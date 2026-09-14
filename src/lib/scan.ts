@@ -68,6 +68,14 @@ export async function repoToplevel(dir: string): Promise<string | null> {
   return out ? out.trim() || null : null;
 }
 
+/**
+ * Whether the repository containing `dir` ignores `dir` itself — `/rd/tmp` against `/rd`'s
+ * `.gitignore`, for instance. `check-ignore -q` exits 0 when the path is ignored.
+ */
+async function isIgnoredByGit(dir: string): Promise<boolean> {
+  return (await git(dir, ['check-ignore', '-q', '.'])) !== null;
+}
+
 /** A path is hidden when any of its directory segments is on the deny list. */
 function passesDeny(rel: string, rules: IgnoreRules): boolean {
   const parts = rel.split('/');
@@ -136,7 +144,13 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
 
   const ownRepo = noGit ? null : await repoToplevel(root.path);
 
-  if (ownRepo) {
+  // A root its own repository ignores — `/rd/tmp`, a build directory, a scratch folder — lists
+  // as completely empty. Git is not wrong: nothing there is tracked, and nothing there ever
+  // will be. But the user pointed mdhouse at that directory on purpose, so fall through to the
+  // filesystem walk and show what is actually in it.
+  const gitBlind = ownRepo !== null && (await isIgnoredByGit(root.path));
+
+  if (ownRepo && !gitBlind) {
     // The root is inside a repository: one listing covers the whole subtree.
     repos.push(ownRepo);
     const listed = await listViaGit(root.path, includeIgnored);

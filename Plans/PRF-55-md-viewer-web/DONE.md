@@ -154,3 +154,18 @@ list. They reuse the recents payload rather than asking the server a second ques
 
 Verified on `/rd/vhosts/realty`: `nginx` matches 93 lines in 41 files; with *recent* on, 6
 lines in 1 file, matching the recents list by hand.
+
+## B.5 — A root its own repository ignores
+`mdhouse /rd/tmp` listed nothing. `/rd/.gitignore:81` ignores `tmp`, so
+`git ls-files -co --exclude-standard` correctly reported zero files for the whole root — and
+the scanner took that as the answer.
+
+Git is not wrong: nothing there is tracked and nothing there will be. But the user pointed
+mdhouse at that directory deliberately. `scanRoot()` now asks `git check-ignore -q .` for the
+root itself and, when the repository ignores it, falls through to the filesystem walk instead
+of the git listing. `repos` stays empty for such a root, which is accurate — an ignored
+directory has no history, so recents and the history panel correctly offer nothing.
+
+Verified: `/rd/tmp` 13 files, matching `find /rd/tmp -name '*.md' | wc -l`. No regression —
+`/rd/vhosts/realty` 1 047 / 1 repo, `~/src` 1 039 / 26 repos. `test/scan.test.ts` covers both
+halves: a tracked root ignores its `tmp/`, and that same `tmp/` as a root lists its files.
