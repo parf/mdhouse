@@ -17,6 +17,14 @@ export function timeAgo(at: number): string {
   return `${Math.floor(days / 365)} y ago`;
 }
 
+/**
+ * A file name as it is worth reading in a list where everything is Markdown: `TODO.md` is
+ * `TODO`. `.mdx` keeps its extension — there the distinction still says something.
+ */
+export function docName(name: string): string {
+  return name.replace(/\.md$/i, '');
+}
+
 /** Split a line into plain and highlighted runs for a search hit. */
 export function highlightRanges(text: string, ranges: Array<[number, number]>): Array<{ text: string; hit: boolean }> {
   if (!ranges.length) return [{ text, hit: false }];

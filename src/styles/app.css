@@ -338,10 +338,29 @@ main {
 .hit .meta { display: flex; gap: 7px; font-size: 11px; color: var(--fg-faint); margin-top: 2px; }
 .hit .meta .who { color: var(--fg-muted); }
 
+/* A recents row reads as three lines: what changed, where it lives, and why. */
+.hit.recent { padding: 6px 10px; }
+.hit.recent .recent-head { display: flex; align-items: baseline; gap: 6px; }
+.hit.recent .hit-name { color: var(--accent); font-weight: 550; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hit.recent .recent-head .meta { margin: 0 0 0 auto; flex: none; }
+.hit.recent .recent-dir {
+  color: var(--fg);
+  font-size: 11px;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The path up to the containing folder is context; the folder itself is the answer. */
+.hit.recent .recent-dir .lead { color: var(--fg-muted); }
+.hit.recent .recent-dir b { font-weight: 650; }
+/* Three lines, not four: the commit subject is a headline, the full text is in the tooltip. */
+.hit.recent .hit-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
 /* Uncommitted work is colour-coded: it is the half of "recent" you can still change. A left
    rule survives the compact width, where the status word itself is the first thing cut. */
 .hit.uncommitted { border-left: 2px solid var(--mark, var(--warn)); }
-.hit.uncommitted .hit-name { color: var(--mark, var(--warn)); }
+.hit.uncommitted:not(.recent) .hit-name { color: var(--mark, var(--warn)); }
 .hit.uncommitted .meta .tag {
   color: var(--mark, var(--warn));
   background: color-mix(in srgb, var(--mark, var(--warn)) 14%, transparent);
@@ -356,7 +375,7 @@ main {
 /* A compact sidebar has no room for the directory line or a commit subject. */
 .sidebar.compact .hit { padding: 5px 8px; }
 .sidebar.compact .hit .hit-dir,
-.sidebar.compact .hit .hit-line { display: none; }
+.sidebar.compact .hit:not(.recent) .hit-line { display: none; }
 /* Too narrow for the whole path — the parent folder is what tells two DONE.md rows apart. */
 .sidebar.compact .hit .hit-parent { display: inline; }
 .sidebar.compact .hit .hit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

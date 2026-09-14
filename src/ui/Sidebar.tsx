@@ -5,7 +5,7 @@ import type { SearchResult } from '../lib/search';
 import type { Mark } from '../lib/prefs';
 import { buildTree, fuzzyScore, type Node } from './tree-model';
 import { Tree } from './Tree';
-import { timeAgo, highlightRanges } from './format';
+import { timeAgo, highlightRanges, docName } from './format';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
   IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
@@ -322,7 +322,7 @@ function HitPath({ name, dir, lead }: { name: string; dir: string; lead?: preact
   return (
     <span class="hit-path">
       {lead}
-      <span class="hit-name">{name}</span>
+      <span class="hit-name">{docName(name)}</span>
       {parent && (
         <span class="hit-parent" title={dir}>
           {parent}
@@ -330,6 +330,21 @@ function HitPath({ name, dir, lead }: { name: string; dir: string; lead?: preact
       )}
       <span class="hit-dir">{dir}</span>
     </span>
+  );
+}
+
+/**
+ * The containing directory, on its own line, with the folder the file actually sits in picked
+ * out — in a list of `README.md` rows from a dozen plan folders, that last segment is the
+ * only part carrying information.
+ */
+function DirLine({ dir }: { dir: string }) {
+  const cut = dir.lastIndexOf('/');
+  return (
+    <div class="recent-dir" title={dir}>
+      {cut !== -1 && <span class="lead">{dir.slice(0, cut + 1)}</span>}
+      <b>{cut === -1 ? dir : dir.slice(cut + 1)}</b>
+    </div>
   );
 }
 
@@ -367,30 +382,32 @@ function Recents(props: SidebarProps) {
     <div>
       {entries.map((e) => (
         <button
-          class={`hit${e.uncommitted ? ` uncommitted ${e.status}` : ''}`}
+          class={`hit recent${e.uncommitted ? ` uncommitted ${e.status}` : ''}`}
           key={`${e.rel}-${e.hash ?? e.at}`}
           onClick={() => props.onOpen(e.rel)}
           title={e.uncommitted ? `${e.rel} — ${e.status}, not committed` : e.rel}
         >
-          <HitPath
-            name={e.name}
-            dir={e.dir}
-            /* Everything in Mine is mine — the marker only carries information on Recent. */
-            lead={
-              props.tab !== 'mine' &&
-              isMine(e, me) && (
-                <span class="mine" title="yours" aria-label="yours">
-                  ❖
-                </span>
-              )
-            }
-          />
-          <span class="meta">
-            {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
-            <span>{timeAgo(e.at)}</span>
-            {e.author && props.tab !== 'mine' && <span class="who">{e.author}</span>}
+          <span class="recent-head">
+            {/* Everything in Mine is mine — the marker only carries information on Recent. */}
+            {props.tab !== 'mine' && isMine(e, me) && (
+              <span class="mine" title="yours" aria-label="yours">
+                ❖
+              </span>
+            )}
+            <span class="hit-name">{docName(e.name)}</span>
+            <span class="meta">
+              {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
+              <span>{timeAgo(e.at)}</span>
+              {e.author && props.tab !== 'mine' && <span class="who">{e.author}</span>}
+            </span>
           </span>
-          {e.subject && <div class="hit-line">{e.subject}</div>}
+
+          {e.dir && <DirLine dir={e.dir} />}
+          {e.subject && (
+            <div class="hit-line" title={e.subject}>
+              {e.subject}
+            </div>
+          )}
         </button>
       ))}
     </div>

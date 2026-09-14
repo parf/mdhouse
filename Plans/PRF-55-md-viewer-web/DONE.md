@@ -182,3 +182,25 @@ also makes it yours: nobody else has a claim on a file that was never committed.
 
 Verified: `/rd/tmp` 13 entries, newest first, all marked untracked; `/rd/vhosts/realty`
 unchanged at 80 entries, all from commits.
+
+## H.4 — Recents rows, three lines
+A recents row now reads as three lines instead of a name with a trailing dump of metadata:
+
+```
+❖ TODO                         13 min ago  Serg Parf
+Plans/**RLM-1125-attom-tax-assessor**
+RLM-1125: preserve absent ATTOM fields and recover …
+```
+
+The file name is a link colour, the age and committer sit at the right edge of the same line,
+the containing directory gets a line of its own in the body colour with the *last* folder in
+bold — in a column of `README` rows from a dozen plan folders that segment is the only part
+carrying information — and the commit subject is clamped to one line with the full text in
+the tooltip, so a row is always exactly three lines tall.
+
+`.md` is dropped from every file name shown in the sidebar: in a viewer where everything is
+Markdown the extension is three characters of noise. `.mdx` keeps its extension, where the
+distinction still says something.
+
+The uncommitted colour coding moved to the left rule and the status tag, since the file name
+now carries the link colour instead.
