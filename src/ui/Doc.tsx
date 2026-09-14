@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, type DocPayload } from './api';
 import type { FileHistory } from '../lib/git';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide } from './icons';
 import { timeAgo } from './format';
 
 interface Props {
@@ -189,12 +189,12 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
 
           <span class="doc-actions">
             <button
-              class="icon-btn wide-toggle"
+              class="icon-btn"
               aria-pressed={fullWidth}
               title={fullWidth ? 'Back to a reading column' : 'Use the full window width'}
               onClick={() => setFullWidth((w) => !w)}
             >
-              {'<=>'}
+              <IconWide size={15} inward={fullWidth} />
             </button>
             <button
               class="icon-btn"

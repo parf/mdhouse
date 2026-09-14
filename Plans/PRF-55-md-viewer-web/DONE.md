@@ -234,10 +234,14 @@ Verified on `.claude/GeoQ.md` (1 H1, 11 H2, 12 H3): 12 entries by default, 24 wi
 and the previously-missing anchor present in the widened list.
 
 ## M.6 — Full-width reading
-A `<=>` button in the document meta line drops the 900px measure and lets the document fill
+A fit-to-width button in the document meta line drops the 900px measure and lets the document fill
 the pane, keeping the 30px side padding. Prose reads better in a column, which is why the cap
 is there — but a document that is mostly wide tables or long code lines would rather have the
 window, and `.claude/GeoQ.md` is exactly that document.
 
 The choice survives navigation: it is a way of reading, not a property of one file. It is not
 persisted across reloads, which keeps the default honest for a page someone opens from a link.
+
+The control is an inline SVG like every other icon in the header rather than a text `<=>`:
+two margins with an arrow pushing out to them, reversed to point inward once the document
+already fills the pane.

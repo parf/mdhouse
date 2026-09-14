@@ -128,6 +128,31 @@ export const IconUser = (p: Props) =>
     p,
   );
 
+/**
+ * Fit-to-width: two margins with an arrow pushing out to them, or pulling back in once the
+ * document already fills the pane.
+ */
+export const IconWide = ({ inward, ...p }: Props & { inward?: boolean }) =>
+  svg(
+    <>
+      <line x1="1.75" y1="3.25" x2="1.75" y2="12.75" />
+      <line x1="14.25" y1="3.25" x2="14.25" y2="12.75" />
+      <line x1="4.5" y1="8" x2="11.5" y2="8" />
+      {inward ? (
+        <>
+          <polyline points="6.75,5.5 4.5,8 6.75,10.5" />
+          <polyline points="9.25,5.5 11.5,8 9.25,10.5" />
+        </>
+      ) : (
+        <>
+          <polyline points="6.75,10.5 4.5,8 6.75,5.5" transform="translate(-0.25 0)" />
+          <polyline points="9.25,10.5 11.5,8 9.25,5.5" transform="translate(0.25 0)" />
+        </>
+      )}
+    </>,
+    p,
+  );
+
 export const IconX = (p: Props) =>
   svg(
     <>
