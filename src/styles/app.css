@@ -353,7 +353,7 @@ main {
 }
 /* The path up to the containing folder is context; the folder itself is the answer. */
 .hit.recent .recent-dir .lead { color: var(--fg-muted); }
-.hit.recent .recent-dir b { font-weight: 650; }
+.hit.recent .recent-dir b { font-weight: 650; font-size: 12.5px; }
 /* Three lines, not four: the commit subject is a headline, the full text is in the tooltip. */
 .hit.recent .hit-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 
