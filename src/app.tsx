@@ -6,6 +6,7 @@ import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
 import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
+import { Home } from './ui/Home';
 import { ancestors } from './ui/tree-model';
 import { IconPanel, IconSearch } from './ui/icons';
 
@@ -42,6 +43,8 @@ function App() {
   const [showIgnored, setShowIgnored] = useState(() => load(LS_IGNORED, false));
   const [tab, setTab] = useState<Tab>('files');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  /** Bumped by every live event, so the front page can refetch without a prop for each field. */
+  const [revision, setRevision] = useState(0);
 
   const [query, setQuery] = useState('');
   const [searchIn, setSearchIn] = useState<SearchIn>({ names: true, text: true });
@@ -166,6 +169,7 @@ function App() {
     if (msg.t === 'hello' || msg.t === 'pong') return;
 
     void reloadTree();
+    setRevision((n) => n + 1);
     if (WANTS_RECENTS.has(tab)) void reloadRecents();
 
     // Refresh the open document only when it is one of the files that actually changed.
@@ -315,10 +319,21 @@ function App() {
           onToggleDir={toggleDir}
           onOpen={openFile}
           onMark={setMark}
+          onHome={() => go('/')}
         />
       )}
 
       <main>
+        {!docPath ? (
+          <Home
+            rootId={rootId}
+            roots={roots}
+            tree={tree}
+            showIgnored={showIgnored}
+            revision={revision}
+            onOpen={openFile}
+          />
+        ) : (
         <Doc
           doc={doc}
           loading={loadingDoc}
@@ -328,6 +343,7 @@ function App() {
           onMark={setMark}
           onOpenDir={revealDir}
         />
+        )}
       </main>
     </div>
   );

@@ -1,6 +1,6 @@
 /** Server calls and the live-update socket. */
 
-import type { TreePayload, RecentEntry } from '../lib/store';
+import type { TreePayload, RecentEntry, Digest } from '../lib/store';
 import type { SearchResult } from '../lib/search';
 import type { Heading } from '../lib/render';
 import type { Mark } from '../lib/prefs';
@@ -60,6 +60,9 @@ export const api = {
 
   recents: (root: string, ignored: boolean, limit = 80) =>
     get<{ entries: RecentEntry[] }>('/api/recents', { root, limit, ignored: ignored ? 1 : 0 }),
+
+  digest: (root: string, ignored: boolean, limit = 60) =>
+    get<Digest>('/api/digest', { root, limit, ignored: ignored ? 1 : 0 }),
 
   history: (p: string) => get<FileHistory>('/api/git/log', { p }),
 

@@ -66,6 +66,8 @@ export interface SidebarProps {
   onToggleDir: (path: string) => void;
   onOpen: (path: string, line?: number) => void;
   onMark: (path: string, mark: Mark, on: boolean) => void;
+  /** Leave the open document and show the root's front page. */
+  onHome: () => void;
 }
 
 const STATE_ICON = { off: IconPanelOff, compact: IconPanel, open: IconPanelWide };
@@ -124,7 +126,9 @@ export function Sidebar(props: SidebarProps) {
           <StateIcon />
         </button>
         <span class="brand">
-          {tree?.root.name ?? 'mdhouse'}
+          <button class="home-link" onClick={props.onHome} title="What changed here lately">
+            {tree?.root.name ?? 'mdhouse'}
+          </button>
           {/* Read-only is the normal state and says nothing; being able to write does. */}
           {tree?.root.writable && (
             <span class="rw" title="mdhouse may write to this tree">

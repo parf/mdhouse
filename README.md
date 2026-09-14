@@ -24,6 +24,10 @@ be linked, bookmarked and typed by hand.
 - **Recents** — one list: everything uncommitted in your working tree, colour-coded by git
   status, then the files touched by the last N commits, filterable by committer. *Mine*
   narrows it to your own work — all uncommitted changes count as yours.
+- **A front page** — the root name in the sidebar opens it. The same material grouped by
+  commit rather than by file: each commit with its subject and the documents it is the newest
+  change to. A commit that only repeats files you have already seen above is left out, and a
+  tree git knows nothing about falls back to the twenty most recently changed files.
 - **Mark things** — favorite, mute or ignore any file or directory. Marks live in
   `~/.config/mdhouse/`, never inside the tree you are reading, so they work on a directory
   you cannot write to at all.

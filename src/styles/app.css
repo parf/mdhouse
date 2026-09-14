@@ -396,6 +396,84 @@ main {
 .sidebar.compact .hit .hit-parent { display: inline; }
 .sidebar.compact .hit .hit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ── front page ─────────────────────────────────────────────────────────── */
+
+.brand .home-link { font: inherit; color: inherit; padding: 0; border-radius: 3px; }
+.brand .home-link:hover { color: var(--accent); }
+
+.home { max-width: 860px; margin: 0 auto; padding: 24px 30px 120px; }
+.home-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+.home-head h1 { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; color: var(--h1); margin: 0; }
+.home-head .tabs { margin-left: auto; flex: 0 0 auto; gap: 3px; }
+.home-head .tabs button { display: flex; align-items: center; gap: 5px; padding: 5px 10px; flex: none; }
+
+.home-section { margin-bottom: 26px; }
+.home-section h2 {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 0 0 6px;
+}
+
+/* One file, wherever it appears: on its own under Uncommitted, or inside a commit card. */
+.home-file {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.home-file:hover { background: var(--bg-hover); }
+.home-file .where { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-file .where .dir { color: var(--fg-faint); }
+.home-file .where b { font-weight: 600; color: var(--accent); }
+.home-file .when { margin-left: auto; flex: none; font-size: 11.5px; color: var(--fg-faint); }
+.home-file .tag {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.home-file.loud .tag { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+
+.commit-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  padding: 9px 10px;
+  margin-bottom: 8px;
+}
+.commit-card > header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+/* The subject is the point of the row, so it gets the space — two lines of it, then an
+   ellipsis, with the full text in the tooltip. */
+.commit-card .subject {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.35;
+  color: var(--h2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.commit-card .when { flex: none; font-size: 11.5px; color: var(--fg-faint); }
+.commit-card .who { flex: none; font-size: 11.5px; color: var(--fg-muted); }
+
+@media (max-width: 720px) {
+  .home { padding: 16px 16px 90px; }
+  .commit-card > header { flex-wrap: wrap; }
+}
+
 /* ── document ───────────────────────────────────────────────────────────── */
 
 .doc-wrap { max-width: 900px; margin: 0 auto; padding: 22px 30px 120px; }

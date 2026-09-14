@@ -254,3 +254,25 @@ short tick before it so a third-level row is recognisable without measuring its 
 
 Rows became full-width links with a hover background, so the click target is the row rather
 than the words.
+
+## L.1 — The front page
+`/` used to say "pick a file on the left". It now shows what changed in this root, grouped by
+**commit** rather than by file — the sidebar's Recent tab answers *which files changed*, this
+answers *what was done*, and a commit carrying its subject plus the four plan files it touched
+says more than those four files listed separately.
+
+- **Favs / Recent / Mine** across the top, Recent by default. Favourites read the tree's
+  resolved per-file marks, so a starred *folder* contributes its files without re-implementing
+  the directory-rule matching. Mine filters by git identity, and keeps all uncommitted work.
+- **Uncommitted** first, as `dir/file — status — age`.
+- **Commits** below: subject clamped to two lines with the age and committer beside it, then
+  the documents that commit is the newest change to. A file appears exactly once, under its
+  newest commit, and **a commit that contributes nothing new is dropped entirely** — on a busy
+  day twenty commits touch the same four plan files and nineteen of those rows say nothing.
+- **No git at all** — a root outside any repository, or one its repository ignores — falls back
+  to the twenty most recently changed files, rather than an empty page.
+
+The root name in the sidebar header is the link to it. The page refetches on live events.
+
+Verified: `/rd/vhosts/realty` 28 commit cards (9 under *Mine*), `/rd/tmp` 13 files under
+*Recently changed*, and the empty states differ per view.

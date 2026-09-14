@@ -48,6 +48,27 @@ export interface RecentEntry {
   uncommitted?: boolean;
 }
 
+/** One commit and the Markdown it is the newest change to. */
+export interface CommitGroup {
+  hash: string;
+  author: string;
+  email: string;
+  date: number;
+  subject: string;
+  files: Array<{ rel: string; name: string; dir: string; status: string }>;
+}
+
+export interface Digest {
+  uncommitted: RecentEntry[];
+  commits: CommitGroup[];
+  /**
+   * Newest files by modification time, filled only when git had nothing to say — a root
+   * outside any repository, or one its repository ignores. Without it the front page of such
+   * a root would be blank, which is the least useful thing it could be.
+   */
+  recent: RecentEntry[];
+}
+
 interface RootState {
   rules: IgnoreRules;
   scans: Map<boolean, ScanResult>;
@@ -227,6 +248,71 @@ export class Store {
       }
     }
     return out.slice(0, limit);
+  }
+
+  /**
+   * The same material as `recents()`, grouped by commit instead of by file — the shape the
+   * front page wants.
+   *
+   * A file appears exactly once, under the newest commit that touched it, and a commit that
+   * contributes nothing new is dropped entirely rather than repeating a file the reader has
+   * already seen two rows above. That is what makes a long `git log` readable: on a busy day
+   * twenty commits touch the same four plan files, and nineteen of those rows say nothing.
+   */
+  async digest(root: Root, limit: number, includeIgnored: boolean): Promise<Digest> {
+    const scan = await this.scan(root, includeIgnored);
+    const status = await this.status(root, scan);
+    const byPath = new Map(scan.files.map((f) => [f.rel, f]));
+    const seen = new Set<string>();
+
+    const uncommitted: RecentEntry[] = [];
+    for (const [rel, st] of status) {
+      if (st === 'deleted') continue;
+      if (this.prefs.hasMark(root.path, rel, 'muted')) continue;
+      const file = byPath.get(rel);
+      if (!file) continue;
+      seen.add(rel);
+      uncommitted.push({ rel, name: file.name, dir: file.dir, at: file.mtime, status: st, uncommitted: true });
+    }
+    uncommitted.sort((a, b) => b.at - a.at);
+
+    const groups = new Map<string, CommitGroup>();
+    let files = 0;
+
+    for (const c of await this.gitChanges(root, scan)) {
+      if (files >= limit) break;
+      if (seen.has(c.rel) || c.status === 'D' || !byPath.has(c.rel)) continue;
+      if (this.prefs.hasMark(root.path, c.rel, 'muted')) continue;
+      seen.add(c.rel);
+      files++;
+
+      let group = groups.get(c.hash);
+      if (!group) {
+        group = {
+          hash: c.hash.slice(0, 8),
+          author: c.author,
+          email: c.email,
+          date: c.date,
+          subject: c.subject,
+          files: [],
+        };
+        groups.set(c.hash, group);
+      }
+      const file = byPath.get(c.rel)!;
+      group.files.push({ rel: c.rel, name: file.name, dir: file.dir, status: c.status });
+    }
+
+    const commits = [...groups.values()];
+    const recent =
+      commits.length > 0
+        ? []
+        : scan.files
+            .filter((f) => !seen.has(f.rel) && !this.prefs.hasMark(root.path, f.rel, 'muted'))
+            .sort((a, b) => b.mtime - a.mtime)
+            .slice(0, 20)
+            .map((f) => ({ rel: f.rel, name: f.name, dir: f.dir, at: f.mtime }));
+
+    return { uncommitted, commits, recent };
   }
 
   /** Every markdown change in the last N commits of every repo under this root, newest first. */

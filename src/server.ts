@@ -187,6 +187,15 @@ export function serve(opts: ServeOptions) {
         return json({ entries: await store.recents(root, limit, includeIgnored) });
       },
 
+      '/api/digest': async (req) => {
+        const url = new URL(req.url);
+        const root = rootOf(url);
+        if (!root) return fail(404, 'unknown root');
+
+        const limit = Math.min(Number(url.searchParams.get('limit') ?? 60), 300);
+        return json(await store.digest(root, limit, flag(url, 'ignored', opts.includeIgnoredDefault)));
+      },
+
       '/api/git/log': async (req) => {
         const url = new URL(req.url);
         const loc = await registry.resolve(url.searchParams.get('p') ?? '');
