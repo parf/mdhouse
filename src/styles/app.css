@@ -455,13 +455,23 @@ main {
   text-align: right;
   white-space: nowrap;
   width: 1%;
-  max-width: 320px;
+  max-width: 340px;
   overflow: hidden;
-  text-overflow: ellipsis;
   color: var(--fg-faint);
   border-right: 1px solid var(--border);
 }
-.home-table .dir-path b { font-weight: 640; color: var(--fg-muted); }
+/* A deep path has to lose something. It loses the leading directories, never the last one —
+   that is the folder the file lives in, and the only part of the path the row is about. */
+.home-table .dir-path { display: inline-flex; align-items: baseline; max-width: 100%; }
+.home-table .dir-path .up { flex: 0 20 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.home-table .dir-path b {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 640;
+  color: var(--fg-muted);
+}
 .home-table .dir-path.root { color: var(--fg-faint); }
 
 .home-table td.name { width: 100%; }
