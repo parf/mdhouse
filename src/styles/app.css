@@ -391,6 +391,9 @@ main {
 .crumbs .sep { color: var(--fg-faint); }
 .crumbs .crumb { font: inherit; color: inherit; padding: 0; border-radius: 2px; }
 .crumbs .crumb:hover { color: var(--accent); text-decoration: underline; }
+/* The folder the document lives in, not the path that leads to it. */
+.crumbs .crumb.here { font-size: 15px; font-weight: 650; color: var(--fg); letter-spacing: -0.01em; }
+.crumbs > span:has(.here) { display: flex; align-items: baseline; }
 .doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--fg-faint); align-items: center; }
 .doc-actions { display: flex; gap: 4px; margin-left: auto; }

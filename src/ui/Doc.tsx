@@ -137,14 +137,21 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
       <header class="doc-head">
         <div class="crumbs">
           {dirs.map((d, i) => {
-            // Each crumb addresses the path up to and including itself.
+            // Each crumb addresses the path up to and including itself. The last one is the
+            // folder the document actually lives in — the part worth reading at a glance, so
+            // it is set larger and bold, as in the recents list.
             const path = dirs.slice(0, i + 1).join('/');
+            const last = i === dirs.length - 1;
             return (
               <span key={path}>
-                <button class="crumb" onClick={() => onOpenDir(path)} title={`Show ${path} in the tree`}>
+                <button
+                  class={`crumb${last ? ' here' : ''}`}
+                  onClick={() => onOpenDir(path)}
+                  title={`Show ${path} in the tree`}
+                >
                   {d}
                 </button>
-                <span class="sep"> / </span>
+                {!last && <span class="sep"> / </span>}
               </span>
             );
           })}
