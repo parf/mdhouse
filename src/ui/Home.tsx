@@ -84,11 +84,11 @@ export function Home(props: Props) {
   if (commits.length) {
     rows.push({ kind: 'head', key: 'h:commits', label: 'Commits' });
     for (const c of commits) {
-      // Your own commits get a green wash, so a page of a team's work shows your part of it
-      // without reaching for the Mine tab.
+      // Your own commits get a green header, so a page of a team's work shows your part of
+      // it without reaching for the Mine tab.
       const own = isMine(c.email, c.author);
       rows.push({ kind: 'commit', key: `c:${c.hash}`, c, own });
-      rows.push(...fileRows(c.files, c.hash, false, own));
+      rows.push(...fileRows(c.files, c.hash));
     }
   }
 
@@ -150,7 +150,7 @@ export function Home(props: Props) {
                 </tr>
               ) : (
                 <tr
-                  class={`file${row.loud ? ' loud' : ''}${row.own ? ' mine' : ''}`}
+                  class={row.loud ? 'file loud' : 'file'}
                   key={row.key}
                   onClick={() => props.onOpen(row.r.rel)}
                   title={row.r.rel}
@@ -188,7 +188,7 @@ export function Home(props: Props) {
 type Row =
   | { kind: 'head'; key: string; label: string }
   | { kind: 'commit'; key: string; c: CommitGroup; own?: boolean }
-  | { kind: 'file'; key: string; r: FileRow; loud?: boolean; own?: boolean; span: number };
+  | { kind: 'file'; key: string; r: FileRow; loud?: boolean; span: number };
 
 type FileRow = Pick<RecentEntry, 'rel' | 'dir' | 'name' | 'status'> & { at?: number };
 
@@ -197,14 +197,14 @@ type FileRow = Pick<RecentEntry, 'rel' | 'dir' | 'name' | 'status'> & { at?: num
  * once. Grouping restarts at every header — a folder repeated under the next commit is new
  * information there.
  */
-function fileRows(files: FileRow[], prefix: string, loud?: boolean, own?: boolean): Row[] {
+function fileRows(files: FileRow[], prefix: string, loud?: boolean): Row[] {
   return files.map((r, i) => {
     let span = 0;
     if (i === 0 || files[i - 1]!.dir !== r.dir) {
       span = 1;
       while (i + span < files.length && files[i + span]!.dir === r.dir) span++;
     }
-    return { kind: 'file', key: `${prefix}:${r.rel}`, r, loud, own, span };
+    return { kind: 'file', key: `${prefix}:${r.rel}`, r, loud, span };
   });
 }
 
