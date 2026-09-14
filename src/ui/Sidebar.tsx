@@ -8,11 +8,11 @@ import { Tree } from './Tree';
 import { timeAgo, highlightRanges } from './format';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
-  IconClock, IconGit, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
+  IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
 } from './icons';
 
 export type SidebarState = 'off' | 'compact' | 'open';
-export type Tab = 'files' | 'favorites' | 'fs' | 'git' | 'mine';
+export type Tab = 'files' | 'favorites' | 'recent' | 'mine';
 
 /**
  * The tab strip is present in compact as well as open — switching to recents or favorites
@@ -21,16 +21,12 @@ export type Tab = 'files' | 'favorites' | 'fs' | 'git' | 'mine';
 const TABS: Array<{ id: Tab; label: string; title: string; Icon: (p: { size?: number }) => preact.JSX.Element }> = [
   { id: 'files', label: 'Files', title: 'All files', Icon: IconDoc },
   { id: 'favorites', label: 'Favs', title: 'Favorites', Icon: (p) => <IconStar {...p} filled /> },
-  { id: 'fs', label: 'Recent', title: 'Recently changed on disk', Icon: IconClock },
-  { id: 'git', label: 'Git', title: 'Recently changed in git', Icon: IconGit },
-  { id: 'mine', label: 'Mine', title: 'My recent commits', Icon: IconUser },
+  { id: 'recent', label: 'Recent', title: 'Uncommitted, then recently committed', Icon: IconClock },
+  { id: 'mine', label: 'Mine', title: 'My uncommitted work and my recent commits', Icon: IconUser },
 ];
 
-/**
- * Which recents dataset a tab reads. 'mine' rides on the same git payload as 'git' — the
- * committer filter is applied client-side, so switching between them costs no request.
- */
-export const RECENTS_KIND: Partial<Record<Tab, 'fs' | 'git'>> = { fs: 'fs', git: 'git', mine: 'git' };
+/** The tabs that read the recents list. 'mine' is a filter over the same payload. */
+export const WANTS_RECENTS = new Set<Tab>(['recent', 'mine']);
 
 export interface SidebarProps {
   state: SidebarState;
@@ -41,7 +37,7 @@ export interface SidebarProps {
   query: string;
   search: SearchResult | null;
   searching: boolean;
-  recents: Record<'fs' | 'git', RecentEntry[] | null>;
+  recents: RecentEntry[] | null;
   authorFilter: string;
   showIgnored: boolean;
   current: string | null;
@@ -104,9 +100,9 @@ export function Sidebar(props: SidebarProps) {
 
   const authors = useMemo(() => {
     const seen = new Map<string, number>();
-    for (const e of props.recents.git ?? []) if (e.author) seen.set(e.author, (seen.get(e.author) ?? 0) + 1);
+    for (const e of props.recents ?? []) if (e.author) seen.set(e.author, (seen.get(e.author) ?? 0) + 1);
     return [...seen].sort((a, b) => b[1] - a[1]).map(([name]) => name);
-  }, [props.recents.git]);
+  }, [props.recents]);
 
   return (
     <aside class={`sidebar ${state}`}>
@@ -177,7 +173,7 @@ export function Sidebar(props: SidebarProps) {
 
             {wide && (
               <div class="filters">
-                {props.tab === 'git' && authors.length > 1 && (
+                {props.tab === 'recent' && authors.length > 1 && (
                   <select value={props.authorFilter} onChange={(e) => props.onAuthor((e.target as HTMLSelectElement).value)}>
                     <option value="">everyone</option>
                     {tree?.user?.name && <option value={tree.user.name}>mine</option>}
@@ -274,35 +270,58 @@ function Favorites(props: SidebarProps & { favorites: FavEntry[] }) {
   );
 }
 
+/** Uncommitted work is yours by definition — nobody else's edits are in your working tree. */
+function isMine(e: RecentEntry, me: { name: string; email: string } | null): boolean {
+  if (e.uncommitted) return true;
+  if (!me) return false;
+  return me.email ? e.email === me.email : e.author === me.name;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  modified: 'modified',
+  untracked: 'new',
+  staged: 'staged',
+};
+
 function Recents(props: SidebarProps) {
-  const kind = RECENTS_KIND[props.tab] ?? 'fs';
-  const all = props.recents[kind];
+  const all = props.recents;
   if (!all) return <p class="empty">Loading…</p>;
 
-  const me = props.tree?.user;
-  if (props.tab === 'mine' && !me) {
-    return <p class="empty">No git identity here — set user.email to see your own commits.</p>;
-  }
-
+  const me = props.tree?.user ?? null;
   const entries =
     props.tab === 'mine'
-      ? all.filter((e) => (me!.email ? e.email === me!.email : e.author === me!.name))
-      : kind === 'git' && props.authorFilter
+      ? all.filter((e) => isMine(e, me))
+      : props.authorFilter
         ? all.filter((e) => e.author === props.authorFilter)
         : all;
+
   if (!entries.length) {
-    return <p class="empty">{props.tab === 'mine' ? `Nothing from ${me!.name} in the last commits.` : 'Nothing here yet.'}</p>;
+    return (
+      <p class="empty">
+        {props.tab === 'mine'
+          ? me
+            ? `Nothing uncommitted, and nothing from ${me.name} in the last commits.`
+            : 'No git identity here — set user.email to see your own work.'
+          : 'Nothing here yet.'}
+      </p>
+    );
   }
 
   return (
     <div>
       {entries.map((e) => (
-        <button class="hit" key={`${e.rel}-${e.hash ?? e.at}`} onClick={() => props.onOpen(e.rel)} title={e.rel}>
+        <button
+          class={`hit${e.uncommitted ? ` uncommitted ${e.status}` : ''}`}
+          key={`${e.rel}-${e.hash ?? e.at}`}
+          onClick={() => props.onOpen(e.rel)}
+          title={e.uncommitted ? `${e.rel} — ${e.status}, not committed` : e.rel}
+        >
           <span class="hit-path">
             <span class="hit-name">{e.name}</span>
             <span class="hit-dir">{e.dir}</span>
           </span>
           <span class="meta">
+            {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
             <span>{timeAgo(e.at)}</span>
             {e.author && props.tab !== 'mine' && <span class="who">{e.author}</span>}
           </span>

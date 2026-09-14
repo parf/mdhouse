@@ -322,6 +322,21 @@ main {
 .hit .meta { display: flex; gap: 7px; font-size: 11px; color: var(--fg-faint); margin-top: 2px; }
 .hit .meta .who { color: var(--fg-muted); }
 
+/* Uncommitted work is colour-coded: it is the half of "recent" you can still change. A left
+   rule survives the compact width, where the status word itself is the first thing cut. */
+.hit.uncommitted { border-left: 2px solid var(--mark, var(--warn)); }
+.hit.uncommitted .hit-name { color: var(--mark, var(--warn)); }
+.hit.uncommitted .meta .tag {
+  color: var(--mark, var(--warn));
+  background: color-mix(in srgb, var(--mark, var(--warn)) 14%, transparent);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-weight: 550;
+}
+.hit.modified  { --mark: var(--warn); }
+.hit.untracked { --mark: var(--ok); }
+.hit.staged    { --mark: var(--accent); }
+
 /* A compact sidebar has no room for the directory line or a commit subject. */
 .sidebar.compact .hit { padding: 5px 8px; }
 .sidebar.compact .hit .hit-dir,

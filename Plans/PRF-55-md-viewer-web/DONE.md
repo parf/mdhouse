@@ -94,3 +94,22 @@ uses, which is why committer filtering was kept client-side in E.
 
 Verified in the browser at compact width: all five tabs switch, Mine lists only
 `parf@realmo.com` commits, Favourites shows `Plans/` as a single row.
+
+## H.2 — One recents list
+Filesystem recents (mtime order) and git recents (commit order) were two tabs showing mostly
+the same files in a different sequence. They are now one list: **uncommitted work first**,
+newest mtime first, then the files touched by the last N commits, deduplicated against it.
+
+Uncommitted entries are colour-coded by git status — amber `modified`, green `new`, blue
+`staged` — with a left rule that survives the compact width, where the status word is the
+first thing cut. Deleted files are left out: there is nothing to open.
+
+All uncommitted work counts as the user's own — nobody else's edits are in your working tree
+— so *Mine* is uncommitted plus commits matching the git identity, and needs no committer
+filter of its own. The committer dropdown stays on *Recent*.
+
+`Store.recentsFs` / `Store.recentsGit` collapsed into `Store.recents`, `/api/recents` lost its
+`kind` parameter, and the client holds one array instead of a record of two.
+
+Verified against `~/src`: 8 untracked files sort above 72 commit entries; touching
+`mdhouse/README.md` makes it appear as `modified` through the watcher without a reload.

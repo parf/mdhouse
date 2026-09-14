@@ -172,15 +172,10 @@ export function serve(opts: ServeOptions) {
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
 
-        const kind = url.searchParams.get('kind') === 'git' ? 'git' : 'fs';
         const limit = Math.min(Number(url.searchParams.get('limit') ?? 50), 500);
         const includeIgnored = flag(url, 'ignored', opts.includeIgnoredDefault);
 
-        const entries =
-          kind === 'git'
-            ? await store.recentsGit(root, limit, includeIgnored)
-            : await store.recentsFs(root, limit, includeIgnored);
-        return json({ kind, entries });
+        return json({ entries: await store.recents(root, limit, includeIgnored) });
       },
 
       '/api/git/log': async (req) => {

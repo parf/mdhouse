@@ -53,8 +53,8 @@ export const api = {
   search: (root: string, q: string, ignored: boolean, regex = false) =>
     get<SearchResult>('/api/search', { root, q, ignored: ignored ? 1 : 0, regex: regex ? 1 : 0 }),
 
-  recents: (root: string, kind: 'fs' | 'git', ignored: boolean, limit = 60) =>
-    get<{ kind: string; entries: RecentEntry[] }>('/api/recents', { root, kind, limit, ignored: ignored ? 1 : 0 }),
+  recents: (root: string, ignored: boolean, limit = 80) =>
+    get<{ entries: RecentEntry[] }>('/api/recents', { root, limit, ignored: ignored ? 1 : 0 }),
 
   history: (p: string) => get<{ commits: Commit[] }>('/api/git/log', { p }),
 

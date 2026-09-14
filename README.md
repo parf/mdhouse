@@ -19,8 +19,9 @@ be linked, bookmarked and typed by hand.
   cycles; the choice is remembered.
 - **Search** — filenames match instantly as you type with no round-trip at all; full text
   goes through ripgrep, with line numbers and highlighted context.
-- **Recents** — what changed on disk (mtime) and what changed in git (last N commits),
-  filterable by committer.
+- **Recents** — one list: everything uncommitted in your working tree, colour-coded by git
+  status, then the files touched by the last N commits, filterable by committer. *Mine*
+  narrows it to your own work — all uncommitted changes count as yours.
 - **Mark things** — favorite, mute or ignore any file or directory. Marks live in
   `~/.config/mdhouse/`, never inside the tree you are reading, so they work even on a
   directory you cannot write to.

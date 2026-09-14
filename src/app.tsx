@@ -4,7 +4,7 @@ import { api, connectLive, type DocPayload, type LiveMessage, type RootInfo } fr
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
-import { Sidebar, RECENTS_KIND, type SidebarState, type Tab } from './ui/Sidebar';
+import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
 import { ancestors } from './ui/tree-model';
 import { IconPanel, IconSearch } from './ui/icons';
@@ -46,7 +46,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState<SearchResult | null>(null);
   const [searching, setSearching] = useState(false);
-  const [recents, setRecents] = useState<Record<'fs' | 'git', RecentEntry[] | null>>({ fs: null, git: null });
+  const [recents, setRecents] = useState<RecentEntry[] | null>(null);
   const [authorFilter, setAuthorFilter] = useState('');
   const [live, setLive] = useState(false);
 
@@ -90,18 +90,16 @@ function App() {
     void reloadTree();
   }, [reloadTree]);
 
-  const reloadRecents = useCallback(
-    async (kind: 'fs' | 'git') => {
-      if (!rootId) return;
-      const { entries } = await api.recents(rootId, kind, showIgnored).catch(() => ({ entries: [] }));
-      setRecents((prev) => ({ ...prev, [kind]: entries }));
-    },
-    [rootId, showIgnored],
-  );
+  const reloadRecents = useCallback(async () => {
+    if (!rootId) return;
+    const { entries } = await api.recents(rootId, showIgnored).catch(() => ({ entries: [] }));
+    setRecents(entries);
+  }, [rootId, showIgnored]);
 
+  // Recents and Mine read the same list — the second is a filter over the first, so switching
+  // between them costs no request.
   useEffect(() => {
-    const kind = RECENTS_KIND[tab];
-    if (kind) void reloadRecents(kind);
+    if (WANTS_RECENTS.has(tab)) void reloadRecents();
   }, [tab, reloadRecents]);
 
   // Document load, keyed on the URL.
@@ -162,8 +160,7 @@ function App() {
     if (msg.t === 'hello' || msg.t === 'pong') return;
 
     void reloadTree();
-    const kind = RECENTS_KIND[tab];
-    if (kind) void reloadRecents(kind);
+    if (WANTS_RECENTS.has(tab)) void reloadRecents();
 
     // Refresh the open document only when it is one of the files that actually changed.
     if (msg.t === 'fs' && doc?.rel && msg.paths.includes(doc.rel)) {

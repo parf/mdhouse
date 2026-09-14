@@ -42,7 +42,10 @@ export interface RecentEntry {
   email?: string;
   subject?: string;
   hash?: string;
+  /** Git status code for an uncommitted entry, or the commit's name-status letter. */
   status?: string;
+  /** Changed in the working tree and not committed. Always counted as the user's own. */
+  uncommitted?: boolean;
 }
 
 interface RootState {
@@ -144,53 +147,52 @@ export class Store {
     };
   }
 
-  /** Filesystem recents: newest mtime first. Muted entries are dropped. */
-  async recentsFs(root: Root, limit: number, includeIgnored: boolean): Promise<RecentEntry[]> {
-    const scan = await this.scan(root, includeIgnored);
-    return scan.files
-      .filter((f) => !this.prefs.hasMark(root.path, f.rel, 'muted'))
-      .sort((a, b) => b.mtime - a.mtime || a.rel.localeCompare(b.rel))
-      .slice(0, limit)
-      .map((f) => ({ rel: f.rel, name: f.name, dir: f.dir, at: f.mtime }));
-  }
-
   /**
-   * Git recents: the newest commit touching each Markdown file, from a single `git log` per
-   * repo. The full author set is returned unfiltered — the client filters by committer with no
-   * further round-trip.
+   * One recents list: what is uncommitted, then what git committed most recently.
+   *
+   * These used to be two tabs — mtime order and git order — which mostly showed the same
+   * files in a different sequence. Uncommitted work is what "recent" actually means while
+   * you are editing, and it is always yours, so it sorts to the top and needs no committer
+   * filter. Muted entries are dropped from both halves.
    */
-  async recentsGit(root: Root, limit: number, includeIgnored: boolean): Promise<RecentEntry[]> {
-    if (this.opts.noGit) return [];
+  async recents(root: Root, limit: number, includeIgnored: boolean): Promise<RecentEntry[]> {
     const scan = await this.scan(root, includeIgnored);
-    const s = await this.stateFor(root);
+    const status = await this.status(root, scan);
+    const byPath = new Map(scan.files.map((f) => [f.rel, f]));
 
-    if (!s.changes) {
-      const all: GitChange[] = [];
-      for (const repo of scan.repos) {
-        const inside = repo.startsWith(root.path);
-        const prefix = inside && repo !== root.path ? repo.slice(root.path.length + 1) + '/' : '';
-        const changes = await recentChanges(repo, inside ? repo : root.path, this.opts.gitLogLimit ?? 200);
-        for (const c of changes) all.push(prefix ? { ...c, rel: prefix + c.rel } : c);
-      }
-      all.sort((a, b) => b.date - a.date);
-      s.changes = all;
-    }
-
-    const known = new Set(scan.files.map((f) => f.rel));
-    const seen = new Set<string>();
     const out: RecentEntry[] = [];
+    const seen = new Set<string>();
 
-    for (const c of s.changes) {
+    for (const [rel, st] of status) {
+      // A deleted file has nothing to open, and the tree cannot show it either.
+      if (st === 'deleted') continue;
+      if (this.prefs.hasMark(root.path, rel, 'muted')) continue;
+      const file = byPath.get(rel);
+      if (!file) continue;
+      seen.add(rel);
+      out.push({
+        rel,
+        name: file.name,
+        dir: file.dir,
+        at: file.mtime,
+        status: st,
+        uncommitted: true,
+      });
+    }
+    out.sort((a, b) => b.at - a.at);
+
+    for (const c of await this.gitChanges(root, scan)) {
+      if (out.length >= limit) break;
       if (seen.has(c.rel)) continue;
-      if (c.status === 'D' || !known.has(c.rel)) continue;
+      if (c.status === 'D' || !byPath.has(c.rel)) continue;
       if (this.prefs.hasMark(root.path, c.rel, 'muted')) continue;
       seen.add(c.rel);
 
-      const slash = c.rel.lastIndexOf('/');
+      const file = byPath.get(c.rel)!;
       out.push({
         rel: c.rel,
-        name: slash === -1 ? c.rel : c.rel.slice(slash + 1),
-        dir: slash === -1 ? '' : c.rel.slice(0, slash),
+        name: file.name,
+        dir: file.dir,
         at: c.date,
         author: c.author,
         email: c.email,
@@ -198,9 +200,26 @@ export class Store {
         hash: c.hash.slice(0, 8),
         status: c.status,
       });
-      if (out.length >= limit) break;
     }
-    return out;
+    return out.slice(0, limit);
+  }
+
+  /** Every markdown change in the last N commits of every repo under this root, newest first. */
+  private async gitChanges(root: Root, scan: ScanResult): Promise<GitChange[]> {
+    if (this.opts.noGit) return [];
+    const s = await this.stateFor(root);
+    if (s.changes) return s.changes;
+
+    const all: GitChange[] = [];
+    for (const repo of scan.repos) {
+      const inside = repo.startsWith(root.path);
+      const prefix = inside && repo !== root.path ? repo.slice(root.path.length + 1) + '/' : '';
+      const changes = await recentChanges(repo, inside ? repo : root.path, this.opts.gitLogLimit ?? 200);
+      for (const c of changes) all.push(prefix ? { ...c, rel: prefix + c.rel } : c);
+    }
+    all.sort((a, b) => b.date - a.date);
+    s.changes = all;
+    return all;
   }
 
   /** Repo and repo-relative path for a file, for the lazy per-file history call. */

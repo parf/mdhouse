@@ -14,9 +14,9 @@ See `DONE.md`. Scaffold, roots and path jail, scanner, renderer, search, git and
 server and client, live channel, marks, README — all built and verified end to end against
 `/rd/vhosts/realty` and `~/src`. 27 tests pass; `tsc --noEmit` is clean.
 
-**H.1** closed the follow-up: the tab strip (Files / Favs / Recent / Git / Mine) works in the
-compact sidebar, favourites are a tab reading the stored mark list, and *Mine* filters git
-recents to the current git identity.
+**H.1** closed the follow-up: the tab strip works in the compact sidebar and favourites are a
+tab reading the stored mark list. **H.2** collapsed the two recents tabs into one — uncommitted
+work, colour-coded, then git history — leaving four tabs: Files / Favs / Recent / Mine.
 
 ## I. Checkbox write-back
 
