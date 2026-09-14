@@ -245,3 +245,12 @@ persisted across reloads, which keeps the default honest for a page someone open
 The control is an inline SVG like every other icon in the header rather than a text `<=>`:
 two margins with an arrow pushing out to them, reversed to point inward once the document
 already fills the pane.
+
+## M.7 — Contents list, styled by depth
+The ToC distinguished levels by indentation alone, which reads as one grey block once a
+document has twenty headings. Depth is now carried by weight and colour as well: H1 bold in
+the body colour with a little air above it, H2 medium grey, H3 smaller and fainter with a
+short tick before it so a third-level row is recognisable without measuring its indent.
+
+Rows became full-width links with a hover background, so the click target is the row rather
+than the words.
