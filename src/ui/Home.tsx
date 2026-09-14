@@ -132,6 +132,12 @@ export function Home(props: Props) {
                 <tr class={row.own ? 'commit mine' : 'commit'} key={row.key}>
                   <td colSpan={3}>
                     <div class="commit-head">
+                      {/* The same ❖ the sidebar puts on your files, for the same reason. */}
+                      {row.own && (
+                        <span class="mine" title="yours" aria-label="yours">
+                          ❖
+                        </span>
+                      )}
                       <span class="subject" title={row.c.subject}>
                         {row.c.subject}
                       </span>

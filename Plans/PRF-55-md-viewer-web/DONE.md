@@ -306,8 +306,11 @@ and the age each keep a single position from the top of the page to the bottom.
   folder is only worth printing where it changes.
 - File rows under a commit leave the age cell empty — the commit's own age heads its block —
   but the cell stays, so the columns hold.
-- **Your own commits get a green wash**, header and files, so a page of a team's work shows
-  your part of it without reaching for the Mine tab.
+- **Every commit line is a band** — its own background, border and rounded top — so the page
+  reads as blocks of work rather than one long list.
+- **Yours are green**, band and file rows both, and carry the **❖** the sidebar already puts on
+  your files. A page of a team's work shows your part of it without the Mine tab, and the
+  symbol says it where colour alone would not.
 
 Verified on `/rd/tmp` (13 rows collapsing to three directory cells: ×5, `/`, ×7, every file
 name on one left edge) and on `/rd/vhosts/realty` (28 commit cards, files grouped by folder,
