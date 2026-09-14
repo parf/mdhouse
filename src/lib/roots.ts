@@ -94,7 +94,11 @@ export class Registry {
         id,
         name,
         path: abs,
-        writable: explicitlyWritable || !isReadOnlyPath(abs),
+        // Read-only is the default for every root: mdhouse is a viewer, and a tree only
+        // becomes writable when the user names it with --writable. `/rd` is not eligible
+        // even then — writeFile() refuses it regardless, so advertising it as writable
+        // would be a lie the UI would repeat.
+        writable: explicitlyWritable && !isReadOnlyPath(abs),
       });
     }
 

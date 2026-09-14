@@ -25,3 +25,18 @@
   makes favorite/mute/ignore work on a read-only root. `src/lib/prefs.ts`.
 - **One anchor scheme,** generated server-side. r-doc has two that disagree; links break
   between them.
+
+
+## Read-only is the default, and the badge marks the exception
+
+Roots were writable unless they were under `/rd`, and the UI advertised the read-only ones
+with a badge. Both halves were wrong.
+
+The badge was noise: it appeared on essentially every root, which is the state a *viewer* is
+in by definition. What is worth announcing is the rare tree mdhouse may write to, so the
+badge inverted — a green `RW` when a root is writable, nothing at all otherwise.
+
+`Root.writable` inverted with it: a root is writable only when `--writable` names it. That
+also removed a contradiction — `--writable /rd/...` used to set `writable: true` while
+`writeFile()` refused the write anyway, so the UI would have offered an edit that could not
+happen. `/rd` is now not eligible for the flag at all, and says so.

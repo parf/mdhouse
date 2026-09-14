@@ -158,10 +158,12 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.brand .ro {
-  font-weight: 500;
-  font-size: 11px;
-  color: var(--warn);
+/* Every root is read-only unless --writable named it, so only the exception is worth a badge. */
+.rw {
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: var(--ok);
   border: 1px solid currentColor;
   border-radius: 3px;
   padding: 0 4px;

@@ -40,9 +40,12 @@ is what the next phase is built on.
 
 ## Read-only trees
 
-`/rd` is hard-coded read-only: mdhouse will not write there, whatever else it is told. Every
-write in the codebase goes through one function that refuses a read-only root. Use
-`--writable <dir>` to opt a tree back in deliberately.
+**Every root is read-only until you say otherwise.** mdhouse is a viewer; `--writable <dir>`
+is what opts one tree into being written to, and the sidebar then shows a green `RW` beside
+its name. No badge means no writes, which is the normal case and says nothing worth reading.
+
+`/rd` is not eligible even with the flag: it is hard-coded read-only and every write in the
+codebase goes through one function that refuses it.
 
 ## Requirements
 
@@ -59,7 +62,7 @@ sidebar footer says so when a fallback is in effect.
 | `-a, --all` | off | include gitignored `.md` files |
 | `--git-log <n>` | `200` | commits scanned for git recents |
 | `--no-git` | off | skip git entirely; filesystem recents only |
-| `--writable <dir>` | — | allow writes to a tree that is read-only by default |
+| `--writable <dir>` | — | allow writes to this tree (never `/rd`) |
 
 A root may also carry a `.mdhouseignore` — one directory name per line, `!name` to unhide one.
 

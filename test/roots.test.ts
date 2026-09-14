@@ -19,9 +19,19 @@ describe('read-only roots', () => {
     await expect(registry.writeFile(`${root.id}/Plans/README.md`, 'nope')).rejects.toThrow(ReadOnlyError);
   });
 
-  test('--writable opts one tree back in', async () => {
+  test('every root is read-only until --writable names it', async () => {
+    expect((await Registry.create([HERE])).list()[0]!.writable).toBe(false);
+    expect((await Registry.create([HERE], [HERE])).list()[0]!.writable).toBe(true);
+  });
+
+  test('--writable cannot opt a /rd tree back in', async () => {
     const registry = await Registry.create(['/rd/vhosts/realty'], ['/rd/vhosts/realty']);
-    expect(registry.list()[0]!.writable).toBe(true);
+    const root = registry.list()[0]!;
+
+    // The flag is honoured everywhere else; here it must not even be advertised, or the UI
+    // would offer an edit that writeFile is going to refuse anyway.
+    expect(root.writable).toBe(false);
+    await expect(registry.writeFile(`${root.id}/Plans/README.md`, 'nope')).rejects.toThrow(ReadOnlyError);
   });
 });
 

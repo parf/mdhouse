@@ -125,7 +125,12 @@ export function Sidebar(props: SidebarProps) {
         </button>
         <span class="brand">
           {tree?.root.name ?? 'mdhouse'}
-          {tree && !tree.root.writable && <span class="ro">read-only</span>}
+          {/* Read-only is the normal state and says nothing; being able to write does. */}
+          {tree?.root.writable && (
+            <span class="rw" title="mdhouse may write to this tree">
+              RW
+            </span>
+          )}
         </span>
         {!wide && (
           <button class="icon-btn" title="Search (/)" onClick={props.onCycleState}>

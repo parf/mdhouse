@@ -161,7 +161,11 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
               {doc.tasks.done}/{doc.tasks.total} done
             </span>
           )}
-          {!doc.writable && <span title="mdhouse will not write to this tree">read-only</span>}
+          {doc.writable && (
+            <span class="rw" title="mdhouse may write to this tree">
+              RW
+            </span>
+          )}
 
           <span class="doc-actions">
             <button

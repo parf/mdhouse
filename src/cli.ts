@@ -20,7 +20,7 @@ Options
   -a, --all            include gitignored .md files
       --git-log <n>    commits scanned for git recents (default 200)
       --no-git         skip git entirely; filesystem recents only
-      --writable <dir> allow writes to a tree that is read-only by default
+      --writable <dir> allow writes to this tree (never /rd)
       --help           show this
 
 With no directory, the current one is used.
@@ -104,7 +104,7 @@ const { server, watcher } = serve({
 const url = `http://${opts.host}:${server.port}`;
 console.log(`mdhouse  ${url}`);
 for (const root of registry.list()) {
-  const badge = root.writable ? '' : '  [read-only]';
+  const badge = root.writable ? '  [RW]' : '';
   console.log(`  ${registry.single ? '' : root.id.padEnd(12)}${root.path}${badge}`);
 }
 if (dirs.some((d) => isReadOnlyPath(d))) {
