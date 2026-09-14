@@ -8,11 +8,29 @@ import { Tree } from './Tree';
 import { timeAgo, highlightRanges } from './format';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
-  IconClock, IconGit, IconDoc, IconStar, IconEyeOff,
+  IconClock, IconGit, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
 } from './icons';
 
 export type SidebarState = 'off' | 'compact' | 'open';
-export type Tab = 'files' | 'fs' | 'git';
+export type Tab = 'files' | 'favorites' | 'fs' | 'git' | 'mine';
+
+/**
+ * The tab strip is present in compact as well as open — switching to recents or favorites
+ * must not require widening the sidebar first. Compact drops the labels and keeps the icons.
+ */
+const TABS: Array<{ id: Tab; label: string; title: string; Icon: (p: { size?: number }) => preact.JSX.Element }> = [
+  { id: 'files', label: 'Files', title: 'All files', Icon: IconDoc },
+  { id: 'favorites', label: 'Favs', title: 'Favorites', Icon: (p) => <IconStar {...p} filled /> },
+  { id: 'fs', label: 'Recent', title: 'Recently changed on disk', Icon: IconClock },
+  { id: 'git', label: 'Git', title: 'Recently changed in git', Icon: IconGit },
+  { id: 'mine', label: 'Mine', title: 'My recent commits', Icon: IconUser },
+];
+
+/**
+ * Which recents dataset a tab reads. 'mine' rides on the same git payload as 'git' — the
+ * committer filter is applied client-side, so switching between them costs no request.
+ */
+export const RECENTS_KIND: Partial<Record<Tab, 'fs' | 'git'>> = { fs: 'fs', git: 'git', mine: 'git' };
 
 export interface SidebarProps {
   state: SidebarState;
@@ -56,10 +74,23 @@ export function Sidebar(props: SidebarProps) {
 
   const nodes = useMemo<Node[]>(() => (tree ? buildTree(tree.files) : []), [tree]);
 
-  const favorites = useMemo(
-    () => (tree?.files ?? []).filter((f) => f.marks?.includes('favorite')),
-    [tree],
-  );
+  const favorites = useMemo<FavEntry[]>(() => {
+    if (!tree) return [];
+    const byPath = new Map(tree.files.map((f) => [f.rel, f]));
+
+    return tree.marks.favorite.map((entry) => {
+      const isDir = entry.endsWith('/');
+      const rel = isDir ? entry.slice(0, -1) : entry;
+      const slash = rel.lastIndexOf('/');
+      return {
+        rel,
+        isDir,
+        name: slash === -1 ? rel : rel.slice(slash + 1),
+        dir: slash === -1 ? '' : rel.slice(0, slash),
+        missing: !isDir && !byPath.has(rel),
+      };
+    });
+  }, [tree]);
 
   // Name matching runs here, on data the client already holds — no request, no debounce.
   const nameHits = useMemo(() => {
@@ -78,7 +109,7 @@ export function Sidebar(props: SidebarProps) {
   }, [props.recents.git]);
 
   return (
-    <aside class="sidebar">
+    <aside class={`sidebar ${state}`}>
       <div class="side-head">
         <button class="icon-btn" onClick={props.onCycleState} title={NEXT_LABEL[state]} aria-label={NEXT_LABEL[state]}>
           <StateIcon />
@@ -104,8 +135,8 @@ export function Sidebar(props: SidebarProps) {
         </div>
       )}
 
-      {wide && (
-        <div class="side-tools">
+      <div class="side-tools">
+        {wide && (
           <div class="search-box">
             <span class="mag">
               <IconSearch size={14} />
@@ -124,21 +155,27 @@ export function Sidebar(props: SidebarProps) {
               </button>
             )}
           </div>
+        )}
 
-          {!query && (
-            <>
-              <div class="tabs" role="tablist">
-                <button role="tab" aria-selected={props.tab === 'files'} onClick={() => props.onTab('files')}>
-                  <IconDoc size={12} /> Files
+        {!query && (
+          <>
+            <div class={`tabs${wide ? '' : ' icons'}`} role="tablist">
+              {TABS.map(({ id, label, title, Icon }) => (
+                <button
+                  key={id}
+                  role="tab"
+                  title={title}
+                  aria-label={title}
+                  aria-selected={props.tab === id}
+                  onClick={() => props.onTab(id)}
+                >
+                  <Icon size={wide ? 12 : 14} />
+                  {wide && <span>{label}</span>}
                 </button>
-                <button role="tab" aria-selected={props.tab === 'fs'} onClick={() => props.onTab('fs')}>
-                  <IconClock size={12} /> Recent
-                </button>
-                <button role="tab" aria-selected={props.tab === 'git'} onClick={() => props.onTab('git')}>
-                  <IconGit size={12} /> Git
-                </button>
-              </div>
+              ))}
+            </div>
 
+            {wide && (
               <div class="filters">
                 {props.tab === 'git' && authors.length > 1 && (
                   <select value={props.authorFilter} onChange={(e) => props.onAuthor((e.target as HTMLSelectElement).value)}>
@@ -157,52 +194,30 @@ export function Sidebar(props: SidebarProps) {
                   <IconEyeOff size={11} /> ignored
                 </button>
               </div>
-            </>
-          )}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
 
       <div class="side-body">
         {query ? (
           <SearchResults {...props} nameHits={nameHits} />
         ) : props.tab === 'files' ? (
-          <>
-            {wide && favorites.length > 0 && (
-              <>
-                <div class="group-title">Favorites</div>
-                {favorites.map((f) => (
-                  <button
-                    key={f.rel}
-                    class="row file fav"
-                    style={{ '--indent': '8px' }}
-                    aria-current={props.current === f.rel ? 'true' : undefined}
-                    onClick={() => props.onOpen(f.rel)}
-                    title={f.rel}
-                  >
-                    <span class="twist" />
-                    <span class="ico">
-                      <IconStar size={14} filled />
-                    </span>
-                    <span class="label">{f.name}</span>
-                  </button>
-                ))}
-                <div class="group-title">All files</div>
-              </>
-            )}
-            {tree ? (
-              <Tree
-                nodes={nodes}
-                expanded={props.expanded}
-                current={props.current}
-                compact={!wide}
-                onToggleDir={props.onToggleDir}
-                onOpen={props.onOpen}
-                onMark={props.onMark}
-              />
-            ) : (
-              <p class="empty">Scanning…</p>
-            )}
-          </>
+          tree ? (
+            <Tree
+              nodes={nodes}
+              expanded={props.expanded}
+              current={props.current}
+              compact={!wide}
+              onToggleDir={props.onToggleDir}
+              onOpen={props.onOpen}
+              onMark={props.onMark}
+            />
+          ) : (
+            <p class="empty">Scanning…</p>
+          )
+        ) : props.tab === 'favorites' ? (
+          <Favorites {...props} favorites={favorites} />
         ) : (
           <Recents {...props} />
         )}
@@ -221,13 +236,63 @@ export function Sidebar(props: SidebarProps) {
   );
 }
 
+interface FavEntry {
+  rel: string;
+  name: string;
+  dir: string;
+  isDir: boolean;
+  /** Favorited but no longer in the tree — deleted, or hidden by the ignored filter. */
+  missing: boolean;
+}
+
+function Favorites(props: SidebarProps & { favorites: FavEntry[] }) {
+  if (!props.tree) return <p class="empty">Loading…</p>;
+  if (!props.favorites.length) {
+    return <p class="empty">No favorites yet. Hover a file in the tree and press the star.</p>;
+  }
+
+  return (
+    <div>
+      {props.favorites.map((f) => (
+        <button
+          key={f.rel}
+          class={`hit${f.missing ? ' muted' : ''}`}
+          onClick={() => (f.isDir ? props.onTab('files') : props.onOpen(f.rel))}
+          title={f.missing ? `${f.rel} — not in the current tree` : f.rel}
+        >
+          <span class="hit-path">
+            <span class="hit-name">
+              {f.isDir ? <IconFolder size={12} /> : null} {f.name}
+              {f.isDir ? '/' : ''}
+            </span>
+            <span class="hit-dir">{f.dir}</span>
+          </span>
+          {f.missing && <span class="meta">missing</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Recents(props: SidebarProps) {
-  const kind = props.tab === 'git' ? 'git' : 'fs';
+  const kind = RECENTS_KIND[props.tab] ?? 'fs';
   const all = props.recents[kind];
   if (!all) return <p class="empty">Loading…</p>;
 
-  const entries = kind === 'git' && props.authorFilter ? all.filter((e) => e.author === props.authorFilter) : all;
-  if (!entries.length) return <p class="empty">Nothing here yet.</p>;
+  const me = props.tree?.user;
+  if (props.tab === 'mine' && !me) {
+    return <p class="empty">No git identity here — set user.email to see your own commits.</p>;
+  }
+
+  const entries =
+    props.tab === 'mine'
+      ? all.filter((e) => (me!.email ? e.email === me!.email : e.author === me!.name))
+      : kind === 'git' && props.authorFilter
+        ? all.filter((e) => e.author === props.authorFilter)
+        : all;
+  if (!entries.length) {
+    return <p class="empty">{props.tab === 'mine' ? `Nothing from ${me!.name} in the last commits.` : 'Nothing here yet.'}</p>;
+  }
 
   return (
     <div>
@@ -239,7 +304,7 @@ function Recents(props: SidebarProps) {
           </span>
           <span class="meta">
             <span>{timeAgo(e.at)}</span>
-            {e.author && <span class="who">{e.author}</span>}
+            {e.author && props.tab !== 'mine' && <span class="who">{e.author}</span>}
           </span>
           {e.subject && <div class="hit-line">{e.subject}</div>}
         </button>

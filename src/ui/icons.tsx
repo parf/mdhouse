@@ -119,6 +119,15 @@ export const IconGit = (p: Props) =>
     p,
   );
 
+export const IconUser = (p: Props) =>
+  svg(
+    <>
+      <circle cx="8" cy="5.25" r="2.75" />
+      <path d="M2.75 13.75c0-2.5 2.35-4 5.25-4s5.25 1.5 5.25 4" />
+    </>,
+    p,
+  );
+
 export const IconX = (p: Props) =>
   svg(
     <>

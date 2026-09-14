@@ -4,7 +4,7 @@ import { api, connectLive, type DocPayload, type LiveMessage, type RootInfo } fr
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
-import { Sidebar, type SidebarState, type Tab } from './ui/Sidebar';
+import { Sidebar, RECENTS_KIND, type SidebarState, type Tab } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
 import { ancestors } from './ui/tree-model';
 import { IconPanel, IconSearch } from './ui/icons';
@@ -100,7 +100,8 @@ function App() {
   );
 
   useEffect(() => {
-    if (tab !== 'files') void reloadRecents(tab);
+    const kind = RECENTS_KIND[tab];
+    if (kind) void reloadRecents(kind);
   }, [tab, reloadRecents]);
 
   // Document load, keyed on the URL.
@@ -161,7 +162,8 @@ function App() {
     if (msg.t === 'hello' || msg.t === 'pong') return;
 
     void reloadTree();
-    if (tab !== 'files') void reloadRecents(tab);
+    const kind = RECENTS_KIND[tab];
+    if (kind) void reloadRecents(kind);
 
     // Refresh the open document only when it is one of the files that actually changed.
     if (msg.t === 'fs' && doc?.rel && msg.paths.includes(doc.rel)) {

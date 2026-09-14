@@ -14,6 +14,10 @@ See `DONE.md`. Scaffold, roots and path jail, scanner, renderer, search, git and
 server and client, live channel, marks, README — all built and verified end to end against
 `/rd/vhosts/realty` and `~/src`. 27 tests pass; `tsc --noEmit` is clean.
 
+**H.1** closed the follow-up: the tab strip (Files / Favs / Recent / Git / Mine) works in the
+compact sidebar, favourites are a tab reading the stored mark list, and *Mine* filters git
+recents to the current git identity.
+
 ## I. Checkbox write-back
 
 Depends on nothing outstanding — `data-line` and `Registry.writeFile()` both already exist.

@@ -25,6 +25,12 @@ export interface TreePayload {
   includeIgnored: boolean;
   user: { name: string; email: string } | null;
   scannedAt: number;
+  /**
+   * The raw mark lists for this root, as stored. The Favorites view reads these rather than
+   * deriving them from file marks: a directory rule marks every file beneath it, which would
+   * otherwise flood the list with a hundred entries the user never picked individually.
+   */
+  marks: { favorite: string[]; muted: string[]; ignored: string[] };
 }
 
 export interface RecentEntry {
@@ -134,6 +140,7 @@ export class Store {
       includeIgnored,
       user: s.user,
       scannedAt: scan.scannedAt,
+      marks: this.prefs.get(root.path),
     };
   }
 

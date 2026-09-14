@@ -76,3 +76,21 @@ Read-only proof: after a full browsing session against `/rd/vhosts/realty`,
 `git -C /rd status --porcelain` is empty — zero modified, zero untracked.
 
 Startup on the primary target: 1 036 files ready in ~50 ms, well inside the budget.
+
+## H.1 — Sidebar navigation in compact
+The tab strip was gated on the open state, so recents and favourites were unreachable
+without widening the sidebar first. It now renders in compact too, icon-only; search and the
+committer/ignored filters stay open-only because they need the width. Hit rows drop the
+directory line and the commit subject at compact width.
+
+Favourites became a tab of its own rather than an inline group inside the tree, reading the
+stored mark list (`TreePayload.marks`) instead of per-file marks: a directory rule such as
+`Plans/` marks the 797 files beneath it, which would otherwise flood the list with entries
+the user never picked. Directory favourites render as one folder row.
+
+Added a **Mine** tab: the git recents already fetched, filtered to the current git identity
+(by email, falling back to the name). No extra request — it is the same payload the Git tab
+uses, which is why committer filtering was kept client-side in E.
+
+Verified in the browser at compact width: all five tabs switch, Mine lists only
+`parf@realmo.com` commits, Favourites shows `Plans/` as a single row.
