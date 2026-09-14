@@ -55,25 +55,27 @@ because it now covers everything rather than one directory, and it is a single f
 about instead of a list to maintain.
 
 
-## Headings get their own ink, in one navy ladder
+## Headings get their own ink — one hue per level
 
 H1–H3 now use `--h1` / `--h2` / `--h3` rather than the body colour, in the document *and* in
 the contents list, so a row and the heading it points at are visibly the same thing.
 
-The first attempt was a warm graphite ramp — three near-blacks a few percent apart. It was
-invisible, which is a fair verdict on a heading colour nobody can see: a hierarchy that has to
-be measured with a colour picker is not doing any work.
+Two attempts failed the same way. A warm graphite ramp — three near-blacks a few percent
+apart — was invisible. Three tints of one navy were still too close: varying only lightness
+means telling a level apart requires a neighbour to compare it with.
 
-The ramp is navy instead, following the blue accent so headings and links belong to the same
-page, and spaced far enough apart to read at a glance while staying dark enough to be ink
-rather than decoration.
+So one hue per level. All three stay dark enough to be ink rather than decoration, but the
+level of a heading is now recognisable on its own, which is the whole job.
 
 | | light | dark |
 | --- | --- | --- |
-| H1 | `#12294d` | `#cfe0fb` |
-| H2 | `#234a7a` | `#a6c4e8` |
-| H3 | `#4a739e` | `#87a7cc` |
+| H1 | `#123a6b` navy | `#9dc4f5` |
+| H2 | `#1d6f5e` teal | `#79d3bb` |
+| H3 | `#8a5a1f` ochre | `#e0b978` |
 | body | `#1c1c1a` | `#e4e4e2` |
+
+Sizes went up with the colours — 1.9 / 1.52 / 1.28em in the document, 14.5 / 13.5 / 12.5px in
+the contents list — so the two signals reinforce each other instead of one carrying it alone.
 
 H4–H6 keep the body and muted colours: they are rare in these documents and already separated
 by size, and continuing the ramp would land them on the grey they already use.
