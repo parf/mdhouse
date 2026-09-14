@@ -50,6 +50,8 @@ async function renderMermaid(container: HTMLElement): Promise<void> {
 export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenDir }: Props) {
   const body = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(true);
+  /** Deepest heading level the contents list shows. H1–H2 by default; the H3 chip widens it. */
+  const [tocDepth, setTocDepth] = useState(2);
 
   // In-app navigation: a local .md link should not reload the page.
   useEffect(() => {
@@ -80,6 +82,9 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
   useEffect(() => {
     if (doc?.hasMermaid && body.current) void renderMermaid(body.current);
   }, [doc?.url, doc?.hasMermaid]);
+
+  // Each document starts at the default depth; H3 is a per-document choice, not a mode.
+  useEffect(() => setTocDepth(2), [doc?.url]);
 
   // Land on the right place: an explicit line from a search hit wins over the URL hash.
   useEffect(() => {
@@ -130,7 +135,8 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
   const isMuted = doc.marks.includes('muted');
   const dirs = doc.rel.split('/').slice(0, -1);
   const title = doc.rel.split('/').pop()!.replace(/\.mdx?$/i, '');
-  const major = doc.headings.filter((h) => h.level <= 2);
+  const listed = doc.headings.filter((h) => h.level <= tocDepth);
+  const hasSubs = doc.headings.some((h) => h.level === 3);
 
   return (
     <article class="doc-wrap">
@@ -204,11 +210,28 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
       </header>
 
       <div class="doc-aside">
-        {major.length > 2 && (
+        {doc.headings.filter((h) => h.level <= 3).length > 2 && (
           <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
-            <summary>Table of contents</summary>
+            <summary>
+              Table of contents
+              {hasSubs && (
+                <button
+                  class="depth"
+                  aria-pressed={tocDepth === 3}
+                  title={tocDepth === 3 ? 'Show H1–H2 only' : 'Include H3 headings'}
+                  // Inside a <summary>, a click would otherwise fold the whole section away.
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setTocDepth((d) => (d === 3 ? 2 : 3));
+                  }}
+                >
+                  H3
+                </button>
+              )}
+            </summary>
             <ul>
-              {major.map((h) => (
+              {listed.map((h) => (
                 <li data-level={h.level} key={h.slug}>
                   <a href={`#${h.slug}`}>{h.text}</a>
                 </li>

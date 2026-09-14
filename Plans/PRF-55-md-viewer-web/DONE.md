@@ -216,3 +216,19 @@ reset a document's authorship. Both are `-1`-shaped, because this runs on every 
 the heavier `fileHistory()` is still what the history panel asks for when it is expanded.
 
 A root git knows nothing about (`/rd/tmp`) reports no authors and the header simply omits them.
+
+## M.5 — H3 in the table of contents
+The contents list shows H1 and H2, which is right for most documents and wrong for the long
+reference ones: a heading like `### Advanced: Z-order curves (Morton codes)` was reachable by
+URL fragment but invisible in the ToC.
+
+An `H3` chip in the contents header widens the list to three levels and back. It only appears
+when the document has H3 headings at all, it resets to the default on every document — a depth
+is a per-document choice, not a mode — and its click handler stops the event, since a click
+inside a `<summary>` would otherwise fold the whole section away.
+
+The ToC's visibility threshold counts to three levels too, so a document whose structure lives
+entirely in H3 now gets a contents list instead of none.
+
+Verified on `.claude/GeoQ.md` (1 H1, 11 H2, 12 H3): 12 entries by default, 24 with the chip on,
+and the previously-missing anchor present in the widened list.

@@ -448,7 +448,20 @@ main {
   margin: 14px 0 22px;
   font-size: 13px;
 }
-.toc summary { cursor: pointer; color: var(--fg-muted); font-size: 12px; }
+.toc summary { cursor: pointer; color: var(--fg-muted); font-size: 12px; display: flex; align-items: center; gap: 8px; }
+/* Widens the list to H3 without folding the section away — see the click handler. */
+.toc summary .depth {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--fg-faint);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.toc summary .depth:hover { color: var(--fg); background: var(--bg-hover); }
+.toc summary .depth[aria-pressed="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
 .toc ul { list-style: none; margin: 8px 0 2px; padding: 0; column-gap: 24px; }
 .toc li { padding: 1.5px 0; }
 .toc li[data-level="2"] { padding-left: 14px; }
