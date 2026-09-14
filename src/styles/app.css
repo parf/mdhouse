@@ -367,9 +367,52 @@ main {
 .doc-head { margin-bottom: 18px; }
 .crumbs { font-size: 12px; color: var(--fg-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .crumbs .sep { color: var(--fg-faint); }
+.crumbs .crumb { font: inherit; color: inherit; padding: 0; border-radius: 2px; }
+.crumbs .crumb:hover { color: var(--accent); text-decoration: underline; }
 .doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--fg-faint); align-items: center; }
 .doc-actions { display: flex; gap: 4px; margin-left: auto; }
+
+/* Contents on the left, history on the right; they stack when the column is narrow. */
+.doc-aside { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+.doc-aside > .toc { flex: 1 1 320px; min-width: 0; margin-bottom: 0; }
+.doc-aside > .gitlog { flex: 0 1 300px; min-width: 0; }
+
+.gitlog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  padding: 10px 12px;
+  font-size: 12.5px;
+}
+.gitlog summary {
+  cursor: pointer;
+  color: var(--fg-muted);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.gitlog .commit { padding: 7px 0; border-bottom: 1px solid var(--border); }
+.gitlog .commit:last-child { border-bottom: 0; }
+.gitlog .commit:first-of-type { margin-top: 8px; }
+.gitlog .commit-subject { color: var(--fg); line-height: 1.35; overflow-wrap: anywhere; }
+.gitlog .commit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: baseline;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--fg-faint);
+}
+.gitlog .commit-meta .who { color: var(--fg-muted); }
+.gitlog .commit-meta code { font: 10.5px var(--mono); color: var(--fg-faint); }
+.gitlog .churn { display: flex; gap: 4px; }
+.gitlog .churn .plus { color: var(--ok); }
+.gitlog .churn .minus { color: var(--danger); }
+.gitlog .commit.created { border-top: 1px solid var(--border); border-bottom: 0; }
+.gitlog .empty { padding: 8px 0; }
 
 .toc {
   border: 1px solid var(--border);
@@ -485,6 +528,8 @@ main {
 /* line-flash when jumping to a search hit */
 @keyframes flash { from { background: color-mix(in srgb, var(--accent) 30%, transparent); } to { background: transparent; } }
 .md .flash { animation: flash 1.4s ease-out; border-radius: 3px; }
+/* A breadcrumb click scrolls the tree to that folder; the flash says which row it landed on. */
+.row.dir.flash { animation: flash 0.9s ease-out; }
 
 /* ── states ─────────────────────────────────────────────────────────────── */
 

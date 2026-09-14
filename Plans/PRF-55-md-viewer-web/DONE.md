@@ -127,3 +127,20 @@ Three small things, all about the compact width where a recents list is a column
 
 Verified in the compact sidebar against `/rd/vhosts/realty`: rows read
 `❖ DONE.md · RLM-1125-attom-tax-assessor`, and Kirill's commits are unmarked.
+
+## K.1 — Per-file git history
+The panel the r-doc viewer gets right, rebuilt: who created the file, and the last 20 commits
+touching it with author, age, short hash and the lines added and removed. It sits to the
+right of the table of contents and both stack when the column is narrow.
+
+`--follow` chases renames, which matters in this tree: a plan folder is renamed when its
+ticket is. One `git log --follow --numstat` per open panel, fetched only when the panel is
+first expanded — a reader who never asks never pays. A second process runs only for a file
+whose history is longer than the window, to find the creating commit.
+
+`fileHistory()` now returns `{commits, created, truncated}` with `added`/`deleted` per commit.
+
+## M.3 — Clickable breadcrumbs
+The directory crumbs above a document title are buttons: a click switches the sidebar to the
+tree, expands the path down to that folder, scrolls it into view and flashes the row. There
+is no directory page to link to — the tree *is* the directory view.

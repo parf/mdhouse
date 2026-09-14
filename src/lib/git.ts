@@ -15,6 +15,19 @@ export interface Commit {
   email: string;
   date: number;
   subject: string;
+  /** Lines added and removed in this file by this commit, when `--numstat` is asked for. */
+  added?: number;
+  deleted?: number;
+  /** The path this commit touched, when it differs from today's — a rename `--follow` chased. */
+  path?: string;
+}
+
+export interface FileHistory {
+  commits: Commit[];
+  /** The commit that introduced the file, even when it is older than the returned window. */
+  created: Commit | null;
+  /** True when more commits exist than were returned. */
+  truncated: boolean;
 }
 
 export interface GitChange extends Commit {
@@ -142,26 +155,71 @@ export async function workingStatus(repo: string, rootPath: string): Promise<Map
   return result;
 }
 
-/** Commits touching one file, newest first. Lazy — only when the git panel is opened. */
-export async function fileHistory(repo: string, repoRelPath: string, limit = 20): Promise<Commit[]> {
+/**
+ * The history of one file, newest first, with the line counts and the creation commit the
+ * r-doc viewer shows. Lazy — this runs only when the history panel is opened, never during a
+ * scan or a recents query.
+ *
+ * `--follow` chases renames, which is the whole point for a docs tree where a plan folder
+ * gets renamed when its ticket does.
+ */
+export async function fileHistory(repo: string, repoRelPath: string, limit = 20): Promise<FileHistory> {
+  const commits = await logNumstat(repo, repoRelPath, [`-n${limit}`]);
+  if (!commits.length) return { commits, created: null, truncated: false };
+
+  // Fewer commits than asked for means we already have the oldest one, so the extra process
+  // is only paid for by a file with a long history.
+  if (commits.length < limit) {
+    return { commits, created: commits[commits.length - 1]!, truncated: false };
+  }
+  const birth = await logNumstat(repo, repoRelPath, ['--diff-filter=A', '--reverse']);
+  return { commits, created: birth[0] ?? null, truncated: true };
+}
+
+/** `git log --follow --numstat` for one file, parsed. One process. */
+async function logNumstat(repo: string, repoRelPath: string, extra: string[]): Promise<Commit[]> {
   const out = await git(repo, [
     'log',
-    `-n${limit}`,
     '--follow',
-    `--format=%H${FMT_SEP}%an${FMT_SEP}%ae${FMT_SEP}%aI${FMT_SEP}%s`,
+    '--numstat',
+    '--date=iso-strict',
+    `--format=${FMT_REC}%H${FMT_SEP}%an${FMT_SEP}%ae${FMT_SEP}%aI${FMT_SEP}%s`,
+    ...extra,
     '--',
     repoRelPath,
   ]);
   if (out === null) return [];
 
-  return out
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => {
-      const [hash = '', author = '', email = '', iso = '', ...rest] = line.split(SEP);
-      const date = Date.parse(iso);
-      return { hash, author, email, date: Number.isNaN(date) ? 0 : date, subject: rest.join(SEP) };
-    });
+  const commits: Commit[] = [];
+  for (const record of out.split(REC)) {
+    if (!record.trim()) continue;
+    const [header = '', ...lines] = record.split('\n');
+    const [hash = '', author = '', email = '', iso = '', ...rest] = header.split(SEP);
+    const date = Date.parse(iso);
+
+    const commit: Commit = {
+      hash,
+      author,
+      email,
+      date: Number.isNaN(date) ? 0 : date,
+      subject: rest.join(SEP),
+    };
+
+    // numstat rows are `added\tdeleted\tpath`; a binary file reports `-`. --follow restricts
+    // the output to this one file, so the first row is always ours.
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const [added = '', deleted = '', ...where] = line.split('\t');
+      commit.added = added === '-' ? 0 : Number(added) || 0;
+      commit.deleted = deleted === '-' ? 0 : Number(deleted) || 0;
+      // A rename row is `old => new` or `dir/{old => new}/file`; keep it as git wrote it.
+      const path = where.join('\t');
+      if (path) commit.path = path;
+      break;
+    }
+    commits.push(commit);
+  }
+  return commits;
 }
 
 /** The configured identity, so the UI can offer a "mine" filter that means something. */

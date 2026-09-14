@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { DocPayload } from './api';
+import { api, type DocPayload } from './api';
+import type { FileHistory } from '../lib/git';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit } from './icons';
 import { timeAgo } from './format';
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
   jumpLine: number | null;
   onNavigate: (url: string) => void;
   onMark: (path: string, mark: Mark, on: boolean) => void;
+  /** Reveal a directory in the sidebar tree. */
+  onOpenDir: (dir: string) => void;
 }
 
 /**
@@ -44,7 +47,7 @@ async function renderMermaid(container: HTMLElement): Promise<void> {
   }
 }
 
-export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark }: Props) {
+export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenDir }: Props) {
   const body = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(true);
 
@@ -133,12 +136,18 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark }: Props
     <article class="doc-wrap">
       <header class="doc-head">
         <div class="crumbs">
-          {dirs.map((d, i) => (
-            <span key={i}>
-              {d}
-              <span class="sep"> / </span>
-            </span>
-          ))}
+          {dirs.map((d, i) => {
+            // Each crumb addresses the path up to and including itself.
+            const path = dirs.slice(0, i + 1).join('/');
+            return (
+              <span key={path}>
+                <button class="crumb" onClick={() => onOpenDir(path)} title={`Show ${path} in the tree`}>
+                  {d}
+                </button>
+                <span class="sep"> / </span>
+              </span>
+            );
+          })}
         </div>
 
         <h1 class="doc-title">{title}</h1>
@@ -182,21 +191,96 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark }: Props
         </div>
       </header>
 
-      {major.length > 2 && (
-        <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
-          <summary>Table of contents</summary>
-          <ul>
-            {major.map((h) => (
-              <li data-level={h.level} key={h.slug}>
-                <a href={`#${h.slug}`}>{h.text}</a>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
+      <div class="doc-aside">
+        {major.length > 2 && (
+          <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
+            <summary>Table of contents</summary>
+            <ul>
+              {major.map((h) => (
+                <li data-level={h.level} key={h.slug}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+        <History p={`${doc.root}/${doc.rel}`} />
+      </div>
 
       <div ref={body} class="md" dangerouslySetInnerHTML={{ __html: doc.html }} />
     </article>
+  );
+}
+
+/**
+ * Per-file git history, the one genuinely good idea in the r-doc viewer's document page:
+ * who created the file, and the last commits with their line counts.
+ *
+ * It costs a `git log` per file, so it is fetched when the panel is first opened and not
+ * before — a reader who never asks never pays. `--follow` means a renamed plan folder keeps
+ * its history, which is exactly the case this docs tree hits.
+ */
+function History({ p }: { p: string }) {
+  const [open, setOpen] = useState(false);
+  const [log, setLog] = useState<FileHistory | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  // A different file invalidates whatever was loaded; the panel keeps its open state.
+  useEffect(() => {
+    setLog(null);
+    setFailed(false);
+  }, [p]);
+
+  useEffect(() => {
+    if (!open || log || failed) return;
+    let live = true;
+    api
+      .history(p)
+      .then((h) => live && setLog(h))
+      .catch(() => live && setFailed(true));
+    return () => {
+      live = false;
+    };
+  }, [open, p, log, failed]);
+
+  return (
+    <details class="gitlog" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>
+        <IconGit size={12} /> History
+      </summary>
+
+      {!log && !failed && <div class="spinner" />}
+      {failed && <p class="empty">git is unavailable here.</p>}
+      {log && !log.commits.length && <p class="empty">Not committed yet.</p>}
+
+      {log?.commits.map((c) => (
+        <div class="commit" key={c.hash}>
+          <div class="commit-subject">{c.subject}</div>
+          <div class="commit-meta">
+            <span class="who">{c.author}</span>
+            <span title={new Date(c.date).toLocaleString()}>{timeAgo(c.date)}</span>
+            <code>{c.hash.slice(0, 8)}</code>
+            {c.added !== undefined && (
+              <span class="churn">
+                <span class="plus">+{c.added}</span>
+                <span class="minus">−{c.deleted}</span>
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+
+      {log?.created && (
+        <div class="commit created">
+          <div class="commit-meta">
+            <span>created by</span>
+            <span class="who">{log.created.author}</span>
+            <span title={new Date(log.created.date).toLocaleString()}>{timeAgo(log.created.date)}</span>
+          </div>
+        </div>
+      )}
+      {log?.truncated && <p class="empty">Older commits exist.</p>}
+    </details>
   );
 }
 

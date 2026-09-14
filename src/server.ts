@@ -182,11 +182,12 @@ export function serve(opts: ServeOptions) {
         const url = new URL(req.url);
         const loc = await registry.resolve(url.searchParams.get('p') ?? '');
         if (!loc) return fail(403, 'path outside any root');
-        if (opts.noGit) return json({ commits: [] });
+        const empty = { commits: [], created: null, truncated: false };
+        if (opts.noGit) return json(empty);
 
         const where = await store.repoFor(loc.root, loc.rel);
-        if (!where) return json({ commits: [] });
-        return json({ commits: await fileHistory(where.repo, where.repoRel) });
+        if (!where) return json(empty);
+        return json(await fileHistory(where.repo, where.repoRel, 20));
       },
 
       '/api/marks': {

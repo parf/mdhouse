@@ -173,6 +173,27 @@ function App() {
 
   useEffect(() => connectLive((msg) => onLive.current(msg), setLive), []);
 
+  /**
+   * Show a directory in the sidebar tree — what a breadcrumb click means. There is no
+   * directory page to navigate to; the tree is the directory view, so open it, expand the
+   * path down to that folder and scroll it into sight.
+   */
+  const revealDir = useCallback((dir: string) => {
+    setTab('files');
+    setQuery('');
+    setSidebar((s) => (s === 'off' ? 'compact' : s));
+    setExpanded((prev) => new Set([...prev, dir, ...ancestors(dir)]));
+    // After the tree has re-rendered with the newly expanded rows.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const row = document.querySelector<HTMLElement>(`.row.dir[data-dir="${CSS.escape(dir)}"]`);
+        row?.scrollIntoView({ block: 'center' });
+        row?.classList.add('flash');
+        setTimeout(() => row?.classList.remove('flash'), 900);
+      }),
+    );
+  }, []);
+
   // ── keyboard ────────────────────────────────────────────────────────────
 
   const cycle = useCallback(() => setSidebar((s) => STATES[(STATES.indexOf(s) + 1) % STATES.length]!), []);
@@ -282,7 +303,15 @@ function App() {
       )}
 
       <main>
-        <Doc doc={doc} loading={loadingDoc} error={docError} jumpLine={jumpLine} onNavigate={go} onMark={setMark} />
+        <Doc
+          doc={doc}
+          loading={loadingDoc}
+          error={docError}
+          jumpLine={jumpLine}
+          onNavigate={go}
+          onMark={setMark}
+          onOpenDir={revealDir}
+        />
       </main>
     </div>
   );

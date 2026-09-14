@@ -30,6 +30,7 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
         <button
           class="row dir"
           style={{ '--indent': `${indent}px` }}
+          data-dir={dir.path}
           onClick={() => p.onToggleDir(dir.path)}
           title={dir.path}
         >

@@ -4,7 +4,7 @@ import type { TreePayload, RecentEntry } from '../lib/store';
 import type { SearchResult } from '../lib/search';
 import type { Heading } from '../lib/render';
 import type { Mark } from '../lib/prefs';
-import type { Commit } from '../lib/git';
+import type { FileHistory } from '../lib/git';
 
 export interface RootInfo {
   id: string;
@@ -56,7 +56,7 @@ export const api = {
   recents: (root: string, ignored: boolean, limit = 80) =>
     get<{ entries: RecentEntry[] }>('/api/recents', { root, limit, ignored: ignored ? 1 : 0 }),
 
-  history: (p: string) => get<{ commits: Commit[] }>('/api/git/log', { p }),
+  history: (p: string) => get<FileHistory>('/api/git/log', { p }),
 
   async setMark(root: string, path: string, mark: Mark, on: boolean): Promise<void> {
     await fetch('/api/marks', {
