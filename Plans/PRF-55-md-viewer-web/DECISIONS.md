@@ -55,20 +55,24 @@ because it now covers everything rather than one directory, and it is a single f
 about instead of a list to maintain.
 
 
-## Headings get their own ink, in one warm graphite ladder
+## Headings get their own ink, in one navy ladder
 
 H1–H3 now use `--h1` / `--h2` / `--h3` rather than the body colour, in the document *and* in
 the contents list, so a row and the heading it points at are visibly the same thing.
 
-The ramp stays in the hue family of the existing warm off-black body text — no cool or sepia
-cast — and is built so the hierarchy is felt rather than noticed: H1 a shade darker than
-prose, H2 level with it, H3 a clear step lighter.
+The first attempt was a warm graphite ramp — three near-blacks a few percent apart. It was
+invisible, which is a fair verdict on a heading colour nobody can see: a hierarchy that has to
+be measured with a colour picker is not doing any work.
+
+The ramp is navy instead, following the blue accent so headings and links belong to the same
+page, and spaced far enough apart to read at a glance while staying dark enough to be ink
+rather than decoration.
 
 | | light | dark |
 | --- | --- | --- |
-| H1 | `#111110` | `#f2f2f0` |
-| H2 | `#2b2b26` | `#d8d8d3` |
-| H3 | `#4a4a42` | `#b4b4ad` |
+| H1 | `#12294d` | `#cfe0fb` |
+| H2 | `#234a7a` | `#a6c4e8` |
+| H3 | `#4a739e` | `#87a7cc` |
 | body | `#1c1c1a` | `#e4e4e2` |
 
 H4–H6 keep the body and muted colours: they are rare in these documents and already separated
