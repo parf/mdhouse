@@ -4,9 +4,9 @@ Point it at a directory and get every `.md` file under it as a browsable, search
 in your browser.
 
 ```bash
-mdhouse /rd/vhosts/realty        # one docs tree
+mdhouse ~/notes                  # one docs tree
 mdhouse ~/src                    # a folder full of git repos — all of them
-mdhouse ~/src /rd --port 7777    # several roots at once
+mdhouse ~/src ~/notes --port 7777   # several roots at once
 ```
 
 Then open <http://127.0.0.1:7777>. Documents live at `/d/<path>/<file>.md`, so any page can
@@ -25,8 +25,8 @@ be linked, bookmarked and typed by hand.
   status, then the files touched by the last N commits, filterable by committer. *Mine*
   narrows it to your own work — all uncommitted changes count as yours.
 - **Mark things** — favorite, mute or ignore any file or directory. Marks live in
-  `~/.config/mdhouse/`, never inside the tree you are reading, so they work even on a
-  directory you cannot write to.
+  `~/.config/mdhouse/`, never inside the tree you are reading, so they work on a directory
+  you cannot write to at all.
 - **Renders properly** — CommonMark and GFM through markdown-it: nested lists, tables,
   footnotes, GitHub alerts (`> [!NOTE]`), syntax highlighting, and mermaid diagrams.
 - **Finds your repos** — hand it a directory of repositories and it discovers each one,
@@ -38,14 +38,15 @@ be linked, bookmarked and typed by hand.
 Every rendered block carries a `data-line` attribute pointing back at its source line. That
 is what the next phase is built on.
 
-## Read-only trees
+## Read-only by default
 
-**Every root is read-only until you say otherwise.** mdhouse is a viewer; `--writable <dir>`
-is what opts one tree into being written to, and the sidebar then shows a green `RW` beside
-its name. No badge means no writes, which is the normal case and says nothing worth reading.
+**mdhouse does not write to the trees it serves.** Point it at anything — someone else's
+working checkout, a mounted share, a directory you would rather not touch — and the worst it
+can do is read. Pass `--rw` to allow writing; the sidebar then shows a green `RW` beside the
+root name. No badge means no writes, which is the normal case.
 
-`/rd` is not eligible even with the flag: it is hard-coded read-only and every write in the
-codebase goes through one function that refuses it.
+This is structural, not a matter of care: every write in the codebase goes through one
+function that refuses a read-only root.
 
 ## Requirements
 
@@ -62,7 +63,7 @@ sidebar footer says so when a fallback is in effect.
 | `-a, --all` | off | include gitignored `.md` files |
 | `--git-log <n>` | `200` | commits scanned for git recents |
 | `--no-git` | off | skip git entirely; filesystem recents only |
-| `--writable <dir>` | — | allow writes to this tree (never `/rd`) |
+| `--rw` | off | allow mdhouse to write to the trees it serves |
 
 A root may also carry a `.mdhouseignore` — one directory name per line, `!name` to unhide one.
 
@@ -70,7 +71,7 @@ A root may also carry a `.mdhouseignore` — one directory name per line, `!name
 
 ```bash
 bun install
-bun run dev          # serves /rd/vhosts/realty with hot reload
+bun run dev          # serves this repo with hot reload
 bun test
 bunx tsc --noEmit
 ```

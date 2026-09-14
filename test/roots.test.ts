@@ -1,37 +1,26 @@
 import { describe, expect, test } from 'bun:test';
-import { Registry, ReadOnlyError, isReadOnlyPath } from '../src/lib/roots';
+import { Registry, ReadOnlyError } from '../src/lib/roots';
 
 const HERE = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 
-describe('read-only roots', () => {
-  test('/rd and everything under it is read-only', () => {
-    expect(isReadOnlyPath('/rd')).toBe(true);
-    expect(isReadOnlyPath('/rd/vhosts/realty')).toBe(true);
-    expect(isReadOnlyPath('/rdx')).toBe(false); // prefix match must respect the boundary
-    expect(isReadOnlyPath('/home/parf/src/mdhouse')).toBe(false);
+describe('read-only by default', () => {
+  test('a root is read-only unless --rw was passed', async () => {
+    expect((await Registry.create([HERE])).list()[0]!.writable).toBe(false);
+    expect((await Registry.create([HERE], true)).list()[0]!.writable).toBe(true);
   });
 
   test('writeFile refuses a read-only root', async () => {
-    const registry = await Registry.create(['/rd/vhosts/realty']);
-    const root = registry.list()[0]!;
-    expect(root.writable).toBe(false);
-
-    await expect(registry.writeFile(`${root.id}/Plans/README.md`, 'nope')).rejects.toThrow(ReadOnlyError);
-  });
-
-  test('every root is read-only until --writable names it', async () => {
-    expect((await Registry.create([HERE])).list()[0]!.writable).toBe(false);
-    expect((await Registry.create([HERE], [HERE])).list()[0]!.writable).toBe(true);
-  });
-
-  test('--writable cannot opt a /rd tree back in', async () => {
-    const registry = await Registry.create(['/rd/vhosts/realty'], ['/rd/vhosts/realty']);
+    const registry = await Registry.create([HERE]);
     const root = registry.list()[0]!;
 
-    // The flag is honoured everywhere else; here it must not even be advertised, or the UI
-    // would offer an edit that writeFile is going to refuse anyway.
-    expect(root.writable).toBe(false);
-    await expect(registry.writeFile(`${root.id}/Plans/README.md`, 'nope')).rejects.toThrow(ReadOnlyError);
+    await expect(registry.writeFile(`${root.id}/README.md`, 'nope')).rejects.toThrow(ReadOnlyError);
+  });
+
+  test('writeFile refuses a path outside every root, writable or not', async () => {
+    const registry = await Registry.create([HERE], true);
+    const id = registry.list()[0]!.id;
+
+    await expect(registry.writeFile(`${id}/../../../tmp/nope.md`, 'nope')).rejects.toThrow();
   });
 });
 
@@ -66,15 +55,15 @@ describe('document URLs', () => {
   });
 
   test('several roots are told apart by a leading segment', async () => {
-    const registry = await Registry.create([HERE, '/rd/vhosts/realty']);
-    const [mine, realty] = registry.list();
+    const registry = await Registry.create([HERE, `${HERE}/src`]);
+    const [mine, nested] = registry.list();
 
     expect(registry.docUrl(mine!, 'README.md')).toBe('/d/mdhouse/README.md');
-    expect(registry.docUrl(realty!, 'Plans/README.md')).toBe('/d/realty/Plans/README.md');
+    expect(registry.docUrl(nested!, 'lib/roots.ts')).toBe('/d/src/lib/roots.ts');
 
-    const resolved = await registry.fromDocUrl('/d/realty/Plans/README.md');
-    expect(resolved?.root.id).toBe('realty');
-    expect(resolved?.rel).toBe('Plans/README.md');
+    const resolved = await registry.fromDocUrl('/d/src/lib/roots.ts');
+    expect(resolved?.root.id).toBe('src');
+    expect(resolved?.rel).toBe('lib/roots.ts');
   });
 
   test('URL-encoded segments survive the round trip', async () => {

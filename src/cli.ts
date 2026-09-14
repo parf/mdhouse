@@ -5,7 +5,7 @@
 
 import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { Registry, isReadOnlyPath } from './lib/roots';
+import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { serve } from './server';
 
@@ -20,7 +20,7 @@ Options
   -a, --all            include gitignored .md files
       --git-log <n>    commits scanned for git recents (default 200)
       --no-git         skip git entirely; filesystem recents only
-      --writable <dir> allow writes to this tree (never /rd)
+      --rw             allow mdhouse to write to the trees it serves
       --help           show this
 
 With no directory, the current one is used.
@@ -34,7 +34,7 @@ interface Options {
   all: boolean;
   gitLog: number;
   noGit: boolean;
-  writable: string[];
+  rw: boolean;
 }
 
 function parse(argv: string[]): Options {
@@ -46,7 +46,7 @@ function parse(argv: string[]): Options {
     all: false,
     gitLog: 200,
     noGit: false,
-    writable: [],
+    rw: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -60,7 +60,7 @@ function parse(argv: string[]): Options {
       case '-a': case '--all': o.all = true; break;
       case '--git-log': o.gitLog = Number(next()); break;
       case '--no-git': o.noGit = true; break;
-      case '--writable': o.writable.push(resolve(next())); break;
+      case '--rw': o.rw = true; break;
       case '--help': console.log(USAGE); process.exit(0);
       default:
         if (arg.startsWith('-')) {
@@ -88,7 +88,7 @@ for (const dir of opts.dirs) {
   dirs.push(abs);
 }
 
-const registry = await Registry.create(dirs, opts.writable);
+const registry = await Registry.create(dirs, opts.rw);
 const prefs = await Prefs.load();
 
 const { server, watcher } = serve({
@@ -107,8 +107,8 @@ for (const root of registry.list()) {
   const badge = root.writable ? '  [RW]' : '';
   console.log(`  ${registry.single ? '' : root.id.padEnd(12)}${root.path}${badge}`);
 }
-if (dirs.some((d) => isReadOnlyPath(d))) {
-  console.log('\n  /rd is served read-only — mdhouse will not write there.');
+if (!opts.rw) {
+  console.log('\n  Read-only — mdhouse will not write to these trees. Pass --rw to allow it.');
 }
 
 if (opts.open) {

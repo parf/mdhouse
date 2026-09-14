@@ -158,7 +158,7 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Every root is read-only unless --writable named it, so only the exception is worth a badge. */
+/* Every root is read-only unless --rw was passed, so only the exception is worth a badge. */
 .rw {
   font-weight: 600;
   font-size: 10.5px;

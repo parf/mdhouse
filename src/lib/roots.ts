@@ -9,15 +9,6 @@
 import { realpath } from 'node:fs/promises';
 import { sep, resolve as resolvePath, relative } from 'node:path';
 
-/**
- * Trees mdHouse must never write to, however it was launched.
- *
- * `/rd` is someone's working checkout and mdHouse's main development target at the same time;
- * a stray write there is a real-world accident, not a test failure. Overridable only by an
- * explicit `--writable <path>` naming the tree.
- */
-const READ_ONLY_ROOTS = ['/rd'];
-
 export interface Root {
   /** Short slug used in URLs. Never contains a slash. */
   id: string;
@@ -25,7 +16,7 @@ export interface Root {
   name: string;
   /** Absolute, symlink-resolved path. */
   path: string;
-  /** false => every write through writeFile() throws. */
+  /** false => every write through writeFile() throws. False unless `--rw` was passed. */
   writable: boolean;
 }
 
@@ -56,11 +47,6 @@ function isUnder(parent: string, child: string): boolean {
   return child === parent || child.startsWith(parent.endsWith(sep) ? parent : parent + sep);
 }
 
-/** A path is read-only when it is one of READ_ONLY_ROOTS or lives inside one. */
-export function isReadOnlyPath(path: string): boolean {
-  return READ_ONLY_ROOTS.some((ro) => isUnder(ro, path));
-}
-
 export class Registry {
   private readonly byId = new Map<string, Root>();
 
@@ -70,13 +56,10 @@ export class Registry {
 
   /**
    * @param specs directories as given on the command line
-   * @param writableOverrides absolute paths the user explicitly opted into writing
+   * @param writable whether the user passed `--rw`. Read-only is the default: mdhouse is a
+   *        viewer, and a viewer that cannot write cannot damage anything it is pointed at.
    */
-  static async create(specs: string[], writableOverrides: string[] = []): Promise<Registry> {
-    const overrides = await Promise.all(
-      writableOverrides.map(async (p) => await realpath(resolvePath(p)).catch(() => resolvePath(p))),
-    );
-
+  static async create(specs: string[], writable = false): Promise<Registry> {
     const roots: Root[] = [];
     const usedIds = new Set<string>();
 
@@ -89,17 +72,7 @@ export class Registry {
       for (let n = 2; usedIds.has(id); n++) id = `${slugify(name)}-${n}`;
       usedIds.add(id);
 
-      const explicitlyWritable = overrides.some((w) => isUnder(w, abs) || isUnder(abs, w));
-      roots.push({
-        id,
-        name,
-        path: abs,
-        // Read-only is the default for every root: mdhouse is a viewer, and a tree only
-        // becomes writable when the user names it with --writable. `/rd` is not eligible
-        // even then — writeFile() refuses it regardless, so advertising it as writable
-        // would be a lie the UI would repeat.
-        writable: explicitlyWritable && !isReadOnlyPath(abs),
-      });
+      roots.push({ id, name, path: abs, writable });
     }
 
     return new Registry(roots);
@@ -202,7 +175,7 @@ export class Registry {
   async writeFile(p: string, data: string | Uint8Array): Promise<Resolved> {
     const loc = await this.resolve(p);
     if (!loc) throw new Error(`path outside any root: ${p}`);
-    if (!loc.root.writable || isReadOnlyPath(loc.abs)) throw new ReadOnlyError(loc.abs);
+    if (!loc.root.writable) throw new ReadOnlyError(loc.abs);
     await Bun.write(loc.abs, data);
     return loc;
   }

@@ -24,7 +24,7 @@ export const DEFAULT_DENY = [
   'venv',
   '__pycache__',
   'target',
-  // r-doc's own skip list — huge generated or third-party trees inside /rd
+  // r-doc's own skip list — huge generated or third-party trees in a big PHP checkout
   'lib.external',
   'git-hooks',
   'pma',

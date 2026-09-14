@@ -106,9 +106,9 @@ export class Store {
     const merged = new Map<string, FileStatus>();
     if (!this.opts.noGit) {
       for (const repo of scan.repos) {
-        // Two shapes: the root sits inside one big repo (`/rd/vhosts/realty`), or the root
-        // holds many repos (`~/src`). Scope the query to whichever is narrower, then restate
-        // the answer relative to the root.
+        // Two shapes: the root is a subtree of one big repo, or the root holds many repos
+        // (`~/src`). Scope the query to whichever is narrower, then restate the answer
+        // relative to the root.
         const nested = repo.startsWith(root.path) && repo !== root.path;
         const prefix = nested ? repo.slice(root.path.length + 1) + '/' : '';
         for (const [rel, st] of await workingStatus(repo, nested ? repo : root.path)) {
@@ -156,7 +156,7 @@ export class Store {
    * filter. Muted entries are dropped from both halves.
    *
    * Whatever git cannot account for is topped up by modification time, so a root git knows
-   * nothing about — `/rd/tmp`, a scratch folder, a directory outside any repository — still
+   * nothing about — a scratch folder, an ignored directory, anything outside a repository — still
    * has a working Recent rather than an empty one. A file in no repository is untracked by
    * definition, which is how it is labelled and coloured.
    */

@@ -40,3 +40,16 @@ badge inverted — a green `RW` when a root is writable, nothing at all otherwis
 also removed a contradiction — `--writable /rd/...` used to set `writable: true` while
 `writeFile()` refused the write anyway, so the UI would have offered an edit that could not
 happen. `/rd` is now not eligible for the flag at all, and says so.
+
+
+## No tree is special; `--rw` is the whole policy
+
+The read-only rule was a hard-coded path list — one particular checkout mdhouse would refuse
+to write to. That was the wrong shape twice over: it protected exactly one tree while leaving
+every other one writable by default, and it baked a local path into a general tool.
+
+The list is gone. `Registry.create(specs, writable)` takes a single boolean from `--rw`, every
+root is read-only without it, and `writeFile()` refuses a read-only root — which is every root
+unless the user asked otherwise. The protection is stronger than the path list ever was,
+because it now covers everything rather than one directory, and it is a single flag to reason
+about instead of a list to maintain.

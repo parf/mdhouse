@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "bun run src/cli.ts",
-    "dev": "bun --hot run src/cli.ts /rd/vhosts/realty",
+    "dev": "bun --hot run src/cli.ts .",
     "test": "bun test"
   },
   "dependencies": {

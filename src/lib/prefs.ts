@@ -2,8 +2,8 @@
  * User marks on files and directories: favorite, muted, ignored.
  *
  * Stored in `~/.config/mdhouse/prefs.json`, keyed by the root's absolute path — never as a
- * dotfile inside a browsed tree. That is what makes the marks work on a read-only root like
- * `/rd`: the opinions are yours, the tree stays untouched.
+ * dotfile inside a browsed tree. That is what makes the marks work on a read-only root, which
+ * is every root by default: the opinions are yours, the tree stays untouched.
  *
  * An entry is a root-relative path. A trailing `/` makes it a directory rule covering the
  * whole subtree; anything else matches one file exactly.

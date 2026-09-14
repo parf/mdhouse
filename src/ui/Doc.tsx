@@ -231,7 +231,11 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
 function Authors({ authors }: { authors: DocPayload['authors'] }) {
   if (!authors) return null;
   const { created, last } = authors;
-  const same = !created || (created.email ? created.email === last.email : created.name === last.name);
+
+  // Either half is enough to call it one person. The same human commits under two addresses
+  // often enough (a job change, a second machine), and whatever the emails say, rendering
+  // "Serg Parf … Serg Parf" is noise.
+  const same = !created || created.email === last.email || created.name === last.name;
 
   return (
     <span class="who" title={`Last commit ${last.hash}, ${timeAgo(last.at)}`}>
