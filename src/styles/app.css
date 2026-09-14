@@ -310,7 +310,22 @@ main {
 .hit:hover { background: var(--bg-hover); }
 .hit .hit-path { display: flex; gap: 6px; align-items: baseline; font-size: 12px; }
 .hit .hit-name { font-weight: 550; }
+/* Your own work, marked in the mixed list. Uncommitted entries keep their status colour. */
+.hit .mine { color: var(--accent); font-size: 10px; line-height: 1; flex: none; }
+.hit.uncommitted .mine { color: var(--mark, var(--warn)); }
 .hit .hit-dir { color: var(--fg-faint); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hit .hit-parent {
+  display: none;
+  color: var(--fg-faint);
+  font-size: 9.5px;
+  white-space: nowrap;
+  /* Pushed to the right edge so the folders line up as a column, and the first thing to be
+     trimmed when the row runs out of room — the file name matters more. */
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .hit .hit-line {
   font: 11.5px/1.45 var(--mono);
   color: var(--fg-muted);
@@ -341,7 +356,9 @@ main {
 .sidebar.compact .hit { padding: 5px 8px; }
 .sidebar.compact .hit .hit-dir,
 .sidebar.compact .hit .hit-line { display: none; }
-.sidebar.compact .hit .hit-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Too narrow for the whole path — the parent folder is what tells two DONE.md rows apart. */
+.sidebar.compact .hit .hit-parent { display: inline; }
+.sidebar.compact .hit .hit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── document ───────────────────────────────────────────────────────────── */
 

@@ -256,13 +256,7 @@ function Favorites(props: SidebarProps & { favorites: FavEntry[] }) {
           onClick={() => (f.isDir ? props.onTab('files') : props.onOpen(f.rel))}
           title={f.missing ? `${f.rel} — not in the current tree` : f.rel}
         >
-          <span class="hit-path">
-            <span class="hit-name">
-              {f.isDir ? <IconFolder size={12} /> : null} {f.name}
-              {f.isDir ? '/' : ''}
-            </span>
-            <span class="hit-dir">{f.dir}</span>
-          </span>
+          <HitPath name={f.isDir ? `${f.name}/` : f.name} dir={f.dir} lead={f.isDir && <IconFolder size={12} />} />
           {f.missing && <span class="meta">missing</span>}
         </button>
       ))}
@@ -275,6 +269,27 @@ function isMine(e: RecentEntry, me: { name: string; email: string } | null): boo
   if (e.uncommitted) return true;
   if (!me) return false;
   return me.email ? e.email === me.email : e.author === me.name;
+}
+
+/**
+ * The file name plus its location. A compact sidebar has no room for the full directory, but
+ * a list of DONE.md / TODO.md rows is useless without it — so compact shows the parent folder
+ * alone (CSS picks which of the two is visible).
+ */
+function HitPath({ name, dir, lead }: { name: string; dir: string; lead?: preact.JSX.Element | false }) {
+  const parent = dir ? dir.slice(dir.lastIndexOf('/') + 1) : '';
+  return (
+    <span class="hit-path">
+      {lead}
+      <span class="hit-name">{name}</span>
+      {parent && (
+        <span class="hit-parent" title={dir}>
+          {parent}
+        </span>
+      )}
+      <span class="hit-dir">{dir}</span>
+    </span>
+  );
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -316,10 +331,19 @@ function Recents(props: SidebarProps) {
           onClick={() => props.onOpen(e.rel)}
           title={e.uncommitted ? `${e.rel} — ${e.status}, not committed` : e.rel}
         >
-          <span class="hit-path">
-            <span class="hit-name">{e.name}</span>
-            <span class="hit-dir">{e.dir}</span>
-          </span>
+          <HitPath
+            name={e.name}
+            dir={e.dir}
+            /* Everything in Mine is mine — the marker only carries information on Recent. */
+            lead={
+              props.tab !== 'mine' &&
+              isMine(e, me) && (
+                <span class="mine" title="yours" aria-label="yours">
+                  ❖
+                </span>
+              )
+            }
+          />
           <span class="meta">
             {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
             <span>{timeAgo(e.at)}</span>

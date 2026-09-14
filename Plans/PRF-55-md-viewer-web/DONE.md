@@ -113,3 +113,17 @@ filter of its own. The committer dropdown stays on *Recent*.
 
 Verified against `~/src`: 8 untracked files sort above 72 commit entries; touching
 `mdhouse/README.md` makes it appear as `modified` through the watcher without a reload.
+
+## H.3 — Reading a recents row at a glance
+Three small things, all about the compact width where a recents list is a column of
+`README.md` / `TODO.md` / `DONE.md` rows that look identical:
+
+- **`❖` marks your own rows** in *Recent* — uncommitted work plus commits matching the git
+  identity. It takes the status colour on uncommitted entries and the accent colour otherwise.
+  *Mine* does not draw it: everything there is yours already.
+- **The parent folder is shown** when the full path is not, right-aligned so the folders line
+  up as a column, in a smaller face than the file name, and the first thing trimmed when the
+  row runs out of room.
+
+Verified in the compact sidebar against `/rd/vhosts/realty`: rows read
+`❖ DONE.md · RLM-1125-attom-tax-assessor`, and Kirill's commits are unmarked.
