@@ -290,17 +290,25 @@ history, where every row is a commit and the newest one is already first.
 Used by the front page (uncommitted, recently-changed and commit cards), the sidebar's Recent
 and Mine tabs, and the document header.
 
-## L.3 — File lists as a table
-The front page's three ragged runs of text became one `FileTable`: **directory | file | age**,
-in real table columns that line up down the page.
+## L.3 — One table for the whole page
+The front page's three ragged runs of text became a single `<table>`: **directory | file | age**.
+Section titles and commit headers are rows that span all three columns; everything else is a
+file row.
 
-- The directory is **right**-aligned against the names, so every file name starts on the same
-  straight edge and the folder reads as a label attached to the group.
-- A run of files from the same folder states it **once**, via `rowspan`. In a plans tree most
-  consecutive rows share a parent, and eight repetitions of `my-daily-work-review` were the
-  reason the list was hard to scan; the folder is only worth printing where it changes.
-- The last path segment stays bold, as in the sidebar's Recent rows.
-- Commit cards use the same table, minus the age column — the commit's own age heads the card.
+One table rather than one per commit is the point. A table per commit sizes its own columns,
+so the file names step left and right down the page; sharing one means the directory, the name
+and the age each keep a single position from the top of the page to the bottom.
 
-Verified on `/rd/tmp` (13 rows collapsing to three directory cells: ×5, `/`, ×7) and on
-`/rd/vhosts/realty` (28 commit cards, files grouped by folder inside each).
+- The directory is **right**-aligned against the names, with the last segment bold, so every
+  file name starts on the same straight edge and the folder reads as the label of a group.
+- A run of files from the same folder states it **once**, via `rowspan`, restarting at each
+  header. Eight repetitions of `my-daily-work-review` were what made the list hard to scan; the
+  folder is only worth printing where it changes.
+- File rows under a commit leave the age cell empty — the commit's own age heads its block —
+  but the cell stays, so the columns hold.
+- **Your own commits get a green wash**, header and files, so a page of a team's work shows
+  your part of it without reaching for the Mine tab.
+
+Verified on `/rd/tmp` (13 rows collapsing to three directory cells: ×5, `/`, ×7, every file
+name on one left edge) and on `/rd/vhosts/realty` (28 commit cards, files grouped by folder,
+the five commits of the current author tinted).

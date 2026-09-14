@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { api, type RootInfo } from './api';
-import type { Digest, RecentEntry, TreePayload } from '../lib/store';
+import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
 import { IconClock, IconStar, IconUser } from './icons';
 import { docName } from './format';
 import { Ago } from './Ago';
@@ -56,8 +56,9 @@ export function Home(props: Props) {
   );
 
   const keep = (rel: string) => view !== 'favorites' || favorites.has(rel);
-  const mine = (email: string, author: string) =>
-    view !== 'mine' || (me ? (me.email ? email === me.email : author === me.name) : false);
+  const isMine = (email: string, author: string) =>
+    me ? (me.email ? email === me.email : author === me.name) : false;
+  const mine = (email: string, author: string) => view !== 'mine' || isMine(email, author);
 
   // Uncommitted work is the user's own by definition, so Mine keeps all of it.
   const uncommitted = (digest?.uncommitted ?? []).filter((e) => keep(e.rel));
@@ -70,6 +71,26 @@ export function Home(props: Props) {
   const recent = (digest?.recent ?? []).filter((e) => keep(e.rel));
   const root = props.tree?.root;
   const nothing = !uncommitted.length && !commits.length && !recent.length;
+
+  const rows: Row[] = [];
+  if (uncommitted.length) {
+    rows.push({ kind: 'head', key: 'h:uncommitted', label: 'Uncommitted' });
+    rows.push(...fileRows(uncommitted, 'u', true));
+  }
+  if (recent.length) {
+    rows.push({ kind: 'head', key: 'h:recent', label: 'Recently changed' });
+    rows.push(...fileRows(recent, 'r'));
+  }
+  if (commits.length) {
+    rows.push({ kind: 'head', key: 'h:commits', label: 'Commits' });
+    for (const c of commits) {
+      // Your own commits get a green wash, so a page of a team's work shows your part of it
+      // without reaching for the Mine tab.
+      const own = isMine(c.email, c.author);
+      rows.push({ kind: 'commit', key: `c:${c.hash}`, c, own });
+      rows.push(...fileRows(c.files, c.hash, false, own));
+    }
+  }
 
   return (
     <div class="home">
@@ -98,99 +119,87 @@ export function Home(props: Props) {
       )}
 
       {digest && !nothing && (
-        <>
-          {uncommitted.length > 0 && (
-            <section class="home-section">
-              <h2>Uncommitted</h2>
-              <FileTable rows={uncommitted} onOpen={props.onOpen} loud />
-            </section>
-          )}
-
-          {recent.length > 0 && (
-            <section class="home-section">
-              <h2>Recently changed</h2>
-              <FileTable rows={recent} onOpen={props.onOpen} />
-            </section>
-          )}
-
-          {commits.length > 0 && (
-            <section class="home-section">
-              <h2>Commits</h2>
-
-              {commits.map((c) => (
-                <article class="commit-card" key={c.hash}>
-                  <header>
-                    <span class="subject" title={c.subject}>
-                      {c.subject}
-                    </span>
-                    <span class="when">
-                      <Ago at={c.date} />
-                    </span>
-                    <span class="who">{c.author}</span>
-                  </header>
-                  {/* The commit's own age heads the card, so the rows below carry none. */}
-                  <FileTable rows={c.files} onOpen={props.onOpen} when={false} />
-                </article>
-              ))}
-            </section>
-          )}
-        </>
+        <table class="home-table">
+          <tbody>
+            {rows.map((row) =>
+              row.kind === 'head' ? (
+                <tr class="head" key={row.key}>
+                  <td colSpan={3}>
+                    <h2>{row.label}</h2>
+                  </td>
+                </tr>
+              ) : row.kind === 'commit' ? (
+                <tr class={row.own ? 'commit mine' : 'commit'} key={row.key}>
+                  <td colSpan={3}>
+                    <div class="commit-head">
+                      <span class="subject" title={row.c.subject}>
+                        {row.c.subject}
+                      </span>
+                      <span class="when">
+                        <Ago at={row.c.date} />
+                      </span>
+                      <span class="who">{row.c.author}</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr
+                  class={`file${row.loud ? ' loud' : ''}${row.own ? ' mine' : ''}`}
+                  key={row.key}
+                  onClick={() => props.onOpen(row.r.rel)}
+                  title={row.r.rel}
+                >
+                  {row.span > 0 && (
+                    <td class="dir" rowSpan={row.span}>
+                      <Dir dir={row.r.dir} />
+                    </td>
+                  )}
+                  <td class="name">
+                    <span class="link">{docName(row.r.name)}</span>
+                    {tagOf(row.r.status, row.loud) && <span class="tag">{tagOf(row.r.status, row.loud)}</span>}
+                  </td>
+                  {/* Empty under a commit — the commit's own age heads its block — but the cell
+                      stays, so every file name sits in the same column all the way down. */}
+                  <td class="when">{row.r.at !== undefined && <Ago at={row.r.at} />}</td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        </table>
       )}
     </div>
   );
 }
 
 /**
- * Files as a table: directory, name, age — three columns that line up, instead of three
- * ragged runs of text.
+ * One flat list of table rows for the whole page: section titles and commit headers span the
+ * full width, file rows fill the three columns.
  *
- * The directory is **right**-aligned against the names, so the eye follows one straight edge
- * down the page, and a run of files from the same folder states it once via `rowspan` rather
- * than repeating it eight times. That repetition is exactly what made the list hard to scan:
- * in a plans tree most rows share a parent, and the folder is only interesting where it
- * changes.
+ * It is a single `<table>` on purpose. A table per commit would let each size its own columns,
+ * and the file names would step left and right down the page; sharing one table means the
+ * directory, the name and the age each keep one position everywhere.
  */
-function FileTable(props: {
-  rows: Array<Pick<RecentEntry, 'rel' | 'dir' | 'name' | 'status'> & { at?: number }>;
-  onOpen: (rel: string) => void;
-  /** Uncommitted rows are the loud ones — a green tag rather than an amber one. */
-  loud?: boolean;
-  when?: boolean;
-}) {
-  const showWhen = props.when !== false;
+type Row =
+  | { kind: 'head'; key: string; label: string }
+  | { kind: 'commit'; key: string; c: CommitGroup; own?: boolean }
+  | { kind: 'file'; key: string; r: FileRow; loud?: boolean; own?: boolean; span: number };
 
-  // How many rows each directory cell spans. 0 means "a cell above already covers this row".
-  const spans = props.rows.map((r, i) => {
-    if (i > 0 && props.rows[i - 1]!.dir === r.dir) return 0;
-    let n = 1;
-    while (i + n < props.rows.length && props.rows[i + n]!.dir === r.dir) n++;
-    return n;
+type FileRow = Pick<RecentEntry, 'rel' | 'dir' | 'name' | 'status'> & { at?: number };
+
+/**
+ * Directory cells span the rows beneath them, so a run of files from the same folder names it
+ * once. Grouping restarts at every header — a folder repeated under the next commit is new
+ * information there.
+ */
+function fileRows(files: FileRow[], prefix: string, loud?: boolean, own?: boolean): Row[] {
+  return files.map((r, i) => {
+    let span = 0;
+    if (i === 0 || files[i - 1]!.dir !== r.dir) {
+      span = 1;
+      while (i + span < files.length && files[i + span]!.dir === r.dir) span++;
+    }
+    return { kind: 'file', key: `${prefix}:${r.rel}`, r, loud, own, span };
   });
-
-  return (
-    <table class={`home-table${props.loud ? ' loud' : ''}`}>
-      <tbody>
-        {props.rows.map((r, i) => (
-          <tr key={r.rel} onClick={() => props.onOpen(r.rel)} title={r.rel}>
-            {spans[i]! > 0 && (
-              <td class="dir" rowSpan={spans[i]}>
-                <Dir dir={r.dir} />
-              </td>
-            )}
-            <td class="name">
-              <span class="link">{docName(r.name)}</span>
-              {tagOf(r.status, props.loud) && <span class="tag">{tagOf(r.status, props.loud)}</span>}
-            </td>
-            {showWhen && (
-              <td class="when">
-                <Ago at={r.at ?? 0} />
-              </td>
-            )}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
 }
 
 /**

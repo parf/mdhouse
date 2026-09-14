@@ -426,44 +426,47 @@ main {
 .home-head .tabs { margin-left: auto; flex: 0 0 auto; gap: 3px; }
 .home-head .tabs button { display: flex; align-items: center; gap: 5px; padding: 5px 10px; flex: none; }
 
-.home-section { margin-bottom: 26px; }
-.home-section h2 {
+/* The whole page is one table — section titles and commit headers are rows that span it, file
+   rows fill its three columns. A table per section would let each size its own columns and the
+   file names would step left and right down the page; sharing one means directory, name and
+   age each keep a single position from the top of the page to the bottom. */
+.home-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.home-table td { padding: 3px 8px; vertical-align: baseline; }
+.home-table tr.file { cursor: pointer; }
+.home-table tr.file:hover > td { background: var(--bg-hover); }
+.home-table tr.file:hover > td.dir { background: none; }
+.home-table td:first-child { border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); }
+.home-table td:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
+
+.home-table tr.head > td { padding: 22px 8px 4px; }
+.home-table tr.head:first-child > td { padding-top: 0; }
+.home-table h2 {
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--fg-faint);
-  margin: 0 0 6px;
+  margin: 0;
 }
-
-/* One file, wherever it appears: on its own under Uncommitted, or inside a commit card.
-   A table rather than a row of flex items, so the three columns line up down the page. */
-.home-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.home-table tr { cursor: pointer; }
-.home-table tr:hover > td { background: var(--bg-hover); }
-.home-table td { padding: 3px 8px; vertical-align: baseline; }
-.home-table td:first-child { border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); }
-.home-table td:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
 
 /* Right-aligned, so the file names all start on one straight edge. A cell spanning several
    rows sits against the first of them, where the eye expects the label of a group. */
-.home-table .dir {
+.home-table td.dir {
   text-align: right;
   white-space: nowrap;
   width: 1%;
-  max-width: 300px;
+  max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--fg-faint);
   border-right: 1px solid var(--border);
 }
-.home-table tr:hover > .dir { background: none; }
 .home-table .dir-path b { font-weight: 640; color: var(--fg-muted); }
 .home-table .dir-path.root { color: var(--fg-faint); }
 
-.home-table .name { width: 100%; }
-.home-table .name .link { font-weight: 600; color: var(--accent); }
-.home-table .when { text-align: right; white-space: nowrap; width: 1%; font-size: 11.5px; }
+.home-table td.name { width: 100%; }
+.home-table td.name .link { font-weight: 600; color: var(--accent); }
+.home-table td.when { text-align: right; white-space: nowrap; width: 1%; font-size: 11.5px; }
 
 .home-table .tag {
   margin-left: 7px;
@@ -474,19 +477,24 @@ main {
   border-radius: 3px;
   padding: 0 4px;
 }
-.home-table.loud .tag { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.home-table tr.loud .tag { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
 
-.commit-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-panel);
-  padding: 9px 10px;
-  margin-bottom: 8px;
+/* Your own commits, tinted: the block reads as yours at a glance, without the Mine tab. */
+.home-table tr.mine > td { background: color-mix(in srgb, var(--ok) 9%, transparent); }
+.home-table tr.commit.mine > td { background: none; }
+.home-table tr.commit.mine .commit-head {
+  background: color-mix(in srgb, var(--ok) 9%, transparent);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 9px 8px 5px;
+  margin: 0 -8px -3px;
 }
-.commit-card > header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+
+/* A commit heads its own block of files: a rule above it, then subject, age and author. */
+.home-table tr.commit > td { padding: 14px 8px 3px; }
+.home-table .commit-head { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid var(--border); padding-top: 9px; }
 /* The subject is the point of the row, so it gets the space — two lines of it, then an
    ellipsis, with the full text in the tooltip. */
-.commit-card .subject {
+.home-table .commit-head .subject {
   flex: 1 1 auto;
   min-width: 0;
   font-size: 13.5px;
@@ -498,12 +506,14 @@ main {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.commit-card .when { flex: none; font-size: 11.5px; color: var(--fg-faint); }
-.commit-card .who { flex: none; font-size: 11.5px; color: var(--fg-muted); }
+.home-table .commit-head .when { flex: none; font-size: 11.5px; }
+.home-table .commit-head .who { flex: none; font-size: 11.5px; color: var(--fg-muted); }
 
 @media (max-width: 720px) {
   .home { padding: 16px 16px 90px; }
-  .commit-card > header { flex-wrap: wrap; }
+  .home-table .commit-head { flex-wrap: wrap; }
+  /* Narrow enough that a long folder would squeeze the names out; keep it to a third. */
+  .home-table td.dir { max-width: 33vw; }
 }
 
 /* ── document ───────────────────────────────────────────────────────────── */
