@@ -18,6 +18,12 @@
   --ok: #2f855a;
   --mark-fav: #d99100;
 
+  /* Heading ink: one warm graphite ladder, used by both the document and its contents list.
+     H1 sits a shade darker than body text, H2 level with it, H3 a clear step lighter. */
+  --h1: #111110;
+  --h2: #2b2b26;
+  --h3: #4a4a42;
+
   --sidebar-compact: 22%;
   --sidebar-open: 32%;
   --radius: 6px;
@@ -43,6 +49,9 @@
     --danger: #e57373;
     --ok: #68c496;
     --mark-fav: #e0b341;
+    --h1: #f2f2f0;
+    --h2: #d8d8d3;
+    --h3: #b4b4ad;
   }
 }
 
@@ -63,6 +72,9 @@
   --danger: #e57373;
   --ok: #68c496;
   --mark-fav: #e0b341;
+  --h1: #f2f2f0;
+  --h2: #d8d8d3;
+  --h3: #b4b4ad;
 }
 
 * { box-sizing: border-box; }
@@ -474,7 +486,7 @@ main {
 .toc li[data-level="1"] {
   font-size: 13.5px;
   font-weight: 640;
-  color: var(--fg);
+  color: var(--h1);
   letter-spacing: -0.01em;
 }
 .toc li[data-level="1"] + li[data-level="1"] { margin-top: 6px; }
@@ -482,13 +494,13 @@ main {
 .toc li[data-level="2"] {
   padding-left: 13px;
   font-weight: 500;
-  color: var(--fg-muted);
+  color: var(--h2);
 }
 
 .toc li[data-level="3"] {
   padding-left: 26px;
   font-size: 12px;
-  color: var(--fg-faint);
+  color: var(--h3);
   position: relative;
 }
 /* A tick, so a third-level row is recognisable without reading its indent. */
@@ -510,9 +522,9 @@ main {
   letter-spacing: -0.015em;
   scroll-margin-top: 16px;
 }
-.md h1 { font-size: 1.7em; }
-.md h2 { font-size: 1.36em; padding-bottom: 0.25em; border-bottom: 1px solid var(--border); }
-.md h3 { font-size: 1.15em; }
+.md h1 { font-size: 1.7em; color: var(--h1); }
+.md h2 { font-size: 1.36em; padding-bottom: 0.25em; border-bottom: 1px solid var(--border); color: var(--h2); }
+.md h3 { font-size: 1.15em; color: var(--h3); }
 .md h4 { font-size: 1em; }
 .md h5, .md h6 { font-size: 0.92em; color: var(--fg-muted); }
 .md p, .md ul, .md ol, .md blockquote, .md table, .md pre { margin: 0.85em 0; }

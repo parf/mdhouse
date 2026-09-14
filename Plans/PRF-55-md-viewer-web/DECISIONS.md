@@ -53,3 +53,23 @@ root is read-only without it, and `writeFile()` refuses a read-only root — whi
 unless the user asked otherwise. The protection is stronger than the path list ever was,
 because it now covers everything rather than one directory, and it is a single flag to reason
 about instead of a list to maintain.
+
+
+## Headings get their own ink, in one warm graphite ladder
+
+H1–H3 now use `--h1` / `--h2` / `--h3` rather than the body colour, in the document *and* in
+the contents list, so a row and the heading it points at are visibly the same thing.
+
+The ramp stays in the hue family of the existing warm off-black body text — no cool or sepia
+cast — and is built so the hierarchy is felt rather than noticed: H1 a shade darker than
+prose, H2 level with it, H3 a clear step lighter.
+
+| | light | dark |
+| --- | --- | --- |
+| H1 | `#111110` | `#f2f2f0` |
+| H2 | `#2b2b26` | `#d8d8d3` |
+| H3 | `#4a4a42` | `#b4b4ad` |
+| body | `#1c1c1a` | `#e4e4e2` |
+
+H4–H6 keep the body and muted colours: they are rare in these documents and already separated
+by size, and continuing the ramp would land them on the grey they already use.
