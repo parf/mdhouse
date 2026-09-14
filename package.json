@@ -1,0 +1,27 @@
+{
+  "name": "mdhouse",
+  "version": "0.1.0",
+  "description": "Browsable, searchable web viewer for every .md file under a directory",
+  "type": "module",
+  "bin": {
+    "mdhouse": "./bin/mdhouse"
+  },
+  "scripts": {
+    "start": "bun run src/cli.ts",
+    "dev": "bun --hot run src/cli.ts /rd/vhosts/realty",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-attrs": "^4.3.1",
+    "markdown-it-footnote": "^4.0.0",
+    "mermaid": "^12.0.0",
+    "preact": "^10.27.0",
+    "shiki": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/bun": "latest"
+  }
+}
