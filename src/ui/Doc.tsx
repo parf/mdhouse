@@ -4,6 +4,7 @@ import type { FileHistory } from '../lib/git';
 import type { Mark } from '../lib/prefs';
 import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide } from './icons';
 import { timeAgo } from './format';
+import { Ago } from './Ago';
 
 interface Props {
   doc: DocPayload | null;
@@ -172,8 +173,8 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
         <h1 class="doc-title">{title}</h1>
 
         <div class="doc-meta">
-          <span title={new Date(doc.mtime).toLocaleString()}>
-            <IconClock size={12} /> {timeAgo(doc.mtime)}
+          <span>
+            <IconClock size={12} /> <Ago at={doc.mtime} />
           </span>
           <Authors authors={doc.authors} />
           {doc.tasks.total > 0 && (
@@ -333,7 +334,7 @@ function History({ p }: { p: string }) {
           <div class="commit-subject">{c.subject}</div>
           <div class="commit-meta">
             <span class="who">{c.author}</span>
-            <span title={new Date(c.date).toLocaleString()}>{timeAgo(c.date)}</span>
+            <Ago at={c.date} flame={false} />
             <code>{c.hash.slice(0, 8)}</code>
             {c.added !== undefined && (
               <span class="churn">
@@ -350,7 +351,7 @@ function History({ p }: { p: string }) {
           <div class="commit-meta">
             <span>created by</span>
             <span class="who">{log.created.author}</span>
-            <span title={new Date(log.created.date).toLocaleString()}>{timeAgo(log.created.date)}</span>
+            <Ago at={log.created.date} flame={false} />
           </div>
         </div>
       )}

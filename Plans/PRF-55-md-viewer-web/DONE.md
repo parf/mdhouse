@@ -276,3 +276,31 @@ The root name in the sidebar header is the link to it. The page refetches on liv
 
 Verified: `/rd/vhosts/realty` 28 commit cards (9 under *Mine*), `/rd/tmp` 13 files under
 *Recently changed*, and the empty states differ per view.
+
+## L.2 — Age as a temperature
+Every "3 h ago" in the app now goes through one `<Ago>` component that colours the label by how
+recent it is, so a column of timestamps reads as a gradient before a single one has been read.
+
+Five buckets, the ones people actually think in: **under ten minutes** (bright red, with a 🔥),
+**this hour** (burnt orange), **today** (amber), **this week** (the ordinary muted grey), and
+**older** (faint). The flame is the point — something touched in the last ten minutes is
+usually the thing you opened the page to find — so it is suppressed only in the per-file git
+history, where every row is a commit and the newest one is already first.
+
+Used by the front page (uncommitted, recently-changed and commit cards), the sidebar's Recent
+and Mine tabs, and the document header.
+
+## L.3 — File lists as a table
+The front page's three ragged runs of text became one `FileTable`: **directory | file | age**,
+in real table columns that line up down the page.
+
+- The directory is **right**-aligned against the names, so every file name starts on the same
+  straight edge and the folder reads as a label attached to the group.
+- A run of files from the same folder states it **once**, via `rowspan`. In a plans tree most
+  consecutive rows share a parent, and eight repetitions of `my-daily-work-review` were the
+  reason the list was hard to scan; the folder is only worth printing where it changes.
+- The last path segment stays bold, as in the sidebar's Recent rows.
+- Commit cards use the same table, minus the age column — the commit's own age heads the card.
+
+Verified on `/rd/tmp` (13 rows collapsing to three directory cells: ×5, `/`, ×7) and on
+`/rd/vhosts/realty` (28 commit cards, files grouped by folder inside each).

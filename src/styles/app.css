@@ -18,6 +18,15 @@
   --ok: #2f855a;
   --mark-fav: #d99100;
 
+  /* Age heat. Five buckets — under ten minutes, this hour, today, this week, older — each with
+     its own colour so a column of timestamps reads as a temperature gradient. The ramp cools
+     from red through amber to the ordinary muted grey the rest of the UI uses for metadata. */
+  --heat-now: #d93025;
+  --heat-hour: #c2620d;
+  --heat-day: #94722a;
+  --heat-week: var(--fg-muted);
+  --heat-old: var(--fg-faint);
+
   /* Heading ink, shared by the document and its contents list. Three *different* hues rather
      than three tints of one: a ladder built only from lightness turned out to be invisible at
      a glance, and the level of a heading is worth recognising without comparing it to its
@@ -51,6 +60,11 @@
     --danger: #e57373;
     --ok: #68c496;
     --mark-fav: #e0b341;
+  --heat-now: #ff6b5e;
+  --heat-hour: #f0913f;
+  --heat-day: #d9a441;
+  --heat-week: var(--fg-muted);
+  --heat-old: var(--fg-faint);
     --h1: #9dc4f5;
     --h2: #79d3bb;
     --h3: #e0b978;
@@ -74,6 +88,11 @@
   --danger: #e57373;
   --ok: #68c496;
   --mark-fav: #e0b341;
+  --heat-now: #ff6b5e;
+  --heat-hour: #f0913f;
+  --heat-day: #d9a441;
+  --heat-week: var(--fg-muted);
+  --heat-old: var(--fg-faint);
   --h1: #9dc4f5;
   --h2: #79d3bb;
   --h3: #e0b978;
@@ -417,24 +436,37 @@ main {
   margin: 0 0 6px;
 }
 
-/* One file, wherever it appears: on its own under Uncommitted, or inside a commit card. */
-.home-file {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  width: 100%;
-  text-align: left;
-  padding: 4px 8px;
-  border-radius: var(--radius);
-  font-size: 13px;
+/* One file, wherever it appears: on its own under Uncommitted, or inside a commit card.
+   A table rather than a row of flex items, so the three columns line up down the page. */
+.home-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.home-table tr { cursor: pointer; }
+.home-table tr:hover > td { background: var(--bg-hover); }
+.home-table td { padding: 3px 8px; vertical-align: baseline; }
+.home-table td:first-child { border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); }
+.home-table td:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
+
+/* Right-aligned, so the file names all start on one straight edge. A cell spanning several
+   rows sits against the first of them, where the eye expects the label of a group. */
+.home-table .dir {
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg-faint);
+  border-right: 1px solid var(--border);
 }
-.home-file:hover { background: var(--bg-hover); }
-.home-file .where { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.home-file .where .dir { color: var(--fg-faint); }
-.home-file .where b { font-weight: 600; color: var(--accent); }
-.home-file .when { margin-left: auto; flex: none; font-size: 11.5px; color: var(--fg-faint); }
-.home-file .tag {
-  flex: none;
+.home-table tr:hover > .dir { background: none; }
+.home-table .dir-path b { font-weight: 640; color: var(--fg-muted); }
+.home-table .dir-path.root { color: var(--fg-faint); }
+
+.home-table .name { width: 100%; }
+.home-table .name .link { font-weight: 600; color: var(--accent); }
+.home-table .when { text-align: right; white-space: nowrap; width: 1%; font-size: 11.5px; }
+
+.home-table .tag {
+  margin-left: 7px;
   font-size: 10.5px;
   font-weight: 600;
   color: var(--warn);
@@ -442,7 +474,7 @@ main {
   border-radius: 3px;
   padding: 0 4px;
 }
-.home-file.loud .tag { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.home-table.loud .tag { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
 
 .commit-card {
   border: 1px solid var(--border);
@@ -715,3 +747,12 @@ main {
   .app[data-sidebar="compact"], .app[data-sidebar="open"] { --sidebar-w: min(78vw, 320px); }
   .doc-wrap { padding: 16px 16px 90px; }
 }
+
+/* ── Age ─────────────────────────────────────────────────────────────────── */
+
+.ago { white-space: nowrap; color: var(--heat-old); }
+.ago.week { color: var(--heat-week); }
+.ago.day { color: var(--heat-day); }
+.ago.hour { color: var(--heat-hour); font-weight: 550; }
+.ago.now { color: var(--heat-now); font-weight: 650; }
+.ago .flame { margin-right: 3px; font-size: 0.95em; }

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { api, type RootInfo } from './api';
-import type { Digest, TreePayload } from '../lib/store';
+import type { Digest, RecentEntry, TreePayload } from '../lib/store';
 import { IconClock, IconStar, IconUser } from './icons';
-import { timeAgo, docName } from './format';
+import { docName } from './format';
+import { Ago } from './Ago';
 
 export type HomeView = 'favorites' | 'recent' | 'mine';
 
@@ -101,64 +102,115 @@ export function Home(props: Props) {
           {uncommitted.length > 0 && (
             <section class="home-section">
               <h2>Uncommitted</h2>
-              {uncommitted.map((e) => (
-                <button class="home-file loud" key={e.rel} onClick={() => props.onOpen(e.rel)} title={e.rel}>
-                  <span class="where">
-                    {e.dir && <span class="dir">{e.dir}/</span>}
-                    <b>{docName(e.name)}</b>
-                  </span>
-                  <span class="tag">{e.status === 'untracked' ? 'new' : e.status}</span>
-                  <span class="when">{timeAgo(e.at)}</span>
-                </button>
-              ))}
+              <FileTable rows={uncommitted} onOpen={props.onOpen} loud />
             </section>
           )}
 
           {recent.length > 0 && (
             <section class="home-section">
               <h2>Recently changed</h2>
-              {recent.map((e) => (
-                <button class="home-file" key={e.rel} onClick={() => props.onOpen(e.rel)} title={e.rel}>
-                  <span class="where">
-                    {e.dir && <span class="dir">{e.dir}/</span>}
-                    <b>{docName(e.name)}</b>
-                  </span>
-                  <span class="when">{timeAgo(e.at)}</span>
-                </button>
-              ))}
+              <FileTable rows={recent} onOpen={props.onOpen} />
             </section>
           )}
 
           {commits.length > 0 && (
-          <section class="home-section">
-            <h2>Commits</h2>
+            <section class="home-section">
+              <h2>Commits</h2>
 
-            {commits.map((c) => (
-              <article class="commit-card" key={c.hash}>
-                <header>
-                  <span class="subject" title={c.subject}>
-                    {c.subject}
-                  </span>
-                  <span class="when" title={new Date(c.date).toLocaleString()}>
-                    {timeAgo(c.date)}
-                  </span>
-                  <span class="who">{c.author}</span>
-                </header>
-                {c.files.map((f) => (
-                  <button class="home-file" key={f.rel} onClick={() => props.onOpen(f.rel)} title={f.rel}>
-                    <span class="where">
-                      {f.dir && <span class="dir">{f.dir}/</span>}
-                      <b>{docName(f.name)}</b>
+              {commits.map((c) => (
+                <article class="commit-card" key={c.hash}>
+                  <header>
+                    <span class="subject" title={c.subject}>
+                      {c.subject}
                     </span>
-                    {f.status === 'A' && <span class="tag">added</span>}
-                  </button>
-                ))}
-              </article>
-            ))}
-          </section>
+                    <span class="when">
+                      <Ago at={c.date} />
+                    </span>
+                    <span class="who">{c.author}</span>
+                  </header>
+                  {/* The commit's own age heads the card, so the rows below carry none. */}
+                  <FileTable rows={c.files} onOpen={props.onOpen} when={false} />
+                </article>
+              ))}
+            </section>
           )}
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Files as a table: directory, name, age — three columns that line up, instead of three
+ * ragged runs of text.
+ *
+ * The directory is **right**-aligned against the names, so the eye follows one straight edge
+ * down the page, and a run of files from the same folder states it once via `rowspan` rather
+ * than repeating it eight times. That repetition is exactly what made the list hard to scan:
+ * in a plans tree most rows share a parent, and the folder is only interesting where it
+ * changes.
+ */
+function FileTable(props: {
+  rows: Array<Pick<RecentEntry, 'rel' | 'dir' | 'name' | 'status'> & { at?: number }>;
+  onOpen: (rel: string) => void;
+  /** Uncommitted rows are the loud ones — a green tag rather than an amber one. */
+  loud?: boolean;
+  when?: boolean;
+}) {
+  const showWhen = props.when !== false;
+
+  // How many rows each directory cell spans. 0 means "a cell above already covers this row".
+  const spans = props.rows.map((r, i) => {
+    if (i > 0 && props.rows[i - 1]!.dir === r.dir) return 0;
+    let n = 1;
+    while (i + n < props.rows.length && props.rows[i + n]!.dir === r.dir) n++;
+    return n;
+  });
+
+  return (
+    <table class={`home-table${props.loud ? ' loud' : ''}`}>
+      <tbody>
+        {props.rows.map((r, i) => (
+          <tr key={r.rel} onClick={() => props.onOpen(r.rel)} title={r.rel}>
+            {spans[i]! > 0 && (
+              <td class="dir" rowSpan={spans[i]}>
+                <Dir dir={r.dir} />
+              </td>
+            )}
+            <td class="name">
+              <span class="link">{docName(r.name)}</span>
+              {tagOf(r.status, props.loud) && <span class="tag">{tagOf(r.status, props.loud)}</span>}
+            </td>
+            {showWhen && (
+              <td class="when">
+                <Ago at={r.at ?? 0} />
+              </td>
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/**
+ * Uncommitted rows label every state; a committed row is only worth marking when the commit
+ * *added* the file, which is the one thing its subject may not say.
+ */
+function tagOf(status: string | undefined, loud?: boolean): string | null {
+  if (!status) return null;
+  if (loud) return status === 'untracked' ? 'new' : status;
+  return status === 'A' ? 'added' : null;
+}
+
+/** `Plans/PRF-55` — the last segment bold, since that is the one that names the folder. */
+function Dir({ dir }: { dir: string }) {
+  if (!dir) return <span class="dir-path root">/</span>;
+  const cut = dir.lastIndexOf('/');
+  return (
+    <span class="dir-path">
+      {cut >= 0 && <span class="up">{dir.slice(0, cut + 1)}</span>}
+      <b>{dir.slice(cut + 1)}</b>
+    </span>
   );
 }

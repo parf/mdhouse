@@ -5,7 +5,8 @@ import type { SearchResult } from '../lib/search';
 import type { Mark } from '../lib/prefs';
 import { buildTree, fuzzyScore, type Node } from './tree-model';
 import { Tree } from './Tree';
-import { timeAgo, highlightRanges, docName } from './format';
+import { highlightRanges, docName } from './format';
+import { Ago } from './Ago';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
   IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
@@ -406,7 +407,7 @@ function Recents(props: SidebarProps) {
             <span class="hit-name">{docName(e.name)}</span>
             <span class="meta">
               {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
-              <span>{timeAgo(e.at)}</span>
+              <Ago at={e.at} />
               {e.author && props.tab !== 'mine' && <span class="who">{e.author}</span>}
             </span>
           </span>
