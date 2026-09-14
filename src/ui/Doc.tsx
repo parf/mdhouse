@@ -52,6 +52,12 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
   const [tocOpen, setTocOpen] = useState(true);
   /** Deepest heading level the contents list shows. H1–H2 by default; the H3 chip widens it. */
   const [tocDepth, setTocDepth] = useState(2);
+  /**
+   * Full-bleed reading. The measure is capped at 900px because prose is easier to read that
+   * way, but a document that is mostly wide tables or long code lines wants the window. Kept
+   * across navigation — it is a way of reading, not a property of one file.
+   */
+  const [fullWidth, setFullWidth] = useState(false);
 
   // In-app navigation: a local .md link should not reload the page.
   useEffect(() => {
@@ -139,7 +145,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
   const hasSubs = doc.headings.some((h) => h.level === 3);
 
   return (
-    <article class="doc-wrap">
+    <article class={`doc-wrap${fullWidth ? ' full' : ''}`}>
       <header class="doc-head">
         <div class="crumbs">
           {dirs.map((d, i) => {
@@ -182,6 +188,14 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
           )}
 
           <span class="doc-actions">
+            <button
+              class="icon-btn wide-toggle"
+              aria-pressed={fullWidth}
+              title={fullWidth ? 'Back to a reading column' : 'Use the full window width'}
+              onClick={() => setFullWidth((w) => !w)}
+            >
+              {'<=>'}
+            </button>
             <button
               class="icon-btn"
               title={isFav ? 'Unfavorite' : 'Favorite'}

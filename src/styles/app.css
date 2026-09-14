@@ -385,6 +385,8 @@ main {
 /* ── document ───────────────────────────────────────────────────────────── */
 
 .doc-wrap { max-width: 900px; margin: 0 auto; padding: 22px 30px 120px; }
+/* Prose reads better in a column; tables and long code lines would rather have the window. */
+.doc-wrap.full { max-width: none; }
 
 .doc-head { margin-bottom: 18px; }
 .crumbs { font-size: 12px; color: var(--fg-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
@@ -397,6 +399,7 @@ main {
 .doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--fg-faint); align-items: center; }
 .doc-meta .who { color: var(--fg-muted); }
+.doc-actions .wide-toggle { font: 600 11px var(--mono); letter-spacing: -0.04em; padding: 2px 4px; }
 .doc-actions { display: flex; gap: 4px; margin-left: auto; }
 
 /* Contents on the left, history on the right; they stack when the column is narrow. */
