@@ -169,3 +169,16 @@ directory has no history, so recents and the history panel correctly offer nothi
 Verified: `/rd/tmp` 13 files, matching `find /rd/tmp -name '*.md' | wc -l`. No regression —
 `/rd/vhosts/realty` 1 047 / 1 repo, `~/src` 1 039 / 26 repos. `test/scan.test.ts` covers both
 halves: a tracked root ignores its `tmp/`, and that same `tmp/` as a root lists its files.
+
+## B.6 — Recent on a root git knows nothing about
+`mdhouse /rd/tmp` listed its files but had an empty Recent: with no repository, there is no
+working status and no log, and the mtime list had been dropped when the two recents tabs were
+collapsed into one.
+
+`Store.recents()` now tops the list up by modification time once git has said everything it
+has to say. A root git covers fully is unaffected — the commits fill the limit first. A file
+in no repository is untracked by definition, so it is labelled and coloured as such, which
+also makes it yours: nobody else has a claim on a file that was never committed.
+
+Verified: `/rd/tmp` 13 entries, newest first, all marked untracked; `/rd/vhosts/realty`
+unchanged at 80 entries, all from commits.

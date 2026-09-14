@@ -154,6 +154,11 @@ export class Store {
    * files in a different sequence. Uncommitted work is what "recent" actually means while
    * you are editing, and it is always yours, so it sorts to the top and needs no committer
    * filter. Muted entries are dropped from both halves.
+   *
+   * Whatever git cannot account for is topped up by modification time, so a root git knows
+   * nothing about — `/rd/tmp`, a scratch folder, a directory outside any repository — still
+   * has a working Recent rather than an empty one. A file in no repository is untracked by
+   * definition, which is how it is labelled and coloured.
    */
   async recents(root: Root, limit: number, includeIgnored: boolean): Promise<RecentEntry[]> {
     const scan = await this.scan(root, includeIgnored);
@@ -200,6 +205,26 @@ export class Store {
         hash: c.hash.slice(0, 8),
         status: c.status,
       });
+    }
+
+    // Everything git had to say, said. Fill the rest by modification time.
+    if (out.length < limit) {
+      const rest = scan.files
+        .filter((f) => !seen.has(f.rel) && !this.prefs.hasMark(root.path, f.rel, 'muted'))
+        .sort((a, b) => b.mtime - a.mtime)
+        .slice(0, limit - out.length);
+
+      for (const f of rest) {
+        out.push({
+          rel: f.rel,
+          name: f.name,
+          dir: f.dir,
+          at: f.mtime,
+          // No repository owns it, so it is untracked — the same standing as uncommitted work,
+          // and nobody else's to claim.
+          ...(f.repo ? {} : { status: 'untracked', uncommitted: true }),
+        });
+      }
     }
     return out.slice(0, limit);
   }
