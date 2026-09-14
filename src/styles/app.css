@@ -218,6 +218,7 @@ main {
 .tabs button[aria-selected="true"] { background: var(--bg-raised); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border-strong); }
 
 .filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--fg-muted); }
+.filters .filler { flex: 1 1 auto; }
 .filters select {
   font: inherit;
   color: inherit;

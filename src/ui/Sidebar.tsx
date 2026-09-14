@@ -25,6 +25,15 @@ const TABS: Array<{ id: Tab; label: string; title: string; Icon: (p: { size?: nu
   { id: 'mine', label: 'Mine', title: 'My uncommitted work and my recent commits', Icon: IconUser },
 ];
 
+/** Which halves of a search are shown: matching file names, matching file contents, or both. */
+export interface SearchIn {
+  names: boolean;
+  text: boolean;
+}
+
+/** Narrows search results to the files in the recents list, or to the user's own. */
+export type SearchScope = 'all' | 'recent' | 'mine';
+
 /** The tabs that read the recents list. 'mine' is a filter over the same payload. */
 export const WANTS_RECENTS = new Set<Tab>(['recent', 'mine']);
 
@@ -48,6 +57,10 @@ export interface SidebarProps {
   onPickRoot: (id: string) => void;
   onTab: (tab: Tab) => void;
   onQuery: (q: string) => void;
+  searchIn: SearchIn;
+  searchScope: SearchScope;
+  onSearchIn: (key: keyof SearchIn) => void;
+  onSearchScope: (scope: SearchScope) => void;
   onAuthor: (author: string) => void;
   onToggleIgnored: () => void;
   onToggleDir: (path: string) => void;
@@ -150,6 +163,34 @@ export function Sidebar(props: SidebarProps) {
                 <IconX size={13} />
               </button>
             )}
+          </div>
+        )}
+
+        {query && wide && (
+          <div class="filters">
+            <button class="chip" aria-pressed={props.searchIn.names} onClick={() => props.onSearchIn('names')}>
+              names
+            </button>
+            <button class="chip" aria-pressed={props.searchIn.text} onClick={() => props.onSearchIn('text')}>
+              contents
+            </button>
+            <span class="filler" />
+            <button
+              class="chip"
+              aria-pressed={props.searchScope === 'recent'}
+              onClick={() => props.onSearchScope('recent')}
+              title="Only files that are uncommitted or recently committed"
+            >
+              <IconClock size={11} /> recent
+            </button>
+            <button
+              class="chip"
+              aria-pressed={props.searchScope === 'mine'}
+              onClick={() => props.onSearchScope('mine')}
+              title="Only my uncommitted work and my recent commits"
+            >
+              <IconUser size={11} /> mine
+            </button>
           </div>
         )}
 
@@ -357,36 +398,56 @@ function Recents(props: SidebarProps) {
 }
 
 function SearchResults(props: SidebarProps & { nameHits: Array<{ file: { rel: string; name: string; dir: string } }> }) {
-  const { search, searching, nameHits } = props;
+  const { search, searching, searchIn, searchScope } = props;
+
+  /**
+   * The scope filters reuse the recents payload rather than asking the server for a second
+   * opinion: it already says what is uncommitted and who committed what, and it is the same
+   * set the Recent and Mine tabs show, so "search within recent" means exactly what the
+   * neighbouring tab means.
+   */
+  const inScope = useMemo<((rel: string) => boolean) | null>(() => {
+    if (searchScope === 'all') return null;
+    const me = props.tree?.user ?? null;
+    const entries = props.recents ?? [];
+    const allowed = new Set(
+      (searchScope === 'mine' ? entries.filter((e) => isMine(e, me)) : entries).map((e) => e.rel),
+    );
+    return (rel) => allowed.has(rel);
+  }, [searchScope, props.recents, props.tree]);
+
+  const nameHits = inScope ? props.nameHits.filter((h) => inScope(h.file.rel)) : props.nameHits;
+  const textHits = search ? (inScope ? search.hits.filter((h) => inScope(h.rel)) : search.hits) : [];
+  const pending = props.recents === null && searchScope !== 'all';
+
+  if (pending) return <p class="empty">Loading…</p>;
 
   return (
     <div>
-      {nameHits.length > 0 && (
+      {searchIn.names && (
         <>
           <div class="group-title">Files</div>
+          {!nameHits.length && <p class="empty">No file names match.</p>}
           {nameHits.map(({ file }) => (
             <button class="hit" key={file.rel} onClick={() => props.onOpen(file.rel)} title={file.rel}>
-              <span class="hit-path">
-                <span class="hit-name">{file.name}</span>
-                <span class="hit-dir">{file.dir}</span>
-              </span>
+              <HitPath name={file.name} dir={file.dir} />
             </button>
           ))}
         </>
       )}
 
-      <div class="group-title">
-        In contents {searching && <span class="spinner" style={{ display: 'inline-block', verticalAlign: -2 }} />}
-      </div>
+      {searchIn.text && (
+        <div class="group-title">
+          In contents {searching && <span class="spinner" style={{ display: 'inline-block', verticalAlign: -2 }} />}
+        </div>
+      )}
 
-      {search && !search.hits.length && !searching && <p class="empty">No matches.</p>}
+      {searchIn.text && search && !textHits.length && !searching && <p class="empty">No matches.</p>}
 
-      {search?.hits.map((hit, i) => (
+      {searchIn.text &&
+        textHits.map((hit, i) => (
         <button class="hit" key={`${hit.rel}:${hit.line}:${i}`} onClick={() => props.onOpen(hit.rel, hit.line)} title={hit.rel}>
-          <span class="hit-path">
-            <span class="hit-name">{hit.rel.split('/').pop()}</span>
-            <span class="hit-dir">{hit.rel.split('/').slice(0, -1).join('/')}</span>
-          </span>
+          <HitPath name={hit.rel.split('/').pop()!} dir={hit.rel.split('/').slice(0, -1).join('/')} />
           <div class="hit-line">
             {highlightRanges(hit.text, hit.ranges).map((part, n) =>
               part.hit ? <mark key={n}>{part.text}</mark> : <span key={n}>{part.text}</span>,
@@ -395,7 +456,7 @@ function SearchResults(props: SidebarProps & { nameHits: Array<{ file: { rel: st
         </button>
       ))}
 
-      {search?.truncated && <p class="empty">More matches exist — narrow the search.</p>}
+      {searchIn.text && search?.truncated && <p class="empty">More matches exist — narrow the search.</p>}
     </div>
   );
 }

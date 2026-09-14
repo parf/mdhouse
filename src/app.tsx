@@ -4,7 +4,7 @@ import { api, connectLive, type DocPayload, type LiveMessage, type RootInfo } fr
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
-import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab } from './ui/Sidebar';
+import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
 import { ancestors } from './ui/tree-model';
 import { IconPanel, IconSearch } from './ui/icons';
@@ -44,6 +44,8 @@ function App() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const [query, setQuery] = useState('');
+  const [searchIn, setSearchIn] = useState<SearchIn>({ names: true, text: true });
+  const [searchScope, setSearchScope] = useState<SearchScope>('all');
   const [search, setSearch] = useState<SearchResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [recents, setRecents] = useState<RecentEntry[] | null>(null);
@@ -98,9 +100,11 @@ function App() {
 
   // Recents and Mine read the same list — the second is a filter over the first, so switching
   // between them costs no request.
+  // The scope filters read the same list, so a search that narrows to recent or mine needs
+  // it loaded even when the recents tab was never opened.
   useEffect(() => {
-    if (WANTS_RECENTS.has(tab)) void reloadRecents();
-  }, [tab, reloadRecents]);
+    if (WANTS_RECENTS.has(tab) || searchScope !== 'all') void reloadRecents();
+  }, [tab, searchScope, reloadRecents]);
 
   // Document load, keyed on the URL.
   const loadSeq = useRef(0);
@@ -134,7 +138,9 @@ function App() {
   // Content search is debounced; name matching in the sidebar is instant and local.
   useEffect(() => {
     const q = query.trim();
-    if (!q || !rootId) {
+    // With the contents filter off there is nothing to ask the server for: name matching
+    // runs on the tree the client already holds.
+    if (!q || !rootId || !searchIn.text) {
       setSearch(null);
       setSearching(false);
       return;
@@ -148,7 +154,7 @@ function App() {
         .finally(() => setSearching(false));
     }, 160);
     return () => clearTimeout(timer);
-  }, [query, rootId, showIgnored]);
+  }, [query, rootId, showIgnored, searchIn.text]);
 
   // ── live updates ────────────────────────────────────────────────────────
 
@@ -294,6 +300,16 @@ function App() {
           onPickRoot={setRootId}
           onTab={setTab}
           onQuery={setQuery}
+          searchIn={searchIn}
+          searchScope={searchScope}
+          onSearchIn={(key) =>
+            setSearchIn((prev) => {
+              const next = { ...prev, [key]: !prev[key] };
+              // Turning both off would show nothing at all; flip to the other one instead.
+              return next.names || next.text ? next : { names: key !== 'names', text: key !== 'text' };
+            })
+          }
+          onSearchScope={(scope) => setSearchScope((prev) => (prev === scope ? 'all' : scope))}
           onAuthor={setAuthorFilter}
           onToggleIgnored={() => setShowIgnored((v) => !v)}
           onToggleDir={toggleDir}

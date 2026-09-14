@@ -144,3 +144,13 @@ whose history is longer than the window, to find the creating commit.
 The directory crumbs above a document title are buttons: a click switches the sidebar to the
 tree, expands the path down to that folder, scrolls it into view and flashes the row. There
 is no directory page to link to — the tree *is* the directory view.
+
+## D.1 — Search filters
+Four chips under the search box: **names** and **contents** choose which half of the result
+is shown — turning contents off also stops the request, since name matching never needed the
+server — and **recent** / **mine** narrow both halves to the files the neighbouring tabs
+list. They reuse the recents payload rather than asking the server a second question, so
+"search within recent" means exactly what the Recent tab means, and the filter is instant.
+
+Verified on `/rd/vhosts/realty`: `nginx` matches 93 lines in 41 files; with *recent* on, 6
+lines in 1 file, matching the recents list by hand.
