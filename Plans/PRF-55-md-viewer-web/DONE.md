@@ -316,3 +316,13 @@ and the age each keep a single position from the top of the page to the bottom.
 Verified on `/rd/tmp` (13 rows collapsing to three directory cells: ×5, `/`, ×7, every file
 name on one left edge) and on `/rd/vhosts/realty` (28 commit cards, files grouped by folder,
 the five commits of the current author tinted).
+
+## M.1 — One mdhouse per port
+Bun turns `SO_REUSEPORT` on by default, so a second `mdhouse` binds a port that is already
+serving and the kernel splits requests between the two processes. With two trees open on 7777,
+roughly every other request landed in the wrong one and the document it asked for was "not
+found" — the tree in the sidebar and the document being fetched came from different servers.
+
+`Bun.serve` now passes `reusePort: false`, and the CLI turns the resulting `EADDRINUSE` into
+the message that actually helps: *port 7777 is already in use — another mdhouse is probably
+running there. Use that one, stop it, or pass --port <n>.*

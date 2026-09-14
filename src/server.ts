@@ -55,6 +55,10 @@ export function serve(opts: ServeOptions) {
     port,
     hostname,
     development: false,
+    // Bun turns SO_REUSEPORT on by default, which lets a second `mdhouse` bind the same port
+    // and the kernel split requests between two processes serving two different trees — every
+    // other click lands in the wrong one and 404s. Refuse the port instead, loudly.
+    reusePort: false,
 
     routes: {
       '/': index,

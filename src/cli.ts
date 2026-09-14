@@ -91,15 +91,27 @@ for (const dir of opts.dirs) {
 const registry = await Registry.create(dirs, opts.rw);
 const prefs = await Prefs.load();
 
-const { server, watcher } = serve({
-  registry,
-  prefs,
-  port: opts.port,
-  hostname: opts.host,
-  noGit: opts.noGit,
-  gitLogLimit: opts.gitLog,
-  includeIgnoredDefault: opts.all,
-});
+let started: ReturnType<typeof serve>;
+try {
+  started = serve({
+    registry,
+    prefs,
+    port: opts.port,
+    hostname: opts.host,
+    noGit: opts.noGit,
+    gitLogLimit: opts.gitLog,
+    includeIgnoredDefault: opts.all,
+  });
+} catch (err) {
+  const code = (err as { code?: string }).code;
+  if (code === 'EADDRINUSE') {
+    console.error(`mdhouse: port ${opts.port} is already in use — another mdhouse is probably`);
+    console.error('         running there. Use that one, stop it, or pass --port <n>.');
+    process.exit(1);
+  }
+  throw err;
+}
+const { server, watcher } = started;
 
 const url = `http://${opts.host}:${server.port}`;
 console.log(`mdhouse  ${url}`);
