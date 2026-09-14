@@ -12,7 +12,7 @@ import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { render, splitFrontmatter } from './lib/render';
 import { searchContent } from './lib/search';
-import { fileHistory } from './lib/git';
+import { fileHistory, authorship } from './lib/git';
 import { Watcher } from './lib/watch';
 
 export interface ServeOptions {
@@ -115,6 +115,9 @@ export function serve(opts: ServeOptions) {
         });
 
         const stat = await file.stat();
+        const where = opts.noGit ? null : await store.repoFor(loc.root, loc.rel);
+        const by = where ? await authorship(where.repo, where.repoRel) : null;
+
         return json({
           root: loc.root.id,
           rel: loc.rel,
@@ -125,6 +128,12 @@ export function serve(opts: ServeOptions) {
           mtime: stat.mtimeMs,
           size: stat.size,
           marks: prefs.marksFor(loc.root.path, loc.rel),
+          authors: by?.last
+            ? {
+                created: by.created && { name: by.created.author, email: by.created.email, at: by.created.date },
+                last: { name: by.last.author, email: by.last.email, at: by.last.date, hash: by.last.hash.slice(0, 8) },
+              }
+            : null,
           ...rendered,
         });
       },

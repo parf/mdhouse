@@ -23,6 +23,11 @@ export interface DocPayload {
   mtime: number;
   size: number;
   marks: Mark[];
+  /** Who created the file and who last committed it, when git knows. */
+  authors: {
+    created: { name: string; email: string; at: number } | null;
+    last: { name: string; email: string; at: number; hash: string };
+  } | null;
   html: string;
   headings: Heading[];
   hasMermaid: boolean;

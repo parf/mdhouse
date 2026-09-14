@@ -396,6 +396,7 @@ main {
 .crumbs > span:has(.here) { display: flex; align-items: baseline; }
 .doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--fg-faint); align-items: center; }
+.doc-meta .who { color: var(--fg-muted); }
 .doc-actions { display: flex; gap: 4px; margin-left: auto; }
 
 /* Contents on the left, history on the right; they stack when the column is narrow. */

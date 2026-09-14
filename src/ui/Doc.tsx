@@ -163,6 +163,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
           <span title={new Date(doc.mtime).toLocaleString()}>
             <IconClock size={12} /> {timeAgo(doc.mtime)}
           </span>
+          <Authors authors={doc.authors} />
           {doc.tasks.total > 0 && (
             <span>
               {doc.tasks.done}/{doc.tasks.total} done
@@ -220,6 +221,28 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
 
       <div ref={body} class="md" dangerouslySetInnerHTML={{ __html: doc.html }} />
     </article>
+  );
+}
+
+/**
+ * Who wrote the file and who last touched it, as `first … last` — collapsed to one name when
+ * they are the same person, which in a plan folder they usually are.
+ */
+function Authors({ authors }: { authors: DocPayload['authors'] }) {
+  if (!authors) return null;
+  const { created, last } = authors;
+  const same = !created || (created.email ? created.email === last.email : created.name === last.name);
+
+  return (
+    <span class="who" title={`Last commit ${last.hash}, ${timeAgo(last.at)}`}>
+      {!same && (
+        <>
+          <span title={`Created ${timeAgo(created.at)}`}>{created.name}</span>
+          <span class="sep"> … </span>
+        </>
+      )}
+      {last.name}
+    </span>
   );
 }
 

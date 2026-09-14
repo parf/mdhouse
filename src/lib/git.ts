@@ -176,6 +176,43 @@ export async function fileHistory(repo: string, repoRelPath: string, limit = 20)
   return { commits, created: birth[0] ?? null, truncated: true };
 }
 
+/**
+ * Who wrote a file and who last touched it: the creating commit and the newest one.
+ *
+ * Two processes in parallel, both `-1`-shaped, because this runs on every document open and
+ * the header only wants two names. The heavier `fileHistory()` is still what the history
+ * panel asks for when it is opened.
+ */
+export async function authorship(
+  repo: string,
+  repoRelPath: string,
+): Promise<{ created: Commit | null; last: Commit | null }> {
+  const [last, created] = await Promise.all([
+    oneCommit(repo, repoRelPath, ['-1']),
+    // --reverse orders oldest first; --diff-filter=A keeps only the commit that added the
+    // file, and --follow means a rename does not reset its authorship.
+    oneCommit(repo, repoRelPath, ['--follow', '--diff-filter=A', '--reverse']),
+  ]);
+  return { created, last };
+}
+
+/** The first commit of a `git log` shaped by `extra`, or null when there is none. */
+async function oneCommit(repo: string, repoRelPath: string, extra: string[]): Promise<Commit | null> {
+  const out = await git(repo, [
+    'log',
+    `--format=%H${FMT_SEP}%an${FMT_SEP}%ae${FMT_SEP}%aI${FMT_SEP}%s`,
+    ...extra,
+    '--',
+    repoRelPath,
+  ]);
+  const line = out?.split('\n').find((l) => l.trim());
+  if (!line) return null;
+
+  const [hash = '', author = '', email = '', iso = '', ...rest] = line.split(SEP);
+  const date = Date.parse(iso);
+  return { hash, author, email, date: Number.isNaN(date) ? 0 : date, subject: rest.join(SEP) };
+}
+
 /** `git log --follow --numstat` for one file, parsed. One process. */
 async function logNumstat(repo: string, repoRelPath: string, extra: string[]): Promise<Commit[]> {
   const out = await git(repo, [

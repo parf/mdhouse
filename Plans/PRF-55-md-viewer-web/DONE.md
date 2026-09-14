@@ -204,3 +204,15 @@ distinction still says something.
 
 The uncommitted colour coding moved to the left rule and the status tag, since the file name
 now carries the link colour instead.
+
+## K.2 — Authorship in the document header
+Beside the age, the document header now names who wrote the file and who last touched it:
+`6 d ago · Serg Parf … Iaroslav Argunov`, collapsed to a single name when they are the same
+person — which inside one plan folder they usually are.
+
+`authorship()` runs the two `git log` shapes in parallel: `-1` for the newest commit, and
+`--follow --diff-filter=A --reverse` for the commit that added the file, so a rename does not
+reset a document's authorship. Both are `-1`-shaped, because this runs on every document open;
+the heavier `fileHistory()` is still what the history panel asks for when it is expanded.
+
+A root git knows nothing about (`/rd/tmp`) reports no authors and the header simply omits them.
