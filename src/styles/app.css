@@ -553,6 +553,7 @@ main {
 .doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--fg-faint); align-items: center; }
 .doc-meta .who { color: var(--fg-muted); }
+.doc-meta .who .born { margin-left: 4px; color: var(--fg-faint); }
 .doc-actions { display: flex; gap: 4px; margin-left: auto; }
 
 /* Contents on the left, history on the right; they stack when the column is narrow. */
@@ -593,7 +594,6 @@ main {
 .gitlog .churn { display: flex; gap: 4px; }
 .gitlog .churn .plus { color: var(--ok); }
 .gitlog .churn .minus { color: var(--danger); }
-.gitlog .commit.created { border-top: 1px solid var(--border); border-bottom: 0; }
 .gitlog .empty { padding: 8px 0; }
 
 .toc {

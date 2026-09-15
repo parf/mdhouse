@@ -24,10 +24,6 @@ export interface Commit {
 
 export interface FileHistory {
   commits: Commit[];
-  /** The commit that introduced the file, even when it is older than the returned window. */
-  created: Commit | null;
-  /** True when more commits exist than were returned. */
-  truncated: boolean;
 }
 
 export interface GitChange extends Commit {
@@ -156,24 +152,17 @@ export async function workingStatus(repo: string, rootPath: string): Promise<Map
 }
 
 /**
- * The history of one file, newest first, with the line counts and the creation commit the
- * r-doc viewer shows. Lazy — this runs only when the history panel is opened, never during a
- * scan or a recents query.
+ * The last few commits to one file, newest first, with the line counts the r-doc viewer shows.
+ *
+ * One `git log`, nothing else: the document header already names who created the file and
+ * when — from `authorship()`, which the page fetches anyway — so the panel neither looks up
+ * the creating commit nor says whether older ones exist.
  *
  * `--follow` chases renames, which is the whole point for a docs tree where a plan folder
  * gets renamed when its ticket does.
  */
-export async function fileHistory(repo: string, repoRelPath: string, limit = 20): Promise<FileHistory> {
-  const commits = await logNumstat(repo, repoRelPath, [`-n${limit}`]);
-  if (!commits.length) return { commits, created: null, truncated: false };
-
-  // Fewer commits than asked for means we already have the oldest one, so the extra process
-  // is only paid for by a file with a long history.
-  if (commits.length < limit) {
-    return { commits, created: commits[commits.length - 1]!, truncated: false };
-  }
-  const birth = await logNumstat(repo, repoRelPath, ['--diff-filter=A', '--reverse']);
-  return { commits, created: birth[0] ?? null, truncated: true };
+export async function fileHistory(repo: string, repoRelPath: string, limit = 5): Promise<FileHistory> {
+  return { commits: await logNumstat(repo, repoRelPath, [`-n${limit}`]) };
 }
 
 /**

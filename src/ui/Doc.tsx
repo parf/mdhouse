@@ -264,7 +264,9 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
 
 /**
  * Who wrote the file and who last touched it, as `first … last` — collapsed to one name when
- * they are the same person, which in a plan folder they usually are.
+ * they are the same person, which in a plan folder they usually are — with the age of the
+ * file beside the name that created it. The line above already says when it last changed, so
+ * together they read as "touched six days ago, started a month ago by Andrei".
  */
 function Authors({ authors }: { authors: DocPayload['authors'] }) {
   if (!authors) return null;
@@ -277,13 +279,18 @@ function Authors({ authors }: { authors: DocPayload['authors'] }) {
 
   return (
     <span class="who" title={`Last commit ${last.hash}, ${timeAgo(last.at)}`}>
+      {created ? created.name : last.name}
+      {created && (
+        <span class="born" title={`Created ${new Date(created.at).toLocaleString()}`}>
+          (<Ago at={created.at} flame={false} />)
+        </span>
+      )}
       {!same && (
         <>
-          <span title={`Created ${timeAgo(created.at)}`}>{created.name}</span>
           <span class="sep"> … </span>
+          {last.name}
         </>
       )}
-      {last.name}
     </span>
   );
 }
@@ -349,16 +356,6 @@ function History({ p }: { p: string }) {
         </div>
       ))}
 
-      {log?.created && (
-        <div class="commit created">
-          <div class="commit-meta">
-            <span>created by</span>
-            <span class="who">{log.created.author}</span>
-            <Ago at={log.created.date} flame={false} />
-          </div>
-        </div>
-      )}
-      {log?.truncated && <p class="empty">Older commits exist.</p>}
     </details>
   );
 }

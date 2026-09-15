@@ -342,3 +342,12 @@ column and turned the page into a history browser with a document attached. It a
 now — the panel answers "what happened to this file lately", and five answers it — with the
 creating commit and an "older commits exist" line still below them. `/api/git/log` takes a
 `limit` (1-50) for anything that wants more later.
+
+## M.4 — Say the authorship once
+The header said "6 d ago · Andrei" and the history panel repeated it as "created by Andrei,
+1 mo ago". Now the header carries both halves — **`6 d ago · Andrei (1 mo ago) · 73/74 done`**,
+last change above, the name that started it and when beside it — and the panel is five commits
+and nothing else: no creation row, no "older commits exist".
+
+That also costs one git process less per document. `fileHistory()` is a single `git log` now;
+the creating commit comes from `authorship()`, which the page fetches anyway for the header.

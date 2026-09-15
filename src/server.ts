@@ -204,7 +204,7 @@ export function serve(opts: ServeOptions) {
         const url = new URL(req.url);
         const loc = await registry.resolve(url.searchParams.get('p') ?? '');
         if (!loc) return fail(403, 'path outside any root');
-        const empty = { commits: [], created: null, truncated: false };
+        const empty = { commits: [] };
         if (opts.noGit) return json(empty);
 
         const where = await store.repoFor(loc.root, loc.rel);
