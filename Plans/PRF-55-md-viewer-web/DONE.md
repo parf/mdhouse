@@ -1,16 +1,25 @@
 # DONE
 
+Sections **A–M** follow the plan's own lettering in [`TODO.md`](TODO.md); **N** is everything
+done after Phase 1 shipped that was never on it.
+
+Two trees recur in the verification notes. **The docs tree** is the primary target: about a
+thousand `.md` files in one repository, with tables, nested lists, task lists, `<details>`
+blocks and Cyrillic text. **The scratch tree** is a directory its own repository ignores —
+the case where git can see nothing at all. `~/src` is a folder of ~30 sibling repositories,
+which is what proves multi-repo discovery.
+
 ## A — Scaffold
 Bun project with TypeScript strict mode and Preact JSX; dependencies pinned
 (`markdown-it` + anchor/attrs/footnote, `preact`, `shiki`). `package.json`, `tsconfig.json`.
 
 ## B.1–B.3 — Roots and the file list
-`lib/roots.ts` (registry, path jail, `/rd` read-only, write chokepoint, URL mapping),
+`lib/roots.ts` (registry, path jail, write chokepoint, URL mapping),
 `lib/ignore.ts` (deny list seeded from r-doc's `docsSkipPatterns()` plus `.mdhouseignore`),
 `lib/scan.ts` (`git ls-files` per repo, directory walk elsewhere).
 
-Measured: `/rd/vhosts/realty` 1 036 files / 51 ms, 1 repo. `~/src` 1 051 files / 172 ms,
-30 repos discovered in one shallow pass. `/rd` correctly reported non-writable.
+Measured: **the docs tree** 1 036 files / 51 ms, 1 repo. `~/src` 1 051 files / 172 ms,
+30 repos discovered in one shallow pass. Both correctly reported non-writable.
 
 ## C — Rendering
 `lib/render.ts`. Verified on `Plans/RLM-1125-attom-tax-assessor/TODO.md` (9.4 KB, 70 ms,
@@ -23,7 +32,7 @@ Nested lists and multi-line blockquotes render correctly — both are r-doc pars
 
 ## D — Search
 `lib/search.ts`. ripgrep `--json` driver, streamed and capped, plus an in-process fallback.
-Verified against `/rd/vhosts/realty`: `?q=owner2_name` returns 16 hits across **6** files,
+Verified against **the docs tree**: `?q=owner2_name` returns 16 hits across **6** files,
 matching `rg -l owner2_name --glob '*.md'` exactly.
 
 Bug found and fixed during verification: ripgrep reports match offsets in **bytes** while
@@ -36,7 +45,7 @@ per repo; committer filtering client-side.
 
 Bug found and fixed: a literal NUL cannot travel inside an argv string, so the record
 separator truncated `--format` and every query returned nothing. Git's own `%x00` / `%x1f`
-escapes fixed it. 465 markdown changes parsed from `/rd` in 48 ms.
+escapes fixed it. 465 markdown changes parsed from a 1 300-file repository in 48 ms.
 
 Verified: 30 repos under `~/src` aggregate correctly; per-file history returns 13 commits
 for `Plans/RLM-1125-attom-tax-assessor/TODO.md`.
@@ -44,7 +53,7 @@ for `Plans/RLM-1125-attom-tax-assessor/TODO.md`.
 ## F — Server and client
 `server.ts`, `cli.ts`, `app.tsx`, `ui/*`, `styles/app.css`. Every endpoint exercised:
 roots, tree, doc, raw, asset, search, recents (both kinds), git/log, marks. Path jail returns
-403 for `../../../etc/passwd`. Multi-root mode tested with `~/src` + `/rd/vhosts/realty`
+403 for `../../../etc/passwd`. Multi-root mode tested with `~/src` + **the docs tree**
 together, including the root-prefixed URL form.
 
 Two fixes during bring-up: `ui/tree.ts` collided case-insensitively with `ui/Tree.tsx` and
@@ -66,14 +75,14 @@ connection is opened once.
 
 ## B.4 — Marks
 `lib/prefs.ts`. Favorite / muted / ignored persisted to `~/.config/mdhouse/prefs.json`, keyed
-by absolute root path. Confirmed working on the **read-only** `/rd` root, which is the point
+by absolute root path. Confirmed working on a **read-only** root, which is the point
 of keeping them outside the tree.
 
 ## H — Phase 1 shipped
 README rewritten. 27 tests across roots, render and search; `tsc --noEmit` clean.
 
-Read-only proof: after a full browsing session against `/rd/vhosts/realty`,
-`git -C /rd status --porcelain` is empty — zero modified, zero untracked.
+Read-only proof: after a full browsing session against **the docs tree**,
+`git -C <tree> status --porcelain` is empty — zero modified, zero untracked.
 
 Startup on the primary target: 1 036 files ready in ~50 ms, well inside the budget.
 
@@ -125,7 +134,7 @@ Three small things, all about the compact width where a recents list is a column
   up as a column, in a smaller face than the file name, and the first thing trimmed when the
   row runs out of room.
 
-Verified in the compact sidebar against `/rd/vhosts/realty`: rows read
+Verified in the compact sidebar against **the docs tree**: rows read
 `❖ DONE.md · RLM-1125-attom-tax-assessor`, and Kirill's commits are unmarked.
 
 ## K.1 — Per-file git history
@@ -140,7 +149,7 @@ whose history is longer than the window, to find the creating commit.
 
 `fileHistory()` now returns `{commits, created, truncated}` with `added`/`deleted` per commit.
 
-## M.3 — Clickable breadcrumbs
+## N.1 — Clickable breadcrumbs
 The directory crumbs above a document title are buttons: a click switches the sidebar to the
 tree, expands the path down to that folder, scrolls it into view and flashes the row. There
 is no directory page to link to — the tree *is* the directory view.
@@ -152,13 +161,13 @@ server — and **recent** / **mine** narrow both halves to the files the neighbo
 list. They reuse the recents payload rather than asking the server a second question, so
 "search within recent" means exactly what the Recent tab means, and the filter is instant.
 
-Verified on `/rd/vhosts/realty`: `nginx` matches 93 lines in 41 files; with *recent* on, 6
+Verified on **the docs tree**: `nginx` matches 93 lines in 41 files; with *recent* on, 6
 lines in 1 file, matching the recents list by hand.
 
 ## B.5 — A root its own repository ignores
-`mdhouse /rd/tmp` listed nothing. `/rd/.gitignore:81` ignores `tmp`, so
-`git ls-files -co --exclude-standard` correctly reported zero files for the whole root — and
-the scanner took that as the answer.
+Pointed at **the scratch tree**, mdhouse listed nothing. The repository's own `.gitignore`
+ignores that directory, so `git ls-files -co --exclude-standard` correctly reported zero files
+for the whole root — and the scanner took that as the answer.
 
 Git is not wrong: nothing there is tracked and nothing there will be. But the user pointed
 mdhouse at that directory deliberately. `scanRoot()` now asks `git check-ignore -q .` for the
@@ -166,12 +175,13 @@ root itself and, when the repository ignores it, falls through to the filesystem
 of the git listing. `repos` stays empty for such a root, which is accurate — an ignored
 directory has no history, so recents and the history panel correctly offer nothing.
 
-Verified: `/rd/tmp` 13 files, matching `find /rd/tmp -name '*.md' | wc -l`. No regression —
-`/rd/vhosts/realty` 1 047 / 1 repo, `~/src` 1 039 / 26 repos. `test/scan.test.ts` covers both
-halves: a tracked root ignores its `tmp/`, and that same `tmp/` as a root lists its files.
+Verified: **the scratch tree** 13 files, matching `find <tree> -name '*.md' | wc -l`. No
+regression — **the docs tree** 1 047 / 1 repo, `~/src` 1 039 / 26 repos. `test/scan.test.ts`
+covers both halves: a tracked root ignores its `tmp/`, and that same `tmp/` as a root lists
+its files.
 
 ## B.6 — Recent on a root git knows nothing about
-`mdhouse /rd/tmp` listed its files but had an empty Recent: with no repository, there is no
+**The scratch tree** listed its files but had an empty Recent: with no repository there is no
 working status and no log, and the mtime list had been dropped when the two recents tabs were
 collapsed into one.
 
@@ -180,7 +190,7 @@ has to say. A root git covers fully is unaffected — the commits fill the limit
 in no repository is untracked by definition, so it is labelled and coloured as such, which
 also makes it yours: nobody else has a claim on a file that was never committed.
 
-Verified: `/rd/tmp` 13 entries, newest first, all marked untracked; `/rd/vhosts/realty`
+Verified: **the scratch tree** 13 entries, newest first, all marked untracked; **the docs tree**
 unchanged at 80 entries, all from commits.
 
 ## H.4 — Recents rows, three lines
@@ -205,7 +215,7 @@ distinction still says something.
 The uncommitted colour coding moved to the left rule and the status tag, since the file name
 now carries the link colour instead.
 
-## K.2 — Authorship in the document header
+## N.2 — Authorship in the document header
 Beside the age, the document header now names who wrote the file and who last touched it:
 `6 d ago · Serg Parf … Iaroslav Argunov`, collapsed to a single name when they are the same
 person — which inside one plan folder they usually are.
@@ -215,9 +225,9 @@ person — which inside one plan folder they usually are.
 reset a document's authorship. Both are `-1`-shaped, because this runs on every document open;
 the heavier `fileHistory()` is still what the history panel asks for when it is expanded.
 
-A root git knows nothing about (`/rd/tmp`) reports no authors and the header simply omits them.
+A root git knows nothing about reports no authors, and the header simply omits them.
 
-## M.5 — H3 in the table of contents
+## N.3 — H3 in the table of contents
 The contents list shows H1 and H2, which is right for most documents and wrong for the long
 reference ones: a heading like `### Advanced: Z-order curves (Morton codes)` was reachable by
 URL fragment but invisible in the ToC.
@@ -233,7 +243,7 @@ entirely in H3 now gets a contents list instead of none.
 Verified on `.claude/GeoQ.md` (1 H1, 11 H2, 12 H3): 12 entries by default, 24 with the chip on,
 and the previously-missing anchor present in the widened list.
 
-## M.6 — Full-width reading
+## N.4 — Full-width reading
 A fit-to-width button in the document meta line drops the 900px measure and lets the document fill
 the pane, keeping the 30px side padding. Prose reads better in a column, which is why the cap
 is there — but a document that is mostly wide tables or long code lines would rather have the
@@ -246,7 +256,7 @@ The control is an inline SVG like every other icon in the header rather than a t
 two margins with an arrow pushing out to them, reversed to point inward once the document
 already fills the pane.
 
-## M.7 — Contents list, styled by depth
+## N.5 — Contents list, styled by depth
 The ToC distinguished levels by indentation alone, which reads as one grey block once a
 document has twenty headings. Depth is now carried by weight and colour as well: H1 bold in
 the body colour with a little air above it, H2 medium grey, H3 smaller and fainter with a
@@ -255,7 +265,7 @@ short tick before it so a third-level row is recognisable without measuring its 
 Rows became full-width links with a hover background, so the click target is the row rather
 than the words.
 
-## L.1 — The front page
+## N.6 — The front page
 `/` used to say "pick a file on the left". It now shows what changed in this root, grouped by
 **commit** rather than by file — the sidebar's Recent tab answers *which files changed*, this
 answers *what was done*, and a commit carrying its subject plus the four plan files it touched
@@ -274,10 +284,10 @@ says more than those four files listed separately.
 
 The root name in the sidebar header is the link to it. The page refetches on live events.
 
-Verified: `/rd/vhosts/realty` 28 commit cards (9 under *Mine*), `/rd/tmp` 13 files under
+Verified: **the docs tree** 28 commit cards (9 under *Mine*), **the scratch tree** 13 files under
 *Recently changed*, and the empty states differ per view.
 
-## L.2 — Age as a temperature
+## N.7 — Age as a temperature
 Every "3 h ago" in the app now goes through one `<Ago>` component that colours the label by how
 recent it is, so a column of timestamps reads as a gradient before a single one has been read.
 
@@ -290,7 +300,7 @@ history, where every row is a commit and the newest one is already first.
 Used by the front page (uncommitted, recently-changed and commit cards), the sidebar's Recent
 and Mine tabs, and the document header.
 
-## L.3 — One table for the whole page
+## N.8 — One table for the whole page
 The front page's three ragged runs of text became a single `<table>`: **directory | file | age**.
 Section titles and commit headers are rows that span all three columns; everything else is a
 file row.
@@ -313,11 +323,11 @@ and the age each keep a single position from the top of the page to the bottom.
   A page of a team's work shows your part of it without the Mine tab, and the symbol says it
   where colour alone would not.
 
-Verified on `/rd/tmp` (13 rows collapsing to three directory cells: ×5, `/`, ×7, every file
-name on one left edge) and on `/rd/vhosts/realty` (28 commit cards, files grouped by folder,
+Verified on **the scratch tree** (13 rows collapsing to three directory cells: ×5, `/`, ×7,
+every file name on one left edge) and on **the docs tree** (28 commit cards, files by folder,
 the five commits of the current author tinted).
 
-## M.1 — One mdhouse per port
+## N.9 — One mdhouse per port
 Bun turns `SO_REUSEPORT` on by default, so a second `mdhouse` binds a port that is already
 serving and the kernel splits requests between the two processes. With two trees open on 7777,
 roughly every other request landed in the wrong one and the document it asked for was "not
@@ -327,7 +337,7 @@ found" — the tree in the sidebar and the document being fetched came from diff
 the message that actually helps: *port 7777 is already in use — another mdhouse is probably
 running there. Use that one, stop it, or pass --port <n>.*
 
-## M.2 — History opens itself
+## N.10 — History opens itself
 The git history panel waited for a click. It now renders open and fetches as soon as the
 document is up, because the click bought nothing: the document was already on screen, so the
 only thing the wait produced was a wait.
@@ -336,14 +346,14 @@ It stays its own request — a `git log --follow --numstat` on a long history is
 that the document must never queue behind it — and collapsing the panel still means the next
 document skips the call.
 
-## M.3 — Five revisions, not twenty
+## N.11 — Five revisions, not twenty
 The history panel asked for twenty commits. On `claude-worklog.md` that filled the whole right
 column and turned the page into a history browser with a document attached. It asks for **five**
 now — the panel answers "what happened to this file lately", and five answers it — with the
 creating commit and an "older commits exist" line still below them. `/api/git/log` takes a
 `limit` (1-50) for anything that wants more later.
 
-## M.4 — Say the authorship once
+## N.12 — Say the authorship once
 The header said "6 d ago · Andrei" and the history panel repeated it as "created by Andrei,
 1 mo ago". Now the header carries both halves — **`6 d ago · Andrei (1 mo ago) · 73/74 done`**,
 last change above, the name that started it and when beside it — and the panel is five commits

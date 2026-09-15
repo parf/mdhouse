@@ -33,13 +33,13 @@ No server code ships to the browser.
 
 ## Contracts and invariants
 
-### Never write to `/rd`
+### Never write to a tree that did not ask for it
 
-`/rd` is the main development target and someone's working checkout at the same time. It is
-hard-coded read-only in `lib/roots.ts` (`READ_ONLY_ROOTS`), overridable only by an explicit
-`--writable <dir>`. Every disk write goes through the single chokepoint
-`Registry.writeFile()`, which refuses a non-writable root. Phase 1 calls it nowhere; it exists
-so later write-back cannot reach `/rd` by forgetting a check.
+Every root is read-only unless the user passed `--rw`: mdhouse is a viewer, and the trees it
+is pointed at are usually someone's working checkout. `Registry.create(specs, writable)` takes
+that single boolean, and every disk write in the codebase goes through the one chokepoint
+`Registry.writeFile()`, which refuses a read-only root. Phase 1 calls it nowhere; it exists so
+that write-back, when it lands, cannot reach a read-only tree by forgetting a check.
 
 ### The path jail
 
@@ -56,8 +56,8 @@ Extra roots earn a leading `/<rootId>/` segment. `Registry.docUrl()` and
 ### One git process per repository
 
 Recents, authors and status badges all come from a single `git log` and a single
-`git status` per repo. The viewer this replaces (`/rd` r-doc) shells out once per displayed
-row; that is the thing not to repeat. Committer filtering happens client-side on data already
+`git status` per repo. The PHP viewer this replaces shells out once per displayed row; that is
+the thing not to repeat. Committer filtering happens client-side on data already
 fetched.
 
 ### `data-line` on every rendered block
@@ -70,8 +70,8 @@ cheap later. Do not remove it.
 ### One anchor scheme
 
 Heading slugs are generated server-side by `markdown-it-anchor` and used unchanged by the ToC.
-The r-doc viewer has two competing schemes (`header-N` from PHP, slugs from JS) and links
-break between them. There is exactly one here.
+The viewer this replaces has two competing schemes (`header-N` from PHP, slugs from JS) and
+links break between them. There is exactly one here.
 
 ## Data sources
 
@@ -90,11 +90,13 @@ break between them. There is exactly one here.
 - Everything cached per root in `lib/store.ts`, invalidated by the filesystem watcher —
   never rebuilt per request.
 - Live updates are WebSocket pushes. **No polling anywhere**, by decision.
-- `git` and `ripgrep` are used when present and degraded gracefully when absent; the
-  sidebar footer says so when a fallback is in effect.
+- `git` and `ripgrep` are used when present and degraded gracefully when absent. The sidebar
+  footer shows `no git` when the git path was unavailable; the ripgrep fallback is currently
+  silent (`SearchResult.degraded` is never rendered).
 
 ## Canonical links
 
-- Prior art analysed: [`rd-md-viewer.local.md`](../../rd-md-viewer.local.md) — how the `/rd`
-  r-doc PHP viewer works, what to steal and what to avoid.
-- Plans convention this directory follows: `/rd/vhosts/realty/Plans/README.md`.
+- Prior art analysed: `rd-md-viewer.local.md` in the repository root — how the PHP viewer this
+  replaces works, what to steal and what to avoid. Local only; gitignored.
+- Plans convention this directory follows: the `Plans/README.md` of the docs tree — a
+  `Plans/<project>/` folder with `README` / `TODO` / `DONE` / `DECISIONS` and friends.
