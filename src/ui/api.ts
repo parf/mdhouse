@@ -64,7 +64,7 @@ export const api = {
   digest: (root: string, ignored: boolean, limit = 60) =>
     get<Digest>('/api/digest', { root, limit, ignored: ignored ? 1 : 0 }),
 
-  history: (p: string) => get<FileHistory>('/api/git/log', { p }),
+  history: (p: string, limit = 5) => get<FileHistory>('/api/git/log', { p, limit }),
 
   async setMark(root: string, path: string, mark: Mark, on: boolean): Promise<void> {
     await fetch('/api/marks', {

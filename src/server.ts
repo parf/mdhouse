@@ -209,7 +209,10 @@ export function serve(opts: ServeOptions) {
 
         const where = await store.repoFor(loc.root, loc.rel);
         if (!where) return json(empty);
-        return json(await fileHistory(where.repo, where.repoRel, 20));
+        // A handful of recent commits is what the panel is for; a worklog with two hundred of
+        // them made the page a history browser with a document attached.
+        const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 5, 1), 50);
+        return json(await fileHistory(where.repo, where.repoRel, limit));
       },
 
       '/api/marks': {

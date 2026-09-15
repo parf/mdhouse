@@ -335,3 +335,10 @@ only thing the wait produced was a wait.
 It stays its own request — a `git log --follow --numstat` on a long history is slow enough
 that the document must never queue behind it — and collapsing the panel still means the next
 document skips the call.
+
+## M.3 — Five revisions, not twenty
+The history panel asked for twenty commits. On `claude-worklog.md` that filled the whole right
+column and turned the page into a history browser with a document attached. It asks for **five**
+now — the panel answers "what happened to this file lately", and five answers it — with the
+creating commit and an "older commits exist" line still below them. `/api/git/log` takes a
+`limit` (1-50) for anything that wants more later.
