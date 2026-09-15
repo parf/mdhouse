@@ -24,11 +24,20 @@ with any directory that has `.md` files in it.
 ## ▸ Try it in a minute
 
 ```bash
+bun install -g mdhouse      # or: npm install -g mdhouse
+```
+
+<details>
+<summary>…or run it from a clone</summary>
+
+```bash
 git clone https://github.com/parf/mdhouse
 cd mdhouse
 bun install
 sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your PATH
 ```
+
+</details>
 
 ```bash
 mdhouse ~/notes                     # one docs tree

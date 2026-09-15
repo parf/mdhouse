@@ -7,6 +7,38 @@
   "bin": {
     "mdhouse": "./bin/mdhouse"
   },
+  "homepage": "https://github.com/parf/mdhouse#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/parf/mdhouse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/parf/mdhouse/issues"
+  },
+  "keywords": [
+    "markdown",
+    "viewer",
+    "docs",
+    "documentation",
+    "bun",
+    "git",
+    "markdown-server",
+    "notes",
+    "wiki",
+    "preact",
+    "ripgrep",
+    "mermaid"
+  ],
+  "engines": {
+    "bun": ">=1.4"
+  },
+  "files": [
+    "bin",
+    "src",
+    "doc",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "bun run src/cli.ts",
     "dev": "bun --hot run src/cli.ts .",
