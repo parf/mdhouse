@@ -60,6 +60,8 @@ by git status, then the files touched by the last N commits, filterable by commi
 is three lines — file, folder, commit subject — and a `❖` marks the ones that are yours.
 *Mine* narrows the list to your own work; all uncommitted changes count as yours.
 
+![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and ages that run from red to grey](doc/recent.png)
+
 **A front page.** Click the root name in the sidebar and you get the same material grouped by
 **commit** instead of by file: each commit with its subject, its age and the documents it is
 the newest change to, in one aligned table. Yours are tinted green and marked `❖`. A commit
