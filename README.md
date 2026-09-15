@@ -193,4 +193,4 @@ and authorship, marks, live updates. Read-only end to end.
 If you try it on your own tree and something looks off, an issue with the shape of the
 directory is the most useful thing you can send.
 
-MIT licensed.
+Licensed under the **GNU General Public License v2** — see [`LICENSE`](LICENSE).

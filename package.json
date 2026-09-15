@@ -2,6 +2,7 @@
   "name": "mdhouse",
   "version": "0.1.0",
   "description": "Browsable, searchable web viewer for every .md file under a directory",
+  "license": "GPL-2.0-only",
   "type": "module",
   "bin": {
     "mdhouse": "./bin/mdhouse"
