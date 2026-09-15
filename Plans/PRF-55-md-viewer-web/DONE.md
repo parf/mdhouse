@@ -326,3 +326,12 @@ found" — the tree in the sidebar and the document being fetched came from diff
 `Bun.serve` now passes `reusePort: false`, and the CLI turns the resulting `EADDRINUSE` into
 the message that actually helps: *port 7777 is already in use — another mdhouse is probably
 running there. Use that one, stop it, or pass --port <n>.*
+
+## M.2 — History opens itself
+The git history panel waited for a click. It now renders open and fetches as soon as the
+document is up, because the click bought nothing: the document was already on screen, so the
+only thing the wait produced was a wait.
+
+It stays its own request — a `git log --follow --numstat` on a long history is slow enough
+that the document must never queue behind it — and collapsing the panel still means the next
+document skips the call.

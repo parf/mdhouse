@@ -292,12 +292,15 @@ function Authors({ authors }: { authors: DocPayload['authors'] }) {
  * Per-file git history, the one genuinely good idea in the r-doc viewer's document page:
  * who created the file, and the last commits with their line counts.
  *
- * It costs a `git log` per file, so it is fetched when the panel is first opened and not
- * before — a reader who never asks never pays. `--follow` means a renamed plan folder keeps
- * its history, which is exactly the case this docs tree hits.
+ * It costs a `git log` per file — slow enough on a long history that it must not hold up the
+ * document — so it stays its own request, fired once the page is up and filled in when it
+ * lands. The panel is open by default: waiting for a click bought nothing but a click, since
+ * the document was already on screen by then. Collapse it and the next document skips the
+ * call entirely. `--follow` means a renamed plan folder keeps its history, which is exactly
+ * the case this docs tree hits.
  */
 function History({ p }: { p: string }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [log, setLog] = useState<FileHistory | null>(null);
   const [failed, setFailed] = useState(false);
 
