@@ -9,7 +9,19 @@
 import type { Registry, Root } from './roots';
 import { loadRootRules, type IgnoreRules } from './ignore';
 import { scanRoot, type MdFile, type ScanResult } from './scan';
-import { recentChanges, workingStatus, currentUser, subdirOf, type FileStatus, type GitChange } from './git';
+import {
+  recentChanges,
+  workingStatus,
+  currentUser,
+  subdirOf,
+  authorship,
+  type FileStatus,
+  type GitChange,
+  type Commit,
+} from './git';
+
+/** Who created a file and who last touched it. */
+export type Authorship = { created: Commit | null; last: Commit | null };
 import type { Prefs, Mark } from './prefs';
 
 export interface FileEntry extends MdFile {
@@ -74,6 +86,7 @@ interface RootState {
   scans: Map<boolean, ScanResult>;
   status?: Map<string, FileStatus>;
   changes?: GitChange[];
+  authors?: Map<string, Authorship>;
   user?: { name: string; email: string } | null;
 }
 
@@ -107,6 +120,7 @@ export class Store {
     if (!s) return;
     delete s.status;
     delete s.changes;
+    delete s.authors;
     if (!gitOnly) s.scans.clear();
   }
 
@@ -334,6 +348,31 @@ export class Store {
   }
 
   /** Repo and repo-relative path for a file, for the lazy per-file history call. */
+  /**
+   * Who created a file and who last touched it, cached per file.
+   *
+   * The creating commit costs a `git log --follow --diff-filter=A --reverse`, which cannot
+   * stop early: git has to walk the whole history to know which end is the oldest. On a
+   * hundred-thousand-commit repository that is most of a second, for two names in a header.
+   * It is the same answer every time until git moves, so it is computed once and then kept
+   * until the watcher says the repository changed.
+   */
+  async authorship(root: Root, rel: string): Promise<Authorship | null> {
+    if (this.opts.noGit) return null;
+    const s = await this.stateFor(root);
+    s.authors ??= new Map();
+
+    const hit = s.authors.get(rel);
+    if (hit) return hit;
+
+    const where = await this.repoFor(root, rel);
+    if (!where) return null;
+
+    const by = await authorship(where.repo, where.repoRel);
+    s.authors.set(rel, by);
+    return by;
+  }
+
   async repoFor(root: Root, rel: string): Promise<{ repo: string; repoRel: string } | null> {
     const scan = await this.scan(root, true);
     const file = scan.files.find((f) => f.rel === rel);

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { api, type DocPayload } from './api';
-import type { FileHistory } from '../lib/git';
+import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
 import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide } from './icons';
 import { timeAgo } from './format';
@@ -59,6 +58,34 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
    * across navigation — it is a way of reading, not a property of one file.
    */
   const [fullWidth, setFullWidth] = useState(false);
+
+  /**
+   * Git history, fetched on its own once the document is up.
+   *
+   * It carries the authorship line in the header as well as the panel beside the text.
+   * Finding the commit that created a file costs a `--follow --diff-filter=A --reverse` log,
+   * which git cannot answer without walking the whole history — most of a second on a large
+   * repository. That used to be inside `/api/doc`, so every document waited on it before a
+   * word was rendered. Now the page paints first and the two names arrive a moment later.
+   */
+  const [log, setLog] = useState<HistoryPayload | null>(null);
+  const [logFailed, setLogFailed] = useState(false);
+  const docPath = doc ? `${doc.root}/${doc.rel}` : null;
+
+  useEffect(() => {
+    setLog(null);
+    setLogFailed(false);
+    if (!docPath) return;
+
+    let live = true;
+    api
+      .history(docPath)
+      .then((h) => live && setLog(h))
+      .catch(() => live && setLogFailed(true));
+    return () => {
+      live = false;
+    };
+  }, [docPath]);
 
   // In-app navigation: a local .md link should not reload the page.
   useEffect(() => {
@@ -176,7 +203,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
           <span>
             <IconClock size={12} /> <Ago at={doc.mtime} />
           </span>
-          <Authors authors={doc.authors} />
+          <Authors authors={log?.authors ?? null} />
           {doc.tasks.total > 0 && (
             <span>
               {doc.tasks.done}/{doc.tasks.total} done
@@ -254,7 +281,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
             </ul>
           </details>
         )}
-        <History p={`${doc.root}/${doc.rel}`} />
+        <History log={log} failed={logFailed} />
       </div>
 
       <div ref={body} class="md" dangerouslySetInnerHTML={{ __html: doc.html }} />
@@ -268,7 +295,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
  * file beside the name that created it. The line above already says when it last changed, so
  * together they read as "touched six days ago, started a month ago by Andrei".
  */
-function Authors({ authors }: { authors: DocPayload['authors'] }) {
+function Authors({ authors }: { authors: DocAuthors | null }) {
   if (!authors) return null;
   const { created, last } = authors;
 
@@ -299,35 +326,12 @@ function Authors({ authors }: { authors: DocPayload['authors'] }) {
  * Per-file git history, the one genuinely good idea in the r-doc viewer's document page:
  * who created the file, and the last commits with their line counts.
  *
- * It costs a `git log` per file — slow enough on a long history that it must not hold up the
- * document — so it stays its own request, fired once the page is up and filled in when it
- * lands. The panel is open by default: waiting for a click bought nothing but a click, since
- * the document was already on screen by then. Collapse it and the next document skips the
- * call entirely. `--follow` means a renamed plan folder keeps its history, which is exactly
- * the case this docs tree hits.
+ * The request is `Doc`'s — the header wants the authorship out of the same response — so this
+ * only renders what arrived. The panel is open by default: waiting for a click bought nothing
+ * but a click, since the document was already on screen by then.
  */
-function History({ p }: { p: string }) {
+function History({ log, failed }: { log: HistoryPayload | null; failed: boolean }) {
   const [open, setOpen] = useState(true);
-  const [log, setLog] = useState<FileHistory | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  // A different file invalidates whatever was loaded; the panel keeps its open state.
-  useEffect(() => {
-    setLog(null);
-    setFailed(false);
-  }, [p]);
-
-  useEffect(() => {
-    if (!open || log || failed) return;
-    let live = true;
-    api
-      .history(p)
-      .then((h) => live && setLog(h))
-      .catch(() => live && setFailed(true));
-    return () => {
-      live = false;
-    };
-  }, [open, p, log, failed]);
 
   return (
     <details class="gitlog" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
@@ -355,7 +359,6 @@ function History({ p }: { p: string }) {
           </div>
         </div>
       ))}
-
     </details>
   );
 }

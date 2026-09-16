@@ -361,3 +361,26 @@ and nothing else: no creation row, no "older commits exist".
 
 That also costs one git process less per document. `fileHistory()` is a single `git log` now;
 the creating commit comes from `authorship()`, which the page fetches anyway for the header.
+
+## N.13 — The document stops waiting for git
+Opening a document took **950 ms** of which 930 was one git command. `/api/doc` called
+`authorship()`, whose second half is
+
+    git log --follow --diff-filter=A --reverse -- <path>
+
+— the commit that created the file. `--reverse` cannot stop early: git has to walk to the root
+of the history to know which end is the oldest. On a 108 000-commit repository that is most of
+a second, spent before a word of the document is rendered, for two names in the header.
+
+Authorship moved to the history request, which the page already fires separately, and the
+`Doc` component now owns that one request and feeds both the header and the panel from it.
+`Store.authorship()` caches the answer per file and the watcher drops it when git moves — the
+creating commit is the same answer every time until something changes.
+
+| | before | after |
+| --- | --- | --- |
+| `/api/doc` | 950 ms | **10 ms** |
+| `/api/git/log` | 20 ms | 1.5 s first, **20 ms** cached |
+
+Measured on a 33 KB document in a 108 000-commit repository. In the browser the document now
+paints on the first frame and the authorship line and history panel fill in behind it.

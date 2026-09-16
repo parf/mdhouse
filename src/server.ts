@@ -12,7 +12,7 @@ import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { render, splitFrontmatter } from './lib/render';
 import { searchContent } from './lib/search';
-import { fileHistory, authorship } from './lib/git';
+import { fileHistory } from './lib/git';
 import { Watcher } from './lib/watch';
 
 export interface ServeOptions {
@@ -119,8 +119,6 @@ export function serve(opts: ServeOptions) {
         });
 
         const stat = await file.stat();
-        const where = opts.noGit ? null : await store.repoFor(loc.root, loc.rel);
-        const by = where ? await authorship(where.repo, where.repoRel) : null;
 
         return json({
           root: loc.root.id,
@@ -132,12 +130,6 @@ export function serve(opts: ServeOptions) {
           mtime: stat.mtimeMs,
           size: stat.size,
           marks: prefs.marksFor(loc.root.path, loc.rel),
-          authors: by?.last
-            ? {
-                created: by.created && { name: by.created.author, email: by.created.email, at: by.created.date },
-                last: { name: by.last.author, email: by.last.email, at: by.last.date, hash: by.last.hash.slice(0, 8) },
-              }
-            : null,
           ...rendered,
         });
       },
@@ -204,7 +196,7 @@ export function serve(opts: ServeOptions) {
         const url = new URL(req.url);
         const loc = await registry.resolve(url.searchParams.get('p') ?? '');
         if (!loc) return fail(403, 'path outside any root');
-        const empty = { commits: [] };
+        const empty = { commits: [], authors: null };
         if (opts.noGit) return json(empty);
 
         const where = await store.repoFor(loc.root, loc.rel);
@@ -212,7 +204,21 @@ export function serve(opts: ServeOptions) {
         // A handful of recent commits is what the panel is for; a worklog with two hundred of
         // them made the page a history browser with a document attached.
         const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 5, 1), 50);
-        return json(await fileHistory(where.repo, where.repoRel, limit));
+        // Authorship rides along: finding the creating commit is the expensive part of this
+        // page, and the document must not wait for it. Cached in the store per file.
+        const [log, by] = await Promise.all([
+          fileHistory(where.repo, where.repoRel, limit),
+          store.authorship(loc.root, loc.rel),
+        ]);
+        return json({
+          ...log,
+          authors: by?.last
+            ? {
+                created: by.created && { name: by.created.author, email: by.created.email, at: by.created.date },
+                last: { name: by.last.author, email: by.last.email, at: by.last.date, hash: by.last.hash.slice(0, 8) },
+              }
+            : null,
+        });
       },
 
       '/api/marks': {
