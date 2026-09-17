@@ -221,6 +221,24 @@ main {
 .root-switch button:hover { background: var(--bg-hover); }
 .root-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
 
+/* The same switcher where a row of chips will not fit: the compact sidebar and the top bar. */
+.root-select {
+  font: inherit;
+  font-size: 12px;
+  color: var(--fg);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 2px 4px;
+  max-width: 100%;
+}
+.sidebar.compact .root-switch { padding: 6px; }
+.sidebar.compact .root-select { width: 100%; }
+/* In the top bar it sits beside the name and takes over holding the rest of the strip right —
+   but only when it is there at all: with one root the name keeps that job itself. */
+.topstrip:has(.root-select) .brand { margin-right: 0; }
+.topstrip .root-select { margin-right: auto; max-width: 30vw; }
+
 .side-tools { padding: 8px; border-bottom: 1px solid var(--border); display: grid; gap: 8px; }
 
 .search-box { position: relative; display: flex; align-items: center; }

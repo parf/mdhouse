@@ -7,6 +7,7 @@ import { buildTree, fuzzyScore, type Node } from './tree-model';
 import { Tree } from './Tree';
 import { highlightRanges, docName } from './format';
 import { Ago } from './Ago';
+import { RootSelect } from './RootSelect';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
   IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
@@ -144,13 +145,19 @@ export function Sidebar(props: SidebarProps) {
         )}
       </div>
 
-      {wide && props.roots.length > 1 && (
+      {props.roots.length > 1 && (
         <div class="root-switch">
-          {props.roots.map((r) => (
-            <button key={r.id} aria-pressed={r.id === props.rootId} onClick={() => props.onPickRoot(r.id)} title={r.path}>
-              {r.name}
-            </button>
-          ))}
+          {/* Open has room for every root at once; compact gets the same thing folded into a
+              select, because switching root must not require widening the sidebar first. */}
+          {wide ? (
+            props.roots.map((r) => (
+              <button key={r.id} aria-pressed={r.id === props.rootId} onClick={() => props.onPickRoot(r.id)} title={r.path}>
+                {r.name}
+              </button>
+            ))
+          ) : (
+            <RootSelect roots={props.roots} rootId={props.rootId} onPick={props.onPickRoot} />
+          )}
         </div>
       )}
 

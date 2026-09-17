@@ -454,3 +454,17 @@ Verified: the daemon survives its launcher (`ps -o sid` shows a session of its o
 and `/api/roots` answer, a second `mdhouse <dir>` hands over without binding, `mdhouse exit`
 and `exit --all` stop one and both and remove the sockets, a port held by `python -m
 http.server` produces the right sentence in the terminal, and the journal carries the banner.
+
+## N.17 — The root switcher in every sidebar state
+With several directories served, the switcher existed in one place only: the row of chips in
+the open sidebar. Compact and off had no way to change root at all, so switching meant
+widening the panel first, and from the top bar it meant two widenings.
+
+The chips stay where they fit. Where they do not, the same list folds into a `<select>`
+(`ui/RootSelect.tsx`): full width at the top of the compact sidebar, and in the top bar
+immediately right of the name, where it takes over holding the search button out at the right
+edge. One root renders nothing anywhere — the widget appears exactly when it means something.
+
+Verified in the browser across all three states: the select carries every root, sits where it
+should (top bar `x=120` against a name ending at `110`, search button still at the far right),
+and changing it swaps the tree without disturbing the open document.

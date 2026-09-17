@@ -6,6 +6,7 @@ import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
 import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
+import { RootSelect } from './ui/RootSelect';
 import { Home } from './ui/Home';
 import { ancestors } from './ui/tree-model';
 import { IconPanel, IconSearch } from './ui/icons';
@@ -282,6 +283,7 @@ function App() {
             <IconPanel />
           </button>
           <span class="brand">{crumb || tree?.root.name || 'mdhouse'}</span>
+          <RootSelect roots={roots} rootId={rootId} onPick={setRootId} />
           <button
             class="icon-btn"
             title="Search (/)"
