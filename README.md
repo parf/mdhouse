@@ -2,12 +2,11 @@
 
 **Every Markdown file under a folder, as a fast little website on your own machine.**
 
-> ✦ **In ten seconds.** You have `.md` files scattered across notes, plans and a dozen git
-> repos. `mdhouse ~/src` finds all of them, renders them properly, and gives you one browser
-> tab with a file tree, instant search, and a live *what changed lately* view fed by git.
-> Nothing is imported, indexed into a database or copied anywhere — it reads your folder as
-> it is right now, and **never writes to it** unless you ask. So you can point it at
-> anything: a shared drive, a colleague's checkout, a directory you only have read access to.
+> ✦ **In ten seconds.** Point it at a folder — notes, a repo, a pile of repos — and get one
+> browser tab with a file tree, instant search, and a live *what changed lately* view fed by
+> git. Nothing is imported, indexed or copied anywhere: it reads the folder as it is right
+> now, and never writes to it unless you ask. So you can point it at anything, including a
+> directory you only have read access to.
 
 ```bash
 mdhouse ~/notes
@@ -15,9 +14,9 @@ mdhouse ~/notes
 
 ![mdhouse showing a docs tree, a rendered document with its table of contents, and the file's git history](doc/screenshot.png)
 
-It is for people who read and write a lot of Markdown and are tired of `cat`, `less`, and
-editor previews that show one file at a time. Made for docs trees and `Plans/` folders; happy
-with any directory that has `.md` files in it.
+For people who read and write a lot of Markdown and are tired of `cat`, `less`, and editor
+previews that show one file at a time. Made for docs trees and `Plans/` folders; happy with
+any directory that has `.md` files in it.
 
 ---
 
@@ -47,19 +46,17 @@ mdhouse ~/notes ~/src   # any folders at once — plain notes, a repo, a pile of
 Then open <http://127.0.0.1:7777>. Every document has an address — `/d/<path>/<file>.md` — so
 pages can be linked, bookmarked and typed by hand.
 
-No build step, no config file, nothing written into the folder you point it at.
-
 ### It runs in the background
 
-The terminal comes straight back, and the server keeps going after you close it:
+The terminal comes straight back, and the server outlives the shell that started it:
 
 ```bash
 mdhouse exit            # stop it   (--all stops every one you have running)
 ```
 
-It prints that line itself on start, so there is nothing to remember. `--fg` keeps it in the
-foreground, where Ctrl+C stops it; anything it prints while detached goes to the system log
-(`journalctl -t mdhouse`), never to a file of its own.
+That line is printed on start, so there is nothing to remember. `--fg` keeps it in the
+foreground, where Ctrl+C stops it; detached, everything it says goes to the system log
+(`journalctl -t mdhouse`).
 
 ### Run it again and it adds, never replaces
 
@@ -68,92 +65,78 @@ mdhouse ~/notes         # starts on 7777
 mdhouse ~/src           # 7777 is taken — hands ~/src to the one already running
 ```
 
-The second command does not fail and does not start a rival server: it asks the running
-mdhouse to serve that directory too, prints the URL, and exits. Your open tabs keep the tree
-they were reading — the new one joins the root switcher beside it. Control goes over a unix
-socket at `~/.config/mdhouse/control-<port>.sock`, mode `0600`, so the only thing that can ask
-is a process running as you; a web page cannot reach a unix socket at all.
+No error and no rival server: the running mdhouse serves that folder too, and your open tabs
+keep the tree they were reading. The request travels over a `0600` unix socket in
+`~/.config/mdhouse/`, so only a process running as you can ask — a web page cannot reach a
+unix socket at all.
 
 ---
 
 ## ❖ What you get
 
-**Browse.** A sidebar tree of `.md` and `.mdx` files, nothing else. Three widths — a single
-top bar, compact (just navigation), or open (search, tabs and filters) — and `Ctrl+B` cycles
-them. Your choice is remembered. Breadcrumbs above a document are clickable. Serving several
-folders, the root switcher is in all three: buttons when the sidebar is open, a dropdown when
-it is compact or gone.
+**Browse.** A sidebar tree of `.md` and `.mdx` files, nothing else. Three widths — a single top
+bar, compact, or open with search and filters — cycled with `Ctrl+B` and remembered.
 
-**Search.** File names match as you type with no request to the server at all. Full text goes
+**Search.** File names match as you type, with no request to the server at all. Full text goes
 through ripgrep with line numbers and highlighted context, and clicking a hit opens the file
-*at that line*. Four chips narrow the results: *names* / *contents* pick which half you see,
-*recent* / *mine* restrict them to the same files the Recent and Mine tabs list.
+*at that line*. Four chips narrow it: *names* / *contents* pick which half you see, *recent* /
+*mine* restrict it to the files the Recent and Mine tabs list.
 
-**Recent → Mine.** One list: everything uncommitted in your working tree first, colour-coded
-by git status, then the files touched by the last N commits, filterable by committer. Each row
-is three lines — file, folder, commit subject — and a `❖` marks the ones that are yours.
-*Mine* narrows the list to your own work; all uncommitted changes count as yours.
+**Two kinds of recent**, side by side in the sidebar tabs — **🕐 Recent**, everything that
+changed here, and **👤 Mine**, only your own work (anything uncommitted counts as yours). The
+clock list puts uncommitted files first, colour-coded by git status, then the files touched by
+the last N commits, filterable by committer; `❖` marks the ones that are yours. Each row is
+three lines: file, folder, commit subject. The other two tabs are **📄 Files** — the tree — and
+**★ Favs**. Compact keeps all four as icons.
 
 ![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and ages that run from red to grey](doc/recent.png)
 
-**A front page.** Click the root name in the sidebar and you get the same material grouped by
-**commit** instead of by file: each commit with its subject, its age and the documents it is
-the newest change to, in one aligned table. Yours are tinted green and marked `❖`. A commit
-that only repeats files you have already seen is dropped, and a tree git knows nothing about
-falls back to the twenty most recently changed files.
+**A front page.** Click the root name and the same material arrives grouped by **commit**
+instead of by file: each commit with its subject, its age and the documents it is the newest
+change to, in one aligned table. Yours are tinted green. A tree git knows nothing about falls
+back to the twenty most recently changed files.
 
 **The document page.** Above the text: clickable breadcrumbs, how long ago the file changed,
 who started it and when, and an `N/M done` count when it has task checkboxes. Beside it: a
-table of contents (H1–H2, with an `H3` chip when the document goes deeper) and a git history
-panel with the last five commits to that file — authors, ages, lines added and removed, each
-row a button that diffs that commit. `--follow` is used, so a renamed file keeps its history.
+table of contents (H1–H2, with an `H3` chip when the document goes deeper) and the last five
+commits to that file, each row a button that diffs that commit. `--follow` is used, so a
+renamed file keeps its history.
 
 **The buttons above a document**, left to right:
 
-- **↔ Full width** — trade the comfortable reading column for the whole window. Good for wide
-  tables and long code lines. Stays on as you move between documents: it is a way of reading,
-  not a property of one file.
+- **↔ Full width** — trade the reading column for the whole window, for wide tables and long
+  code lines. It stays on as you move between documents: a way of reading, not a property of
+  one file.
 - **⊟ Patch** — what changed, as a diff: two line-number gutters, a `+`/`-` column, GitHub's
-  green and red, and the line content rendered as Markdown rather than printed as source.
-- **▤ Marked-up document** — the same change, on the whole document in its normal styling:
-  new blocks tinted green with a bar in the margin, deleted text struck through where it used
-  to be. Nothing is hidden — you read the file, and see what moved.
+  green and red. The line content is *rendered* — headings, bold, inline code, links and task
+  boxes look like themselves, with the source markers (`##`, `-`, `>`) kept beside them in
+  grey. Fenced code stays exactly as typed.
+- **▤ Marked-up document** — the same change laid over the whole document in its normal
+  styling: new blocks tinted green with a bar in the margin, deleted text struck through in
+  the place it used to be. Nothing is hidden — you read the file *and* see what moved.
 - **★ Favourite** — pin the file to the Favs tab and the front page.
 - **🔇 Mute** — drop it out of Recent without deleting anything.
 - **🔗 Copy link** — the document's URL, ready to paste into a ticket or a chat.
 
-**And the bar along the top** — the whole sidebar when it is collapsed:
+Both marks live in `~/.config/mdhouse/`, never inside the tree you are reading, so they work on
+a directory you cannot write to.
+
+**And the bar along the top** — the whole sidebar, when it is collapsed:
 
 - **☰ Panel** — cycle bar → compact → open (`Ctrl+B`).
 - **The root name** — the front page: what changed in this tree lately.
 - **The root dropdown** — switch between the folders being served, when there is more than one.
 - **🔍 Search** — open the sidebar with the cursor in the search box (`/`).
 
-**See what changed, two ways.** Beside the star are two buttons. The first shows the file as a
-**patch** — green and red, both old and new line numbers, the view everyone already reads diffs
-in — except that the lines are *rendered*: headings, bold, inline code, links and task boxes
-look like themselves, with the source markers (`##`, `-`, `>`) kept beside them in grey. The
-gutters and the `+`/`-` column stay monospace, because they are the patch rather than the text.
-The second button keeps the **whole document in its markdown styling** and marks the change on
-it:
-new paragraphs, list items and table rows tinted green with a bar in the margin, and deleted
-text put back, struck through, exactly where it used to be. Same diff, read as a document
-instead of as a patch.
+**Diffs open themselves when they should.** A file with uncommitted work opens on its diff — if
+you have edited it and come back to look at it, the edit is what you came for — in whichever of
+the two views you last used. A clean file opens as a document and compares with the previous
+revision when you ask. An older revision from the history panel is a text the page is not
+showing, so that one always arrives as a patch.
 
-A file with uncommitted work **opens on its diff** — if you have edited it and come back to look
-at it, the edit is what you came for — and it opens in whichever of the two views you last used.
-A file with nothing outstanding opens as a document and shows the last commit's change when you
-ask; click any row in the history panel to see what *that* commit did to this file. (An older
-revision is a text the page is not showing, so the marked-up view falls back to the patch and
-says why.)
-
-**Ages read like a heat map.** Every "3 h ago" is coloured by how fresh it is: 🔥 for anything
-touched in the last ten minutes, then orange for this hour, amber for today, grey for this
-week, faint for older. A column of timestamps is legible before you read a single one.
-
-**Mark things.** Favourite a file or a whole folder to keep it in its own tab and on the front
-page; mute one to drop it out of Recent. Marks live in `~/.config/mdhouse/`, never inside the
-tree you are reading — so they work on a directory you cannot write to at all.
+**Ages read like a heat map.** Every "3 h ago" is coloured by how fresh it is: 🔥 under ten
+minutes, orange this hour, amber today, grey this week, faint for older. A column of timestamps
+is legible before you read a single one.
 
 **Renders properly.** CommonMark and GFM through markdown-it: nested lists, tables, footnotes,
 task lists, GitHub alerts (`> [!NOTE]`), front matter set aside, syntax highlighting via shiki,
@@ -161,30 +144,23 @@ and mermaid diagrams. Relative links and images between documents just work. Lig
 follow your system.
 
 **Finds your repos.** Hand it a directory of repositories and it discovers each one, listing
-files with `git ls-files` so `.gitignore` is honoured with zero configuration. Ignored files
-are one toggle (or `--all`) away, not invisible. A folder your own repo ignores — `tmp/`, say —
-still lists its files when you point mdhouse straight at it.
+files with `git ls-files`, so `.gitignore` is honoured with zero configuration. Ignored files
+are one toggle (or `--all`) away, not invisible.
 
-**Live.** A WebSocket pushes changes from a filesystem watcher: edit a file in your editor and
-the open page, the tree and the front page follow. No polling anywhere. A dot in the sidebar
-footer says the connection is up.
-
-Under the hood, every rendered block carries a `data-line` attribute pointing back at its
-source line. That is what lets the marked-up diff find the exact paragraph or list item a
-change belongs to — and what will make clickable checkboxes and section-to-AI cheap in
-Phase 2.
+**Live.** A WebSocket pushes filesystem changes: edit a file in your editor and the open page,
+the tree and the front page follow. No polling anywhere; a dot in the sidebar footer says the
+connection is up.
 
 ---
 
 ## 🔒 Read-only by default
 
-**mdhouse does not write to the trees it serves.** Point it at anything — someone else's
-working checkout, a mounted share, a directory you would rather not touch — and the worst it
-can do is read. Pass `--rw` to allow writing; the sidebar then shows a green `RW` beside the
-root name. No badge means no writes, which is the normal case.
+**mdhouse does not write to the trees it serves.** Point it at someone else's checkout, a
+mounted share, a directory you would rather not touch — the worst it can do is read. `--rw`
+allows writing and puts a green `RW` badge beside the root name; no badge means no writes.
 
-This is structural, not a matter of care: every write in the codebase goes through one function
-that refuses a read-only root. Today nothing calls it — Phase 1 has no feature that writes.
+It is structural, not a matter of care: every write in the codebase goes through one function
+that refuses a read-only root.
 
 ---
 
@@ -222,7 +198,7 @@ that refuses a read-only root. Today nothing calls it — Phase 1 has no feature
 | `--rw` | off | allow mdhouse to write to the trees it serves |
 
 `MDHOUSE_PORT`, `MDHOUSE_HOST` and `MDHOUSE_ROOT` set the defaults for the port, the bind
-address and the directory used when none is given.
+address and the folder used when none is given.
 
 A root may also carry a **`.mdhouseignore`**: one directory name per line, `#` for comments,
 `!name` to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build
@@ -235,30 +211,29 @@ output and the like).
 ```bash
 bun install
 bun run dev          # serves this repo with hot reload, in the foreground
-bun test             # roots & path jail, scanner, renderer, search
+bun test
 bunx tsc --noEmit
 ```
 
-There is no build step: `Bun.serve` bundles `src/index.html` and everything it imports, so what
-you run is what you edited. Mermaid is served separately and only fetched by pages that use it.
+No build step: `Bun.serve` bundles `src/index.html` and everything it imports, so what you run
+is what you edited. Mermaid is served separately and fetched only by pages that use it.
 
 The shape of it: `src/cli.ts` (flags, the background start, `exit`) → `src/server.ts` (routes,
 WebSocket) → `src/lib/` (roots and the path jail, scanner, renderer, search, git and diffs,
-store, watcher, prefs, the control socket) → `src/ui/` (Preact).
+store, watcher, prefs, the control socket) → `src/ui/` (Preact). Every rendered block carries a
+`data-line` attribute pointing back at its source line — that is how the marked-up diff finds
+the paragraph a change belongs to, and what makes the Phase 2 features cheap.
 
 Planning documents live in [`Plans/PRF-55-md-viewer-web/`](Plans/PRF-55-md-viewer-web/):
 [`README.md`](Plans/PRF-55-md-viewer-web/README.md) for how it is built and why,
-[`DONE.md`](Plans/PRF-55-md-viewer-web/DONE.md) for a log of everything shipped and how it was
-verified, [`TODO.md`](Plans/PRF-55-md-viewer-web/TODO.md) for what is next.
+[`DONE.md`](Plans/PRF-55-md-viewer-web/DONE.md) for everything shipped and how it was verified,
+[`TODO.md`](Plans/PRF-55-md-viewer-web/TODO.md) for what is next.
 
 ---
 
 ## ▸ Status
 
-**Phase 1 is shipped** and in daily use: viewer, search, recents, front page, per-file history
-and authorship, per-file diffs, marks, live updates. Read-only end to end.
-
-**Phase 2, in this order:**
+**Phase 1 is shipped** and in daily use. Next, in this order:
 
 - checkboxes you can tick, written back to disk (only with `--rw` — a stale page must never
   corrupt a file)
