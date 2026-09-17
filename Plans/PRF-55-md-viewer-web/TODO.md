@@ -2,23 +2,25 @@
 
 Goal: PRF-55 Phase 1 — browse, search, filesystem recents, git recents, the 3-state sidebar
 and the WebSocket channel later phases ride on. **Phase 1 is complete and verified**, and a
-run of polish on top of it is too (`N.1`–`N.16` in `DONE.md`).
+run of polish on top of it is too (`N.1`–`N.20` in `DONE.md`).
 
 Next step: **I.1** — clickable checkboxes written back to disk, the first thing that needs
 `data-line` and the first thing that needs the write chokepoint.
 
 ---
 
-## A–H, K.1, N.1–N.16 — closed
+## A–H, K.1, K.2a, N.1–N.20 — closed
 
 See [`DONE.md`](DONE.md). Scaffold, roots and path jail, scanner, renderer, search, git and
 recents, server and client, live channel, marks, README — all built and verified end to end
-against the docs tree, the scratch tree and `~/src`. 39 tests pass; `tsc --noEmit` is clean.
+against the docs tree, the scratch tree and `~/src`. 60 tests pass; `tsc --noEmit` is clean.
 
 Since the ship: per-file history (**K.1**), clickable breadcrumbs, authorship in the document
 header, an H3 contents mode, full-width reading, a front page grouped by commit, age colouring,
-one aligned table for every file list, one mdhouse per port, a history panel that opens
-itself and shows five revisions, and a server that runs in the background until `mdhouse exit`.
+one aligned table for every file list, one mdhouse per port, a history panel that opens itself
+and shows five revisions, a server that runs in the background until `mdhouse exit`, the root
+switcher in every sidebar state, and per-file diffs (**K.2a**) in two views — a patch with its
+lines rendered, and the whole document with the change marked on it.
 
 ## I. Checkbox write-back
 

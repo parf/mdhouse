@@ -40,10 +40,8 @@ sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your P
 </details>
 
 ```bash
-mdhouse ~/notes                     # one docs tree
-mdhouse ~/src                       # a folder full of git repos — all of them at once
-mdhouse ~/src ~/notes --port 7777   # several roots, one tab
-mdhouse -o                          # the current directory, and open a browser
+mdhouse                 # this folder
+mdhouse ~/notes ~/src   # any folders at once — plain notes, a repo, a pile of repos
 ```
 
 Then open <http://127.0.0.1:7777>. Every document has an address — `/d/<path>/<file>.md` — so
@@ -51,23 +49,23 @@ pages can be linked, bookmarked and typed by hand.
 
 No build step, no config file, nothing written into the folder you point it at.
 
-It **runs in the background**, so the terminal comes straight back and the server keeps going
-after you close it. When you are done with it:
+### It runs in the background
+
+The terminal comes straight back, and the server keeps going after you close it:
 
 ```bash
-mdhouse exit           # stop the one on 7777
-mdhouse exit --all     # stop every mdhouse you have running
+mdhouse exit            # stop it   (--all stops every one you have running)
 ```
 
-It says so itself on start, so there is nothing to remember. `--fg` keeps it in the foreground
-instead, where Ctrl+C stops it. Anything it prints while detached goes to the system log
+It prints that line itself on start, so there is nothing to remember. `--fg` keeps it in the
+foreground, where Ctrl+C stops it; anything it prints while detached goes to the system log
 (`journalctl -t mdhouse`), never to a file of its own.
 
-Run it again somewhere else and it does the obvious thing:
+### Run it again and it adds, never replaces
 
 ```bash
-mdhouse ~/notes        # starts on 7777
-mdhouse ~/src          # 7777 is taken — hands ~/src to the one already running
+mdhouse ~/notes         # starts on 7777
+mdhouse ~/src           # 7777 is taken — hands ~/src to the one already running
 ```
 
 The second command does not fail and does not start a rival server: it asks the running
@@ -82,7 +80,9 @@ is a process running as you; a web page cannot reach a unix socket at all.
 
 **Browse.** A sidebar tree of `.md` and `.mdx` files, nothing else. Three widths — a single
 top bar, compact (just navigation), or open (search, tabs and filters) — and `Ctrl+B` cycles
-them. Your choice is remembered. Breadcrumbs above a document are clickable.
+them. Your choice is remembered. Breadcrumbs above a document are clickable. Serving several
+folders, the root switcher is in all three: buttons when the sidebar is open, a dropdown when
+it is compact or gone.
 
 **Search.** File names match as you type with no request to the server at all. Full text goes
 through ripgrep with line numbers and highlighted context, and clicking a hit opens the file
@@ -102,12 +102,32 @@ the newest change to, in one aligned table. Yours are tinted green and marked `�
 that only repeats files you have already seen is dropped, and a tree git knows nothing about
 falls back to the twenty most recently changed files.
 
-**The document page.** Above the text: how long ago it changed, who started it and when, an
-`N/M done` count when the file has task checkboxes, and buttons to favourite, mute, copy the
-link, or trade the comfortable reading column for the full window. Beside it: a table of
-contents (H1–H2, with an `H3` chip when the document goes deeper) and a git history panel with
-the last five commits to that file — authors, ages, lines added and removed, each row a button
-that diffs that commit. `--follow` is used, so a renamed file keeps its history.
+**The document page.** Above the text: clickable breadcrumbs, how long ago the file changed,
+who started it and when, and an `N/M done` count when it has task checkboxes. Beside it: a
+table of contents (H1–H2, with an `H3` chip when the document goes deeper) and a git history
+panel with the last five commits to that file — authors, ages, lines added and removed, each
+row a button that diffs that commit. `--follow` is used, so a renamed file keeps its history.
+
+**The buttons above a document**, left to right:
+
+- **↔ Full width** — trade the comfortable reading column for the whole window. Good for wide
+  tables and long code lines. Stays on as you move between documents: it is a way of reading,
+  not a property of one file.
+- **⊟ Patch** — what changed, as a diff: two line-number gutters, a `+`/`-` column, GitHub's
+  green and red, and the line content rendered as Markdown rather than printed as source.
+- **▤ Marked-up document** — the same change, on the whole document in its normal styling:
+  new blocks tinted green with a bar in the margin, deleted text struck through where it used
+  to be. Nothing is hidden — you read the file, and see what moved.
+- **★ Favourite** — pin the file to the Favs tab and the front page.
+- **🔇 Mute** — drop it out of Recent without deleting anything.
+- **🔗 Copy link** — the document's URL, ready to paste into a ticket or a chat.
+
+**And the bar along the top** — the whole sidebar when it is collapsed:
+
+- **☰ Panel** — cycle bar → compact → open (`Ctrl+B`).
+- **The root name** — the front page: what changed in this tree lately.
+- **The root dropdown** — switch between the folders being served, when there is more than one.
+- **🔍 Search** — open the sidebar with the cursor in the search box (`/`).
 
 **See what changed, two ways.** Beside the star are two buttons. The first shows the file as a
 **patch** — green and red, both old and new line numbers, the view everyone already reads diffs
@@ -150,7 +170,9 @@ the open page, the tree and the front page follow. No polling anywhere. A dot in
 footer says the connection is up.
 
 Under the hood, every rendered block carries a `data-line` attribute pointing back at its
-source line. Nothing uses it yet — it is the foundation for Phase 2.
+source line. That is what lets the marked-up diff find the exact paragraph or list item a
+change belongs to — and what will make clickable checkboxes and section-to-AI cheap in
+Phase 2.
 
 ---
 
@@ -220,8 +242,9 @@ bunx tsc --noEmit
 There is no build step: `Bun.serve` bundles `src/index.html` and everything it imports, so what
 you run is what you edited. Mermaid is served separately and only fetched by pages that use it.
 
-The shape of it: `src/cli.ts` (flags) → `src/server.ts` (routes, WebSocket) → `src/lib/` (roots
-and the path jail, scanner, renderer, search, git, store, watcher, prefs) → `src/ui/` (Preact).
+The shape of it: `src/cli.ts` (flags, the background start, `exit`) → `src/server.ts` (routes,
+WebSocket) → `src/lib/` (roots and the path jail, scanner, renderer, search, git and diffs,
+store, watcher, prefs, the control socket) → `src/ui/` (Preact).
 
 Planning documents live in [`Plans/PRF-55-md-viewer-web/`](Plans/PRF-55-md-viewer-web/):
 [`README.md`](Plans/PRF-55-md-viewer-web/README.md) for how it is built and why,
