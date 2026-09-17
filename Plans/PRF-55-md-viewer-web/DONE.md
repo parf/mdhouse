@@ -384,3 +384,11 @@ creating commit is the same answer every time until something changes.
 
 Measured on a 33 KB document in a 108 000-commit repository. In the browser the document now
 paints on the first frame and the authorship line and history panel fill in behind it.
+
+## N.14 — A contents list from two headings
+The table of contents appeared only above **three** H1–H3 headings, so a document with exactly
+two — a title and one section — lost the whole panel, which reads as a bug rather than as a
+rule: the history panel beside it stays, and the page looks like the contents list broke.
+
+The threshold is now two. A two-line contents list is cheap; a panel that vanishes without
+explanation is not.

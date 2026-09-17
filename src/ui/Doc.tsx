@@ -252,7 +252,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
       </header>
 
       <div class="doc-aside">
-        {doc.headings.filter((h) => h.level <= 3).length > 2 && (
+        {doc.headings.filter((h) => h.level <= 3).length > 1 && (
           <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
             <summary>
               Table of contents
