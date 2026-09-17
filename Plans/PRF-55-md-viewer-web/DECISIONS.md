@@ -115,3 +115,20 @@ means a tab someone is reading becomes a different tree with no explanation, and
 rebuilding the registry, clearing every cache keyed by root id and restarting watchers — three
 places to leak state. Adding is `registry.add()` plus one watcher, and mdhouse already has a
 root switcher to show the result.
+
+
+## Background by default, and syslog rather than a logfile
+
+A viewer is something you leave running for days and glance at; holding a terminal hostage for
+it is the wrong default, and every user of it learns `mdhouse ... &` or a tmux pane instead.
+So the default detaches, and the cost of that — no Ctrl+C — is paid by `mdhouse exit`, printed
+on start so it never has to be remembered. `--fg` is there for `bun --hot`, which must own its
+own process, and for anyone supervising mdhouse with systemd.
+
+A detached process has to put its output somewhere. Not `~/.config/mdhouse/`: config is not
+log, nothing rotates it, and a file only mdhouse knows about is a file nobody reads when
+something breaks. Piping through `logger -t mdhouse` puts it where the system already keeps
+such things — timestamped, rotated, greppable, and reachable with a command the user already
+knows. The launcher never reads it back; the one failure worth answering in the terminal (the
+port held by something that is not mdhouse) is detected before the spawn by binding the port
+for a moment.

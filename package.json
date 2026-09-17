@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "start": "bun run src/cli.ts",
-    "dev": "bun --hot run src/cli.ts .",
+    "dev": "bun --hot run src/cli.ts . --fg",
     "test": "bun test"
   },
   "dependencies": {

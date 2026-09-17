@@ -317,7 +317,25 @@ export async function serve(opts: ServeOptions) {
     return { url: `http://${hostname}:${server.port}`, roots };
   };
 
-  const control = await serveControl(port, async (req) => addRoots(req.dirs, req.rw === true));
+  /** Everything this process holds open, released in the right order. */
+  const shutdown = () => {
+    watcher.close();
+    control?.stop();
+    server.stop(true);
+    process.exit(0);
+  };
 
-  return { server, store, watcher, control };
+  const control = await serveControl(port, {
+    add: (req) => addRoots(req.dirs, req.rw === true),
+    ping: () => ({
+      pid: process.pid,
+      url: `http://${hostname}:${server.port}`,
+      roots: registry.list().map((r) => ({ name: r.name, path: r.path, writable: r.writable })),
+    }),
+    // `mdhouse exit`. The daemon runs detached with no terminal attached to it, so asking it
+    // over the socket is the supported way to stop it — there is no Ctrl+C to press.
+    exit: shutdown,
+  });
+
+  return { server, store, watcher, control, shutdown };
 }

@@ -51,6 +51,18 @@ pages can be linked, bookmarked and typed by hand.
 
 No build step, no config file, nothing written into the folder you point it at.
 
+It **runs in the background**, so the terminal comes straight back and the server keeps going
+after you close it. When you are done with it:
+
+```bash
+mdhouse exit           # stop the one on 7777
+mdhouse exit --all     # stop every mdhouse you have running
+```
+
+It says so itself on start, so there is nothing to remember. `--fg` keeps it in the foreground
+instead, where Ctrl+C stops it. Anything it prints while detached goes to the system log
+(`journalctl -t mdhouse`), never to a file of its own.
+
 Run it again somewhere else and it does the obvious thing:
 
 ```bash
@@ -160,10 +172,11 @@ that refuses a read-only root. Today nothing calls it — Phase 1 has no feature
 
 | Flag | Default | |
 | --- | --- | --- |
-| `-p, --port <n>` | `7777` | one mdhouse per port; a second one gets a clear error |
+| `-p, --port <n>` | `7777` | one mdhouse per port; a second one hands over its directories |
 | `-h, --host <addr>` | `127.0.0.1` | local-only by default; `0.0.0.0` to share on your LAN |
 | `-o, --open` | off | open a browser on start |
-| `-a, --all` | off | include gitignored `.md` files |
+| `-a, --all` | off | include gitignored `.md` files — with `exit`, stop every mdhouse |
+| `-f, --fg` | off | stay in the foreground instead of detaching |
 | `--git-log <n>` | `200` | commits scanned for recents and the front page |
 | `--no-git` | off | skip git entirely; recents by modification time only |
 | `--rw` | off | allow mdhouse to write to the trees it serves |
@@ -181,7 +194,7 @@ output and the like).
 
 ```bash
 bun install
-bun run dev          # serves this repo with hot reload
+bun run dev          # serves this repo with hot reload, in the foreground
 bun test             # roots & path jail, scanner, renderer, search
 bunx tsc --noEmit
 ```

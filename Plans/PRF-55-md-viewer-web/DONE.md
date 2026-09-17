@@ -419,3 +419,38 @@ root added at runtime arrive as `{"t":"fs","root":"livetest","paths":["a.md"]}`.
 The CLI says which is which: `+` for a root just added, `·` for one already served, and a note
 when `--rw` was asked for a tree the daemon is already serving read-only — writability belongs
 to the root that exists, and pretending otherwise would be a lie about what it will let you do.
+
+## N.16 — It runs in the background, and `mdhouse exit` stops it
+`mdhouse <dir>` used to hold the terminal until Ctrl+C. It now starts the server detached and
+returns: the launcher waits until the daemon answers on the control socket, prints the URL,
+the roots, the pid and the line telling you how to stop it, then exits 0.
+
+**Detached properly.** The spawn goes through `setsid`, so the daemon gets a session of its
+own: closing the terminal does not take it with it, and a later Ctrl+C in that terminal never
+reaches it. Without `setsid` (macOS has none) a `detached` child still outlives its parent,
+which is the part that matters.
+
+**Output goes to syslog**, through `logger -t mdhouse`, not to a file of our own — a
+background process that writes somewhere only it knows about is a process whose failures
+nobody reads. `journalctl -t mdhouse -f` follows it; the start banner, the read-only note and
+any crash land there.
+
+**Stopping is a command, not a signal.** `/exit` joined `/add` on the control socket, plus a
+side-effect-free `/ping` that doubles as the liveness probe the stale-socket cleanup already
+needed. `mdhouse exit` stops the daemon on `--port` and prints what it was serving;
+`mdhouse exit --all` sweeps every `control-*.sock`; with nothing there it names the ports that
+do have one instead of failing silently. It stops a `--fg` server just as well as a detached
+one — same handler, same shutdown path.
+
+**The port taken by something else is answered in the terminal, not in the log.** The launcher
+binds the port for a moment before spawning: if that fails and nothing answered on the control
+socket, the process holding it is not mdhouse, and saying so directly beats a detached child
+failing into syslog.
+
+`--fg` keeps everything in one process; `bun run dev` uses it, because `bun --hot` must own the
+process it reloads.
+
+Verified: the daemon survives its launcher (`ps -o sid` shows a session of its own), the page
+and `/api/roots` answer, a second `mdhouse <dir>` hands over without binding, `mdhouse exit`
+and `exit --all` stop one and both and remove the sockets, a port held by `python -m
+http.server` produces the right sentence in the terminal, and the journal carries the banner.
