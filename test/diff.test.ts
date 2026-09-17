@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { newFileDiff, parsePatch } from '../src/lib/git';
 import { changesOf } from '../src/ui/mark-changes';
+import { markupHunks, markupLine } from '../src/lib/render';
 
 const PATCH = `diff --git a/NOTE.md b/NOTE.md
 index 1234567..89abcde 100644
@@ -155,5 +156,63 @@ describe('placing a diff on the rendered document', () => {
     );
 
     expect(removals).toEqual([{ at: 3, text: 'tail' }]);
+  });
+});
+
+describe('a patch line is Markdown too', () => {
+  test('inline markup is rendered, the source marker is kept', () => {
+    expect(markupLine('## Kept **safe**')).toBe(
+      '<span class="dl dl-h dl-h2"><span class="mk">## </span>Kept <strong>safe</strong></span>',
+    );
+  });
+
+  test('list items keep their bullet and render their body', () => {
+    expect(markupLine('- two `changed` here')).toContain('<span class="mk">- </span>');
+    expect(markupLine('- two `changed` here')).toContain('<code>changed</code>');
+  });
+
+  test('task boxes become boxes', () => {
+    expect(markupLine('- [x] done')).toContain('☑');
+    expect(markupLine('- [ ] not done')).toContain('☐');
+  });
+
+  test('indentation survives, in character widths', () => {
+    expect(markupLine('    - nested')).toContain('style="padding-left:4ch"');
+  });
+
+  test('a fenced line is left exactly as typed', () => {
+    expect(markupLine('const x = `a ** b`;', true)).toBe(
+      '<span class="dl dl-code">const x = `a ** b`;</span>',
+    );
+  });
+
+  test('links are decoration, not navigation', () => {
+    const html = markupLine('see [the docs](../other.md)');
+    expect(html).toContain('<span class="md-link">the docs</span>');
+    expect(html).not.toContain('href');
+  });
+
+  test('html in the source is shown, not run', () => {
+    expect(markupLine('<script>alert(1)</script>')).toContain('&lt;script&gt;');
+  });
+
+  test('an empty line still occupies one', () => {
+    expect(markupLine('')).toContain('&nbsp;');
+  });
+
+  test('fences switch rendering off and on again within a hunk', () => {
+    const line = (text: string) => ({ t: ' ' as const, text });
+    const [hunk] = markupHunks([
+      { heading: '', lines: [line('# Title'), line('```js'), line('**not bold**'), line('```'), line('**bold**')] },
+    ]);
+
+    const html = hunk!.lines.map((l) => l.html!);
+    expect(html[0]).toContain('dl-h1');
+    expect(html[1]).toContain('dl-code');
+    // Inside the fence: the asterisks are the text.
+    expect(html[2]).toBe('<span class="dl dl-code">**not bold**</span>');
+    expect(html[3]).toContain('dl-code');
+    // Out the other side, markup is markup again.
+    expect(html[4]).toContain('<strong>bold</strong>');
   });
 });

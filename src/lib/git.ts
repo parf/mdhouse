@@ -262,6 +262,8 @@ export interface DiffLine {
   /** ' ' context, '+' added, '-' removed. */
   t: ' ' | '+' | '-';
   text: string;
+  /** The line with its Markdown rendered, filled in by `markupHunks()` before it is served. */
+  html?: string;
   /** Line number on the old side, on the new side; absent where the line does not exist. */
   a?: number;
   b?: number;

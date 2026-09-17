@@ -530,3 +530,26 @@ The chosen view sticks: a file with uncommitted work opens in whichever of the t
 used. Four more tests cover the placement logic — added lines, an anchored removal run, a
 replacement, and deletions at the end of a hunk — from a pure `changesOf()` split out of the
 DOM work for exactly that reason. 51 tests pass.
+
+## N.20 — The patch is Markdown too
+Reading `**bold**`, `[text](url)` and `## Heading` as source is a needless tax on someone who
+came to see what a document says, so the patch view renders its lines. The gutters and the
+`+`/`-` column keep their monospace and their alignment — they *are* the patch — and only the
+content of each line becomes text: headings in the document's own heading colours, list bullets
+and blockquote markers muted beside their rendered body, inline code, task boxes as ☑ / ☐,
+links underlined but inert.
+
+**Inline, one line at a time.** A patch row is a line, not a block, and a line pulled out of
+its list or its table cannot be parsed as one anyway; what block context there is comes from
+the line's own prefix. Leading indentation is preserved in `ch` units so nesting still lines
+up. Fenced code is left exactly as typed, tracked per hunk — best effort, since a hunk starts
+wherever git chose to start it.
+
+**Two deliberate limits.** Links render as `<span>`, not `<a>`: a relative href would not
+resolve from a diff row, and nothing in this view should navigate anywhere. Raw HTML in the
+source is escaped and shown, because in a diff the markup *is* the content.
+
+Rendered server-side, by the renderer that already renders the document — `markupHunks()` in
+`render.ts`, applied to every diff before it is served. Nine more tests: inline markup, kept
+markers, task boxes, indentation, fenced lines, inert links, escaped HTML, empty lines, and a
+fence switching rendering off and on again inside one hunk. 60 tests pass.

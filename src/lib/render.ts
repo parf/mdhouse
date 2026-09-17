@@ -18,6 +18,7 @@ import type Token from 'markdown-it/lib/token.mjs';
 import anchor from 'markdown-it-anchor';
 import footnote from 'markdown-it-footnote';
 import attrs from 'markdown-it-attrs';
+import type { DiffHunk } from './git';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 
 export interface RenderContext {
@@ -325,4 +326,91 @@ export function splitFrontmatter(src: string): { frontmatter: string | null; bod
   const head = src.slice(src.indexOf('\n') + 1, end);
   const body = stop === -1 ? '' : src.slice(stop + 1);
   return { frontmatter: head, body, offset: src.slice(0, stop + 1).split('\n').length - 1 };
+}
+
+/* ── patch lines, with their markdown applied ────────────────────────────── */
+
+/**
+ * A patch of a Markdown file is still Markdown, and reading `**bold**` and `[text](url)` as
+ * source is a needless tax on someone who came to see what a document says. The diff view
+ * keeps its gutters and its `+`/`-` column — those are the patch — and renders the line
+ * content instead of printing it.
+ *
+ * Inline only, one line at a time: a patch row is a line, not a block, and a line pulled out
+ * of its list or its table cannot be parsed as one anyway. What block context there is comes
+ * from the line's own prefix — `##`, `-`, `>` — which is kept, muted, so the source shape is
+ * still visible beside its rendering.
+ */
+const inlineMd = new MarkdownIt({ html: false, linkify: false });
+
+// A link in a patch row is decoration, not navigation: a relative href would not resolve from
+// here, and nothing in a diff view should be clickable into somewhere else.
+inlineMd.renderer.rules.link_open = () => '<span class="md-link">';
+inlineMd.renderer.rules.link_close = () => '</span>';
+// An image would blow the row height up; its alt text says what it was.
+inlineMd.renderer.rules.image = (tokens, idx) =>
+  `<span class="md-img">🖼 ${escapeHtml(tokens[idx]!.content)}</span>`;
+
+const escapeHtml = (s: string): string => inlineMd.utils.escapeHtml(s);
+
+const FENCE = /^[ \t]*(?:```|~~~)/;
+
+/** Render one patch line. `raw` is for lines inside a fenced code block, which stay as typed. */
+export function markupLine(text: string, raw = false): string {
+  const indent = /^[ \t]*/.exec(text)![0]!;
+  const rest = text.slice(indent.length);
+  const pad = indent.replace(/\t/g, '    ').length;
+  const style = pad ? ` style="padding-left:${pad}ch"` : '';
+  const wrap = (cls: string, body: string) => `<span class="dl${cls ? ` ${cls}` : ''}"${style}>${body || '&nbsp;'}</span>`;
+  const mark = (s: string) => `<span class="mk">${escapeHtml(s)}</span>`;
+
+  if (raw) return wrap('dl-code', escapeHtml(rest));
+
+  const heading = /^(#{1,6})([ \t]+)(.*)$/.exec(rest);
+  if (heading) {
+    return wrap(`dl-h dl-h${Math.min(heading[1]!.length, 3)}`, mark(heading[1]! + heading[2]!) + inlineMd.renderInline(heading[3]!));
+  }
+
+  const quote = /^(>[ \t]?)(.*)$/.exec(rest);
+  if (quote) return wrap('dl-q', mark(quote[1]!) + inlineMd.renderInline(quote[2]!));
+
+  const item = /^([-*+]|\d+[.)])([ \t]+)(.*)$/.exec(rest);
+  if (item) {
+    const task = /^\[([ xX])\][ \t]+(.*)$/.exec(item[3]!);
+    const marker = mark(item[1]! + item[2]!);
+    if (task) {
+      const done = task[1] !== ' ';
+      return wrap(
+        `dl-li${done ? ' dl-done' : ''}`,
+        `${marker}<span class="tick">${done ? '☑' : '☐'}</span> ${inlineMd.renderInline(task[2]!)}`,
+      );
+    }
+    return wrap('dl-li', marker + inlineMd.renderInline(item[3]!));
+  }
+
+  if (/^([-*_])(?:[ \t]*\1){2,}[ \t]*$/.test(rest)) return wrap('dl-rule', escapeHtml(rest));
+
+  return wrap('', inlineMd.renderInline(rest));
+}
+
+/**
+ * Render every line of a patch.
+ *
+ * Fence tracking is per hunk and best-effort: a hunk starts wherever git chose to start it, so
+ * a document whose code fence opened above the hunk is read as prose. Getting that right would
+ * mean parsing the whole file for the sake of a handful of rows.
+ */
+export function markupHunks(hunks: DiffHunk[]): DiffHunk[] {
+  return hunks.map((hunk) => {
+    let fenced = false;
+    return {
+      ...hunk,
+      lines: hunk.lines.map((line) => {
+        const fence = FENCE.test(line.text);
+        const html = markupLine(line.text, fenced || fence);
+        if (fence) fenced = !fenced;
+        return { ...line, html };
+      }),
+    };
+  });
 }

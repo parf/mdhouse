@@ -911,6 +911,26 @@ main {
 
 .diff .empty { padding: 10px 12px; }
 
+/* A patch line with its Markdown rendered. The gutters and the sign column keep the monospace
+   they need to line up; the text itself becomes text. The source markers (`##`, `-`, `>`) stay
+   visible but muted, so the shape of the line is still legible beside its rendering. */
+.diff-hunk td.code.md-line { font: 13.5px/1.6 var(--sans); padding: 1px 10px; }
+.diff-hunk .dl { display: block; }
+.diff-hunk .mk { font: 12.5px var(--mono); color: var(--fg-faint); }
+.diff-hunk .dl-h { font-weight: 650; }
+.diff-hunk .dl-h1 { font-size: 1.25em; color: var(--h1); }
+.diff-hunk .dl-h2 { font-size: 1.12em; color: var(--h2); }
+.diff-hunk .dl-h3 { font-size: 1.02em; color: var(--h3); }
+.diff-hunk .dl-q { color: var(--fg-muted); font-style: italic; }
+.diff-hunk .dl-rule { color: var(--fg-faint); font-family: var(--mono); }
+.diff-hunk .dl-code { font: 12.5px/1.5 var(--mono); }
+.diff-hunk .dl-done { color: var(--fg-muted); }
+.diff-hunk .tick { color: var(--ok); }
+.diff-hunk .md-line code { font: 12.5px var(--mono); background: var(--bg-hover); border-radius: 3px; padding: 0 3px; }
+.diff-hunk .md-line .md-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.diff-hunk .md-line .md-img { color: var(--fg-muted); }
+.diff-hunk .md-line del { color: var(--fg-faint); }
+
 /* The document with its diff on it: the same green and red, laid over prose rather than a
    patch. A bar in the margin does the work the +/− column does in the monospace view, so the
    tint can stay faint enough to read a paragraph through. */

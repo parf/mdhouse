@@ -41,8 +41,14 @@ export function Diff({ diff, loading }: { diff: FileDiff | null; loading: boolea
                 <td class="ln">{line.a ?? ''}</td>
                 <td class="ln">{line.b ?? ''}</td>
                 <td class="sign">{line.t === ' ' ? '' : line.t}</td>
-                {/* An empty line still needs to occupy one, and a tab still means eight. */}
-                <td class="code">{line.text || ' '}</td>
+                {/* The line with its Markdown rendered, by the same renderer the document
+                    uses. The gutters and the sign column stay as they are — they are the
+                    patch, not the text. An empty line still has to occupy one. */}
+                {line.html ? (
+                  <td class="code md-line" dangerouslySetInnerHTML={{ __html: line.html }} />
+                ) : (
+                  <td class="code">{line.text || '\u00a0'}</td>
+                )}
               </tr>
             ))}
           </tbody>

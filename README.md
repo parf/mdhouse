@@ -111,7 +111,11 @@ that diffs that commit. `--follow` is used, so a renamed file keeps its history.
 
 **See what changed, two ways.** Beside the star are two buttons. The first shows the file as a
 **patch** — green and red, both old and new line numbers, the view everyone already reads diffs
-in. The second keeps the **whole document in its markdown styling** and marks the change on it:
+in — except that the lines are *rendered*: headings, bold, inline code, links and task boxes
+look like themselves, with the source markers (`##`, `-`, `>`) kept beside them in grey. The
+gutters and the `+`/`-` column stay monospace, because they are the patch rather than the text.
+The second button keeps the **whole document in its markdown styling** and marks the change on
+it:
 new paragraphs, list items and table rows tinted green with a bar in the margin, and deleted
 text put back, struck through, exactly where it used to be. Same diff, read as a document
 instead of as a patch.

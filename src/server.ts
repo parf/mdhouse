@@ -10,7 +10,7 @@ import index from './index.html';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
-import { render, splitFrontmatter } from './lib/render';
+import { markupHunks, render, splitFrontmatter } from './lib/render';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { Watcher } from './lib/watch';
@@ -241,6 +241,10 @@ export async function serve(opts: ServeOptions) {
         const none: FileDiff = { kind: 'none', added: 0, removed: 0, hunks: [], truncated: false };
         if (opts.noGit) return json(none);
 
+        /** A patch of a Markdown file is Markdown: every line goes out rendered. */
+        const served = (d: FileDiff, current: boolean) =>
+          json({ ...d, hunks: markupHunks(d.hunks), current });
+
         const asked = url.searchParams.get('rev') ?? '';
         // Only a hash, never a ref expression: this string reaches a git command line.
         const rev = /^[0-9a-f]{4,40}$/i.test(asked) ? asked : null;
@@ -251,7 +255,7 @@ export async function serve(opts: ServeOptions) {
         // Not in a repository, or in one that has never seen this file: the whole file is new.
         if (!where || (status === 'untracked' && !rev)) {
           const text = await Bun.file(loc.abs).text().catch(() => null);
-          return json(text === null ? none : { ...newFileDiff(text), current: true });
+          return text === null ? json(none) : served(newFileDiff(text), true);
         }
 
         if (rev) {
@@ -261,20 +265,20 @@ export async function serve(opts: ServeOptions) {
           // The newest commit's result is the file on disk — as long as nothing has been
           // edited since. Any older revision describes a text this page is not showing.
           const by = await store.authorship(loc.root, loc.rel);
-          return json({ ...shown, current: committed && by?.last?.hash === info!.hash });
+          return served(shown, committed && by?.last?.hash === info!.hash);
         }
 
         if (!committed) {
           const working = await workingDiff(where.repo, where.repoRel);
           // An empty answer means the index and the working tree agree with HEAD after all —
           // a mode change, say. Fall through to the last commit rather than show nothing.
-          if (working?.hunks.length) return json({ ...working, current: true });
+          if (working?.hunks.length) return served(working, true);
         }
 
         const by = await store.authorship(loc.root, loc.rel);
         if (!by?.last) return json(none);
         const last = await commitDiff(where.repo, where.repoRel, by.last);
-        return json(last ? { ...last, current: committed } : none);
+        return last ? served(last, committed) : json(none);
       },
 
       '/api/marks': {
