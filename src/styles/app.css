@@ -312,6 +312,7 @@ main {
 .row.fav > .ico { color: var(--mark-fav); }
 
 .badge { font-size: 10.5px; flex: none; padding: 0 4px; border-radius: 3px; color: var(--fg-faint); }
+.badge.recent-heat { font-size: 13px; padding: 0 2px; line-height: 1; }
 .badge.modified { color: var(--warn); }
 .badge.untracked { color: var(--ok); }
 .badge.staged { color: var(--accent); }

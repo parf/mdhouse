@@ -2,6 +2,7 @@ import type { Node, DirNode, FileNode } from './tree-model';
 import type { Mark } from '../lib/prefs';
 import { IconChevron, IconDoc, IconFolder, IconStar, IconMute, IconEyeOff } from './icons';
 import { docName } from './format';
+import { RecentHeat } from './Ago';
 
 interface Props {
   nodes: Node[];
@@ -66,6 +67,8 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       <span class="twist" />
       <span class="ico">{isFav ? <IconStar size={14} filled /> : <IconDoc size={14} />}</span>
       <span class="label">{docName(file.name)}</span>
+
+      <RecentHeat at={file.file.mtime} />
 
       {status && (
         <span class={`badge ${status}`} title={status}>

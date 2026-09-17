@@ -392,3 +392,30 @@ rule: the history panel beside it stays, and the page looks like the contents li
 
 The threshold is now two. A two-line contents list is cheap; a panel that vanishes without
 explanation is not.
+
+## N.15 — A second mdhouse hands over its directories
+`mdhouse <dir>` on a port already serving used to be an error telling you to pick another
+port. It now asks the daemon that holds the port to serve that directory as well, prints the
+URL and exits 0 — the command ends on a page, which is the only thing anyone runs it for.
+
+**It adds; it never replaces.** A tab open on one tree should not turn into a different tree
+because a terminal somewhere ran another command: the reader loses their place, the open
+document 404s and nothing says why. mdhouse already serves several roots with a switcher, so
+the new directory simply joins them. `Registry.add()` is the new door — an already-served
+directory returns the root it already has rather than a duplicate.
+
+**No key, no signature, no clock.** Control goes over a unix socket at
+`~/.config/mdhouse/control-<port>.sock`, mode `0600`: the only process that can ask a daemon
+to do anything is one running as the user who started it, which is what a shared secret in
+that same directory would have been standing in for. A browser cannot open a unix socket, so
+the CSRF and DNS-rebinding routes into a local HTTP control endpoint do not exist. A socket
+file left behind by a `kill -9` is detected and removed rather than blocking the next start.
+
+Open tabs hear about it: the daemon publishes `{t:'roots'}`, the client refetches the root
+list and reconnects — which is how it subscribes to the new root's topic, so live updates work
+on a tree added an hour after the server started. Verified end to end: edits to a file in a
+root added at runtime arrive as `{"t":"fs","root":"livetest","paths":["a.md"]}`.
+
+The CLI says which is which: `+` for a root just added, `·` for one already served, and a note
+when `--rw` was asked for a tree the daemon is already serving read-only — writability belongs
+to the root that exists, and pretending otherwise would be a lie about what it will let you do.

@@ -60,22 +60,30 @@ export class Registry {
    *        viewer, and a viewer that cannot write cannot damage anything it is pointed at.
    */
   static async create(specs: string[], writable = false): Promise<Registry> {
-    const roots: Root[] = [];
-    const usedIds = new Set<string>();
+    const registry = new Registry([]);
+    for (const spec of specs) await registry.add(spec, writable);
+    return registry;
+  }
 
-    for (const spec of specs) {
-      const abs = await realpath(resolvePath(spec));
-      if (roots.some((r) => r.path === abs)) continue;
+  /**
+   * Serve one more directory, for the lifetime of the process.
+   *
+   * A second `mdhouse <dir>` against a port already in use hands its directory here rather
+   * than failing, so the registry has to grow after construction. A directory already served
+   * returns the root it already has: asking twice is how you get its URL, not a duplicate.
+   */
+  async add(spec: string, writable = false): Promise<Root> {
+    const abs = await realpath(resolvePath(spec));
+    const existing = this.list().find((r) => r.path === abs);
+    if (existing) return existing;
 
-      const name = abs.split(sep).filter(Boolean).pop() ?? abs;
-      let id = slugify(name);
-      for (let n = 2; usedIds.has(id); n++) id = `${slugify(name)}-${n}`;
-      usedIds.add(id);
+    const name = abs.split(sep).filter(Boolean).pop() ?? abs;
+    let id = slugify(name);
+    for (let n = 2; this.byId.has(id); n++) id = `${slugify(name)}-${n}`;
 
-      roots.push({ id, name, path: abs, writable });
-    }
-
-    return new Registry(roots);
+    const root: Root = { id, name, path: abs, writable };
+    this.byId.set(id, root);
+    return root;
   }
 
   list(): Root[] {

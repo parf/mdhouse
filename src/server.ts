@@ -14,6 +14,7 @@ import { render, splitFrontmatter } from './lib/render';
 import { searchContent } from './lib/search';
 import { fileHistory } from './lib/git';
 import { Watcher } from './lib/watch';
+import { serveControl, type AddReply } from './lib/control';
 
 export interface ServeOptions {
   registry: Registry;
@@ -36,7 +37,7 @@ const ASSET_EXT = /\.(png|jpe?g|gif|webp|svg|avif|ico)$/i;
 /** Resolved once at startup; mermaid is a direct dependency so this always exists. */
 const MERMAID_DIST = new URL('../node_modules/mermaid/dist', import.meta.url).pathname;
 
-export function serve(opts: ServeOptions) {
+export async function serve(opts: ServeOptions) {
   const { registry, prefs, port, hostname } = opts;
   const store = new Store(registry, prefs, { noGit: opts.noGit, gitLogLimit: opts.gitLogLimit });
 
@@ -261,6 +262,7 @@ export function serve(opts: ServeOptions) {
       open(ws: ServerWebSocket<undefined>) {
         const rootIds = registry.list().map((r) => r.id);
         for (const id of rootIds) ws.subscribe(`root:${id}`);
+        ws.subscribe('roots');
         ws.send(JSON.stringify({ t: 'hello', roots: rootIds }));
       },
       message(ws: ServerWebSocket<undefined>, raw: string | Buffer) {
@@ -285,5 +287,37 @@ export function serve(opts: ServeOptions) {
   });
   for (const root of registry.list()) watcher.watchRoot(root);
 
-  return { server, store, watcher };
+  /**
+   * Serve more directories, at the request of a second `mdhouse` on the control socket.
+   *
+   * Adding rather than replacing is deliberate. A tab open on one tree should not turn into a
+   * different tree because a terminal somewhere ran another command: the reader loses their
+   * place, the open document 404s, and nothing says why. mdhouse already serves several roots
+   * with a switcher, so the new directory simply joins them and the caller is told its URL.
+   */
+  const addRoots = async (dirs: string[], writable: boolean): Promise<AddReply> => {
+    const asked = new Set<string>();
+    const added = new Set<string>();
+
+    for (const dir of dirs) {
+      const known = new Set(registry.list().map((r) => r.id));
+      const root = await registry.add(dir, writable);
+      // Asking for a directory already served is a request for its URL, not a second copy of
+      // it — only a genuinely new root needs a watcher.
+      if (!known.has(root.id)) {
+        watcher.watchRoot(root);
+        added.add(root.id);
+      }
+      asked.add(root.id);
+    }
+
+    const roots = registry.list().map((r) => ({ ...r, added: added.has(r.id), asked: asked.has(r.id) }));
+    // Open tabs learn about the new root over the channel they already hold.
+    server.publish('roots', JSON.stringify({ t: 'roots', roots: roots.map((r) => r.id) }));
+    return { url: `http://${hostname}:${server.port}`, roots };
+  };
+
+  const control = await serveControl(port, async (req) => addRoots(req.dirs, req.rw === true));
+
+  return { server, store, watcher, control };
 }

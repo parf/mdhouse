@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'preact/hooks';
 import { timeAgo } from './format';
 
 /**
@@ -20,19 +21,47 @@ export function heatOf(at: number): Heat {
   return 'old';
 }
 
+/** Expire recent indicators at their time boundaries without polling. */
+function useHeat(at: number): Heat {
+  const [, refresh] = useState(0);
+  const heat = at ? heatOf(at) : 'old';
+
+  useEffect(() => {
+    const duration = heat === 'now' ? 10 * MINUTE : heat === 'hour' ? HOUR : null;
+    if (duration === null) return;
+    const timer = setTimeout(() => refresh((n) => n + 1), Math.max(0, at + duration - Date.now()));
+    return () => clearTimeout(timer);
+  }, [at, heat]);
+
+  return heat;
+}
+
+/** A file's recent-update badge beside its git status. */
+export function RecentHeat({ at }: { at: number }) {
+  const heat = useHeat(at);
+  if (heat !== 'now' && heat !== 'hour') return null;
+  const label = heat === 'now' ? 'Hot — updated less than 10 minutes ago' : 'Warm — updated less than an hour ago';
+
+  return (
+    <span class="badge recent-heat" role="img" aria-label={label} title={label}>
+      {heat === 'now' ? '🔥' : '♨️'}
+    </span>
+  );
+}
+
 /**
- * A "3 h ago" label, coloured by how recent it is. The freshest bucket also gets a flame —
- * something changed in the last ten minutes is usually the thing you came here for.
+ * A "3 h ago" label, coloured by how recent it is, with hot and warm indicators for the
+ * first ten minutes and the rest of the first hour.
  */
 export function Ago({ at, flame = true }: { at: number; flame?: boolean }) {
+  const heat = useHeat(at);
   if (!at) return null;
-  const heat = heatOf(at);
 
   return (
     <span class={`ago ${heat}`} title={new Date(at).toLocaleString()}>
-      {heat === 'now' && flame && (
+      {(heat === 'now' || heat === 'hour') && flame && (
         <span class="flame" aria-hidden="true">
-          🔥
+          {heat === 'now' ? '🔥' : '♨️'}
         </span>
       )}
       {timeAgo(at)}

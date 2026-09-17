@@ -51,6 +51,19 @@ pages can be linked, bookmarked and typed by hand.
 
 No build step, no config file, nothing written into the folder you point it at.
 
+Run it again somewhere else and it does the obvious thing:
+
+```bash
+mdhouse ~/notes        # starts on 7777
+mdhouse ~/src          # 7777 is taken — hands ~/src to the one already running
+```
+
+The second command does not fail and does not start a rival server: it asks the running
+mdhouse to serve that directory too, prints the URL, and exits. Your open tabs keep the tree
+they were reading — the new one joins the root switcher beside it. Control goes over a unix
+socket at `~/.config/mdhouse/control-<port>.sock`, mode `0600`, so the only thing that can ask
+is a process running as you; a web page cannot reach a unix socket at all.
+
 ---
 
 ## ❖ What you get

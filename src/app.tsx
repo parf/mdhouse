@@ -82,7 +82,11 @@ function App() {
   useEffect(() => {
     void api.roots().then(({ roots }) => {
       setRoots(roots);
-      setRootId((current) => current || (roots[0]?.id ?? ''));
+      // `?root=<id>` picks which tree to land on — what a second `mdhouse <dir>` prints when
+      // the daemon it handed the directory to was already serving something else.
+      const asked = new URLSearchParams(location.search).get('root');
+      const wanted = roots.find((r) => r.id === asked)?.id;
+      setRootId((current) => current || wanted || (roots[0]?.id ?? ''));
     });
   }, []);
 
@@ -167,6 +171,13 @@ function App() {
   const onLive = useRef<(msg: LiveMessage) => void>(() => {});
   onLive.current = (msg) => {
     if (msg.t === 'hello' || msg.t === 'pong') return;
+
+    // Another `mdhouse` handed this one a directory: pick up the new root list, but stay
+    // where the reader is — the tree they are looking at has not changed.
+    if (msg.t === 'roots') {
+      void api.roots().then(({ roots }) => setRoots(roots));
+      return;
+    }
 
     void reloadTree();
     setRevision((n) => n + 1);

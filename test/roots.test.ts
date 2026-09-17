@@ -75,3 +75,41 @@ describe('document URLs', () => {
     expect((await registry.fromDocUrl(url))?.rel).toBe('a b/c#d.md');
   });
 });
+
+describe('adding a root at runtime', () => {
+  test('a new directory joins the registry and keeps the old one', async () => {
+    const registry = await Registry.create([`${HERE}/src`]);
+    const added = await registry.add(`${HERE}/test`);
+
+    expect(registry.list().map((r) => r.path)).toEqual([`${HERE}/src`, `${HERE}/test`]);
+    expect(added.id).toBe('test');
+    // The first root stays the default, so URLs handed out before the addition still resolve.
+    expect(registry.defaultRoot().path).toBe(`${HERE}/src`);
+  });
+
+  test('asking for a directory already served returns the root it already has', async () => {
+    const registry = await Registry.create([`${HERE}/src`]);
+    const again = await registry.add(`${HERE}/src`);
+
+    expect(registry.list()).toHaveLength(1);
+    expect(again.id).toBe(registry.list()[0]!.id);
+  });
+
+  test('a second directory of the same name gets its own id', async () => {
+    const registry = await Registry.create([`${HERE}/src/lib`]);
+    const other = await registry.add(`${HERE}/src/ui`);
+    const clash = await registry.add(`${HERE}/test`);
+
+    expect(other.id).toBe('ui');
+    expect(clash.id).toBe('test');
+    expect(new Set(registry.list().map((r) => r.id)).size).toBe(3);
+  });
+
+  test('writability is per root, not per process', async () => {
+    const registry = await Registry.create([`${HERE}/src`]);
+    const writable = await registry.add(`${HERE}/test`, true);
+
+    expect(registry.list()[0]!.writable).toBe(false);
+    expect(writable.writable).toBe(true);
+  });
+});

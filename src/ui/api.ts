@@ -84,7 +84,9 @@ export type LiveMessage =
   | { t: 'hello'; roots: string[] }
   | { t: 'pong' }
   | { t: 'fs'; root: string; paths: string[] }
-  | { t: 'git'; root: string; paths: string[] };
+  | { t: 'git'; root: string; paths: string[] }
+  /** A second `mdhouse` handed this one another directory. */
+  | { t: 'roots'; roots: string[] };
 
 /**
  * The live channel. Reconnects with backoff; never polls. `onStatus` drives the dot in the
@@ -108,7 +110,12 @@ export function connectLive(onMessage: (msg: LiveMessage) => void, onStatus: (li
     };
     socket.onmessage = (ev) => {
       try {
-        onMessage(JSON.parse(ev.data as string) as LiveMessage);
+        const msg = JSON.parse(ev.data as string) as LiveMessage;
+        onMessage(msg);
+        // Topics are subscribed to when the socket opens, so a root added since then has
+        // nobody listening to it. Reconnecting — the backoff path that already exists — is
+        // how this client starts hearing about the new tree.
+        if (msg.t === 'roots') socket?.close();
       } catch {
         /* ignore malformed frames */
       }

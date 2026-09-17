@@ -32,7 +32,7 @@ interface PrefsFile {
   roots: Record<string, RootPrefs>;
 }
 
-const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
+export const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
 const PREFS_PATH = `${CONFIG_DIR}/prefs.json`;
 
 const empty = (): RootPrefs => ({ favorite: [], muted: [], ignored: [] });

@@ -95,3 +95,23 @@ found* — intermittently, with nothing wrong with the path.
 `Bun.serve` now passes `reusePort: false` and the CLI turns `EADDRINUSE` into a sentence that
 says which port is taken and what to do about it. Sharing a port is not a feature anyone asked
 for here, and the failure it produces is indistinguishable from a bug in the path handling.
+
+
+## The control channel is a unix socket, and it adds rather than replaces
+
+Two questions, and the answers reinforce each other.
+
+**How does a second `mdhouse` reach the first?** The shape considered first was a random key
+in the config, a timestamp, and `md5(key + time)` as an HTTP POST. It has three faults: the
+MAC signs the timestamp rather than the request, so a captured one authorises any directory
+list; md5 in `md5(key ++ msg)` form is the textbook length-extension construction; and the key
+would live in the file the server already serializes parts of to the browser. A unix socket at
+`~/.config/mdhouse/control-<port>.sock`, mode `0600`, deletes all three: filesystem
+permissions are the authentication, there is nothing to sign, and a browser cannot open a unix
+socket at all — which is the attack the shared secret existed to stop.
+
+**What does it do when it gets there?** Add the directory, never swap the trees out. Replacing
+means a tab someone is reading becomes a different tree with no explanation, and it means
+rebuilding the registry, clearing every cache keyed by root id and restarting watchers — three
+places to leak state. Adding is `registry.add()` plus one watcher, and mdhouse already has a
+root switcher to show the result.

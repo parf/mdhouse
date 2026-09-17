@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { serve } from './server';
+import { askDaemon } from './lib/control';
 
 const USAGE = `mdhouse — browse every .md file under a directory
 
@@ -91,9 +92,27 @@ for (const dir of opts.dirs) {
 const registry = await Registry.create(dirs, opts.rw);
 const prefs = await Prefs.load();
 
-let started: ReturnType<typeof serve>;
+/** The root list, ids and paths in columns: `+` for one just added, `·` for one already served. */
+const printRoots = (
+  roots: Array<{ id: string; path: string; writable: boolean; added?: boolean; asked?: boolean }>,
+  showIds: boolean,
+): void => {
+  const width = Math.max(...roots.map((r) => r.id.length)) + 2;
+  for (const root of roots) {
+    const mark = root.added ? '+' : root.asked ? '·' : ' ';
+    const id = showIds ? root.id.padEnd(width) : '';
+    console.log(`${mark} ${id}${root.path}${root.writable ? '  [RW]' : ''}`);
+  }
+};
+
+const openBrowser = (target: string): void => {
+  const opener = process.platform === 'darwin' ? 'open' : 'xdg-open';
+  Bun.spawn([opener, target], { stdout: 'ignore', stderr: 'ignore' }).unref();
+};
+
+let started: Awaited<ReturnType<typeof serve>>;
 try {
-  started = serve({
+  started = await serve({
     registry,
     prefs,
     port: opts.port,
@@ -104,33 +123,59 @@ try {
   });
 } catch (err) {
   const code = (err as { code?: string }).code;
-  if (code === 'EADDRINUSE') {
-    console.error(`mdhouse: port ${opts.port} is already in use — another mdhouse is probably`);
-    console.error('         running there. Use that one, stop it, or pass --port <n>.');
+  if (code !== 'EADDRINUSE') throw err;
+
+  /**
+   * The port is taken. If an mdhouse is behind it, hand it these directories rather than
+   * failing: `mdhouse <dir>` should end on a page, not on an error telling you to pick a
+   * port. The daemon adds them to what it already serves — it never swaps its trees out from
+   * under a tab someone is reading.
+   */
+  const reply = await askDaemon(opts.port, { dirs, rw: opts.rw });
+  if (!reply) {
+    console.error(`mdhouse: port ${opts.port} is in use by something that is not mdhouse.`);
+    console.error('         Stop it, or pass --port <n>.');
     process.exit(1);
   }
-  throw err;
+  if ('error' in reply) {
+    console.error(`mdhouse: the mdhouse on ${opts.port} refused: ${reply.error}`);
+    process.exit(1);
+  }
+
+  const grew = reply.roots.some((r) => r.added);
+  console.log(`mdhouse  ${reply.url}  (already running — ${grew ? 'added to it' : 'already serving that'})`);
+  printRoots(reply.roots, reply.roots.length > 1);
+
+  // Writability belongs to a root, and this one already exists with its own answer. Say so
+  // rather than pretending `--rw` did something.
+  for (const root of reply.roots) {
+    if (root.asked && !root.added && opts.rw && !root.writable) {
+      console.log(`\n  ${root.path} is already served read-only.`);
+      console.log('  Stop that mdhouse and start it again with --rw to change that.');
+    }
+  }
+
+  const fresh = reply.roots.find((r) => r.asked);
+  const target =
+    fresh && reply.roots.length > 1 ? `${reply.url}/?root=${encodeURIComponent(fresh.id)}` : reply.url;
+  if (opts.open) openBrowser(target);
+  process.exit(0);
 }
-const { server, watcher } = started;
+const { server, watcher, control } = started;
 
 const url = `http://${opts.host}:${server.port}`;
 console.log(`mdhouse  ${url}`);
-for (const root of registry.list()) {
-  const badge = root.writable ? '  [RW]' : '';
-  console.log(`  ${registry.single ? '' : root.id.padEnd(12)}${root.path}${badge}`);
-}
+printRoots(registry.list(), !registry.single);
 if (!opts.rw) {
   console.log('\n  Read-only — mdhouse will not write to these trees. Pass --rw to allow it.');
 }
 
-if (opts.open) {
-  const opener = process.platform === 'darwin' ? 'open' : 'xdg-open';
-  Bun.spawn([opener, url], { stdout: 'ignore', stderr: 'ignore' }).unref();
-}
+if (opts.open) openBrowser(url);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     watcher.close();
+    control?.stop();
     server.stop(true);
     process.exit(0);
   });
