@@ -468,3 +468,36 @@ edge. One root renders nothing anywhere — the widget appears exactly when it m
 Verified in the browser across all three states: the select carries every root, sits where it
 should (top bar `x=120` against a name ending at `110`, search button still at the far right),
 and changing it swaps the tree without disturbing the open document.
+
+## N.18 — Diffs, where the document is
+A button left of the star turns the document into a patch and back. What it shows depends on
+the file, because the useful comparison does:
+
+- **Uncommitted work opens on the diff, unasked.** If you have edited a file and come back to
+  look at it, the edit is what you came for — the working tree against `HEAD`, staged or not.
+- **A clean file opens as a document** and diffs its last commit only when asked. "Compare
+  with the previous revision" is the only comparison with a sensible default for a file nobody
+  has touched, and it is one click away rather than in your way.
+- **A file git has never seen** is the whole file, added — synthesised rather than shelled out
+  to `git diff --no-index`, which also covers a file in no repository at all.
+- **Any revision on demand:** the history rows are buttons now, and clicking one shows what
+  that commit did to this file. Clicking it again puts the document back.
+
+GitHub's colours (`#e6ffec` / `#ffebe9`, stronger tints in the gutters, the same values dark
+mode uses at 15 % and 30 % alpha) and two line-number gutters, because "which line is this
+now" and "which line was it before" are different questions.
+
+**The landmine:** `diff.external` — difftastic, delta — is set in plenty of real `~/.gitconfig`
+files, and `git diff` honours it, so the parser was handed a side-by-side rendering with no
+`@@` in it. Every diff command now passes `--no-ext-diff --no-textconv`. (`git show` ignores
+`diff.external` by default, which is why the commit path worked while the working-tree path
+silently produced nothing.)
+
+`/api/git/diff?p=&rev=` is one process per view; `rev` is accepted only as a hash, since it
+reaches a git command line. `/api/doc` now carries the file's working-tree status, from the
+map the tree badges are already built from, which is what decides the opening view.
+
+Six tests cover the patch parser: two gutters, hunk headings, several hunks each with their own
+numbering, git chatter dropped, a missing final newline, the 4000-line cut, and the whole-file
+case. One of them caught a phantom blank line at the end of every diff — the trailing newline
+of the patch, split into an empty context line.

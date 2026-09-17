@@ -106,8 +106,15 @@ falls back to the twenty most recently changed files.
 `N/M done` count when the file has task checkboxes, and buttons to favourite, mute, copy the
 link, or trade the comfortable reading column for the full window. Beside it: a table of
 contents (H1–H2, with an `H3` chip when the document goes deeper) and a git history panel with
-the last five commits to that file — authors, ages, lines added and removed. `--follow` is
-used, so a renamed file keeps its history.
+the last five commits to that file — authors, ages, lines added and removed, each row a button
+that diffs that commit. `--follow` is used, so a renamed file keeps its history.
+
+**See what changed.** The diff button beside the star shows the file as a patch instead of as
+text, in the green-and-red everyone already reads patches in, with both old and new line
+numbers. A file with uncommitted work **opens on its diff** — if you have edited it and come
+back to look at it, the edit is what you came for. A file with nothing outstanding opens as a
+document and shows the last commit's change when you ask; click any row in the history panel
+to see what *that* commit did to this file.
 
 **Ages read like a heat map.** Every "3 h ago" is coloured by how fresh it is: 🔥 for anything
 touched in the last ten minutes, then orange for this hour, amber for today, grey for this
@@ -215,13 +222,13 @@ verified, [`TODO.md`](Plans/PRF-55-md-viewer-web/TODO.md) for what is next.
 ## ▸ Status
 
 **Phase 1 is shipped** and in daily use: viewer, search, recents, front page, per-file history
-and authorship, marks, live updates. Read-only end to end.
+and authorship, per-file diffs, marks, live updates. Read-only end to end.
 
 **Phase 2, in this order:**
 
 - checkboxes you can tick, written back to disk (only with `--rw` — a stale page must never
   corrupt a file)
-- git diffs for changed files
+- a changed / added / removed listing for a whole root, on top of the per-file diffs
 - pushing a selected section to Claude or Codex for feedback, streamed back over the WebSocket
   that is already there
 

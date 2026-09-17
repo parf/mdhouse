@@ -119,6 +119,18 @@ export const IconGit = (p: Props) =>
     p,
   );
 
+/** A file with a plus above a minus: what a diff is, in the shape the octicon set uses. */
+export const IconDiff = (p: Props) =>
+  svg(
+    <>
+      <path d="M12.75 5.75v7a1.5 1.5 0 0 1-1.5 1.5h-6.5a1.5 1.5 0 0 1-1.5-1.5v-9.5a1.5 1.5 0 0 1 1.5-1.5h4" />
+      <path d="M9 1.75v3a1 1 0 0 0 1 1h2.75" />
+      <path d="M6 7.5h4M8 5.5v4" />
+      <path d="M6 11.5h4" />
+    </>,
+    p,
+  );
+
 export const IconUser = (p: Props) =>
   svg(
     <>

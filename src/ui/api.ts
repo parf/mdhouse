@@ -4,7 +4,7 @@ import type { TreePayload, RecentEntry, Digest } from '../lib/store';
 import type { SearchResult } from '../lib/search';
 import type { Heading } from '../lib/render';
 import type { Mark } from '../lib/prefs';
-import type { FileHistory } from '../lib/git';
+import type { FileDiff, FileHistory, FileStatus } from '../lib/git';
 
 export interface RootInfo {
   id: string;
@@ -37,6 +37,8 @@ export interface DocPayload {
   headings: Heading[];
   hasMermaid: boolean;
   tasks: { done: number; total: number };
+  /** Working-tree status, when git has something to say: `modified`, `staged`, `untracked`. */
+  status?: FileStatus;
 }
 
 async function get<T>(path: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<T> {
@@ -70,6 +72,10 @@ export const api = {
     get<Digest>('/api/digest', { root, limit, ignored: ignored ? 1 : 0 }),
 
   history: (p: string, limit = 5) => get<HistoryPayload>('/api/git/log', { p, limit }),
+
+  /** What changed in one file. Without `rev` the server picks: uncommitted work, else the
+      commit that last touched it. */
+  diff: (p: string, rev?: string) => get<FileDiff>('/api/git/diff', { p, rev }),
 
   async setMark(root: string, path: string, mark: Mark, on: boolean): Promise<void> {
     await fetch('/api/marks', {

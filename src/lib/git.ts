@@ -255,3 +255,146 @@ export async function currentUser(repo: string): Promise<{ name: string; email: 
   if (!name && !email) return null;
   return { name: name ?? '', email: email ?? '' };
 }
+
+/* ── diffs ─────────────────────────────────────────────────────────────────── */
+
+export interface DiffLine {
+  /** ' ' context, '+' added, '-' removed. */
+  t: ' ' | '+' | '-';
+  text: string;
+  /** Line number on the old side, on the new side; absent where the line does not exist. */
+  a?: number;
+  b?: number;
+}
+
+export interface DiffHunk {
+  /** What git writes after the `@@ … @@` — usually the enclosing heading. */
+  heading: string;
+  lines: DiffLine[];
+}
+
+export interface FileDiff {
+  /** What is being compared: the working tree against HEAD, one commit, or a file git never saw. */
+  kind: 'working' | 'commit' | 'new' | 'none';
+  /** The commit shown, for `kind: 'commit'`. */
+  rev?: Commit;
+  added: number;
+  removed: number;
+  hunks: DiffHunk[];
+  /** True when the diff was cut short; the page says so rather than lying by omission. */
+  truncated: boolean;
+}
+
+/** Lines of patch body kept. A diff longer than this is being read by a machine, not a person. */
+const MAX_DIFF_LINES = 4000;
+
+/**
+ * Parse a unified diff for a single file into hunks, carrying both line numbers.
+ *
+ * Only the body matters here: the caller already knows which file this is, so the `diff --git`,
+ * `index`, `---` and `+++` headers are dropped rather than parsed.
+ */
+export function parsePatch(patch: string): Omit<FileDiff, 'kind' | 'rev'> {
+  const hunks: DiffHunk[] = [];
+  let added = 0;
+  let removed = 0;
+  let truncated = false;
+  let a = 0;
+  let b = 0;
+  let current: DiffHunk | null = null;
+  let kept = 0;
+
+  // One trailing newline ends the last line of the patch; splitting on it would otherwise
+  // invent an empty context line at the end of every diff.
+  for (const raw of patch.replace(/\n$/, '').split('\n')) {
+    const at = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@ ?(.*)$/.exec(raw);
+    if (at) {
+      a = Number(at[1]);
+      b = Number(at[2]);
+      current = { heading: at[3] ?? '', lines: [] };
+      hunks.push(current);
+      continue;
+    }
+    if (!current) continue; // still in the header block
+    if (raw.startsWith('\\')) continue; // "\ No newline at end of file"
+
+    if (kept >= MAX_DIFF_LINES) {
+      truncated = true;
+      break;
+    }
+
+    const mark = raw[0];
+    const text = raw.slice(1);
+    if (mark === '+') {
+      current.lines.push({ t: '+', text, b: b++ });
+      added++;
+    } else if (mark === '-') {
+      current.lines.push({ t: '-', text, a: a++ });
+      removed++;
+    } else if (mark === ' ' || raw === '') {
+      current.lines.push({ t: ' ', text, a: a++, b: b++ });
+    } else {
+      continue; // a stray header line between hunks
+    }
+    kept++;
+  }
+
+  // A patch cut in the middle can leave an empty trailing hunk; nothing to show for it.
+  return { hunks: hunks.filter((h) => h.lines.length), added, removed, truncated };
+}
+
+/**
+ * Flags that make git produce a patch we can parse, whatever the user's config says.
+ *
+ * `diff.external` (difftastic, delta and friends) replaces the unified diff wholesale, and
+ * `git diff` honours it — so a perfectly normal developer setup would hand this parser a
+ * side-by-side rendering with no `@@` in it at all. `--no-textconv` is the same argument for
+ * binary-ish filters.
+ */
+const PLAIN_DIFF = ['--no-ext-diff', '--no-textconv', '--no-color', '-U3'];
+
+/** Uncommitted changes to one file: the working tree, staged or not, against HEAD. */
+export async function workingDiff(repo: string, repoRelPath: string): Promise<FileDiff | null> {
+  const patch = await git(repo, ['diff', ...PLAIN_DIFF, 'HEAD', '--', repoRelPath]);
+  if (patch === null) return null;
+  return { kind: 'working', ...parsePatch(patch) };
+}
+
+/** What one commit did to one file. `rev` describes it, so the page can say what it is showing. */
+export async function commitDiff(repo: string, repoRelPath: string, rev: Commit): Promise<FileDiff | null> {
+  const patch = await git(repo, ['show', ...PLAIN_DIFF, '--format=', rev.hash, '--', repoRelPath]);
+  if (patch === null) return null;
+  return { kind: 'commit', rev, ...parsePatch(patch) };
+}
+
+/**
+ * A file git has never seen, as a diff against nothing.
+ *
+ * Synthesised rather than shelled out to `git diff --no-index`: it is the same answer, and it
+ * also covers a file in no repository at all, where there is no git to ask.
+ */
+export function newFileDiff(text: string): FileDiff {
+  const lines = text.split('\n');
+  if (lines.at(-1) === '') lines.pop();
+
+  const truncated = lines.length > MAX_DIFF_LINES;
+  const kept = truncated ? lines.slice(0, MAX_DIFF_LINES) : lines;
+  return {
+    kind: 'new',
+    added: kept.length,
+    removed: 0,
+    truncated,
+    hunks: kept.length ? [{ heading: '', lines: kept.map((text, i) => ({ t: '+' as const, text, b: i + 1 })) }] : [],
+  };
+}
+
+/** One commit's own description, for a revision the page was asked to show. */
+export async function commitInfo(repo: string, rev: string): Promise<Commit | null> {
+  const out = await git(repo, ['show', '-s', `--format=%H${FMT_SEP}%an${FMT_SEP}%ae${FMT_SEP}%aI${FMT_SEP}%s`, rev]);
+  const line = out?.split('\n').find((l) => l.trim());
+  if (!line) return null;
+
+  const [hash = '', author = '', email = '', iso = '', ...rest] = line.split(SEP);
+  const date = Date.parse(iso);
+  return { hash, author, email, date: Number.isNaN(date) ? 0 : date, subject: rest.join(SEP) };
+}

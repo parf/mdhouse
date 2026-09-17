@@ -35,6 +35,15 @@
   --h2: #1d6f5e; /* teal */
   --h3: #8a5a1f; /* ochre */
 
+  /* Diffs, in GitHub's colours — the ones every developer already reads a patch in. The line
+     tint is the pale wash; the gutter is the stronger one, so the margin still reads as green
+     or red when the text itself is selected or highlighted. */
+  --diff-add: #e6ffec;
+  --diff-add-gutter: #ccffd8;
+  --diff-del: #ffebe9;
+  --diff-del-gutter: #ffd7d5;
+  --diff-hunk: #f0f3f6;
+
   --sidebar-compact: 22%;
   --sidebar-open: 32%;
   --radius: 6px;
@@ -68,6 +77,11 @@
     --h1: #9dc4f5;
     --h2: #79d3bb;
     --h3: #e0b978;
+    --diff-add: rgba(46, 160, 67, 0.15);
+    --diff-add-gutter: rgba(46, 160, 67, 0.3);
+    --diff-del: rgba(248, 81, 73, 0.15);
+    --diff-del-gutter: rgba(248, 81, 73, 0.3);
+    --diff-hunk: rgba(88, 166, 255, 0.1);
   }
 }
 
@@ -96,6 +110,11 @@
   --h1: #9dc4f5;
   --h2: #79d3bb;
   --h3: #e0b978;
+  --diff-add: rgba(46, 160, 67, 0.15);
+  --diff-add-gutter: rgba(46, 160, 67, 0.3);
+  --diff-del: rgba(248, 81, 73, 0.15);
+  --diff-del-gutter: rgba(248, 81, 73, 0.3);
+  --diff-hunk: rgba(88, 166, 255, 0.1);
 }
 
 * { box-sizing: border-box; }
@@ -595,7 +614,19 @@ main {
   align-items: center;
   gap: 5px;
 }
-.gitlog .commit { padding: 7px 0; border-bottom: 1px solid var(--border); }
+.gitlog .commit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 6px;
+  margin: 0 -6px;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+  color: inherit;
+}
+.gitlog .commit:hover { background: var(--bg-hover); }
+.gitlog .commit[aria-pressed="true"] { background: var(--bg-active); }
 .gitlog .commit:last-child { border-bottom: 0; }
 .gitlog .commit:first-of-type { margin-top: 8px; }
 .gitlog .commit-subject { color: var(--fg); line-height: 1.35; overflow-wrap: anywhere; }
@@ -805,3 +836,77 @@ main {
 .ago.hour { color: var(--heat-hour); font-weight: 550; }
 .ago.now { color: var(--heat-now); font-weight: 650; }
 .ago .flame { margin-right: 3px; font-size: 0.95em; }
+
+/* ── diffs ──────────────────────────────────────────────────────────────── */
+
+.diff {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 28px;
+  background: var(--bg-raised);
+}
+.diff-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: 12.5px;
+  color: var(--fg-muted);
+}
+.diff-head b { color: var(--fg); font-weight: 600; }
+.diff-head code { font: 11.5px var(--mono); color: var(--fg-faint); }
+.diff-head .sep { color: var(--fg-faint); }
+.diff-head .churn { margin-left: auto; display: flex; gap: 6px; font: 12px var(--mono); }
+.diff-head .churn .plus { color: var(--ok); }
+.diff-head .churn .minus { color: var(--danger); }
+
+.diff-hunk {
+  width: 100%;
+  border-collapse: collapse;
+  font: 12.5px/1.5 var(--mono);
+  table-layout: auto;
+}
+/* Long lines scroll the cell rather than the page: a document is read at its own width. */
+.diff-hunk td.code {
+  padding: 0 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 4;
+  width: 100%;
+}
+.diff-hunk td.ln {
+  width: 1%;
+  padding: 0 6px;
+  text-align: right;
+  color: var(--fg-faint);
+  background: var(--bg-panel);
+  user-select: none;
+  white-space: nowrap;
+}
+.diff-hunk td.sign {
+  width: 1%;
+  padding: 0 2px 0 6px;
+  color: var(--fg-muted);
+  user-select: none;
+}
+
+.diff-hunk tr.add td.code, .diff-hunk tr.add td.sign { background: var(--diff-add); }
+.diff-hunk tr.add td.ln { background: var(--diff-add-gutter); color: var(--fg-muted); }
+.diff-hunk tr.del td.code, .diff-hunk tr.del td.sign { background: var(--diff-del); }
+.diff-hunk tr.del td.ln { background: var(--diff-del-gutter); color: var(--fg-muted); }
+
+.diff-hunk tr.hunk-head td {
+  background: var(--diff-hunk);
+  color: var(--fg-muted);
+  border-top: 1px solid var(--border);
+  padding: 2px 10px;
+  font-size: 11.5px;
+}
+.diff-hunk tr.hunk-head td.ln { text-align: center; background: var(--diff-hunk); }
+.diff-hunk:first-of-type tr.hunk-head td { border-top: 0; }
+
+.diff .empty { padding: 10px 12px; }

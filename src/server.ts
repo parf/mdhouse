@@ -12,7 +12,7 @@ import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { render, splitFrontmatter } from './lib/render';
 import { searchContent } from './lib/search';
-import { fileHistory } from './lib/git';
+import { commitDiff, commitInfo, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { Watcher } from './lib/watch';
 import { serveControl, type AddReply } from './lib/control';
 
@@ -120,6 +120,9 @@ export async function serve(opts: ServeOptions) {
         });
 
         const stat = await file.stat();
+        // Cheap — the status map is built once per root and invalidated by the watcher. It is
+        // here because it decides whether the page opens on the diff or on the document.
+        const status = await store.statusOf(loc.root, loc.rel).catch(() => undefined);
 
         return json({
           root: loc.root.id,
@@ -131,6 +134,7 @@ export async function serve(opts: ServeOptions) {
           mtime: stat.mtimeMs,
           size: stat.size,
           marks: prefs.marksFor(loc.root.path, loc.rel),
+          ...(status ? { status } : {}),
           ...rendered,
         });
       },
@@ -220,6 +224,50 @@ export async function serve(opts: ServeOptions) {
               }
             : null,
         });
+      },
+
+      /**
+       * What changed in one file: the working tree against HEAD when there is something
+       * uncommitted, and otherwise the last commit that touched it — "compare with the
+       * previous revision", which is the only comparison worth a default for a file nobody
+       * has edited. `rev` asks for a particular commit instead, which is what clicking a row
+       * in the history panel does.
+       */
+      '/api/git/diff': async (req) => {
+        const url = new URL(req.url);
+        const loc = await registry.resolve(url.searchParams.get('p') ?? '');
+        if (!loc) return fail(403, 'path outside any root');
+
+        const none: FileDiff = { kind: 'none', added: 0, removed: 0, hunks: [], truncated: false };
+        if (opts.noGit) return json(none);
+
+        const asked = url.searchParams.get('rev') ?? '';
+        // Only a hash, never a ref expression: this string reaches a git command line.
+        const rev = /^[0-9a-f]{4,40}$/i.test(asked) ? asked : null;
+        const where = await store.repoFor(loc.root, loc.rel);
+        const status = rev ? undefined : await store.statusOf(loc.root, loc.rel);
+
+        // Not in a repository, or in one that has never seen this file: the whole file is new.
+        if (!where || status === 'untracked') {
+          const text = await Bun.file(loc.abs).text().catch(() => null);
+          return json(text === null ? none : newFileDiff(text));
+        }
+
+        if (rev) {
+          const info = await commitInfo(where.repo, rev);
+          return json((info && (await commitDiff(where.repo, where.repoRel, info))) || none);
+        }
+
+        if (status === 'modified' || status === 'staged') {
+          const working = await workingDiff(where.repo, where.repoRel);
+          // An empty answer means the index and the working tree agree with HEAD after all —
+          // a mode change, say. Fall through to the last commit rather than show nothing.
+          if (working?.hunks.length) return json(working);
+        }
+
+        const by = await store.authorship(loc.root, loc.rel);
+        if (!by?.last) return json(none);
+        return json((await commitDiff(where.repo, where.repoRel, by.last)) ?? none);
       },
 
       '/api/marks': {

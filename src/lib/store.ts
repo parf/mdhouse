@@ -155,6 +155,18 @@ export class Store {
     return merged;
   }
 
+  /**
+   * The working-tree status of one file, from the same cached map the tree badges are made of.
+   *
+   * The document page asks for it so it knows whether the file has uncommitted changes — which
+   * is what decides whether it opens on the diff or on the rendered text.
+   */
+  async statusOf(root: Root, rel: string): Promise<FileStatus | undefined> {
+    if (this.opts.noGit) return undefined;
+    const scan = await this.scan(root, true);
+    return (await this.status(root, scan)).get(rel);
+  }
+
   async tree(root: Root, includeIgnored: boolean): Promise<TreePayload> {
     const scan = await this.scan(root, includeIgnored);
     const status = await this.status(root, scan);

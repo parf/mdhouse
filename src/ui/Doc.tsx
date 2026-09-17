@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff } from './icons';
 import { timeAgo } from './format';
 import { Ago } from './Ago';
+import { Diff } from './Diff';
+import type { FileDiff } from '../lib/git';
 
 interface Props {
   doc: DocPayload | null;
@@ -86,6 +88,38 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
       live = false;
     };
   }, [docPath]);
+
+  /**
+   * Diff mode: the same document shown as what changed rather than as text.
+   *
+   * A file with uncommitted work opens on its diff — if you have edited it and come to look at
+   * it, the edit is the thing you came for. A file with nothing outstanding opens as a
+   * document and shows the last commit's change only when asked, which is what the button and
+   * the history rows are for.
+   */
+  const [diffOn, setDiffOn] = useState(false);
+  const [diffRev, setDiffRev] = useState<string | null>(null);
+  const [diff, setDiff] = useState<FileDiff | null>(null);
+  const dirty = doc?.status === 'modified' || doc?.status === 'staged' || doc?.status === 'untracked';
+
+  useEffect(() => {
+    setDiffRev(null);
+    setDiffOn(dirty);
+  }, [docPath, dirty]);
+
+  useEffect(() => {
+    setDiff(null);
+    if (!docPath || !diffOn) return;
+
+    let live = true;
+    api
+      .diff(docPath, diffRev ?? undefined)
+      .then((d) => live && setDiff(d))
+      .catch(() => live && setDiff({ kind: 'none', added: 0, removed: 0, hunks: [], truncated: false }));
+    return () => {
+      live = false;
+    };
+  }, [docPath, diffOn, diffRev]);
 
   // In-app navigation: a local .md link should not reload the page.
   useEffect(() => {
@@ -226,6 +260,17 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
             </button>
             <button
               class="icon-btn"
+              aria-pressed={diffOn}
+              title={diffOn ? 'Show the document' : dirty ? 'Show your uncommitted changes' : 'Compare with the previous revision'}
+              onClick={() => {
+                setDiffRev(null);
+                setDiffOn((on) => !on);
+              }}
+            >
+              <IconDiff size={15} />
+            </button>
+            <button
+              class="icon-btn"
               title={isFav ? 'Unfavorite' : 'Favorite'}
               aria-pressed={isFav}
               onClick={() => onMark(doc.rel, 'favorite', !isFav)}
@@ -281,10 +326,23 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
             </ul>
           </details>
         )}
-        <History log={log} failed={logFailed} />
+        <History
+          log={log}
+          failed={logFailed}
+          activeRev={diffOn ? diffRev : null}
+          onPickRev={(hash) => {
+            // Clicking the revision already on screen puts the document back.
+            const showing = diffOn && diffRev === hash;
+            setDiffRev(showing ? null : hash);
+            setDiffOn(!showing);
+          }}
+        />
       </div>
 
-      <div ref={body} class="md" dangerouslySetInnerHTML={{ __html: doc.html }} />
+      {diffOn && <Diff diff={diff} loading={!diff} />}
+      {/* Hidden rather than unmounted: the rendered body carries the link handler, the mermaid
+          diagrams and the scroll target, and none of that should be rebuilt by a toggle. */}
+      <div ref={body} class="md" hidden={diffOn} dangerouslySetInnerHTML={{ __html: doc.html }} />
     </article>
   );
 }
@@ -330,7 +388,18 @@ function Authors({ authors }: { authors: DocAuthors | null }) {
  * only renders what arrived. The panel is open by default: waiting for a click bought nothing
  * but a click, since the document was already on screen by then.
  */
-function History({ log, failed }: { log: HistoryPayload | null; failed: boolean }) {
+function History({
+  log,
+  failed,
+  activeRev,
+  onPickRev,
+}: {
+  log: HistoryPayload | null;
+  failed: boolean;
+  /** The revision the page is diffing, so the row that produced it can say so. */
+  activeRev: string | null;
+  onPickRev: (hash: string) => void;
+}) {
   const [open, setOpen] = useState(true);
 
   return (
@@ -344,7 +413,14 @@ function History({ log, failed }: { log: HistoryPayload | null; failed: boolean 
       {log && !log.commits.length && <p class="empty">Not committed yet.</p>}
 
       {log?.commits.map((c) => (
-        <div class="commit" key={c.hash}>
+        // A row is a question — what did this commit do to this file? — so it is a button.
+        <button
+          class="commit"
+          key={c.hash}
+          aria-pressed={activeRev === c.hash}
+          title={`What ${c.hash.slice(0, 8)} changed here`}
+          onClick={() => onPickRev(c.hash)}
+        >
           <div class="commit-subject">{c.subject}</div>
           <div class="commit-meta">
             <span class="who">{c.author}</span>
@@ -357,7 +433,7 @@ function History({ log, failed }: { log: HistoryPayload | null; failed: boolean 
               </span>
             )}
           </div>
-        </div>
+        </button>
       ))}
     </details>
   );

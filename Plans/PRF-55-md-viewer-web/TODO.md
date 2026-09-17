@@ -48,7 +48,8 @@ without the file being modified unless explicitly applied.
 ## K. Git beyond recents
 
 - ~~**K.1** Per-file history panel~~ — shipped; see `DONE.md`.
-- **K.2** Diff view for changed files; changed/added/removed listing for a root.
+- ~~**K.2a** Per-file diff view~~ — shipped; see `DONE.md`.
+- **K.2b** Changed/added/removed listing for a whole root, reusing the same diff view.
 
 ## L. Plans-convention awareness
 
