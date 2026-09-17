@@ -20,13 +20,7 @@ export function Diff({ diff, loading }: { diff: FileDiff | null; loading: boolea
 
   return (
     <div class="diff">
-      <div class="diff-head">
-        <Label diff={diff} />
-        <span class="churn">
-          {diff.added > 0 && <span class="plus">+{diff.added}</span>}
-          {diff.removed > 0 && <span class="minus">−{diff.removed}</span>}
-        </span>
-      </div>
+      <DiffHead diff={diff} />
 
       {diff.hunks.map((hunk, i) => (
         <table class="diff-hunk" key={i}>
@@ -56,6 +50,23 @@ export function Diff({ diff, loading }: { diff: FileDiff | null; loading: boolea
       ))}
 
       {diff.truncated && <p class="empty">The rest of this diff is too long to show.</p>}
+    </div>
+  );
+}
+
+/**
+ * What is being compared, and by how much. Shared with the marked-up document view, which
+ * needs the same sentence above a page that otherwise looks like any other document.
+ */
+export function DiffHead({ diff, children }: { diff: FileDiff; children?: preact.ComponentChildren }) {
+  return (
+    <div class="diff-head">
+      <Label diff={diff} />
+      {children}
+      <span class="churn">
+        {diff.added > 0 && <span class="plus">+{diff.added}</span>}
+        {diff.removed > 0 && <span class="minus">−{diff.removed}</span>}
+      </span>
     </div>
   );
 }

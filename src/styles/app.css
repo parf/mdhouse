@@ -910,3 +910,36 @@ main {
 .diff-hunk:first-of-type tr.hunk-head td { border-top: 0; }
 
 .diff .empty { padding: 10px 12px; }
+
+/* The document with its diff on it: the same green and red, laid over prose rather than a
+   patch. A bar in the margin does the work the +/− column does in the monospace view, so the
+   tint can stay faint enough to read a paragraph through. */
+.md.marked .chg-add {
+  background: var(--diff-add);
+  box-shadow: inset 3px 0 0 var(--ok);
+  border-radius: 2px;
+  padding: 2px 8px 2px 10px;
+  margin-left: -10px;
+}
+.md.marked li.chg-add { margin-left: 0; padding-left: 10px; }
+.md.marked tr.chg-add { box-shadow: inset 3px 0 0 var(--ok); }
+.md.marked td.chg-add, .md.marked th.chg-add { margin: 0; padding: 4px 8px; }
+
+/* Deleted text has nowhere to live in the rendered document, so it comes back as itself: the
+   raw markdown lines, in the place they were taken from. */
+.md.marked .chg-del {
+  background: var(--diff-del);
+  box-shadow: inset 3px 0 0 var(--danger);
+  border-radius: 2px;
+  padding: 4px 8px 4px 10px;
+  margin: 8px 0 8px -10px;
+  font: 12.5px/1.6 var(--mono);
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-decoration: line-through;
+  text-decoration-color: var(--danger);
+  text-decoration-thickness: 1px;
+}
+
+.diff-head .warn-note { color: var(--warn); }

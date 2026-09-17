@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff, IconDiffDoc } from './icons';
 import { timeAgo } from './format';
 import { Ago } from './Ago';
-import { Diff } from './Diff';
+import { Diff, DiffHead } from './Diff';
+import { markChanges } from './mark-changes';
 import type { FileDiff } from '../lib/git';
+
+/** The two diff views; either can be the one a toggle turns on. */
+type DiffView = 'patch' | 'marked';
+/** What the page is showing: the document, the patch, or the document with the change on it. */
+type DocView = 'doc' | DiffView;
+
+/** The tooltip for a diff button, which depends on what there is to compare. */
+const whatDiff = (dirty: boolean, how: string) =>
+  `${dirty ? 'Show your uncommitted changes' : 'Compare with the previous revision'} — ${how}`;
 
 interface Props {
   doc: DocPayload | null;
@@ -97,14 +107,20 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
    * document and shows the last commit's change only when asked, which is what the button and
    * the history rows are for.
    */
-  const [diffOn, setDiffOn] = useState(false);
+  const [view, setView] = useState<DocView>('doc');
+  /** Which of the two diff views to open on: whichever was last asked for. */
+  const [diffView, setDiffView] = useState<DiffView>('patch');
   const [diffRev, setDiffRev] = useState<string | null>(null);
   const [diff, setDiff] = useState<FileDiff | null>(null);
   const dirty = doc?.status === 'modified' || doc?.status === 'staged' || doc?.status === 'untracked';
+  const diffOn = view !== 'doc';
 
   useEffect(() => {
     setDiffRev(null);
-    setDiffOn(dirty);
+    setView(dirty ? diffView : 'doc');
+    // diffView is deliberately not a dependency: changing the preferred view is already a
+    // change of view, and re-running here would fight the toggle that set it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docPath, dirty]);
 
   useEffect(() => {
@@ -120,6 +136,29 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
       live = false;
     };
   }, [docPath, diffOn, diffRev]);
+
+  /**
+   * The marked-up document: the change marks laid over the rendered text, and taken off again
+   * when the view or the diff changes. Only possible when the diff describes the file on disk
+   * — an older revision is a text this page is not showing.
+   */
+  const overlaid = view === 'marked' && diff?.current === true && diff.hunks.length > 0;
+
+  /** Turn a diff view on, switch to it, or — clicking the one already on — go back to the text. */
+  const pick = (next: DiffView) => {
+    setDiffView(next);
+    if (view === next) {
+      setView('doc');
+      setDiffRev(null);
+    } else {
+      setView(next);
+    }
+  };
+
+  useEffect(() => {
+    if (!overlaid || !diff || !body.current) return;
+    return markChanges(body.current, diff, doc?.lineOffset ?? 0);
+  }, [overlaid, diff, doc?.url, doc?.html]);
 
   // In-app navigation: a local .md link should not reload the page.
   useEffect(() => {
@@ -258,16 +297,23 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
             >
               <IconWide size={15} inward={fullWidth} />
             </button>
+            {/* Two ways to look at the same change: the patch, and the document with the
+                change marked on it. Either one toggles back to the plain document. */}
             <button
               class="icon-btn"
-              aria-pressed={diffOn}
-              title={diffOn ? 'Show the document' : dirty ? 'Show your uncommitted changes' : 'Compare with the previous revision'}
-              onClick={() => {
-                setDiffRev(null);
-                setDiffOn((on) => !on);
-              }}
+              aria-pressed={view === 'patch'}
+              title={view === 'patch' ? 'Show the document' : whatDiff(dirty, 'as a patch')}
+              onClick={() => pick('patch')}
             >
               <IconDiff size={15} />
+            </button>
+            <button
+              class="icon-btn"
+              aria-pressed={view === 'marked'}
+              title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
+              onClick={() => pick('marked')}
+            >
+              <IconDiffDoc size={15} />
             </button>
             <button
               class="icon-btn"
@@ -334,15 +380,31 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
             // Clicking the revision already on screen puts the document back.
             const showing = diffOn && diffRev === hash;
             setDiffRev(showing ? null : hash);
-            setDiffOn(!showing);
+            setView(showing ? 'doc' : diffView);
           }}
         />
       </div>
 
-      {diffOn && <Diff diff={diff} loading={!diff} />}
+      {view === 'marked' && diff && diff.kind !== 'none' && (
+        <DiffHead diff={diff}>
+          {!diff.current && <span class="warn-note">this revision is not the file on disk</span>}
+          {diff.current && !diff.hunks.length && <span class="sep">· nothing to mark</span>}
+        </DiffHead>
+      )}
+      {view === 'marked' && !diff && <div class="spinner" />}
+      {/* The marked view falls back to the patch when the marks cannot be trusted: a diff of an
+          older revision describes a text this page is not showing. */}
+      {(view === 'patch' || (view === 'marked' && diff?.current === false)) && (
+        <Diff diff={diff} loading={!diff} />
+      )}
       {/* Hidden rather than unmounted: the rendered body carries the link handler, the mermaid
           diagrams and the scroll target, and none of that should be rebuilt by a toggle. */}
-      <div ref={body} class="md" hidden={diffOn} dangerouslySetInnerHTML={{ __html: doc.html }} />
+      <div
+        ref={body}
+        class={`md${overlaid ? ' marked' : ''}`}
+        hidden={view === 'patch' || (view === 'marked' && diff?.current === false)}
+        dangerouslySetInnerHTML={{ __html: doc.html }}
+      />
     </article>
   );
 }

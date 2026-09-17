@@ -283,6 +283,13 @@ export interface FileDiff {
   hunks: DiffHunk[];
   /** True when the diff was cut short; the page says so rather than lying by omission. */
   truncated: boolean;
+  /**
+   * Whether the new side of this diff is the file as it is on disk right now.
+   *
+   * It is what decides whether the change marks can be laid over the rendered document: an
+   * older revision's diff describes a text the page is not showing.
+   */
+  current?: boolean;
 }
 
 /** Lines of patch body kept. A diff longer than this is being read by a machine, not a person. */

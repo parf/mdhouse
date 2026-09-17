@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { newFileDiff, parsePatch } from '../src/lib/git';
+import { changesOf } from '../src/ui/mark-changes';
 
 const PATCH = `diff --git a/NOTE.md b/NOTE.md
 index 1234567..89abcde 100644
@@ -92,5 +93,67 @@ describe('a file git has never seen', () => {
 
   test('an empty file has no hunks to show', () => {
     expect(newFileDiff('').hunks).toEqual([]);
+  });
+});
+
+describe('placing a diff on the rendered document', () => {
+  const diff = (lines: Array<[' ' | '+' | '-', string, number?, number?]>) => ({
+    kind: 'working' as const,
+    added: 0,
+    removed: 0,
+    truncated: false,
+    hunks: [{ heading: '', lines: lines.map(([t, text, a, b]) => ({ t, text, a, b })) }],
+  });
+
+  test('added lines are reported at their place in the new file', () => {
+    const { added, removals } = changesOf(
+      diff([
+        [' ', 'one', 1, 1],
+        ['+', 'two', undefined, 2],
+        [' ', 'three', 2, 3],
+        ['+', 'four', undefined, 4],
+      ]),
+    );
+
+    expect(added).toEqual([2, 4]);
+    expect(removals).toEqual([]);
+  });
+
+  test('a removed run is anchored to the line that now starts there', () => {
+    const { removals } = changesOf(
+      diff([
+        [' ', 'one', 1, 1],
+        ['-', 'gone A', 2],
+        ['-', 'gone B', 3],
+        [' ', 'four', 4, 2],
+      ]),
+    );
+
+    // Two lines vanished between "one" and "four": they belong just above what is now line 2.
+    expect(removals).toEqual([{ at: 2, text: 'gone A\ngone B' }]);
+  });
+
+  test('a replacement leaves the old text above the new', () => {
+    const { added, removals } = changesOf(
+      diff([
+        ['-', 'old', 1],
+        ['+', 'new', undefined, 1],
+      ]),
+    );
+
+    expect(added).toEqual([1]);
+    expect(removals).toEqual([{ at: 1, text: 'old' }]);
+  });
+
+  test('deletions at the end of a hunk sit just past its last line', () => {
+    const { removals } = changesOf(
+      diff([
+        [' ', 'one', 1, 1],
+        [' ', 'two', 2, 2],
+        ['-', 'tail', 3],
+      ]),
+    );
+
+    expect(removals).toEqual([{ at: 3, text: 'tail' }]);
   });
 });

@@ -109,12 +109,19 @@ contents (H1–H2, with an `H3` chip when the document goes deeper) and a git hi
 the last five commits to that file — authors, ages, lines added and removed, each row a button
 that diffs that commit. `--follow` is used, so a renamed file keeps its history.
 
-**See what changed.** The diff button beside the star shows the file as a patch instead of as
-text, in the green-and-red everyone already reads patches in, with both old and new line
-numbers. A file with uncommitted work **opens on its diff** — if you have edited it and come
-back to look at it, the edit is what you came for. A file with nothing outstanding opens as a
-document and shows the last commit's change when you ask; click any row in the history panel
-to see what *that* commit did to this file.
+**See what changed, two ways.** Beside the star are two buttons. The first shows the file as a
+**patch** — green and red, both old and new line numbers, the view everyone already reads diffs
+in. The second keeps the **whole document in its markdown styling** and marks the change on it:
+new paragraphs, list items and table rows tinted green with a bar in the margin, and deleted
+text put back, struck through, exactly where it used to be. Same diff, read as a document
+instead of as a patch.
+
+A file with uncommitted work **opens on its diff** — if you have edited it and come back to look
+at it, the edit is what you came for — and it opens in whichever of the two views you last used.
+A file with nothing outstanding opens as a document and shows the last commit's change when you
+ask; click any row in the history panel to see what *that* commit did to this file. (An older
+revision is a text the page is not showing, so the marked-up view falls back to the patch and
+says why.)
 
 **Ages read like a heat map.** Every "3 h ago" is coloured by how fresh it is: 🔥 for anything
 touched in the last ten minutes, then orange for this hour, amber for today, grey for this

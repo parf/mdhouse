@@ -245,29 +245,36 @@ export async function serve(opts: ServeOptions) {
         // Only a hash, never a ref expression: this string reaches a git command line.
         const rev = /^[0-9a-f]{4,40}$/i.test(asked) ? asked : null;
         const where = await store.repoFor(loc.root, loc.rel);
-        const status = rev ? undefined : await store.statusOf(loc.root, loc.rel);
+        const status = await store.statusOf(loc.root, loc.rel);
+        const committed = status !== 'modified' && status !== 'staged';
 
         // Not in a repository, or in one that has never seen this file: the whole file is new.
-        if (!where || status === 'untracked') {
+        if (!where || (status === 'untracked' && !rev)) {
           const text = await Bun.file(loc.abs).text().catch(() => null);
-          return json(text === null ? none : newFileDiff(text));
+          return json(text === null ? none : { ...newFileDiff(text), current: true });
         }
 
         if (rev) {
           const info = await commitInfo(where.repo, rev);
-          return json((info && (await commitDiff(where.repo, where.repoRel, info))) || none);
+          const shown = info && (await commitDiff(where.repo, where.repoRel, info));
+          if (!shown) return json(none);
+          // The newest commit's result is the file on disk — as long as nothing has been
+          // edited since. Any older revision describes a text this page is not showing.
+          const by = await store.authorship(loc.root, loc.rel);
+          return json({ ...shown, current: committed && by?.last?.hash === info!.hash });
         }
 
-        if (status === 'modified' || status === 'staged') {
+        if (!committed) {
           const working = await workingDiff(where.repo, where.repoRel);
           // An empty answer means the index and the working tree agree with HEAD after all —
           // a mode change, say. Fall through to the last commit rather than show nothing.
-          if (working?.hunks.length) return json(working);
+          if (working?.hunks.length) return json({ ...working, current: true });
         }
 
         const by = await store.authorship(loc.root, loc.rel);
         if (!by?.last) return json(none);
-        return json((await commitDiff(where.repo, where.repoRel, by.last)) ?? none);
+        const last = await commitDiff(where.repo, where.repoRel, by.last);
+        return json(last ? { ...last, current: committed } : none);
       },
 
       '/api/marks': {

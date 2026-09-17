@@ -131,6 +131,16 @@ export const IconDiff = (p: Props) =>
     p,
   );
 
+/** Lines of prose with a change bar down the margin: the document, with its diff on it. */
+export const IconDiffDoc = (p: Props) =>
+  svg(
+    <>
+      <path d="M2.5 3.5v9" stroke-width="2.4" />
+      <path d="M6 3.5h7.5M6 6.6h5.5M6 9.7h7.5M6 12.8h4" />
+    </>,
+    p,
+  );
+
 export const IconUser = (p: Props) =>
   svg(
     <>

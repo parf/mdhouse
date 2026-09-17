@@ -501,3 +501,32 @@ Six tests cover the patch parser: two gutters, hunk headings, several hunks each
 numbering, git chatter dropped, a missing final newline, the 4000-line cut, and the whole-file
 case. One of them caught a phantom blank line at the end of every diff — the trailing newline
 of the patch, split into an empty context line.
+
+## N.19 — The whole document, with the diff on it
+The patch view answers "what changed"; it is a poor way to answer "what does this say now".
+A second button beside it keeps the document exactly as it renders — headings, lists, tables,
+links — and marks the change on it:
+
+- new blocks tinted green with a bar in the margin, at the **deepest** block that owns the
+  line, so a changed list item is marked rather than the whole list;
+- deleted runs put back as raw markdown, struck through, in the place they were taken from —
+  the one thing a rendered document cannot show by itself.
+
+**This is what `data-line` was for.** Every block the renderer emits carries its source line,
+so an added line number resolves to the element containing it: each element's span runs from
+its own line to the line of the next element in document order, which is what makes the nested
+one win. Front matter is handled by `doc.lineOffset` — verified on a file with four lines of
+it, where the marks land on exactly the right paragraph.
+
+The marks are applied to the live DOM and taken off again on the way out, rather than the body
+being re-rendered: the rendered body carries the link handler, the mermaid diagrams and the
+scroll position, and a view toggle should not rebuild any of that.
+
+**An older revision cannot be marked up** — its diff describes a text the page is not showing.
+`/api/git/diff` now says whether the new side is the file on disk (`current`), and the marked
+view falls back to the patch with an amber note when it is not.
+
+The chosen view sticks: a file with uncommitted work opens in whichever of the two you last
+used. Four more tests cover the placement logic — added lines, an anchored removal run, a
+replacement, and deletions at the end of a hunk — from a pure `changesOf()` split out of the
+DOM work for exactly that reason. 51 tests pass.
