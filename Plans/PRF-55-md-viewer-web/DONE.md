@@ -553,3 +553,27 @@ Rendered server-side, by the renderer that already renders the document — `mar
 `render.ts`, applied to every diff before it is served. Nine more tests: inline markup, kept
 markers, task boxes, indentation, fenced lines, inert links, escaped HTML, empty lines, and a
 fence switching rendering off and on again inside one hunk. 60 tests pass.
+
+---
+
+## N.21 A face
+
+A house with `.md` glowing inside it. It appears twice, at two sizes, from two sources.
+
+**At the top of the README**, 640×362 and 51 KB — the full mark, centred. Centring in Markdown
+means a raw `<p align="center">` block, and that turned up a hole in the renderer: `<img src>`
+inside raw HTML was left alone, so the logo was a broken image in mdhouse while GitHub rendered
+it fine. `rewriteHtmlImages()` now sends relative sources through `/api/asset`, the same route
+markdown images already took, and leaves external, root-absolute and `data:` URLs alone. Two
+tests.
+
+**In front of every document title**, 124×72 and 4 KB, inlined as a `data:` URI in the
+stylesheet. The client has no static-asset route — `/api/asset` only resolves paths inside a
+served root, and the app chrome is not inside one — and the favicon in `index.html` was already
+an inline data URI, so this follows it. `.doc-title` becomes a flex row and `.mark` is sized in
+`em` (`1.55em × 0.9em`), so it tracks the title rather than fixing a pixel size beside it.
+
+The image is a raster with a white ground, not a transparency. A transparent cut was tried and
+rejected: the roof and outline are dark navy and disappear against a dark background. So the
+small copy is rounded into a tile instead — a logo badge in either theme, rather than a white
+rectangle in one of them.
