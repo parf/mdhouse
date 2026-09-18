@@ -270,7 +270,10 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
           })}
         </div>
 
-        <h1 class="doc-title">{title}</h1>
+        <h1 class="doc-title">
+          <span class="mark" aria-hidden="true" />
+          {title}
+        </h1>
 
         <div class="doc-meta">
           <span>
