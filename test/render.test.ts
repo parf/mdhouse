@@ -43,6 +43,20 @@ describe('markdown rendering', () => {
     expect(html).toContain('src="/api/asset?p=r%2Fdocs%2Fimg%2Fpic.png"');
   });
 
+  test('an <img> written as HTML gets the same asset URL', async () => {
+    // A README that centres its logo with raw HTML is ordinary; the browser would otherwise
+    // resolve that path against /d/…, which serves documents, not images.
+    const { html } = await render('<p align="center"><img src="../logo.png" width="200"></p>\n', ctx);
+    expect(html).toContain('src="/api/asset?p=r%2Flogo.png"');
+    expect(html).toContain('width="200"');
+  });
+
+  test('an external or absolute <img> is left alone', async () => {
+    const { html } = await render('<img src="https://example.com/x.png"><img src="/api/asset?p=r%2Fy.png">\n', ctx);
+    expect(html).toContain('src="https://example.com/x.png"');
+    expect(html).toContain('src="/api/asset?p=r%2Fy.png"');
+  });
+
   test('external links open in a new tab, safely', async () => {
     const { html } = await render('[site](https://example.com)', ctx);
     expect(html).toContain('target="_blank"');

@@ -253,6 +253,24 @@ function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
   };
 }
 
+/**
+ * Rewrite `src` on raw-HTML `<img>` tags, which markdown-it passes through untouched.
+ *
+ * A README that centres its logo with `<p align="center"><img src="doc/logo.png"></p>` is
+ * ordinary on GitHub, and without this the picture is a broken icon here: the browser resolves
+ * that path against `/d/…`, which is a document route, not the asset proxy. The Markdown image
+ * syntax is handled by the renderer rule above; this is the same rewrite for the tags written
+ * by hand.
+ */
+function rewriteHtmlImages(html: string, ctx: RenderContext): string {
+  return html.replace(/(<img\b[^>]*?\bsrc=)(["'])([^"']+)\2/gi, (whole, head, quote, src: string) => {
+    if (isExternal(src) || src.startsWith('/') || src.startsWith('data:')) return whole;
+    const target = resolveRelative(ctx.docPath, src);
+    if (!target) return whole;
+    return `${head}${quote}/api/asset?p=${encodeURIComponent(`${ctx.rootId}/${target}`)}${quote}`;
+  });
+}
+
 export async function render(src: string, ctx: RenderContext): Promise<Rendered> {
   await preloadLanguages(src);
   const hl = await highlighter();
@@ -312,7 +330,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   });
   md.use(linkPlugin, ctx);
 
-  const html = md.render(src);
+  const html = rewriteHtmlImages(md.render(src), ctx);
   return { html, headings, hasMermaid, tasks };
 }
 

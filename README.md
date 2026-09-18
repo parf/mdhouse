@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="doc/logo.png" alt="mdhouse — a house with .md inside" width="260">
+</p>
+
 # ❖ mdhouse
 
 **Every Markdown file under a folder, as a fast little website on your own machine.**
