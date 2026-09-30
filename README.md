@@ -80,6 +80,9 @@ unix socket at all.
 
 **Browse.** A sidebar tree of `.md` and `.mdx` files, nothing else. Three widths — a single top
 bar, compact, or open with search and filters — cycled with `Ctrl+B` and remembered.
+Every file shows its size (`812`, `1.1K`, `150K`); stubs stand out — **∅** under 101 bytes, **S**
+under 500, names struck through, in the tree and every list. Empty files are left out, and the
+folders above the open document are bold.
 
 **Search.** File names match as you type, with no request to the server at all. Full text goes
 through ripgrep with line numbers and highlighted context, and clicking a hit opens the file

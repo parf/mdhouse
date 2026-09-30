@@ -1,6 +1,6 @@
 {
   "name": "mdhouse",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Browsable, searchable web viewer for every .md file under a directory",
   "license": "GPL-2.0-only",
   "type": "module",
@@ -37,6 +37,7 @@
     "src",
     "doc",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {

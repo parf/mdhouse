@@ -577,3 +577,30 @@ The image is a raster with a white ground, not a transparency. A transparent cut
 rejected: the roof and outline are dark navy and disappear against a dark background. So the
 small copy is rounded into a tile instead — a logo badge in either theme, rather than a white
 rectangle in one of them.
+
+---
+
+## N.22 — Sizes, and stubs that stand out
+
+A plans tree fills up with `QUESTIONS.md` files holding one line: "no open questions". They
+looked exactly like the documents beside them.
+
+**Sizes.** `fileSize()` in `ui/format.ts` gives at most three digits: `87`, `1.1K`, `100K`,
+`1.2M`. Bytes carry no unit, and rounding that would reach four digits moves up a unit instead.
+The open sidebar shows a size on every file. Compact shows it on everything the stub marks do not
+already cover. `test/format.test.ts` has the edge cases.
+
+**Stubs.** Under 101 bytes a file gets a white **∅** on hot pink; under 500, a white **S** on
+violet; and in both cases the name is struck through. The mark sits at the right end of the row,
+in the tree and in search, Favorites, Recent and Mine. The route to it was not direct. Shrunken
+and half-filled page icons came first, and at 14 pixels nobody could tell them from the normal
+page. Only a coloured tile with a letter on it read as different.
+
+**Empty files** are dropped from the tree and its folder counts. Search and recents still list
+them.
+
+**Less chrome.** The page icon on file rows is gone: every row is Markdown, and the icon looked
+like the folder icon. File names move up into its space, and a favourite's star takes the
+chevron slot, which a file row never uses. Folder names and counts are dark brown, with the
+counts in bold. The folders above the open document are bold too, so the way down to it reads at
+a glance.
