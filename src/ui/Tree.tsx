@@ -41,10 +41,12 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
   if (node.kind === 'dir') {
     const dir = node as DirNode;
     const open = p.expanded.has(dir.path);
+    // An ancestor of the open document: bold, so the way down to it reads at a glance.
+    const onPath = !!p.current?.startsWith(`${dir.path}/`);
     return (
       <>
         <button
-          class="row dir"
+          class={`row dir${onPath ? ' on-path' : ''}`}
           style={{ '--indent': `${indent}px` }}
           data-dir={dir.path}
           onClick={() => p.onToggleDir(dir.path)}

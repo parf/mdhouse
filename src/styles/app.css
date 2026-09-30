@@ -354,6 +354,7 @@ main {
 .row .twist { width: 12px; flex: none; color: var(--fg-faint); display: flex; justify-content: center; }
 .row .ico { flex: none; color: var(--fg-faint); display: flex; }
 .row.dir > .label { color: var(--dir); }
+.row.dir.on-path > .label { font-weight: 700; }
 .row.dir > .badge { color: var(--dir); font-weight: 700; }
 .row.muted { opacity: 0.45; }
 .row.fav > .twist { color: var(--mark-fav); }
