@@ -1,6 +1,6 @@
 import type { Node, DirNode, FileNode } from './tree-model';
 import type { Mark } from '../lib/prefs';
-import { IconChevron, IconDoc, IconFolder, IconStar, IconMute, IconEyeOff } from './icons';
+import { IconChevron, IconFolder, IconStar, IconMute, IconEyeOff } from './icons';
 import { docName, fileSize } from './format';
 import { RecentHeat } from './Ago';
 
@@ -21,7 +21,7 @@ const STATUS_LABEL: Record<string, string> = {
   deleted: 'D',
 };
 
-/** Files this small are stubs, or close to it, and are marked at both ends of their row. */
+/** Files this small are stubs, or close to it, and are marked at the end of their row. */
 export const sizeClass = (size: number) => (size < 101 ? 'tiny' : size < 500 ? 'small' : '');
 
 /** ∅ for a file under 101 bytes, S for one under 500; nothing for anything bigger. */
@@ -33,11 +33,6 @@ export function SizeMark({ size, end }: { size: number | undefined; end?: boolea
       {small === 'tiny' ? '∅' : 'S'}
     </span>
   );
-}
-
-/** The left-hand slot in the lists: the mark, or an empty space the same width so names line up. */
-export function SizeSlot({ size }: { size: number | undefined }) {
-  return size && sizeClass(size) ? <SizeMark size={size} /> : <span class="size-slot" />;
 }
 
 function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
@@ -85,8 +80,9 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       onClick={() => p.onOpen(file.path)}
       title={`${file.path} · ${size < 1000 ? `${size} B` : fileSize(size)}`}
     >
-      <span class="twist" />
-      <span class="ico">{isFav ? <IconStar size={14} filled /> : small ? <SizeMark size={size} /> : <IconDoc size={14} />}</span>
+      {/* No page icon: every row here is a Markdown file, so it would say nothing. A favourite's
+          star sits in the chevron's slot, where it costs no width. */}
+      <span class="twist">{isFav && <IconStar size={12} filled />}</span>
       <span class="label">{docName(file.name)}</span>
       <SizeMark size={size} end />
 

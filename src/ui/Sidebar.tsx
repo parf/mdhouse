@@ -3,7 +3,7 @@ import type { RootInfo } from './api';
 import type { TreePayload, RecentEntry } from '../lib/store';
 import type { SearchResult } from '../lib/search';
 import type { Mark } from '../lib/prefs';
-import { SizeMark, SizeSlot, sizeClass } from './Tree';
+import { SizeMark, sizeClass } from './Tree';
 import { buildTree, fuzzyScore, type Node } from './tree-model';
 import { Tree } from './Tree';
 import { highlightRanges, docName } from './format';
@@ -328,7 +328,7 @@ function Favorites(props: SidebarProps & { sizes: Sizes; favorites: FavEntry[] }
         >
           <HitPath
             name={f.isDir ? `${f.name}/` : f.name}
-            dir={f.dir} lead={f.isDir ? <IconFolder size={12} /> : <SizeSlot size={props.sizes.get(f.rel)} />}
+            dir={f.dir} lead={f.isDir && <IconFolder size={12} />}
             tail={<SizeMark size={props.sizes.get(f.rel)} end />}
           />
           {f.missing && <span class="meta">missing</span>}
@@ -438,7 +438,6 @@ function Recents(props: SidebarProps & { sizes: Sizes }) {
                 ❖
               </span>
             )}
-            <SizeSlot size={props.sizes.get(e.rel)} />
             <span class="hit-name">{docName(e.name)}</span>
             <span class="meta">
               {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
@@ -496,7 +495,6 @@ function SearchResults(props: SidebarProps & { sizes: Sizes; nameHits: Array<{ f
               <HitPath
                 name={file.name}
                 dir={file.dir}
-                lead={<SizeSlot size={props.sizes.get(file.rel)} />}
                 tail={<SizeMark size={props.sizes.get(file.rel)} end />}
               />
             </button>
@@ -520,7 +518,6 @@ function SearchResults(props: SidebarProps & { sizes: Sizes; nameHits: Array<{ f
           <HitPath
             name={hit.rel.split('/').pop()!}
             dir={hit.rel.split('/').slice(0, -1).join('/')}
-            lead={<SizeSlot size={props.sizes.get(hit.rel)} />}
             tail={<SizeMark size={props.sizes.get(hit.rel)} end />}
           />
           <div class="hit-line">

@@ -356,12 +356,12 @@ main {
 .row.dir > .label { color: var(--dir); }
 .row.dir > .badge { color: var(--dir); font-weight: 700; }
 .row.muted { opacity: 0.45; }
-.row.fav > .ico { color: var(--mark-fav); }
+.row.fav > .twist { color: var(--mark-fav); }
 .row.tiny > .label { color: var(--fg-muted); }
 .row.tiny > .label, .row.small > .label,
 .hit.tiny .hit-name, .hit.small .hit-name { text-decoration: line-through; }
 
-/* Tiny (∅, under 101 B) and small (S, under 500 B) files: a bright tile on both ends of the row. */
+/* Tiny (∅, under 101 B) and small (S, under 500 B) files: a bright tile at the end of the row. */
 .size-mark {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
   width: 14px; height: 14px; border-radius: 3px;
@@ -369,7 +369,6 @@ main {
 }
 .size-mark.tiny { background: var(--size-tiny); font-size: 12px; }
 .size-mark.small { background: var(--size-small); }
-.size-slot { display: inline-flex; flex: none; width: 14px; align-self: center; }
 .hit .hit-path > .size-mark.end, .hit .meta > .size-mark { align-self: center; }
 .hit .hit-path > .size-mark.end { margin-left: auto; }
 
