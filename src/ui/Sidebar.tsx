@@ -85,7 +85,7 @@ export function Sidebar(props: SidebarProps) {
   const wide = state === 'open';
   const StateIcon = STATE_ICON[state];
 
-  const nodes = useMemo<Node[]>(() => (tree ? buildTree(tree.files) : []), [tree]);
+  const nodes = useMemo<Node[]>(() => (tree ? buildTree(tree.files.filter((f) => f.size > 0)) : []), [tree]);
 
   const favorites = useMemo<FavEntry[]>(() => {
     if (!tree) return [];

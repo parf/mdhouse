@@ -1,7 +1,7 @@
 import type { Node, DirNode, FileNode } from './tree-model';
 import type { Mark } from '../lib/prefs';
-import { IconChevron, IconDoc, IconFolder, IconStar, IconMute, IconEyeOff } from './icons';
-import { docName } from './format';
+import { IconChevron, IconDoc, IconDocSmall, IconDocTiny, IconFolder, IconStar, IconMute, IconEyeOff } from './icons';
+import { docName, fileSize } from './format';
 import { RecentHeat } from './Ago';
 
 interface Props {
@@ -20,6 +20,10 @@ const STATUS_LABEL: Record<string, string> = {
   staged: 'S',
   deleted: 'D',
 };
+
+/** Files this small are stubs, or close to it, and get their own icon. */
+const sizeClass = (size: number) => (size < 101 ? 'tiny' : size < 500 ? 'small' : '');
+const SIZE_ICON = { tiny: IconDocTiny, small: IconDocSmall, '': IconDoc };
 
 function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
   const indent = 8 + depth * 13;
@@ -55,17 +59,20 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
   const isFav = marks.includes('favorite');
   const isMuted = marks.includes('muted');
   const status = file.file.status;
+  const size = file.file.size;
+  const small = sizeClass(size);
+  const DocIcon = SIZE_ICON[small];
 
   return (
     <button
-      class={`row file${isMuted ? ' muted' : ''}${isFav ? ' fav' : ''}`}
+      class={`row file${isMuted ? ' muted' : ''}${isFav ? ' fav' : ''}${small ? ` ${small}` : ''}`}
       style={{ '--indent': `${indent}px` }}
       aria-current={p.current === file.path ? 'true' : undefined}
       onClick={() => p.onOpen(file.path)}
-      title={file.path}
+      title={`${file.path} · ${size < 1000 ? `${size} B` : fileSize(size)}`}
     >
       <span class="twist" />
-      <span class="ico">{isFav ? <IconStar size={14} filled /> : <IconDoc size={14} />}</span>
+      <span class="ico">{isFav ? <IconStar size={14} filled /> : <DocIcon size={14} />}</span>
       <span class="label">{docName(file.name)}</span>
 
       <RecentHeat at={file.file.mtime} />
@@ -75,6 +82,8 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
           {STATUS_LABEL[status]}
         </span>
       )}
+
+      {!p.compact && <span class="badge size">{fileSize(size)}</span>}
 
       {!p.compact && (
         <span class="marks">

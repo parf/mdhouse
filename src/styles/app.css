@@ -347,12 +347,14 @@ main {
 .row.dir > .label { color: var(--fg-muted); }
 .row.muted { opacity: 0.45; }
 .row.fav > .ico { color: var(--mark-fav); }
+.row.tiny > .label { color: var(--fg-muted); }
 
 .badge { font-size: 10.5px; flex: none; padding: 0 4px; border-radius: 3px; color: var(--fg-faint); }
 .badge.recent-heat { font-size: 13px; padding: 0 2px; line-height: 1; }
 .badge.modified { color: var(--warn); }
 .badge.untracked { color: var(--ok); }
 .badge.staged { color: var(--accent); }
+.badge.size { font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; padding: 0 0 0 2px; }
 .badge.ignored { color: var(--fg-faint); border: 1px solid var(--border-strong); }
 
 .row .marks { display: none; gap: 1px; flex: none; }

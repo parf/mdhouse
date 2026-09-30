@@ -52,6 +52,27 @@ export const IconDoc = (p: Props) =>
     p,
   );
 
+/** An empty page: a file under 101 bytes, a stub at most. */
+export const IconDocTiny = (p: Props) =>
+  svg(
+    <>
+      <path d="M9 1.75H4.25A1.5 1.5 0 0 0 2.75 3.25v9.5a1.5 1.5 0 0 0 1.5 1.5h7.5a1.5 1.5 0 0 0 1.5-1.5V5.75z" stroke-dasharray="2 1.6" />
+      <polyline points="9,1.75 9,5.75 13.25,5.75" />
+    </>,
+    p,
+  );
+
+/** A page with one short line: a file under 500 bytes. */
+export const IconDocSmall = (p: Props) =>
+  svg(
+    <>
+      <path d="M9 1.75H4.25A1.5 1.5 0 0 0 2.75 3.25v9.5a1.5 1.5 0 0 0 1.5 1.5h7.5a1.5 1.5 0 0 0 1.5-1.5V5.75z" />
+      <polyline points="9,1.75 9,5.75 13.25,5.75" />
+      <line x1="5.5" y1="9.5" x2="8.5" y2="9.5" />
+    </>,
+    p,
+  );
+
 export const IconFolder = (p: Props) =>
   svg(<path d="M1.75 4.25A1.5 1.5 0 0 1 3.25 2.75h2.6l1.4 1.6h5.5a1.5 1.5 0 0 1 1.5 1.5v6.4a1.5 1.5 0 0 1-1.5 1.5h-9.5a1.5 1.5 0 0 1-1.5-1.5z" />, p);
 

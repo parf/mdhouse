@@ -25,6 +25,21 @@ export function docName(name: string): string {
   return name.replace(/\.md$/i, '');
 }
 
+/**
+ * A file size in at most three digits: `87`, `1.1K`, `100K`, `1.2M`. Bytes carry no unit —
+ * next to K and M a bare number reads as bytes without the extra letter.
+ */
+export function fileSize(bytes: number): string {
+  if (bytes < 1000) return String(bytes);
+  let v = bytes / 1024;
+  for (const unit of ['K', 'M', 'G', 'T']) {
+    if (v < 9.95) return `${v.toFixed(1).replace(/\.0$/, '')}${unit}`;
+    if (Math.round(v) < 1000) return `${Math.round(v)}${unit}`;
+    v /= 1024;
+  }
+  return `${Math.round(v * 1024)}T`;
+}
+
 /** Split a line into plain and highlighted runs for a search hit. */
 export function highlightRanges(text: string, ranges: Array<[number, number]>): Array<{ text: string; hit: boolean }> {
   if (!ranges.length) return [{ text, hit: false }];
