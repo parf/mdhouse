@@ -3,6 +3,7 @@ import type { RootInfo } from './api';
 import type { TreePayload, RecentEntry } from '../lib/store';
 import type { SearchResult } from '../lib/search';
 import type { Mark } from '../lib/prefs';
+import { SizeMark, SizeSlot, sizeClass } from './Tree';
 import { buildTree, fuzzyScore, type Node } from './tree-model';
 import { Tree } from './Tree';
 import { highlightRanges, docName } from './format';
@@ -86,6 +87,8 @@ export function Sidebar(props: SidebarProps) {
   const StateIcon = STATE_ICON[state];
 
   const nodes = useMemo<Node[]>(() => (tree ? buildTree(tree.files.filter((f) => f.size > 0)) : []), [tree]);
+
+  const sizes = useMemo(() => new Map((tree?.files ?? []).map((f) => [f.rel, f.size])), [tree]);
 
   const favorites = useMemo<FavEntry[]>(() => {
     if (!tree) return [];
@@ -255,7 +258,7 @@ export function Sidebar(props: SidebarProps) {
 
       <div class="side-body">
         {query ? (
-          <SearchResults {...props} nameHits={nameHits} />
+          <SearchResults {...props} sizes={sizes} nameHits={nameHits} />
         ) : props.tab === 'files' ? (
           tree ? (
             <Tree
@@ -271,9 +274,9 @@ export function Sidebar(props: SidebarProps) {
             <p class="empty">Scanning…</p>
           )
         ) : props.tab === 'favorites' ? (
-          <Favorites {...props} favorites={favorites} />
+          <Favorites {...props} sizes={sizes} favorites={favorites} />
         ) : (
-          <Recents {...props} />
+          <Recents {...props} sizes={sizes} />
         )}
       </div>
 
@@ -290,6 +293,15 @@ export function Sidebar(props: SidebarProps) {
   );
 }
 
+/** File sizes by root-relative path, for the small-file marks in the lists. */
+type Sizes = Map<string, number>;
+
+/** ` tiny` / ` small` for a list row, so its name can be struck through like the tree's. */
+const sizeCls = (sizes: Sizes, rel: string) => {
+  const c = sizeClass(sizes.get(rel) ?? 1000);
+  return c ? ` ${c}` : '';
+};
+
 interface FavEntry {
   rel: string;
   name: string;
@@ -299,7 +311,7 @@ interface FavEntry {
   missing: boolean;
 }
 
-function Favorites(props: SidebarProps & { favorites: FavEntry[] }) {
+function Favorites(props: SidebarProps & { sizes: Sizes; favorites: FavEntry[] }) {
   if (!props.tree) return <p class="empty">Loading…</p>;
   if (!props.favorites.length) {
     return <p class="empty">No favorites yet. Hover a file in the tree and press the star.</p>;
@@ -310,11 +322,15 @@ function Favorites(props: SidebarProps & { favorites: FavEntry[] }) {
       {props.favorites.map((f) => (
         <button
           key={f.rel}
-          class={`hit${f.missing ? ' muted' : ''}`}
+          class={`hit${f.missing ? ' muted' : ''}${sizeCls(props.sizes, f.rel)}`}
           onClick={() => (f.isDir ? props.onTab('files') : props.onOpen(f.rel))}
           title={f.missing ? `${f.rel} — not in the current tree` : f.rel}
         >
-          <HitPath name={f.isDir ? `${f.name}/` : f.name} dir={f.dir} lead={f.isDir && <IconFolder size={12} />} />
+          <HitPath
+            name={f.isDir ? `${f.name}/` : f.name}
+            dir={f.dir} lead={f.isDir ? <IconFolder size={12} /> : <SizeSlot size={props.sizes.get(f.rel)} />}
+            tail={<SizeMark size={props.sizes.get(f.rel)} end />}
+          />
           {f.missing && <span class="meta">missing</span>}
         </button>
       ))}
@@ -334,7 +350,17 @@ function isMine(e: RecentEntry, me: { name: string; email: string } | null): boo
  * a list of DONE.md / TODO.md rows is useless without it — so compact shows the parent folder
  * alone (CSS picks which of the two is visible).
  */
-function HitPath({ name, dir, lead }: { name: string; dir: string; lead?: preact.JSX.Element | false }) {
+function HitPath({
+  name,
+  dir,
+  lead,
+  tail,
+}: {
+  name: string;
+  dir: string;
+  lead?: preact.JSX.Element | false;
+  tail?: preact.JSX.Element;
+}) {
   const parent = dir ? dir.slice(dir.lastIndexOf('/') + 1) : '';
   return (
     <span class="hit-path">
@@ -346,6 +372,7 @@ function HitPath({ name, dir, lead }: { name: string; dir: string; lead?: preact
         </span>
       )}
       <span class="hit-dir">{dir}</span>
+      {tail}
     </span>
   );
 }
@@ -371,7 +398,7 @@ const STATUS_LABEL: Record<string, string> = {
   staged: 'staged',
 };
 
-function Recents(props: SidebarProps) {
+function Recents(props: SidebarProps & { sizes: Sizes }) {
   const all = props.recents;
   if (!all) return <p class="empty">Loading…</p>;
 
@@ -399,7 +426,7 @@ function Recents(props: SidebarProps) {
     <div>
       {entries.map((e) => (
         <button
-          class={`hit recent${e.uncommitted ? ` uncommitted ${e.status}` : ''}`}
+          class={`hit recent${e.uncommitted ? ` uncommitted ${e.status}` : ''}${sizeCls(props.sizes, e.rel)}`}
           key={`${e.rel}-${e.hash ?? e.at}`}
           onClick={() => props.onOpen(e.rel)}
           title={e.uncommitted ? `${e.rel} — ${e.status}, not committed` : e.rel}
@@ -411,11 +438,13 @@ function Recents(props: SidebarProps) {
                 ❖
               </span>
             )}
+            <SizeSlot size={props.sizes.get(e.rel)} />
             <span class="hit-name">{docName(e.name)}</span>
             <span class="meta">
               {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
               <Ago at={e.at} />
               {e.author && props.tab !== 'mine' && <span class="who">{e.author}</span>}
+              <SizeMark size={props.sizes.get(e.rel)} end />
             </span>
           </span>
 
@@ -431,7 +460,7 @@ function Recents(props: SidebarProps) {
   );
 }
 
-function SearchResults(props: SidebarProps & { nameHits: Array<{ file: { rel: string; name: string; dir: string } }> }) {
+function SearchResults(props: SidebarProps & { sizes: Sizes; nameHits: Array<{ file: { rel: string; name: string; dir: string } }> }) {
   const { search, searching, searchIn, searchScope } = props;
 
   /**
@@ -463,8 +492,13 @@ function SearchResults(props: SidebarProps & { nameHits: Array<{ file: { rel: st
           <div class="group-title">Files</div>
           {!nameHits.length && <p class="empty">No file names match.</p>}
           {nameHits.map(({ file }) => (
-            <button class="hit" key={file.rel} onClick={() => props.onOpen(file.rel)} title={file.rel}>
-              <HitPath name={file.name} dir={file.dir} />
+            <button class={`hit${sizeCls(props.sizes, file.rel)}`} key={file.rel} onClick={() => props.onOpen(file.rel)} title={file.rel}>
+              <HitPath
+                name={file.name}
+                dir={file.dir}
+                lead={<SizeSlot size={props.sizes.get(file.rel)} />}
+                tail={<SizeMark size={props.sizes.get(file.rel)} end />}
+              />
             </button>
           ))}
         </>
@@ -480,8 +514,15 @@ function SearchResults(props: SidebarProps & { nameHits: Array<{ file: { rel: st
 
       {searchIn.text &&
         textHits.map((hit, i) => (
-        <button class="hit" key={`${hit.rel}:${hit.line}:${i}`} onClick={() => props.onOpen(hit.rel, hit.line)} title={hit.rel}>
-          <HitPath name={hit.rel.split('/').pop()!} dir={hit.rel.split('/').slice(0, -1).join('/')} />
+        <button
+          class={`hit${sizeCls(props.sizes, hit.rel)}`}
+          key={`${hit.rel}:${hit.line}:${i}`} onClick={() => props.onOpen(hit.rel, hit.line)} title={hit.rel}>
+          <HitPath
+            name={hit.rel.split('/').pop()!}
+            dir={hit.rel.split('/').slice(0, -1).join('/')}
+            lead={<SizeSlot size={props.sizes.get(hit.rel)} />}
+            tail={<SizeMark size={props.sizes.get(hit.rel)} end />}
+          />
           <div class="hit-line">
             {highlightRanges(hit.text, hit.ranges).map((part, n) =>
               part.hit ? <mark key={n}>{part.text}</mark> : <span key={n}>{part.text}</span>,

@@ -17,6 +17,9 @@
   --danger: #c0392b;
   --ok: #2f855a;
   --mark-fav: #d99100;
+  --size-tiny: #f0206e;
+  --dir: #6b4226;
+  --size-small: #7b3ff2;
 
   /* Age heat. Five buckets — under ten minutes, this hour, today, this week, older — each with
      its own colour so a column of timestamps reads as a temperature gradient. The ramp cools
@@ -69,6 +72,9 @@
     --danger: #e57373;
     --ok: #68c496;
     --mark-fav: #e0b341;
+    --size-tiny: #ff3d85;
+    --dir: #c9a07a;
+    --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
   --heat-day: #d9a441;
@@ -102,6 +108,9 @@
   --danger: #e57373;
   --ok: #68c496;
   --mark-fav: #e0b341;
+  --size-tiny: #ff3d85;
+  --dir: #c9a07a;
+  --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
   --heat-day: #d9a441;
@@ -344,10 +353,25 @@ main {
 .row .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
 .row .twist { width: 12px; flex: none; color: var(--fg-faint); display: flex; justify-content: center; }
 .row .ico { flex: none; color: var(--fg-faint); display: flex; }
-.row.dir > .label { color: var(--fg-muted); }
+.row.dir > .label { color: var(--dir); }
+.row.dir > .badge { color: var(--dir); font-weight: 700; }
 .row.muted { opacity: 0.45; }
 .row.fav > .ico { color: var(--mark-fav); }
 .row.tiny > .label { color: var(--fg-muted); }
+.row.tiny > .label, .row.small > .label,
+.hit.tiny .hit-name, .hit.small .hit-name { text-decoration: line-through; }
+
+/* Tiny (∅, under 101 B) and small (S, under 500 B) files: a bright tile on both ends of the row. */
+.size-mark {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 14px; height: 14px; border-radius: 3px;
+  font-size: 10px; font-weight: 700; line-height: 1; color: #fff;
+}
+.size-mark.tiny { background: var(--size-tiny); font-size: 12px; }
+.size-mark.small { background: var(--size-small); }
+.size-slot { display: inline-flex; flex: none; width: 14px; align-self: center; }
+.hit .hit-path > .size-mark.end, .hit .meta > .size-mark { align-self: center; }
+.hit .hit-path > .size-mark.end { margin-left: auto; }
 
 .badge { font-size: 10.5px; flex: none; padding: 0 4px; border-radius: 3px; color: var(--fg-faint); }
 .badge.recent-heat { font-size: 13px; padding: 0 2px; line-height: 1; }
