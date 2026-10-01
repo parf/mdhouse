@@ -8,6 +8,7 @@ import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, typ
 import { Doc } from './ui/Doc';
 import { RootSelect } from './ui/RootSelect';
 import { Home } from './ui/Home';
+import { AboutModal } from './ui/AboutModal';
 import { ancestors } from './ui/tree-model';
 import { IconPanel, IconSearch } from './ui/icons';
 
@@ -55,6 +56,7 @@ function App() {
   const [recents, setRecents] = useState<RecentEntry[] | null>(null);
   const [authorFilter, setAuthorFilter] = useState('');
   const [live, setLive] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const [path, setPath] = useState(() => location.pathname);
   const docPath = path.startsWith('/d/') ? path.slice(3) : '';
@@ -231,6 +233,12 @@ function App() {
       }
       if (typing) return;
 
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setAboutOpen((open) => !open);
+        return;
+      }
+
       if (e.key === '/' || ((e.key === 'k' || e.key === 'p') && (e.ctrlKey || e.metaKey))) {
         e.preventDefault();
         setSidebar('open');
@@ -282,7 +290,10 @@ function App() {
           <button class="icon-btn" onClick={cycle} title="Show sidebar (Ctrl+B)" aria-label="Show sidebar">
             <IconPanel />
           </button>
-          <span class="brand">{crumb || tree?.root.name || 'mdhouse'}</span>
+          <span class="brand">
+            <button class="mark brand-mark" onClick={() => setAboutOpen(true)} title="About mdhouse" aria-label="About mdhouse" />
+            {crumb || tree?.root.name || 'mdhouse'}
+          </span>
           <RootSelect roots={roots} rootId={rootId} onPick={setRootId} />
           <button
             class="icon-btn"
@@ -333,6 +344,7 @@ function App() {
           onOpen={openFile}
           onMark={setMark}
           onHome={() => go('/')}
+          onAbout={() => setAboutOpen(true)}
         />
       )}
 
@@ -345,6 +357,7 @@ function App() {
             showIgnored={showIgnored}
             revision={revision}
             onOpen={openFile}
+            onAbout={() => setAboutOpen(true)}
           />
         ) : (
         <Doc
@@ -355,9 +368,12 @@ function App() {
           onNavigate={go}
           onMark={setMark}
           onOpenDir={revealDir}
+          onAbout={() => setAboutOpen(true)}
         />
         )}
       </main>
+
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }

@@ -15,6 +15,7 @@ interface Props {
   /** Bumped by the live channel so the page reloads when the tree changes underneath it. */
   revision: number;
   onOpen: (path: string) => void;
+  onAbout?: () => void;
 }
 
 const VIEWS: Array<{ id: HomeView; label: string; Icon: (p: { size?: number }) => preact.JSX.Element }> = [
@@ -95,7 +96,10 @@ export function Home(props: Props) {
   return (
     <div class="home">
       <header class="home-head">
-        <h1>{root?.name ?? 'mdhouse'}</h1>
+        <h1>
+          <button class="mark" onClick={props.onAbout} title="About mdhouse" aria-label="About mdhouse" />
+          {root?.name ?? 'mdhouse'}
+        </h1>
         <div class="tabs" role="tablist">
           {VIEWS.map(({ id, label, Icon }) => (
             <button key={id} role="tab" aria-selected={view === id} onClick={() => setView(id)}>

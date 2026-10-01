@@ -71,6 +71,7 @@ export interface SidebarProps {
   onMark: (path: string, mark: Mark, on: boolean) => void;
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
+  onAbout?: () => void;
 }
 
 const STATE_ICON = { off: IconPanelOff, compact: IconPanel, open: IconPanelWide };
@@ -131,6 +132,7 @@ export function Sidebar(props: SidebarProps) {
           <StateIcon />
         </button>
         <span class="brand">
+          <button class="mark brand-mark" onClick={props.onAbout} title="About mdhouse" aria-label="About mdhouse" />
           <button class="home-link" onClick={props.onHome} title="What changed here lately">
             {tree?.root.name ?? 'mdhouse'}
           </button>

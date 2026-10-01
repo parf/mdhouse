@@ -27,6 +27,7 @@ interface Props {
   onMark: (path: string, mark: Mark, on: boolean) => void;
   /** Reveal a directory in the sidebar tree. */
   onOpenDir: (dir: string) => void;
+  onAbout?: () => void;
 }
 
 /**
@@ -59,7 +60,7 @@ async function renderMermaid(container: HTMLElement): Promise<void> {
   }
 }
 
-export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenDir }: Props) {
+export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenDir, onAbout }: Props) {
   const body = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(true);
   /** Deepest heading level the contents list shows. H1–H2 by default; the H3 chip widens it. */
@@ -271,7 +272,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
         </div>
 
         <h1 class="doc-title">
-          <span class="mark" aria-hidden="true" />
+          <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />
           {title}
         </h1>
 
