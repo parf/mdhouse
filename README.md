@@ -131,6 +131,8 @@ a directory you cannot write to.
 **And the bar along the top** — the whole sidebar, when it is collapsed:
 
 - **☰ Panel** — cycle bar → compact → open (`Ctrl+B`).
+- **The house** — version, links and the shortcut list. It is the same button in front of every
+  document title and on the front page, and `?` opens it from anywhere.
 - **The root name** — the front page: what changed in this tree lately.
 - **The root dropdown** — switch between the folders being served, when there is more than one.
 - **🔍 Search** — open the sidebar with the cursor in the search box (`/`).
@@ -169,7 +171,8 @@ mounted share, a directory you would rather not touch — the worst it can do is
 allows writing and puts a green `RW` badge beside the root name; no badge means no writes.
 
 It is structural, not a matter of care: every write in the codebase goes through one function
-that refuses a read-only root.
+that refuses a read-only root, and that function resolves symlinks before it decides — including
+for a file that does not exist yet, which is the case a write actually creates.
 
 ---
 
@@ -179,7 +182,8 @@ that refuses a read-only root.
 | --- | --- |
 | `Ctrl+B` / `⌘B` | cycle the sidebar: bar → compact → open |
 | `/`, `Ctrl+K`, `Ctrl+P` | open the sidebar and focus search |
-| `Esc` in the search box | clear the query |
+| `?` | version, links and this list |
+| `Esc` | clear the search query, or close the dialog |
 
 ---
 
@@ -249,6 +253,10 @@ Planning documents live in [`Plans/PRF-55-md-viewer-web/`](Plans/PRF-55-md-viewe
 - a changed / added / removed listing for a whole root, on top of the per-file diffs
 - pushing a selected section to Claude or Codex for feedback, streamed back over the WebSocket
   that is already there
+
+Recently fixed, if you were bitten by any of them: a repository *inside* the folder you serve
+(`mdhouse ~/src`) had no git history, collapsed folders listed themselves twice, and links to a
+file whose name contains a space did not open. See [`CHANGELOG.md`](CHANGELOG.md).
 
 If you try it on your own tree and something looks off, an issue with the shape of the
 directory is the most useful thing you can send.

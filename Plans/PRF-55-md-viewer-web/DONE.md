@@ -604,3 +604,70 @@ like the folder icon. File names move up into its space, and a favourite's star 
 chevron slot, which a file row never uses. Folder names and counts are dark brown, with the
 counts in bold. The folders above the open document are bold too, so the way down to it reads at
 a glance.
+
+---
+
+## N.22 About, on the mark that was already there
+
+The house in front of a document title, on the front page heading and in the sidebar brand was
+decoration. It is a button now — the same one in all three places — and `?` opens it from
+anywhere. Inside: version, repository, author, and the keyboard shortcuts, which until then
+lived only in the README, where nobody using the app is looking.
+
+The version is imported from `package.json` rather than written out a second time. Bun
+tree-shakes the import: the bundle gets the string and nothing else — checked by grepping the
+served chunk for the dependency list, the scripts and the keywords, none of which are in it.
+
+## N.23 What an outside review found
+
+Eleven findings came back from a review by another model. **Ten were real.** Each was
+reproduced before anything was edited — a script against the real function, a scratch git repo,
+or the running server — and each now has a test that fails against the old code.
+
+**Folders contained themselves.** `buildTree` collapsed a single-child chain into `Plans/PRF-55`
+and then walked the *uncollapsed* children, re-adding the directory the collapse had just folded
+away. Every collapsed row in the sidebar held a copy of itself.
+
+**A repository inside the root had no history at all.** `repoFor` measured the file's path from
+the repo to the *root* — but when the root contains the repo, as in `mdhouse ~/src`, the root is
+not inside the repo and the answer was `..`. git rejected `../mdhouse/README.md` and the panel
+came back empty. It now measures from the repo to the file. This is the case the README leads
+with, and it was broken for every file in it.
+
+**The path jail could be walked out of.** `realpath` only answers for a path that exists, and
+the fallback trusted the lexical path — so if any directory in the root was a symlink out of the
+tree, `root/link/new.md` read as inside the root and `writeFile` put the bytes outside it.
+Reproduced, then closed: the jail walks up to the nearest ancestor that does exist, resolves
+*that*, and rebuilds the tail onto it. Reads were never affected, because a file that exists
+resolves. This is the guarantee checkbox write-back is going to stand on, so it mattered now
+rather than later.
+
+**Links with a space 404ed.** markdown-it hands back `My%20Notes/doc.md` even when the source
+wrote the space literally, and every rewrite here re-encodes what it is given: `%2520`. Decoding
+now happens once, per path segment, inside `resolveRelative` — the single funnel all three
+rewrites share.
+
+**Deletions were marked at the top of the file.** A hunk of nothing but deletions has no line
+carrying a new-side number, so `changesOf` fell back to 1. git puts it in the header instead —
+`@@ -5,2 +4,0 @@` means the text sat just after line 4 — so `DiffHunk` carries `b` now.
+
+**Non-ASCII filenames came back from git quoted and octal-escaped**, matching no file that was
+ever scanned. `-c core.quotepath=false` goes on every git call, in the one wrapper.
+
+Also: `-o` opened two browser tabs, because the launcher opened one and passed `-o` to the
+daemon, which opened another; and any transient control-socket error deleted the socket of a
+daemon that was still running.
+
+**Where the review was wrong.** It recommended unlinking a control socket only on `ECONNREFUSED`
+or `ENOENT`. Bun reports a dead unix socket as `FailedToOpenSocket`, so following that literally
+would have left stale sockets forever and broken hand-over after a crash — the opposite of the
+fix. And its eleventh finding, an infinite loop on an empty search query, is unreachable:
+`searchContent` already refuses one. A guard went in regardless, since the function is exported.
+
+**The Ignore button is gone** rather than wired up. It wrote a mark nothing read and had no way
+to undo itself; wiring it up would have hidden files permanently with no way back. The mark
+stays in `prefs.ts` so existing prefs files keep meaning something, and `TODO.md` says what a
+real one needs.
+
+**The tests were never typechecked** — `tsconfig.json` included only `src/`. It covers `test/`
+now, which immediately caught the diff helpers going stale against the new hunk field. 78 tests.

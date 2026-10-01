@@ -132,3 +132,19 @@ such things — timestamped, rotated, greppable, and reachable with a command th
 knows. The launcher never reads it back; the one failure worth answering in the terminal (the
 port held by something that is not mdhouse) is detected before the spawn by binding the port
 for a moment.
+
+## A review is a list of claims, not a list of changes
+
+Eleven findings arrived from another model. Ten were real and are fixed; two of its
+recommendations were wrong, and following either would have made things worse — one would have
+left stale control sockets forever, because Bun does not report a dead unix socket with the
+POSIX code the review assumed.
+
+So the rule the round settled on: reproduce before editing. Every finding got a script against
+the real function, a scratch git repo, or a request to the running server, *first* — which is
+also what produced the regression tests, since a reproduction is a failing test with the
+assertion left off. The two bad recommendations were caught by the same step that confirmed the
+other ten, at no extra cost.
+
+It also found the reason a whole class of bug could sit there unseen: `tsconfig.json` included
+only `src/`, so the test suite had never been typechecked.

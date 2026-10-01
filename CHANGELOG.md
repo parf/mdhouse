@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 — 2026-10-01
+
+Documentation catch-up. No code changes over 0.4.0.
+
+- README covers the about box and `?`, and its keyboard table is complete again.
+- The read-only section says what the jail actually does now: it resolves symlinks before
+  deciding, including for a file that does not exist yet.
+- Status points at the three fixes most likely to have bitten someone, and at the changelog.
+- `DONE.md` gains N.22 and N.23, `DECISIONS.md` gains the rule the review round settled on —
+  reproduce before editing, since two of the eleven recommendations were wrong.
+
 ## 0.4.0 — 2026-10-01
 
 An About box, and a round of fixes from an outside code review. Every item below was
