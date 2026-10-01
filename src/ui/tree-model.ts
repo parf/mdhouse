@@ -100,8 +100,17 @@ export function buildTree(files: FileEntry[]): Node[] {
     }
   }
 
+  // Collapse first, then descend into what the collapse left behind. Walking the original
+  // children instead would re-add the directory the chain just folded away, so `a/b` would
+  // contain a second `b`.
   const walk = (nodes: Node[]): Node[] =>
-    sortNodes(nodes.map((n) => (n.kind === 'dir' ? { ...collapseChains(n), children: walk(n.children) } : n)));
+    sortNodes(
+      nodes.map((n) => {
+        if (n.kind !== 'dir') return n;
+        const collapsed = collapseChains(n);
+        return { ...collapsed, children: walk(collapsed.children) };
+      }),
+    );
 
   return walk(rootChildren);
 }

@@ -88,11 +88,20 @@ async function call<T>(port: number, path: string, body: unknown = {}): Promise<
     const parsed = (await res.json().catch(() => null)) as T | { error: string } | null;
     if (!parsed) return { error: `the daemon on ${port} answered ${res.status}` };
     return parsed;
-  } catch {
-    try {
-      unlinkSync(sock);
-    } catch {
-      /* someone else got there first */
+  } catch (err) {
+    // Only a socket with nothing behind it is stale. Any other failure — a timeout, an abort,
+    // a daemon mid-hiccup — belongs to a server that is still running, and deleting its socket
+    // would cut off every later `mdhouse` call that wanted to reach it.
+    //
+    // Bun reports both "no such file" and "nothing is listening" as FailedToOpenSocket; the
+    // POSIX codes are listed too, for a runtime that uses them instead.
+    const code = (err as { code?: string } | null)?.code;
+    if (code === 'FailedToOpenSocket' || code === 'ECONNREFUSED' || code === 'ENOENT') {
+      try {
+        unlinkSync(sock);
+      } catch {
+        /* someone else got there first */
+      }
     }
     return null;
   }

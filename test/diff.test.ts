@@ -98,12 +98,12 @@ describe('a file git has never seen', () => {
 });
 
 describe('placing a diff on the rendered document', () => {
-  const diff = (lines: Array<[' ' | '+' | '-', string, number?, number?]>) => ({
+  const diff = (lines: Array<[' ' | '+' | '-', string, number?, number?]>, b = 1) => ({
     kind: 'working' as const,
     added: 0,
     removed: 0,
     truncated: false,
-    hunks: [{ heading: '', lines: lines.map(([t, text, a, b]) => ({ t, text, a, b })) }],
+    hunks: [{ heading: '', b, lines: lines.map(([t, text, a, bb]) => ({ t, text, a, b: bb })) }],
   });
 
   test('added lines are reported at their place in the new file', () => {
@@ -203,7 +203,7 @@ describe('a patch line is Markdown too', () => {
   test('fences switch rendering off and on again within a hunk', () => {
     const line = (text: string) => ({ t: ' ' as const, text });
     const [hunk] = markupHunks([
-      { heading: '', lines: [line('# Title'), line('```js'), line('**not bold**'), line('```'), line('**bold**')] },
+      { heading: '', b: 1, lines: [line('# Title'), line('```js'), line('**not bold**'), line('```'), line('**bold**')] },
     ]);
 
     const html = hunk!.lines.map((l) => l.html!);
@@ -214,5 +214,28 @@ describe('a patch line is Markdown too', () => {
     expect(html[3]).toContain('dl-code');
     // Out the other side, markup is markup again.
     expect(html[4]).toContain('<strong>bold</strong>');
+  });
+});
+
+describe('a hunk that is nothing but deletions', () => {
+  test('the header says where the removed text sat', () => {
+    // git writes `@@ -5,2 +4,0 @@` for a pure deletion: zero lines on the new side, starting
+    // after line 4 — so the text that went missing belongs just above what is now line 5.
+    // No line in the hunk carries a new-side number, so without the header there is nothing
+    // to read it from, and the deletion used to be pinned to the top of the file.
+    const { hunks } = parsePatch('@@ -5,2 +4,0 @@ line 4\n-line 5\n-line 6\n');
+
+    expect(hunks[0]!.b).toBe(4);
+    expect(changesOf({ kind: 'working', added: 0, removed: 2, truncated: false, hunks }).removals).toEqual([
+      { at: 5, text: 'line 5\nline 6' },
+    ]);
+  });
+
+  test('a hunk with context still reads its anchor off the lines', () => {
+    const { hunks } = parsePatch('@@ -2,8 +2,6 @@\n line 2\n line 3\n line 4\n-line 5\n-line 6\n line 7\n');
+
+    expect(changesOf({ kind: 'working', added: 0, removed: 2, truncated: false, hunks }).removals).toEqual([
+      { at: 5, text: 'line 5\nline 6' },
+    ]);
   });
 });

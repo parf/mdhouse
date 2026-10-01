@@ -8,6 +8,7 @@
 import type { ServerWebSocket } from 'bun';
 import index from './index.html';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
+import { repoToplevel } from './lib/scan';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter } from './lib/render';
@@ -344,7 +345,15 @@ export async function serve(opts: ServeOptions) {
       server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths: ev.paths }));
     }
   });
-  for (const root of registry.list()) watcher.watchRoot(root);
+  const watchTree = async (root: Root): Promise<void> => {
+    watcher.watchRoot(root);
+    // A root inside a checkout has its .git above it, out of reach of the recursive watch.
+    if (!opts.noGit) {
+      const repo = await repoToplevel(root.path);
+      if (repo) watcher.watchRepo(root, repo);
+    }
+  };
+  for (const root of registry.list()) await watchTree(root);
 
   /**
    * Serve more directories, at the request of a second `mdhouse` on the control socket.
@@ -364,7 +373,7 @@ export async function serve(opts: ServeOptions) {
       // Asking for a directory already served is a request for its URL, not a second copy of
       // it — only a genuinely new root needs a watcher.
       if (!known.has(root.id)) {
-        watcher.watchRoot(root);
+        await watchTree(root);
         added.add(root.id);
       }
       asked.add(root.id);

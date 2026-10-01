@@ -160,6 +160,10 @@ export async function searchInProcess(
   query: string,
   opts: SearchOptions,
 ): Promise<SearchResult> {
+  // searchContent already refuses an empty query; this is for anyone calling the fallback
+  // directly, where a zero-length needle would make the indexOf walk below never advance.
+  if (!query) return { hits: [], truncated: false, degraded: true };
+
   const { regex = false, maxHits = 500, maxPerFile = 20 } = opts;
   const hasUpper = /[A-Z]/.test(query);
 

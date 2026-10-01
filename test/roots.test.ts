@@ -113,3 +113,53 @@ describe('adding a root at runtime', () => {
     expect(writable.writable).toBe(true);
   });
 });
+
+describe('the path jail and symlinks', () => {
+  const tmp = `${HERE}/.tmp-jail-test`;
+  const mk = async () => {
+    const { mkdir, rm, symlink, writeFile } = await import('node:fs/promises');
+    await rm(tmp, { recursive: true, force: true });
+    await mkdir(`${tmp}/root`, { recursive: true });
+    await mkdir(`${tmp}/outside`, { recursive: true });
+    await writeFile(`${tmp}/outside/secret.md`, 'not yours\n');
+    await symlink(`${tmp}/outside`, `${tmp}/root/ext`);
+    return async () => rm(tmp, { recursive: true, force: true });
+  };
+
+  test('a symlink out of the root is refused, for a file that exists', async () => {
+    const clean = await mk();
+    try {
+      const registry = await Registry.create([`${tmp}/root`], true);
+      expect(await registry.resolve('root/ext/secret.md')).toBeNull();
+    } finally {
+      await clean();
+    }
+  });
+
+  test('and for one that does not exist yet — the case a write would create', async () => {
+    // realpath cannot answer for a path that is not there, and trusting the spelling instead
+    // let `root/ext/new.md` read as inside the root while landing in /outside. The jail has to
+    // resolve the nearest ancestor that does exist.
+    const clean = await mk();
+    try {
+      const registry = await Registry.create([`${tmp}/root`], true);
+      expect(await registry.resolve('root/ext/new.md')).toBeNull();
+      await expect(registry.writeFile('root/ext/new.md', 'escaped')).rejects.toThrow();
+      expect(await Bun.file(`${tmp}/outside/new.md`).exists()).toBe(false);
+    } finally {
+      await clean();
+    }
+  });
+
+  test('a new file on a real path inside the root still resolves', async () => {
+    const clean = await mk();
+    try {
+      const registry = await Registry.create([`${tmp}/root`], true);
+      // Including through directories that do not exist yet — nothing to resolve, but nothing
+      // suspicious either.
+      expect((await registry.resolve('root/notes/new.md'))?.rel).toBe('notes/new.md');
+    } finally {
+      await clean();
+    }
+  });
+});

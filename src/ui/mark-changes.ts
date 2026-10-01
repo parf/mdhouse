@@ -33,7 +33,10 @@ export function changesOf(diff: FileDiff): { added: number[]; removals: Removal[
 
   for (const hunk of diff.hunks) {
     let pending: string[] = [];
-    let at = hunk.lines.find((l) => l.b !== undefined)?.b ?? 1;
+    // Where the hunk starts on the new side. A hunk of nothing but deletions has no line to
+    // read this off — git writes `@@ -5,2 +4,0 @@`, meaning the text sat just after line 4 —
+    // so taking it from the header is the only way to place those deletions at all.
+    let at = hunk.b;
 
     for (const line of hunk.lines) {
       if (line.t === '-') {

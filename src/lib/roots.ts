@@ -7,7 +7,7 @@
  */
 
 import { realpath } from 'node:fs/promises';
-import { sep, resolve as resolvePath, relative } from 'node:path';
+import { sep, resolve as resolvePath, relative, dirname } from 'node:path';
 
 export interface Root {
   /** Short slug used in URLs. Never contains a slash. */
@@ -45,6 +45,34 @@ function slugify(name: string): string {
 
 function isUnder(parent: string, child: string): boolean {
   return child === parent || child.startsWith(parent.endsWith(sep) ? parent : parent + sep);
+}
+
+/**
+ * The real location of `candidate`, or null if it is not inside `rootPath`.
+ *
+ * realpath only answers for a path that exists, and a path that does not exist yet is exactly
+ * the case a write has to get right. Resolving just the lexical path would trust the spelling:
+ * if `root/ext` is a symlink out of the tree, `root/ext/new.md` *reads* as if it were inside
+ * the root while landing wherever the link points. So walk up to the nearest ancestor that
+ * does exist, resolve that, and rebuild the tail onto it — then the jail check sees where the
+ * file would really be created.
+ */
+async function jailedPath(rootPath: string, candidate: string): Promise<string | null> {
+  const tail: string[] = [];
+  let at = candidate;
+
+  for (;;) {
+    const real = await realpath(at).catch(() => null);
+    if (real !== null) {
+      const abs = tail.length ? resolvePath(real, ...tail.reverse()) : real;
+      return isUnder(rootPath, abs) ? abs : null;
+    }
+    const parent = dirname(at);
+    // Ran out of filesystem before finding anything that exists.
+    if (parent === at) return null;
+    tail.push(at.slice(parent.length + 1));
+    at = parent;
+  }
 }
 
 export class Registry {
@@ -168,10 +196,8 @@ export class Registry {
     if (rel.split('/').some((seg) => seg === '..')) return null;
 
     const candidate = resolvePath(root.path, rel);
-    // realpath fails for a path that does not exist; fall back to the lexical resolution so
-    // callers still get a jailed path they can stat or create.
-    const abs = await realpath(candidate).catch(() => candidate);
-    if (!isUnder(root.path, abs)) return null;
+    const abs = await jailedPath(root.path, candidate);
+    if (abs === null) return null;
 
     return { root, rel: relative(root.path, abs).split(sep).join('/'), abs };
   }

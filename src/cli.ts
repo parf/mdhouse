@@ -224,7 +224,10 @@ if (!opts.fg) {
    * nobody reads, and syslog is already rotated, timestamped and greppable.
    */
   const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
-  const self = [process.execPath, process.argv[1]!, ...argv, '--fg'].map(quote).join(' ');
+  // The launcher opens the browser itself, once it knows the daemon answered. Passing `-o` on
+  // would have the daemon open a second tab the moment it binds.
+  const forwarded = argv.filter((a) => a !== '-o' && a !== '--open');
+  const self = [process.execPath, process.argv[1]!, ...forwarded, '--fg'].map(quote).join(' ');
   // Without `logger` there is nowhere to put the output; discard it rather than leave the
   // daemon writing into a pipe whose other end does not exist.
   const line = Bun.which('logger')

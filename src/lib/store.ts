@@ -6,6 +6,7 @@
  * keystroke of a search would be absurd.
  */
 
+import { sep, resolve as resolvePath, relative } from 'node:path';
 import type { Registry, Root } from './roots';
 import { loadRootRules, type IgnoreRules } from './ignore';
 import { scanRoot, type MdFile, type ScanResult } from './scan';
@@ -13,7 +14,6 @@ import {
   recentChanges,
   workingStatus,
   currentUser,
-  subdirOf,
   authorship,
   type FileStatus,
   type GitChange,
@@ -390,7 +390,10 @@ export class Store {
     const file = scan.files.find((f) => f.rel === rel);
     const repo = file?.repo ?? scan.repos[0];
     if (!repo) return null;
-    const sub = subdirOf(repo, root.path);
-    return { repo, repoRel: sub ? `${sub}/${rel}` : rel };
+    // Measure from the repo to the file itself. Going via the root breaks when the repo is
+    // *inside* the root — serving ~/src, a directory of repos — where the root is not under
+    // the repo at all and the old subdirOf() answered `..`.
+    const abs = resolvePath(root.path, rel);
+    return { repo, repoRel: relative(repo, abs).split(sep).join('/') };
   }
 }

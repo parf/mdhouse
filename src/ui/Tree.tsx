@@ -1,6 +1,6 @@
 import type { Node, DirNode, FileNode } from './tree-model';
 import type { Mark } from '../lib/prefs';
-import { IconChevron, IconFolder, IconStar, IconMute, IconEyeOff } from './icons';
+import { IconChevron, IconFolder, IconStar, IconMute } from './icons';
 import { docName, fileSize } from './format';
 import { RecentHeat } from './Ago';
 
@@ -110,9 +110,6 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
           </MarkButton>
           <MarkButton label={isMuted ? 'Unmute' : 'Mute'} on={isMuted} onPress={() => p.onMark(file.path, 'muted', !isMuted)}>
             <IconMute size={12} />
-          </MarkButton>
-          <MarkButton label="Ignore" on={false} onPress={() => p.onMark(file.path, 'ignored', true)}>
-            <IconEyeOff size={12} />
           </MarkButton>
         </span>
       )}

@@ -104,3 +104,38 @@ describe('frontmatter', () => {
     expect(offset).toBe(0);
   });
 });
+
+describe('paths that are not plain ASCII', () => {
+  // markdown-it hands back a percent-encoded href even when the source wrote a literal space,
+  // and every rewrite below re-encodes what it is given. Decoding first is what keeps a space
+  // from becoming %2520 and the link from 404ing.
+  const encCtx = { ...ctx, docPath: 'index.md' };
+
+  test('a link written with %20 resolves to the file with the space', async () => {
+    const { html } = await render('[spaced](My%20Notes/doc.md)', encCtx);
+    expect(html).toContain('href="/d/My Notes/doc.md"');
+    expect(html).not.toContain('%2520');
+  });
+
+  test('a link written with a literal space comes out the same way', async () => {
+    const { html } = await render('[spaced](<My Notes/doc.md>)', encCtx);
+    expect(html).toContain('href="/d/My Notes/doc.md"');
+  });
+
+  test('an image path is decoded once, then encoded once for the asset route', async () => {
+    const { html } = await render('![x](My%20Pics/shot.png)', encCtx);
+    expect(html).toContain(`src="/api/asset?p=${encodeURIComponent('r/My Pics/shot.png')}"`);
+    expect(html).not.toContain('%2520');
+  });
+
+  test('a raw-HTML img with a space is rewritten too', async () => {
+    const { html } = await render('<p><img src="My Pics/shot.png"></p>', encCtx);
+    expect(html).toContain(`src="/api/asset?p=${encodeURIComponent('r/My Pics/shot.png')}"`);
+  });
+
+  test('a lone percent is a filename character, not a broken escape', async () => {
+    // decodeURIComponent throws on this; the segment has to survive as written.
+    const { html } = await render('<p><img src="100% done.png"></p>', encCtx);
+    expect(html).toContain(encodeURIComponent('r/100% done.png'));
+  });
+});

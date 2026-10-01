@@ -30,6 +30,31 @@ export class Watcher {
 
   constructor(private readonly onChange: (events: WatchEvent[]) => void) {}
 
+  /**
+   * Also watch the `.git` of the repository the root belongs to, when that repository sits
+   * *above* the root — serving `Plans/` out of a checkout, say. The recursive watch below only
+   * sees inside the root, so a commit made from the repository root would otherwise never
+   * reach the page and the recents would quietly go stale.
+   *
+   * Nothing to do when the repo is the root, or below it: the recursive watch covers it.
+   */
+  watchRepo(root: Root, repo: string): void {
+    const inside = relative(repo, root.path);
+    if (!inside || inside.startsWith('..')) return; // root is not under this repo
+    const gitDir = `${repo}${sep}.git`;
+    try {
+      const watcher = watch(gitDir, { recursive: false, persistent: false });
+      watcher.on('error', () => {});
+      watcher.on('change', () => {
+        this.gitDirty.add(root.id);
+        this.schedule();
+      });
+      this.watchers.push(watcher);
+    } catch {
+      /* no .git to watch, or watching is unavailable — the viewer still works */
+    }
+  }
+
   watchRoot(root: Root): void {
     let watcher: FSWatcher;
     try {

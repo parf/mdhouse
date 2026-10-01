@@ -45,7 +45,10 @@ const FMT_REC = '%x00';
 
 async function git(cwd: string, args: string[], timeoutMs = 15_000): Promise<string | null> {
   try {
-    const proc = Bun.spawn(['git', ...args], {
+    // core.quotepath=false keeps non-ASCII filenames as themselves. Without it `--name-status`
+    // hands back `"r\303\251sum\303\251.md"` — quoted, octal-escaped, and matching no file we
+    // ever scanned, so the row would be unopenable. Set here so every git call gets it.
+    const proc = Bun.spawn(['git', '-c', 'core.quotepath=false', ...args], {
       cwd,
       stdout: 'pipe',
       stderr: 'ignore',
@@ -272,6 +275,8 @@ export interface DiffLine {
 export interface DiffHunk {
   /** What git writes after the `@@ … @@` — usually the enclosing heading. */
   heading: string;
+  /** The hunk's first line on the new side, straight from `@@ … +b,… @@`. */
+  b: number;
   lines: DiffLine[];
 }
 
@@ -320,7 +325,7 @@ export function parsePatch(patch: string): Omit<FileDiff, 'kind' | 'rev'> {
     if (at) {
       a = Number(at[1]);
       b = Number(at[2]);
-      current = { heading: at[3] ?? '', lines: [] };
+      current = { heading: at[3] ?? '', b, lines: [] };
       hunks.push(current);
       continue;
     }
@@ -393,7 +398,7 @@ export function newFileDiff(text: string): FileDiff {
     added: kept.length,
     removed: 0,
     truncated,
-    hunks: kept.length ? [{ heading: '', lines: kept.map((text, i) => ({ t: '+' as const, text, b: i + 1 })) }] : [],
+    hunks: kept.length ? [{ heading: '', b: 1, lines: kept.map((text, i) => ({ t: '+' as const, text, b: i + 1 })) }] : [],
   };
 }
 

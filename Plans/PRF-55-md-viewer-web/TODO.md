@@ -91,3 +91,10 @@ From an external review of the code, kept here so they are not lost:
 ## Blockers
 
 None. Phase 1 ships; everything above is new work.
+
+## Raised by the 0.4.0 review, not yet done
+
+- **An ignore feature that works.** The button was removed in 0.4.0 because it wrote a mark
+  nothing read and could not be undone. A real one needs: tree and search filtering on the
+  mark, a way to see what is hidden, and a way to put it back. The `'ignored'` mark stays in
+  `prefs.ts` so existing prefs files keep meaning something.

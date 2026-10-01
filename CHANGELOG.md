@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.4.0 — 2026-10-01
+
+An About box, and a round of fixes from an outside code review. Every item below was
+reproduced before it was changed, and each now has a test.
+
+### Added
+
+- **About box.** The house in front of a title, on the front page and in the sidebar is now a
+  button; `?` opens the same dialog from anywhere. It carries the version, the repository, the
+  author and the keyboard shortcuts.
+
+### Fixed
+
+- **Folders were listed inside themselves.** A collapsed chain like `Plans/PRF-55` contained a
+  second `PRF-55` holding the files. Collapsing and descending were both applied to the
+  uncollapsed children.
+- **No git history for a repo inside the root.** `mdhouse ~/src` — a directory of repositories,
+  the case the README advertises — showed an empty history and no diffs for every file in it.
+  The path handed to git was measured through the root, which is not inside the repo, and came
+  out as `../…`.
+- **The path jail could be walked out of.** A path that did not exist yet was trusted as
+  written, so with a symlink out of the tree, `root/link/new.md` read as inside the root and a
+  write landed outside it. The jail now resolves the nearest ancestor that does exist. Reads
+  were already safe; this closes the write that checkbox write-back will need.
+- **Links and images with a space, or any non-ASCII, 404ed.** `My Notes/doc.md` was encoded
+  twice, to `My%2520Notes`.
+- **Deletions were marked at the top of the file.** A change that only removes lines gives git
+  nothing on the new side to anchor to; the hunk header carries it and was being ignored.
+- **Non-ASCII filenames came back from git quoted and octal-escaped**, so those rows in Recent
+  and Mine matched no file and would not open.
+- **`mdhouse -o` opened two tabs** — the launcher opened one and passed `-o` to the daemon,
+  which opened another.
+- **A transient control-socket error deleted the socket** of a daemon that was still running,
+  after which no `mdhouse` could reach it.
+
+### Removed
+
+- **The Ignore button** in the tree. It wrote a mark nothing read, and had no way to undo
+  itself. The mark stays in prefs; the feature needs designing before it has a button.
+
+### Internal
+
+- The test suite is typechecked now — `tsconfig.json` covered only `src/`.
+- `.git` is watched when it sits above the root, so serving a subdirectory of a checkout still
+  goes live on commit.
+
+
 ## 0.3.3 — 2026-09-29
 
 The sidebar shows file sizes and makes stubs stand out.
