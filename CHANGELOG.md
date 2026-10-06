@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.1 — 2026-10-06
+
+- **The root dropdown everywhere, showing as much of the path as fits.** The compact sidebar
+  shows the folder and its parent (`Plans/Removal`). The wide sidebar shows two parents
+  (`rdc/Plans/Removal`), replacing its row of chips. The top bar, when the sidebar is off,
+  shows the whole path with home as `~`. A label too long for its width loses its left end
+  behind "…", so the folder's own name stays visible.
+- **∅ without a tile:** a bold pink ∅. Names of files under 101 bytes are struck through twice.
+- **Fixed:** with the sidebar off, the ⚙ covered the top bar's search button. It now sits in the
+  top bar.
+
 ## 0.7.0 — 2026-10-06
 
 ### Added
