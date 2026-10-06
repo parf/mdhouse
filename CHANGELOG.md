@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.2 — 2026-10-06
+
+- **The ⚙ sits on the title's line** on the document page, the front page and settings, with its
+  right edge lined up with the toolbar below. It was pinned to the window corner, beside the
+  breadcrumb.
+- **The open sidebar's tree shows each file's age** before its size (`now`, `5m`, `22h`, `1d`,
+  `2mo`), heat-coloured, with the full time on hover. A hairline separates the two, and the
+  size column is at least five characters wide, so the lines stay aligned.
+
 ## 0.7.1 — 2026-10-06
 
 - **The root dropdown everywhere, showing as much of the path as fits.** The compact sidebar
