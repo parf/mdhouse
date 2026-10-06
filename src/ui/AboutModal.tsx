@@ -50,7 +50,9 @@ export function AboutModal({ open, onClose }: Props) {
             <a href="https://www.npmjs.com/package/mdhouse" target="_blank" rel="noopener noreferrer">
               npm
             </a>
-            {' - Author: Serg Parf - '}
+          </div>
+          <div class="about-links">
+            {'Author: Serg Parf - '}
             <a href="https://parf.dev" target="_blank" rel="noopener noreferrer">
               https://parf.dev
             </a>
