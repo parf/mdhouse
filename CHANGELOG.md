@@ -14,6 +14,12 @@
   away. `mdhouse <served folder> --rw` makes it writable on the running mdhouse, no restart. The
   systemd service writes only to folders saved writable.
 
+### Changed
+
+- **GitHub alerts** (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) look like
+  the `/rd` docs viewer's: an icon on the title (ℹ️ 💡 📣 ⚠️ 🛑, added in CSS), GitHub's colours, a
+  tinted background and a 4px edge — with darker-theme colours in dark mode.
+
 ### Fixed
 
 - Opening a document with uncommitted changes shows its diff, as before — but a file that
