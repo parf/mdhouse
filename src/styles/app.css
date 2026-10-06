@@ -1065,7 +1065,7 @@ main {
   background: var(--qa-fill);
 }
 /* An answer sits in a little, under the question or disagreement it settles. */
-.md :is(.markdown-alert-answer, .qa-a) { margin-left: 1em; }
+.md :is(.markdown-alert-answer, .qa-a) { margin-left: 1.4em; }
 .md .markdown-alert-note      .markdown-alert-title::before { content: 'ℹ️'; }
 .md .markdown-alert-tip       .markdown-alert-title::before { content: '💡'; }
 .md .markdown-alert-important .markdown-alert-title::before { content: '📣'; }
