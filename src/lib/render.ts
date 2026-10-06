@@ -47,7 +47,8 @@ export interface Rendered {
   tasks: { done: number; total: number };
 }
 
-const ALERTS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
+/** GitHub's five alerts, plus QUESTION and ANSWER — mdhouse's own, for Q&A logs in plan folders. */
+const ALERTS = ['note', 'tip', 'important', 'warning', 'caution', 'question', 'answer'] as const;
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
 const MD_EXT = /\.mdx?$/i;
 const PRELOAD_LANGS = ['bash', 'json', 'ts', 'js', 'tsx', 'php', 'sql', 'yaml', 'go', 'python', 'diff', 'html', 'css', 'md'];
@@ -146,7 +147,7 @@ function lineMapPlugin(md: MarkdownIt): void {
 }
 
 /**
- * GitHub alerts: `> [!NOTE]` and the quoted lines under it.
+ * GitHub alerts: `> [!NOTE]` and the quoted lines under it — plus `[!QUESTION]` and `[!ANSWER]`.
  *
  * The class names follow GitHub's (`markdown-alert-note`), so the styling reads as theirs.
  */
@@ -158,7 +159,7 @@ function alertPlugin(md: MarkdownIt): void {
       const inline = tokens[i + 2];
       if (tokens[i + 1]?.type !== 'paragraph_open' || inline?.type !== 'inline') continue;
 
-      const match = /^\[!(note|tip|important|warning|caution)\]\s*\n?/i.exec(inline.content);
+      const match = new RegExp(`^\\[!(${ALERTS.join('|')})\\]\\s*\\n?`, 'i').exec(inline.content);
       if (!match) continue;
       const kind = match[1]!.toLowerCase() as (typeof ALERTS)[number];
 

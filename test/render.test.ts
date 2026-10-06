@@ -231,3 +231,18 @@ describe('toggleTask — the one edit mdhouse makes to a document', () => {
     expect(html).toContain(`data-line="2" data-hash="${lineHash('- [x] two')}"`);
   });
 });
+
+describe('alerts', () => {
+  test("GitHub's five, and mdhouse's QUESTION and ANSWER, any case", async () => {
+    for (const kind of ['note', 'tip', 'important', 'warning', 'caution', 'question', 'answer']) {
+      const { html } = await render(`> [!${kind.toUpperCase()}]\n> body\n`, ctx);
+      expect(html).toContain(`markdown-alert markdown-alert-${kind}`);
+      expect(html).toContain(`<p class="markdown-alert-title">${kind[0]!.toUpperCase()}${kind.slice(1)}</p>`);
+    }
+    expect((await render('> [!answer]\n> lower case\n', ctx)).html).toContain('markdown-alert-answer');
+  });
+
+  test('an unknown marker stays a plain quote', async () => {
+    expect((await render('> [!BOGUS]\n> x\n', ctx)).html).toContain('<blockquote');
+  });
+});

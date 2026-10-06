@@ -126,7 +126,8 @@ link (see [Settings](#-settings)).
 week, faint for older — with 🔥 on anything touched in the last ten minutes and ♨️ for the rest
 of the hour, in the tree as well as the lists.
 
-**Renders properly.** CommonMark and GFM through markdown-it: nested lists, tables, footnotes,
+**Renders properly.** CommonMark and GFM through markdown-it — everything beyond plain CommonMark
+is listed, with live examples, in [**Markdown in mdhouse**](doc/markdown.md). In short: nested lists, tables, footnotes,
 task lists, GitHub alerts (`> [!NOTE]`), front matter set aside, syntax highlighting via shiki,
 and mermaid diagrams. Questions and answers get real blocks with the VuePress / VitePress syntax
 — `::: q` or `::: question`, `::: a` or `::: answer`, closed by `:::` — and a leading `**Q:**` /
