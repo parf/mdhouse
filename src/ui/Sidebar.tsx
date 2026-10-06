@@ -67,6 +67,7 @@ export interface SidebarProps {
   onAuthor: (author: string) => void;
   onToggleIgnored: () => void;
   onToggleDir: (path: string) => void;
+  onOpenDirPage: (path: string) => void;
   onOpen: (path: string, line?: number) => void;
   onMark: (path: string, mark: Mark, on: boolean) => void;
   /** Leave the open document and show the root's front page. */
@@ -267,6 +268,7 @@ export function Sidebar(props: SidebarProps) {
               current={props.current}
               compact={!wide}
               onToggleDir={props.onToggleDir}
+              onOpenDirPage={props.onOpenDirPage}
               onOpen={props.onOpen}
               onMark={props.onMark}
             />

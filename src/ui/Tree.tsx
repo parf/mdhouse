@@ -10,6 +10,8 @@ interface Props {
   current: string | null;
   compact: boolean;
   onToggleDir: (path: string) => void;
+  /** Open a folder's own page — the count badge on its row. */
+  onOpenDirPage: (path: string) => void;
   onOpen: (path: string) => void;
   onMark: (path: string, mark: Mark, on: boolean) => void;
 }
@@ -61,6 +63,7 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
           class={`row dir${onPath ? ' on-path' : ''}`}
           style={{ '--indent': `${indent}px` }}
           data-dir={dir.path}
+          aria-current={p.current === `${dir.path}/` ? 'true' : undefined}
           onClick={() => p.onToggleDir(dir.path)}
           title={dir.path}
         >
@@ -71,7 +74,21 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
             <IconFolder size={14} />
           </span>
           <span class="label">{dir.name}</span>
-          {!open && <span class="badge">{dir.count}</span>}
+          {/* The name toggles the folder; the count opens its page, every file beneath it. A
+              span, not a link: a row is a button, and a button cannot hold another control. */}
+          {!open && (
+            <span
+              class="badge count"
+              role="link"
+              title={`Open ${dir.path}/ — all ${dir.count} files`}
+              onClick={(e) => {
+                e.stopPropagation();
+                p.onOpenDirPage(dir.path);
+              }}
+            >
+              {dir.count}
+            </span>
+          )}
         </button>
         {open && dir.children.map((child) => <Row key={child.path} {...p} node={child} depth={depth + 1} />)}
       </>

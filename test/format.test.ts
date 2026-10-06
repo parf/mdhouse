@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { preciseAgo, fileSize, rootLabel, shortAgo } from '../src/ui/format';
+import { likeMatcher, preciseAgo, fileSize, rootLabel, shortAgo } from '../src/ui/format';
 
 describe('fileSize', () => {
   test('bytes stay bare under 1000', () => {
@@ -77,5 +77,40 @@ describe('shortAgo', () => {
     expect(ago(24 * 60 + 5)).toBe('1d');
     expect(ago(3 * 24 * 60)).toBe('3d');
     expect(ago(70 * 24 * 60)).toBe('2mo');
+  });
+});
+
+describe('likeMatcher', () => {
+  test('anywhere, ignoring case, like LIKE %text%', () => {
+    const m = likeMatcher('plan');
+    expect(m('Plans/RLM-1638')).toBe(true);
+    expect(m('README')).toBe(false);
+  });
+
+  test('% and _ are wildcards; everything else is literal', () => {
+    expect(likeMatcher('rlm%metrics')('RLM-1638-derived-metrics')).toBe(true);
+    expect(likeMatcher('rlm-16_8')('RLM-1638')).toBe(true);
+    expect(likeMatcher('a.b')('axb')).toBe(false);
+    expect(likeMatcher('a.b')('a.b')).toBe(true);
+    expect(likeMatcher('(x')('a(x')).toBe(true);
+  });
+
+  test('empty matches everything', () => {
+    expect(likeMatcher('  ')('anything')).toBe(true);
+  });
+
+  test('^ pins the start, $ pins the end', () => {
+    expect(likeMatcher('^rlm')('RLM-1638')).toBe(true);
+    expect(likeMatcher('^rlm')('done/RLM-1638')).toBe(false);
+    expect(likeMatcher('metrics$')('RLM-1638-derived-metrics')).toBe(true);
+    expect(likeMatcher('metrics$')('metrics-old')).toBe(false);
+    expect(likeMatcher('^readme$')('README')).toBe(true);
+    expect(likeMatcher('^readme$')('README-old')).toBe(false);
+    expect(likeMatcher('^rlm%metrics$')('RLM-1638-derived-metrics')).toBe(true);
+  });
+
+  test('a $ or ^ elsewhere is a literal character', () => {
+    expect(likeMatcher('a$b')('xa$by')).toBe(true);
+    expect(likeMatcher('a^b')('a^b')).toBe(true);
   });
 });

@@ -19,6 +19,7 @@
   --mark-fav: #d99100;
   --size-tiny: #f0206e;
   --dir: #6b4226;
+  --doc-title: #2b6e3f; /* mid-dark green */
   --size-small: #7b3ff2;
 
   /* Age heat. Five buckets — under ten minutes, this hour, today, this week, older — each with
@@ -74,6 +75,7 @@
     --mark-fav: #e0b341;
     --size-tiny: #ff3d85;
     --dir: #c9a07a;
+    --doc-title: #7cc48d;
     --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
@@ -110,6 +112,7 @@
   --mark-fav: #e0b341;
   --size-tiny: #ff3d85;
   --dir: #c9a07a;
+  --doc-title: #7cc48d;
   --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
@@ -370,7 +373,13 @@ main {
 .row .ico { flex: none; color: var(--fg-faint); display: flex; }
 .row.dir > .label { color: var(--dir); }
 .row.dir.on-path > .label { font-weight: 700; }
+/* The way down to where the reader is, tinted faintly so it reads as one path. */
+.row.dir.on-path:not([aria-current="true"]) { background: color-mix(in srgb, var(--dir) 8%, transparent); }
+.row.dir.on-path:not([aria-current="true"]):hover { background: color-mix(in srgb, var(--dir) 14%, transparent); }
 .row.dir > .badge { color: var(--dir); font-weight: 700; }
+/* The count opens the folder's page; the rest of the row only toggles it. */
+.row.dir > .badge.count { cursor: pointer; border-radius: 3px; }
+.row.dir > .badge.count:hover { background: color-mix(in srgb, var(--dir) 14%, transparent); text-decoration: underline; }
 .row.muted { opacity: 0.45; }
 .row.fav > .twist { color: var(--mark-fav); }
 .row.tiny > .label { color: var(--fg-muted); }
@@ -510,6 +519,14 @@ main {
 .home { max-width: 860px; margin: 0 auto; padding: 24px 30px 120px; }
 .home-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
 .home-head h1 { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; color: var(--h1); margin: 0; display: flex; align-items: center; }
+/* DIR on the front page, GIT on the root's folder page: each leads to the other view. */
+.head-link {
+  flex: none; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--ok);
+  padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent); border-radius: var(--radius);
+}
+.head-link:hover { text-decoration: none; background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.doc-title-row > .head-link { margin-right: auto; }
+.doc-title-row:has(> .head-link) > .doc-title { flex: 0 1 auto; }
 .home-head .tabs { margin-left: auto; flex: 0 0 auto; gap: 3px; }
 .home-head .tabs button { display: flex; align-items: center; gap: 5px; padding: 5px 10px; flex: none; }
 
@@ -562,8 +579,56 @@ main {
 .home-table .dir-path.root { color: var(--fg-faint); }
 
 .home-table td.name { width: 100%; }
-.home-table td.name .link { font-weight: 600; color: var(--accent); }
+.home-table td.name .link { font-weight: 600; color: var(--accent); overflow-wrap: anywhere; }
 .home-table td.when { text-align: right; white-space: nowrap; width: 1%; font-size: 11.5px; }
+
+/* A folder's page: the front page's table, plus a size column. */
+.dir-page .crumbs { margin-bottom: 2px; }
+.dir-page .crumbs > span { display: inline-flex; align-items: baseline; gap: 4px; }
+.dir-meta { display: flex; align-items: center; gap: 12px; color: var(--fg-muted); font-size: 12px; margin: 0 0 16px; }
+.dir-table td.size {
+  text-align: right; white-space: nowrap; width: 1%; font-size: 11.5px;
+  color: var(--fg-faint); font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--border-strong); padding-left: 7px;
+}
+.dir-table td.size.small { color: var(--size-small); font-weight: 650; }
+.dir-table tr.tiny .link, .dir-table tr.small .link { text-decoration: line-through; }
+.dir-table tr.tiny .link { text-decoration-style: double; text-decoration-thickness: 1px; }
+.dir-table td.name .size-mark { margin-left: 6px; vertical-align: -1px; }
+.dir-table tr.muted { opacity: 0.5; }
+.dir-table tr.filter-row > td { padding-bottom: 8px; vertical-align: middle; }
+.dir-table .sort-flip {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-size: 11.5px; padding: 3px 8px; color: var(--fg-muted);
+  border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised);
+}
+.dir-table .sort-flip:hover { color: var(--fg); border-color: var(--accent); }
+.dir-table .col-filter {
+  width: 100%; font: inherit; font-size: 12px; padding: 3px 7px;
+  color: var(--fg); background: var(--bg-raised);
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+}
+.dir-table td.dir .col-filter { text-align: right; min-width: 170px; }
+.dir-table .col-filter:focus { outline: none; border-color: var(--accent); }
+.dir-table .filter-with-help { display: flex; align-items: center; gap: 6px; }
+.dir-table .filter-help {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor;
+  font: italic 700 10.5px/1 Georgia, serif; color: var(--accent); cursor: help;
+}
+.dir-table .filter-help:hover, .dir-table .filter-help:focus { color: var(--accent); outline: none; }
+.dir-table .filter-help { position: relative; }
+.dir-table .filter-help .tip {
+  display: none; position: absolute; top: calc(100% + 6px); right: -8px; z-index: 20;
+  width: max-content; max-width: 480px; padding: 8px 10px; white-space: pre-wrap; text-align: left;
+  font: 12px/1.55 var(--mono); font-style: normal; color: var(--fg);
+  background: var(--bg-raised); border: 1px solid var(--border-strong); border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.14);
+}
+.dir-table .filter-help:hover .tip, .dir-table .filter-help:focus .tip { display: block; }
+.dir-table td.none { color: var(--fg-muted); padding: 10px 8px; }
+.dir-table .dir-link { font: inherit; color: inherit; padding: 0; text-align: right; display: block; max-width: 340px; margin-left: auto; overflow: hidden; }
+.dir-table .dir-link:hover b { text-decoration: underline; }
 
 .home-table .tag {
   margin-left: 7px;
@@ -687,15 +752,17 @@ main {
 .crumbs .sep { color: var(--fg-faint); }
 .crumbs .crumb { font: inherit; color: inherit; padding: 0; border-radius: 2px; }
 .crumbs .crumb:hover { color: var(--accent); text-decoration: underline; }
+.crumbs a.crumb { text-decoration: none; }
+.crumbs .crumb.root { color: var(--dir); font-weight: 600; }
 /* The folder the document lives in, not the path that leads to it. */
-.crumbs .crumb.here { font-size: 15px; font-weight: 650; color: var(--fg); letter-spacing: -0.01em; }
+.crumbs .crumb.here { font-size: 15px; font-weight: 650; color: var(--dir); letter-spacing: -0.01em; }
 .crumbs > span:has(.here) { display: flex; align-items: baseline; }
 /* The title and the ⚙ share one line; the title takes the room. */
 .doc-title-row { display: flex; align-items: center; gap: 8px; }
 .doc-title-row > .doc-title { flex: 1 1 auto; min-width: 0; }
 .notice-gear { float: right; }
 .head-gear { margin-left: auto; }
-.doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px;
+.doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; color: var(--doc-title);
   display: flex; align-items: center; gap: 8px; }
 /* The house, at the size of the title it stands in front of. It is a raster with a white
    ground, so it is rounded into a tile rather than floated on the page background. */
@@ -733,7 +800,7 @@ main {
 
 /* Contents on the left, history on the right; they stack when the column is narrow. */
 .doc-aside { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
-.doc-aside > .toc { flex: 1 1 320px; min-width: 0; margin-bottom: 0; }
+.doc-aside > .toc { flex: 1 1 320px; min-width: 0; margin: 0; padding-top: 10px; }
 .doc-aside > .gitlog { flex: 0 1 300px; min-width: 0; }
 
 .gitlog {

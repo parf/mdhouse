@@ -10,6 +10,7 @@ import { RootSelect } from './ui/RootSelect';
 import { Home } from './ui/Home';
 import { AboutModal } from './ui/AboutModal';
 import { Settings } from './ui/Settings';
+import { DirPage } from './ui/DirPage';
 import { ancestors } from './ui/tree-model';
 import { IconGear, IconPanel, IconSearch } from './ui/icons';
 
@@ -63,6 +64,9 @@ function App() {
   const [path, setPath] = useState(() => location.pathname);
   const docPath = path.startsWith('/d/') ? path.slice(3) : '';
   const onSettings = path === '/settings';
+  // `/d/<root>/<dir>/` — a trailing slash is a folder's page, not a document. With a single
+  // root its own page is plain `/d/`.
+  const dirPage = path.startsWith('/d/') && (docPath === '' || docPath.endsWith('/')) ? docPath : null;
 
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
@@ -133,7 +137,7 @@ function App() {
   // Document load, keyed on the URL.
   const loadSeq = useRef(0);
   useEffect(() => {
-    if (!docPath) {
+    if (!docPath || docPath.endsWith('/')) {
       setDoc(null);
       setDocError(null);
       return;
@@ -274,6 +278,45 @@ function App() {
     [go, roots, rootId],
   );
 
+  /** A folder page's URL, built the way document URLs are; `''` is the root's own page. */
+  const dirPageUrl = useCallback(
+    (dir: string) => {
+      const root = roots.find((r) => r.id === rootId);
+      const segs = [...(roots.length > 1 && root ? [root.id] : []), ...dir.split('/')].filter(Boolean);
+      return `/d/${segs.map((s) => `${encodeURIComponent(s)}/`).join('')}`;
+    },
+    [roots, rootId],
+  );
+  const openDirPage = useCallback((dir: string) => go(dirPageUrl(dir)), [go, dirPageUrl]);
+
+  /**
+   * Which root and folder a folder URL names. The first segment is a root id only when more
+   * than one root is served — the same rule document URLs follow.
+   */
+  const dirTarget = useMemo(() => {
+    if (dirPage === null) return null;
+    const segs = dirPage
+      .split('/')
+      .filter(Boolean)
+      .map((s) => {
+        try {
+          return decodeURIComponent(s);
+        } catch {
+          return s;
+        }
+      });
+    const named = roots.length > 1 ? roots.find((r) => r.id === segs[0]) : undefined;
+    return { rootId: named?.id ?? rootId, dir: (named ? segs.slice(1) : segs).join('/') };
+  }, [dirPage, roots, rootId]);
+
+  // Opening a folder page switches to its root, and opens the folder in the tree.
+  useEffect(() => {
+    if (!dirTarget) return;
+    if (dirTarget.rootId && dirTarget.rootId !== rootId) setRootId(dirTarget.rootId);
+    if (dirTarget.dir) setExpanded((prev) => new Set([...prev, dirTarget.dir, ...ancestors(dirTarget.dir)]));
+    document.title = `${dirTarget.dir || 'root'}/ · mdhouse`;
+  }, [dirTarget?.rootId, dirTarget?.dir]);
+
   const toggleDir = useCallback((dirPath: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -350,7 +393,9 @@ function App() {
           recents={recents}
           authorFilter={authorFilter}
           showIgnored={showIgnored}
-          current={doc?.rel ?? null}
+          // On a folder page the folder is where the reader is: `dir/` marks it, and every folder
+          // above it, just as an open document marks its own.
+          current={doc?.rel ?? (dirTarget?.dir ? `${dirTarget.dir}/` : null)}
           expanded={expanded}
           live={live}
           onCycleState={cycle}
@@ -370,6 +415,7 @@ function App() {
           onAuthor={setAuthorFilter}
           onToggleIgnored={() => setShowIgnored((v) => !v)}
           onToggleDir={toggleDir}
+          onOpenDirPage={openDirPage}
           onOpen={openFile}
           onMark={setMark}
           onHome={() => go('/')}
@@ -381,6 +427,17 @@ function App() {
         {/* The ⚙ sits in each page's own header row; with the sidebar off the top bar has it. */}
         {onSettings ? (
           <Settings roots={roots} onChanged={() => void reloadRoots()} gear={pageGear} />
+        ) : dirTarget ? (
+          <DirPage
+            tree={tree?.root.id === dirTarget.rootId ? tree : null}
+            dir={dirTarget.dir}
+            onOpen={openFile}
+            onOpenDir={openDirPage}
+            onAbout={() => setAboutOpen(true)}
+            gear={pageGear}
+            gitUrl={roots.length > 1 ? `/?root=${encodeURIComponent(dirTarget.rootId)}` : '/'}
+            onOpenGit={() => go('/')}
+          />
         ) : !docPath ? (
           <Home
             rootId={rootId}
@@ -391,6 +448,8 @@ function App() {
             onOpen={openFile}
             onAbout={() => setAboutOpen(true)}
             gear={pageGear}
+            dirUrl={dirPageUrl('')}
+            onOpenDir={() => openDirPage('')}
           />
         ) : (
         <Doc
@@ -400,9 +459,16 @@ function App() {
           jumpLine={jumpLine}
           onNavigate={go}
           onMark={setMark}
-          onOpenDir={revealDir}
+          // A breadcrumb folder opens its own page, and shows itself in the tree.
+          onOpenDir={(dir) => {
+            revealDir(dir);
+            openDirPage(dir);
+          }}
           onAbout={() => setAboutOpen(true)}
           gear={pageGear}
+          rootName={tree?.root.name}
+          rootDirUrl={dirPageUrl('')}
+          onOpenRootDir={() => openDirPage('')}
         />
         )}
       </main>

@@ -25,11 +25,15 @@ interface Props {
   jumpLine: number | null;
   onNavigate: (url: string) => void;
   onMark: (path: string, mark: Mark, on: boolean) => void;
-  /** Reveal a directory in the sidebar tree. */
+  /** A breadcrumb folder: open its page, and reveal it in the sidebar tree. */
   onOpenDir: (dir: string) => void;
   onAbout?: () => void;
   /** The settings button, placed on the title's line. */
   gear?: preact.ComponentChildren;
+  /** The root, first in the breadcrumb, linking to its folder page. */
+  rootName?: string;
+  rootDirUrl?: string;
+  onOpenRootDir?: () => void;
 }
 
 /**
@@ -62,7 +66,20 @@ async function renderMermaid(container: HTMLElement): Promise<void> {
   }
 }
 
-export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenDir, onAbout, gear }: Props) {
+export function Doc({
+  doc,
+  loading,
+  error,
+  jumpLine,
+  onNavigate,
+  onMark,
+  onOpenDir,
+  onAbout,
+  gear,
+  rootName,
+  rootDirUrl,
+  onOpenRootDir,
+}: Props) {
   const body = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(true);
   /** Deepest heading level the contents list shows. H1–H2 by default; the H3 chip widens it. */
@@ -253,6 +270,24 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
     <article class={`doc-wrap${fullWidth ? ' full' : ''}`}>
       <header class="doc-head">
         <div class="crumbs">
+          {/* The root leads, and opens its own folder page — every file in it, as a list. */}
+          {rootName && rootDirUrl && (
+            <span>
+              <a
+                class="crumb root"
+                href={rootDirUrl}
+                title={`${rootName}/ — every file, as a list`}
+                onClick={(e) => {
+                  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  onOpenRootDir?.();
+                }}
+              >
+                {rootName}
+              </a>
+              {dirs.length > 0 && <span class="sep"> / </span>}
+            </span>
+          )}
           {dirs.map((d, i) => {
             // Each crumb addresses the path up to and including itself. The last one is the
             // folder the document actually lives in — the part worth reading at a glance, so
@@ -264,7 +299,7 @@ export function Doc({ doc, loading, error, jumpLine, onNavigate, onMark, onOpenD
                 <button
                   class={`crumb${last ? ' here' : ''}`}
                   onClick={() => onOpenDir(path)}
-                  title={`Show ${path} in the tree`}
+                  title={`Open ${path}/ — every file in it`}
                 >
                   {d}
                 </button>

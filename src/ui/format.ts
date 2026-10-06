@@ -88,6 +88,26 @@ export function rootLabel(path: string, opts: { above?: number | 'all'; max?: nu
   return label.length > max ? `…${label.slice(label.length - max + 1)}` : label;
 }
 
+/**
+ * A filter box's text as a matcher, the way MySQL reads `LIKE '%text%'`: it matches anywhere,
+ * ignoring case, and `%` / `_` inside it stand for any run of characters / exactly one. A
+ * leading `^` pins it to the start and a trailing `$` to the end, as in a regex. Empty text
+ * matches everything.
+ */
+export function likeMatcher(text: string): (value: string) => boolean {
+  let t = text.trim();
+  const start = t.startsWith('^');
+  const end = t.length > (start ? 1 : 0) && t.endsWith('$');
+  if (start) t = t.slice(1);
+  if (end) t = t.slice(0, -1);
+  if (!t && !start && !end) return () => true;
+  const body = [...t]
+    .map((ch) => (ch === '%' ? '.*' : ch === '_' ? '.' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+    .join('');
+  const re = new RegExp(`${start ? '^' : ''}${body}${end ? '$' : ''}`, 'i');
+  return (value) => re.test(value);
+}
+
 /** Split a line into plain and highlighted runs for a search hit. */
 export function highlightRanges(text: string, ranges: Array<[number, number]>): Array<{ text: string; hit: boolean }> {
   if (!ranges.length) return [{ text, hit: false }];

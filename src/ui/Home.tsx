@@ -18,6 +18,9 @@ interface Props {
   onAbout?: () => void;
   /** The settings button, at the end of the header row. */
   gear?: preact.ComponentChildren;
+  /** The root's own folder page — every file in it, as a list. */
+  dirUrl: string;
+  onOpenDir: () => void;
 }
 
 const VIEWS: Array<{ id: HomeView; label: string; Icon: (p: { size?: number }) => preact.JSX.Element }> = [
@@ -102,6 +105,19 @@ export function Home(props: Props) {
           <button class="mark" onClick={props.onAbout} title="About mdhouse" aria-label="About mdhouse" />
           {root?.name ?? 'mdhouse'}
         </h1>
+        {/* A real link, so a middle click opens it in a tab; a plain click stays in the app. */}
+        <a
+          class="head-link"
+          href={props.dirUrl}
+          title="Every file in this root, as a list"
+          onClick={(e) => {
+            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+            e.preventDefault();
+            props.onOpenDir();
+          }}
+        >
+          DIR
+        </a>
         <div class="tabs" role="tablist">
           {VIEWS.map(({ id, label, Icon }) => (
             <button key={id} role="tab" aria-selected={view === id} onClick={() => setView(id)}>
@@ -274,7 +290,7 @@ function tagOf(status: string | undefined, loud?: boolean): string | null {
 }
 
 /** `Plans/PRF-55` — the last segment bold, since that is the one that names the folder. */
-function Dir({ dir }: { dir: string }) {
+export function Dir({ dir }: { dir: string }) {
   if (!dir) return <span class="dir-path root">/</span>;
   const cut = dir.lastIndexOf('/');
   return (
