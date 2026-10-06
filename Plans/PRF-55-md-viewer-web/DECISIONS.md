@@ -1,150 +1,121 @@
 # Decisions
 
-## 2026-09-13
+Each entry is a choice that shapes the code, and why. When a later decision replaces an
+earlier one, the earlier one is rewritten to say what holds now.
+
+## Foundations — 2026-09-13
 
 - **Bun + Preact SPA, no separate build step.** `Bun.serve` bundles `index.html` and its
-  imports natively with hot reload. Landed in `src/server.ts`, `src/index.html`.
+  imports natively, with hot reload. `src/server.ts`, `src/index.html`.
 - **markdown-it over remark and marked.** Block tokens carry `.map = [startLine, endLine]`,
-  which is what checkbox write-back and section→AI need; remark is heavier and async, marked
-  has weaker position data. Landed in `src/lib/render.ts`.
-- **Local-first, network-ready.** Binds `127.0.0.1`; the path jail, the read-only flag and
-  the write chokepoint are built now so LAN exposure later needs no rework.
-- **WebSockets, never polling.** The channel ships in Phase 1 even though Phase 1 barely uses
-  it, so later interactive features have no new plumbing to build. `src/lib/watch.ts`.
-- **The development target is read-only.** It is someone's working checkout as well as the
-  best test tree there is. First implemented as a hard-coded path list in `src/lib/roots.ts`;
-  superseded twice below, and now read-only is simply the default for every root.
-- **`git ls-files` is the scanner, not a glob.** `.gitignore` is honoured for free and it is
-  far faster; the deny list only covers ground outside any repo. Measured 1 036 files in 51 ms
-  on the docs tree. `src/lib/scan.ts`.
-- **One git process per repo.** The PHP viewer this replaces shells out per displayed row;
-  recents, authors and status all come from one `git log` and one `git status` here, with
-  committer filtering done client-side. `src/lib/git.ts`.
-- **URL shape `/d/<path>/<file>.md`.** Root-relative with one root; a `/<rootId>/` segment
-  only when there is more than one. `Registry.docUrl()` / `fromDocUrl()`.
-- **Marks live in `~/.config/mdhouse/`,** never as a dotfile in a browsed tree — that is what
-  makes favorite/mute/ignore work on a read-only root. `src/lib/prefs.ts`.
-- **One anchor scheme,** generated server-side. The viewer this replaces has two that
-  disagree; links break between them.
+  which is what checkbox write-back and section → AI need; remark is heavier and async, marked
+  has weaker position data. `src/lib/render.ts`.
+- **Local-first, network-ready.** Binds `127.0.0.1`; the path jail, the read-only flag and the
+  write chokepoint exist now, so LAN exposure later needs no rework.
+- **WebSockets, never polling.** `src/lib/watch.ts`.
+- **`git ls-files` is the scanner, not a glob.** `.gitignore` is honoured for free and it is far
+  faster; the deny list only covers ground outside any repo. `src/lib/scan.ts`.
+- **Git is batched:** one `git log` and one `git status` per repo, never a call per displayed
+  row. Committer filtering is client-side. `src/lib/git.ts`.
+- **URL shape `/d/<path>/<file>.md`.** Root-relative with one root; a `/<rootId>/` segment only
+  when there is more than one. `Registry.docUrl()` / `fromDocUrl()`.
+- **Config lives in `~/.config/mdhouse/`,** never as a dotfile in a browsed tree — that is what
+  makes marks work on a read-only root. `src/lib/prefs.ts`.
+- **One anchor scheme,** generated server-side and used unchanged by the contents list.
 
+## `--rw` is the whole write policy
 
-## Read-only is the default, and the badge marks the exception
+Every root is read-only unless `--rw` was passed; `Registry.create(specs, writable)` takes that
+one boolean, and `writeFile()` refuses a read-only root. The UI marks the exception — a green
+`RW` on a writable root — and nothing at all on the usual read-only one.
 
-Roots were writable unless they matched a hard-coded path, and the UI advertised the
-read-only ones with a badge. Both halves were wrong.
-
-The badge was noise: it appeared on essentially every root, which is the state a *viewer* is
-in by definition. What is worth announcing is the rare tree mdhouse may write to, so the
-badge inverted — a green `RW` when a root is writable, nothing at all otherwise.
-
-`Root.writable` inverted with it: a root is writable only when the flag names it. That also
-removed a contradiction — naming a protected directory used to set `writable: true` while
-`writeFile()` refused the write anyway, so the UI would have offered an edit that could not
-happen. A protected tree is no longer eligible for the flag at all, and says so.
-
-*(Superseded by the next entry: the path list is gone and `--rw` is the whole policy.)*
-
-
-## No tree is special; `--rw` is the whole policy
-
-The read-only rule was a hard-coded path list — one particular checkout mdhouse would refuse
-to write to. That was the wrong shape twice over: it protected exactly one tree while leaving
-every other one writable by default, and it baked a local path into a general tool.
-
-The list is gone. `Registry.create(specs, writable)` takes a single boolean from `--rw`, every
-root is read-only without it, and `writeFile()` refuses a read-only root — which is every root
-unless the user asked otherwise. The protection is stronger than the path list ever was,
-because it now covers everything rather than one directory, and it is a single flag to reason
-about instead of a list to maintain.
-
+This replaced a hard-coded list of protected paths, which protected exactly one tree, left every
+other one writable by default, and baked a local path into a general tool.
 
 ## Headings get their own ink — one hue per level
 
-H1–H3 now use `--h1` / `--h2` / `--h3` rather than the body colour, in the document *and* in
-the contents list, so a row and the heading it points at are visibly the same thing.
-
-Two attempts failed the same way. A warm graphite ramp — three near-blacks a few percent
-apart — was invisible. Three tints of one navy were still too close: varying only lightness
-means telling a level apart requires a neighbour to compare it with.
-
-So one hue per level. All three stay dark enough to be ink rather than decoration, but the
-level of a heading is now recognisable on its own, which is the whole job.
+H1–H3 use `--h1` / `--h2` / `--h3` in the document *and* the contents list, so a row and the
+heading it points at are visibly the same thing. One hue per level, because tints of one colour
+need a neighbour to compare against before a level can be told apart.
 
 | | light | dark |
 | --- | --- | --- |
 | H1 | `#123a6b` navy | `#9dc4f5` |
 | H2 | `#1d6f5e` teal | `#79d3bb` |
 | H3 | `#8a5a1f` ochre | `#e0b978` |
-| body | `#1c1c1a` | `#e4e4e2` |
 
-Sizes went up with the colours — 1.9 / 1.52 / 1.28em in the document, 14.5 / 13.5 / 12.5px in
-the contents list — so the two signals reinforce each other instead of one carrying it alone.
-
-H4–H6 keep the body and muted colours: they are rare in these documents and already separated
-by size, and continuing the ramp would land them on the grey they already use.
-
+Sizes went up with the colours — 1.9 / 1.52 / 1.28em in the document — so the two signals
+reinforce each other. H4–H6 keep body colours. A document's own title (`.doc-title`, the file
+name above the text) is green, so it is not mistaken for the document's first heading.
 
 ## One mdhouse per port
 
-Bun enables `SO_REUSEPORT` by default, so a second `mdhouse` binds a port that is already
-serving and the kernel splits requests between the two processes. With two trees open on the
-same port, roughly every other request was answered by the wrong one: the sidebar came from
-one server and the document from the other, so a file that plainly existed returned *not
-found* — intermittently, with nothing wrong with the path.
-
-`Bun.serve` now passes `reusePort: false` and the CLI turns `EADDRINUSE` into a sentence that
-says which port is taken and what to do about it. Sharing a port is not a feature anyone asked
-for here, and the failure it produces is indistinguishable from a bug in the path handling.
-
+Bun enables `SO_REUSEPORT` by default, so a second `mdhouse` bound an already-serving port and
+the kernel split requests between the two: every other request reached the wrong tree and a file
+that plainly existed came back *not found*. `Bun.serve` passes `reusePort: false`.
 
 ## The control channel is a unix socket, and it adds rather than replaces
 
-Two questions, and the answers reinforce each other.
+A second `mdhouse` reaches the first over `~/.config/mdhouse/control-<port>.sock`, mode `0600`.
+Filesystem permissions are the authentication, there is nothing to sign, and a browser cannot
+open a unix socket at all. (A shared-secret HTTP endpoint was considered and rejected: its MAC
+would have signed a timestamp rather than the request, in a length-extension-prone form, with the
+key in a file the server partly serves.)
 
-**How does a second `mdhouse` reach the first?** The shape considered first was a random key
-in the config, a timestamp, and `md5(key + time)` as an HTTP POST. It has three faults: the
-MAC signs the timestamp rather than the request, so a captured one authorises any directory
-list; md5 in `md5(key ++ msg)` form is the textbook length-extension construction; and the key
-would live in the file the server already serializes parts of to the browser. A unix socket at
-`~/.config/mdhouse/control-<port>.sock`, mode `0600`, deletes all three: filesystem
-permissions are the authentication, there is nothing to sign, and a browser cannot open a unix
-socket at all — which is the attack the shared secret existed to stop.
+When it gets there it **adds** the directory and never swaps trees: replacing would turn a tab
+someone is reading into a different tree with no explanation, and means rebuilding every cache
+keyed by root id.
 
-**What does it do when it gets there?** Add the directory, never swap the trees out. Replacing
-means a tab someone is reading becomes a different tree with no explanation, and it means
-rebuilding the registry, clearing every cache keyed by root id and restarting watchers — three
-places to leak state. Adding is `registry.add()` plus one watcher, and mdhouse already has a
-root switcher to show the result.
+## Background by default, logging to syslog
 
+A viewer is left running for days, so the default detaches; `mdhouse exit` stops it and is
+printed on start. Output goes through `logger -t mdhouse` — timestamped, rotated, and readable
+with a command the user already knows — not to a file only mdhouse knows about. `--fg` is for
+`bun --hot` and for supervisors.
 
-## Background by default, and syslog rather than a logfile
+## Saved directories live in `prefs.json`
 
-A viewer is something you leave running for days and glance at; holding a terminal hostage for
-it is the wrong default, and every user of it learns `mdhouse ... &` or a tmux pane instead.
-So the default detaches, and the cost of that — no Ctrl+C — is paid by `mdhouse exit`, printed
-on start so it never has to be remembered. `--fg` is there for `bun --hot`, which must own its
-own process, and for anyone supervising mdhouse with systemd.
+One config file, not two. `-P` and `--rm` go to a running daemon over the control socket, so it
+starts or stops serving the folder at once. `-P` rather than `-p`, because `-p` has always been
+the port.
 
-A detached process has to put its output somewhere. Not `~/.config/mdhouse/`: config is not
-log, nothing rotates it, and a file only mdhouse knows about is a file nobody reads when
-something breaks. Piping through `logger -t mdhouse` puts it where the system already keeps
-such things — timestamped, rotated, greppable, and reachable with a command the user already
-knows. The launcher never reads it back; the one failure worth answering in the terminal (the
-port held by something that is not mdhouse) is detected before the spawn by binding the port
-for a moment.
+## The systemd service serves only what is saved
+
+Under systemd the working directory is `$HOME`, and the "no directory given" fallback would
+serve all of it. So `mdhouse service install` refuses until something is saved, and a service
+that finds the list emptied exits 0 — which `Restart=on-failure` leaves alone, as it does
+`mdhouse exit`.
+
+## The last pull is `FETCH_HEAD`, not `.git`
+
+`.git`'s own mtime moves on every commit, stage and checkout, so it repeats the last commit's
+age. `FETCH_HEAD` is rewritten by fetch and pull only.
+
+## Folder pages are built in the browser
+
+The client already holds the whole tree, so a folder's page is a filter over it — no endpoint,
+no request, and live updates for free. Its address is the folder's path with a trailing slash.
+
+## Only trusted host names, and state changes only from mdhouse's own page
+
+Every request must be addressed to `localhost`, an IP address, or (with `--host`) the machine's
+own name. DNS rebinding makes a hostile page same-origin with the local server in every header
+but `Host`, so the name is the one thing to check; an allow-list of names, rather than a
+deny-list, because the attacker picks the name.
+
+On top of that, `POST /api/marks`, `/api/roots/remove`, `/api/settings` and the WebSocket refuse
+a request whose `Origin` or `Sec-Fetch-Site` names another site — the requests a stray web page
+could otherwise send to a local server.
+
+## `prefs.json` is changed by read–apply–write, never by rewriting a held copy
+
+Several processes write it. Each change re-reads the file, applies itself, and replaces the file
+atomically (temp file + rename). A file that does not parse is moved aside, not overwritten: it
+holds every mark and saved folder, and an empty file saved over a typo would destroy them.
 
 ## A review is a list of claims, not a list of changes
 
-Eleven findings arrived from another model. Ten were real and are fixed; two of its
-recommendations were wrong, and following either would have made things worse — one would have
-left stale control sockets forever, because Bun does not report a dead unix socket with the
-POSIX code the review assumed.
-
-So the rule the round settled on: reproduce before editing. Every finding got a script against
-the real function, a scratch git repo, or a request to the running server, *first* — which is
-also what produced the regression tests, since a reproduction is a failing test with the
-assertion left off. The two bad recommendations were caught by the same step that confirmed the
-other ten, at no extra cost.
-
-It also found the reason a whole class of bug could sit there unseen: `tsconfig.json` included
-only `src/`, so the test suite had never been typechecked.
+Reproduce before editing. Every finding from an outside review gets a script against the real
+function, a scratch repo or the running server *first* — which is also how the regression tests
+get written, since a reproduction is a failing test with the assertion left off. Of eleven
+findings in the 0.4.0 review, two recommendations were wrong, and this step caught both.

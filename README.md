@@ -9,8 +9,7 @@
 > ✦ **In ten seconds.** Point it at a folder — notes, a repo, a pile of repos — and get one
 > browser tab with a file tree, instant search, and a live *what changed lately* view fed by
 > git. Nothing is imported, indexed or copied anywhere: it reads the folder as it is right
-> now, and never writes to it unless you ask. So you can point it at anything, including a
-> directory you only have read access to.
+> now, and never writes to it unless you ask.
 
 ```bash
 mdhouse ~/notes
@@ -19,16 +18,22 @@ mdhouse ~/notes
 ![mdhouse showing a docs tree, a rendered document with its table of contents, and the file's git history](doc/screenshot.png)
 
 For people who read and write a lot of Markdown and are tired of `cat`, `less`, and editor
-previews that show one file at a time. Made for docs trees and `Plans/` folders; happy with
-any directory that has `.md` files in it.
+previews that show one file at a time. Made for docs trees and `Plans/` folders; happy with any
+directory that has `.md` files in it.
 
 ---
 
-## ▸ Try it in a minute
+## ▸ Install
 
 ```bash
 bun install -g mdhouse      # or: npm install -g mdhouse
 ```
+
+- **[Bun](https://bun.sh) ≥ 1.4** — the only hard requirement.
+- **git** — optional. Without it you still get the tree and search; recents fall back to
+  modification time and the sidebar footer says `no git`.
+- **ripgrep** (`rg`) — optional. Without it full-text search uses a slower in-process scan that
+  gives the same answers.
 
 <details>
 <summary>…or run it from a clone</summary>
@@ -42,163 +47,158 @@ sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your P
 
 </details>
 
-```bash
-mdhouse                 # this folder
-mdhouse ~/notes ~/src   # any folders at once — plain notes, a repo, a pile of repos
-```
-
-Then open <http://127.0.0.1:7777>. Every document has an address — `/d/<path>/<file>.md` — so
-pages can be linked, bookmarked and typed by hand.
-
-### It runs in the background
-
-The terminal comes straight back, and the server outlives the shell that started it:
+## ▸ Start
 
 ```bash
-mdhouse exit            # stop it   (--all stops every one you have running)
+mdhouse ~/notes ~/src       # serve these folders — plain notes, a repo, a pile of repos
+mdhouse ~/notes ~/src -P    # …and save them, so every later start serves them too
+mdhouse                     # the saved folders, or this one when nothing is saved
+mdhouse exit                # stop it
 ```
 
-That line is printed on start, so there is nothing to remember. `--fg` keeps it in the
-foreground, where Ctrl+C stops it; detached, everything it says goes to the system log
-(`journalctl -t mdhouse`).
-
-### Run it again and it adds, never replaces
-
-```bash
-mdhouse ~/notes         # starts on 7777
-mdhouse ~/src           # 7777 is taken — hands ~/src to the one already running
-```
-
-No error and no rival server: the running mdhouse serves that folder too, and your open tabs
-keep the tree they were reading. The request travels over a `0600` unix socket in
-`~/.config/mdhouse/`, so only a process running as you can ask — a web page cannot reach a
-unix socket at all.
-
-### Keep them, and start it with your session
-
-```bash
-mdhouse ~/notes ~/src -P     # serve them now, and on every start from here on
-mdhouse                      # no folder named: serves the saved ones
-mdhouse --rm ~/src           # forget it and stop serving it
-mdhouse service install      # a systemd --user service, started at login
-```
-
-Saved folders sit in `~/.config/mdhouse/prefs.json`, beside your favourites. The **⚙** at the top
-right of every page lists what is served — saved, or just for this session — and removes one with
-a click. `mdhouse service uninstall` and `mdhouse service status` do what they say; the log is
-`journalctl --user -u mdhouse -f`, and `loginctl enable-linger $USER` starts it at boot, before
-you log in.
+Then open <http://127.0.0.1:7777>. It runs in the background — the terminal comes straight back
+and the server outlives the shell — and running `mdhouse <folder>` again adds that folder to the
+one already running rather than starting a rival. More in [Running it](#-running-it).
 
 ---
 
 ## ❖ What you get
 
-**Browse.** A sidebar tree of `.md` and `.mdx` files, nothing else. Three widths — a single top
-bar, compact, or open with search and filters — cycled with `Ctrl+B` and remembered.
-Every file shows its size (`812`, `1.1K`, `150K`); stubs stand out — **∅** under 101 bytes, the
-size in violet under 500, names struck through, in the tree and every list. Empty files are left out, and the
-folders above the open document are bold.
+**Browse.** A sidebar tree of `.md` and `.mdx` files, nothing else, in three widths — a single
+top bar, compact, or open with search and filters — cycled with `Ctrl+B` and remembered. The
+open sidebar shows each file's age and size; compact shows the size. Stubs stand out: a pink
+**∅** and a double strike-through under 101 bytes, the size in violet and one strike under 500.
+Empty files are left out of the tree. The folders on the way to what you are reading are bold,
+git status shows as `M` / `U` / `S` / `D`, and in the open sidebar hovering a file offers ★ and 🔇.
 
 **Search.** File names match as you type, with no request to the server at all. Full text goes
 through ripgrep with line numbers and highlighted context, and clicking a hit opens the file
 *at that line*. Four chips narrow it: *names* / *contents* pick which half you see, *recent* /
 *mine* restrict it to the files the Recent and Mine tabs list.
 
-**Two kinds of recent**, side by side in the sidebar tabs — **🕐 Recent**, everything that
-changed here, and **👤 Mine**, only your own work (anything uncommitted counts as yours). The
-clock list puts uncommitted files first, colour-coded by git status, then the files touched by
-the last N commits, filterable by committer; `❖` marks the ones that are yours. Each row is
-three lines: file, folder, commit subject. The other two tabs are **📄 Files** — the tree — and
-**★ Favs**. Compact keeps all four as icons.
+**Two kinds of recent**, as sidebar tabs — **🕐 Recent**, everything that changed here, and
+**👤 Mine**, only your own work (anything uncommitted counts as yours). Uncommitted files come
+first, colour-coded by git status, then the files touched by the last N commits, filterable by
+committer; `❖` marks the ones that are yours. The other two tabs are **📄 Files** and
+**★ Favs**.
 
 ![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and ages that run from red to grey](doc/recent.png)
 
-**A front page.** Click the root name and the same material arrives grouped by **commit**
-instead of by file: each commit with its subject, its age and the documents it is the newest
-change to, in one aligned table. Yours are tinted green. A tree git knows nothing about falls
-back to the twenty most recently changed files.
-Above it, one band says where the checkout stands: the branch and when it last pulled, then
-the commit HEAD is on, with its age and author.
+**A front page** — the root's name in the sidebar. A band at the top says where the checkout
+stands: the branch, when it last pulled, and the commit it is on. Below, what changed, grouped
+by **commit**: each with its subject, age, author and the documents it is the newest change to.
+Yours are tinted green. **Favs / Recent / Mine** narrow it. A folder git knows nothing about
+gets its twenty most recently changed files instead.
 
-**A page per folder.** Click a folder's count in the tree, any folder in a document's breadcrumb,
-or **DIR** beside the front page's title, and you get every `.md` beneath that folder in one
-table: subfolder, name, age and size. It lists newest first or A–Z (`ls -lR` order), and past
-50 files it has two filters that match like `LIKE '%text%'`, with `^` and `$` to anchor. The
-address is the folder's path with a trailing slash, `/d/<root>/<dir>/`, so it can be bookmarked.
+**A page per folder.** Click the count on a closed folder in the tree, any folder in a
+document's breadcrumb, or **DIR** beside the front page's title, and you get every `.md` beneath
+that folder in one table: subfolder, name, age and size. Newest first, or A–Z in `ls -lR` order.
+Past 50 files it grows two filters, one per column, that match like `LIKE '%text%'` — `^` and `$`
+anchor, `%` and `_` are wildcards. From the root's own page, **GIT** goes back to the front page.
 
-**The document page.** Above the text: clickable breadcrumbs, how long ago the file changed,
-who started it and when, and an `N/M done` count when it has task checkboxes. Beside it: a
-table of contents (H1–H2, with an `H3` chip when the document goes deeper) and the last five
-commits to that file, each row a button that diffs that commit. `--follow` is used, so a
-renamed file keeps its history.
+**The document page.** Above the text: a breadcrumb that opens each folder's page, how long ago
+the file changed, who started it and when, and an `N/M done` count when it has task checkboxes.
+Beside it: a table of contents (H1–H2, with an `H3` chip when the document goes deeper) and the
+last five commits to that file, each a button that shows what that commit did. Renames are
+followed, so a moved file keeps its history.
 
 **The buttons above a document**, left to right:
 
-- **↔ Full width** — trade the reading column for the whole window, for wide tables and long
-  code lines. It stays on as you move between documents: a way of reading, not a property of
-  one file.
-- **⊟ Patch** — what changed, as a diff: two line-number gutters, a `+`/`-` column, GitHub's
-  green and red. The line content is *rendered* — headings, bold, inline code, links and task
-  boxes look like themselves, with the source markers (`##`, `-`, `>`) kept beside them in
-  grey. Fenced code stays exactly as typed.
-- **▤ Marked-up document** — the same change laid over the whole document in its normal
-  styling: new blocks tinted green with a bar in the margin, deleted text struck through in
-  the place it used to be. Nothing is hidden — you read the file *and* see what moved.
-- **★ Favourite** — pin the file to the Favs tab and the front page.
+- **↔ Full width** — the whole window instead of a reading column, for wide tables and long
+  code lines. It stays on as you move between documents.
+- **⊟ Patch** — what changed, as a diff: two line-number gutters, GitHub's green and red, and
+  the line content *rendered* — headings, bold, code, links and task boxes look like themselves.
+- **▤ Marked-up document** — the same change laid over the whole document in its normal styling:
+  new blocks tinted green, deleted text struck through where it used to be.
+- **★ Favourite** — pin the file to the Favs tabs.
 - **🔇 Mute** — drop it out of Recent without deleting anything.
-- **🔗 Copy link** — the document's URL, ready to paste into a ticket or a chat.
+- **🔗 Copy link** — the document's URL.
 
-Both marks live in `~/.config/mdhouse/`, never inside the tree you are reading, so they work on
-a directory you cannot write to.
+A file with uncommitted work opens on its diff, in whichever view you used last; a clean file
+opens as a document. Beside the title, **✎** opens the file in your editor through an `edit:`
+link (see [Settings](#-settings)).
 
-**And the bar along the top** — the whole sidebar, when it is collapsed:
-
-- **☰ Panel** — cycle bar → compact → open (`Ctrl+B`).
-- **The house** — version, links and the shortcut list. It is the same button in front of every
-  document title and on the front page, and `?` opens it from anywhere.
-- **The root name** — the front page: what changed in this tree lately.
-- **The root dropdown** — switch between the folders being served, when there is more than one.
-- **🔍 Search** — open the sidebar with the cursor in the search box (`/`).
-
-**⚙ Settings**, in the top-right corner of every page: the folders being served, which of them
-are saved, and a button to remove one.
-
-**Diffs open themselves when they should.** A file with uncommitted work opens on its diff — if
-you have edited it and come back to look at it, the edit is what you came for — in whichever of
-the two views you last used. A clean file opens as a document and compares with the previous
-revision when you ask. An older revision from the history panel is a text the page is not
-showing, so that one always arrives as a patch.
-
-**Ages read like a heat map.** Every "3h ago" is coloured by how fresh it is — red under ten
-minutes, orange this hour, amber today, grey this week, faint for older — and the first hour
-also carries an icon: **🔥 hot** for the last ten minutes, **♨️ warm** for the rest of the hour.
-The same two badges appear beside a file in the tree, so a fresh file is visible without
-opening anything. A column of timestamps is legible before you read a single one.
+**Ages read like a heat map** — red under ten minutes, orange this hour, amber today, grey this
+week, faint for older — with 🔥 on anything touched in the last ten minutes and ♨️ for the rest
+of the hour, in the tree as well as the lists.
 
 **Renders properly.** CommonMark and GFM through markdown-it: nested lists, tables, footnotes,
 task lists, GitHub alerts (`> [!NOTE]`), front matter set aside, syntax highlighting via shiki,
-and mermaid diagrams. Relative links and images between documents just work. Light and dark
-follow your system.
+and mermaid diagrams. A leading `**Q:**` / `**A:**` reads as ❓ / 💬. Relative links and images
+between documents just work. Light and dark follow your system.
 
 **Finds your repos.** Hand it a directory of repositories and it discovers each one, listing
 files with `git ls-files`, so `.gitignore` is honoured with zero configuration. Ignored files
-are one toggle (or `--all`) away, not invisible.
+are one toggle (or `--all`) away.
 
-**Live.** A WebSocket pushes filesystem changes: edit a file in your editor and the open page,
-the tree and the front page follow. No polling anywhere; a dot in the sidebar footer says the
-connection is up.
+**Live.** Edit a file in your editor and the open page, the tree and the front page follow,
+pushed over a WebSocket. No polling; a dot in the sidebar footer says the connection is up.
+
+**Around the edges.** The house in front of every title opens version, links and the shortcut
+list (`?` from anywhere). The folder dropdown switches between served folders — more of each
+path as the sidebar widens, the whole path with the sidebar off. With the sidebar off, a single
+top bar keeps ☰, the dropdown, 🔍 and ⚙.
 
 ---
 
-## 🔒 Read-only by default
+## ▸ Running it
+
+**In the background.** `mdhouse <folder>` detaches and returns; `mdhouse exit` (or `stop`) ends
+it, and `exit --all` ends every one you have running. Its output goes to the system log —
+`journalctl -t mdhouse` on Linux. `--fg` keeps it in the foreground, where Ctrl+C stops it.
+
+**It adds, never replaces.** With one already running on the port, `mdhouse ~/src` hands `~/src`
+to it: no error, no rival server, and your open tabs keep the tree they were reading. The
+request travels over a `0600` unix socket in `~/.config/mdhouse/`, so only a process running as
+you can make it.
+
+**Saved folders, port and host.** `-P` (`--perm`) saves the folders you name; from then on
+every start serves them, alongside any you name that time. Give `--port` or `--host` with `-P`
+and those are saved too — `mdhouse ~/notes -P --port 8080` — so plain `mdhouse`, `mdhouse exit`
+and the service all use them. `mdhouse --rm <folder>` forgets a folder and stops serving it —
+though the last one being served stays up until `exit`. It all lives in
+`~/.config/mdhouse/prefs.json`, with your favourites and settings.
+
+**As a service** (Linux, systemd):
+
+```bash
+mdhouse service install      # starts now and at every login, serving the saved folders
+mdhouse service status
+mdhouse service uninstall
+```
+
+It asks you to save a folder first, and it starts the way a plain `mdhouse` does — the saved
+folders, on the saved port and host. It is always read-only (`--rw` is not carried into it).
+`mdhouse exit` stops it, and systemd leaves it stopped: start it again with
+`systemctl --user start mdhouse`. The log is `journalctl --user -u mdhouse -f`;
+`loginctl enable-linger $USER` starts it at boot, before you log in. `service install --port <n>`
+installs a second, pinned instance as `mdhouse-<n>.service`.
+
+### ⚙ Settings
+
+The **⚙** on each page's title line (in the top bar when the sidebar is off):
+
+- **Directories** — what is served, which folders are saved and which are only for this session,
+  and a button to remove one. Adding is done from a terminal, with `-P`.
+- **Documents → Edit link** — on by default: the ✎ beside each title, linking to
+  `edit:/full/path`. It needs something on your machine that opens `edit:` URLs in your editor;
+  turn it off if nothing does.
+
+---
+
+## 🔒 Read-only, and local
 
 **mdhouse does not write to the trees it serves.** Point it at someone else's checkout, a
 mounted share, a directory you would rather not touch — the worst it can do is read. `--rw`
-allows writing and puts a green `RW` badge beside the root name; no badge means no writes.
+allows writing and puts a green `RW` badge beside the root name; no badge means no writes. Every
+write goes through one function that refuses a read-only root, and it resolves symlinks before
+it decides — including for a file that does not exist yet. Your favourites, saved folders and
+settings live in `~/.config/mdhouse/`, never inside a tree.
 
-It is structural, not a matter of care: every write in the codebase goes through one function
-that refuses a read-only root, and that function resolves symlinks before it decides — including
-for a file that does not exist yet, which is the case a write actually creates.
+**It answers only your own machine.** It binds `127.0.0.1` unless you pass `--host`. Requests
+addressed to any name other than `localhost`, an IP address, or (with `--host`) this machine's
+own hostname are refused — that is what stops a web page from re-pointing its domain at your
+machine to read your files. Anything that changes state must come from mdhouse's own page.
 
 ---
 
@@ -211,45 +211,48 @@ for a file that does not exist yet, which is the case a write actually creates.
 | `?` | version, links and this list |
 | `Esc` | clear the search query, or close the dialog |
 
----
-
-## ▸ Requirements
-
-- **[Bun](https://bun.sh) ≥ 1.4** — the only hard requirement.
-- **git** — optional. Without it you still get the tree and search; recents fall back to
-  modification time and the sidebar footer says `no git`.
-- **ripgrep** (`rg`) — optional. Without it full-text search uses a slower in-process scan that
-  gives the same answers.
-
----
-
 ## ▸ Options
 
 | Flag | Default | |
 | --- | --- | --- |
-| `-p, --port <n>` | `7777` | one mdhouse per port; a second one hands over its directories |
-| `-h, --host <addr>` | `127.0.0.1` | local-only by default; `0.0.0.0` to share on your LAN |
+| `-p, --port <n>` | `7777` | one mdhouse per port; a second one hands over its folders |
+| `-h, --host <addr>` | `127.0.0.1` | `0.0.0.0` to share on your LAN. `-h` is the host, not help |
 | `-o, --open` | off | open a browser on start |
 | `-a, --all` | off | include gitignored `.md` files — with `exit`, stop every mdhouse |
 | `-f, --fg` | off | stay in the foreground instead of detaching |
 | `--git-log <n>` | `200` | commits scanned for recents and the front page |
 | `--no-git` | off | skip git entirely; recents by modification time only |
 | `--rw` | off | allow mdhouse to write to the trees it serves |
-| `-P, --perm` | off | save the folders: serve them on every start |
+| `-P, --perm` | off | save the folders, and any `--port` / `--host` given: used on every start |
 | `--rm` | off | forget the folders and stop serving them |
+| `--help` | | the usage text |
 
-`MDHOUSE_PORT`, `MDHOUSE_HOST` and `MDHOUSE_ROOT` set the defaults for the port, the bind
-address and the folder used when none is given and none is saved.
+Port and host come from the flag, else `MDHOUSE_PORT` / `MDHOUSE_HOST`, else what `-P` saved,
+else `7777` on `127.0.0.1`. `MDHOUSE_ROOT` is the folder used when none is named and none is
+saved.
 
-`mdhouse service install | uninstall | status` manages the systemd user unit — `mdhouse.service`,
-or `mdhouse-<port>.service` with `--port`. It serves the saved folders, so it asks you to save
-one first.
+A root may carry a **`.mdhouseignore`**: one directory name per line, `#` for comments, `!name`
+to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build output
+and the like).
 
-A root may also carry a **`.mdhouseignore`**: one directory name per line, `#` for comments,
-`!name` to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build
-output and the like).
+Addresses: a document is `/d/<root>/<path>/<file>.md` and a folder's page `/d/<root>/<path>/` —
+the `<root>/` part only when more than one folder is served — so pages can be linked and
+bookmarked.
 
 ---
+
+## ▸ Status
+
+In daily use. Next, in this order:
+
+- checkboxes you can tick, written back to disk (only with `--rw` — a stale page must never
+  corrupt a file)
+- a changed / added / removed listing for a whole root, on top of the per-file diffs
+- pushing a selected section to Claude or Codex for feedback, streamed back over the WebSocket
+
+What changed in each release: [`CHANGELOG.md`](CHANGELOG.md). If you try it on your own tree and
+something looks off, an issue describing the shape of the directory is the most useful thing you
+can send.
 
 ## ▸ Development
 
@@ -260,37 +263,9 @@ bun test
 bunx tsc --noEmit
 ```
 
-No build step: `Bun.serve` bundles `src/index.html` and everything it imports, so what you run
-is what you edited. Mermaid is served separately and fetched only by pages that use it.
-
-The shape of it: `src/cli.ts` (flags, the background start, `exit`) → `src/server.ts` (routes,
-WebSocket) → `src/lib/` (roots and the path jail, scanner, renderer, search, git and diffs,
-store, watcher, prefs, the control socket) → `src/ui/` (Preact). Every rendered block carries a
-`data-line` attribute pointing back at its source line — that is how the marked-up diff finds
-the paragraph a change belongs to, and what makes the Phase 2 features cheap.
-
-Planning documents live in [`Plans/PRF-55-md-viewer-web/`](Plans/PRF-55-md-viewer-web/):
-[`README.md`](Plans/PRF-55-md-viewer-web/README.md) for how it is built and why,
-[`DONE.md`](Plans/PRF-55-md-viewer-web/DONE.md) for everything shipped and how it was verified,
-[`TODO.md`](Plans/PRF-55-md-viewer-web/TODO.md) for what is next.
-
----
-
-## ▸ Status
-
-**Phase 1 is shipped** and in daily use. Next, in this order:
-
-- checkboxes you can tick, written back to disk (only with `--rw` — a stale page must never
-  corrupt a file)
-- a changed / added / removed listing for a whole root, on top of the per-file diffs
-- pushing a selected section to Claude or Codex for feedback, streamed back over the WebSocket
-  that is already there
-
-Recently fixed, if you were bitten by any of them: a repository *inside* the folder you serve
-(`mdhouse ~/src`) had no git history, collapsed folders listed themselves twice, and links to a
-file whose name contains a space did not open. See [`CHANGELOG.md`](CHANGELOG.md).
-
-If you try it on your own tree and something looks off, an issue with the shape of the
-directory is the most useful thing you can send.
+No build step: `Bun.serve` bundles `src/index.html` and everything it imports, so what you run is
+what you edited. How it is built and why is in
+[`Plans/PRF-55-md-viewer-web/`](Plans/PRF-55-md-viewer-web/README.md), with what is next in
+[`TODO.md`](Plans/PRF-55-md-viewer-web/TODO.md).
 
 Licensed under the **GNU General Public License v2** — see [`LICENSE`](LICENSE).

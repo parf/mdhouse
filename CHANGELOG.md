@@ -1,79 +1,86 @@
 # Changelog
 
-## 0.8.0 — 2026-10-06
+## Unreleased
 
-### Added
+### Security
 
-- **A page for every folder** at `/d/<root>/<dir>/`: every Markdown file beneath it in one
-  table, with subfolder (named once per run), name, age and size.
-  - Newest first, or A–Z in `ls -lR` order (a folder's own files before its subfolders'). A
-    button over the age column flips between them, and the choice is remembered.
-  - Past 50 files, a filter sits over the folder column and another over the name column. They
-    match like `LIKE '%text%'`, ignoring case: `^` anchors the start, `$` the end, `%` is any
-    run and `_` one character. An ⓘ explains this, and Esc clears a box.
-  - Small and tiny files are marked as in the tree.
-- **Ways in:**
-  - the count on a folder's row in the tree (the name still only opens and closes it)
-  - every folder in a document's breadcrumb, which also reveals the folder in the tree
-  - the root, now first in the breadcrumb
-  - a **DIR** button beside the front page's title
-  
-  The root's own folder page has a **GIT** button back to the front page.
-- **The tree marks a folder page** as it marks a document: the way down is bold and faintly
-  tinted, and the folder itself is highlighted.
-
-### Changed
-
-- The breadcrumb's last folder is brown, like folders in the tree. A document's title is a
-  mid-dark green.
-- The contents and history panels beside a document start at the same height.
+- **Requests addressed to a foreign host name are refused** (`421`). A web page could re-point
+  its own domain at 127.0.0.1 (DNS rebinding) and then read every served file and change
+  settings — the browser treats that as same-origin, so no origin check could tell. Only
+  `localhost`, IP addresses and, with `--host`, the machine's own name are accepted.
+- **Favourite / mute / ignore changes and the live-update channel** now refuse other sites, as
+  removing a folder and changing settings already did.
 
 ### Fixed
 
-- Long folder paths are cut from the left, and long file names with nothing to break at wrap,
-  instead of pushing the table wider than the page.
+- **`prefs.json` can no longer be wiped.** A file that fails to parse is moved aside as
+  `prefs.json.broken-<time>` rather than written over; every save is a temp file renamed into
+  place, so no reader sees half a file; and each change is made against the file as it is now,
+  so the CLI, the service and a second daemon no longer undo each other's changes.
+- Picking a root in the dropdown on a folder page left the page waiting on a spinner; it now
+  moves to that root's folder page. On a document page the breadcrumb stays with the document's
+  own root.
+- The ✎ link cut a path at `#` or `?`.
+- `mdhouse <folder>` run just after the service started said the port was held by "something
+  that is not mdhouse": the port is bound a moment before the control socket. It now waits for
+  the socket before deciding.
 
-## 0.7.2 — 2026-10-06
+### Added
 
-- **The ⚙ sits on the title's line** on the document page, the front page and settings, with its
-  right edge lined up with the toolbar below. It was pinned to the window corner, beside the
-  breadcrumb.
-- **The open sidebar's tree shows each file's age** before its size (`now`, `5m`, `22h`, `1d`,
-  `2mo`), heat-coloured, with the full time on hover. A hairline separates the two, and the
-  size column is at least five characters wide, so the lines stay aligned.
+- **The port and host can be saved.** `-P` with `--port` / `--host` stores them in `prefs.json`,
+  and plain `mdhouse`, `mdhouse exit` and the systemd service all use them — so the service
+  comes up exactly where a start by hand does. Order: flag, then `MDHOUSE_PORT` /
+  `MDHOUSE_HOST`, then the saved value, then `127.0.0.1:7777`. `mdhouse service install` now
+  writes an unpinned `mdhouse.service` that follows the config; `service install --port <n>`
+  still makes a pinned `mdhouse-<n>.service`.
+- **✎ Edit link** beside each document's title, opening `edit:/full/path` in whatever handles
+  `edit:` URLs. On by default; **Settings → Documents** turns it off.
+- A leading `**Q:**` / `**A:**` renders as ❓ / 💬, each on its own line. Raw `<pre>` blocks are
+  left alone.
 
-## 0.7.1 — 2026-10-06
+## 0.8.0 — 2026-10-06
 
-- **The root dropdown everywhere, showing as much of the path as fits.** The compact sidebar
-  shows the folder and its parent (`Plans/Removal`). The wide sidebar shows two parents
-  (`rdc/Plans/Removal`), replacing its row of chips. The top bar, when the sidebar is off,
-  shows the whole path with home as `~`. A label too long for its width loses its left end
-  behind "…", so the folder's own name stays visible.
-- **∅ without a tile:** a bold pink ∅. Names of files under 101 bytes are struck through twice.
-- **Fixed:** with the sidebar off, the ⚙ covered the top bar's search button. It now sits in the
-  top bar.
-
-## 0.7.0 — 2026-10-06
+0.7.0–0.7.2 were never published; their changes are part of this release.
 
 ### Added
 
 - **Saved folders.** `mdhouse <dir> -P` (`--perm`) serves a folder now and on every start;
   `mdhouse --rm <dir>` forgets it and stops serving it. They live in
   `~/.config/mdhouse/prefs.json`, beside the favourites. A plain `mdhouse` serves the saved
-  folders, and the current one only when nothing is saved. A saved folder that has since been
-  deleted is skipped with a warning.
+  folders — and any you name are served alongside them — falling back to the current folder
+  only when nothing is saved. A saved folder that has since been deleted is skipped.
 - **A systemd user service.** `mdhouse service install` writes and starts `mdhouse.service`
-  (`mdhouse-<port>.service` for another port), which serves the saved folders from login on.
-  `uninstall` and `status` too. It refuses to install with nothing saved, so it never ends up
-  serving all of `$HOME`.
-- **Settings page**, behind a ⚙ at the top right of every page. It lists the served folders,
-  saved or just for this session, and removes one with a click. The tab moves to another folder
-  if it was showing the removed one. The request is refused from any other site.
+  (`mdhouse-<port>.service` for another port), serving the saved folders from login on;
+  `uninstall` and `status` too. It refuses to install with nothing saved, so it never serves
+  all of `$HOME`.
+- **Settings**, behind a ⚙ on each page's title line: the served folders, saved or just for this
+  session, each with a remove button. Removing is refused from any other site.
+- **A page for every folder** at `/d/<root>/<dir>/`: every Markdown file beneath it in one
+  table — subfolder (named once per run), name, age, size.
+  - Newest first, or A–Z in `ls -lR` order; a button over the age column flips them, and the
+    choice is remembered.
+  - Past 50 files, a filter over each of the first two columns, matching like
+    `LIKE '%text%'`: `^` and `$` anchor, `%` and `_` are wildcards. An ⓘ explains it.
+  - Reached from the count on a closed folder in the tree, every folder in a document's
+    breadcrumb, the root at the head of that breadcrumb, and **DIR** beside the front page's
+    title. **GIT** on the root's page leads back.
+  - The tree marks it as it marks a document: the way down bold and tinted, the folder
+    highlighted.
+- **The open sidebar shows each file's age** (`5m`, `22h`, `1d`, `2mo`) before its size.
 
 ### Changed
 
-- **Files of 101–499 bytes show their size in violet instead of the S tile.** The struck-through
-  name already said "small"; the number says how small. ∅ stays for files under 101 bytes.
+- **The root dropdown is used in every sidebar state** and shows as much of each path as fits:
+  folder and parent in compact, two parents in the open sidebar (replacing the row of chips),
+  the whole path with home as `~` in the top bar. A long label loses its left end.
+- **Small files:** under 101 bytes a bold pink **∅** and a double strike-through; 101–499 bytes
+  the size in violet and one strike — the S tile is gone.
+- The breadcrumb's last folder is brown, like folders in the tree; a document's title is green;
+  the contents and history panels start at the same height.
+
+### Fixed
+
+- Long folder paths and long unbroken file names no longer push tables wider than the page.
 
 ## 0.6.0 — 2026-10-05
 

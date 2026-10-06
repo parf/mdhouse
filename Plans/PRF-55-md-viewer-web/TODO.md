@@ -1,104 +1,64 @@
 # TODO — mdhouse
 
-Goal: PRF-55 Phase 1 — browse, search, filesystem recents, git recents, the 3-state sidebar
-and the WebSocket channel later phases ride on. **Phase 1 is complete and verified**, and a
-run of polish on top of it is too (`N.1`–`N.23` in `DONE.md`).
+Released: **0.8.0** on npm. Everything built so far is in [`DONE.md`](DONE.md); user-facing
+history is in [`CHANGELOG.md`](../../CHANGELOG.md).
 
-Next step: **I.1** — clickable checkboxes written back to disk, the first thing that needs
-`data-line` and the first thing that needs the write chokepoint.
-
----
-
-## A–H, K.1, K.2a, N.1–N.23 — closed
-
-See [`DONE.md`](DONE.md). Scaffold, roots and path jail, scanner, renderer, search, git and
-recents, server and client, live channel, marks, README — all built and verified end to end
-against the docs tree, the scratch tree and `~/src`. 78 tests pass; `tsc --noEmit` is clean
-over `src/` and `test/` both.
-
-Since the ship: per-file history (**K.1**), clickable breadcrumbs, authorship in the document
-header, an H3 contents mode, full-width reading, a front page grouped by commit, age colouring,
-one aligned table for every file list, one mdhouse per port, a history panel that opens itself
-and shows five revisions, a server that runs in the background until `mdhouse exit`, the root
-switcher in every sidebar state, and per-file diffs (**K.2a**) in two views — a patch with its
-lines rendered, and the whole document with the change marked on it. Then sizes and stub marks
-in the sidebar, an about box on the house (`?`), and the ten real findings from an outside
-review — including no git history for a repository nested inside the root, and a hole in the
-path jail for files that do not exist yet.
+Next step: **I.0 → I.1** — per-folder `--rw`, then clickable checkboxes written back to disk.
+I.1 is the first feature that writes, and the first to stand on `data-line` and the
+`Registry.writeFile()` chokepoint.
 
 ## I. Checkbox write-back
 
-Depends on nothing outstanding — `data-line` and `Registry.writeFile()` both already exist.
+Only I.0 comes first: `data-line` is on every block and `writeFile()` exists.
 
-- **I.1** Client enables checkboxes only when `doc.writable`; a click POSTs
+- **I.0** Make `--rw` per folder before anything writes. Today the daemon merges the saved
+  folders into `Registry.create(dirs, opts.rw)`, so `mdhouse ./scratch --rw` makes **every saved
+  folder** writable too. Harmless while nothing writes (no one runs with `--rw` now); not once
+  I.1 lands. Writability should belong to the folder it was asked for — stored with the saved
+  entry when it is saved with `--rw`, and never inherited by the others.
+- **I.1** The client enables checkboxes only when `doc.writable`; a click POSTs
   `{path, line, checked}`.
-- **I.2** Server patches exactly that source line (`[ ]` <-> `[x]`), refusing if the line no
-  longer looks like a task item — a stale page must not corrupt a file.
-- **I.3** Write through `Registry.writeFile()`; echo the change over the existing WebSocket
-  so other tabs follow.
+- **I.2** The server patches exactly that source line (`[ ]` ↔ `[x]`), and refuses if the line
+  no longer looks like a task item — a stale page must not corrupt a file.
+- **I.3** Write through `Registry.writeFile()`, and echo the change over the WebSocket so other
+  tabs follow.
 
-**Acceptance I:** ticking a box changes one line and nothing else (`git diff` shows a
-one-line change); a read-only root renders the boxes disabled and rejects the POST with 403;
-two open tabs stay in step.
+**Acceptance:** ticking a box changes one line and nothing else (`git diff` shows one line); a
+read-only root renders the boxes disabled and rejects the POST with 403; two open tabs stay in
+step.
 
 ## J. Section → AI
 
 - **J.1** Select a block; `data-line` gives its source range.
 - **J.2** A panel takes a comment and runs `claude -p` or `codex exec` with the section plus
   file context.
-- **J.3** Stream the reply back over the existing WebSocket channel.
+- **J.3** Stream the reply back over the WebSocket.
 
-**Acceptance J:** feedback on a section of a real plan document returns something useful
-without the file being modified unless explicitly applied.
+**Acceptance:** feedback on a section of a real plan document comes back without the file being
+modified, unless the user explicitly applies it.
 
-## K. Git beyond recents
+## K.2b Changes across a root
 
-- ~~**K.1** Per-file history panel~~ — shipped; see `DONE.md`.
-- ~~**K.2a** Per-file diff view~~ — shipped; see `DONE.md`.
-- **K.2b** Changed/added/removed listing for a whole root, reusing the same diff view.
+A changed / added / removed listing for a whole root, opening the existing per-file diff views.
 
 ## L. Plans-convention awareness
 
-Detect `Plans/<project>/` — the convention this very directory follows — and render it as a
-project card: TODO checkbox progress, DONE count, open-QUESTIONS badge, `done/` archive link.
-The highest-value thing the viewer this replaces cannot do.
+Detect `Plans/<project>/` — the convention this directory follows — and show it as a project
+card: TODO checkbox progress, DONE count, an open-QUESTIONS badge, a link to the `done/` archive.
 
-## M. Smaller wins
+## M. Smaller
 
-- **M.1** Task progress in the *tree* (`12/34` beside any file with checkboxes), computed
-  during the scan. The document header already shows its own count.
+- **M.1** Task progress in the tree (`12/34` beside a file with checkboxes), computed during
+  the scan. The document header already shows its own count.
 - **M.2** Backlinks and a broken-link report; links are already parsed at render time.
-- **M.3** Scroll the tree to the open document; remember scroll position per file.
-- **M.4** Editor (CodeMirror 6) with live preview and scroll-sync — `data-line` makes it cheap.
-- **M.5** The **Ignore** button in the tree writes an `ignored` mark that nothing filters on.
-  Either wire it up or take the button away.
-- **M.6** The ripgrep fallback is silent: `SearchResult.degraded` is computed and never
-  rendered. The README claims a footer note; make it true or drop the claim.
-
-## Review findings, not yet acted on
-
-From an external review of the code, kept here so they are not lost:
-
-- `Registry.resolve()` falls back to the lexical path when `realpath` fails, which is right for
-  a file that does not exist yet but fails open if a parent is a symlink out of the root.
-- `lib/prefs.ts` writes to `~/.config/mdhouse/` directly rather than through the chokepoint;
-  `XDG_CONFIG_HOME` therefore decides where it lands.
-- `searchInProcess()` reads paths without resolving symlinks.
-- `lib/watch.ts` watches `root.path` only, so the `.git` of a parent repository is missed and
-  a commit made outside the root does not refresh anything.
-- Smaller: double-encoded links for non-ASCII and spaces in `render.ts`, `repoFor()` producing
-  `../` paths for nested repos, quoted non-ASCII filenames in `--name-status` output, and
-  `collapseChains()` duplicating directory nodes.
-
----
-
-## Blockers
-
-None. Phase 1 ships; everything above is new work.
-
-## Raised by the 0.4.0 review, not yet done
-
-- **An ignore feature that works.** The button was removed in 0.4.0 because it wrote a mark
-  nothing read and could not be undone. A real one needs: tree and search filtering on the
-  mark, a way to see what is hidden, and a way to put it back. The `'ignored'` mark stays in
-  `prefs.ts` so existing prefs files keep meaning something.
+- **M.3** Opening a document scrolls the tree to it, as a breadcrumb click already does.
+- **M.4** An editor (CodeMirror 6) with live preview and scroll-sync, built on `data-line`.
+- **M.5** An ignore that works. The old button was removed in 0.4.0: it wrote a mark nothing
+  read and could not be undone. A real one needs tree and search filtering on the mark, a view
+  of what is hidden, and a way to bring it back. The `ignored` mark is still in `prefs.ts`, so
+  existing prefs files keep meaning something.
+- **M.6** The ripgrep fallback is silent: `SearchResult.degraded` is computed and never shown.
+  Say so in the search results, or drop the field.
+- **M.7** The in-process search fallback reads the scanned file list without resolving
+  symlinks, so a `.md` symlink pointing outside the root is searched. Ripgrep does not follow
+  symlinks by default; the fallback should behave the same.
