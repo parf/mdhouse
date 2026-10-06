@@ -4,12 +4,12 @@
  * markdown-it was chosen for one structural reason: every block token carries
  * `token.map = [startLine, endLine]`. A core rule copies that onto the rendered element as
  * `data-line`, so every paragraph, list item and checkbox in the DOM knows which source line
- * it came from. Phase 1 does not consume it, but it is what makes checkbox write-back,
- * "push this section to Claude" and editor scroll-sync cheap later instead of a
+ * it came from. The marked-up diff view stands on it already, and it is what will make checkbox
+ * write-back, "push this section to Claude" and editor scroll-sync cheap instead of a
  * reverse-engineering exercise.
  *
- * The r-doc viewer this replaces has two competing anchor schemes (`header-N` from PHP and
- * slugs from JS). There is exactly one here, generated server-side.
+ * There is exactly one anchor scheme, generated server-side and used unchanged by the contents
+ * list, so a link to a heading and the contents entry for it can never disagree.
  */
 
 import MarkdownIt from 'markdown-it';
@@ -147,8 +147,7 @@ function lineMapPlugin(md: MarkdownIt): void {
 /**
  * GitHub alerts: `> [!NOTE]` and the quoted lines under it.
  *
- * The class names match the r-doc viewer's contract (`markdown-alert-note`), so its theme CSS
- * ports across unchanged.
+ * The class names follow GitHub's (`markdown-alert-note`), so the styling reads as theirs.
  */
 function alertPlugin(md: MarkdownIt): void {
   md.core.ruler.after('block', 'mdhouse_alerts', (state) => {
@@ -287,6 +286,34 @@ function rewriteHtmlImages(html: string, ctx: RenderContext): string {
   });
 }
 
+/**
+ * `**Q:**` and `**A:**` leading a paragraph, a list item or a line become ❓ and 💬 — a
+ * question-and-answer log reads as a conversation instead of a column of bold letters. Only
+ * where they lead: a bold `Q:` mid-sentence is left as written.
+ */
+const QA_EMOJI: Record<string, string> = { Q: '❓', A: '💬' };
+
+export function questionsAndAnswers(html: string): string {
+  // `<pre>` is left exactly as written — raw HTML is allowed, and a preformatted block is the
+  // one place a stray line break would show.
+  return html
+    .split(/(<pre\b[\s\S]*?<\/pre>)/i)
+    .map((part) =>
+      part.startsWith('<pre') || part.startsWith('<PRE')
+        ? part
+        : part.replace(
+            // A bare newline counts only after text, i.e. a soft break inside a paragraph — not
+            // the newline that follows an opening tag like `<details>`.
+            /(<p\b[^>]*>|<li\b[^>]*>|<br\s*\/?>|(?<=[^>\n])\n)(\s*)<strong>([QA]):<\/strong>/g,
+            // A Q: or A: on a line of its own is a new turn, so it keeps its line: Markdown
+            // would otherwise run a question and the answer below it together into one.
+            (_, lead: string, space: string, which: string) =>
+              `${lead === '\n' ? '<br>\n' : lead}${space}<span class="qa" role="img" aria-label="${which}:">${QA_EMOJI[which]}</span>`,
+          ),
+    )
+    .join('');
+}
+
 export async function render(src: string, ctx: RenderContext): Promise<Rendered> {
   await preloadLanguages(src);
   const hl = await highlighter();
@@ -346,7 +373,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   });
   md.use(linkPlugin, ctx);
 
-  const html = rewriteHtmlImages(md.render(src), ctx);
+  const html = questionsAndAnswers(rewriteHtmlImages(md.render(src), ctx));
   return { html, headings, hasMermaid, tasks };
 }
 

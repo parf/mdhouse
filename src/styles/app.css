@@ -237,6 +237,13 @@ main {
 .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .settings-error { color: var(--danger); font-size: 12.5px; }
 .settings-note { color: var(--fg-muted); font-size: 12.5px; margin-top: 12px; }
+.settings section + section { margin-top: 28px; }
+.settings-option { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 13px; line-height: 1.5;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.settings-option label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.settings-option code, .settings-hint code { font-size: 11.5px; }
+.settings-hint { color: var(--fg-muted); font-size: 12.5px; }
+.edit-link { flex: none; }
 
 .brand {
   font-weight: 650;
@@ -956,6 +963,8 @@ main {
 .md blockquote > *:first-child { margin-top: 0; }
 .md blockquote > *:last-child { margin-bottom: 0; }
 
+/* ❓ and 💬 standing in for a leading **Q:** / **A:**. */
+.md .qa { margin-right: 0.3em; }
 .md table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
 .md th, .md td { border: 1px solid var(--border); padding: 5px 10px; text-align: left; }
 .md th { background: var(--bg-panel); font-weight: 620; }
@@ -972,7 +981,7 @@ main {
 .md .task-checkbox { margin-right: 0.5em; vertical-align: -1px; accent-color: var(--accent); }
 .md .task-checkbox:disabled { cursor: default; }
 
-/* GitHub alerts — class names match the r-doc viewer so its theme ports across */
+/* GitHub alerts: > [!NOTE] and friends, with GitHub's class names */
 .md .markdown-alert {
   border-left: 3px solid var(--alert, var(--accent));
   background: color-mix(in srgb, var(--alert, var(--accent)) 7%, transparent);

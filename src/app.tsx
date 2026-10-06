@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { api, connectLive, type DocPayload, type LiveMessage, type RootInfo } from './ui/api';
+import { api, connectLive, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options } from './ui/api';
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
@@ -37,6 +37,8 @@ const save = (key: string, value: unknown) => {
 function App() {
   const [roots, setRoots] = useState<RootInfo[]>([]);
   const [home, setHome] = useState<string | undefined>(undefined);
+  const [options, setOptions] = useState<Options>({ editLink: true });
+  useEffect(() => void api.settings().then(setOptions).catch(() => {}), []);
   const [rootId, setRootId] = useState('');
   const [tree, setTree] = useState<TreePayload | null>(null);
   const [doc, setDoc] = useState<DocPayload | null>(null);
@@ -111,9 +113,14 @@ function App() {
     setRootId((current) => (roots.some((r) => r.id === current) ? current : (roots[0]?.id ?? '')));
   }, []);
 
+  // Only the newest tree request may land: switching root while an older answer is in flight
+  // would otherwise put the wrong root's tree under the page.
+  const treeSeq = useRef(0);
   const reloadTree = useCallback(async () => {
     if (!rootId) return;
-    setTree(await api.tree(rootId, showIgnored).catch(() => null));
+    const seq = ++treeSeq.current;
+    const next = await api.tree(rootId, showIgnored).catch(() => null);
+    if (seq === treeSeq.current) setTree(next);
   }, [rootId, showIgnored]);
 
   useEffect(() => {
@@ -280,14 +287,27 @@ function App() {
 
   /** A folder page's URL, built the way document URLs are; `''` is the root's own page. */
   const dirPageUrl = useCallback(
-    (dir: string) => {
-      const root = roots.find((r) => r.id === rootId);
+    (dir: string, inRoot = rootId) => {
+      const root = roots.find((r) => r.id === inRoot);
       const segs = [...(roots.length > 1 && root ? [root.id] : []), ...dir.split('/')].filter(Boolean);
       return `/d/${segs.map((s) => `${encodeURIComponent(s)}/`).join('')}`;
     },
     [roots, rootId],
   );
-  const openDirPage = useCallback((dir: string) => go(dirPageUrl(dir)), [go, dirPageUrl]);
+  const openDirPage = useCallback((dir: string, inRoot?: string) => go(dirPageUrl(dir, inRoot)), [go, dirPageUrl]);
+
+  /**
+   * Picking a root in the dropdown. On a folder page the URL names the root, so the page has to
+   * move with the pick — changing only the tree left the page waiting for a root it no longer
+   * had. Elsewhere the reader stays where they are.
+   */
+  const pickRoot = useCallback(
+    (id: string) => {
+      setRootId(id);
+      if (dirPage !== null) go(dirPageUrl('', id));
+    },
+    [dirPage, go, dirPageUrl],
+  );
 
   /**
    * Which root and folder a folder URL names. The first segment is a root id only when more
@@ -354,6 +374,14 @@ function App() {
 
   const pageGear = sidebar !== 'off' ? gear() : null;
 
+  // `edit:` plus the file's full path: the root's path is on disk, the document's is under it.
+  const docRoot = doc ? roots.find((r) => r.id === doc.root) : undefined;
+  // Each segment encoded on its own: `encodeURI` leaves `#` and `?` alone, which cut the path.
+  const editHref =
+    options.editLink && doc && docRoot
+      ? `edit:${`${docRoot.path}/${doc.rel}`.split('/').map(encodeURIComponent).join('/')}`
+      : null;
+
   return (
     <div class="app" data-sidebar={sidebar}>
       {sidebar === 'off' && (
@@ -365,7 +393,7 @@ function App() {
             <button class="mark brand-mark" onClick={() => setAboutOpen(true)} title="About mdhouse" aria-label="About mdhouse" />
             {crumb || tree?.root.name || 'mdhouse'}
           </span>
-          <RootSelect roots={roots} rootId={rootId} onPick={setRootId} above="all" max={80} home={home} />
+          <RootSelect roots={roots} rootId={rootId} onPick={pickRoot} above="all" max={80} home={home} />
           <button
             class="icon-btn"
             title="Search (/)"
@@ -399,7 +427,7 @@ function App() {
           expanded={expanded}
           live={live}
           onCycleState={cycle}
-          onPickRoot={setRootId}
+          onPickRoot={pickRoot}
           onTab={setTab}
           onQuery={setQuery}
           searchIn={searchIn}
@@ -426,7 +454,13 @@ function App() {
       <main>
         {/* The ⚙ sits in each page's own header row; with the sidebar off the top bar has it. */}
         {onSettings ? (
-          <Settings roots={roots} onChanged={() => void reloadRoots()} gear={pageGear} />
+          <Settings
+            roots={roots}
+            onChanged={() => void reloadRoots()}
+            gear={pageGear}
+            options={options}
+            onOptions={setOptions}
+          />
         ) : dirTarget ? (
           <DirPage
             tree={tree?.root.id === dirTarget.rootId ? tree : null}
@@ -460,15 +494,17 @@ function App() {
           onNavigate={go}
           onMark={setMark}
           // A breadcrumb folder opens its own page, and shows itself in the tree.
+          // The breadcrumb belongs to the document's root, whatever the dropdown says.
           onOpenDir={(dir) => {
             revealDir(dir);
-            openDirPage(dir);
+            openDirPage(dir, doc?.root);
           }}
           onAbout={() => setAboutOpen(true)}
           gear={pageGear}
-          rootName={tree?.root.name}
-          rootDirUrl={dirPageUrl('')}
-          onOpenRootDir={() => openDirPage('')}
+          rootName={docRoot?.name}
+          editHref={editHref}
+          rootDirUrl={dirPageUrl('', doc?.root)}
+          onOpenRootDir={() => openDirPage('', doc?.root)}
         />
         )}
       </main>

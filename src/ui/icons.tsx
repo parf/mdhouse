@@ -213,3 +213,13 @@ export const IconTrash = (p: Props) =>
     </>,
     p,
   );
+
+/** Edit: a pencil, drawn within the same 3.4–12.6 box the gear fills, so the two sit level. */
+export const IconEdit = (p: Props) =>
+  svg(
+    <>
+      <path d="M10.5 3.6a1.4 1.4 0 0 1 2 2L6 12.1l-2.6.6.6-2.6z" />
+      <line x1="9.3" y1="4.8" x2="11.3" y2="6.8" />
+    </>,
+    p,
+  );

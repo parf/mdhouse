@@ -1,12 +1,19 @@
 import { useState } from 'preact/hooks';
-import { api, type RootInfo } from './api';
+import { api, type RootInfo, type Settings as Options } from './api';
 import { IconTrash } from './icons';
+
+/** Where to start when nothing handles `edit:` URLs yet. */
+const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
+  'linux xdg configure edit protocol to open files in my editor',
+)}`;
 
 interface Props {
   roots: RootInfo[];
   /** The live channel refreshes `roots`; this is only for an immediate re-read. */
   onChanged: () => void;
   gear?: preact.ComponentChildren;
+  options: Options;
+  onOptions: (o: Options) => void;
 }
 
 /**
@@ -16,7 +23,7 @@ interface Props {
  * Removing is the only action here. Adding needs a path typed into a browser that cannot
  * check it exists or offer completion; `mdhouse <dir> -P` in a terminal does both.
  */
-export function Settings({ roots, onChanged, gear }: Props) {
+export function Settings({ roots, onChanged, gear, options, onOptions }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const last = roots.length === 1;
@@ -82,6 +89,39 @@ export function Settings({ roots, onChanged, gear }: Props) {
           Add one from a terminal: <code>mdhouse &lt;dir&gt; -P</code> serves it now and on every start.
           Without <code>-P</code> it lasts until mdhouse stops.
         </p>
+      </section>
+
+      <section>
+        <h2>Documents</h2>
+        {/* One line: the option, then how to make it work. The link stays outside the label —
+            inside one, a click can toggle the checkbox instead of opening the page. */}
+        <div class="settings-option">
+          <label>
+            <input
+              type="checkbox"
+              checked={options.editLink}
+              onChange={async (e) => {
+                const editLink = (e.target as HTMLInputElement).checked;
+                onOptions({ ...options, editLink });
+                try {
+                  onOptions(await api.setSettings({ editLink }));
+                } catch (err) {
+                  onOptions(options);
+                  setError((err as Error).message);
+                }
+              }}
+            />
+            <span>
+              <b>Edit link</b> — ✎ beside each title, opening <code>edit:/full/path</code>.
+            </span>
+          </label>
+          <span class="settings-hint">
+            Needs an <code>edit:</code> URL handler.{' '}
+            <a href={EDIT_HELP} target="_blank" rel="noopener noreferrer">
+              How to set one up
+            </a>
+          </span>
+        </div>
       </section>
     </div>
   );

@@ -19,32 +19,37 @@ import { runService } from './lib/service';
 const USAGE = `mdhouse — browse every .md file under a directory
 
   mdhouse [dir ...] [options]     start it (in the background)
-  mdhouse exit [options]          stop the one running
+  mdhouse exit [options]          stop the one running  (also: stop)
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
 
 Options
   -p, --port <n>       port to listen on            (default 7777)
-  -h, --host <addr>    address to bind              (default 127.0.0.1)
+  -h, --host <addr>    address to bind              (default 127.0.0.1; -h is not help)
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
   -f, --fg             stay in the foreground; Ctrl+C stops it
-      --git-log <n>    commits scanned for git recents (default 200)
+      --git-log <n>    commits scanned for recents and the front page (default 200)
       --no-git         skip git entirely; filesystem recents only
       --rw             allow mdhouse to write to the trees it serves
-  -P, --perm           save the directories: serve them on every start
-      --rm             forget the directories and stop serving them
+  -P, --perm           save the folders (and any --port/--host given): used on every start
+      --rm             forget the folders and stop serving them
       --help           show this
 
-With no directory, the saved ones are served — or the current one, when none are saved.
-Saved directories live in ~/.config/mdhouse/prefs.json, beside the favourites.
+With no folder named, the saved ones are served — or $MDHOUSE_ROOT, or the current folder,
+when none are saved. Saved folders live in ~/.config/mdhouse/prefs.json, beside the favourites.
+Port and host: the flag, else $MDHOUSE_PORT / $MDHOUSE_HOST, else what -P saved, else
+127.0.0.1:7777.
 `;
 
 interface Options {
   dirs: string[];
   port: number;
   host: string;
+  /** Given on this command line, as opposed to coming from the environment or the config. */
+  portGiven: boolean;
+  hostGiven: boolean;
   open: boolean;
   all: boolean;
   gitLog: number;
@@ -58,8 +63,11 @@ interface Options {
 function parse(argv: string[]): Options {
   const o: Options = {
     dirs: [],
-    port: Number(process.env.MDHOUSE_PORT ?? 7777),
-    host: process.env.MDHOUSE_HOST ?? '127.0.0.1',
+    // Filled in below, once the config has been read: flag, then environment, then config.
+    port: 0,
+    host: '',
+    portGiven: false,
+    hostGiven: false,
     open: false,
     all: false,
     gitLog: 200,
@@ -75,8 +83,8 @@ function parse(argv: string[]): Options {
     const next = () => argv[++i] ?? '';
 
     switch (arg) {
-      case '-p': case '--port': o.port = Number(next()); break;
-      case '-h': case '--host': o.host = next(); break;
+      case '-p': case '--port': o.port = Number(next()); o.portGiven = true; break;
+      case '-h': case '--host': o.host = next(); o.hostGiven = true; break;
       case '-o': case '--open': o.open = true; break;
       case '-a': case '--all': o.all = true; break;
       case '-f': case '--fg': case '--foreground': o.fg = true; break;
@@ -139,6 +147,26 @@ const openBrowser = (target: string): void => {
   Bun.spawn([opener, target], { stdout: 'ignore', stderr: 'ignore' }).unref();
 };
 
+/**
+ * Where to listen: a flag on this command, else `MDHOUSE_PORT` / `MDHOUSE_HOST`, else the port
+ * and host saved in the config (`-P --port …`), else 7777 on 127.0.0.1. Every command resolves it
+ * the same way, so a plain `mdhouse exit` finds the daemon a plain `mdhouse` started, and the
+ * service comes up where a start by hand would.
+ */
+const prefs = await Prefs.load();
+{
+  const saved = prefs.server;
+  if (!opts.portGiven) opts.port = Number(process.env.MDHOUSE_PORT || saved.port || 7777);
+  if (!opts.hostGiven) opts.host = process.env.MDHOUSE_HOST || saved.host || '127.0.0.1';
+  if (!Number.isInteger(opts.port) || opts.port <= 0 || opts.port > 65535) {
+    console.error(`mdhouse: not a port: ${opts.port}`);
+    process.exit(2);
+  }
+}
+
+/** `--port` for a hint, only when this command needed one to find the daemon. */
+const portHint = opts.portGiven ? ` --port ${opts.port}` : '';
+
 // ---------------------------------------------------------------- mdhouse exit
 
 if (command === 'exit') {
@@ -168,11 +196,11 @@ if (command === 'exit') {
 
 // ---------------------------------------------------------------- mdhouse service …
 
-if (command === 'service') process.exit(await runService(argv[1] ?? '', { port: opts.port }));
+if (command === 'service') {
+  process.exit(await runService(argv[1] ?? '', { port: opts.port, explicit: opts.portGiven }));
+}
 
 // ---------------------------------------------------------------- mdhouse --rm [dir ...]
-
-const prefs = await Prefs.load();
 
 if (opts.rm) {
   const asked = (opts.dirs.length ? opts.dirs : [process.cwd()]).map(canonical);
@@ -203,6 +231,16 @@ if (opts.rm) {
 }
 
 // ---------------------------------------------------------------- mdhouse [dir ...]
+
+// `-P` saves where to listen as well as what to serve: `mdhouse ~/notes -P --port 8080` makes
+// 8080 the port every later start — and the service — comes up on.
+if (opts.perm && (opts.portGiven || opts.hostGiven)) {
+  const server = await prefs.setServer({
+    ...(opts.portGiven ? { port: opts.port } : {}),
+    ...(opts.hostGiven ? { host: opts.host } : {}),
+  });
+  console.log(`mdhouse  saved: listen on ${server.host ?? '127.0.0.1'}:${server.port ?? 7777}`);
+}
 
 /** Is this a directory we can serve? Saved ones may have been deleted since. */
 const isDir = (abs: string): boolean => existsSync(abs) && statSync(abs).isDirectory();
@@ -263,7 +301,7 @@ async function handOver(reply: AddReply | { error: string } | null): Promise<nev
     }
   }
 
-  console.log(`\n  Stop it with:  mdhouse exit${opts.port === 7777 ? '' : ` --port ${opts.port}`}`);
+  console.log(`\n  Stop it with:  mdhouse exit${portHint}`);
 
   const fresh = reply.roots.find((r) => r.asked);
   const target =
@@ -272,7 +310,7 @@ async function handOver(reply: AddReply | { error: string } | null): Promise<nev
   process.exit(0);
 }
 
-const stopHint = `mdhouse exit${opts.port === 7777 ? '' : ` --port ${opts.port}`}`;
+const stopHint = `mdhouse exit${portHint}`;
 
 if (!opts.fg) {
   // Already running? Hand it the directories without starting anything.
@@ -289,6 +327,13 @@ if (!opts.fg) {
     Bun.serve({ port: opts.port, hostname: opts.host, reusePort: false, fetch: () => new Response('') }).stop(true);
   } catch (err) {
     if ((err as { code?: string }).code !== 'EADDRINUSE') throw err;
+    // An mdhouse that is still starting — the service, a moment after `systemctl start` — holds
+    // the port before its control socket is up. Give it a few seconds to answer before calling
+    // it something else.
+    for (let i = 0; i < 50; i++) {
+      await Bun.sleep(100);
+      if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw, save: opts.perm }));
+    }
     console.error(`mdhouse: port ${opts.port} is in use by something that is not mdhouse.`);
     console.error('         Stop it, or pass --port <n>.');
     process.exit(1);

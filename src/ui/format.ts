@@ -1,4 +1,4 @@
-/** Compact "time ago" labels, same vocabulary the r-doc git panel uses. */
+/** Compact labels for ages, sizes, paths and filters, shared by every list in the UI. */
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;

@@ -18,7 +18,7 @@
  */
 
 import { homedir } from 'node:os';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
@@ -37,7 +37,27 @@ interface PrefsFile {
   roots: Record<string, RootPrefs>;
   /** Absolute, symlink-resolved directories served on every start. */
   saved: string[];
+  /** The settings page's options. */
+  settings: Settings;
+  /**
+   * Where to listen, saved with `-P --port … --host …` so every start — by hand or as the
+   * systemd service — comes up the same way. Missing means the built-in defaults.
+   */
+  server: ServerConfig;
 }
+
+export interface ServerConfig {
+  port?: number;
+  host?: string;
+}
+
+/** The options on the settings page. Each has a default, so an older file needs none of them. */
+export interface Settings {
+  /** An `edit:` link on every document, for a URL handler that opens the file in an editor. */
+  editLink: boolean;
+}
+
+const DEFAULT_SETTINGS: Settings = { editLink: true };
 
 export const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
 const PREFS_PATH = `${CONFIG_DIR}/prefs.json`;
@@ -55,6 +75,55 @@ function covers(rule: string, path: string): boolean {
   return path === rule;
 }
 
+const fresh = (): PrefsFile => ({ version: 1, roots: {}, saved: [], settings: { ...DEFAULT_SETTINGS }, server: {} });
+
+const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
+
+/** A parsed file, filled out and type-checked, so an older or hand-edited one loads cleanly. */
+function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
+  const saved = Array.isArray(parsed.saved) ? parsed.saved.filter((d) => typeof d === 'string') : [];
+  const settings = { ...DEFAULT_SETTINGS };
+  for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
+    const value = parsed.settings?.[key];
+    if (typeof value === typeof DEFAULT_SETTINGS[key]) settings[key] = value as never;
+  }
+  const server: ServerConfig = {};
+  if (validPort(parsed.server?.port)) server.port = parsed.server.port;
+  if (typeof parsed.server?.host === 'string' && parsed.server.host) server.host = parsed.server.host;
+  return {
+    version: 1,
+    roots: parsed.roots && typeof parsed.roots === 'object' ? parsed.roots : {},
+    saved,
+    settings,
+    server,
+  };
+}
+
+/**
+ * The file as it is on disk now: `missing`, `broken` (it exists and does not parse), or its data.
+ * Writes are atomic (see `write`), so a parse failure is a real problem — a typo from a hand
+ * edit — never a half-written file caught mid-save.
+ */
+async function readFile(path: string): Promise<PrefsFile | 'missing' | 'broken'> {
+  const file = Bun.file(path);
+  if (!(await file.exists())) return 'missing';
+  try {
+    return normalizeFile((await file.json()) as Partial<PrefsFile>);
+  } catch {
+    return 'broken';
+  }
+}
+
+/**
+ * Move an unreadable prefs file aside rather than ever writing over it: it holds every mark and
+ * saved directory, and an empty file saved on top of a typo would destroy them all.
+ */
+async function setAside(path: string): Promise<void> {
+  const backup = `${path}.broken-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+  await rename(path, backup).catch(() => {});
+  console.error(`mdhouse: ${path} could not be read; moved it to ${backup} and started a new one.`);
+}
+
 export class Prefs {
   private constructor(
     private data: PrefsFile,
@@ -63,17 +132,61 @@ export class Prefs {
 
   /** @param path the prefs file; tests pass their own, everything else takes the default. */
   static async load(path = PREFS_PATH): Promise<Prefs> {
-    const fresh = (): PrefsFile => ({ version: 1, roots: {}, saved: [] });
-    const file = Bun.file(path);
-    if (!(await file.exists())) return new Prefs(fresh(), path);
-    try {
-      const parsed = (await file.json()) as Partial<PrefsFile>;
-      const saved = Array.isArray(parsed.saved) ? parsed.saved.filter((d) => typeof d === 'string') : [];
-      return new Prefs({ version: 1, roots: parsed.roots ?? {}, saved }, path);
-    } catch {
-      // A corrupt prefs file must not stop the viewer from starting.
-      return new Prefs(fresh(), path);
-    }
+    const found = await readFile(path);
+    if (found === 'broken') await setAside(path);
+    return new Prefs(typeof found === 'object' ? found : fresh(), path);
+  }
+
+  /**
+   * Every change is read, apply, write — against the file as it is *now*, not the copy this
+   * process loaded. More than one process writes it (the CLI, a daemon per port, the systemd
+   * service), and each holding its own copy meant each save undid the others' changes.
+   */
+  private async mutate<T>(change: (data: PrefsFile) => T): Promise<T> {
+    const found = await readFile(this.path);
+    if (found === 'broken') await setAside(this.path);
+    const data = typeof found === 'object' ? found : found === 'missing' ? fresh() : this.data;
+    const result = change(data);
+    this.data = data;
+    await this.write();
+    return result;
+  }
+
+  /** Written to a temporary file and renamed over the old one, so no reader sees half of it. */
+  private async write(): Promise<void> {
+    await mkdir(dirname(this.path), { recursive: true });
+    const tmp = `${this.path}.${process.pid}.tmp`;
+    await Bun.write(tmp, JSON.stringify(this.data, null, 2) + '\n');
+    await rename(tmp, this.path);
+  }
+
+  get settings(): Settings {
+    return { ...this.data.settings };
+  }
+
+  /** Change some settings; unknown keys and values of the wrong type are ignored. */
+  async updateSettings(patch: Record<string, unknown>): Promise<Settings> {
+    await this.mutate((data) => {
+      for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
+        const value = patch[key];
+        if (typeof value === typeof DEFAULT_SETTINGS[key]) data.settings[key] = value as never;
+      }
+    });
+    return this.settings;
+  }
+
+  get server(): ServerConfig {
+    return { ...this.data.server };
+  }
+
+  /** Remember where to listen; an invalid port is refused rather than saved. */
+  async setServer(patch: ServerConfig): Promise<ServerConfig> {
+    if (patch.port !== undefined && !validPort(patch.port)) throw new Error(`not a port: ${patch.port}`);
+    await this.mutate((data) => {
+      if (patch.port !== undefined) data.server.port = patch.port;
+      if (patch.host) data.server.host = patch.host;
+    });
+    return this.server;
   }
 
   /** The directories to serve on every start. */
@@ -86,23 +199,21 @@ export class Prefs {
   }
 
   /** Save a directory; true when it was not saved already. */
-  async addSaved(dir: string): Promise<boolean> {
-    if (this.data.saved.includes(dir)) return false;
-    this.data.saved = [...this.data.saved, dir].sort();
-    await this.save();
-    return true;
+  addSaved(dir: string): Promise<boolean> {
+    return this.mutate((data) => {
+      if (data.saved.includes(dir)) return false;
+      data.saved = [...data.saved, dir].sort();
+      return true;
+    });
   }
 
   /** Forget a saved directory; true when it was saved. */
-  async removeSaved(dir: string): Promise<boolean> {
-    if (!this.data.saved.includes(dir)) return false;
-    this.data.saved = this.data.saved.filter((d) => d !== dir);
-    await this.save();
-    return true;
-  }
-
-  private forRoot(rootPath: string): RootPrefs {
-    return (this.data.roots[rootPath] ??= empty());
+  removeSaved(dir: string): Promise<boolean> {
+    return this.mutate((data) => {
+      if (!data.saved.includes(dir)) return false;
+      data.saved = data.saved.filter((d) => d !== dir);
+      return true;
+    });
   }
 
   /** All marks for one root, as plain arrays the client can hold. */
@@ -128,22 +239,17 @@ export class Prefs {
    */
   async set(rootPath: string, entry: string, mark: Mark, on: boolean): Promise<RootPrefs> {
     const rel = normalize(entry);
-    const prefs = this.forRoot(rootPath);
-
-    prefs[mark] = prefs[mark].filter((e) => e !== rel);
-    if (on) {
-      prefs[mark].push(rel);
-      prefs[mark].sort();
-      if (mark === 'favorite') prefs.muted = prefs.muted.filter((e) => e !== rel);
-      if (mark === 'muted') prefs.favorite = prefs.favorite.filter((e) => e !== rel);
-    }
-
-    await this.save();
+    await this.mutate((data) => {
+      const prefs = (data.roots[rootPath] ??= empty());
+      for (const m of MARKS) prefs[m] ??= [];
+      prefs[mark] = prefs[mark].filter((e) => e !== rel);
+      if (on) {
+        prefs[mark].push(rel);
+        prefs[mark].sort();
+        if (mark === 'favorite') prefs.muted = prefs.muted.filter((e) => e !== rel);
+        if (mark === 'muted') prefs.favorite = prefs.favorite.filter((e) => e !== rel);
+      }
+    });
     return this.get(rootPath);
-  }
-
-  async save(): Promise<void> {
-    await mkdir(dirname(this.path), { recursive: true });
-    await Bun.write(this.path, JSON.stringify(this.data, null, 2) + '\n');
   }
 }

@@ -4,7 +4,7 @@
  * `.gitignore` is handled for free by `git ls-files --exclude-standard` (see scan.ts), so this
  * list exists for two narrower jobs: filtering the parts of a root that are not in any repo,
  * and hiding build/vendor trees that are *tracked* and would otherwise drown the sidebar.
- * The seed comes from the r-doc viewer's `docsSkipPatterns()` plus the usual suspects.
+ * The list is the usual build and dependency directories, plus a few big generated trees.
  */
 
 export const DEFAULT_DENY = [
@@ -24,7 +24,7 @@ export const DEFAULT_DENY = [
   'venv',
   '__pycache__',
   'target',
-  // r-doc's own skip list — huge generated or third-party trees in a big PHP checkout
+  // Huge generated or third-party trees found in large PHP checkouts
   'lib.external',
   'git-hooks',
   'pma',

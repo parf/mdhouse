@@ -208,7 +208,7 @@ export class Registry {
   }
 
   /**
-   * The only write in the codebase. Phase 1 calls it nowhere; it exists so that when checkbox
+   * The only write in the codebase. Nothing calls it yet; it exists so that when checkbox
    * write-back arrives it cannot reach a read-only tree by forgetting a check.
    */
   async writeFile(p: string, data: string | Uint8Array): Promise<Resolved> {

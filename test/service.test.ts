@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { unitName, unitText } from '../src/lib/service';
 
-const spec = { bun: '/usr/bin/bun', cli: '/opt/mdhouse/bin/mdhouse', port: 7777, path: '/usr/bin:/bin' };
+const spec = { bun: '/usr/bin/bun', cli: '/opt/mdhouse/bin/mdhouse', path: '/usr/bin:/bin' };
 
 describe('the systemd unit', () => {
   test('runs mdhouse in the foreground, on the saved directories', () => {
@@ -13,9 +13,15 @@ describe('the systemd unit', () => {
     expect(text).not.toContain('XDG_CONFIG_HOME');
   });
 
-  test('another port gets its own unit and its own flag', () => {
+  test('the usual unit pins no port: it listens wherever the config says, like a plain start', () => {
     expect(unitName(7777)).toBe('mdhouse.service');
-    expect(unitName(8080)).toBe('mdhouse-8080.service');
+    expect(unitName(8080)).toBe('mdhouse.service'); // a port from the config, not from `service --port`
+    expect(unitText(spec)).not.toContain('--port');
+  });
+
+  test('an explicit `service --port` gets its own unit with the port pinned', () => {
+    expect(unitName(8080, true)).toBe('mdhouse-8080.service');
+    expect(unitName(7777, true)).toBe('mdhouse.service');
     expect(unitText({ ...spec, port: 8080 })).toContain('--fg --port 8080\n');
   });
 

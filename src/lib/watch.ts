@@ -2,9 +2,9 @@
  * Filesystem watching -> WebSocket pushes.
  *
  * Explicitly not polling: a change on disk reaches the open page because the kernel told us,
- * not because the browser asked again. Phase 1 uses this only to refresh the open document and
- * the tree, but the channel, the per-root topics and the reconnect handling all exist now so
- * later interactive features have nothing left to build.
+ * not because the browser asked again. It refreshes the open document, the tree, the recents
+ * and the front page; the per-root topics and the reconnect handling are what later interactive
+ * features will ride on.
  */
 
 import { watch, type FSWatcher } from 'node:fs';

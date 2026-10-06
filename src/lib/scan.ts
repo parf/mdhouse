@@ -1,8 +1,8 @@
 /**
  * Finding every .md file under a root.
  *
- * The r-doc viewer globs its whole tree and then subtracts a hardcoded skip list. That is both
- * slow and blind to `.gitignore`. mdHouse asks git instead: one `git ls-files` per repository
+ * Globbing a whole tree and subtracting a skip list is both slow and blind to `.gitignore`.
+ * mdHouse asks git instead: one `git ls-files` per repository
  * returns tracked plus untracked-but-not-ignored files, so `.gitignore` is honoured with no
  * configuration at all. Globbing is the fallback for ground that is not in any repo.
  */

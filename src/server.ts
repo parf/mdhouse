@@ -8,7 +8,7 @@
 import type { ServerWebSocket } from 'bun';
 import index from './index.html';
 import { realpath } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { homedir, hostname as machineName } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { repoToplevel } from './lib/scan';
@@ -34,6 +34,26 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
 const fail = (status: number, message: string) => json({ error: message }, status);
+
+/**
+ * Is this request addressed to mdhouse by a name a browser can be trusted with?
+ *
+ * DNS rebinding is the attack: a page at `evil.example` re-points that name at 127.0.0.1, and
+ * from then on the browser treats mdhouse as the attacker's own origin — `Origin`, `Host` and
+ * `Sec-Fetch-Site` all say "same origin", so no origin check can tell. What it cannot fake is
+ * the name: the `Host` header carries the attacker's domain. So only names that cannot be
+ * rebound are accepted: `localhost` and IP literals, plus, when mdhouse is bound to the network
+ * on purpose (`--host`), this machine's own hostname.
+ */
+export function trustedHost(host: string | null, bound: string, machine = machineName()): boolean {
+  if (!host) return false;
+  const name = (host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.replace(/:\d+$/, '')).toLowerCase();
+  if (name === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(name) || name.includes(':')) return true;
+  const loopback = bound === '127.0.0.1' || bound === 'localhost' || bound === '::1';
+  if (loopback) return false;
+  const me = machine.toLowerCase();
+  return name === me || name === `${me}.local`;
+}
 
 /** Did this request come from a page mdhouse served itself? See `/api/roots/remove`. */
 export function sameOrigin(req: Request): boolean {
@@ -69,6 +89,30 @@ export async function serve(opts: ServeOptions) {
     return v === null ? dflt : v !== '0' && v !== 'false';
   };
 
+  /**
+   * Every handler behind the host check. The app's HTML entry is left as it is — it is the
+   * bundle, the same for everyone, and carries no data.
+   */
+  type Handler = (req: Request) => Response | Promise<Response>;
+  const check = (h: Handler): Handler => (req) =>
+    trustedHost(req.headers.get('host'), hostname) ? h(req) : fail(421, 'unrecognised host name');
+  function guard<R extends string>(routes: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
+    const out: Record<string, unknown> = {};
+    for (const [path, route] of Object.entries(routes)) {
+      if (typeof route === 'function') out[path] = check(route as Handler);
+      // A method map — `{ GET, POST }` — not the HTML bundle, which is an object too.
+      else if (
+        route &&
+        typeof route === 'object' &&
+        Object.keys(route).length > 0 &&
+        Object.entries(route).every(([m, v]) => /^[A-Z]+$/.test(m) && typeof v === 'function')
+      ) {
+        out[path] = Object.fromEntries(Object.entries(route).map(([m, h]) => [m, check(h as Handler)]));
+      } else out[path] = route;
+    }
+    return out as Bun.Serve.Routes<undefined, R>;
+  }
+
   const server = Bun.serve({
     port,
     hostname,
@@ -78,7 +122,7 @@ export async function serve(opts: ServeOptions) {
     // other click lands in the wrong one and 404s. Refuse the port instead, loudly.
     reusePort: false,
 
-    routes: {
+    routes: guard({
       '/': index,
       // Every document URL is `/d/<path>/<file>.md`; the SPA takes it from here.
       '/d/*': index,
@@ -124,6 +168,17 @@ export async function serve(opts: ServeOptions) {
        * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
        * non-browser caller sends neither and is let through — it could edit prefs.json itself.
        */
+      /** The settings page's options. Changing one is held to the same same-origin rule. */
+      '/api/settings': {
+        GET: () => json(prefs.settings),
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          if (!body) return fail(400, 'expected a JSON object');
+          return json(await prefs.updateSettings(body));
+        },
+      },
+
       '/api/roots/remove': {
         POST: async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
@@ -328,6 +383,9 @@ export async function serve(opts: ServeOptions) {
           return json(prefs.get(root.path));
         },
         POST: async (req) => {
+          // Bun parses the body whatever its content-type, so a cross-site `text/plain` form
+          // post would otherwise land here.
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as {
             root?: string;
             path?: string;
@@ -345,11 +403,15 @@ export async function serve(opts: ServeOptions) {
           return json(marks);
         },
       },
-    },
+    }),
 
     async fetch(req, srv) {
+      if (!trustedHost(req.headers.get('host'), hostname)) return fail(421, 'unrecognised host name');
       const url = new URL(req.url);
       if (url.pathname === '/ws') {
+        // A cross-site page must not subscribe to the live channel: it names every root and
+        // every file as it changes.
+        if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
         if (srv.upgrade(req)) return undefined as unknown as Response;
         return fail(400, 'websocket upgrade failed');
       }

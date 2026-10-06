@@ -42,8 +42,8 @@ function sortNodes(nodes: Node[]): Node[] {
 
     if (a.kind !== b.kind) return a.kind === 'dir' ? -1 : 1;
 
-    // README, CLAUDE and AGENTS lead their directory — the same convention r-doc uses,
-    // and the same order the Plans/ house convention reads in.
+    // README, CLAUDE and AGENTS lead their directory, then TODO and DONE — the order a
+    // Plans/<project>/ folder is read in.
     if (a.kind === 'file' && b.kind === 'file') {
       const rank = (n: string) => (/^(README|CLAUDE|AGENTS|TODO|DONE)\./i.test(n) ? 0 : 1);
       const ra = rank(a.name), rb = rank(b.name);

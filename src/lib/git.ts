@@ -1,8 +1,8 @@
 /**
  * Git queries, batched.
  *
- * The r-doc viewer this replaces shells out to `git log -1` once per row it displays. mdHouse
- * makes **one** `git log` call per repository and derives every recents row, author and status
+ * Never one `git log -1` per displayed row — that is what makes a viewer slow on a big tree.
+ * mdHouse makes **one** `git log` call per repository and derives every recents row, author and status
  * badge from that single result. Committer filtering then happens client-side on data already
  * in hand, so changing the filter costs no round-trip at all.
  */
@@ -156,7 +156,7 @@ export async function workingStatus(repo: string, rootPath: string): Promise<Map
 }
 
 /**
- * The last few commits to one file, newest first, with the line counts the r-doc viewer shows.
+ * The last few commits to one file, newest first, with the lines each one added and removed.
  *
  * One `git log`, nothing else: the document header already names who created the file and
  * when — from `authorship()`, which the page fetches anyway — so the panel neither looks up

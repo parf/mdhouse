@@ -6,6 +6,10 @@ import type { Heading } from '../lib/render';
 import type { Mark } from '../lib/prefs';
 import type { FileDiff, FileHistory, FileStatus } from '../lib/git';
 
+export interface Settings {
+  editLink: boolean;
+}
+
 export interface RootInfo {
   id: string;
   name: string;
@@ -85,6 +89,18 @@ export const api = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ root, path, mark, on }),
     });
+  },
+
+  settings: () => get<Settings>('/api/settings'),
+
+  async setSettings(patch: Partial<Settings>): Promise<Settings> {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json() as Promise<Settings>;
   },
 
   /** Forget a directory and stop serving it. */

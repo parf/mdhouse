@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { render, splitFrontmatter } from '../src/lib/render';
+import { questionsAndAnswers, render, splitFrontmatter } from '../src/lib/render';
 
 const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/d/${rel}` };
 
@@ -26,7 +26,7 @@ describe('markdown rendering', () => {
     expect(html).toContain('checked data-line="2"');
   });
 
-  test('nested lists survive — the r-doc parser loses these', async () => {
+  test('nested lists keep all their levels', async () => {
     const { html } = await render('- outer\n  - inner\n    - deepest\n', ctx);
     expect(html.match(/<ul/g)?.length).toBe(3);
   });
@@ -137,5 +137,34 @@ describe('paths that are not plain ASCII', () => {
     // decodeURIComponent throws on this; the segment has to survive as written.
     const { html } = await render('<p><img src="100% done.png"></p>', encCtx);
     expect(html).toContain(encodeURIComponent('r/100% done.png'));
+  });
+});
+
+describe('Q: and A:', () => {
+  const qa = (html: string) => questionsAndAnswers(html).replace(/<span class="qa"[^>]*>(.)<\/span>/gu, '[$1]');
+
+  test('leading a paragraph, a list item or a line, they become emoji', () => {
+    expect(qa('<p data-line="1"><strong>Q:</strong> one?\n<strong>A:</strong> two.</p>')).toBe(
+      '<p data-line="1">[❓] one?<br>\n[💬] two.</p>',
+    );
+    expect(qa('<li><strong>Q:</strong> x</li>')).toBe('<li>[❓] x</li>');
+    // An explicit break is kept as it is, not doubled.
+    expect(qa('<p>a<br>\n<strong>A:</strong> b</p>')).toBe('<p>a<br>\n[💬] b</p>');
+  });
+
+  test('raw HTML: a <pre> is left as written, and no break is added after an opening tag', () => {
+    const pre = '<pre>\n<strong>Q:</strong> x</pre>';
+    expect(qa(pre)).toBe(pre);
+    expect(qa('<details>\n<strong>Q:</strong> x</details>')).toBe('<details>\n<strong>Q:</strong> x</details>');
+  });
+
+  test('applying it twice changes nothing more', () => {
+    const once = questionsAndAnswers('<p><strong>Q:</strong> a\n<strong>A:</strong> b</p>');
+    expect(questionsAndAnswers(once)).toBe(once);
+  });
+
+  test('mid-sentence, or any other bold word, is left alone', () => {
+    expect(qa('<p>Text with <strong>Q:</strong> mid.</p>')).toBe('<p>Text with <strong>Q:</strong> mid.</p>');
+    expect(qa('<p><strong>Note:</strong> x</p>')).toBe('<p><strong>Note:</strong> x</p>');
   });
 });

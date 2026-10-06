@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff, IconDiffDoc } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff, IconDiffDoc, IconEdit } from './icons';
 import { timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -34,6 +34,8 @@ interface Props {
   rootName?: string;
   rootDirUrl?: string;
   onOpenRootDir?: () => void;
+  /** `edit:/full/path` for this document, or null when the edit link is turned off. */
+  editHref?: string | null;
 }
 
 /**
@@ -79,6 +81,7 @@ export function Doc({
   rootName,
   rootDirUrl,
   onOpenRootDir,
+  editHref,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(true);
@@ -316,6 +319,13 @@ export function Doc({
             <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />
             {title}
           </h1>
+          {/* Hands the file to whatever handles `edit:` URLs — an editor, set up outside mdhouse.
+              Settings turns it off where nothing does. */}
+          {editHref && (
+            <a class="icon-btn edit-link" href={editHref} title={`Edit ${editHref.slice(5)}`} aria-label="Edit">
+              <IconEdit />
+            </a>
+          )}
           {gear}
         </div>
 
@@ -490,8 +500,8 @@ function Authors({ authors }: { authors: DocAuthors | null }) {
 }
 
 /**
- * Per-file git history, the one genuinely good idea in the r-doc viewer's document page:
- * who created the file, and the last commits with their line counts.
+ * Per-file git history: the last commits to this file, with their line counts. Who created it
+ * is in the header, from the same response.
  *
  * The request is `Doc`'s — the header wants the authorship out of the same response — so this
  * only renders what arrived. The panel is open by default: waiting for a click bought nothing
