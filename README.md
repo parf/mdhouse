@@ -189,10 +189,11 @@ The **⚙** on each page's title line (in the top bar when the sidebar is off):
 ## 🔒 Read-only, and local
 
 **mdhouse does not write to the trees it serves.** Point it at someone else's checkout, a
-mounted share, a directory you would rather not touch — the worst it can do is read. `--rw`
-allows writing and puts a green `RW` badge beside the root name; no badge means no writes. Every
-write goes through one function that refuses a read-only root, and it resolves symlinks before
-it decides — including for a file that does not exist yet. Your favourites, saved folders and
+mounted share, a directory you would rather not touch — the worst it can do is read. 1.0 has no
+feature that writes at all. `--rw` is reserved for 1.1, where ticking a checkbox will save the
+file; until then it only puts a green `RW` badge beside the folder. When writing arrives, it will
+go through one function that refuses a read-only folder and resolves symlinks before it decides —
+including for a file that does not exist yet. Your favourites, saved folders and
 settings live in `~/.config/mdhouse/`, never inside a tree.
 
 **It answers only your own machine.** It binds `127.0.0.1` unless you pass `--host`. Requests
@@ -222,7 +223,7 @@ machine to read your files. Anything that changes state must come from mdhouse's
 | `-f, --fg` | off | stay in the foreground instead of detaching |
 | `--git-log <n>` | `200` | commits scanned for recents and the front page |
 | `--no-git` | off | skip git entirely; recents by modification time only |
-| `--rw` | off | allow mdhouse to write to the trees it serves |
+| `--rw` | off | reserved for write-back in 1.1; in 1.0 it only marks the folder `RW` |
 | `-P, --perm` | off | save the folders, and any `--port` / `--host` given: used on every start |
 | `--rm` | off | forget the folders and stop serving them |
 | `--help` | | the usage text |
@@ -243,7 +244,7 @@ bookmarked.
 
 ## ▸ Status
 
-In daily use. Next, in this order:
+**1.0** — read-only, and in daily use. Next, in this order, starting with **1.1**:
 
 - checkboxes you can tick, written back to disk (only with `--rw` — a stale page must never
   corrupt a file)

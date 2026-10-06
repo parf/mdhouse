@@ -111,6 +111,15 @@ and raw HTML escaped — in a diff, the markup is the content.
   not start. Method maps are now recognised by their upper-case HTTP-method keys, and a test
   starts a real server so a startup failure cannot pass the suite again.
 
+## Packaging
+
+- **Every npm release before 1.0.0 served `500 Build Failed` at `/`.** Bun bundles the UI at
+  request time, and its JSX settings (`jsx: react-jsx`, `jsxImportSource: preact`) live in
+  `tsconfig.json` — which `package.json` `files` did not include. A clone has the file, so it
+  only failed for people who installed the package. Found by the 1.0 release check: `npm pack`,
+  install into a temporary prefix, start it, load the page in a browser. That check is now part
+  of every release.
+
 ## Verification habits
 
 - `tsconfig.json` covers `src/` and `test/`; before 0.4.0 the tests were never typechecked.

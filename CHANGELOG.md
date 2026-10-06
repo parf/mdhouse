@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 — 2026-10-06
+
+The first stable release, and a **read-only** one: nothing in 1.0 writes to the folders it
+serves. `--rw` is reserved for 1.1, where ticked checkboxes will be saved.
 
 ### Security
 
@@ -13,6 +16,9 @@
 
 ### Fixed
 
+- **Installed from npm, mdhouse could not show its page** — `/` answered `500 Build Failed`.
+  The package left out `tsconfig.json`, which tells Bun to compile the UI's JSX for Preact; a
+  clone has it, which is why this went unseen. Every earlier npm release is affected; upgrade.
 - **`prefs.json` can no longer be wiped.** A file that fails to parse is moved aside as
   `prefs.json.broken-<time>` rather than written over; every save is a temp file renamed into
   place, so no reader sees half a file; and each change is made against the file as it is now,
@@ -24,6 +30,11 @@
 - `mdhouse <folder>` run just after the service started said the port was held by "something
   that is not mdhouse": the port is bound a moment before the control socket. It now waits for
   the socket before deciding.
+- `mdhouse service --port 8080 install` failed when the flag came before the action.
+- Paths with `'`, `%` or `$` broke the systemd unit; they are escaped the way systemd expects.
+- In a linked git worktree the front page never showed when it last pulled.
+- The ✎ no longer flashes on pages where it is turned off; the tab title no longer keeps the
+  last folder page's name; the count on a folder in the tree can be opened from the keyboard.
 
 ### Added
 

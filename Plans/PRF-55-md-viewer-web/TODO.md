@@ -1,7 +1,7 @@
 # TODO — mdhouse
 
-Released: **0.8.0** on npm. Everything built so far is in [`DONE.md`](DONE.md); user-facing
-history is in [`CHANGELOG.md`](../../CHANGELOG.md).
+Released: **1.0.0**, read-only. Next: **1.1**, the first release that writes. Everything built
+so far is in [`DONE.md`](DONE.md); user-facing history is in [`CHANGELOG.md`](../../CHANGELOG.md).
 
 Next step: **I.0 → I.1** — per-folder `--rw`, then clickable checkboxes written back to disk.
 I.1 is the first feature that writes, and the first to stand on `data-line` and the

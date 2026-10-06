@@ -1,6 +1,6 @@
 {
   "name": "mdhouse",
-  "version": "0.8.0",
+  "version": "1.0.0",
   "description": "Browsable, searchable web viewer for every .md file under a directory",
   "license": "GPL-2.0-only",
   "type": "module",
@@ -38,7 +38,8 @@
     "doc",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "tsconfig.json"
   ],
   "scripts": {
     "start": "bun run src/cli.ts",
