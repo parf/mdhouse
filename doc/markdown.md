@@ -156,8 +156,10 @@ The data team, from October.
 
 ## Inline Q&A
 
-The shortest form: a bold `Q:` or `A:` leading a paragraph, a list item or a line becomes ❓ / 💬,
-each on its own line. A bold `Q:` in the middle of a sentence is left as written.
+The shortest form. Lines starting with a bold `Q:` or `A:` render exactly like `[!QUESTION]` /
+`[!ANSWER]` — one block per line, the icon in front; a line without a marker stays with the block
+above it. Inside a list item the marker becomes a small ❓ / 💬 instead, and a bold `Q:` in the
+middle of a sentence is left as written.
 
 ```markdown
 **Q:** Is the cache warm?

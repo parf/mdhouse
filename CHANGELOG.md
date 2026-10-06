@@ -15,7 +15,8 @@
   systemd service writes only to folders saved writable.
 
 - **`> [!QUESTION]` and `> [!ANSWER]`** alerts, coloured like GitHub's five (❓ teal, 💬 green)
-  but one line each — the icon in front of the text, no title row.
+  but one line each — the icon in front of the text, no title row. Lines starting with `**Q:**` /
+  `**A:**` render as the same blocks.
 - **[Markdown in mdhouse](doc/markdown.md)** — every syntax mdhouse supports beyond CommonMark,
   with live examples, and what it does not support. Linked from the README.
 

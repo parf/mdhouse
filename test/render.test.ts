@@ -253,3 +253,18 @@ describe('alerts', () => {
     expect((await render('> [!BOGUS]\n> x\n', ctx)).html).toContain('<blockquote');
   });
 });
+
+describe('**Q:** / **A:** paragraphs', () => {
+  test('become one-line question and answer blocks, like [!QUESTION] / [!ANSWER]', async () => {
+    const { html } = await render('**Q:** Is it **warm**?\n**A:** After the first request.\nIt stays warm.\n', ctx);
+    expect(html).toContain('<div class="markdown-alert markdown-alert-question" role="note" aria-label="Question" data-line="1">');
+    expect(html).toContain('<p data-line="1">Is it <strong>warm</strong>?</p>');
+    expect(html).toContain('<div class="markdown-alert markdown-alert-answer" role="note" aria-label="Answer" data-line="2">');
+    expect(html).toContain('After the first request.\nIt stays warm.</p>'); // an unmarked line stays with its block
+  });
+
+  test('a list item keeps the inline icon; mid-sentence stays bold', async () => {
+    expect((await render('- **Q:** in a list\n', ctx)).html).toContain('<span class="qa" role="img" aria-label="Q:">❓</span>');
+    expect((await render('Text with **Q:** mid.\n', ctx)).html).toContain('<strong>Q:</strong>');
+  });
+});
