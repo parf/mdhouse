@@ -79,6 +79,22 @@ One config file, not two. `-P` and `--rm` go to a running daemon over the contro
 starts or stops serving the folder at once. `-P` rather than `-p`, because `-p` has always been
 the port.
 
+## Write access belongs to a folder, and is granted only from a terminal
+
+`--rw` used to be one flag for the whole process, so starting one scratch folder with `--rw`
+made every saved folder writable too. Now it covers the folders named on that command; a saved
+folder carries its own flag (`-P --rw`), and `-P` records the folder exactly as asked, so
+re-saving without `--rw` is how write access is taken away. A running daemon can be told to make
+a folder writable (`mdhouse <dir> --rw`, over the user-only socket) but never the reverse, and the
+Settings page shows `RW` without a switch: no browser click can ever enable writing.
+
+## A checkbox write is checked against the line it was rendered from
+
+The page may be older than the file. A line number alone would let a stale tab flip whatever now
+sits on that line, so each checkbox carries a fingerprint of its source line and the server
+refuses (`409`) when the line no longer matches. Cheaper and stricter than comparing whole-file
+mtimes: only a change to *that* line, or one that moves it, refuses the click.
+
 ## The systemd service serves only what is saved
 
 Under systemd the working directory is `$HOME`, and the "no directory given" fallback would

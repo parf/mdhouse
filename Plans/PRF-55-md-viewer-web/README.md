@@ -7,8 +7,9 @@ for users in [`CHANGELOG.md`](../../CHANGELOG.md).
 ## Purpose
 
 Point mdhouse at a directory and every `.md` file under it becomes a browsable, searchable site
-in the browser, live, with git history and diffs beside each document. Next: tick checkboxes
-and have them written back, and push a section to Claude or Codex for feedback.
+in the browser, live, with git history and diffs beside each document. In folders served with
+`--rw`, ticking a checkbox saves the file. Next: a changes listing per root, and pushing a
+section to Claude or Codex for feedback.
 
 Ticket: PRF-55 — <https://linear.app/realmo-product/issue/PRF-55/md-files-viewereditor-web-mdhouse>
 
@@ -39,11 +40,23 @@ No server code ships to the browser.
 
 ### Never write to a tree that did not ask for it
 
-Every root is read-only unless the user passed `--rw`. `Registry.create(specs, writable)` takes
-that single boolean, and every disk write to a served tree goes through the one chokepoint
-`Registry.writeFile()`, which refuses a read-only root. Nothing calls it yet; it exists so that
-write-back, when it lands, cannot reach a read-only tree by forgetting a check. mdhouse's own
+Writability belongs to a **folder**, never to the process. A folder named on a command gets
+that command's `--rw`; a saved folder is writable only if it was saved with `-P --rw`
+(`writable` in prefs); `--rw` for an already-served folder upgrades it in place
+(`Registry.setWritable`), never downgrades. Write access is granted only from a terminal — no
+page can turn it on.
+
+Every disk write to a served tree goes through the one chokepoint `Registry.writeFile()`, which
+refuses a read-only root. Its only caller is `POST /api/task` (a checkbox tick). mdhouse's own
 config (`prefs.json`, the control socket) lives outside every tree.
+
+### A tick changes one line, or nothing
+
+`toggleTask(src, line, hash)` in `render.ts` is the only edit made to a document. The rendered
+checkbox carries `data-line` (1-based, within the body) and `data-hash` (FNV-1a of the raw source
+line); the server re-reads the file, counts front matter back in, and flips the bracket only if
+that line still hashes the same and still looks like a task item — else `409`, and the page
+reloads. Writes to one file are queued; `\r\n` and every other byte are kept.
 
 ### The path jail
 
@@ -85,7 +98,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   name. Anything else is `421`. This is the DNS-rebinding guard: a rebound page looks
   same-origin in every header except the name it was addressed to. `guard()` in `server.ts` wraps
   every route; the HTML bundle is left alone.
-- **State-changing requests** — `POST /api/marks`, `/api/roots/remove`, `/api/settings` — and the
+- **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/roots/remove`, `/api/settings` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.

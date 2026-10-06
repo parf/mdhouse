@@ -117,6 +117,23 @@ and raw HTML escaped — in a diff, the markup is the content.
   not start. Method maps are now recognised by their upper-case HTTP-method keys, and a test
   starts a real server so a startup failure cannot pass the suite again.
 
+## Checkbox write-back (1.1)
+
+- `--rw` became per folder: `Registry.create([{ path, writable }])`, a `writable` list in prefs
+  (only saved folders can be in it), and `/add` with `rw` upgrading a served root in place.
+  Before, the daemon built every root, saved ones included, with the one process flag.
+- A tick is `POST /api/task { p, line, hash }` → `toggleTask()` → `Registry.writeFile()`; the
+  watcher's push reloads every tab. The page also refetches after every click, so a box always
+  carries the fingerprint of the file as it now is.
+- **Trap:** the document page re-decided its view whenever the file's git status changed. A
+  tick makes the file "modified", which threw the reader out of the document into the patch
+  view, where boxes are disabled. The view is now decided once per document, when it arrives.
+- **Trap:** a refused click reloads identical HTML (nothing was written), so the effect that
+  re-enables boxes never re-ran and the box stayed disabled; the handler re-enables it itself.
+- Verified on scratch git repos on a spare port: one tick → one changed line (`git diff`), a
+  second tab followed live, a read-only folder's boxes stay disabled and a forced POST gets
+  `403`, a stale fingerprint gets the note and no write.
+
 ## Packaging
 
 - **Every npm release before 1.0.0 served `500 Build Failed` at `/`.** Bun bundles the UI at

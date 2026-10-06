@@ -100,7 +100,8 @@ Past 50 files it grows two filters, one per column, that match like `LIKE '%text
 anchor, `%` and `_` are wildcards. From the root's own page, **GIT** goes back to the front page.
 
 **The document page.** Above the text: a breadcrumb that opens each folder's page, how long ago
-the file changed, who started it and when, and an `N/M done` count when it has task checkboxes.
+the file changed, who started it and when, and an `N/M done` count when it has task checkboxes —
+which you can tick, in a folder served with `--rw`: the file is saved with that one line changed.
 Beside it: a table of contents (H1–H2, with an `H3` chip when the document goes deeper) and the
 last five commits to that file, each a button that shows what that commit did. Renames are
 followed, so a moved file keeps its history.
@@ -174,7 +175,7 @@ mdhouse service uninstall
 ```
 
 It asks you to save a folder first, and it starts the way a plain `mdhouse` does — the saved
-folders, on the saved port and host. It is always read-only (`--rw` is not carried into it).
+folders, on the saved port and host, and writes only to folders saved with `-P --rw`.
 `mdhouse exit` stops it, and systemd leaves it stopped: start it again with
 `systemctl --user start mdhouse`. The log is `journalctl --user -u mdhouse -f`;
 `loginctl enable-linger $USER` starts it at boot, before you log in. `service install --port <n>`
@@ -192,15 +193,20 @@ The **⚙** on each page's title line (in the top bar when the sidebar is off):
 
 ---
 
-## 🔒 Read-only, and local
+## 🔒 Read-only unless you say, and local
 
-**mdhouse does not write to the trees it serves.** Point it at someone else's checkout, a
-mounted share, a directory you would rather not touch — the worst it can do is read. 1.0 has no
-feature that writes at all. `--rw` is reserved for 1.1, where ticking a checkbox will save the
-file; until then it only puts a green `RW` badge beside the folder. When writing arrives, it will
-go through one function that refuses a read-only folder and resolves symlinks before it decides —
-including for a file that does not exist yet. Your favourites, saved folders and
-settings live in `~/.config/mdhouse/`, never inside a tree.
+**mdhouse does not write to a folder unless you started it with `--rw`.** Point it at someone
+else's checkout, a mounted share, a directory you would rather not touch — the worst it can do is
+read. Write access belongs to a folder, not to mdhouse: `mdhouse ~/notes --rw` makes `~/notes`
+writable and nothing else, `-P --rw` saves it that way, and saving it again without `--rw`
+takes write access away. A writable folder has a green `RW` badge; the Settings page shows which
+they are, but write access is only ever granted from a terminal.
+
+The one thing it writes is a ticked checkbox, and only that line. The page sends the line and a
+fingerprint of it, and the server refuses if the file no longer matches — a stale tab can never
+flip whatever now sits on that line; it reloads and asks you to tick again. Every write goes
+through one function that refuses a read-only folder and resolves symlinks before it decides.
+Your favourites, saved folders and settings live in `~/.config/mdhouse/`, never inside a tree.
 
 **It answers only your own machine.** It binds `127.0.0.1` unless you pass `--host`. Requests
 addressed to any name other than `localhost`, an IP address, or (with `--host`) this machine's
@@ -231,7 +237,7 @@ are refused.
 | `-f, --fg` | off | stay in the foreground instead of detaching |
 | `--git-log <n>` | `200` | commits scanned for recents and the front page |
 | `--no-git` | off | skip git entirely; recents by modification time only |
-| `--rw` | off | reserved for write-back in 1.1; in 1.0 it only marks the folder `RW` |
+| `--rw` | off | the folders named may be written — ticking a checkbox saves it; with `-P`, saved so |
 | `-P, --perm` | off | save the folders, and any `--port` / `--host` given: used on every start |
 | `--rm` | off | forget the folders and stop serving them |
 | `--help` | | the usage text |
@@ -252,10 +258,9 @@ bookmarked.
 
 ## ▸ Status
 
-**1.0** — read-only, and in daily use. Next, in this order, starting with **1.1**:
+**1.1** — checkboxes you can tick, in folders served with `--rw`; everything else is read-only.
+In daily use. Next:
 
-- checkboxes you can tick, written back to disk (only with `--rw` — a stale page must never
-  corrupt a file)
 - a changed / added / removed listing for a whole root, on top of the per-file diffs
 - pushing a selected section to Claude or Codex for feedback, streamed back over the WebSocket
 

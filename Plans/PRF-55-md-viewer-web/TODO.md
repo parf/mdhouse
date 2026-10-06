@@ -1,31 +1,9 @@
 # TODO — mdhouse
 
-Released: **1.0.0**, read-only. Next: **1.1**, the first release that writes. Everything built
-so far is in [`DONE.md`](DONE.md); user-facing history is in [`CHANGELOG.md`](../../CHANGELOG.md).
+**1.1.0** — checkboxes written back to disk in `--rw` folders (I.0–I.3, done; see
+[`DONE.md`](DONE.md)). User-facing history is in [`CHANGELOG.md`](../../CHANGELOG.md).
 
-Next step: **I.0 → I.1** — per-folder `--rw`, then clickable checkboxes written back to disk.
-I.1 is the first feature that writes, and the first to stand on `data-line` and the
-`Registry.writeFile()` chokepoint.
-
-## I. Checkbox write-back
-
-Only I.0 comes first: `data-line` is on every block and `writeFile()` exists.
-
-- **I.0** Make `--rw` per folder before anything writes. Today the daemon merges the saved
-  folders into `Registry.create(dirs, opts.rw)`, so `mdhouse ./scratch --rw` makes **every saved
-  folder** writable too. Harmless while nothing writes (no one runs with `--rw` now); not once
-  I.1 lands. Writability should belong to the folder it was asked for — stored with the saved
-  entry when it is saved with `--rw`, and never inherited by the others.
-- **I.1** The client enables checkboxes only when `doc.writable`; a click POSTs
-  `{path, line, checked}`.
-- **I.2** The server patches exactly that source line (`[ ]` ↔ `[x]`), and refuses if the line
-  no longer looks like a task item — a stale page must not corrupt a file.
-- **I.3** Write through `Registry.writeFile()`, and echo the change over the WebSocket so other
-  tabs follow.
-
-**Acceptance:** ticking a box changes one line and nothing else (`git diff` shows one line); a
-read-only root renders the boxes disabled and rejects the POST with 403; two open tabs stay in
-step.
+Next step: **K.2b** or **J** — your pick.
 
 ## J. Section → AI
 

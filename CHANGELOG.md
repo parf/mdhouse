@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.0 — 2026-10-06
+
+### Added
+
+- **Tick a checkbox and the file is saved.** In a folder served with `--rw`, task checkboxes in
+  a document are live: a tick changes `[ ]` ↔ `[x]` on that one line and nothing else, and every
+  open tab follows. The page sends the line with a fingerprint of it; if the file changed since
+  the page was loaded, the server refuses (`409`), the page reloads, and nothing is written.
+- **`--rw` belongs to a folder, not to mdhouse.** It applies to the folders named on that
+  command only — saved folders are no longer made writable by it. `-P --rw` saves a folder
+  writable (`writable` in `prefs.json`); saving it again without `--rw` takes write access
+  away. `mdhouse <served folder> --rw` makes it writable on the running mdhouse, no restart. The
+  systemd service writes only to folders saved writable.
+
+### Fixed
+
+- Opening a document with uncommitted changes shows its diff, as before — but a file that
+  becomes modified while it is open (by a tick) no longer throws the page into the diff view.
+- The About box puts the author on a line of its own.
+
 ## 1.0.1 — 2026-10-06
 
 ### Fixed
