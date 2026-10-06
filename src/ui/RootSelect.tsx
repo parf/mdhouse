@@ -1,8 +1,10 @@
 import type { RootInfo } from './api';
+import { rootLabel } from './format';
 
 /**
- * The root switcher as a `<select>`, for the two places with no room for a row of chips: the
- * compact sidebar and the top bar left behind when the sidebar is off.
+ * The root switcher, in every sidebar state. How much of each path it shows grows with the
+ * room it has: the folder and its parent in the compact sidebar, two parents in the open one,
+ * the whole path (home as `~`) in the full-width top bar left when the sidebar is off.
  *
  * With one root there is nothing to switch between and it renders nothing at all — the widget
  * appears exactly when it means something.
@@ -12,11 +14,19 @@ export function RootSelect({
   rootId,
   onPick,
   className,
+  above = 1,
+  max = 28,
+  home,
 }: {
   roots: RootInfo[];
   rootId: string;
   onPick: (id: string) => void;
   className?: string;
+  /** Folders shown above each root's own, or the whole path. */
+  above?: number | 'all';
+  /** Longest label before its left end is cut. */
+  max?: number;
+  home?: string;
 }) {
   if (roots.length < 2) return null;
 
@@ -31,7 +41,7 @@ export function RootSelect({
     >
       {roots.map((r) => (
         <option key={r.id} value={r.id} title={r.path}>
-          {r.name}
+          {rootLabel(r.path, { above, max, home })}
         </option>
       ))}
     </select>

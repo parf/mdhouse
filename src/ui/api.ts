@@ -57,7 +57,7 @@ async function get<T>(path: string, params: Record<string, string | number | boo
 }
 
 export const api = {
-  roots: () => get<{ roots: RootInfo[]; single: boolean }>('/api/roots'),
+  roots: () => get<{ roots: RootInfo[]; single: boolean; home?: string }>('/api/roots'),
 
   tree: (root: string, ignored: boolean) => get<TreePayload>('/api/tree', { root, ignored: ignored ? 1 : 0 }),
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { preciseAgo, fileSize } from '../src/ui/format';
+import { preciseAgo, fileSize, rootLabel } from '../src/ui/format';
 
 describe('fileSize', () => {
   test('bytes stay bare under 1000', () => {
@@ -32,5 +32,37 @@ describe('preciseAgo', () => {
 
   test('words after that', () => {
     expect(ago(10 * 24 * 60)).toBe('10d ago');
+  });
+});
+
+describe('rootLabel', () => {
+  test('the folder and its parent, by default', () => {
+    expect(rootLabel('/rd/vhosts/rdc/Plans/Removal')).toBe('Plans/Removal');
+    expect(rootLabel('/home/parf/doc/RealmoMove')).toBe('doc/RealmoMove');
+  });
+
+  test('two folders above, for the wide sidebar', () => {
+    expect(rootLabel('/rd/vhosts/rdc/Plans/Removal', { above: 2 })).toBe('rdc/Plans/Removal');
+  });
+
+  test('a short path is shown whole, with its slash', () => {
+    expect(rootLabel('/rd')).toBe('/rd');
+    expect(rootLabel('/rd/tmp')).toBe('/rd/tmp');
+    expect(rootLabel('/rd/tmp', { above: 2 })).toBe('/rd/tmp');
+  });
+
+  test('the whole path, home written as ~', () => {
+    const home = '/home/parf';
+    expect(rootLabel('/home/parf/doc/RealmoMove', { above: 'all', home, max: 99 })).toBe('~/doc/RealmoMove');
+    expect(rootLabel('/home/parf', { above: 'all', home })).toBe('~');
+    expect(rootLabel('/home/parfx/doc', { above: 'all', home })).toBe('/home/parfx/doc');
+    expect(rootLabel('/rd/tmp', { above: 'all', home })).toBe('/rd/tmp');
+  });
+
+  test('too long: the left end goes, the folder name stays', () => {
+    const label = rootLabel('/x/some-rather-long-parent-name/RLM-1842-final-folder', { max: 28 });
+    expect(label).toHaveLength(28);
+    expect(label.startsWith('…')).toBe(true);
+    expect(label.endsWith('RLM-1842-final-folder')).toBe(true);
   });
 });

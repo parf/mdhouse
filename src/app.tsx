@@ -35,6 +35,7 @@ const save = (key: string, value: unknown) => {
 
 function App() {
   const [roots, setRoots] = useState<RootInfo[]>([]);
+  const [home, setHome] = useState<string | undefined>(undefined);
   const [rootId, setRootId] = useState('');
   const [tree, setTree] = useState<TreePayload | null>(null);
   const [doc, setDoc] = useState<DocPayload | null>(null);
@@ -85,8 +86,9 @@ function App() {
   // ── data ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    void api.roots().then(({ roots }) => {
+    void api.roots().then(({ roots, home }) => {
       setRoots(roots);
+      setHome(home);
       // `?root=<id>` picks which tree to land on — what a second `mdhouse <dir>` prints when
       // the daemon it handed the directory to was already serving something else.
       const asked = new URLSearchParams(location.search).get('root');
@@ -295,6 +297,18 @@ function App() {
 
   const crumb = useMemo(() => doc?.rel ?? '', [doc?.rel]);
 
+  const gear = (extra = '') => (
+    <button
+      class={`icon-btn${extra ? ` ${extra}` : ''}`}
+      aria-pressed={onSettings}
+      onClick={() => go(onSettings ? '/' : '/settings')}
+      title={onSettings ? 'Close settings' : 'Settings'}
+      aria-label="Settings"
+    >
+      <IconGear />
+    </button>
+  );
+
   return (
     <div class="app" data-sidebar={sidebar}>
       {sidebar === 'off' && (
@@ -306,7 +320,7 @@ function App() {
             <button class="mark brand-mark" onClick={() => setAboutOpen(true)} title="About mdhouse" aria-label="About mdhouse" />
             {crumb || tree?.root.name || 'mdhouse'}
           </span>
-          <RootSelect roots={roots} rootId={rootId} onPick={setRootId} />
+          <RootSelect roots={roots} rootId={rootId} onPick={setRootId} above="all" max={80} home={home} />
           <button
             class="icon-btn"
             title="Search (/)"
@@ -317,6 +331,7 @@ function App() {
           >
             <IconSearch />
           </button>
+          {gear()}
         </div>
       )}
 
@@ -361,15 +376,8 @@ function App() {
       )}
 
       <main>
-        <button
-          class="icon-btn gear"
-          aria-pressed={onSettings}
-          onClick={() => go(onSettings ? '/' : '/settings')}
-          title={onSettings ? 'Close settings' : 'Settings'}
-          aria-label="Settings"
-        >
-          <IconGear />
-        </button>
+        {/* With the sidebar off the top bar owns the top-right corner, and the gear joins it. */}
+        {sidebar !== 'off' && gear('gear')}
         {onSettings ? (
           <Settings roots={roots} onChanged={() => void reloadRoots()} />
         ) : !docPath ? (

@@ -266,19 +266,9 @@ main {
   gap: 4px;
   padding: 6px 8px;
   border-bottom: 1px solid var(--border);
-  overflow-x: auto;
 }
-.root-switch button {
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  color: var(--fg-muted);
-  white-space: nowrap;
-}
-.root-switch button:hover { background: var(--bg-hover); }
-.root-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
 
-/* The same switcher where a row of chips will not fit: the compact sidebar and the top bar. */
+/* The root switcher: in both sidebar widths, and in the top bar when the sidebar is off. */
 .root-select {
   font: inherit;
   font-size: 12px;
@@ -289,12 +279,11 @@ main {
   padding: 2px 4px;
   max-width: 100%;
 }
-.sidebar.compact .root-switch { padding: 6px; }
-.sidebar.compact .root-select { width: 100%; }
+.sidebar .root-select { width: 100%; }
 /* In the top bar it sits beside the name and takes over holding the rest of the strip right —
    but only when it is there at all: with one root the name keeps that job itself. */
 .topstrip:has(.root-select) .brand { margin-right: 0; }
-.topstrip .root-select { margin-right: auto; max-width: 30vw; }
+.topstrip .root-select { margin-right: auto; max-width: 50vw; }
 
 .side-tools { padding: 8px; border-bottom: 1px solid var(--border); display: grid; gap: 8px; }
 
@@ -390,15 +379,17 @@ main {
 .row.tiny > .label { color: var(--fg-muted); }
 .row.tiny > .label, .row.small > .label,
 .hit.tiny .hit-name, .hit.small .hit-name { text-decoration: line-through; }
+/* Under 101 bytes: struck twice, to match the ∅ — a stub, not just a short file. */
+.row.tiny > .label, .hit.tiny .hit-name { text-decoration-style: double; text-decoration-thickness: 1px; }
 
-/* Tiny files (∅, under 101 B) get a bright tile at the end of the row; small ones (under 500 B)
+/* Tiny files (∅, under 101 B) get a bright pink ∅ at the end of the row; small ones (under 500 B)
    show their size in violet instead. */
 .size-mark {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 14px; height: 14px; border-radius: 3px;
-  font-size: 10px; font-weight: 700; line-height: 1; color: #fff;
+  width: 14px; height: 14px;
+  font-size: 14px; font-weight: 700; line-height: 1;
 }
-.size-mark.tiny { background: var(--size-tiny); font-size: 12px; }
+.size-mark.tiny { color: var(--size-tiny); }
 .badge.size.small, .size-num.small { color: var(--size-small); font-weight: 650; }
 .size-num { flex: none; font-size: 10.5px; font-variant-numeric: tabular-nums; }
 .hit .hit-path > .end:is(.size-mark, .size-num), .hit .meta > :is(.size-mark, .size-num) { align-self: center; }

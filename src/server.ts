@@ -8,6 +8,7 @@
 import type { ServerWebSocket } from 'bun';
 import index from './index.html';
 import { realpath } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { repoToplevel } from './lib/scan';
@@ -111,6 +112,8 @@ export async function serve(opts: ServeOptions) {
             saved: prefs.isSaved(r.path),
           })),
           single: registry.single,
+          // So the top bar can write paths under it as `~/…`.
+          home: homedir(),
         }),
 
       /**

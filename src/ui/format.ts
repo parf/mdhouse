@@ -56,6 +56,27 @@ export function fileSize(bytes: number): string {
   return `${Math.round(v * 1024)}T`;
 }
 
+/**
+ * A root as the switcher names it: its folder and `above` folders over it — `Plans/Removal`
+ * rather than a bare `Removal`, since several roots are often siblings or namesakes and the
+ * parents are what tell them apart. A path that has fewer segments keeps its leading slash
+ * (`/rd`). `above: 'all'` is the whole path, with the home directory written `~`.
+ *
+ * Past `max` characters the left end goes, behind an ellipsis: the last segment is the one
+ * that must stay readable, and a `<select>` can only cut text off on the right.
+ */
+export function rootLabel(path: string, opts: { above?: number | 'all'; max?: number; home?: string } = {}): string {
+  const { above = 1, max = 28, home } = opts;
+  let label: string;
+  if (above === 'all') {
+    label = home && (path === home || path.startsWith(`${home}/`)) ? `~${path.slice(home.length)}` || '~' : path;
+  } else {
+    const parts = path.split('/').filter(Boolean);
+    label = parts.length <= above + 1 ? `/${parts.join('/')}` : parts.slice(-(above + 1)).join('/');
+  }
+  return label.length > max ? `…${label.slice(label.length - max + 1)}` : label;
+}
+
 /** Split a line into plain and highlighted runs for a search hit. */
 export function highlightRanges(text: string, ranges: Array<[number, number]>): Array<{ text: string; hit: boolean }> {
   if (!ranges.length) return [{ text, hit: false }];

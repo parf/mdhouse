@@ -152,17 +152,15 @@ export function Sidebar(props: SidebarProps) {
 
       {props.roots.length > 1 && (
         <div class="root-switch">
-          {/* Open has room for every root at once; compact gets the same thing folded into a
-              select, because switching root must not require widening the sidebar first. */}
-          {wide ? (
-            props.roots.map((r) => (
-              <button key={r.id} aria-pressed={r.id === props.rootId} onClick={() => props.onPickRoot(r.id)} title={r.path}>
-                {r.name}
-              </button>
-            ))
-          ) : (
-            <RootSelect roots={props.roots} rootId={props.rootId} onPick={props.onPickRoot} />
-          )}
+          {/* A select in both widths: a row of chips wraps into a wall once there are a few
+              roots, and the select shows more of each path as the sidebar grows. */}
+          <RootSelect
+            roots={props.roots}
+            rootId={props.rootId}
+            onPick={props.onPickRoot}
+            above={wide ? 2 : 1}
+            max={wide ? 44 : 28}
+          />
         </div>
       )}
 
