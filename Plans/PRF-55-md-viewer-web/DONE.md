@@ -31,6 +31,9 @@ repository ignores; `~/src` — ~30 sibling repositories.
   segment, in `resolveRelative`, the funnel every rewrite shares.
 - `**Q:**` / `**A:**` leading a paragraph, list item or line become ❓ / 💬
   (`questionsAndAnswers`), and keep their own line.
+- `::: q` / `::: question` / `::: a` / `::: answer` are markdown-it-container blocks
+  (`qaContainerPlugin`). The container's open token has a `map`, so the existing line-map rule
+  tags it with `data-line` with no extra work; the custom renderer emits it via `renderAttrs`.
 
 ## Search
 

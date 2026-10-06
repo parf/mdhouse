@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Question and answer blocks**: `::: q` / `::: question` and `::: a` / `::: answer`, closed by
+  `:::` — the VuePress / VitePress container syntax, via markdown-it-container. A block holds
+  any Markdown, carries `data-line` like every other block, and text on the opening line
+  (`::: q Do we keep it?`) becomes its first line, in bold for a question. The inline
+  `**Q:**` / `**A:**` form still works.
+
 ## 1.0.0 — 2026-10-06
 
 The first stable release, and a **read-only** one: nothing in 1.0 writes to the folders it

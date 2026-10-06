@@ -124,7 +124,9 @@ of the hour, in the tree as well as the lists.
 
 **Renders properly.** CommonMark and GFM through markdown-it: nested lists, tables, footnotes,
 task lists, GitHub alerts (`> [!NOTE]`), front matter set aside, syntax highlighting via shiki,
-and mermaid diagrams. A leading `**Q:**` / `**A:**` reads as ❓ / 💬. Relative links and images
+and mermaid diagrams. Questions and answers get real blocks with the VuePress / VitePress syntax
+— `::: q` or `::: question`, `::: a` or `::: answer`, closed by `:::` — and a leading `**Q:**` /
+`**A:**` on a line reads as ❓ / 💬. Relative links and images
 between documents just work. Light and dark follow your system.
 
 **Finds your repos.** Hand it a directory of repositories and it discovers each one, listing

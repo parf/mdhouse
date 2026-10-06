@@ -966,6 +966,22 @@ main {
 
 /* ❓ and 💬 standing in for a leading **Q:** / **A:**. */
 .md .qa { margin-right: 0.3em; }
+
+/* ::: q / ::: a blocks: a question, and its answer set in under it. */
+.md .qa-block {
+  display: flex; align-items: flex-start; gap: 0.5em;
+  margin: 0.9em 0; padding: 0.55em 0.85em; border-radius: var(--radius);
+  border-left: 3px solid var(--qa-edge);
+  background: color-mix(in srgb, var(--qa-edge) 7%, transparent);
+}
+.md .qa-block > .qa { margin: 0.1em 0 0; flex: none; }
+.md .qa-q { --qa-edge: var(--accent); }
+.md .qa-a { --qa-edge: var(--ok); margin-left: 1.4em; }
+.md .qa-q + .qa-a { margin-top: -0.4em; }
+.md .qa-body { flex: 1; min-width: 0; }
+.md .qa-body > :first-child { margin-top: 0; }
+.md .qa-body > :last-child { margin-bottom: 0; }
+.md .qa-q .qa-title { font-weight: 600; }
 .md table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
 .md th, .md td { border: 1px solid var(--border); padding: 5px 10px; text-align: left; }
 .md th { background: var(--bg-panel); font-weight: 620; }

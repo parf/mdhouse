@@ -168,3 +168,23 @@ describe('Q: and A:', () => {
     expect(qa('<p><strong>Note:</strong> x</p>')).toBe('<p><strong>Note:</strong> x</p>');
   });
 });
+
+describe('::: q / ::: a containers', () => {
+  test('both spellings make blocks that carry data-line and hold any Markdown', async () => {
+    const { html } = await render('::: question\nWhy?\n:::\n\n::: a\n- one\n- two\n:::\n', ctx);
+    expect(html).toContain('<div data-line="1" class="qa-block qa-q">');
+    expect(html).toContain('aria-label="Q:">❓</span>');
+    expect(html).toContain('<div data-line="5" class="qa-block qa-a">');
+    expect(html.match(/<li/g)?.length).toBe(2);
+  });
+
+  test('text on the opening line is the first line, rendered inline', async () => {
+    const { html } = await render('::: q Keep **5y**?\n:::\n', ctx);
+    expect(html).toContain('<p class="qa-title">Keep <strong>5y</strong>?</p>');
+  });
+
+  test('an unknown container name is left as text', async () => {
+    const { html } = await render('::: warning\nx\n:::\n', ctx);
+    expect(html).not.toContain('qa-block');
+  });
+});

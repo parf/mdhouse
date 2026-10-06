@@ -13,11 +13,12 @@
  */
 
 import MarkdownIt from 'markdown-it';
-import type { PluginWithOptions } from 'markdown-it';
+import type { PluginWithOptions, PluginWithParams } from 'markdown-it';
 import type Token from 'markdown-it/lib/token.mjs';
 import anchor from 'markdown-it-anchor';
 import footnote from 'markdown-it-footnote';
 import attrs from 'markdown-it-attrs';
+import container from 'markdown-it-container';
 import type { DiffHunk } from './git';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 
@@ -293,6 +294,35 @@ function rewriteHtmlImages(html: string, ctx: RenderContext): string {
  */
 const QA_EMOJI: Record<string, string> = { Q: '❓', A: '💬' };
 
+/**
+ * `::: q` / `::: question` and `::: a` / `::: answer` — the container syntax VuePress and
+ * VitePress use — as real question and answer blocks. Unlike a leading `**Q:**`, a block holds
+ * any Markdown (lists, code, several paragraphs) and carries `data-line` like every other block,
+ * so the marked-up diff and, later, section → AI can address one exchange. Text after the name
+ * on the opening line (`::: q Do we keep it?`) becomes the block's first line.
+ */
+const QA_CONTAINERS: Record<string, 'q' | 'a'> = { q: 'q', question: 'q', a: 'a', answer: 'a' };
+
+function qaContainerPlugin(md: MarkdownIt): void {
+  for (const [name, kind] of Object.entries(QA_CONTAINERS)) {
+    // Typed against an older @types/markdown-it, like markdown-it-attrs below; the runtime
+    // contract is a plain plugin.
+    md.use(container as unknown as PluginWithParams, name, {
+      render(tokens: Token[], idx: number, _opts: unknown, _env: unknown, self: { renderAttrs: (t: Token) => string }) {
+        const token = tokens[idx]!;
+        if (token.nesting !== 1) return '</div></div>\n';
+        token.attrJoin('class', `qa-block qa-${kind}`);
+        const title = token.info.trim().slice(name.length).trim();
+        return (
+          `<div${self.renderAttrs(token)}>` +
+          `<span class="qa" role="img" aria-label="${kind === 'q' ? 'Q:' : 'A:'}">${QA_EMOJI[kind.toUpperCase()]}</span>` +
+          `<div class="qa-body">\n${title ? `<p class="qa-title">${md.renderInline(title)}</p>\n` : ''}`
+        );
+      },
+    });
+  }
+}
+
 export function questionsAndAnswers(html: string): string {
   // `<pre>` is left exactly as written — raw HTML is allowed, and a preformatted block is the
   // one place a stray line break would show.
@@ -359,6 +389,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
     allowedAttributes: ['id', 'class'],
   });
   md.use(footnote);
+  md.use(qaContainerPlugin);
   md.use(anchor, {
     slugify,
     permalink: anchor.permalink.linkInsideHeader({ symbol: '#', placement: 'after', class: 'header-anchor' }),
