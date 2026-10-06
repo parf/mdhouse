@@ -19,6 +19,9 @@
   `**A:**` render as the same blocks, and so does a quote opening with a Q&A glyph: `> ?` / `❓`
   / `Q:` / `Q` a question, `> ?!` / `!?` / `⁉️` a **disagreement** (two sources that contradict,
   orange), `> 💬` / `A:` the answer. A bare `> A …` stays a quote.
+- **One bright palette for Q&A**: every question, disagreement and answer — whichever form it
+  was written in, `::: q` blocks included — has the same bright blue / orange / green fill and
+  4px edge, from shared `--qa-*` tokens.
 - **[Markdown in mdhouse](doc/markdown.md)** — every syntax mdhouse supports beyond CommonMark,
   with live examples, and what it does not support. Linked from the README.
 

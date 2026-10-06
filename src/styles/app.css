@@ -25,9 +25,12 @@
   --alert-important: #8250df;
   --alert-warning: #bf8700;
   --alert-caution: #cf222e;
-  --alert-question: #0e7490;
-  --alert-answer: #2f855a;
-  --alert-disagreement: #bc4c00;
+  --qa-question: #2563eb;
+  --qa-question-bg: #dbeafe;
+  --qa-answer: #16a34a;
+  --qa-answer-bg: #dcfce7;
+  --qa-disagreement: #ea580c;
+  --qa-disagreement-bg: #ffedd5;
   --size-small: #7b3ff2;
 
   /* Age heat. Five buckets — under ten minutes, this hour, today, this week, older — each with
@@ -89,9 +92,12 @@
     --alert-important: #ab7df8;
     --alert-warning: #d29922;
     --alert-caution: #f85149;
-    --alert-question: #3bc9db;
-    --alert-answer: #68c496;
-    --alert-disagreement: #f0883e;
+    --qa-question: #60a5fa;
+    --qa-question-bg: #1e3a8a;
+    --qa-answer: #4ade80;
+    --qa-answer-bg: #14532d;
+    --qa-disagreement: #fb923c;
+    --qa-disagreement-bg: #7c2d12;
     --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
@@ -134,9 +140,12 @@
   --alert-important: #ab7df8;
   --alert-warning: #d29922;
   --alert-caution: #f85149;
-  --alert-question: #3bc9db;
-  --alert-answer: #68c496;
-  --alert-disagreement: #f0883e;
+  --qa-question: #60a5fa;
+  --qa-question-bg: #1e3a8a;
+  --qa-answer: #4ade80;
+  --qa-answer-bg: #14532d;
+  --qa-disagreement: #fb923c;
+  --qa-disagreement-bg: #7c2d12;
   --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
@@ -994,13 +1003,10 @@ main {
 /* ::: q / ::: a blocks: a question, and its answer set in under it. */
 .md .qa-block {
   display: flex; align-items: flex-start; gap: 0.5em;
-  margin: 0.9em 0; padding: 0.55em 0.85em; border-radius: var(--radius);
-  border-left: 3px solid var(--qa-edge);
-  background: color-mix(in srgb, var(--qa-edge) 7%, transparent);
+  margin: 0.9em 0; padding: 8px 16px;
 }
 .md .qa-block > .qa { margin: 0.1em 0 0; flex: none; }
-.md .qa-q { --qa-edge: var(--accent); }
-.md .qa-a { --qa-edge: var(--ok); margin-left: 1.4em; }
+.md .qa-a { margin-left: 1.4em; }
 .md .qa-q + .qa-a { margin-top: -0.4em; }
 .md .qa-body { flex: 1; min-width: 0; }
 .md .qa-body > :first-child { margin-top: 0; }
@@ -1048,9 +1054,18 @@ main {
 .md .markdown-alert-important { --alert: var(--alert-important); }
 .md .markdown-alert-warning   { --alert: var(--alert-warning); }
 .md .markdown-alert-caution   { --alert: var(--alert-caution); }
-.md .markdown-alert-question  { --alert: var(--alert-question); }
-.md .markdown-alert-answer    { --alert: var(--alert-answer); }
-.md .markdown-alert-disagreement { --alert: var(--alert-disagreement); }
+/* The Q&A palette: one look for a question, a disagreement and an answer, whichever way it was
+   written — `> [!QUESTION]`, `> ?` / `> ?!` / `> 💬`, `**Q:**` lines, `::: q` blocks. Bright,
+   distinct fills, so a Q&A log reads at a glance; later features (filters, counts, a Q&A view)
+   reuse the same --qa-* tokens. */
+.md :is(.markdown-alert-question, .qa-q) { --qa: var(--qa-question); --qa-fill: var(--qa-question-bg); }
+.md .markdown-alert-disagreement { --qa: var(--qa-disagreement); --qa-fill: var(--qa-disagreement-bg); }
+.md :is(.markdown-alert-answer, .qa-a) { --qa: var(--qa-answer); --qa-fill: var(--qa-answer-bg); }
+.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) {
+  border-left: 4px solid var(--qa);
+  border-radius: 0 6px 6px 0;
+  background: var(--qa-fill);
+}
 .md .markdown-alert-note      .markdown-alert-title::before { content: 'ℹ️'; }
 .md .markdown-alert-tip       .markdown-alert-title::before { content: '💡'; }
 .md .markdown-alert-important .markdown-alert-title::before { content: '📣'; }
