@@ -120,6 +120,12 @@ back to the twenty most recently changed files.
 Above it, one band says where the checkout stands: the branch and when it last pulled, then
 the commit HEAD is on, with its age and author.
 
+**A page per folder.** Click a folder's count in the tree, any folder in a document's breadcrumb,
+or **DIR** beside the front page's title, and you get every `.md` beneath that folder in one
+table: subfolder, name, age and size. It lists newest first or A–Z (`ls -lR` order), and past
+50 files it has two filters that match like `LIKE '%text%'`, with `^` and `$` to anchor. The
+address is the folder's path with a trailing slash, `/d/<root>/<dir>/`, so it can be bookmarked.
+
 **The document page.** Above the text: clickable breadcrumbs, how long ago the file changed,
 who started it and when, and an `N/M done` count when it has task checkboxes. Beside it: a
 table of contents (H1–H2, with an `H3` chip when the document goes deeper) and the last five

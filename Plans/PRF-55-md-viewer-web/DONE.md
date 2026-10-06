@@ -741,3 +741,32 @@ Tests: `prefs.test.ts` (round-trip, duplicates, marks kept, old files), `Registr
 port 7791 with an isolated config: save, restart, bare start, add while running, remove,
 remove-last, remove with no daemon, service install/exit/uninstall, a UI delete, and a
 cross-origin POST refused with 403.
+
+---
+
+## N.26 A page for every folder
+
+`/d/<root>/<dir>/`: the trailing slash is what makes it a folder rather than a document, and a
+single root's own page is plain `/d/`. `DirPage.tsx` builds the table from the tree payload
+the client already holds, so it costs no request and updates live with the tree. The table is
+the front page's: a subfolder is named once per run of rows, in a cell spanning them.
+
+Newest first by default, since a folder is usually opened to see what moved. A–Z sorts by
+folder and then name, not by whole path. Comparing whole paths put `infra/colo/x` before
+`infra/y`, a subfolder ahead of its parent's own files. That is not `ls -lR` order.
+
+The filters (`likeMatcher` in `format.ts`) are LIKE with implied `%` around the text, plus `^`
+and `$` borrowed from regex. Everything else is escaped, so `.` and `(` are literal. They appear
+only past 50 files, where a list stops being scannable. The ⓘ is a CSS popup rather than a
+`title`: a native tooltip waits, and the first report was that it did not show at all.
+
+Ways in: the count badge on a tree row (a `span` with `role="link"`, since a row is a button and
+cannot hold another), breadcrumb folders, the root at the head of the breadcrumb, and DIR beside
+the front page's title. GIT goes back from the root's page. A folder page passes `dir/` to the
+tree as its current path, so the existing bolding of the way down applies unchanged.
+
+Two layout bugs only showed on `/d/rd/`, the biggest page. A folder path inside a button did
+not truncate, because the button grew to fit it. A file name of underscores
+(`110_REY_ANALYTICS_…_2026-07-30`) could not wrap. Either one pushed the table past the page.
+Separately, the filter row was first named `filters`, a class the sidebar already used with
+`display: flex`, which stacked its cells.

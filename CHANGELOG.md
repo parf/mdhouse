@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.8.0 — 2026-10-06
+
+### Added
+
+- **A page for every folder** at `/d/<root>/<dir>/`: every Markdown file beneath it in one
+  table, with subfolder (named once per run), name, age and size.
+  - Newest first, or A–Z in `ls -lR` order (a folder's own files before its subfolders'). A
+    button over the age column flips between them, and the choice is remembered.
+  - Past 50 files, a filter sits over the folder column and another over the name column. They
+    match like `LIKE '%text%'`, ignoring case: `^` anchors the start, `$` the end, `%` is any
+    run and `_` one character. An ⓘ explains this, and Esc clears a box.
+  - Small and tiny files are marked as in the tree.
+- **Ways in:**
+  - the count on a folder's row in the tree (the name still only opens and closes it)
+  - every folder in a document's breadcrumb, which also reveals the folder in the tree
+  - the root, now first in the breadcrumb
+  - a **DIR** button beside the front page's title
+  
+  The root's own folder page has a **GIT** button back to the front page.
+- **The tree marks a folder page** as it marks a document: the way down is bold and faintly
+  tinted, and the folder itself is highlighted.
+
+### Changed
+
+- The breadcrumb's last folder is brown, like folders in the tree. A document's title is a
+  mid-dark green.
+- The contents and history panels beside a document start at the same height.
+
+### Fixed
+
+- Long folder paths are cut from the left, and long file names with nothing to break at wrap,
+  instead of pushing the table wider than the page.
+
 ## 0.7.2 — 2026-10-06
 
 - **The ⚙ sits on the title's line** on the document page, the front page and settings, with its
