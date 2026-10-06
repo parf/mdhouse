@@ -233,12 +233,19 @@ describe('toggleTask — the one edit mdhouse makes to a document', () => {
 });
 
 describe('alerts', () => {
-  test("GitHub's five get a title row", async () => {
-    for (const kind of ['note', 'tip', 'important', 'warning', 'caution']) {
+  test('IMPORTANT, WARNING and CAUTION get a title row', async () => {
+    for (const kind of ['important', 'warning', 'caution']) {
       const { html } = await render(`> [!${kind.toUpperCase()}]\n> body\n`, ctx);
       expect(html).toContain(`markdown-alert markdown-alert-${kind}`);
       expect(html).toContain(`<p class="markdown-alert-title">${kind[0]!.toUpperCase()}${kind.slice(1)}</p>`);
     }
+  });
+
+  test('NOTE and TIP are one line too', async () => {
+    const { html } = await render('> [!NOTE]\n> Read this.\n\n> [!TIP] Inline.\n', ctx);
+    expect(html).toContain('class="markdown-alert markdown-alert-note" role="note" aria-label="Note"');
+    expect(html).toContain('class="markdown-alert markdown-alert-tip" role="note" aria-label="Tip"');
+    expect(html).not.toContain('markdown-alert-title');
   });
 
   test('QUESTION and ANSWER are one line: no title row, the name kept for screen readers', async () => {

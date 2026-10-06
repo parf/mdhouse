@@ -49,6 +49,8 @@ export interface Rendered {
 
 /** GitHub's five alerts, plus QUESTION and ANSWER — mdhouse's own, for Q&A logs in plan folders. */
 const ALERTS = ['note', 'tip', 'important', 'warning', 'caution', 'question', 'answer'] as const;
+/** Alerts shown as one line — icon, then text — rather than under a title row. */
+const ONE_LINE_ALERTS = new Set<string>(['note', 'tip', 'question', 'answer']);
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
 const MD_EXT = /\.mdx?$/i;
 const PRELOAD_LANGS = ['bash', 'json', 'ts', 'js', 'tsx', 'php', 'sql', 'yaml', 'go', 'python', 'diff', 'html', 'css', 'md'];
@@ -178,9 +180,9 @@ function alertPlugin(md: MarkdownIt): void {
       }
 
       const title = `${kind[0]!.toUpperCase()}${kind.slice(1)}`;
-      // A question or an answer is one line: the icon sits in front of the text (CSS), with no
-      // title row above it — the name is still there for a screen reader.
-      if (kind === 'question' || kind === 'answer') {
+      // A note, a tip, a question or an answer is one line: the icon sits in front of the text
+      // (CSS), with no title row above it — the name is still there for a screen reader.
+      if (ONE_LINE_ALERTS.has(kind)) {
         open.attrSet('role', 'note');
         open.attrSet('aria-label', title);
         i += 1;

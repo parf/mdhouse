@@ -29,7 +29,8 @@
 
 - **GitHub alerts** (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) look like
   the `/rd` docs viewer's: an icon on the title (ℹ️ 💡 📣 ⚠️ 🛑, added in CSS), GitHub's colours, a
-  tinted background and a 4px edge — with darker-theme colours in dark mode.
+  tinted background and a 4px edge — with darker-theme colours in dark mode. NOTE and TIP are
+  one line (icon, then text, no title row); IMPORTANT, WARNING and CAUTION keep their title.
 
 ### Fixed
 
