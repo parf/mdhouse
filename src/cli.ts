@@ -15,6 +15,7 @@ import { Prefs } from './lib/prefs';
 import { serve } from './server';
 import { askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply } from './lib/control';
 import { runService } from './lib/service';
+import { logHints } from './lib/loghint';
 
 const USAGE = `mdhouse — browse every .md file under a directory
 
@@ -123,11 +124,9 @@ const opts = parse(
       : argv.slice(1),
 );
 
-/** How to read what the daemon has said since it started. */
-const LOG_HINT =
-  process.platform === 'darwin'
-    ? `log show --last 10m --predicate 'process == "logger"'`
-    : 'journalctl -t mdhouse -n 20';
+const LOG = logHints({ platform: process.platform, which: (c) => !!Bun.which(c), exists: existsSync });
+/** For when there is no log to point at: the same command, in the foreground, shows it all. */
+const FG_HINT = 'run it in the foreground to see its output:  mdhouse … --fg';
 
 /** The root list, ids and paths in columns: `+` for one just added, `·` for one already served. */
 const printRoots = (
@@ -393,7 +392,7 @@ if (!opts.fg) {
     // It never came up. Whatever it said on the way down is in the system log, which is the
     // only place it exists — so say how to read it rather than leaving a silent failure.
     console.error(`mdhouse: the server did not start${child.exitCode !== null ? '' : ' in time'}.`);
-    console.error(`         What it said:  ${LOG_HINT}`);
+    console.error(LOG ? `         What it said:  ${LOG.recent}` : `         Nothing kept its output here — ${FG_HINT}`);
     process.exit(1);
   }
 
@@ -410,7 +409,7 @@ if (!opts.fg) {
   }
   console.log(`\n  Running in the background (pid ${live.pid}).  Stop it with:  ${stopHint}`);
   console.log(`  Point it at more directories any time:  mdhouse <dir>`);
-  console.log(`  Watch what it does:  ${LOG_HINT.replace('-n 20', '-f')}`);
+  console.log(LOG ? `  Watch what it does:  ${LOG.follow}` : `  Its output is not kept on this system — ${FG_HINT}`);
 
   if (opts.open) openBrowser(live.url);
   process.exit(0);

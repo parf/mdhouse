@@ -7,6 +7,10 @@
 - **Installed with npm on a machine without Bun**, `mdhouse` failed with the shell's
   `env: 'bun': No such file or directory`. It now says it needs Bun ≥ 1.4 and where to get it,
   and names the version when an older Bun is found. The README says Bun is needed with npm too.
+- **The "watch what it does" hint fits the machine.** It said `journalctl -t mdhouse -f`
+  everywhere, including macOS and containers with no journald. Now it is `log stream` on macOS,
+  `journalctl` only where journald runs, a `grep` of `/var/log/syslog` or `/var/log/messages`
+  where that is the log, and — where nothing keeps the output — a pointer to `--fg`.
 
 ### Added
 

@@ -149,8 +149,9 @@ top bar keeps ☰, the dropdown, 🔍 and ⚙.
 ## ▸ Running it
 
 **In the background.** `mdhouse <folder>` detaches and returns; `mdhouse exit` (or `stop`) ends
-it, and `exit --all` ends every one you have running. Its output goes to the system log —
-`journalctl -t mdhouse` on Linux. `--fg` keeps it in the foreground, where Ctrl+C stops it.
+it, and `exit --all` ends every one you have running. Its output goes to the system log, and
+the start message says how to read it here — `journalctl -t mdhouse -f` with journald,
+`log stream` on macOS. `--fg` keeps it in the foreground, where Ctrl+C stops it.
 
 **It adds, never replaces.** With one already running on the port, `mdhouse ~/src` hands `~/src`
 to it: no error, no rival server, and your open tabs keep the tree they were reading. The

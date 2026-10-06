@@ -26,7 +26,7 @@ src/
   index.html     the bundle entry point
   app.tsx        shell: routing, data loading, keyboard, live channel
   lib/           server side: roots, ignore, prefs, scan, render, git, search, store, watch,
-                 control (unix socket), service (systemd unit)
+                 control (unix socket), service (systemd unit), loghint (where output goes)
   ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, Settings, AboutModal,
                  RootSelect, tree building, icons, formatting
   styles/        one stylesheet, CSS custom properties, light and dark
