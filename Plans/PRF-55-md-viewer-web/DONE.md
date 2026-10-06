@@ -671,3 +671,30 @@ real one needs.
 
 **The tests were never typechecked** — `tsconfig.json` included only `src/`. It covers `test/`
 now, which immediately caught the diff helpers going stale against the new hunk field. 78 tests.
+
+---
+
+## N.24 Where the checkout stands
+
+The front page said what changed in the docs, but not whether the checkout was current. One
+band above the commits now does, in their style. The top row has the branch and the last pull;
+the second has HEAD's commit (subject, age, author, ❖ when yours), laid out like the commit
+bands below. That second row is the newest commit of any kind, not the newest Markdown one.
+
+`repoHead()` in `git.ts` makes two calls: `rev-parse --abbrev-ref HEAD --absolute-git-dir
+--git-common-dir`, then `commitInfo('HEAD')`. A detached HEAD shows its short hash as the
+branch. It is cached per root next to the other git derivatives and cleared by the same
+watcher event, so a commit or a pull updates the band live.
+
+**The pull time is `FETCH_HEAD`, not `.git`.** The request was `.git`'s mtime, but measured on a
+live repo that tracks the last commit (15:27), not the last pull (14:38). Creating and renaming
+lock files touches the directory on every commit, stage and checkout. `FETCH_HEAD` is rewritten
+by fetch and pull only. Linked worktrees share it through the common dir, so both are checked.
+A repo that has never fetched shows no pull time, rather than a misleading one.
+
+For a root holding many repos (`~/src`), the band shows whichever repo committed last, with
+its path in front of the branch.
+
+`preciseAgo()` gives the pull two units for the first week (`29m`, `7h 12m`, `1d 7h ago`),
+because "yesterday" covered anything from two to forty-seven hours. `timeAgo()` dropped the
+space before its units throughout: `22h ago`. `test/head.test.ts` has five cases. 85 tests.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 — 2026-10-05
+
+- **The front page shows where the checkout stands.** A band above the commits: the branch and
+  when it last pulled, then HEAD's commit with its subject, age and author (❖ when it is yours).
+  It is the newest commit of any kind, not just the newest that touched Markdown, so it shows
+  whether the checkout is current. The pull time comes from `FETCH_HEAD`. A root holding several
+  repos shows whichever moved last, named.
+- **"Pulled" is precise:** `29m`, `7h 12m`, `1d 7h ago` for the first week, not "yesterday".
+- **Ages are tighter everywhere:** `22h ago`, `5m ago`, `3d ago`, with no space before the unit.
+
 ## 0.5.0 — 2026-10-01
 
 Documentation catch-up. No code changes over 0.4.0.

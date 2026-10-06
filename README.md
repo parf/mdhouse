@@ -102,6 +102,8 @@ three lines: file, folder, commit subject. The other two tabs are **📄 Files**
 instead of by file: each commit with its subject, its age and the documents it is the newest
 change to, in one aligned table. Yours are tinted green. A tree git knows nothing about falls
 back to the twenty most recently changed files.
+Above it, one band says where the checkout stands: the branch and when it last pulled, then
+the commit HEAD is on, with its age and author.
 
 **The document page.** Above the text: clickable breadcrumbs, how long ago the file changed,
 who started it and when, and an `N/M done` count when it has task checkboxes. Beside it: a
