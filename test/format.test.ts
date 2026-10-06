@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { preciseAgo, fileSize, rootLabel } from '../src/ui/format';
+import { preciseAgo, fileSize, rootLabel, shortAgo } from '../src/ui/format';
 
 describe('fileSize', () => {
   test('bytes stay bare under 1000', () => {
@@ -64,5 +64,18 @@ describe('rootLabel', () => {
     expect(label).toHaveLength(28);
     expect(label.startsWith('…')).toBe(true);
     expect(label.endsWith('RLM-1842-final-folder')).toBe(true);
+  });
+});
+
+describe('shortAgo', () => {
+  const ago = (minutes: number) => shortAgo(Date.now() - minutes * 60_000);
+
+  test('the age alone, no "ago"', () => {
+    expect(ago(0)).toBe('now');
+    expect(ago(5)).toBe('5m');
+    expect(ago(22 * 60)).toBe('22h');
+    expect(ago(24 * 60 + 5)).toBe('1d');
+    expect(ago(3 * 24 * 60)).toBe('3d');
+    expect(ago(70 * 24 * 60)).toBe('2mo');
   });
 });

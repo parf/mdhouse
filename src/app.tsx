@@ -309,6 +309,8 @@ function App() {
     </button>
   );
 
+  const pageGear = sidebar !== 'off' ? gear() : null;
+
   return (
     <div class="app" data-sidebar={sidebar}>
       {sidebar === 'off' && (
@@ -376,10 +378,9 @@ function App() {
       )}
 
       <main>
-        {/* With the sidebar off the top bar owns the top-right corner, and the gear joins it. */}
-        {sidebar !== 'off' && gear('gear')}
+        {/* The ⚙ sits in each page's own header row; with the sidebar off the top bar has it. */}
         {onSettings ? (
-          <Settings roots={roots} onChanged={() => void reloadRoots()} />
+          <Settings roots={roots} onChanged={() => void reloadRoots()} gear={pageGear} />
         ) : !docPath ? (
           <Home
             rootId={rootId}
@@ -389,6 +390,7 @@ function App() {
             revision={revision}
             onOpen={openFile}
             onAbout={() => setAboutOpen(true)}
+            gear={pageGear}
           />
         ) : (
         <Doc
@@ -400,6 +402,7 @@ function App() {
           onMark={setMark}
           onOpenDir={revealDir}
           onAbout={() => setAboutOpen(true)}
+          gear={pageGear}
         />
         )}
       </main>

@@ -1,8 +1,8 @@
 import type { Node, DirNode, FileNode } from './tree-model';
 import type { Mark } from '../lib/prefs';
 import { IconChevron, IconFolder, IconStar, IconMute } from './icons';
-import { docName, fileSize } from './format';
-import { RecentHeat } from './Ago';
+import { docName, fileSize, shortAgo } from './format';
+import { Ago, RecentHeat } from './Ago';
 
 interface Props {
   nodes: Node[];
@@ -109,6 +109,13 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       )}
 
       {/* Compact has room for a size too, but not beside the ∅ mark, which already says it. */}
+      {/* The open sidebar has room for when, as well as how big: the age, heat-coloured like
+          every other age, just ahead of the size. */}
+      {!p.compact && (
+        <span class="badge age">
+          <Ago at={file.file.mtime} flame={false} format={shortAgo} />
+        </span>
+      )}
       {(!p.compact || small !== 'tiny') && <span class={`badge size${small ? ` ${small}` : ''}`}>{fileSize(size)}</span>}
 
       {!p.compact && (

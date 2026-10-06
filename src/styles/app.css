@@ -211,9 +211,6 @@ main {
 .icon-btn:hover { background: var(--bg-hover); color: var(--fg); }
 .icon-btn[aria-pressed="true"] { background: var(--bg-active); color: var(--accent); }
 
-/* Settings, in the top-right corner of every page. Fixed to the viewport, whose right edge is
-   main's, clear of main's scrollbar. */
-.gear { position: fixed; top: 9px; right: 22px; z-index: 5; background: var(--bg); }
 
 /* ── settings ───────────────────────────────────────────────────────────── */
 
@@ -400,7 +397,11 @@ main {
 .badge.modified { color: var(--warn); }
 .badge.untracked { color: var(--ok); }
 .badge.staged { color: var(--accent); }
-.badge.size { font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; padding: 0 0 0 2px; }
+.badge.age { min-width: 3ch; text-align: right; padding: 0 0 0 2px; font-variant-numeric: tabular-nums; }
+.badge.size { font-variant-numeric: tabular-nums; min-width: 5ch; text-align: right; padding: 0 0 0 2px; }
+/* Open sidebar: a hairline between age and size, so the two numbers read as columns rather
+   than one run of digits. */
+.sidebar.open .badge.size { border-left: 1px solid var(--border-strong); border-radius: 0; padding: 0 0 0 5px; min-width: calc(5ch + 6px); }
 .badge.ignored { color: var(--fg-faint); border: 1px solid var(--border-strong); }
 
 .row .marks { display: none; gap: 1px; flex: none; }
@@ -689,6 +690,11 @@ main {
 /* The folder the document lives in, not the path that leads to it. */
 .crumbs .crumb.here { font-size: 15px; font-weight: 650; color: var(--fg); letter-spacing: -0.01em; }
 .crumbs > span:has(.here) { display: flex; align-items: baseline; }
+/* The title and the ⚙ share one line; the title takes the room. */
+.doc-title-row { display: flex; align-items: center; gap: 8px; }
+.doc-title-row > .doc-title { flex: 1 1 auto; min-width: 0; }
+.notice-gear { float: right; }
+.head-gear { margin-left: auto; }
 .doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px;
   display: flex; align-items: center; gap: 8px; }
 /* The house, at the size of the title it stands in front of. It is a raster with a white

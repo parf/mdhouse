@@ -16,6 +16,8 @@ interface Props {
   revision: number;
   onOpen: (path: string) => void;
   onAbout?: () => void;
+  /** The settings button, at the end of the header row. */
+  gear?: preact.ComponentChildren;
 }
 
 const VIEWS: Array<{ id: HomeView; label: string; Icon: (p: { size?: number }) => preact.JSX.Element }> = [
@@ -108,6 +110,7 @@ export function Home(props: Props) {
             </button>
           ))}
         </div>
+        {props.gear}
       </header>
 
       {digest?.head && <RepoLine head={digest.head} own={!!digest.head.commit && isMine(digest.head.commit.email, digest.head.commit.author)} />}

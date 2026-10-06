@@ -18,6 +18,17 @@ export function timeAgo(at: number): string {
 }
 
 /**
+ * `timeAgo` without the "ago", for a column where every entry is an age: `now`, `5m`, `22h`,
+ * `3d`, `2mo`, `1y`. Yesterday is `1d` here — the word does not fit the column.
+ */
+export function shortAgo(at: number): string {
+  if (!at) return '';
+  if (Date.now() - at < MINUTE) return 'now';
+  const label = timeAgo(at);
+  return label === 'yesterday' ? '1d' : label.replace(/ ago$/, '');
+}
+
+/**
  * Elapsed time in two units for the first week — `29m ago`, `7h 12m ago`, `1d 7h ago` — then the
  * usual `timeAgo` words. For "when did this checkout last pull", where "yesterday" could mean
  * two hours ago or forty.

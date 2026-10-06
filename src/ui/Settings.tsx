@@ -6,6 +6,7 @@ interface Props {
   roots: RootInfo[];
   /** The live channel refreshes `roots`; this is only for an immediate re-read. */
   onChanged: () => void;
+  gear?: preact.ComponentChildren;
 }
 
 /**
@@ -15,7 +16,7 @@ interface Props {
  * Removing is the only action here. Adding needs a path typed into a browser that cannot
  * check it exists or offer completion; `mdhouse <dir> -P` in a terminal does both.
  */
-export function Settings({ roots, onChanged }: Props) {
+export function Settings({ roots, onChanged, gear }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const last = roots.length === 1;
@@ -39,6 +40,7 @@ export function Settings({ roots, onChanged }: Props) {
     <div class="settings">
       <header class="home-head">
         <h1>Settings</h1>
+        <span class="head-gear">{gear}</span>
       </header>
 
       <section>
