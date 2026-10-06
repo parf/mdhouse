@@ -50,10 +50,19 @@ export function RecentHeat({ at }: { at: number }) {
 }
 
 /**
- * A "3 h ago" label, coloured by how recent it is, with hot and warm indicators for the
+ * A "3h ago" label, coloured by how recent it is, with hot and warm indicators for the
  * first ten minutes and the rest of the first hour.
  */
-export function Ago({ at, flame = true }: { at: number; flame?: boolean }) {
+export function Ago({
+  at,
+  flame = true,
+  format = timeAgo,
+}: {
+  at: number;
+  flame?: boolean;
+  /** The label; `timeAgo` by default, `preciseAgo` where "yesterday" is too vague. */
+  format?: (at: number) => string;
+}) {
   const heat = useHeat(at);
   if (!at) return null;
 
@@ -64,7 +73,7 @@ export function Ago({ at, flame = true }: { at: number; flame?: boolean }) {
           {heat === 'now' ? '🔥' : '♨️'}
         </span>
       )}
-      {timeAgo(at)}
+      {format(at)}
     </span>
   );
 }

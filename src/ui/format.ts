@@ -8,13 +8,29 @@ export function timeAgo(at: number): string {
   if (!at) return '';
   const delta = Date.now() - at;
   if (delta < MINUTE) return 'just now';
-  if (delta < HOUR) return `${Math.floor(delta / MINUTE)} min ago`;
-  if (delta < DAY) return `${Math.floor(delta / HOUR)} h ago`;
+  if (delta < HOUR) return `${Math.floor(delta / MINUTE)}m ago`;
+  if (delta < DAY) return `${Math.floor(delta / HOUR)}h ago`;
 
   const days = Math.floor(delta / DAY);
-  if (days < 30) return days === 1 ? 'yesterday' : `${days} d ago`;
-  if (days < 365) return `${Math.floor(days / 30)} mo ago`;
-  return `${Math.floor(days / 365)} y ago`;
+  if (days < 30) return days === 1 ? 'yesterday' : `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+/**
+ * Elapsed time in two units for the first week — `29m ago`, `7h 12m ago`, `1d 7h ago` — then the
+ * usual `timeAgo` words. For "when did this checkout last pull", where "yesterday" could mean
+ * two hours ago or forty.
+ */
+export function preciseAgo(at: number): string {
+  if (!at) return '';
+  const minutes = Math.max(0, Math.floor((Date.now() - at) / MINUTE));
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days >= 7) return timeAgo(at);
+  if (days) return `${days}d ${hours % 24}h ago`;
+  if (hours) return `${hours}h ${minutes % 60}m ago`;
+  return `${minutes}m ago`;
 }
 
 /**

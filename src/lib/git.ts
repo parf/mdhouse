@@ -7,7 +7,8 @@
  * in hand, so changing the filter costs no round-trip at all.
  */
 
-import { relative, sep } from 'node:path';
+import { stat } from 'node:fs/promises';
+import { join, relative, sep } from 'node:path';
 
 export interface Commit {
   hash: string;
@@ -411,4 +412,43 @@ export async function commitInfo(repo: string, rev: string): Promise<Commit | nu
   const [hash = '', author = '', email = '', iso = '', ...rest] = line.split(SEP);
   const date = Date.parse(iso);
   return { hash, author, email, date: Number.isNaN(date) ? 0 : date, subject: rest.join(SEP) };
+}
+
+/** Where a repository stands: its branch, its newest commit, and when it last fetched. */
+export interface RepoHead {
+  /** Branch name, or the short hash when HEAD is detached. */
+  branch: string;
+  /** HEAD itself — the newest commit of any kind, not only the ones that touched Markdown. */
+  commit: Commit | null;
+  /**
+   * When the checkout last talked to its remote: the mtime of FETCH_HEAD, which every fetch
+   * and pull rewrites. Not the mtime of `.git` itself — that moves on every commit, staging
+   * and checkout, so it would only ever repeat the commit's age. Null for a repo that has never
+   * fetched.
+   */
+  pulledAt: number | null;
+}
+
+export async function repoHead(repo: string): Promise<RepoHead | null> {
+  const [refs, commit] = await Promise.all([
+    git(repo, ['rev-parse', '--abbrev-ref', 'HEAD', '--absolute-git-dir', '--git-common-dir']),
+    commitInfo(repo, 'HEAD'),
+  ]);
+  if (refs === null) return null;
+
+  const [branch = '', gitDir = '', commonDir = ''] = refs.split('\n').map((l) => l.trim());
+  // A linked worktree keeps its own HEAD but shares FETCH_HEAD with the main checkout, so look
+  // in both. --git-common-dir may come back relative to the repo.
+  const dirs = [gitDir, commonDir && join(repo, commonDir)].filter(Boolean);
+  let pulledAt: number | null = null;
+  for (const dir of dirs) {
+    const info = await stat(join(dir, 'FETCH_HEAD')).catch(() => null);
+    if (info) pulledAt = Math.max(pulledAt ?? 0, info.mtimeMs);
+  }
+
+  return {
+    branch: branch === 'HEAD' ? (commit?.hash.slice(0, 8) ?? 'HEAD') : branch,
+    commit,
+    pulledAt,
+  };
 }

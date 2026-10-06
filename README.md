@@ -143,7 +143,7 @@ the two views you last used. A clean file opens as a document and compares with 
 revision when you ask. An older revision from the history panel is a text the page is not
 showing, so that one always arrives as a patch.
 
-**Ages read like a heat map.** Every "3 h ago" is coloured by how fresh it is — red under ten
+**Ages read like a heat map.** Every "3h ago" is coloured by how fresh it is — red under ten
 minutes, orange this hour, amber today, grey this week, faint for older — and the first hour
 also carries an icon: **🔥 hot** for the last ten minutes, **♨️ warm** for the rest of the hour.
 The same two badges appear beside a file in the tree, so a fresh file is visible without

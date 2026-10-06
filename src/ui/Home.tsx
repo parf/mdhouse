@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { api, type RootInfo } from './api';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
-import { IconClock, IconStar, IconUser } from './icons';
-import { docName } from './format';
+import { IconClock, IconGit, IconStar, IconUser } from './icons';
+import { preciseAgo, docName } from './format';
 import { Ago } from './Ago';
 
 export type HomeView = 'favorites' | 'recent' | 'mine';
@@ -41,7 +41,7 @@ export function Home(props: Props) {
     api
       .digest(props.rootId, props.showIgnored)
       .then((d) => live && setDigest(d))
-      .catch(() => live && setDigest({ uncommitted: [], commits: [], recent: [] }));
+      .catch(() => live && setDigest({ uncommitted: [], commits: [], recent: [], head: null }));
     return () => {
       live = false;
     };
@@ -110,6 +110,8 @@ export function Home(props: Props) {
         </div>
       </header>
 
+      {digest?.head && <RepoLine head={digest.head} own={!!digest.head.commit && isMine(digest.head.commit.email, digest.head.commit.author)} />}
+
       {!digest && <div class="spinner" />}
 
       {digest && nothing && (
@@ -176,6 +178,52 @@ export function Home(props: Props) {
             )}
           </tbody>
         </table>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Where the checkout stands, above everything else: the branch, the commit HEAD is on, and how
+ * long ago it last pulled. The commits below are only the ones that touched Markdown; this is
+ * the newest commit of any kind, so it answers "is this checkout current" rather than "what
+ * changed in the docs".
+ */
+function RepoLine({ head, own }: { head: NonNullable<Digest['head']>; own: boolean }) {
+  const c = head.commit;
+  return (
+    <div class={own ? 'repo-line mine' : 'repo-line'}>
+      {/* Two rows: the checkout (branch, last pull), then its HEAD commit laid out exactly like
+          the commit bands below — subject, age, author. Branch names run long, and so do
+          subjects; on one line each would squeeze the other into an ellipsis. */}
+      <div class="repo-top">
+        <span class="branch" title={head.repo ? `${head.repo} · ${head.branch}` : head.branch}>
+          <IconGit size={12} />
+          {head.repo && <span class="repo">{head.repo}</span>}
+          <span class="name">{head.branch}</span>
+        </span>
+        {head.pulledAt !== null && (
+          <span class="pulled" title={`Last fetch or pull: ${new Date(head.pulledAt).toLocaleString()}`}>
+            pulled <Ago at={head.pulledAt} flame={false} format={preciseAgo} />
+          </span>
+        )}
+      </div>
+      {c && (
+        <div class="repo-subject">
+          {/* The same ❖ the commit bands below put before your subjects. */}
+          {own && (
+            <span class="mine" title="yours" aria-label="yours">
+              ❖
+            </span>
+          )}
+          <span class="subject" title={c.hash.slice(0, 10)}>
+            {c.subject}
+          </span>
+          <span class="when">
+            <Ago at={c.date} />
+          </span>
+          <span class="who">{c.author}</span>
+        </div>
       )}
     </div>
   );

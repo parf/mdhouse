@@ -564,6 +564,58 @@ main {
 }
 .home-table .commit-head .mine { flex: none; color: var(--ok); font-size: 10px; line-height: 1; }
 
+/* The checkout's own state, above the table: the commit band's look, closed on all four sides
+   since nothing hangs off it. */
+.repo-line {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 10px 8px;
+  margin: 0 7px 18px;
+  font-size: 11.5px;
+}
+.repo-line.mine {
+  background: color-mix(in srgb, var(--ok) 13%, transparent);
+  border-color: color-mix(in srgb, var(--ok) 30%, transparent);
+}
+.repo-top { display: flex; align-items: center; gap: 8px; }
+/* The branch takes what the row has left, and gives way with an ellipsis before the ages do. */
+.repo-line .branch {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  color: var(--dir);
+  background: color-mix(in srgb, var(--dir) 12%, transparent);
+  font-weight: 600;
+}
+.repo-line .branch svg { flex: none; }
+.repo-line .branch .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repo-line .branch .repo { flex: none; color: var(--fg-muted); font-weight: 500; }
+.repo-line .branch .repo::after { content: ' ·'; }
+.repo-line .mine { flex: none; color: var(--ok); font-size: 10px; line-height: 1; }
+.repo-line .when, .repo-line .who { font-size: 11.5px; }
+.repo-line .when { flex: none; }
+.repo-line .who { flex: none; color: var(--fg-muted); }
+.repo-line .pulled { flex: none; margin-left: auto; font-size: 11.5px; color: var(--fg-muted); }
+.repo-subject { display: flex; align-items: baseline; gap: 8px; margin-top: 5px; }
+.repo-line .subject {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.35;
+  color: var(--h2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* A commit heads its own block of files, on a band of its own so the page reads as blocks
    rather than one long list. */
 .home-table tr.commit > td { padding: 14px 8px 0; }
@@ -598,6 +650,7 @@ main {
 @media (max-width: 720px) {
   .home { padding: 16px 16px 90px; }
   .home-table .commit-head { flex-wrap: wrap; }
+  .repo-top { flex-wrap: wrap; }
   /* Narrow enough that a long folder would squeeze the names out; keep it to a third. */
   .home-table td.dir { max-width: 33vw; }
 }

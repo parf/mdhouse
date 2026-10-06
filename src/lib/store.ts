@@ -12,6 +12,8 @@ import { loadRootRules, type IgnoreRules } from './ignore';
 import { scanRoot, type MdFile, type ScanResult } from './scan';
 import {
   recentChanges,
+  repoHead,
+  type RepoHead,
   workingStatus,
   currentUser,
   authorship,
@@ -79,6 +81,8 @@ export interface Digest {
    * a root would be blank, which is the least useful thing it could be.
    */
   recent: RecentEntry[];
+  /** The line above it all: branch, last commit and last pull. Null without git. */
+  head: (RepoHead & { repo: string }) | null;
 }
 
 interface RootState {
@@ -86,6 +90,7 @@ interface RootState {
   scans: Map<boolean, ScanResult>;
   status?: Map<string, FileStatus>;
   changes?: GitChange[];
+  head?: (RepoHead & { repo: string }) | null;
   authors?: Map<string, Authorship>;
   user?: { name: string; email: string } | null;
 }
@@ -120,6 +125,7 @@ export class Store {
     if (!s) return;
     delete s.status;
     delete s.changes;
+    delete s.head;
     delete s.authors;
     if (!gitOnly) s.scans.clear();
   }
@@ -338,7 +344,31 @@ export class Store {
             .slice(0, 20)
             .map((f) => ({ rel: f.rel, name: f.name, dir: f.dir, at: f.mtime }));
 
-    return { uncommitted, commits, recent };
+    return { uncommitted, commits, recent, head: await this.head(root, scan) };
+  }
+
+  /**
+   * The repository the root belongs to, as of now. A root inside one checkout — the usual
+   * case — has exactly one answer. A root holding many (`~/src`) shows whichever moved last,
+   * named, since that is the one the reader most likely came to look at.
+   */
+  private async head(root: Root, scan: ScanResult): Promise<(RepoHead & { repo: string }) | null> {
+    if (this.opts.noGit || !scan.repos.length) return null;
+    const s = await this.stateFor(root);
+    if (s.head !== undefined) return s.head;
+
+    const heads = await Promise.all(scan.repos.map(async (repo) => ({ repo, head: await repoHead(repo) })));
+    let best: (RepoHead & { repo: string }) | null = null;
+    for (const { repo, head } of heads) {
+      if (!head) continue;
+      if (!best || (head.commit?.date ?? 0) > (best.commit?.date ?? 0)) {
+        // Name the repo only when the root holds several; otherwise it is the root itself.
+        const name = scan.repos.length > 1 ? relative(root.path, repo).split(sep).join('/') || '.' : '';
+        best = { ...head, repo: name };
+      }
+    }
+    s.head = best;
+    return best;
   }
 
   /** Every markdown change in the last N commits of every repo under this root, newest first. */
