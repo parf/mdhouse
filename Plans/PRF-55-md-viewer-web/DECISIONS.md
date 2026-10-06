@@ -137,12 +137,13 @@ A Q&A item looks the same however it was written — `> [!QUESTION]`, `> ?` / `>
 
 | | edge | fill (light) | edge / fill (dark) |
 | --- | --- | --- | --- |
-| ❓ question | `--qa-question` `#2563eb` | `--qa-question-bg` `#dbeafe` | `#60a5fa` / `#1e3a8a` |
+| ❓ question | `--qa-question` `#dc2626` | `--qa-question-bg` `#fee2e2` | `#f87171` / `#7f1d1d` |
 | ⁉️ disagreement | `--qa-disagreement` `#ea580c` | `--qa-disagreement-bg` `#ffedd5` | `#fb923c` / `#7c2d12` |
 | 💬 answer | `--qa-answer` `#16a34a` | `--qa-answer-bg` `#dcfce7` | `#4ade80` / `#14532d` |
 
 The fills are bright on purpose — a Q&A log should read at a glance, and stand apart from the
-pale GitHub alerts. Meanings follow `/rd/.claude/Glyphs.md`: ❓ open question, ⁉️ open
+pale GitHub alerts. Questions are red, like the ❓ glyph; an answer is indented a little, under
+what it settles. Meanings follow `/rd/.claude/Glyphs.md`: ❓ open question, ⁉️ open
 disagreement, 💬 the answer that settles either.
 
 ## A review is a list of claims, not a list of changes

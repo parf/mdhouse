@@ -25,8 +25,8 @@
   --alert-important: #8250df;
   --alert-warning: #bf8700;
   --alert-caution: #cf222e;
-  --qa-question: #2563eb;
-  --qa-question-bg: #dbeafe;
+  --qa-question: #dc2626;
+  --qa-question-bg: #fee2e2;
   --qa-answer: #16a34a;
   --qa-answer-bg: #dcfce7;
   --qa-disagreement: #ea580c;
@@ -92,8 +92,8 @@
     --alert-important: #ab7df8;
     --alert-warning: #d29922;
     --alert-caution: #f85149;
-    --qa-question: #60a5fa;
-    --qa-question-bg: #1e3a8a;
+    --qa-question: #f87171;
+    --qa-question-bg: #7f1d1d;
     --qa-answer: #4ade80;
     --qa-answer-bg: #14532d;
     --qa-disagreement: #fb923c;
@@ -140,8 +140,8 @@
   --alert-important: #ab7df8;
   --alert-warning: #d29922;
   --alert-caution: #f85149;
-  --qa-question: #60a5fa;
-  --qa-question-bg: #1e3a8a;
+  --qa-question: #f87171;
+  --qa-question-bg: #7f1d1d;
   --qa-answer: #4ade80;
   --qa-answer-bg: #14532d;
   --qa-disagreement: #fb923c;
@@ -1006,8 +1006,6 @@ main {
   margin: 0.9em 0; padding: 8px 16px;
 }
 .md .qa-block > .qa { margin: 0.1em 0 0; flex: none; }
-.md .qa-a { margin-left: 1.4em; }
-.md .qa-q + .qa-a { margin-top: -0.4em; }
 .md .qa-body { flex: 1; min-width: 0; }
 .md .qa-body > :first-child { margin-top: 0; }
 .md .qa-body > :last-child { margin-bottom: 0; }
@@ -1066,6 +1064,8 @@ main {
   border-radius: 0 6px 6px 0;
   background: var(--qa-fill);
 }
+/* An answer sits in a little, under the question or disagreement it settles. */
+.md :is(.markdown-alert-answer, .qa-a) { margin-left: 1em; }
 .md .markdown-alert-note      .markdown-alert-title::before { content: 'ℹ️'; }
 .md .markdown-alert-tip       .markdown-alert-title::before { content: '💡'; }
 .md .markdown-alert-important .markdown-alert-title::before { content: '📣'; }

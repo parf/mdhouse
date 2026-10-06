@@ -20,8 +20,8 @@
   / `Q:` / `Q` a question, `> ?!` / `!?` / `⁉️` a **disagreement** (two sources that contradict,
   orange), `> 💬` / `A:` the answer. A bare `> A …` stays a quote.
 - **One bright palette for Q&A**: every question, disagreement and answer — whichever form it
-  was written in, `::: q` blocks included — has the same bright blue / orange / green fill and
-  4px edge, from shared `--qa-*` tokens.
+  was written in, `::: q` blocks included — has the same bright red / orange / green fill and
+  4px edge, from shared `--qa-*` tokens; an answer is indented a little under what it settles.
 - **[Markdown in mdhouse](doc/markdown.md)** — every syntax mdhouse supports beyond CommonMark,
   with live examples, and what it does not support. Linked from the README.
 
