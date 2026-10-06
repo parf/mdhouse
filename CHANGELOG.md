@@ -1,6 +1,10 @@
 # Changelog
 
-## 1.1.0 — 2026-10-06
+## 1.1.1 — 2026-10-06
+
+The first release that writes — tick a checkbox in a `--rw` folder and that line is saved — and
+a much richer Markdown: `/rd`-style alerts, question / disagreement / answer blocks in four
+forms, and two new docs. 1.1.0 was never published; its changes are part of this release.
 
 ### Added
 
