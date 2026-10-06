@@ -124,7 +124,17 @@ async function setAside(path: string): Promise<void> {
   console.error(`mdhouse: ${path} could not be read; moved it to ${backup} and started a new one.`);
 }
 
+/** Distinguishes this process's temporary files from one another. */
+let tmpSeq = 0;
+
 export class Prefs {
+  /**
+   * This process's changes, one after another. Each one reads the file, applies itself and
+   * writes; two of them interleaved would both start from the same file, and the later write
+   * would drop the earlier change — two quick clicks on ★ lost one of them.
+   */
+  private queue: Promise<unknown> = Promise.resolve();
+
   private constructor(
     private data: PrefsFile,
     readonly path = PREFS_PATH,
@@ -142,7 +152,13 @@ export class Prefs {
    * process loaded. More than one process writes it (the CLI, a daemon per port, the systemd
    * service), and each holding its own copy meant each save undid the others' changes.
    */
-  private async mutate<T>(change: (data: PrefsFile) => T): Promise<T> {
+  private mutate<T>(change: (data: PrefsFile) => T): Promise<T> {
+    const run = this.queue.then(() => this.mutateNow(change));
+    this.queue = run.catch(() => {});
+    return run;
+  }
+
+  private async mutateNow<T>(change: (data: PrefsFile) => T): Promise<T> {
     const found = await readFile(this.path);
     if (found === 'broken') await setAside(this.path);
     const data = typeof found === 'object' ? found : found === 'missing' ? fresh() : this.data;
@@ -155,7 +171,7 @@ export class Prefs {
   /** Written to a temporary file and renamed over the old one, so no reader sees half of it. */
   private async write(): Promise<void> {
     await mkdir(dirname(this.path), { recursive: true });
-    const tmp = `${this.path}.${process.pid}.tmp`;
+    const tmp = `${this.path}.${process.pid}.${++tmpSeq}.tmp`;
     await Bun.write(tmp, JSON.stringify(this.data, null, 2) + '\n');
     await rename(tmp, this.path);
   }

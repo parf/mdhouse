@@ -137,3 +137,22 @@ describe('where to listen', () => {
     expect((await Prefs.load(f)).server).toEqual({});
   });
 });
+
+describe('changes made at once, in one process', () => {
+  test('none is lost and none fails — they run one after another', async () => {
+    const f = join(dir, 'burst.json');
+    const prefs = await Prefs.load(f);
+    const names = Array.from({ length: 8 }, (_, i) => `f${i}.md`);
+
+    await Promise.all([
+      ...names.map((n) => prefs.set('/r', n, 'favorite', true)),
+      prefs.updateSettings({ editLink: false }),
+      prefs.addSaved('/burst'),
+    ]);
+
+    const after = await Prefs.load(f);
+    expect(after.get('/r').favorite).toEqual(names);
+    expect(after.settings.editLink).toBe(false);
+    expect(after.savedDirs()).toEqual(['/burst']);
+  });
+});

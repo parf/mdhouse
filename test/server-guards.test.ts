@@ -12,6 +12,13 @@ describe('trustedHost — the DNS-rebinding guard', () => {
     expect(trustedHost('evil.example:7777', '127.0.0.1')).toBe(false);
     expect(trustedHost('localhost.evil.example', '127.0.0.1')).toBe(false);
     expect(trustedHost(null, '127.0.0.1')).toBe(false);
+    expect(trustedHost('evil.com:x', '127.0.0.1')).toBe(false); // a colon alone is not IPv6
+  });
+
+  test('IPv6 in every form a browser sends, and a trailing dot', () => {
+    for (const host of ['[::1]:7777', '::1', '[::ffff:127.0.0.1]:7777', 'localhost.:7777']) {
+      expect(trustedHost(host, '127.0.0.1')).toBe(true);
+    }
   });
 
   test('bound to the network, this machine’s own name is accepted too, and nothing near it', () => {

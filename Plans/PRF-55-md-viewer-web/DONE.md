@@ -93,7 +93,10 @@ and raw HTML escaped — in a diff, the markup is the content.
 - **prefs.json used to be lost** two ways: a file that failed to parse loaded as empty and the
   next save wrote that over it; and every process held its own copy, so the CLI, the service and
   a second daemon each undid the others' changes. Now: read–apply–write per change, temp file +
-  rename, and an unreadable file is moved aside.
+  rename, and an unreadable file is moved aside. **Then the fix had its own bug:** two changes
+  at once in one process (two quick ★ clicks) both read the same file, and the later write
+  dropped the earlier change — or failed renaming a shared temp file. Changes now queue
+  in-process, and every temp file has its own name. Found by the 1.0 pre-release review.
 - The systemd unit copies `PATH` from the installing shell (systemd's has no git, rg or bun) and
   `XDG_CONFIG_HOME` when set; another port gets `mdhouse-<port>.service`, which is also how it was
   tested without touching the real one.

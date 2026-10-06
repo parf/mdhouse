@@ -118,7 +118,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   footer shows `no git` when the git path was unavailable; the ripgrep fallback is currently
   silent (TODO M.6).
 - `prefs.json` has several writers (the CLI, a daemon per port, the systemd service). Every
-  change is read–apply–write against the file as it is now, written to a temp file and renamed
+  change is read–apply–write against the file as it is now, one at a time within a process
+  (`Prefs.queue`), written to a uniquely named temp file and renamed
   into place; a file that does not parse is moved aside as `prefs.json.broken-<time>`, never
   written over. The CLI still sends `-P` / `--rm` to a running daemon, so its open tabs update.
 - Tests: `bun test`; types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.

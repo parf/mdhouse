@@ -47,8 +47,12 @@ const fail = (status: number, message: string) => json({ error: message }, statu
  */
 export function trustedHost(host: string | null, bound: string, machine = machineName()): boolean {
   if (!host) return false;
-  const name = (host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.replace(/:\d+$/, '')).toLowerCase();
-  if (name === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(name) || name.includes(':')) return true;
+  const name = (host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.replace(/:\d+$/, ''))
+    .toLowerCase()
+    .replace(/\.$/, ''); // `localhost.` is still localhost
+  const ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(name);
+  const ipv6 = /^[0-9a-f:.]+$/.test(name) && name.includes(':');
+  if (name === 'localhost' || ipv4 || ipv6) return true;
   const loopback = bound === '127.0.0.1' || bound === 'localhost' || bound === '::1';
   if (loopback) return false;
   const me = machine.toLowerCase();

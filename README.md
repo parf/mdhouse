@@ -199,7 +199,9 @@ settings live in `~/.config/mdhouse/`, never inside a tree.
 **It answers only your own machine.** It binds `127.0.0.1` unless you pass `--host`. Requests
 addressed to any name other than `localhost`, an IP address, or (with `--host`) this machine's
 own hostname are refused — that is what stops a web page from re-pointing its domain at your
-machine to read your files. Anything that changes state must come from mdhouse's own page.
+machine to read your files. Anything that changes state must come from mdhouse's own page. On a
+LAN, reach it by IP address or by this machine's own hostname; other DNS names for the machine
+are refused.
 
 ---
 
