@@ -9,8 +9,9 @@ import { Doc } from './ui/Doc';
 import { RootSelect } from './ui/RootSelect';
 import { Home } from './ui/Home';
 import { AboutModal } from './ui/AboutModal';
+import { Settings } from './ui/Settings';
 import { ancestors } from './ui/tree-model';
-import { IconPanel, IconSearch } from './ui/icons';
+import { IconGear, IconPanel, IconSearch } from './ui/icons';
 
 const STATES: SidebarState[] = ['off', 'compact', 'open'];
 const LS_STATE = 'mdhouse.sidebar';
@@ -60,6 +61,7 @@ function App() {
 
   const [path, setPath] = useState(() => location.pathname);
   const docPath = path.startsWith('/d/') ? path.slice(3) : '';
+  const onSettings = path === '/settings';
 
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
@@ -91,6 +93,16 @@ function App() {
       const wanted = roots.find((r) => r.id === asked)?.id;
       setRootId((current) => current || wanted || (roots[0]?.id ?? ''));
     });
+  }, []);
+
+  /**
+   * Re-read the served directories. If the one on screen was removed — from the settings page,
+   * or by `mdhouse --rm` in a terminal — move to the first that is left.
+   */
+  const reloadRoots = useCallback(async () => {
+    const { roots } = await api.roots();
+    setRoots(roots);
+    setRootId((current) => (roots.some((r) => r.id === current) ? current : (roots[0]?.id ?? '')));
   }, []);
 
   const reloadTree = useCallback(async () => {
@@ -178,7 +190,7 @@ function App() {
     // Another `mdhouse` handed this one a directory: pick up the new root list, but stay
     // where the reader is — the tree they are looking at has not changed.
     if (msg.t === 'roots') {
-      void api.roots().then(({ roots }) => setRoots(roots));
+      void reloadRoots();
       return;
     }
 
@@ -349,7 +361,18 @@ function App() {
       )}
 
       <main>
-        {!docPath ? (
+        <button
+          class="icon-btn gear"
+          aria-pressed={onSettings}
+          onClick={() => go(onSettings ? '/' : '/settings')}
+          title={onSettings ? 'Close settings' : 'Settings'}
+          aria-label="Settings"
+        >
+          <IconGear />
+        </button>
+        {onSettings ? (
+          <Settings roots={roots} onChanged={() => void reloadRoots()} />
+        ) : !docPath ? (
           <Home
             rootId={rootId}
             roots={roots}

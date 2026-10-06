@@ -7,6 +7,8 @@
 
 import type { ServerWebSocket } from 'bun';
 import index from './index.html';
+import { realpath } from 'node:fs/promises';
+import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { repoToplevel } from './lib/scan';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
@@ -15,7 +17,7 @@ import { markupHunks, render, splitFrontmatter } from './lib/render';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { Watcher } from './lib/watch';
-import { serveControl, type AddReply } from './lib/control';
+import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 
 export interface ServeOptions {
   registry: Registry;
@@ -31,6 +33,19 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
 const fail = (status: number, message: string) => json({ error: message }, status);
+
+/** Did this request come from a page mdhouse served itself? See `/api/roots/remove`. */
+export function sameOrigin(req: Request): boolean {
+  const site = req.headers.get('sec-fetch-site');
+  if (site && site !== 'same-origin' && site !== 'none') return false;
+  const origin = req.headers.get('origin');
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === req.headers.get('host');
+  } catch {
+    return false;
+  }
+}
 
 const RAW_EXT = /\.(mmd|mermaid|txt|sql|sh|ya?ml|json|csv|ini|conf|toml|howto|local|log|env|dist|example|readme)$/i;
 const ASSET_EXT = /\.(png|jpe?g|gif|webp|svg|avif|ico)$/i;
@@ -66,6 +81,7 @@ export async function serve(opts: ServeOptions) {
       '/': index,
       // Every document URL is `/d/<path>/<file>.md`; the SPA takes it from here.
       '/d/*': index,
+      '/settings': index,
 
       /**
        * Mermaid's own ESM build, served straight from node_modules so it stays out of the app
@@ -92,9 +108,28 @@ export async function serve(opts: ServeOptions) {
             name: r.name,
             path: r.path,
             writable: r.writable,
+            saved: prefs.isSaved(r.path),
           })),
           single: registry.single,
         }),
+
+      /**
+       * The settings page's delete button: forget a directory and stop serving it.
+       *
+       * The only request a page can make that changes what mdhouse serves, so it has to come
+       * from mdhouse's own page. A browser sends `Origin` on a cross-site POST, and
+       * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
+       * non-browser caller sends neither and is let through — it could edit prefs.json itself.
+       */
+      '/api/roots/remove': {
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as { id?: string } | null;
+          const root = body?.id ? registry.get(body.id) : undefined;
+          if (!root) return fail(404, 'unknown root');
+          return json(await removeRoots([root.path]));
+        },
+      },
 
       '/api/tree': async (req) => {
         const url = new URL(req.url);
@@ -363,7 +398,7 @@ export async function serve(opts: ServeOptions) {
    * place, the open document 404s, and nothing says why. mdhouse already serves several roots
    * with a switcher, so the new directory simply joins them and the caller is told its URL.
    */
-  const addRoots = async (dirs: string[], writable: boolean): Promise<AddReply> => {
+  const addRoots = async (dirs: string[], writable: boolean, save = false): Promise<AddReply> => {
     const asked = new Set<string>();
     const added = new Set<string>();
 
@@ -377,12 +412,53 @@ export async function serve(opts: ServeOptions) {
         added.add(root.id);
       }
       asked.add(root.id);
+      if (save) await prefs.addSaved(root.path);
     }
 
-    const roots = registry.list().map((r) => ({ ...r, added: added.has(r.id), asked: asked.has(r.id) }));
+    const roots = rootLines(added, asked);
     // Open tabs learn about the new root over the channel they already hold.
     server.publish('roots', JSON.stringify({ t: 'roots', roots: roots.map((r) => r.id) }));
     return { url: `http://${hostname}:${server.port}`, roots };
+  };
+
+  const rootLines = (added: Set<string> = new Set(), asked: Set<string> = new Set()): RootLine[] =>
+    registry.list().map((r) => ({
+      ...r,
+      added: added.has(r.id),
+      asked: asked.has(r.id),
+      saved: prefs.isSaved(r.path),
+    }));
+
+  /**
+   * Forget directories and stop serving them — `mdhouse --rm`, or the settings page.
+   *
+   * A directory may have been deleted since it was saved, so a path that no longer resolves is
+   * matched as written. The last root is never removed: with none, every request would have
+   * nothing to answer from. It is unsaved, kept until exit, and the reply says so.
+   */
+  const removeRoots = async (dirs: string[]): Promise<RemoveReply> => {
+    const results: RemoveReply['results'] = [];
+    for (const dir of dirs) {
+      const abs = await realpath(resolvePath(dir)).catch(() => resolvePath(dir));
+      const unsaved = await prefs.removeSaved(abs);
+      const root = registry.list().find((r) => r.path === abs);
+      if (!root) {
+        results.push({ path: abs, unsaved, removed: false });
+        continue;
+      }
+      if (registry.list().length === 1) {
+        results.push({ path: abs, unsaved, removed: false, kept: true });
+        continue;
+      }
+      registry.remove(root.id);
+      watcher.unwatch(root.id);
+      store.drop(root.id);
+      results.push({ path: abs, unsaved, removed: true });
+    }
+
+    const roots = rootLines();
+    server.publish('roots', JSON.stringify({ t: 'roots', roots: roots.map((r) => r.id) }));
+    return { results, roots };
   };
 
   /** Everything this process holds open, released in the right order. */
@@ -394,11 +470,17 @@ export async function serve(opts: ServeOptions) {
   };
 
   const control = await serveControl(port, {
-    add: (req) => addRoots(req.dirs, req.rw === true),
+    add: (req) => addRoots(req.dirs, req.rw === true, req.save === true),
+    remove: (req) => removeRoots(req.dirs),
     ping: () => ({
       pid: process.pid,
       url: `http://${hostname}:${server.port}`,
-      roots: registry.list().map((r) => ({ name: r.name, path: r.path, writable: r.writable })),
+      roots: registry.list().map((r) => ({
+        name: r.name,
+        path: r.path,
+        writable: r.writable,
+        saved: prefs.isSaved(r.path),
+      })),
     }),
     // `mdhouse exit`. The daemon runs detached with no terminal attached to it, so asking it
     // over the socket is the supported way to stop it — there is no Ctrl+C to press.

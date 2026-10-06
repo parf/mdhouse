@@ -114,6 +114,11 @@ export class Registry {
     return root;
   }
 
+  /** Stop serving a root. Its id becomes free; paths under it no longer resolve. */
+  remove(id: string): boolean {
+    return this.byId.delete(id);
+  }
+
   list(): Root[] {
     return [...this.byId.values()];
   }

@@ -211,6 +211,33 @@ main {
 .icon-btn:hover { background: var(--bg-hover); color: var(--fg); }
 .icon-btn[aria-pressed="true"] { background: var(--bg-active); color: var(--accent); }
 
+/* Settings, in the top-right corner of every page. Fixed to the viewport, whose right edge is
+   main's, clear of main's scrollbar. */
+.gear { position: fixed; top: 9px; right: 22px; z-index: 5; background: var(--bg); }
+
+/* ── settings ───────────────────────────────────────────────────────────── */
+
+.settings { max-width: 860px; margin: 0 auto; padding: 24px 30px 120px; }
+.settings h2 {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fg-muted); margin: 6px 0 10px;
+}
+.settings-roots { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.settings-roots li { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: var(--bg-panel); }
+.settings-roots li + li { border-top: 1px solid var(--border); }
+.settings-roots li:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+.settings-roots li:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+.settings-roots .what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.settings-roots .name { font-weight: 600; color: var(--dir); }
+.settings-roots .path { font: 11.5px var(--mono); color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-roots .tag { flex: none; font-size: 10.5px; padding: 1px 6px; border-radius: 3px; color: var(--fg-muted); border: 1px solid var(--border-strong); }
+.settings-roots .tag.saved { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.settings-roots .tag.rw { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.icon-btn.danger:hover:not(:disabled) { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.settings-error { color: var(--danger); font-size: 12.5px; }
+.settings-note { color: var(--fg-muted); font-size: 12.5px; margin-top: 12px; }
+
 .brand {
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -364,16 +391,18 @@ main {
 .row.tiny > .label, .row.small > .label,
 .hit.tiny .hit-name, .hit.small .hit-name { text-decoration: line-through; }
 
-/* Tiny (∅, under 101 B) and small (S, under 500 B) files: a bright tile at the end of the row. */
+/* Tiny files (∅, under 101 B) get a bright tile at the end of the row; small ones (under 500 B)
+   show their size in violet instead. */
 .size-mark {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
   width: 14px; height: 14px; border-radius: 3px;
   font-size: 10px; font-weight: 700; line-height: 1; color: #fff;
 }
 .size-mark.tiny { background: var(--size-tiny); font-size: 12px; }
-.size-mark.small { background: var(--size-small); }
-.hit .hit-path > .size-mark.end, .hit .meta > .size-mark { align-self: center; }
-.hit .hit-path > .size-mark.end { margin-left: auto; }
+.badge.size.small, .size-num.small { color: var(--size-small); font-weight: 650; }
+.size-num { flex: none; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.hit .hit-path > .end:is(.size-mark, .size-num), .hit .meta > :is(.size-mark, .size-num) { align-self: center; }
+.hit .hit-path > .end:is(.size-mark, .size-num) { margin-left: auto; }
 
 .badge { font-size: 10.5px; flex: none; padding: 0 4px; border-radius: 3px; color: var(--fg-faint); }
 .badge.recent-heat { font-size: 13px; padding: 0 2px; line-height: 1; }

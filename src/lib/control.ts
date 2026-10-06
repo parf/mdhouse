@@ -18,6 +18,27 @@ export interface AddRequest {
   dirs: string[];
   /** Whether the new roots may be written to — `--rw` on the second invocation. */
   rw?: boolean;
+  /** Also save them, so they are served on every start — `-P` / `--perm`. */
+  save?: boolean;
+}
+
+/** `mdhouse --rm <dir>`: forget these directories and stop serving them. */
+export interface RemoveRequest {
+  dirs: string[];
+}
+
+export interface RemoveReply {
+  /** One line per directory asked about, saying what became of it. */
+  results: Array<{
+    path: string;
+    /** It was in the saved list and is not any more. */
+    unsaved: boolean;
+    /** It was being served and is not any more. */
+    removed: boolean;
+    /** Served, but kept: it is the last root, and a server with none cannot answer anything. */
+    kept?: boolean;
+  }>;
+  roots: RootLine[];
 }
 
 export interface RootLine {
@@ -29,6 +50,8 @@ export interface RootLine {
   added: boolean;
   /** This request named it — true for a directory the daemon was already serving. */
   asked: boolean;
+  /** In the saved list: served again on every start. */
+  saved: boolean;
 }
 
 export interface AddReply {
@@ -41,11 +64,12 @@ export interface AddReply {
 export interface PingReply {
   pid: number;
   url: string;
-  roots: Array<{ name: string; path: string; writable: boolean }>;
+  roots: Array<{ name: string; path: string; writable: boolean; saved?: boolean }>;
 }
 
 export interface Handlers {
   add: (req: AddRequest) => Promise<AddReply>;
+  remove: (req: RemoveRequest) => Promise<RemoveReply>;
   ping: () => PingReply;
   exit: () => void;
 }
@@ -118,6 +142,11 @@ export async function askDaemon(port: number, req: AddRequest): Promise<AddReply
   return call<AddReply>(port, '/add', req);
 }
 
+/** Ask the daemon on `port` to forget these directories, and stop serving them. */
+export async function askRemove(port: number, req: RemoveRequest): Promise<RemoveReply | { error: string } | null> {
+  return call<RemoveReply>(port, '/remove', req);
+}
+
 /**
  * Ask the daemon on `port` to stop, and wait for its socket to go.
  *
@@ -168,13 +197,13 @@ export async function serveControl(port: number, handlers: Handlers): Promise<{ 
           return Response.json({ ok: true });
         }
 
-        if (pathname === '/add') {
+        if (pathname === '/add' || pathname === '/remove') {
           const body = (await req.json().catch(() => null)) as AddRequest | null;
           if (!body || !Array.isArray(body.dirs)) {
             return Response.json({ error: 'expected {dirs: string[]}' }, { status: 400 });
           }
           try {
-            return Response.json(await handlers.add(body));
+            return Response.json(await (pathname === '/add' ? handlers.add(body) : handlers.remove(body)));
           } catch (err) {
             // A directory that has been removed since the caller checked it, a permission
             // problem — the caller is a terminal waiting for an answer, so say what happened.

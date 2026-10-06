@@ -192,3 +192,24 @@ export const IconLink = (p: Props) =>
     </>,
     p,
   );
+
+/** Settings: a cog, six teeth. */
+export const IconGear = (p: Props) =>
+  svg(
+    <>
+      <circle cx="8" cy="8" r="2.1" />
+      <path d="M8 1.9v1.6M8 12.5v1.6M14.1 8h-1.6M3.5 8H1.9M12.3 3.7l-1.1 1.1M4.8 11.2l-1.1 1.1M12.3 12.3l-1.1-1.1M4.8 4.8 3.7 3.7" />
+      <circle cx="8" cy="8" r="4.6" />
+    </>,
+    p,
+  );
+
+export const IconTrash = (p: Props) =>
+  svg(
+    <>
+      <path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5" />
+      <path d="M3.9 4.25l.65 8.6a1.4 1.4 0 0 0 1.4 1.3h4.1a1.4 1.4 0 0 0 1.4-1.3l.65-8.6" />
+      <path d="M6.6 7v4.6M9.4 7v4.6" />
+    </>,
+    p,
+  );

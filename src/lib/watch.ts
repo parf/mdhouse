@@ -23,7 +23,8 @@ const DEBOUNCE_MS = 120;
 const MD = /\.mdx?$/i;
 
 export class Watcher {
-  private readonly watchers: FSWatcher[] = [];
+  /** Per root, so a root removed at runtime can stop being watched without the others. */
+  private readonly watchers = new Map<string, FSWatcher[]>();
   private readonly pending = new Map<string, Set<string>>();
   private readonly gitDirty = new Set<string>();
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -49,7 +50,7 @@ export class Watcher {
         this.gitDirty.add(root.id);
         this.schedule();
       });
-      this.watchers.push(watcher);
+      this.keep(root.id, watcher);
     } catch {
       /* no .git to watch, or watching is unavailable — the viewer still works */
     }
@@ -85,7 +86,21 @@ export class Watcher {
       this.schedule();
     });
 
-    this.watchers.push(watcher);
+    this.keep(root.id, watcher);
+  }
+
+  private keep(rootId: string, watcher: FSWatcher): void {
+    const list = this.watchers.get(rootId);
+    if (list) list.push(watcher);
+    else this.watchers.set(rootId, [watcher]);
+  }
+
+  /** Stop watching one root, and drop anything it had queued. */
+  unwatch(rootId: string): void {
+    for (const w of this.watchers.get(rootId) ?? []) w.close();
+    this.watchers.delete(rootId);
+    this.pending.delete(rootId);
+    this.gitDirty.delete(rootId);
   }
 
   private schedule(): void {
@@ -105,8 +120,8 @@ export class Watcher {
 
   close(): void {
     if (this.timer) clearTimeout(this.timer);
-    for (const w of this.watchers) w.close();
-    this.watchers.length = 0;
+    for (const list of this.watchers.values()) for (const w of list) w.close();
+    this.watchers.clear();
   }
 }
 

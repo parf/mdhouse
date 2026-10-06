@@ -11,10 +11,15 @@
  *   favorite  pinned to the top of the sidebar and starred in the tree
  *   muted     dimmed, sorted last, kept out of recents and default search  (opposite of favorite)
  *   ignored   hidden outright, like .gitignore — revealed only by the "show ignored" toggle
+ *
+ * The same file holds `saved`: the directories mdhouse serves every time it starts, added with
+ * `mdhouse <dir> -P` and removed with `mdhouse --rm <dir>` or from the settings page. One config
+ * file, not two — there is nothing about a directory list that wants a file of its own.
  */
 
 import { homedir } from 'node:os';
 import { mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -30,6 +35,8 @@ interface PrefsFile {
   version: 1;
   /** absolute root path -> marks */
   roots: Record<string, RootPrefs>;
+  /** Absolute, symlink-resolved directories served on every start. */
+  saved: string[];
 }
 
 export const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
@@ -54,16 +61,44 @@ export class Prefs {
     readonly path = PREFS_PATH,
   ) {}
 
-  static async load(): Promise<Prefs> {
-    const file = Bun.file(PREFS_PATH);
-    if (!(await file.exists())) return new Prefs({ version: 1, roots: {} });
+  /** @param path the prefs file; tests pass their own, everything else takes the default. */
+  static async load(path = PREFS_PATH): Promise<Prefs> {
+    const fresh = (): PrefsFile => ({ version: 1, roots: {}, saved: [] });
+    const file = Bun.file(path);
+    if (!(await file.exists())) return new Prefs(fresh(), path);
     try {
       const parsed = (await file.json()) as Partial<PrefsFile>;
-      return new Prefs({ version: 1, roots: parsed.roots ?? {} });
+      const saved = Array.isArray(parsed.saved) ? parsed.saved.filter((d) => typeof d === 'string') : [];
+      return new Prefs({ version: 1, roots: parsed.roots ?? {}, saved }, path);
     } catch {
       // A corrupt prefs file must not stop the viewer from starting.
-      return new Prefs({ version: 1, roots: {} });
+      return new Prefs(fresh(), path);
     }
+  }
+
+  /** The directories to serve on every start. */
+  savedDirs(): string[] {
+    return [...this.data.saved];
+  }
+
+  isSaved(dir: string): boolean {
+    return this.data.saved.includes(dir);
+  }
+
+  /** Save a directory; true when it was not saved already. */
+  async addSaved(dir: string): Promise<boolean> {
+    if (this.data.saved.includes(dir)) return false;
+    this.data.saved = [...this.data.saved, dir].sort();
+    await this.save();
+    return true;
+  }
+
+  /** Forget a saved directory; true when it was saved. */
+  async removeSaved(dir: string): Promise<boolean> {
+    if (!this.data.saved.includes(dir)) return false;
+    this.data.saved = this.data.saved.filter((d) => d !== dir);
+    await this.save();
+    return true;
   }
 
   private forRoot(rootPath: string): RootPrefs {
@@ -108,7 +143,7 @@ export class Prefs {
   }
 
   async save(): Promise<void> {
-    await mkdir(CONFIG_DIR, { recursive: true });
-    await Bun.write(PREFS_PATH, JSON.stringify(this.data, null, 2) + '\n');
+    await mkdir(dirname(this.path), { recursive: true });
+    await Bun.write(this.path, JSON.stringify(this.data, null, 2) + '\n');
   }
 }

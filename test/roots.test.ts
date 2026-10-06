@@ -163,3 +163,15 @@ describe('the path jail and symlinks', () => {
     }
   });
 });
+
+describe('removing a root', () => {
+  test('frees its id, and paths under it stop resolving', async () => {
+    const registry = await Registry.create([HERE, `${HERE}/src`]);
+    const [first, second] = registry.list();
+
+    expect(registry.remove(second!.id)).toBe(true);
+    expect(registry.list().map((r) => r.id)).toEqual([first!.id]);
+    expect(await registry.resolve(`${second!.id}/cli.ts`)).toBeNull();
+    expect(registry.remove(second!.id)).toBe(false);
+  });
+});

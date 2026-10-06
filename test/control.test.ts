@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from 'bun:test';
 import { chmodSync, existsSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
-import { askDaemon, askExit, askPing, controlPath, knownPorts, serveControl } from '../src/lib/control';
+import { askDaemon, askExit, askPing, askRemove, controlPath, knownPorts, serveControl } from '../src/lib/control';
 
 // A port number nothing binds — the control socket is a file, not a TCP port, so this only
 // has to be unique among tests.
@@ -10,6 +10,7 @@ const URL = 'http://127.0.0.1:61771';
 
 const handlers = (over: Partial<Parameters<typeof serveControl>[1]> = {}) => ({
   add: async () => ({ url: URL, roots: [] }),
+  remove: async () => ({ results: [], roots: [] }),
   ping: () => ({ pid: process.pid, url: URL, roots: [] }),
   exit: () => {},
   ...over,
@@ -41,6 +42,24 @@ describe('the control socket', () => {
 
     control!.stop();
     expect(existsSync(SOCK)).toBe(false);
+  });
+
+  test('carries a remove request and its reply', async () => {
+    const seen: string[][] = [];
+    const control = await serveControl(
+      PORT,
+      handlers({
+        remove: async (req) => {
+          seen.push(req.dirs);
+          return { results: [{ path: '/tmp', unsaved: true, removed: true }], roots: [] };
+        },
+      }),
+    );
+
+    const reply = await askRemove(PORT, { dirs: ['/tmp'] });
+    expect(reply).toEqual({ results: [{ path: '/tmp', unsaved: true, removed: true }], roots: [] });
+    expect(seen).toEqual([['/tmp']]);
+    control!.stop();
   });
 
   test('a ping says who is behind the socket, and lists it among the known ports', async () => {

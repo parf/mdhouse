@@ -119,6 +119,11 @@ export class Store {
     return s;
   }
 
+  /** Forget a root entirely — it is no longer served. */
+  drop(rootId: string): void {
+    this.state.delete(rootId);
+  }
+
   /** Drop every cached derivative of a root. Called by the watcher, never by a request. */
   invalidate(rootId: string, gitOnly = false): void {
     const s = this.state.get(rootId);

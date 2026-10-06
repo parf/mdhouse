@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * `mdhouse [dir ...] [options]` and `mdhouse exit`.
+ * `mdhouse [dir ...] [options]`, `mdhouse exit` and `mdhouse service …`.
  *
  * By default this process is only a launcher: it starts the real server detached, in its own
  * session, waits until it answers on the control socket, prints where it is, and returns the
@@ -8,17 +8,20 @@
  * `mdhouse exit` rather than Ctrl+C. `--fg` keeps everything in one process instead.
  */
 
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { serve } from './server';
-import { askDaemon, askExit, askPing, knownPorts, type AddReply } from './lib/control';
+import { askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply } from './lib/control';
+import { runService } from './lib/service';
 
 const USAGE = `mdhouse — browse every .md file under a directory
 
   mdhouse [dir ...] [options]     start it (in the background)
   mdhouse exit [options]          stop the one running
+  mdhouse service install         run it as a systemd --user service, started at login
+  mdhouse service uninstall|status
 
 Options
   -p, --port <n>       port to listen on            (default 7777)
@@ -30,9 +33,12 @@ Options
       --git-log <n>    commits scanned for git recents (default 200)
       --no-git         skip git entirely; filesystem recents only
       --rw             allow mdhouse to write to the trees it serves
+  -P, --perm           save the directories: serve them on every start
+      --rm             forget the directories and stop serving them
       --help           show this
 
-With no directory, the current one is used.
+With no directory, the saved ones are served — or the current one, when none are saved.
+Saved directories live in ~/.config/mdhouse/prefs.json, beside the favourites.
 `;
 
 interface Options {
@@ -45,6 +51,8 @@ interface Options {
   noGit: boolean;
   rw: boolean;
   fg: boolean;
+  perm: boolean;
+  rm: boolean;
 }
 
 function parse(argv: string[]): Options {
@@ -58,6 +66,8 @@ function parse(argv: string[]): Options {
     noGit: false,
     rw: false,
     fg: false,
+    perm: false,
+    rm: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -73,6 +83,8 @@ function parse(argv: string[]): Options {
       case '--git-log': o.gitLog = Number(next()); break;
       case '--no-git': o.noGit = true; break;
       case '--rw': o.rw = true; break;
+      case '-P': case '--perm': o.perm = true; break;
+      case '--rm': o.rm = true; break;
       case '--help': console.log(USAGE); process.exit(0);
       default:
         if (arg.startsWith('-')) {
@@ -84,13 +96,14 @@ function parse(argv: string[]): Options {
     }
   }
 
-  if (!o.dirs.length) o.dirs.push(process.env.MDHOUSE_ROOT ?? process.cwd());
+  // No directory is decided later: the saved list comes first, and reading it needs the prefs.
   return o;
 }
 
 const argv = process.argv.slice(2);
-const command = argv[0] === 'exit' || argv[0] === 'stop' ? 'exit' : 'serve';
-const opts = parse(command === 'exit' ? argv.slice(1) : argv);
+const command =
+  argv[0] === 'exit' || argv[0] === 'stop' ? 'exit' : argv[0] === 'service' ? 'service' : 'serve';
+const opts = parse(command === 'serve' ? argv : command === 'service' ? argv.slice(2) : argv.slice(1));
 
 /** How to read what the daemon has said since it started. */
 const LOG_HINT =
@@ -100,14 +113,24 @@ const LOG_HINT =
 
 /** The root list, ids and paths in columns: `+` for one just added, `·` for one already served. */
 const printRoots = (
-  roots: Array<{ id: string; path: string; writable: boolean; added?: boolean; asked?: boolean }>,
+  roots: Array<{ id: string; path: string; writable: boolean; added?: boolean; asked?: boolean; saved?: boolean }>,
   showIds: boolean,
 ): void => {
   const width = Math.max(...roots.map((r) => r.id.length)) + 2;
   for (const root of roots) {
     const mark = root.added ? '+' : root.asked ? '·' : ' ';
     const id = showIds ? root.id.padEnd(width) : '';
-    console.log(`${mark} ${id}${root.path}${root.writable ? '  [RW]' : ''}`);
+    console.log(`${mark} ${id}${root.path}${root.writable ? '  [RW]' : ''}${root.saved ? '  [saved]' : ''}`);
+  }
+};
+
+/** A directory as the config stores it: absolute and symlink-resolved, or as written if gone. */
+const canonical = (dir: string): string => {
+  const abs = resolve(dir);
+  try {
+    return realpathSync(abs);
+  } catch {
+    return abs;
   }
 };
 
@@ -143,16 +166,71 @@ if (command === 'exit') {
   process.exit(0);
 }
 
+// ---------------------------------------------------------------- mdhouse service …
+
+if (command === 'service') process.exit(await runService(argv[1] ?? '', { port: opts.port }));
+
+// ---------------------------------------------------------------- mdhouse --rm [dir ...]
+
+const prefs = await Prefs.load();
+
+if (opts.rm) {
+  const asked = (opts.dirs.length ? opts.dirs : [process.cwd()]).map(canonical);
+  // A running daemon holds the prefs in memory and rewrites the whole file on its next change,
+  // so it has to be the one to forget them — editing the file under it would be undone.
+  if (await askPing(opts.port)) {
+    const reply = await askRemove(opts.port, { dirs: asked });
+    if (!reply || 'error' in reply) {
+      console.error(`mdhouse: the mdhouse on ${opts.port} refused: ${reply ? reply.error : 'no answer'}`);
+      process.exit(1);
+    }
+    for (const r of reply.results) {
+      const what = r.removed
+        ? `removed${r.unsaved ? ' and forgotten' : ''}`
+        : r.kept
+          ? `forgotten, but still served until exit — it is the last directory`
+          : r.unsaved
+            ? 'forgotten (it was not being served)'
+            : 'not saved, and not served — nothing to do';
+      console.log(`mdhouse  ${r.path}  ${what}`);
+    }
+  } else {
+    for (const dir of asked) {
+      console.log(`mdhouse  ${dir}  ${(await prefs.removeSaved(dir)) ? 'forgotten' : 'was not saved — nothing to do'}`);
+    }
+  }
+  process.exit(0);
+}
+
 // ---------------------------------------------------------------- mdhouse [dir ...]
+
+/** Is this a directory we can serve? Saved ones may have been deleted since. */
+const isDir = (abs: string): boolean => existsSync(abs) && statSync(abs).isDirectory();
 
 const dirs: string[] = [];
 for (const dir of opts.dirs) {
   const abs = resolve(dir);
-  if (!existsSync(abs) || !statSync(abs).isDirectory()) {
+  if (!isDir(abs)) {
     console.error(`mdhouse: not a directory: ${dir}`);
     process.exit(1);
   }
   dirs.push(abs);
+}
+
+const saved = prefs.savedDirs().filter((dir) => {
+  if (isDir(dir)) return true;
+  console.error(`mdhouse: saved directory is gone, skipping: ${dir}  (mdhouse --rm ${dir} forgets it)`);
+  return false;
+});
+
+if (!dirs.length) {
+  if (saved.length) dirs.push(...saved);
+  else if (process.env.MDHOUSE_SERVICE === '1') {
+    // Under systemd the current directory is $HOME, and serving all of it is never what was
+    // meant. Exit cleanly rather than fail, so the unit is not restarted in a loop.
+    console.error('mdhouse: no saved directories — nothing to serve. Save one with:  mdhouse <dir> -P');
+    process.exit(0);
+  } else dirs.push(resolve(process.env.MDHOUSE_ROOT ?? process.cwd()));
 }
 
 /**
@@ -198,7 +276,11 @@ const stopHint = `mdhouse exit${opts.port === 7777 ? '' : ` --port ${opts.port}`
 
 if (!opts.fg) {
   // Already running? Hand it the directories without starting anything.
-  if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw }));
+  if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw, save: opts.perm }));
+
+  // Nothing running, so nothing holds the prefs in memory: save here, and the daemon about to
+  // start reads them back.
+  if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir));
 
   // Nobody answered on the control socket, so if the port is taken it is taken by something
   // else. Finding that out here, rather than in a detached child whose output has gone to the
@@ -226,7 +308,8 @@ if (!opts.fg) {
   const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
   // The launcher opens the browser itself, once it knows the daemon answered. Passing `-o` on
   // would have the daemon open a second tab the moment it binds.
-  const forwarded = argv.filter((a) => a !== '-o' && a !== '--open');
+  // `-P` is done already: the directories are in the prefs the daemon will read.
+  const forwarded = argv.filter((a) => !['-o', '--open', '-P', '--perm'].includes(a));
   const self = [process.execPath, process.argv[1]!, ...forwarded, '--fg'].map(quote).join(' ');
   // Without `logger` there is nowhere to put the output; discard it rather than leave the
   // daemon writing into a pipe whose other end does not exist.
@@ -264,6 +347,9 @@ if (!opts.fg) {
     live.roots.map((r) => ({ ...r, id: '' })),
     false,
   );
+  if (!opts.perm && !prefs.savedDirs().length) {
+    console.log('\n  Serve these on every start:  mdhouse <dir> -P');
+  }
   if (!opts.rw) {
     console.log('\n  Read-only — mdhouse will not write to these trees. Pass --rw to allow it.');
   }
@@ -275,8 +361,10 @@ if (!opts.fg) {
   process.exit(0);
 }
 
-const registry = await Registry.create(dirs, opts.rw);
-const prefs = await Prefs.load();
+// The daemon itself: what it was asked for, plus everything saved — `-P` is a promise that a
+// directory comes back on every start, however the start was asked for.
+if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir));
+const registry = await Registry.create([...new Set([...dirs, ...saved].map(canonical))], opts.rw);
 
 let started: Awaited<ReturnType<typeof serve>>;
 try {
@@ -299,14 +387,17 @@ try {
    * port. The daemon adds them to what it already serves — it never swaps its trees out from
    * under a tab someone is reading.
    */
-  await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw }));
+  await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw, save: opts.perm }));
   throw err; // unreachable: handOver never returns
 }
 const { server, shutdown } = started;
 
 const url = `http://${opts.host}:${server.port}`;
 console.log(`mdhouse  ${url}`);
-printRoots(registry.list(), !registry.single);
+printRoots(
+  registry.list().map((r) => ({ ...r, saved: prefs.isSaved(r.path) })),
+  !registry.single,
+);
 if (!opts.rw) {
   console.log('\n  Read-only — mdhouse will not write to these trees. Pass --rw to allow it.');
 }

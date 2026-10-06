@@ -24,13 +24,25 @@ const STATUS_LABEL: Record<string, string> = {
 /** Files this small are stubs, or close to it, and are marked at the end of their row. */
 export const sizeClass = (size: number) => (size < 101 ? 'tiny' : size < 500 ? 'small' : '');
 
-/** ∅ for a file under 101 bytes, S for one under 500; nothing for anything bigger. */
+/**
+ * ∅ for a file under 101 bytes; the size itself, in violet, for one under 500; nothing for
+ * anything bigger. The struck-through name already says "small" — an S tile beside it only
+ * said it twice, where the number says how small. ∅ stays: it means "stub", which a number
+ * does not.
+ */
 export function SizeMark({ size, end }: { size: number | undefined; end?: boolean }) {
   const small = size ? sizeClass(size) : '';
   if (!small) return null;
+  if (small === 'small') {
+    return (
+      <span class={`size-num small${end ? ' end' : ''}`} title={`${size} bytes`}>
+        {size}
+      </span>
+    );
+  }
   return (
-    <span class={`size-mark ${small}${end ? ' end' : ''}`} title={`${size} B`} aria-label={`${size} bytes`}>
-      {small === 'tiny' ? '∅' : 'S'}
+    <span class={`size-mark tiny${end ? ' end' : ''}`} title={`${size} B`} aria-label={`${size} bytes`}>
+      ∅
     </span>
   );
 }
@@ -86,7 +98,7 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
           star sits in the chevron's slot, where it costs no width. */}
       <span class="twist">{isFav && <IconStar size={12} filled />}</span>
       <span class="label">{docName(file.name)}</span>
-      <SizeMark size={size} end />
+      {small === 'tiny' && <SizeMark size={size} end />}
 
       <RecentHeat at={file.file.mtime} />
 
@@ -96,8 +108,8 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
         </span>
       )}
 
-      {/* Compact has room for a size too, but not beside the ∅ / S mark, which already says it. */}
-      {(!p.compact || !small) && <span class="badge size">{fileSize(size)}</span>}
+      {/* Compact has room for a size too, but not beside the ∅ mark, which already says it. */}
+      {(!p.compact || small !== 'tiny') && <span class={`badge size${small ? ` ${small}` : ''}`}>{fileSize(size)}</span>}
 
       {!p.compact && (
         <span class="marks">

@@ -11,6 +11,8 @@ export interface RootInfo {
   name: string;
   path: string;
   writable: boolean;
+  /** In the saved list: served on every start, not just this session. */
+  saved?: boolean;
 }
 
 /** Who created a file and who last committed it. Arrives with the history, not the document. */
@@ -84,6 +86,19 @@ export const api = {
       body: JSON.stringify({ root, path, mark, on }),
     });
   },
+
+  /** Forget a directory and stop serving it. */
+  async removeRoot(id: string): Promise<void> {
+    const res = await fetch('/api/roots/remove', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
+    }
+  },
 };
 
 export type LiveMessage =
@@ -91,7 +106,7 @@ export type LiveMessage =
   | { t: 'pong' }
   | { t: 'fs'; root: string; paths: string[] }
   | { t: 'git'; root: string; paths: string[] }
-  /** A second `mdhouse` handed this one another directory. */
+  /** The served directories changed: one added by a second `mdhouse`, or one removed. */
   | { t: 'roots'; roots: string[] };
 
 /**
