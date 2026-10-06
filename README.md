@@ -129,9 +129,8 @@ of the hour, in the tree as well as the lists.
 **Renders properly.** CommonMark and GFM through markdown-it — everything beyond plain CommonMark
 is listed, with live examples, in [**Markdown in mdhouse**](doc/markdown.md). In short: nested lists, tables, footnotes,
 task lists, GitHub alerts (`> [!NOTE]`), front matter set aside, syntax highlighting via shiki,
-and mermaid diagrams. Questions and answers get real blocks with the VuePress / VitePress syntax
-— `::: q` or `::: question`, `::: a` or `::: answer`, closed by `:::` — and a leading `**Q:**` /
-`**A:**` on a line reads as ❓ / 💬. Relative links and images
+and mermaid diagrams. Question, disagreement and answer blocks — `> [!QUESTION]`, `::: q`,
+`**Q:**` lines, `> ?` / `> ?!` / `> 💬` — have [their own page](doc/qa.md). Relative links and images
 between documents just work. Light and dark follow your system.
 
 **Finds your repos.** Hand it a directory of repositories and it discovers each one, listing

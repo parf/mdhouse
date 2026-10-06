@@ -24,6 +24,8 @@
   4px edge, from shared `--qa-*` tokens; an answer is indented a little under what it settles.
 - **[Markdown in mdhouse](doc/markdown.md)** — every syntax mdhouse supports beyond CommonMark,
   with live examples, and what it does not support. Linked from the README.
+- **[Questions and answers in mdhouse](doc/qa.md)** — every Q&A form, what ❓ / ⁉️ / 💬 mean, and
+  the shared palette, on a page of its own; linked from the Markdown page and the README.
 
 ### Changed
 

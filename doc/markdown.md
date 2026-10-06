@@ -12,10 +12,10 @@ mdhouse and every example below renders live.
 | [Autolinks](#autolinks) | a bare `https://…` | GFM |
 | [Footnotes](#footnotes) | `text[^1]` … `[^1]: note` | GFM |
 | [Alerts](#alerts) | `> [!NOTE]` `[!TIP]` `[!IMPORTANT]` `[!WARNING]` `[!CAUTION]` | GitHub |
-| [Question / Answer alerts](#question-and-answer-alerts) | `> [!QUESTION]` `> [!ANSWER]` | **mdhouse** |
-| [Q&A blocks](#qa-blocks) | `::: q` / `::: question`, `::: a` / `::: answer` | VuePress / VitePress |
-| [Inline Q&A](#inline-qa) | a leading `**Q:**` / `**A:**` | **mdhouse** |
-| [Q&A glyphs in a quote](#qa-glyphs-in-a-quote) | `> ?` `> ?!` `> 💬` `> Q:` `> A:` | **mdhouse** |
+| [Question / Answer alerts](qa.md#question-and-answer-alerts) | `> [!QUESTION]` `> [!ANSWER]` | **mdhouse** |
+| [Q&A container blocks](qa.md#container-blocks) | `::: q` / `::: question`, `::: a` / `::: answer` | VuePress / VitePress |
+| [Bold `Q:` / `A:` lines](qa.md#bold-lines) | a leading `**Q:**` / `**A:**` | **mdhouse** |
+| [Q&A glyphs in a quote](qa.md#glyphs-in-a-quote) | `> ?` `> ?!` `> 💬` `> Q:` `> A:` | **mdhouse** |
 | [Heading anchors](#heading-anchors) | every heading gets an `id` and a `#` link | markdown-it-anchor |
 | [Attributes](#attributes) | `{#id .class}` after a heading or paragraph | markdown-it-attrs |
 | [Code highlighting](#code) | ` ```ts ` fences | shiki |
@@ -104,97 +104,10 @@ meant to stop the reader:
 The marker is case-insensitive and must open the quote; the rest of the quote is the alert's
 body, and may hold any Markdown.
 
-## Question and answer alerts
+## Questions and answers
 
-mdhouse's own two, for the question-and-answer logs plan folders collect. Unlike GitHub's five
-they have no title row: each is one line, the icon in front of the text. The text may also follow
-the marker on the same line — `> [!ANSWER] Yes.`
-
-```markdown
-> [!QUESTION]
-> Do we keep the 5y signal?
-
-> [!ANSWER]
-> Yes — it carries most of the lift.
-```
-
-> [!QUESTION]
-> Do we keep the 5y signal?
-
-> [!ANSWER]
-> Yes — it carries most of the lift.
-
-GitHub does not know these two, and shows them there as plain quotes with the marker visible.
-
-## Q&A blocks
-
-The container syntax VuePress and VitePress use. A block holds any Markdown — lists, code,
-several paragraphs — and text on the opening line becomes its first line (bold, for a question):
-
-```markdown
-::: q Who owns the import?
-The ATTOM feed lands monthly.
-:::
-
-::: answer
-The data team, from October.
-
-- schedule: first Monday
-- alerts: #data-import
-:::
-```
-
-::: q Who owns the import?
-The ATTOM feed lands monthly.
-:::
-
-::: answer
-The data team, from October.
-
-- schedule: first Monday
-- alerts: #data-import
-:::
-
-`q` and `question`, `a` and `answer` are the same thing. Close each block with `:::`.
-
-## Inline Q&A
-
-The shortest form. Lines starting with a bold `Q:` or `A:` render exactly like `[!QUESTION]` /
-`[!ANSWER]` — one block per line, the icon in front; a line without a marker stays with the block
-above it. Inside a list item the marker becomes a small ❓ / 💬 instead, and a bold `Q:` in the
-middle of a sentence is left as written.
-
-```markdown
-**Q:** Is the cache warm?
-**A:** After the first request.
-```
-
-**Q:** Is the cache warm?
-**A:** After the first request.
-
-## Q&A glyphs in a quote
-
-The glyphs of a Q&A log, opening a line of a quote, make the same one-line blocks:
-
-| Line opens with | Block |
-| --- | --- |
-| `?` `❓` `Q:` `Q` | ❓ question — open, nobody has the answer yet |
-| `?!` `!?` `⁉️` | ⁉️ disagreement — two sources contradict, still open |
-| `💬` `A:` | 💬 answer — settles the question or disagreement above it |
-
-```markdown
-> ?! The spec says 5 years; the code uses 7.
-> 💬 The code is right — the spec was never updated.
-```
-
-> ?! The spec says 5 years; the code uses 7.
-> 💬 The code is right — the spec was never updated.
-
-> ? Who owns the import?
-> 💬 The data team.
-
-The quote must open with one of them; then the whole quote becomes blocks. A bare `A` is never a
-marker — `> A quick note` is English — so an answer needs `A:` or 💬.
+Question, answer and disagreement blocks — `> [!QUESTION]`, `::: q`, `**Q:**` lines, `> ?` /
+`> ?!` / `> 💬` — have their own page: [**Questions and answers in mdhouse**](qa.md).
 
 ## Heading anchors
 
