@@ -1,2 +1,7 @@
-#!/usr/bin/env bun
+#!/bin/sh
+':' //; # Run directly, this is a shell script: check for Bun, then hand this same file to it.
+':' //; v=$(bun --version 2>/dev/null) || { echo "mdhouse needs Bun >= 1.4 — https://bun.sh (npm installs the package, but Bun runs it)" >&2; exit 1; }
+':' //; case "$v" in 0.*|1.[0-3].*) echo "mdhouse needs Bun >= 1.4; this is Bun $v — upgrade with: bun upgrade" >&2; exit 1;; esac
+':' //; exec bun "$0" "$@"
+// Run by Bun, the lines above are a string and a comment each, and this is the program.
 import '../src/cli.ts';

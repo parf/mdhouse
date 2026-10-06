@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- **Installed with npm on a machine without Bun**, `mdhouse` failed with the shell's
+  `env: 'bun': No such file or directory`. It now says it needs Bun ≥ 1.4 and where to get it,
+  and names the version when an older Bun is found. The README says Bun is needed with npm too.
+
 ### Added
 
 - **Question and answer blocks**: `::: q` / `::: question` and `::: a` / `::: answer`, closed by
