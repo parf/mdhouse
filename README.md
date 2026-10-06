@@ -29,6 +29,8 @@ directory that has `.md` files in it.
 bun install -g mdhouse      # or: npm install -g mdhouse
 ```
 
+On npm: <https://www.npmjs.com/package/mdhouse>
+
 - **[Bun](https://bun.sh) ≥ 1.4** — the only hard requirement.
 - **git** — optional. Without it you still get the tree and search; recents fall back to
   modification time and the sidebar footer says `no git`.
