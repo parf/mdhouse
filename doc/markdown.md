@@ -103,7 +103,9 @@ body, and may hold any Markdown.
 
 ## Question and answer alerts
 
-mdhouse's own two, in the same style — for the question-and-answer logs plan folders collect:
+mdhouse's own two, for the question-and-answer logs plan folders collect. Unlike GitHub's five
+they have no title row: each is one line, the icon in front of the text. The text may also follow
+the marker on the same line — `> [!ANSWER] Yes.`
 
 ```markdown
 > [!QUESTION]

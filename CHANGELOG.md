@@ -14,8 +14,8 @@
   away. `mdhouse <served folder> --rw` makes it writable on the running mdhouse, no restart. The
   systemd service writes only to folders saved writable.
 
-- **`> [!QUESTION]` and `> [!ANSWER]`** alerts, in the same style as GitHub's five (❓ teal, 💬
-  green).
+- **`> [!QUESTION]` and `> [!ANSWER]`** alerts, coloured like GitHub's five (❓ teal, 💬 green)
+  but one line each — the icon in front of the text, no title row.
 - **[Markdown in mdhouse](doc/markdown.md)** — every syntax mdhouse supports beyond CommonMark,
   with live examples, and what it does not support. Linked from the README.
 

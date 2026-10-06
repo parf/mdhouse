@@ -177,8 +177,18 @@ function alertPlugin(md: MarkdownIt): void {
         if (inline.children[1]?.type === 'softbreak') inline.children.splice(0, 2);
       }
 
+      const title = `${kind[0]!.toUpperCase()}${kind.slice(1)}`;
+      // A question or an answer is one line: the icon sits in front of the text (CSS), with no
+      // title row above it — the name is still there for a screen reader.
+      if (kind === 'question' || kind === 'answer') {
+        open.attrSet('role', 'note');
+        open.attrSet('aria-label', title);
+        i += 1;
+        continue;
+      }
+
       const titleToken = new state.Token('html_block', '', 0);
-      titleToken.content = `<p class="markdown-alert-title">${kind[0]!.toUpperCase()}${kind.slice(1)}</p>\n`;
+      titleToken.content = `<p class="markdown-alert-title">${title}</p>\n`;
       tokens.splice(i + 1, 0, titleToken);
 
       // If the marker line was the whole paragraph, drop the now-empty paragraph.

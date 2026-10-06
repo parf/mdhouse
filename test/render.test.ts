@@ -233,13 +233,20 @@ describe('toggleTask — the one edit mdhouse makes to a document', () => {
 });
 
 describe('alerts', () => {
-  test("GitHub's five, and mdhouse's QUESTION and ANSWER, any case", async () => {
-    for (const kind of ['note', 'tip', 'important', 'warning', 'caution', 'question', 'answer']) {
+  test("GitHub's five get a title row", async () => {
+    for (const kind of ['note', 'tip', 'important', 'warning', 'caution']) {
       const { html } = await render(`> [!${kind.toUpperCase()}]\n> body\n`, ctx);
       expect(html).toContain(`markdown-alert markdown-alert-${kind}`);
       expect(html).toContain(`<p class="markdown-alert-title">${kind[0]!.toUpperCase()}${kind.slice(1)}</p>`);
     }
-    expect((await render('> [!answer]\n> lower case\n', ctx)).html).toContain('markdown-alert-answer');
+  });
+
+  test('QUESTION and ANSWER are one line: no title row, the name kept for screen readers', async () => {
+    const { html } = await render('> [!QUESTION]\n> Keep it?\n\n> [!answer] Yes.\n', ctx);
+    expect(html).toContain('class="markdown-alert markdown-alert-question" role="note" aria-label="Question"');
+    expect(html).toContain('class="markdown-alert markdown-alert-answer" role="note" aria-label="Answer"');
+    expect(html).not.toContain('markdown-alert-title');
+    expect(html).toContain('>Yes.</p>');
   });
 
   test('an unknown marker stays a plain quote', async () => {
