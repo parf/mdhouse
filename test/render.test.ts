@@ -268,3 +268,27 @@ describe('**Q:** / **A:** paragraphs', () => {
     expect((await render('Text with **Q:** mid.\n', ctx)).html).toContain('<strong>Q:</strong>');
   });
 });
+
+describe('Q&A glyphs in a quote', () => {
+  const kinds = async (src: string) =>
+    [...(await render(src, ctx)).html.matchAll(/markdown-alert-(question|answer|disagreement)"/g)].map((m) => m[1]);
+
+  test('? ❓ Q: and Q ask; ?! !? ⁉️ disagree; 💬 and A: answer', async () => {
+    expect(await kinds('> ? a\n> 💬 b\n')).toEqual(['question', 'answer']);
+    expect(await kinds('> ❓ a\n> A: b\n')).toEqual(['question', 'answer']);
+    expect(await kinds('> Q: a\n> Q b\n')).toEqual(['question', 'question']);
+    expect(await kinds('> ?! a\n> !? b\n> ⁉️ c\n> 💬 d\n')).toEqual(['disagreement', 'disagreement', 'disagreement', 'answer']);
+  });
+
+  test('the quote frame goes, and the marker with it', async () => {
+    const { html } = await render('> ? Is it **warm**?\n', ctx);
+    expect(html).not.toContain('<blockquote');
+    expect(html).toContain('Is it <strong>warm</strong>?</p>');
+  });
+
+  test('ordinary quotes stay quotes — a bare A is English, and Q must stand alone', async () => {
+    for (const src of ['> A quick note\n', '> Quite so\n', '> Q4 revenue\n', '> Plain\n> ? not first\n']) {
+      expect((await render(src, ctx)).html).toContain('<blockquote');
+    }
+  });
+});

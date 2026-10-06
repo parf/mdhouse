@@ -198,53 +198,110 @@ function alertPlugin(md: MarkdownIt): void {
   });
 }
 
+type QaKind = 'question' | 'answer' | 'disagreement';
+const QA_TITLE: Record<QaKind, string> = { question: 'Question', answer: 'Answer', disagreement: 'Disagreement' };
+
 /**
- * A paragraph whose lines start with `**Q:**` / `**A:**` becomes question and answer blocks —
- * the same one-line blocks as `> [!QUESTION]` / `> [!ANSWER]`, one per marked line, with any
- * unmarked lines staying with the block above them. Each block keeps its own source line.
+ * Split a paragraph into one-line question / answer / disagreement blocks — the same blocks as
+ * `> [!QUESTION]` / `> [!ANSWER]`. Each line `marker` recognises starts a block; an unmarked line
+ * stays with the block above it. Returns null when the paragraph does not start with a marker.
  *
- * Runs on block tokens, before inline parsing: the new paragraphs carry plain `inline` content,
- * and markdown-it parses their bold and links as usual. Paragraphs inside a tight list are left
- * to the inline ❓ / 💬 of `questionsAndAnswers()`: a block inside a list item would not read as
- * one line of a list.
+ * Built from block tokens, before inline parsing: the new paragraphs carry plain `inline`
+ * content, so their bold and links render as usual, and each keeps its own source line.
  */
+function qaBlocks(
+  state: { Token: typeof Token },
+  open: Token,
+  inline: Token,
+  marker: RegExp,
+  kindOf: (mark: string) => QaKind,
+): Token[] | null {
+  if (!open.map || !marker.test(inline.content)) return null;
+  const groups: Array<{ kind: QaKind; line: number; text: string[] }> = [];
+  inline.content.split('\n').forEach((text, n) => {
+    const m = marker.exec(text);
+    if (m) groups.push({ kind: kindOf(m[1]!), line: open.map![0] + n, text: [text.slice(m[0].length)] });
+    else groups[groups.length - 1]!.text.push(text);
+  });
+
+  const out: Token[] = [];
+  for (const g of groups) {
+    const start = new state.Token('html_block', '', 0);
+    start.content =
+      `<div class="markdown-alert markdown-alert-${g.kind}" role="note" ` +
+      `aria-label="${QA_TITLE[g.kind]}" data-line="${g.line + 1}">\n`;
+    const pOpen = new state.Token('paragraph_open', 'p', 1);
+    pOpen.map = [g.line, g.line + g.text.length];
+    const body = new state.Token('inline', '', 0);
+    body.content = g.text.join('\n');
+    body.map = pOpen.map;
+    body.children = [];
+    const pClose = new state.Token('paragraph_close', 'p', -1);
+    const end = new state.Token('html_block', '', 0);
+    end.content = '</div>\n';
+    out.push(start, pOpen, body, pClose, end);
+  }
+  return out;
+}
+
+/** `**Q:**` / `**A:**` opening a line of a paragraph. */
 const QA_LINE = /^\*\*([QA]):\*\*\s*/;
 
+/**
+ * The glyphs of a Q&A log, opening a line inside a quote (see /rd/.claude/Glyphs.md): `?` or ❓ a
+ * question, `?!` / `!?` or ⁉️ a disagreement — two sources that contradict — and 💬 the answer;
+ * also `Q:` / `A:`, and `Q` alone. Never a bare `A`: `> A quick note` is English, not an answer.
+ */
+const QUOTE_MARK = /^(\?!|!\?|\u2049\uFE0F?|\?|\u2753|\u{1F4AC}|Q:|A:|Q(?=\s))\s*/u;
+const quoteKind = (mark: string): QaKind =>
+  mark === '?!' || mark === '!?' || mark.startsWith('\u2049')
+    ? 'disagreement'
+    : mark === '\u{1F4AC}' || mark === 'A:'
+      ? 'answer'
+      : 'question';
+
+/**
+ * Two places a Q&A log becomes question / answer / disagreement blocks:
+ * - a paragraph whose lines open with `**Q:**` / `**A:**`;
+ * - a quote whose first line opens with a glyph (`> ?`, `> ?!`, `> 💬`, `> Q:` …) — the whole
+ *   quote then turns into blocks, and loses its quote frame.
+ * Inside a tight list a `**Q:**` stays a small inline icon (`questionsAndAnswers`); a block
+ * inside a list item would not read as one line of the list.
+ */
 function qaLinesPlugin(md: MarkdownIt): void {
   md.core.ruler.after('block', 'mdhouse_qa_lines', (state) => {
     const tokens = state.tokens;
     for (let i = 0; i < tokens.length - 2; i++) {
       const open = tokens[i]!;
-      const inline = tokens[i + 1]!;
-      if (open.type !== 'paragraph_open' || open.hidden || inline.type !== 'inline' || !open.map) continue;
-      if (!QA_LINE.test(inline.content)) continue;
 
-      // Group the lines: each marked line starts a block; the others continue the one above.
-      const groups: Array<{ kind: 'question' | 'answer'; line: number; text: string[] }> = [];
-      inline.content.split('\n').forEach((text, n) => {
-        const m = QA_LINE.exec(text);
-        if (m) groups.push({ kind: m[1] === 'Q' ? 'question' : 'answer', line: open.map![0] + n, text: [text.slice(m[0].length)] });
-        else groups[groups.length - 1]!.text.push(text);
-      });
-
-      const replacement: Token[] = [];
-      for (const g of groups) {
-        const title = g.kind === 'question' ? 'Question' : 'Answer';
-        const start = new state.Token('html_block', '', 0);
-        start.content = `<div class="markdown-alert markdown-alert-${g.kind}" role="note" aria-label="${title}" data-line="${g.line + 1}">\n`;
-        const pOpen = new state.Token('paragraph_open', 'p', 1);
-        pOpen.map = [g.line, g.line + g.text.length];
-        const body = new state.Token('inline', '', 0);
-        body.content = g.text.join('\n');
-        body.map = pOpen.map;
-        body.children = [];
-        const pClose = new state.Token('paragraph_close', 'p', -1);
-        const end = new state.Token('html_block', '', 0);
-        end.content = '</div>\n';
-        replacement.push(start, pOpen, body, pClose, end);
+      if (open.type === 'blockquote_open' && tokens[i + 1]?.type === 'paragraph_open') {
+        const first = tokens[i + 2]!;
+        if (first.type !== 'inline' || !QUOTE_MARK.test(first.content)) continue;
+        let close = i + 1;
+        while (close < tokens.length && !(tokens[close]!.type === 'blockquote_close' && tokens[close]!.level === open.level)) close++;
+        const inner: Token[] = [];
+        for (let k = i + 1; k < close; k++) {
+          const t = tokens[k]!;
+          const blocks =
+            t.type === 'paragraph_open' && t.level === open.level + 1 && tokens[k + 1]?.type === 'inline'
+              ? qaBlocks(state, t, tokens[k + 1]!, QUOTE_MARK, quoteKind)
+              : null;
+          if (blocks) {
+            inner.push(...blocks);
+            k += 2;
+          } else inner.push(t);
+        }
+        tokens.splice(i, close - i + 1, ...inner);
+        i += inner.length - 1;
+        continue;
       }
-      tokens.splice(i, 3, ...replacement);
-      i += replacement.length - 1;
+
+      const inline = tokens[i + 1]!;
+      if (open.type !== 'paragraph_open' || open.hidden || inline.type !== 'inline') continue;
+      const blocks = qaBlocks(state, open, inline, QA_LINE, (m) => (m === 'Q' ? 'question' : 'answer'));
+      if (!blocks) continue;
+      tokens.splice(i, 3, ...blocks);
+      i += blocks.length - 1;
     }
   });
 }

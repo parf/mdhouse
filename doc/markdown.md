@@ -15,6 +15,7 @@ mdhouse and every example below renders live.
 | [Question / Answer alerts](#question-and-answer-alerts) | `> [!QUESTION]` `> [!ANSWER]` | **mdhouse** |
 | [Q&A blocks](#qa-blocks) | `::: q` / `::: question`, `::: a` / `::: answer` | VuePress / VitePress |
 | [Inline Q&A](#inline-qa) | a leading `**Q:**` / `**A:**` | **mdhouse** |
+| [Q&A glyphs in a quote](#qa-glyphs-in-a-quote) | `> ?` `> ?!` `> 💬` `> Q:` `> A:` | **mdhouse** |
 | [Heading anchors](#heading-anchors) | every heading gets an `id` and a `#` link | markdown-it-anchor |
 | [Attributes](#attributes) | `{#id .class}` after a heading or paragraph | markdown-it-attrs |
 | [Code highlighting](#code) | ` ```ts ` fences | shiki |
@@ -168,6 +169,30 @@ middle of a sentence is left as written.
 
 **Q:** Is the cache warm?
 **A:** After the first request.
+
+## Q&A glyphs in a quote
+
+The glyphs of a Q&A log, opening a line of a quote, make the same one-line blocks:
+
+| Line opens with | Block |
+| --- | --- |
+| `?` `❓` `Q:` `Q` | ❓ question — open, nobody has the answer yet |
+| `?!` `!?` `⁉️` | ⁉️ disagreement — two sources contradict, still open |
+| `💬` `A:` | 💬 answer — settles the question or disagreement above it |
+
+```markdown
+> ?! The spec says 5 years; the code uses 7.
+> 💬 The code is right — the spec was never updated.
+```
+
+> ?! The spec says 5 years; the code uses 7.
+> 💬 The code is right — the spec was never updated.
+
+> ? Who owns the import?
+> 💬 The data team.
+
+The quote must open with one of them; then the whole quote becomes blocks. A bare `A` is never a
+marker — `> A quick note` is English — so an answer needs `A:` or 💬.
 
 ## Heading anchors
 

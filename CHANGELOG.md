@@ -16,7 +16,9 @@
 
 - **`> [!QUESTION]` and `> [!ANSWER]`** alerts, coloured like GitHub's five (❓ teal, 💬 green)
   but one line each — the icon in front of the text, no title row. Lines starting with `**Q:**` /
-  `**A:**` render as the same blocks.
+  `**A:**` render as the same blocks, and so does a quote opening with a Q&A glyph: `> ?` / `❓`
+  / `Q:` / `Q` a question, `> ?!` / `!?` / `⁉️` a **disagreement** (two sources that contradict,
+  orange), `> 💬` / `A:` the answer. A bare `> A …` stays a quote.
 - **[Markdown in mdhouse](doc/markdown.md)** — every syntax mdhouse supports beyond CommonMark,
   with live examples, and what it does not support. Linked from the README.
 
