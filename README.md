@@ -74,14 +74,29 @@ keep the tree they were reading. The request travels over a `0600` unix socket i
 `~/.config/mdhouse/`, so only a process running as you can ask — a web page cannot reach a
 unix socket at all.
 
+### Keep them, and start it with your session
+
+```bash
+mdhouse ~/notes ~/src -P     # serve them now, and on every start from here on
+mdhouse                      # no folder named: serves the saved ones
+mdhouse --rm ~/src           # forget it and stop serving it
+mdhouse service install      # a systemd --user service, started at login
+```
+
+Saved folders sit in `~/.config/mdhouse/prefs.json`, beside your favourites. The **⚙** at the top
+right of every page lists what is served — saved, or just for this session — and removes one with
+a click. `mdhouse service uninstall` and `mdhouse service status` do what they say; the log is
+`journalctl --user -u mdhouse -f`, and `loginctl enable-linger $USER` starts it at boot, before
+you log in.
+
 ---
 
 ## ❖ What you get
 
 **Browse.** A sidebar tree of `.md` and `.mdx` files, nothing else. Three widths — a single top
 bar, compact, or open with search and filters — cycled with `Ctrl+B` and remembered.
-Every file shows its size (`812`, `1.1K`, `150K`); stubs stand out — **∅** under 101 bytes, **S**
-under 500, names struck through, in the tree and every list. Empty files are left out, and the
+Every file shows its size (`812`, `1.1K`, `150K`); stubs stand out — **∅** under 101 bytes, the
+size in violet under 500, names struck through, in the tree and every list. Empty files are left out, and the
 folders above the open document are bold.
 
 **Search.** File names match as you type, with no request to the server at all. Full text goes
@@ -138,6 +153,9 @@ a directory you cannot write to.
 - **The root name** — the front page: what changed in this tree lately.
 - **The root dropdown** — switch between the folders being served, when there is more than one.
 - **🔍 Search** — open the sidebar with the cursor in the search box (`/`).
+
+**⚙ Settings**, in the top-right corner of every page: the folders being served, which of them
+are saved, and a button to remove one.
 
 **Diffs open themselves when they should.** A file with uncommitted work opens on its diff — if
 you have edited it and come back to look at it, the edit is what you came for — in whichever of
@@ -211,9 +229,15 @@ for a file that does not exist yet, which is the case a write actually creates.
 | `--git-log <n>` | `200` | commits scanned for recents and the front page |
 | `--no-git` | off | skip git entirely; recents by modification time only |
 | `--rw` | off | allow mdhouse to write to the trees it serves |
+| `-P, --perm` | off | save the folders: serve them on every start |
+| `--rm` | off | forget the folders and stop serving them |
 
 `MDHOUSE_PORT`, `MDHOUSE_HOST` and `MDHOUSE_ROOT` set the defaults for the port, the bind
-address and the folder used when none is given.
+address and the folder used when none is given and none is saved.
+
+`mdhouse service install | uninstall | status` manages the systemd user unit — `mdhouse.service`,
+or `mdhouse-<port>.service` with `--port`. It serves the saved folders, so it asks you to save
+one first.
 
 A root may also carry a **`.mdhouseignore`**: one directory name per line, `#` for comments,
 `!name` to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build

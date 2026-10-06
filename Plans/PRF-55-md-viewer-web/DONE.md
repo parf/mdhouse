@@ -698,3 +698,46 @@ its path in front of the branch.
 `preciseAgo()` gives the pull two units for the first week (`29m`, `7h 12m`, `1d 7h ago`),
 because "yesterday" covered anything from two to forty-seven hours. `timeAgo()` dropped the
 space before its units throughout: `22h ago`. `test/head.test.ts` has five cases. 85 tests.
+
+---
+
+## N.25 Folders that come back, and a service to bring them
+
+Every restart used to forget what mdhouse served. `prefs.json` now carries `saved`, a list of
+realpaths, beside the marks: one config file rather than two. `mdhouse <dir> -P` adds to it and
+`mdhouse --rm <dir>` takes away. `-p` stays the port, since moving it would have broken every
+existing `mdhouse -p 8080`. A bare `mdhouse` serves the saved list, and the current directory only
+when the list is empty. The daemon always serves what it was given plus what is saved, and a
+saved folder that has since gone is skipped with a warning, not a failed start.
+
+**Who writes the file.** The daemon holds prefs in memory and rewrites the whole file on every
+mark, so a CLI edit made under a running daemon would be undone by the next star. With a daemon
+up, `-P` and `--rm` go over the control socket (`save` on `/add`, and a new `/remove`) and the
+daemon writes. With none up, the CLI edits the file itself. Removal needed `Registry.remove`,
+`Watcher.unwatch` (watchers are now kept per root) and `Store.drop`. The last root is never
+removed, because a server with no roots cannot answer anything: it is unsaved and served until
+exit, and the reply says so.
+
+**The service** is `mdhouse --fg` under systemd, writing to the journal. `Environment=PATH` is
+copied from the installing shell, since systemd's own PATH has no git, rg or bun.
+`XDG_CONFIG_HOME` is carried over when set, so the service reads the same prefs. Under systemd the
+working directory is `$HOME`, so the empty-list fallback would serve all of it. So `install`
+refuses with nothing saved, and a service that finds the list emptied since exits 0, which
+`Restart=on-failure` leaves alone. `mdhouse exit` stops it the same way. A port other than 7777
+gets `mdhouse-<port>.service`, which is also how it was tested without touching the real one.
+
+**Settings** is `/settings`, reached by a ⚙ fixed to the top-right corner. One section for now,
+Directories, with saved / this-session / RW tags and a delete button (disabled on the last root).
+Adding is left to the terminal, where a path can be tab-completed and checked. `POST
+/api/roots/remove` is the first request a page can make that changes what is served, so it is
+refused when `Origin` names another host or `Sec-Fetch-Site` says cross-site.
+
+**S → size.** Once small names were struck through, the S tile repeated them. Files of 101–499
+bytes now show their byte count in violet, in both sidebar widths and in every list. ∅ stays: it
+means "stub", which a number does not.
+
+Tests: `prefs.test.ts` (round-trip, duplicates, marks kept, old files), `Registry.remove`, the
+`/remove` control round-trip, and `service.test.ts` for the unit text. 94 tests. End to end on
+port 7791 with an isolated config: save, restart, bare start, add while running, remove,
+remove-last, remove with no daemon, service install/exit/uninstall, a UI delete, and a
+cross-origin POST refused with 403.

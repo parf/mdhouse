@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.7.0 — 2026-10-06
+
+### Added
+
+- **Saved folders.** `mdhouse <dir> -P` (`--perm`) serves a folder now and on every start;
+  `mdhouse --rm <dir>` forgets it and stops serving it. They live in
+  `~/.config/mdhouse/prefs.json`, beside the favourites. A plain `mdhouse` serves the saved
+  folders, and the current one only when nothing is saved. A saved folder that has since been
+  deleted is skipped with a warning.
+- **A systemd user service.** `mdhouse service install` writes and starts `mdhouse.service`
+  (`mdhouse-<port>.service` for another port), which serves the saved folders from login on.
+  `uninstall` and `status` too. It refuses to install with nothing saved, so it never ends up
+  serving all of `$HOME`.
+- **Settings page**, behind a ⚙ at the top right of every page. It lists the served folders,
+  saved or just for this session, and removes one with a click. The tab moves to another folder
+  if it was showing the removed one. The request is refused from any other site.
+
+### Changed
+
+- **Files of 101–499 bytes show their size in violet instead of the S tile.** The struck-through
+  name already said "small"; the number says how small. ∅ stays for files under 101 bytes.
+
 ## 0.6.0 — 2026-10-05
 
 - **The front page shows where the checkout stands.** A band above the commits: the branch and
