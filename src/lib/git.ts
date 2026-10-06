@@ -8,7 +8,7 @@
  */
 
 import { stat } from 'node:fs/promises';
-import { join, relative, sep } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 
 export interface Commit {
   hash: string;
@@ -439,7 +439,9 @@ export async function repoHead(repo: string): Promise<RepoHead | null> {
   const [branch = '', gitDir = '', commonDir = ''] = refs.split('\n').map((l) => l.trim());
   // A linked worktree keeps its own HEAD but shares FETCH_HEAD with the main checkout, so look
   // in both. --git-common-dir may come back relative to the repo.
-  const dirs = [gitDir, commonDir && join(repo, commonDir)].filter(Boolean);
+  // --git-common-dir is relative in the main checkout and absolute in a linked worktree;
+  // `resolve` handles both, where `join` glued an absolute one under the repo.
+  const dirs = [gitDir, commonDir && resolve(repo, commonDir)].filter(Boolean);
   let pulledAt: number | null = null;
   for (const dir of dirs) {
     const info = await stat(join(dir, 'FETCH_HEAD')).catch(() => null);

@@ -387,6 +387,7 @@ main {
 /* The count opens the folder's page; the rest of the row only toggles it. */
 .row.dir > .badge.count { cursor: pointer; border-radius: 3px; }
 .row.dir > .badge.count:hover { background: color-mix(in srgb, var(--dir) 14%, transparent); text-decoration: underline; }
+.row.dir > .badge.count:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .row.muted { opacity: 0.45; }
 .row.fav > .twist { color: var(--mark-fav); }
 .row.tiny > .label { color: var(--fg-muted); }

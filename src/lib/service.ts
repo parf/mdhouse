@@ -44,7 +44,14 @@ export interface UnitSpec {
 }
 
 export function unitText(u: UnitSpec): string {
-  const q = (s: string) => (/[\s"\\]/.test(s) ? `"${s.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"` : s);
+  // systemd's own syntax, not a shell's: `%` starts a specifier everywhere (`%%` is a literal),
+  // `$` expands a variable in ExecStart (`$$` is a literal), and a value with whitespace or
+  // quotes goes in double quotes with `\` and `"` escaped.
+  const q = (s: string, exec = false) => {
+    let v = s.replaceAll('%', '%%');
+    if (exec) v = v.replaceAll('$', '$$$$');
+    return /[\s"'\\]/.test(v) ? `"${v.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"` : v;
+  };
   const exec = [u.bun, u.cli, '--fg', ...(u.port ? ['--port', String(u.port)] : [])];
   return [
     '[Unit]',
@@ -52,7 +59,7 @@ export function unitText(u: UnitSpec): string {
     'After=network.target',
     '',
     '[Service]',
-    `ExecStart=${exec.map(q).join(' ')}`,
+    `ExecStart=${exec.map((a) => q(a, true)).join(' ')}`,
     'WorkingDirectory=%h',
     `Environment=${q(`PATH=${u.path}`)}`,
     'Environment=MDHOUSE_SERVICE=1',

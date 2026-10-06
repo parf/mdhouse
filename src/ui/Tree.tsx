@@ -80,8 +80,16 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
             <span
               class="badge count"
               role="link"
+              tabIndex={0}
               title={`Open ${dir.path}/ — all ${dir.count} files`}
               onClick={(e) => {
+                e.stopPropagation();
+                p.onOpenDirPage(dir.path);
+              }}
+              // Reachable from the keyboard too; the key must not also toggle the row around it.
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
                 e.stopPropagation();
                 p.onOpenDirPage(dir.path);
               }}

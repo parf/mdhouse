@@ -32,7 +32,7 @@ Options
   -f, --fg             stay in the foreground; Ctrl+C stops it
       --git-log <n>    commits scanned for recents and the front page (default 200)
       --no-git         skip git entirely; filesystem recents only
-      --rw             allow mdhouse to write to the trees it serves
+      --rw             reserved for write-back (1.1); 1.0 never writes, this only marks RW
   -P, --perm           save the folders (and any --port/--host given): used on every start
       --rm             forget the folders and stop serving them
       --help           show this
@@ -111,7 +111,17 @@ function parse(argv: string[]): Options {
 const argv = process.argv.slice(2);
 const command =
   argv[0] === 'exit' || argv[0] === 'stop' ? 'exit' : argv[0] === 'service' ? 'service' : 'serve';
-const opts = parse(command === 'serve' ? argv : command === 'service' ? argv.slice(2) : argv.slice(1));
+// `mdhouse service install --port 8080` and `mdhouse service --port 8080 install` are the same
+// request: the action is whichever word names one, wherever it sits.
+const SERVICE_ACTIONS = ['install', 'uninstall', 'status'];
+const serviceAction = command === 'service' ? (argv.slice(1).find((a) => SERVICE_ACTIONS.includes(a)) ?? '') : '';
+const opts = parse(
+  command === 'serve'
+    ? argv
+    : command === 'service'
+      ? argv.slice(1).filter((a) => a !== serviceAction)
+      : argv.slice(1),
+);
 
 /** How to read what the daemon has said since it started. */
 const LOG_HINT =
@@ -197,7 +207,7 @@ if (command === 'exit') {
 // ---------------------------------------------------------------- mdhouse service …
 
 if (command === 'service') {
-  process.exit(await runService(argv[1] ?? '', { port: opts.port, explicit: opts.portGiven }));
+  process.exit(await runService(serviceAction, { port: opts.port, explicit: opts.portGiven }));
 }
 
 // ---------------------------------------------------------------- mdhouse --rm [dir ...]
@@ -396,7 +406,7 @@ if (!opts.fg) {
     console.log('\n  Serve these on every start:  mdhouse <dir> -P');
   }
   if (!opts.rw) {
-    console.log('\n  Read-only — mdhouse will not write to these trees. Pass --rw to allow it.');
+    console.log('\n  Read-only — mdhouse does not write to the trees it serves.');
   }
   console.log(`\n  Running in the background (pid ${live.pid}).  Stop it with:  ${stopHint}`);
   console.log(`  Point it at more directories any time:  mdhouse <dir>`);
@@ -444,7 +454,7 @@ printRoots(
   !registry.single,
 );
 if (!opts.rw) {
-  console.log('\n  Read-only — mdhouse will not write to these trees. Pass --rw to allow it.');
+  console.log('\n  Read-only — mdhouse does not write to the trees it serves.');
 }
 console.log(
   process.env.MDHOUSE_DAEMON === '1'

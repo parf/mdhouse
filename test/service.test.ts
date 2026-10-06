@@ -30,4 +30,10 @@ describe('the systemd unit', () => {
     expect(text).toContain('ExecStart=/usr/bin/bun "/home/a b/mdhouse" --fg');
     expect(text).toContain('Environment="XDG_CONFIG_HOME=/cfg dir"');
   });
+
+  test("systemd's own escapes: % and $ are doubled, a ' forces quotes", () => {
+    const text = unitText({ ...spec, cli: "/home/o'neil/100%/$HOME/mdhouse" });
+    expect(text).toContain(`ExecStart=/usr/bin/bun "/home/o'neil/100%%/$$HOME/mdhouse" --fg`);
+    expect(unitText({ ...spec, path: '/opt/50%/bin' })).toContain('Environment=PATH=/opt/50%%/bin');
+  });
 });

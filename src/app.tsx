@@ -38,7 +38,18 @@ function App() {
   const [roots, setRoots] = useState<RootInfo[]>([]);
   const [home, setHome] = useState<string | undefined>(undefined);
   const [options, setOptions] = useState<Options>({ editLink: true });
-  useEffect(() => void api.settings().then(setOptions).catch(() => {}), []);
+  // Until the saved settings arrive, nothing that depends on them is drawn — otherwise a ✎
+  // turned off in Settings flashed on every load.
+  const [optionsLoaded, setOptionsLoaded] = useState(false);
+  useEffect(
+    () =>
+      void api
+        .settings()
+        .then(setOptions)
+        .catch(() => {})
+        .finally(() => setOptionsLoaded(true)),
+    [],
+  );
   const [rootId, setRootId] = useState('');
   const [tree, setTree] = useState<TreePayload | null>(null);
   const [doc, setDoc] = useState<DocPayload | null>(null);
@@ -334,8 +345,15 @@ function App() {
     if (!dirTarget) return;
     if (dirTarget.rootId && dirTarget.rootId !== rootId) setRootId(dirTarget.rootId);
     if (dirTarget.dir) setExpanded((prev) => new Set([...prev, dirTarget.dir, ...ancestors(dirTarget.dir)]));
-    document.title = `${dirTarget.dir || 'root'}/ · mdhouse`;
+    document.title = `${dirTarget.dir || (roots.find((r) => r.id === dirTarget.rootId)?.name ?? 'root')}/ · mdhouse`;
   }, [dirTarget?.rootId, dirTarget?.dir]);
+
+  // The front page and Settings name themselves; documents and folder pages set their own titles
+  // when they load, so a title never outlives the page that set it.
+  useEffect(() => {
+    if (onSettings) document.title = 'Settings · mdhouse';
+    else if (!docPath) document.title = `${tree?.root.name ?? 'mdhouse'} · mdhouse`;
+  }, [onSettings, docPath, tree?.root.name]);
 
   const toggleDir = useCallback((dirPath: string) => {
     setExpanded((prev) => {
@@ -378,7 +396,7 @@ function App() {
   const docRoot = doc ? roots.find((r) => r.id === doc.root) : undefined;
   // Each segment encoded on its own: `encodeURI` leaves `#` and `?` alone, which cut the path.
   const editHref =
-    options.editLink && doc && docRoot
+    optionsLoaded && options.editLink && doc && docRoot
       ? `edit:${`${docRoot.path}/${doc.rel}`.split('/').map(encodeURIComponent).join('/')}`
       : null;
 
