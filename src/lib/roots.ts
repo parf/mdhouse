@@ -83,14 +83,32 @@ export class Registry {
   }
 
   /**
-   * @param specs directories as given on the command line
-   * @param writable whether the user passed `--rw`. Read-only is the default: mdhouse is a
-   *        viewer, and a viewer that cannot write cannot damage anything it is pointed at.
+   * @param specs directories, each a path or `{ path, writable }` — writability belongs to the
+   *        folder it was asked for, not to the process.
+   * @param writable the default for plain paths. Read-only is the default: a viewer that
+   *        cannot write cannot damage anything it is pointed at.
    */
-  static async create(specs: string[], writable = false): Promise<Registry> {
+  static async create(
+    specs: Array<string | { path: string; writable: boolean }>,
+    writable = false,
+  ): Promise<Registry> {
     const registry = new Registry([]);
-    for (const spec of specs) await registry.add(spec, writable);
+    for (const spec of specs) {
+      if (typeof spec === 'string') await registry.add(spec, writable);
+      else await registry.add(spec.path, spec.writable);
+    }
     return registry;
+  }
+
+  /**
+   * Make a served root writable, or read-only again. `mdhouse <dir> --rw` against a running
+   * daemon upgrades the folder in place rather than asking for a restart.
+   */
+  setWritable(id: string, on: boolean): boolean {
+    const root = this.byId.get(id);
+    if (!root) return false;
+    root.writable = on;
+    return true;
   }
 
   /**

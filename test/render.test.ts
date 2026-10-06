@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { questionsAndAnswers, render, splitFrontmatter } from '../src/lib/render';
+import { lineHash, questionsAndAnswers, render, splitFrontmatter, toggleTask } from '../src/lib/render';
 
 const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/d/${rel}` };
 
@@ -186,5 +186,48 @@ describe('::: q / ::: a containers', () => {
   test('an unknown container name is left as text', async () => {
     const { html } = await render('::: warning\nx\n:::\n', ctx);
     expect(html).not.toContain('qa-block');
+  });
+});
+
+describe('toggleTask — the one edit mdhouse makes to a document', () => {
+  const tick = (src: string, line: number, text: string) => toggleTask(src, line, lineHash(text));
+
+  test('flips one bracket and keeps every other byte', () => {
+    const src = '# T\n\n- [ ] one\n- [x] two\n';
+    expect(tick(src, 3, '- [ ] one')).toEqual({ src: '# T\n\n- [x] one\n- [x] two\n', checked: true });
+    expect(tick(src, 4, '- [x] two')).toEqual({ src: '# T\n\n- [ ] one\n- [ ] two\n', checked: false });
+    expect(tick('- [X] up\n', 1, '- [X] up')).toEqual({ src: '- [ ] up\n', checked: false });
+  });
+
+  test('CRLF files stay CRLF', () => {
+    expect(tick('- [ ] a\r\n- [ ] b\r\n', 2, '- [ ] b')).toEqual({ src: '- [ ] a\r\n- [x] b\r\n', checked: true });
+  });
+
+  test('nested, numbered and quoted items', () => {
+    expect(tick('- a\n  - [ ] deep\n', 2, '  - [ ] deep')).toMatchObject({ checked: true });
+    expect(tick('3. [ ] third\n', 1, '3. [ ] third')).toMatchObject({ src: '3. [x] third\n' });
+    expect(tick('> - [ ] quoted\n', 1, '> - [ ] quoted')).toMatchObject({ src: '> - [x] quoted\n' });
+  });
+
+  test('front matter is counted back in: data-line is the line within the body', () => {
+    const src = '---\ntitle: x\n---\n- [ ] after\n';
+    expect(tick(src, 1, '- [ ] after')).toEqual({ src: '---\ntitle: x\n---\n- [x] after\n', checked: true });
+  });
+
+  test('a page older than the file is refused, not applied to whatever is there now', () => {
+    expect(tick('- [x] one\n', 1, '- [ ] one')).toEqual({ error: 'stale' }); // ticked elsewhere since
+    expect(tick('- [ ] new line\n- [ ] one\n', 1, '- [ ] one')).toEqual({ error: 'stale' }); // shifted
+    expect(tick('- [ ] one\n', 9, '- [ ] one')).toEqual({ error: 'stale' });
+    expect(tick('- [ ] one\n', 0, '- [ ] one')).toEqual({ error: 'stale' });
+  });
+
+  test('a line that is no longer a task item is refused', () => {
+    expect(tick('plain text\n', 1, 'plain text')).toEqual({ error: 'not-a-task' });
+  });
+
+  test('the rendered checkbox carries the hash toggleTask expects', async () => {
+    const { html } = await render('- [ ] one\n- [x] two\n', ctx);
+    expect(html).toContain(`data-line="1" data-hash="${lineHash('- [ ] one')}"`);
+    expect(html).toContain(`data-line="2" data-hash="${lineHash('- [x] two')}"`);
   });
 });

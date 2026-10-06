@@ -175,3 +175,18 @@ describe('removing a root', () => {
     expect(registry.remove(second!.id)).toBe(false);
   });
 });
+
+describe('writability per folder', () => {
+  test('each folder gets its own, and a served one can be made writable in place', async () => {
+    const registry = await Registry.create([
+      { path: HERE, writable: true },
+      { path: `${HERE}/src`, writable: false },
+    ]);
+    const [a, b] = registry.list();
+    expect([a!.writable, b!.writable]).toEqual([true, false]);
+
+    expect(registry.setWritable(b!.id, true)).toBe(true);
+    expect(registry.get(b!.id)!.writable).toBe(true);
+    expect(registry.setWritable('nope', true)).toBe(false);
+  });
+});

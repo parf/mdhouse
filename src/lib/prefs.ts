@@ -37,6 +37,12 @@ interface PrefsFile {
   roots: Record<string, RootPrefs>;
   /** Absolute, symlink-resolved directories served on every start. */
   saved: string[];
+  /**
+   * The saved directories mdhouse may write to — saved with `-P --rw`. Writability belongs to
+   * the folder it was asked for, never to the process: starting with `--rw` for one folder does
+   * not make the saved ones writable.
+   */
+  writable: string[];
   /** The settings page's options. */
   settings: Settings;
   /**
@@ -75,13 +81,24 @@ function covers(rule: string, path: string): boolean {
   return path === rule;
 }
 
-const fresh = (): PrefsFile => ({ version: 1, roots: {}, saved: [], settings: { ...DEFAULT_SETTINGS }, server: {} });
+const fresh = (): PrefsFile => ({
+  version: 1,
+  roots: {},
+  saved: [],
+  writable: [],
+  settings: { ...DEFAULT_SETTINGS },
+  server: {},
+});
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
 
 /** A parsed file, filled out and type-checked, so an older or hand-edited one loads cleanly. */
 function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   const saved = Array.isArray(parsed.saved) ? parsed.saved.filter((d) => typeof d === 'string') : [];
+  // Only a saved directory can be saved writable.
+  const writable = Array.isArray(parsed.writable)
+    ? parsed.writable.filter((d) => typeof d === 'string' && saved.includes(d))
+    : [];
   const settings = { ...DEFAULT_SETTINGS };
   for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
     const value = parsed.settings?.[key];
@@ -94,6 +111,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     version: 1,
     roots: parsed.roots && typeof parsed.roots === 'object' ? parsed.roots : {},
     saved,
+    writable,
     settings,
     server,
   };
@@ -214,12 +232,23 @@ export class Prefs {
     return this.data.saved.includes(dir);
   }
 
-  /** Save a directory; true when it was not saved already. */
-  addSaved(dir: string): Promise<boolean> {
+  /** Saved with `-P --rw`: mdhouse may write to it on every start. */
+  isWritableSaved(dir: string): boolean {
+    return this.data.writable.includes(dir);
+  }
+
+  /**
+   * Save a directory, recording it exactly as asked: writable with `rw`, read-only without —
+   * so saving again without `--rw` is how write access is taken away. True when it was not
+   * saved before.
+   */
+  addSaved(dir: string, rw = false): Promise<boolean> {
     return this.mutate((data) => {
-      if (data.saved.includes(dir)) return false;
-      data.saved = [...data.saved, dir].sort();
-      return true;
+      const isNew = !data.saved.includes(dir);
+      if (isNew) data.saved = [...data.saved, dir].sort();
+      data.writable = data.writable.filter((d) => d !== dir);
+      if (rw) data.writable = [...data.writable, dir].sort();
+      return isNew;
     });
   }
 
@@ -228,6 +257,7 @@ export class Prefs {
     return this.mutate((data) => {
       if (!data.saved.includes(dir)) return false;
       data.saved = data.saved.filter((d) => d !== dir);
+      data.writable = data.writable.filter((d) => d !== dir);
       return true;
     });
   }

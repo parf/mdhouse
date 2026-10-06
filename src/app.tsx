@@ -521,6 +521,12 @@ function App() {
           gear={pageGear}
           rootName={docRoot?.name}
           editHref={editHref}
+          onReload={() =>
+            void api
+              .doc(docPath)
+              .then(setDoc)
+              .catch(() => {})
+          }
           rootDirUrl={dirPageUrl('', doc?.root)}
           onOpenRootDir={() => openDirPage('', doc?.root)}
         />

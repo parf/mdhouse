@@ -14,7 +14,7 @@ import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { repoToplevel } from './lib/scan';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
-import { markupHunks, render, splitFrontmatter } from './lib/render';
+import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { Watcher } from './lib/watch';
@@ -81,6 +81,8 @@ const MERMAID_DIST = new URL('../node_modules/mermaid/dist', import.meta.url).pa
 export async function serve(opts: ServeOptions) {
   const { registry, prefs, port, hostname } = opts;
   const store = new Store(registry, prefs, { noGit: opts.noGit, gitLogLimit: opts.gitLogLimit });
+  /** Checkbox writes in flight, per file, so they apply one after another. */
+  const taskWrites = new Map<string, Promise<unknown>>();
 
   /** Resolve the `root` query parameter, defaulting to the first root. */
   const rootOf = (url: URL): Root | null => {
@@ -172,6 +174,48 @@ export async function serve(opts: ServeOptions) {
        * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
        * non-browser caller sends neither and is let through — it could edit prefs.json itself.
        */
+      /**
+       * Tick or untick one task checkbox — the only write mdhouse makes to a document.
+       *
+       * Refused on a read-only folder before the file is even read; refused with 409 when the
+       * page was rendered from an older file (the line's fingerprint no longer matches), so a
+       * stale tab cannot flip whatever now sits on that line. The write goes through
+       * `Registry.writeFile()`, the one chokepoint, and the watcher then tells every open tab.
+       */
+      '/api/task': {
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as { p?: string; line?: number; hash?: string } | null;
+          if (!body?.p || !Number.isInteger(body.line) || typeof body.hash !== 'string') {
+            return fail(400, 'expected {p, line, hash}');
+          }
+          const loc = await registry.resolve(body.p);
+          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to tick boxes`);
+
+          // One file, one write at a time: two quick clicks are applied in order, each against
+          // the file the previous one left.
+          const run = (taskWrites.get(loc.abs) ?? Promise.resolve()).then(async () => {
+            const result = toggleTask(await Bun.file(loc.abs).text(), body.line!, body.hash!);
+            if ('error' in result) return result;
+            await registry.writeFile(body.p!, result.src);
+            return result;
+          });
+          const tail = run.catch(() => {});
+          taskWrites.set(loc.abs, tail);
+          // Forget the file once its last queued write is done, so the map does not grow.
+          void tail.then(() => taskWrites.get(loc.abs) === tail && taskWrites.delete(loc.abs));
+          const result = await run;
+          if ('error' in result) {
+            return json(
+              { error: result.error === 'stale' ? 'the file changed since this page was loaded' : 'that line is no longer a task', reason: result.error },
+              409,
+            );
+          }
+          return json({ checked: result.checked });
+        },
+      },
+
       /** The settings page's options. Changing one is held to the same same-origin rule. */
       '/api/settings': {
         GET: () => json(prefs.settings),
@@ -470,10 +514,17 @@ export async function serve(opts: ServeOptions) {
   const addRoots = async (dirs: string[], writable: boolean, save = false): Promise<AddReply> => {
     const asked = new Set<string>();
     const added = new Set<string>();
+    const upgraded = new Set<string>();
 
     for (const dir of dirs) {
       const known = new Set(registry.list().map((r) => r.id));
       const root = await registry.add(dir, writable);
+      // `--rw` for a folder already served read-only upgrades it in place. Never the other way:
+      // taking write access away is `-P` without `--rw` and a restart, or `--rm`.
+      if (writable && !root.writable) {
+        registry.setWritable(root.id, true);
+        upgraded.add(root.id);
+      }
       // Asking for a directory already served is a request for its URL, not a second copy of
       // it — only a genuinely new root needs a watcher.
       if (!known.has(root.id)) {
@@ -481,10 +532,10 @@ export async function serve(opts: ServeOptions) {
         added.add(root.id);
       }
       asked.add(root.id);
-      if (save) await prefs.addSaved(root.path);
+      if (save) await prefs.addSaved(root.path, writable);
     }
 
-    const roots = rootLines(added, asked);
+    const roots = rootLines(added, asked).map((r) => (upgraded.has(r.id) ? { ...r, upgraded: true } : r));
     // Open tabs learn about the new root over the channel they already hold.
     server.publish('roots', JSON.stringify({ t: 'roots', roots: roots.map((r) => r.id) }));
     return { url: `http://${hostname}:${server.port}`, roots };

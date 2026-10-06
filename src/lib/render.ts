@@ -187,13 +187,59 @@ function alertPlugin(md: MarkdownIt): void {
   });
 }
 
+/** FNV-1a, 32 bits, as hex: a fingerprint of one source line, cheap to compute on both ends. */
+export function lineHash(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+/** A task item's marker, through the bracket: `- [ ]`, `1. [x]`, `> * [X]`. */
+const TASK_LINE = /^(\s*(?:>\s*)*(?:[-*+]|\d+[.)])\s+)\[([ xX])\]/;
+
 /**
- * Task list items become real checkboxes carrying their source line. They are rendered
- * disabled here; the client re-enables them only for a writable root.
+ * Tick or untick the task on one line of a file — the only edit mdhouse makes to a document.
+ *
+ * `line` is the 1-based line within the body (what `data-line` says); front matter is counted
+ * back in here. `hash` is the fingerprint the page rendered with: if the line no longer matches
+ * it, the page is older than the file and the click is refused rather than applied to whatever
+ * now sits on that line. Everything but the one bracket is kept byte for byte, `\r\n` included.
+ */
+export function toggleTask(
+  src: string,
+  line: number,
+  hash: string,
+): { src: string; checked: boolean } | { error: 'stale' | 'not-a-task' } {
+  const lines = src.split('\n');
+  const index = splitFrontmatter(src).offset + line - 1;
+  const raw = lines[index];
+  if (raw === undefined || line < 1) return { error: 'stale' };
+
+  const cr = raw.endsWith('\r');
+  const text = cr ? raw.slice(0, -1) : raw;
+  if (lineHash(text) !== hash) return { error: 'stale' };
+
+  const match = TASK_LINE.exec(text);
+  if (!match) return { error: 'not-a-task' };
+
+  const checked = match[2] === ' ';
+  const at = match[1]!.length + 1; // the character inside the brackets
+  lines[index] = `${text.slice(0, at)}${checked ? 'x' : ' '}${text.slice(at + 1)}${cr ? '\r' : ''}`;
+  return { src: lines.join('\n'), checked };
+}
+
+/**
+ * Task list items become real checkboxes carrying their source line and a fingerprint of it
+ * (`data-hash`), which is what lets a click be checked against the file before it is written.
+ * They are rendered disabled here; the client enables them only for a writable root.
  */
 function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number }): void {
   md.core.ruler.after('mdhouse_alerts', 'mdhouse_tasks', (state) => {
     const tokens = state.tokens;
+    const source = state.src.split('\n');
     for (let i = 0; i < tokens.length - 2; i++) {
       if (tokens[i]!.type !== 'list_item_open') continue;
       const inline = tokens[i + 2];
@@ -213,10 +259,11 @@ function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number })
         inline.children[0]!.content = inline.children[0]!.content.replace(/^\[[ xX]\]\s+/, '');
       }
 
+      const raw = (source[line - 1] ?? '').replace(/\r$/, '');
       const box = new state.Token('html_inline', '', 0);
       box.content =
         `<input class="task-checkbox" type="checkbox" disabled` +
-        `${done ? ' checked' : ''} data-line="${line}">`;
+        `${done ? ' checked' : ''} data-line="${line}" data-hash="${lineHash(raw)}">`;
       inline.children?.unshift(box);
       i += 2;
     }

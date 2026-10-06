@@ -93,6 +93,22 @@ export const api = {
 
   settings: () => get<Settings>('/api/settings'),
 
+  /**
+   * Tick or untick the task on `line` of document `p` (a wire path), if that line still has the
+   * fingerprint `hash` the page was rendered with. A refusal throws with the server's reason;
+   * `status` 409 means the page is older than the file.
+   */
+  async toggleTask(p: string, line: number, hash: string): Promise<{ checked: boolean }> {
+    const res = await fetch('/api/task', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ p, line, hash }),
+    });
+    const body = (await res.json().catch(() => null)) as { checked?: boolean; error?: string } | null;
+    if (!res.ok) throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+    return { checked: body?.checked === true };
+  },
+
   async setSettings(patch: Partial<Settings>): Promise<Settings> {
     const res = await fetch('/api/settings', {
       method: 'POST',

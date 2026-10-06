@@ -52,6 +52,8 @@ export interface RootLine {
   asked: boolean;
   /** In the saved list: served again on every start. */
   saved: boolean;
+  /** This request made it writable — it was served read-only until now. */
+  upgraded?: boolean;
 }
 
 export interface AddReply {

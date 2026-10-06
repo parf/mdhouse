@@ -33,7 +33,8 @@ Options
   -f, --fg             stay in the foreground; Ctrl+C stops it
       --git-log <n>    commits scanned for recents and the front page (default 200)
       --no-git         skip git entirely; filesystem recents only
-      --rw             reserved for write-back (1.1); 1.0 never writes, this only marks RW
+      --rw             the folders named may be written (ticking a checkbox saves it);
+                       with -P, saved writable. Other folders are not affected
   -P, --perm           save the folders (and any --port/--host given): used on every start
       --rm             forget the folders and stop serving them
       --help           show this
@@ -140,6 +141,12 @@ const printRoots = (
     console.log(`${mark} ${id}${root.path}${root.writable ? '  [RW]' : ''}${root.saved ? '  [saved]' : ''}`);
   }
 };
+
+/** What mdhouse may write, said once under the root list, which marks each writable one `[RW]`. */
+const writeNote = (roots: Array<{ writable: boolean }>): string =>
+  roots.some((r) => r.writable)
+    ? '\n  Folders marked [RW]: ticking a checkbox saves the file. The rest are read-only.'
+    : '\n  Read-only — mdhouse does not write to the trees it serves.';
 
 /** A directory as the config stores it: absolute and symlink-resolved, or as written if gone. */
 const canonical = (dir: string): string => {
@@ -301,13 +308,9 @@ async function handOver(reply: AddReply | { error: string } | null): Promise<nev
   console.log(`mdhouse  ${reply.url}  (already running — ${grew ? 'added to it' : 'already serving that'})`);
   printRoots(reply.roots, reply.roots.length > 1);
 
-  // Writability belongs to a root, and this one already exists with its own answer. Say so
-  // rather than pretending `--rw` did something.
+  // `--rw` for a folder that was already served read-only switched it over in place.
   for (const root of reply.roots) {
-    if (root.asked && !root.added && opts.rw && !root.writable) {
-      console.log(`\n  ${root.path} is already served read-only.`);
-      console.log('  Stop that mdhouse and start it again with --rw to change that.');
-    }
+    if (root.upgraded) console.log(`\n  ${root.path} is writable now.`);
   }
 
   console.log(`\n  Stop it with:  mdhouse exit${portHint}`);
@@ -327,7 +330,7 @@ if (!opts.fg) {
 
   // Nothing running, so nothing holds the prefs in memory: save here, and the daemon about to
   // start reads them back.
-  if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir));
+  if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw);
 
   // Nobody answered on the control socket, so if the port is taken it is taken by something
   // else. Finding that out here, rather than in a detached child whose output has gone to the
@@ -404,9 +407,7 @@ if (!opts.fg) {
   if (!opts.perm && !prefs.savedDirs().length) {
     console.log('\n  Serve these on every start:  mdhouse <dir> -P');
   }
-  if (!opts.rw) {
-    console.log('\n  Read-only — mdhouse does not write to the trees it serves.');
-  }
+  console.log(writeNote(live.roots));
   console.log(`\n  Running in the background (pid ${live.pid}).  Stop it with:  ${stopHint}`);
   console.log(`  Point it at more directories any time:  mdhouse <dir>`);
   console.log(LOG ? `  Watch what it does:  ${LOG.follow}` : `  Its output is not kept on this system — ${FG_HINT}`);
@@ -417,8 +418,16 @@ if (!opts.fg) {
 
 // The daemon itself: what it was asked for, plus everything saved — `-P` is a promise that a
 // directory comes back on every start, however the start was asked for.
-if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir));
-const registry = await Registry.create([...new Set([...dirs, ...saved].map(canonical))], opts.rw);
+if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw);
+// Writability per folder: `--rw` covers the folders named on this command, and a saved folder is
+// writable only if it was saved with `-P --rw`. One `--rw` never spreads to the others.
+const named = new Set(dirs.map(canonical));
+const registry = await Registry.create(
+  [...new Set([...named, ...saved.map(canonical)])].map((path) => ({
+    path,
+    writable: (named.has(path) && opts.rw) || prefs.isWritableSaved(path),
+  })),
+);
 
 let started: Awaited<ReturnType<typeof serve>>;
 try {
@@ -452,9 +461,7 @@ printRoots(
   registry.list().map((r) => ({ ...r, saved: prefs.isSaved(r.path) })),
   !registry.single,
 );
-if (!opts.rw) {
-  console.log('\n  Read-only — mdhouse does not write to the trees it serves.');
-}
+console.log(writeNote(registry.list()));
 console.log(
   process.env.MDHOUSE_DAEMON === '1'
     ? `\n  Started in the background — stop it with ${stopHint}.`

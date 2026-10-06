@@ -156,3 +156,32 @@ describe('changes made at once, in one process', () => {
     expect(after.savedDirs()).toEqual(['/burst']);
   });
 });
+
+describe('writable saved folders', () => {
+  test('-P records a folder as asked: with rw writable, without it read-only again', async () => {
+    const f = join(dir, 'rw.json');
+    const prefs = await Prefs.load(f);
+    await prefs.addSaved('/a', true);
+    await prefs.addSaved('/b');
+    expect((await Prefs.load(f)).isWritableSaved('/a')).toBe(true);
+    expect((await Prefs.load(f)).isWritableSaved('/b')).toBe(false);
+
+    await prefs.addSaved('/a'); // saved again without --rw: write access taken away
+    expect((await Prefs.load(f)).isWritableSaved('/a')).toBe(false);
+  });
+
+  test('forgetting a folder forgets its write access; only saved folders can be writable', async () => {
+    const f = join(dir, 'rw2.json');
+    const prefs = await Prefs.load(f);
+    await prefs.addSaved('/c', true);
+    await prefs.removeSaved('/c');
+    await prefs.addSaved('/c');
+    expect((await Prefs.load(f)).isWritableSaved('/c')).toBe(false);
+
+    const g = join(dir, 'rw3.json');
+    await writeFile(g, JSON.stringify({ saved: ['/x'], writable: ['/x', '/not-saved', 3] }));
+    const loaded = await Prefs.load(g);
+    expect(loaded.isWritableSaved('/x')).toBe(true);
+    expect(loaded.isWritableSaved('/not-saved')).toBe(false);
+  });
+});

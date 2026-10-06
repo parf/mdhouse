@@ -36,6 +36,8 @@ interface Props {
   onOpenRootDir?: () => void;
   /** `edit:/full/path` for this document, or null when the edit link is turned off. */
   editHref?: string | null;
+  /** Fetch this document again — after a checkbox write, so the page matches the file. */
+  onReload?: () => void;
 }
 
 /**
@@ -82,6 +84,7 @@ export function Doc({
   rootDirUrl,
   onOpenRootDir,
   editHref,
+  onReload,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(true);
@@ -138,13 +141,19 @@ export function Doc({
   const dirty = doc?.status === 'modified' || doc?.status === 'staged' || doc?.status === 'untracked';
   const diffOn = view !== 'doc';
 
+  // Decided once per document, when it arrives — not again when its status changes while it is
+  // open. Ticking a checkbox makes the file "modified", and that must not throw the reader out
+  // of the document and into its diff.
+  const viewDecidedFor = useRef<string | null>(null);
   useEffect(() => {
+    if (!doc || viewDecidedFor.current === doc.url) return;
+    viewDecidedFor.current = doc.url;
     setDiffRev(null);
     setView(dirty ? diffView : 'doc');
     // diffView is deliberately not a dependency: changing the preferred view is already a
     // change of view, and re-running here would fight the toggle that set it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docPath, dirty]);
+  }, [doc?.url, dirty]);
 
   useEffect(() => {
     setDiff(null);
@@ -212,6 +221,46 @@ export function Doc({
   useEffect(() => {
     if (doc?.hasMermaid && body.current) void renderMermaid(body.current);
   }, [doc?.url, doc?.hasMermaid]);
+
+  /**
+   * Checkboxes you can tick, on a writable folder and in the plain document view (a diff view
+   * is about what changed, not a place to change it). A click asks the server to flip that one
+   * line — refused if the file moved on since this page was rendered — and the document is then
+   * fetched again, so every box carries the fingerprint of the file as it now is.
+   */
+  const [taskNote, setTaskNote] = useState<string | null>(null);
+  useEffect(() => setTaskNote(null), [doc?.url]);
+  useEffect(() => {
+    const el = body.current;
+    if (!el || !doc) return;
+    const editable = doc.writable && view === 'doc';
+    for (const box of el.querySelectorAll<HTMLInputElement>('.task-checkbox')) box.disabled = !editable;
+    if (!editable) return;
+
+    const onChange = async (e: Event) => {
+      const box = e.target as HTMLInputElement;
+      if (!box.classList?.contains('task-checkbox')) return;
+      box.disabled = true;
+      try {
+        await api.toggleTask(`${doc.root}/${doc.rel}`, Number(box.dataset.line), box.dataset.hash ?? '');
+        setTaskNote(null);
+      } catch (err) {
+        // Put the box back as it was. The reload below may bring identical HTML (nothing was
+        // written), and then nothing else would re-enable it.
+        box.checked = !box.checked;
+        box.disabled = false;
+        setTaskNote(
+          (err as { status?: number }).status === 409
+            ? 'The file changed since this page was loaded — it has been reloaded; tick again.'
+            : (err as Error).message,
+        );
+      } finally {
+        onReload?.();
+      }
+    };
+    el.addEventListener('change', onChange);
+    return () => el.removeEventListener('change', onChange);
+  }, [doc?.html, doc?.writable, view]);
 
   // Each document starts at the default depth; H3 is a per-document choice, not a mode.
   useEffect(() => setTocDepth(2), [doc?.url]);
@@ -456,6 +505,7 @@ export function Doc({
       )}
       {/* Hidden rather than unmounted: the rendered body carries the link handler, the mermaid
           diagrams and the scroll target, and none of that should be rebuilt by a toggle. */}
+      {taskNote && <p class="task-note">{taskNote}</p>}
       <div
         ref={body}
         class={`md${overlaid ? ' marked' : ''}`}
