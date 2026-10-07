@@ -20,7 +20,7 @@
     return r;
   };
   /**
-   * Every form has 💬 Save, (ESC)Cancel and 👤me; the buttons between them are what fits what is
+   * Every form has 💬 (save), (ESC)Cancel and 👤me; the buttons between them are what fits what is
    * edited. A button with `s` saves and moves the line to that stage; `partial` saves the reply as
    * 💬 ⚠️ (need more); `pick` saves and picks the option the comment is on.
    */
@@ -32,13 +32,13 @@
     proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
     comment: [],
   };
-  function editor(host, { kind = 'comment', prefill = '', placeholder = 'Reply…', save = '💬 Save', onSave }) {
+  function editor(host, { kind = 'comment', prefill = '', placeholder = 'Reply…', save = '💬', onSave }) {
     closeEditors();
     const ed = document.createElement('div');
     ed.className = kind === 'finding' ? 'f-edit' : 'c-edit';
     const extra = (ACTIONS[kind] || [])
       .map(([a, label, tip]) => `<button data-a="${a}"${tip ? ` data-tip="${tip}"` : ''}>${label}</button>`).join('');
-    ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">${save}</button>`
+    ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Save — Ctrl+Enter">${save}</button>`
       + extra + '<button data-a="elaborate" data-tip="Ask for more: a reply \'elaborate — …\'; the item stays open">🔍 more</button>'
       + '<button class="cancel">(ESC)Cancel</button>'
       + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;

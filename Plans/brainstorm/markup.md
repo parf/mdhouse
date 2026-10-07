@@ -28,14 +28,14 @@ turns so GitHub keeps them apart:
 - the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
 - a `❓` / `⁉️` item is answered, as a quote one is, when its last 💬 is whole (not ⚠️) and from a
   person — a reply from 👾 / 📡 asks me again
-- every editor: 💬 Save, the actions that fit (below), (ESC)Cancel, and `[ ] 👤me` at the far right —
+- every editor: 💬 (save — the glyph alone), the actions that fit (below), (ESC)Cancel, and `[ ] 👤me` at the far right —
   set, the reply starts with my badge
   (`💬 👤parf …`); remembered per browser. The name: `"me"` in prefs.json settings overrides;
   default from git — the local part of `user.email` (a badge name is one word), else `user.name`
   without spaces
 - "need more" = my `💬 ⚠️` while the glyph stays `❓`
 
-  | Editing | Actions between Save and Cancel |
+  | Editing | Actions between 💬 and Cancel |
   |---|---|
   | a question ❓ ⁉️ (answered or not) | ⚠️ need more · ✅ settled · ⏳ agent · ⏸️ defer · 🚫 drop |
   | a finding (a line with a severity) | ✅ done · 🚫 reject · ⏸️ defer · 🎫 ticket · ⏳ agent · ❓ me · ⚠️ partial |
