@@ -15,6 +15,7 @@
   --accent-fg: #ffffff;
   --warn: #b7791f;
   --danger: #c0392b;
+  --uncommitted: #c2410c; /* dark orange: work not committed yet */
   --ok: #2f855a;
   --mark-fav: #d99100;
   --size-tiny: #f0206e;
@@ -82,6 +83,7 @@
     --accent-fg: #0d1117;
     --warn: #d9a441;
     --danger: #e57373;
+    --uncommitted: #fb923c;
     --ok: #68c496;
     --mark-fav: #e0b341;
     --size-tiny: #ff3d85;
@@ -130,6 +132,7 @@
   --accent-fg: #0d1117;
   --warn: #d9a441;
   --danger: #e57373;
+  --uncommitted: #fb923c;
   --ok: #68c496;
   --mark-fav: #e0b341;
   --size-tiny: #ff3d85;
@@ -1607,3 +1610,4 @@ button.sync-chip { cursor: pointer; }
   border: 1px solid var(--border-strong); color: var(--fg-muted); background: var(--bg-raised);
 }
 .diff-reset:hover { color: #b91c1c; border-color: #b91c1c; }
+.gitlog .commit.local .commit-subject { color: var(--uncommitted); font-weight: 600; }
