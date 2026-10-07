@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- A folder page and its git view share one header: logo; the folder name (folder page → its
+  git view, git view → the folder page); GIT / Favs / Recent / Mine / Commits / Files and ⚙ on
+  the right, links each — the tab is in the url (`?git=favs|mine|commits|files`)
+
 ## 1.4.0 — 2026-10-07
 
 ### Added

@@ -51,7 +51,9 @@
 
 ## NEXT iteration
 
-- [ ] unify styles (git/dir) view
+- [x] unify styles (git/dir) view
+  - Logo ; Dir_Name - справа вкладки [GIT] / Favs / Recent / Mine / Commits / Files и ⚙ - everywhere
+  - on dir page "Dir Name" link to "git"; everywhere else - link to dir
 - [ ] git status in breadcrumbs
 - [ ] ez git page access
 - [ ] Questions with suggests - questions with suggested options - radio buttons or just buttons/checkboxes

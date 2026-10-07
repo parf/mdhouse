@@ -2,13 +2,12 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { api, type GitInfo, type RemoteState, type RootInfo } from './api';
 import { CommitsView, FilesView, GitActions, RemoteBar, SyncLists } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
-import { IconClock, IconDoc, IconGit, IconStar, IconUser } from './icons';
-
-const IconFiles = IconDoc;
+import { PageHead, type HomeView } from './PageHead';
+import { IconGit } from './icons';
 import { preciseAgo, docName } from './format';
 import { Ago } from './Ago';
 
-export type HomeView = 'favorites' | 'recent' | 'mine' | 'commits' | 'files';
+export type { HomeView } from './PageHead';
 
 interface Props {
   rootId: string;
@@ -23,18 +22,14 @@ interface Props {
   gear?: preact.ComponentChildren;
   /** The folder this is the git view of, root-relative; '' for the root. */
   dir: string;
-  /** The folder's own page — every file in it, as a list. */
+  /** The folder's own page — every file in it, as a list; the git view is it plus `?git`. */
   dirUrl: string;
-  onOpenDir: () => void;
+  /** A parent folder's git view, for the breadcrumbs. */
+  crumbUrl: (dir: string) => string;
+  /** The tab, from the url. */
+  view: HomeView;
+  go: (url: string) => void;
 }
-
-const VIEWS: Array<{ id: HomeView; label: string; Icon: (p: { size?: number }) => preact.JSX.Element; git?: true }> = [
-  { id: 'favorites', label: 'Favs', Icon: (p) => <IconStar {...p} filled /> },
-  { id: 'recent', label: 'Recent', Icon: IconClock },
-  { id: 'mine', label: 'Mine', Icon: IconUser },
-  { id: 'commits', label: 'Commits', Icon: IconGit, git: true },
-  { id: 'files', label: 'Files', Icon: IconFiles, git: true },
-];
 
 /**
  * The front page: what changed here lately, grouped by commit rather than by file.
@@ -44,7 +39,6 @@ const VIEWS: Array<{ id: HomeView; label: string; Icon: (p: { size?: number }) =
  * the four plan files it touched says more than those four files listed separately.
  */
 export function Home(props: Props) {
-  const [view, setView] = useState<HomeView>('recent');
   const [digest, setDigest] = useState<Digest | null>(null);
 
   useEffect(() => {
@@ -75,9 +69,8 @@ export function Home(props: Props) {
       live = false;
     };
   }, [p, props.revision, gitTick]);
-  useEffect(() => {
-    if (!git && (view === 'commits' || view === 'files')) setView('recent');
-  }, [git]);
+  // Commits and Files need a repo; outside one they read as Recent.
+  const view: HomeView = !git && (props.view === 'commits' || props.view === 'files') ? 'recent' : props.view;
 
   const me = props.tree?.user ?? null;
 
@@ -128,34 +121,17 @@ export function Home(props: Props) {
 
   return (
     <div class="home">
-      <header class="home-head">
-        <h1>
-          <button class="mark" onClick={props.onAbout} title="About mdhouse" aria-label="About mdhouse" />
-          {props.dir ? <span class="git-dirname">{props.dir}/</span> : (root?.name ?? 'mdhouse')}
-        </h1>
-        {/* A real link, so a middle click opens it in a tab; a plain click stays in the app. */}
-        <a
-          class="head-link"
-          href={props.dirUrl}
-          title="Every file in this root, as a list"
-          onClick={(e) => {
-            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-            e.preventDefault();
-            props.onOpenDir();
-          }}
-        >
-          DIR
-        </a>
-        <div class="tabs" role="tablist">
-          {VIEWS.filter((v) => !v.git || git).map(({ id, label, Icon }) => (
-            <button key={id} role="tab" aria-selected={view === id} onClick={() => setView(id)}>
-              <Icon size={12} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
-        {props.gear}
-      </header>
+      <PageHead
+        rootName={root?.name ?? 'mdhouse'}
+        dir={props.dir}
+        dirUrl={props.dirUrl}
+        crumbUrl={props.crumbUrl}
+        view={view}
+        repo={!!git}
+        go={props.go}
+        onAbout={props.onAbout}
+        gear={props.gear}
+      />
 
       {(() => {
         const head = git?.head ? { ...git.head, repo: git.repo } : digest?.head;

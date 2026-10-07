@@ -6,6 +6,7 @@ import { docName, fileSize, likeMatcher } from './format';
 import { Ago } from './Ago';
 import { Dir } from './Home';
 import { sizeClass, SizeMark } from './Tree';
+import { PageHead } from './PageHead';
 
 type Sort = 'new' | 'az';
 
@@ -28,14 +29,12 @@ interface Props {
   /** Root-relative folder, '' for the root itself. */
   dir: string;
   onOpen: (rel: string) => void;
-  onOpenDir: (dir: string) => void;
+  /** A folder's page url, root-relative dir. */
+  dirUrl: (dir: string) => string;
+  go: (url: string) => void;
   onAbout?: () => void;
   gear?: preact.ComponentChildren;
-  /** The root's front page — what git says changed — linked from the root's own folder page. */
   rootId: string;
-  /** This folder's git view; the link shows only when the folder is inside a repo. */
-  gitUrl: string;
-  onOpenGit: () => void;
 }
 
 const loadSort = (): Sort => {
@@ -56,7 +55,7 @@ const loadSort = (): Sort => {
  * Built from the tree the sidebar already holds, so it costs no request and follows live
  * changes with it.
  */
-export function DirPage({ tree, dir, onOpen, onOpenDir, onAbout, gear, rootId, gitUrl, onOpenGit }: Props) {
+export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }: Props) {
   const [inRepo, setInRepo] = useState(false);
   useEffect(() => {
     let live = true;
@@ -105,58 +104,23 @@ export function DirPage({ tree, dir, onOpen, onOpenDir, onAbout, gear, rootId, g
   }, [all, dir, sort, filterable, dirQuery, nameQuery]);
 
   const total = files.reduce((n, f) => n + f.size, 0);
-  const segments = dir ? dir.split('/') : [];
-  const name = segments.at(-1) ?? tree?.root.name ?? '';
 
   // Where each file sits relative to this page's folder; '' for the folder itself.
   const sub = (f: FileEntry) => (f.dir === dir ? '' : dir ? f.dir.slice(dir.length + 1) : f.dir);
 
   return (
     <div class="home dir-page">
-      {/* On the root's own page the breadcrumb would be just the root's name, which the title
-          already says. */}
-      {dir && (
-        <nav class="crumbs">
-          <button class="crumb" onClick={() => onOpenDir('')}>
-            {tree?.root.name}
-          </button>
-          {segments.map((seg, i) => (
-            <span key={i}>
-              <span class="sep">/</span>
-              <button
-                class={i === segments.length - 1 ? 'crumb here' : 'crumb'}
-                onClick={() => onOpenDir(segments.slice(0, i + 1).join('/'))}
-              >
-                {seg}
-              </button>
-            </span>
-          ))}
-        </nav>
-      )}
-
-      <div class="doc-title-row">
-        <h1 class="doc-title">
-          <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />
-          {name}/
-        </h1>
-        {/* The git view's DIR, the other way round: from the folder's file list to what git
-            says changed in it. Only on a folder inside a repo. */}
-        {inRepo && (
-          <a
-            class="head-link git"
-            href={gitUrl}
-            title="What changed here, by commit"
-            onClick={(e) => {
-              if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-              e.preventDefault();
-              onOpenGit();
-            }}
-          >
-            GIT
-          </a>
-        )}
-        {gear}
-      </div>
+      <PageHead
+        rootName={tree?.root.name ?? ''}
+        dir={dir}
+        dirUrl={dirUrl(dir)}
+        crumbUrl={dirUrl}
+        view={null}
+        repo={inRepo}
+        go={go}
+        onAbout={onAbout}
+        gear={gear}
+      />
 
       <div class="dir-meta">
         <span>
@@ -243,7 +207,7 @@ export function DirPage({ tree, dir, onOpen, onOpenDir, onAbout, gear, rootId, g
                           class="dir-link"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onOpenDir(dir ? `${dir}/${at}` : at);
+                            go(dirUrl(dir ? `${dir}/${at}` : at));
                           }}
                           title={`Open ${dir ? `${dir}/${at}` : at}/`}
                         >

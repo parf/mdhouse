@@ -165,7 +165,7 @@ describe('the git view — /api/git', () => {
       fetch(url(path), { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
     try {
       const info = await (await fetch(url('/api/git?p=repo/'))).json();
-      expect(info.dirty).toEqual([{ path: 'a.md', code: ' M', md: true }]);
+      expect(info.dirty).toMatchObject([{ path: 'a.md', code: ' M', md: true, size: 3 }]);
       expect(info.commitMessage).toBe('Update a.md');
       expect(info.writable).toBe(false);
       expect((await fetch(url('/api/git?p=plain/'))).status).toBe(404);

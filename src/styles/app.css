@@ -221,6 +221,8 @@ main {
   grid-area: main;
   min-width: 0;
   overflow-y: auto;
+  /* A short page and a long one keep the same width, so headers don't shift by a scrollbar. */
+  scrollbar-gutter: stable;
 }
 
 /* ── sidebar chrome ─────────────────────────────────────────────────────── */
@@ -558,18 +560,25 @@ main {
 .brand .home-link:hover { color: var(--accent); }
 
 .home { max-width: 860px; margin: 0 auto; padding: 24px 30px 120px; }
-.home-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+.home-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+@media (max-width: 760px) { .home-head { flex-wrap: wrap; } }
 .home-head h1 { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; color: var(--h1); margin: 0; display: flex; align-items: center; }
-/* DIR on the front page, GIT on the root's folder page: each leads to the other view. */
-.head-link {
-  flex: none; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--ok);
-  padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent); border-radius: var(--radius);
-}
-.head-link:hover { text-decoration: none; background: color-mix(in srgb, var(--ok) 12%, transparent); }
-.doc-title-row > .head-link { margin-right: auto; }
-.doc-title-row:has(> .head-link) > .doc-title { flex: 0 1 auto; }
 .home-head .tabs { margin-left: auto; flex: 0 0 auto; gap: 3px; }
-.home-head .tabs button { display: flex; align-items: center; gap: 5px; padding: 5px 10px; flex: none; }
+.home-head .tabs > a {
+  display: flex; align-items: center; gap: 5px; padding: 5px 10px; flex: none;
+  font-size: 12px; color: var(--fg-muted); border-radius: var(--radius); white-space: nowrap; text-decoration: none;
+}
+.home-head .tabs > a:hover { background: var(--bg-hover); text-decoration: none; }
+.home-head .tabs > a[aria-selected="true"] { background: var(--bg-raised); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border-strong); }
+/* GIT switches pages, the rest are the git view's tabs: a little room between them. */
+.home-head .tabs > a.git-tab { margin-right: 8px; font-weight: 650; letter-spacing: 0.04em; }
+.home-head .tabs > a.git-tab[aria-selected="true"] { color: var(--ok); }
+.home-head h1 { min-width: 0; }
+.home-head .head-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-head .head-name { color: inherit; text-decoration: none; border-radius: 3px; }
+.home-head .head-name:hover { color: var(--accent); text-decoration: none; }
+.head-crumbs { margin-bottom: 4px; }
+.head-crumbs > span { display: inline-flex; align-items: baseline; gap: 4px; }
 
 /* The whole page is one table — section titles and commit headers are rows that span it, file
    rows fill its three columns. A table per section would let each size its own columns and the
@@ -624,8 +633,6 @@ main {
 .home-table td.when { text-align: right; white-space: nowrap; width: 1%; font-size: 11.5px; }
 
 /* A folder's page: the front page's table, plus a size column. */
-.dir-page .crumbs { margin-bottom: 2px; }
-.dir-page .crumbs > span { display: inline-flex; align-items: baseline; gap: 4px; }
 .dir-meta { display: flex; align-items: center; gap: 12px; color: var(--fg-muted); font-size: 12px; margin: 0 0 16px; }
 .dir-table td.size {
   text-align: right; white-space: nowrap; width: 1%; font-size: 11.5px;
@@ -1497,7 +1504,6 @@ kbd {
 .md .add-buttons .answer-cancel { margin-left: auto; }
 
 /* ---------------------------------------------------------------- the git view of a folder */
-.git-dirname { font-weight: 680; }
 .git-remote { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: -8px 7px 14px; font-size: 12px; color: var(--fg-muted); }
 .git-origin { color: var(--fg-muted); }
 .git-remote-state { font-size: 12px; }

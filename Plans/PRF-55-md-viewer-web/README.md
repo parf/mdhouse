@@ -156,6 +156,10 @@ contents list, so a heading link and its contents entry cannot disagree.
   `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote`, POST
   `/api/git/commit|pull|push` — writable folder, same origin, one at a time per repo; network
   git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Host links from `origin`.
+  Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.
+- **One header** (`PageHead.tsx`) for a folder page and its git view: logo; folder name —
+  on the folder page a link to its git view, everywhere else to the folder page; on the right
+  GIT / Favs / Recent / Mine / Commits / Files (GIT, Commits, Files only inside a repo) and ⚙.
 - **Folder pages** are built in the browser from the tree payload it already holds; they cost
   no request.
 

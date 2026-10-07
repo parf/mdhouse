@@ -8,6 +8,7 @@ import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, typ
 import { Doc } from './ui/Doc';
 import { RootSelect } from './ui/RootSelect';
 import { Home } from './ui/Home';
+import { viewOf } from './ui/PageHead';
 import { AboutModal } from './ui/AboutModal';
 import { Settings } from './ui/Settings';
 import { DirPage } from './ui/DirPage';
@@ -503,19 +504,20 @@ function App() {
             gear={pageGear}
             dir={dirTarget.dir}
             dirUrl={dirPageUrl(dirTarget.dir, dirTarget.rootId)}
-            onOpenDir={() => openDirPage(dirTarget.dir, dirTarget.rootId)}
+            crumbUrl={(d) => `${dirPageUrl(d, dirTarget.rootId)}?git`}
+            view={viewOf(full.slice(path.length))}
+            go={go}
           />
         ) : dirTarget ? (
           <DirPage
             tree={tree?.root.id === dirTarget.rootId ? tree : null}
             dir={dirTarget.dir}
             onOpen={openFile}
-            onOpenDir={openDirPage}
+            dirUrl={(d) => dirPageUrl(d, dirTarget.rootId)}
+            go={go}
             onAbout={() => setAboutOpen(true)}
             gear={pageGear}
             rootId={dirTarget.rootId}
-            gitUrl={`${dirPageUrl(dirTarget.dir, dirTarget.rootId)}?git`}
-            onOpenGit={() => go(`${dirPageUrl(dirTarget.dir, dirTarget.rootId)}?git`)}
           />
         ) : !docPath ? (
           <Home
@@ -529,7 +531,9 @@ function App() {
             gear={pageGear}
             dir=""
             dirUrl={dirPageUrl('')}
-            onOpenDir={() => openDirPage('')}
+            crumbUrl={(d) => `${dirPageUrl(d)}?git`}
+            view="recent"
+            go={go}
           />
         ) : (
         <Doc
