@@ -63,8 +63,8 @@ ul.items { list-style: none; margin: 0; padding: 0; }
 /* settled: muted and folded */
 details.settled { color: var(--muted); padding: 6px 8px; margin: 4px 0; border-radius: 6px; }
 /* same columns as .hang: every glyph at the same x, every text at the same x */
-details.settled > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: minmax(1.6em, max-content) minmax(0, 1fr) auto; column-gap: 6px; align-items: start; }
-/* one glyph or two (status + severity) — never wrapped */
+details.settled > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
+/* the glyph column holds the first glyph only; a severity after a status is part of the text */
 details.settled > summary > .g, .item > .head > .g { text-align: center; white-space: nowrap; }
 details.settled > summary::-webkit-details-marker { display: none; }
 details.settled > summary .t { display: grid; min-width: 0; }
@@ -263,17 +263,17 @@ Glyphs: <a href="README.md">README.md</a>.</p>
     <div class="strip" id="strip"></div>
     <ul class="items">
       <li class="item sev-h" data-k="🔴 open"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🔴</span></span><span><code>src/cli.ts:536</code> --fg hands over on a busy port. Fix: exit 1</span></div></li>
-      <li class="item wait-me" data-k="❓ 🟠 open"><div class="head"><span class="g"><span class="g-btn" title="Reply">❓</span> 🟠</span><span><code>package.json:46</code> dev script feeds <code>.</code> to the live instance</span></div>
+      <li class="item wait-me" data-k="❓ 🟠 open"><div class="head"><span class="g"><span class="g-btn" title="Reply">❓</span></span><span>🟠 <code>package.json:46</code> dev script feeds <code>.</code> to the live instance</span></div>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span>pin :7790, or drop it?</div></div></li>
       <li class="item" data-k="🟠 open" style="font-weight:600"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🟠</span></span><span><code>src/server.ts:631</code> limit=abc → no cap</span></div></li>
       <li class="item" data-k="⚪ open"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⚪</span></span><span><code>control.ts:125</code> unlink race</span></div></li>
       <li class="item" data-k="🔵 open" style="color:var(--dim)"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🔵</span></span><span><code>README.md:12</code> wording</span></div></li>
-      <li class="item" data-k="⏳ 🟠 open"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⏳</span> 🟠</span><span><code>test/</code> fixed ports collide</span><span class="btn">waiting on agent</span></div>
+      <li class="item" data-k="⏳ 🟠 open"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⏳</span></span><span>🟠 <code>test/</code> fixed ports collide</span><span class="btn">waiting on agent</span></div>
         <div class="thread"><div class="reply"><span class="who">👤 parf</span>go with port: 0</div></div></li>
-      <li class="item deferred" data-k="⏸️ ⚪"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⏸️</span> ⚪</span><span><code>search.ts:174</code> ReDoS without rg — <i>needs a design — later</i></span></div></li>
-      <details class="settled" data-k="✅ 🟠"><summary><span class="g"><span class="g-btn sev" title="Reply, or set its stage">✅</span> 🟠</span><span class="t"><span class="t-q"><code>test/control.test.ts:8</code> real config dir</span><span class="t-a">💬 112b307 — temp config</span></span></summary>
+      <li class="item deferred" data-k="⏸️ ⚪"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⏸️</span></span><span>⚪ <code>search.ts:174</code> ReDoS without rg — <i>needs a design — later</i></span></div></li>
+      <details class="settled" data-k="✅ 🟠"><summary><span class="g"><span class="g-btn sev" title="Reply, or set its stage">✅</span></span><span class="t"><span class="t-q">🟠 <code>test/control.test.ts:8</code> real config dir</span><span class="t-a">💬 112b307 — temp config</span></span></summary>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span><code>112b307</code> — temp config</div></div></details>
-      <details class="settled" data-k="🚫 ⚪"><summary><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🚫</span> ⚪</span><span class="t"><span class="t-q"><code>CLAUDE.md:119</code> socket wait</span><span class="t-a">💬 moot — reload polls HTTP</span></span></summary>
+      <details class="settled" data-k="🚫 ⚪"><summary><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🚫</span></span><span class="t"><span class="t-q">⚪ <code>CLAUDE.md:119</code> socket wait</span><span class="t-a">💬 moot — reload polls HTTP</span></span></summary>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span>moot — reload polls HTTP</div></div></details>
     </ul>
   </div>
@@ -492,8 +492,11 @@ document.getElementById('one-g').addEventListener('click', (e) => {
         th.append(r);
       }
       if (b.dataset.s) {
-        const sev = item.dataset.k.split(' ').find((k) => ['🔴', '🟠', '⚪', '🔵'].includes(k)) ?? '';
-        item.querySelector('.head > .g, summary > .g').innerHTML = `<span class="g-btn sev">${b.dataset.s}</span> ${sev}`;
+        // the severity is part of the text: only the status glyph changes
+        const g = item.querySelector('.head > .g, summary > .g');
+        const sev = item.dataset.k.split(' ').find((k) => ['🔴', '🟠', '⚪', '🔵'].includes(k));
+        g.innerHTML = `<span class="g-btn sev">${b.dataset.s}</span>`;
+        if (sev && g.nextElementSibling && !g.nextElementSibling.textContent.trimStart().startsWith(sev)) g.nextElementSibling.prepend(`${sev} `);
         item.style.opacity = ['✅', '🚫', '⏸️'].includes(b.dataset.s) ? '.55' : '';
       }
       ed.remove();

@@ -155,5 +155,6 @@ Edge cases:
 - [ ] unpicked options after a pick — muted
 - [ ] the glyph hangs: a column of its own, wrapped lines line up with the text, not under the glyph
 - [ ] every block aligned left alike — glyphs at one x, text at one x; no left border, the background is enough
+- [ ] only the first glyph hangs; a second one (the severity after a status: `✅ 🟠`) is part of the text, as 💬 is
 - [ ] a summary strip per page: `6` │ `🔴 2` `🟠 3` `⚪ 4` `✅ 2` — the total, then threshold filters (above)
 - no extra markup for any of this: `<details>` stays available, but mdhouse folds by glyph
