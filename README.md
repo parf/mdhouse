@@ -44,7 +44,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 
 ## ❖ What you get
 
-Live, git-aware Markdown viewer — GithubMarkdown and more.
+Live, git-aware Markdown viewer — GithubMarkdown and more flavours.
 
 - 📁 **Browse** — a sidebar tree of `.md` / `.mdx` files only, in three widths (`Ctrl+B`), with
   age, size, git status (`M` `U` `S` `D`), and stubs marked **∅**.
