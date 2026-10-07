@@ -176,7 +176,9 @@ bun install
 sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your PATH
 ```
 
-Then:
+Then run it as `mdhouse`, as above.
+
+Want to debug:
 
 ```bash
 bun run dev          # serves this repo with hot reload, in the foreground
