@@ -72,6 +72,7 @@ On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plai
 
 - 🌟 = the suggested one (the agent's pick); ⭐ = runner-up, optional
 - a click on `( )` writes `(x)` and clears the others; the question turns `✅`
+- a click on that `✅` undoes the pick: `(x)` → `( )`, `✅` → `❓` — unanswered again
 - a click on `[ ]` writes `[x]`; the question stays `❓` until I say done
 - once something is picked, the unpicked options are muted
 - a 💬 under the options still works: "none — do X instead"

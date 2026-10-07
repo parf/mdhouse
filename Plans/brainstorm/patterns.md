@@ -38,6 +38,7 @@ An item comes with options; I pick.
 - [ ] a free-text 💬 still possible next to the options
 - [ ] a comment on each option — on the picked one ("yes, and …") or on a rejected one ("no, because …")
 - [ ] once picked, the other options are muted
+- [ ] click on ✅ → undo selection (return as unanswered)
 - [x] syntax: `( )` radio, `[ ]` checkbox — [markup.md](markup.md)
 
 ## 4. Working with existing documents — point at something and say …

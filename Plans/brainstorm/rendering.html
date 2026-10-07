@@ -230,7 +230,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   - ( ) `port: 0`, printed at start
   - ( ) keep `7777`</pre></div>
   <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
-    <li class="item wait-me" id="one"><div class="head"><span class="g" id="one-g">❓</span><span>Dev server port:</span><span class="btn hot">💬</span></div>
+    <li class="item wait-me" id="one"><div class="head"><span class="g" id="one-g" style="cursor:pointer" title="Click ✅ to undo the pick">❓</span><span>Dev server port:</span><span class="btn hot">💬</span></div>
       <div class="opts" id="one-opts">
         <label class="opt"><input type="radio" name="port"> <span><code>7790</code>, own config <span class="suggest">🌟 suggested</span></span></label>
         <label class="opt"><input type="radio" name="port"> <span><code>port: 0</code>, printed at start</span></label>
@@ -238,6 +238,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
       </div></li>
   </ul></div>
   <ul class="notes"><li><code>( )</code> → radios; a click writes <code>(x)</code>, clears the others, turns ❓ into ✅ — try it</li>
+  <li>a click on that ✅ undoes the pick — <code>(x)</code> → <code>( )</code>, back to ❓</li>
   <li>after the pick the others are muted and struck; the item drops to normal weight</li>
   <li>🌟 — the agent's suggestion, labelled</li></ul></div>
 </div>
@@ -331,6 +332,18 @@ document.querySelectorAll('#one-opts .opt').forEach((opt) => {
     const item = document.getElementById('one');
     item.classList.remove('wait-me');
   });
+});
+// A click on the ✅ undoes the pick: unanswered again.
+document.getElementById('one-g').addEventListener('click', (e) => {
+  const g = e.currentTarget;
+  if (g.textContent !== '✅') return;
+  document.querySelectorAll('#one-opts .opt').forEach((o) => {
+    o.classList.remove('picked');
+    o.querySelector('input').checked = false;
+  });
+  document.getElementById('one-opts').classList.remove('done');
+  g.textContent = '❓';
+  document.getElementById('one').classList.add('wait-me');
 });
 // Summary strip: counts per glyph, a click filters.
 (() => {
