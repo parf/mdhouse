@@ -216,9 +216,9 @@ function quoteHtml(lines: string[]): string {
       + `${threadHtml(replies)}</details>`;
   }
   if (request) return `<div class="req" data-k="${key}">👉 ${inline(question)}</div>${replies.length ? threadHtml(replies) : ''}`;
-  const kind = status === '⁉️' ? 'd' : 'q';
-  return `<div class="qwrap" data-k="${key}"><div class="qblock ${kind} hang"><span class="g">${glyphButton(status, 'Answer')}</span><div>${inline(question)}</div></div>`
-    + `${replies.length ? threadHtml(replies) : ''}</div>`;
+  // the same block a list question gets: one form for every unanswered question
+  return `<ul class="items"><li class="item wait-me${status === '⁉️' ? ' dis' : ''}" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Answer')}</span><span>${inline(question)}</span></div>`
+    + `${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</li></ul>`;
 }
 
 // ---------------------------------------------------------------- document
@@ -286,6 +286,11 @@ ul.items { margin: 6px 0 14px; }
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
+/* every line: the glyph in a column of its own, the same as a folded one */
+.item > .head { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto auto; column-gap: 4px; align-items: start; }
+.item > .head > .g { text-align: center; }
+/* an editor starts where the text does */
+.item > .c-edit, .item > .f-edit, details > .c-edit, details > .f-edit { margin: 6px 0 2px calc(1.6em + 4px); }
 /* badges: one chip shape, a tint per kind */
 .who[data-kind="agent"] { background: #f3e8ff; border-color: #c084fc; color: #6b21a8; }
 .who[data-kind="team"] { background: #e0f2fe; border-color: #7dd3fc; color: #075985; }

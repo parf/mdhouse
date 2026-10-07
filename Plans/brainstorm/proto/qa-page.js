@@ -19,7 +19,7 @@
     ed.innerHTML = '<textarea placeholder="Reply…"></textarea><div class="bar"><button class="save">💬 Save</button>'
       + (stages ? '<span class="lbl">and set:</span><button data-s="✅">✅ done</button><button data-s="🚫">🚫 rejected</button>'
         + '<button data-s="⏸️">⏸️ deferred</button><button data-s="❓">❓ needs my call</button>' : '')
-      + '<button class="cancel">Cancel</button></div>';
+      + '<button class="cancel">(ESC)Cancel</button></div>';
     host.append(ed);
     const ta = ed.querySelector('textarea');
     ta.value = prefill;
