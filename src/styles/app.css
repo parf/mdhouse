@@ -1018,7 +1018,7 @@ main {
 .md h1:hover .header-anchor, .md h2:hover .header-anchor,
 .md h3:hover .header-anchor, .md h4:hover .header-anchor { opacity: 1; }
 
-.md li.task-item { list-style: none; margin-left: -1.35em; }
+.md :is(li.task-item, li.status-item) { list-style: none; margin-left: -1.35em; }
 .md .task-checkbox { margin-right: 0.5em; vertical-align: -1px; accent-color: var(--accent); }
 .md .task-checkbox:disabled { cursor: default; }
 .md .task-checkbox:not(:disabled) { cursor: pointer; }
@@ -1081,8 +1081,38 @@ main {
 .md .qa-icon { position: absolute; left: 14px; top: 8px; line-height: 1.6; }
 .md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :nth-child(2) { margin-top: 0; }
 .md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :last-child { margin-bottom: 0; }
+/* In a writable folder a question's icon is the button that opens the answer editor. */
+.md .qa-btn { cursor: pointer; border-radius: 4px; }
+.md .qa-btn:hover, .md .qa-btn:focus-visible {
+  outline: 2px solid var(--qa, var(--qa-question)); outline-offset: 2px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+/* A checkbox question gets its button after the box, in the line of text — not in a gutter. */
+.md .task-qa { position: static; margin: 0 6px 0 2px; }
+.md .task-glyph { margin-right: 0.35em; }
+.md .task-glyph + .task-qa { margin-left: -0.1em; }
+/* The editor: the answer block it will become, being written. */
+.md .answer-editor {
+  position: relative; margin: 6px 0 14px 1.4em; padding: 8px 16px 10px 42px;
+  border-left: 4px solid var(--qa-answer); border-radius: 0 6px 6px 0; background: var(--qa-answer-bg);
+}
+.md .answer-editor textarea {
+  display: block; width: 100%; min-height: 3.2em; resize: vertical; box-sizing: border-box;
+  font: inherit; line-height: 1.5; padding: 6px 8px; color: var(--fg); background: var(--bg);
+  border: 1px solid color-mix(in srgb, var(--qa-answer) 45%, transparent); border-radius: var(--radius);
+}
+.md .answer-editor textarea:focus { outline: none; border-color: var(--qa-answer); }
+.md .answer-buttons { display: flex; gap: 8px; margin-top: 8px; }
+.md .answer-buttons button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: var(--radius); cursor: pointer; }
+.md .answer-save { color: #fff; background: var(--qa-answer); border: 1px solid var(--qa-answer); font-weight: 600; }
+.md .answer-save:disabled { opacity: 0.45; cursor: default; }
+.md .answer-cancel { color: var(--fg-muted); background: transparent; border: 1px solid var(--border-strong); }
+.md .answer-note { margin: 6px 0 0; font-size: 12.5px; color: var(--warn); }
+.md li > .answer-host .answer-editor { margin-left: 0; }
+
 /* A list item that is a question or an answer is the block: no bullet beside it. */
-.md li:has(> :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer)) { list-style: none; }
+/* A `- **Q:**` / `- **A:**` item is laid out exactly like the block it would be outside a list. */
+.md li:has(> :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer)):not(.task-item, .status-item) { list-style: none; margin-left: -1.5em; }
 
 .md .footnotes { border-top: 1px solid var(--border); margin-top: 2.5em; font-size: 0.92em; color: var(--fg-muted); }
 

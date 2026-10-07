@@ -141,3 +141,75 @@ describe('POST /api/task — ticking a box', () => {
     }
   });
 });
+
+describe('/api/qa/answer — answering a question', () => {
+  test('reads and writes on a writable folder; refuses read-only, stale pages, empty answers and other sites', async () => {
+    const { mkdtemp, rm, readFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { lineHash } = await import('../src/lib/qa');
+
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-qa-'));
+    const rw = join(base, 'rw');
+    const ro = join(base, 'ro');
+    await Bun.write(join(rw, 'q.md'), '# Q\n\n> ? Who?\n> 💬 Nobody.\n\n- ⚠️ Fixed?\n');
+    await Bun.write(join(ro, 'q.md'), '> ? Locked?\n');
+
+    const port = 61792;
+    const registry = await Registry.create([
+      { path: rw, writable: true },
+      { path: ro, writable: false },
+    ]);
+    const { server, watcher, control } = await serve({
+      registry,
+      prefs: await Prefs.load(join(base, 'prefs.json')),
+      port,
+      hostname: '127.0.0.1',
+      noGit: true,
+    });
+    const [rwId, roId] = registry.list().map((r) => r.id);
+    const url = `http://127.0.0.1:${port}/api/qa/answer`;
+    const post = (body: unknown, headers: Record<string, string> = {}) =>
+      fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+    const q = lineHash('> ? Who?');
+
+    try {
+      const got = await fetch(`${url}?p=${rwId}/q.md&line=3&form=quote&hash=${q}`);
+      expect(got.status).toBe(200);
+      const { text, answerHash } = (await got.json()) as { text: string; answerHash: string };
+      expect(text).toBe('Nobody.');
+
+      const ok = await post({ p: `${rwId}/q.md`, line: 3, form: 'quote', hash: q, answerHash, text: 'Everybody:\n- a' });
+      expect(ok.status).toBe(200);
+      expect(await readFile(join(rw, 'q.md'), 'utf8')).toBe('# Q\n\n> ? Who?\n> 💬 Everybody:\n> - a\n\n- ⚠️ Fixed?\n');
+
+      // The same save from a page that still has the old answer: refused, file untouched.
+      expect((await post({ p: `${rwId}/q.md`, line: 3, form: 'quote', hash: q, answerHash, text: 'x' })).status).toBe(409);
+      expect((await fetch(`${url}?p=${rwId}/q.md&line=3&form=quote&hash=${lineHash('> ? Whom?')}`)).status).toBe(409);
+      expect((await post({ p: `${rwId}/q.md`, line: 7, form: 'task', hash: lineHash('- ⚠️ Fixed?'), answerHash: '', text: '  ' })).status).toBe(400);
+
+      // Check & Save on a status item: answered, and the glyph becomes ✅.
+      const check = await post({ p: `${rwId}/q.md`, line: 7, form: 'task', hash: lineHash('- ⚠️ Fixed?'), answerHash: '', text: 'Yes.', check: true });
+      expect(check.status).toBe(200);
+      expect(await readFile(join(rw, 'q.md'), 'utf8')).toEndWith('- ✅ Fixed?\n  > 💬 Yes.\n');
+
+      const before = await readFile(join(rw, 'q.md'), 'utf8');
+      expect((await post({ p: `${roId}/q.md`, line: 1, form: 'quote', hash: lineHash('> ? Locked?'), answerHash: '', text: 'x' })).status).toBe(403);
+      expect(await readFile(join(ro, 'q.md'), 'utf8')).toBe('> ? Locked?\n');
+      const cross = await post(
+        { p: `${rwId}/q.md`, line: 3, form: 'quote', hash: q, answerHash: lineHash('> 💬 Everybody:\n> - a'), text: 'x' },
+        { 'sec-fetch-site': 'cross-site' },
+      );
+      expect(cross.status).toBe(403);
+      expect(await readFile(join(rw, 'q.md'), 'utf8')).toBe(before);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+});

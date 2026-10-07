@@ -17,71 +17,71 @@ What each form means is in [Questions and answers in mdhouse](qa.md).
 
 ## Glyphs in a quote
 
-> ? Should the scanner follow symlinks?
+> ? Who keeps eating the yoghurt labelled "DO NOT TOUCH"?
 
-> ? Is the cache warm after a restart?
-> 💬 Not until the first request touches each root.
+> ? Is it a bug or a feature if nobody filed a ticket?
+> 💬 A feature, until a customer finds it.
 
-> ?! The README says 7777 is the only port; the code reads `MDHOUSE_PORT` too.
+> ?! The README says the build takes two minutes; the build disagrees by forty.
 
-> !? The spec says 5-year signals; the code uses 7.
-> 💬 The code is right — the spec was never updated after the July review.
+> !? The style guide says tabs; the cat walked over the keyboard and chose spaces.
+> 💬 The cat outranks the style guide.
 
-> ⁉️ Two runs of the scan disagree on the file count.
+> ⁉️ Two clocks on the office wall disagree, and both claim to be on NTP.
 
-> ❓ Who owns the import job?
-> 💬 The data team, from October:
-> - schedule: first Monday of the month
-> - alerts: #data-import
+> ❓ What is the plan for Friday deploys?
+> 💬 There is a plan:
+> - don't
+> - if you must, bring snacks for the on-call
 
-> Q: Do we keep the `.mdx` extension in names?
+> Q: Can the rubber duck be promoted to senior engineer?
 
-> Q Should hidden folders ever be listed?
-> A: Only with `--all`, like ignored files.
+> Q Does "works on my machine" count as a test environment?
+> A: Only if your machine is shipped to the customer.
 
 ## Alerts
 
 > [!QUESTION]
-> Should search results show the file size?
+> Should the meeting about fewer meetings be a meeting?
 
 > [!QUESTION]
-> What happens to a tick on a file that was renamed?
+> Why does the printer only jam before a deadline?
 
 > [!ANSWER]
-> The page reloads: the old path no longer resolves, so the server answers 404 and nothing is
-> written.
+> It can sense fear. Printers have done so since 1987.
 >
-> A rename shows up as a new file in the tree a moment later.
+> Printing the night before has not been tried yet.
 
 ## Bold lines
 
-**Q:** Does the front page show uncommitted work first?
+**Q:** How many standups can one person attend before they sit down?
 
-**Q:** Can two tabs tick the same box at once?
-**A:** Yes — the second one is refused (409), reloads, and shows the box already ticked.
+**Q:** Is a semicolon a lifestyle choice?
+**A:** In JavaScript, yes. In Python, a cry for help.
 
 As list items too:
 
-- **Q:** Should a list of questions keep its bullets?
-- **Q:** Do list-item questions take answers?
-- **A:** Yes — the answer is written as the next item of the same list.
+- **Q:** Who named the server `prod-final-v2-really-final`?
+- **Q:** Can we schedule the outage for when nobody is looking?
+- **A:** Yes — 3 a.m. on a Sunday, as tradition demands.
 
 ## Containers
 
-::: q Should the about box show the git commit of the running build?
+::: q Should the coffee machine get its own on-call rotation?
 :::
 
 ::: question
-Is the WebSocket reconnect fast enough after a laptop wakes?
+Will the legacy code ever be rewritten?
 
-It used to take up to 30 seconds.
+It was "temporary" in 2009.
 :::
 
 ::: answer
-Yes, now under a second:
+Eventually, once three things are true:
 
-- the client retries with backoff from 250 ms
-- the server keeps no per-socket state to rebuild
+- someone understands it
+- that person is still here
+- the person who wrote it has forgiven us
 :::
 
 ---
@@ -92,19 +92,27 @@ The `QUESTIONS.md` convention: every task item is a question. In a writable fold
 checkbox opens the editor; the answer is written as an indented `> 💬` inside the item, and
 **Check & Save** also ticks the box.
 
-- [ ] Which hosts take the adapter and notifier instances in the versioned
-      deployment inventory before each cutover?
-- [ ] Which service groups are needed besides the initial `parf` and `prod`?
-- [x] Does every provider accept a duplicate when the API call succeeds but the ack does not?
-  > 💬 No — two of them reject it; those calls are made idempotent with a request key.
+- [ ] Is it a meeting if everyone is on mute?
+- [ ] Who approved the requirement that the logo be bigger and also smaller,
+      and has anyone told the designer?
+- [x] Did turning it off and on again work?
+  > 💬 Yes. Nobody knows why. Nobody will ever know why.
 
-### Deferred
+## Status glyph items
 
-As they appear in a real `QUESTIONS.md` — Russian text, continuation lines indented under the item:
+A list item that opens with a status glyph is a question with a status. The ❓ after the glyph
+opens the editor; on a ❓ or ⁉️ item the glyph itself is the button. **Check & Save** turns the
+glyph into ✅.
 
-- [ ] Какие service-groups понадобятся кроме initial `parf` и `prod`?
-- [ ] Какой residual duplicate policy принимает каждый external provider,
-      когда API success и JetStream ACK не атомарны?
+- ❓ Where do the missing socks go — same place as the missing semicolons?
+- ⁉️ Marketing says the feature ships Monday; engineering says "which feature?"
+- ⚠️ Is the coffee machine fixed? It makes coffee, but only decaf.
+- ⏳ Has the build finished yet?
+- ☐ Should we label the fridge shelves by team?
+- 🚫 Rewrite everything in a language invented last Tuesday?
+  > 💬 No. We still have scars from the last one.
+- ✅ Is lunch at noon?
+  > 💬 Yes, and it is not up for discussion.
 
 ## Not questions — these must stay as they are
 
@@ -113,3 +121,5 @@ As they appear in a real `QUESTIONS.md` — Russian text, continuation lines ind
 > Quite so — and "Q" counts only as a word of its own.
 
 Text with a **Q:** in the middle of a sentence stays bold.
+
+- 🎉 A list item opening with any other emoji is just a list item.

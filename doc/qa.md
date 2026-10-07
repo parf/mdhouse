@@ -14,7 +14,8 @@ The meanings follow the glyph conventions in `/rd/.claude/Glyphs.md`: a ❓ or �
 is settled; with nothing under it, it is still open. The colours are the `--qa-*` tokens, the
 same in every form below.
 
-Four ways to write them — pick whichever reads best in the file; they render alike:
+Four ways to write blocks — pick whichever reads best in the file; they render alike — and list
+items, which are questions with a status:
 
 | Form | Question | Disagreement | Answer | From |
 | --- | --- | --- | --- | --- |
@@ -22,6 +23,10 @@ Four ways to write them — pick whichever reads best in the file; they render a
 | [Containers](#container-blocks) | `::: q` / `::: question` | | `::: a` / `::: answer` | VuePress / VitePress |
 | [Bold lines](#bold-lines) | `**Q:**` | | `**A:**` | mdhouse |
 | [Glyphs in a quote](#glyphs-in-a-quote) | `> ?` `> ❓` `> Q:` `> Q` | `> ?!` `> !?` `> ⁉️` | `> 💬` `> A:` | mdhouse |
+| [Checkbox and status items](#checkbox-and-status-items) | `- [ ]` `- [x]` `- ✅` `- ⚠️` … | `- ⁉️` | indented `> 💬` | QUESTIONS.md |
+
+In a folder served with `--rw` they can be [answered in the browser](#answering-in-the-browser).
+To try every form, open the [Q&A playground](qa-playground.md).
 
 Everything else mdhouse renders beyond CommonMark is in [Markdown in mdhouse](markdown.md).
 
@@ -84,8 +89,8 @@ The data team, from October.
 
 The shortest form. Lines starting with a bold `Q:` or `A:` render exactly like `[!QUESTION]` /
 `[!ANSWER]` — one block per line, the icon in front; a line without a marker stays with the block
-above it. Inside a list item the marker becomes a small ❓ / 💬 instead, and a bold `Q:` in the
-middle of a sentence is left as written.
+above it. As list items — `- **Q:**` and `- **A:**` — they are the same blocks; a bold `Q:` in
+the middle of a sentence is left as written.
 
 ```markdown
 **Q:** Is the cache warm?
@@ -118,3 +123,71 @@ The glyphs of a Q&A log, opening a line of a quote, make the same one-line block
 
 The quote must open with one of them; then the whole quote becomes blocks. A bare `A` is never a
 marker — `> A quick note` is English — so an answer needs `A:` or 💬.
+
+## Checkbox and status items
+
+The `QUESTIONS.md` convention: every list item that opens with a checkbox or a status glyph is a
+question, and the checkbox or glyph is its status. Its answer is an indented quote inside the item:
+
+```markdown
+- [ ] Which hosts take the new adapter?
+- [x] Does the provider accept duplicates?
+  > 💬 No — those calls carry a request key.
+- ⚠️ Is the migration done?
+  > 💬 For two tables of three.
+```
+
+- [ ] Which hosts take the new adapter?
+- [x] Does the provider accept duplicates?
+  > 💬 No — those calls carry a request key.
+- ⚠️ Is the migration done?
+  > 💬 For two tables of three.
+
+The status glyphs, with the meanings `/rd/.claude/Glyphs.md` gives them; the variation selector
+(`✅` vs `✔`, `⚠️` vs `⚠`) is optional:
+
+| Opens with | Status |
+| --- | --- |
+| `[ ]` `☐` | open |
+| `[x]` `✅` `✔️` `☑️` | done |
+| `⚠️` | partial — follow-up needed |
+| `⏳` | in progress |
+| `🎫` | handed off — ticketed |
+| `❌` | failed — it ran and did not pass |
+| `🚫` | dropped — rejected by decision |
+| `⛔` | blocked — cannot be done |
+| `☒` | crossed out |
+| `❓` | open question |
+| `⁉️` | disagreement — two sources contradict |
+
+The glyph must be followed by a space; any other emoji (`- 🎉 …`) leaves the item a plain list
+item. Only `[ ]` / `[x]` are checkboxes — counted in the page header and tickable in a `--rw`
+folder; a glyph stays the text it is. An existing `> A:` answer is read too, but an answer saved
+from the browser is always written as `> 💬`.
+
+## Answering in the browser
+
+In a folder served with `--rw`, in the plain document view (not a diff), each ❓ and ⁉️ is a
+button; checkbox and status items get a ❓ after the box or glyph — 💬 once they have an answer —
+and an item marked ❓ or ⁉️ uses its own glyph. Click it (or Enter on it) and an editor opens
+under the question, loaded with the existing answer if there is one.
+
+Write the answer — plain Markdown; lines starting with `-` are bullets — and **Save** or
+Ctrl+Enter; Esc or **Cancel** closes it without saving. On a checkbox or status item **Check &
+Save** also ticks `[ ]` to `[x]`, or turns the glyph into ✅.
+
+The answer is written in the question's own syntax:
+
+| Question | Answer written as |
+| --- | --- |
+| `> ?` `> ❓` `> ?!` … in a quote | `> 💬 …` lines in the same quote |
+| `> [!QUESTION]` | a `> [!ANSWER]` block after a blank line |
+| `**Q:**` (or `- **Q:**`) | an `**A:**` line under it (or the next list item) |
+| `::: q` | a `::: a` … `:::` block after a blank line |
+| `- [ ]` / `- ⚠️` … item | an indented `> 💬` quote inside the item |
+
+An existing answer is replaced in place; nothing else in the file changes. Only answers are
+written, never the question. If the file changed since the page was loaded — the question was
+edited, or someone answered it meanwhile — the save is refused or the editor says so, and the
+text you typed is kept. A file with uncommitted changes opens on its diff; switch back to the
+document to answer.

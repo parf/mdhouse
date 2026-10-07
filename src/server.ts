@@ -15,6 +15,7 @@ import { repoToplevel } from './lib/scan';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
+import { answerText, findQuestion, QA_FORMS, writeAnswer, type AnswerRequest, type QaForm } from './lib/qa';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { Watcher } from './lib/watch';
@@ -81,8 +82,19 @@ const MERMAID_DIST = new URL('../node_modules/mermaid/dist', import.meta.url).pa
 export async function serve(opts: ServeOptions) {
   const { registry, prefs, port, hostname } = opts;
   const store = new Store(registry, prefs, { noGit: opts.noGit, gitLogLimit: opts.gitLogLimit });
-  /** Checkbox writes in flight, per file, so they apply one after another. */
-  const taskWrites = new Map<string, Promise<unknown>>();
+  /**
+   * Writes to documents in flight, per file, so they apply one after another — two quick clicks
+   * (a tick and an answer, or two ticks) each run against the file the previous one left.
+   */
+  const fileWrites = new Map<string, Promise<unknown>>();
+  const queueWrite = <T>(abs: string, write: () => Promise<T>): Promise<T> => {
+    const run = (fileWrites.get(abs) ?? Promise.resolve()).then(write);
+    const tail = run.catch(() => {});
+    fileWrites.set(abs, tail);
+    // Forget the file once its last queued write is done, so the map does not grow.
+    void tail.then(() => fileWrites.get(abs) === tail && fileWrites.delete(abs));
+    return run;
+  };
 
   /** Resolve the `root` query parameter, defaulting to the first root. */
   const rootOf = (url: URL): Root | null => {
@@ -193,19 +205,12 @@ export async function serve(opts: ServeOptions) {
           if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to tick boxes`);
 
-          // One file, one write at a time: two quick clicks are applied in order, each against
-          // the file the previous one left.
-          const run = (taskWrites.get(loc.abs) ?? Promise.resolve()).then(async () => {
+          const result = await queueWrite(loc.abs, async () => {
             const result = toggleTask(await Bun.file(loc.abs).text(), body.line!, body.hash!);
             if ('error' in result) return result;
             await registry.writeFile(body.p!, result.src);
             return result;
           });
-          const tail = run.catch(() => {});
-          taskWrites.set(loc.abs, tail);
-          // Forget the file once its last queued write is done, so the map does not grow.
-          void tail.then(() => taskWrites.get(loc.abs) === tail && taskWrites.delete(loc.abs));
-          const result = await run;
           if ('error' in result) {
             return json(
               { error: result.error === 'stale' ? 'the file changed since this page was loaded' : 'that line is no longer a task', reason: result.error },
@@ -213,6 +218,66 @@ export async function serve(opts: ServeOptions) {
             );
           }
           return json({ checked: result.checked });
+        },
+      },
+
+      /**
+       * Answering a question from the page — the second write mdhouse makes to a document.
+       *
+       * GET loads the answer under a question as editable text, with its fingerprint; POST writes
+       * it, in the question's own syntax (qa.ts). Both are refused when the question's lines no
+       * longer match what the page rendered, and POST the same way when the answer changed
+       * under it, so a stale page never overwrites anything. Same rules as `/api/task`.
+       */
+      '/api/qa/answer': {
+        GET: async (req) => {
+          const url = new URL(req.url);
+          const loc = await registry.resolve(url.searchParams.get('p') ?? '');
+          const form = url.searchParams.get('form') as QaForm;
+          const line = Number(url.searchParams.get('line'));
+          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          if (!QA_FORMS.includes(form) || !Number.isInteger(line)) return fail(400, 'expected p, line, form, hash');
+          const src = await Bun.file(loc.abs).text();
+          const found = findQuestion(src, splitFrontmatter(src).offset, line, form);
+          if (!found || found.hash !== url.searchParams.get('hash')) {
+            return json({ error: 'the file changed since this page was loaded', reason: 'stale' }, 409);
+          }
+          const text = found.answer ? answerText(found.lines.slice(found.answer.start, found.answer.end), form) : '';
+          return json({ text, answerHash: found.answerHash });
+        },
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as (Partial<AnswerRequest> & { p?: string }) | null;
+          if (
+            !body?.p ||
+            !Number.isInteger(body.line) ||
+            !QA_FORMS.includes(body.form as QaForm) ||
+            typeof body.hash !== 'string' ||
+            typeof body.answerHash !== 'string' ||
+            typeof body.text !== 'string'
+          ) {
+            return fail(400, 'expected {p, line, form, hash, answerHash, text}');
+          }
+          const loc = await registry.resolve(body.p);
+          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to answer`);
+
+          const result = await queueWrite(loc.abs, async () => {
+            const src = await Bun.file(loc.abs).text();
+            const result = writeAnswer(src, splitFrontmatter(src).offset, body as AnswerRequest);
+            if ('error' in result) return result;
+            await registry.writeFile(body.p!, result.src);
+            return result;
+          });
+          if ('error' in result) {
+            const message = {
+              stale: 'the file changed since this page was loaded',
+              'not-a-question': 'that is no longer a question',
+              empty: 'the answer is empty',
+            }[result.error];
+            return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
+          }
+          return json({ ok: true });
         },
       },
 

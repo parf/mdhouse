@@ -146,6 +146,22 @@ pale GitHub alerts. Questions are red, like the ❓ glyph; an answer is indented
 what it settles. Meanings follow `/rd/.claude/Glyphs.md`: ❓ open question, ⁉️ open
 disagreement, 💬 the answer that settles either.
 
+## An answer is written in the question's own syntax — 2026-10-06
+
+Saving from the page writes `> 💬` under a quote question, `> [!ANSWER]` under an alert,
+`**A:**` under a bold line, `::: a` under a container, an indented `> 💬` inside a checkbox or
+status item. The file stays in the style its author chose, and the result reads the same on
+GitHub as the hand-written answers around it. `> A:` answers are read but 💬 is written.
+
+- **Checkbox and status-glyph list items are questions** (the QUESTIONS.md convention): the box
+  or glyph is the item's status, the answer an indented quote inside it. The glyphs are the
+  status vocabulary of `/rd/.claude/Glyphs.md`; any other emoji leaves an item a plain one.
+  Check & Save ticks `[ ]`, or turns a glyph into ✅.
+- **The draft outlives the HTML.** The page is re-rendered whenever the file changes; the
+  editor's text lives in `Doc` and is mounted again under its question (found by fingerprint,
+  then line). A changed question or a meanwhile answer is said in the editor before Save, and a
+  stale POST is refused — the draft is kept in every case.
+
 ## A review is a list of claims, not a list of changes
 
 Reproduce before editing. Every finding from an outside review gets a script against the real

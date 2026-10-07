@@ -93,6 +93,34 @@ export const api = {
 
   settings: () => get<Settings>('/api/settings'),
 
+  /** The answer under a question, as editable text, with the fingerprint it was read at. */
+  qaAnswer: (p: string, line: number, form: string, hash: string) =>
+    get<{ text: string; answerHash: string }>('/api/qa/answer', { p, line, form, hash }),
+
+  /**
+   * Write the answer to a question. Throws with `status` 409 when the page is older than the
+   * file (the question or its answer changed since it was rendered).
+   */
+  async saveAnswer(req: {
+    p: string;
+    line: number;
+    form: string;
+    hash: string;
+    answerHash: string;
+    text: string;
+    check?: boolean;
+  }): Promise<void> {
+    const res = await fetch('/api/qa/answer', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+    }
+  },
+
   /**
    * Tick or untick the task on `line` of document `p` (a wire path), if that line still has the
    * fingerprint `hash` the page was rendered with. A refusal throws with the server's reason;

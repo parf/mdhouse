@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased — 1.2
+
+### Added
+
+- **Answer questions on the page.** In a folder served with `--rw`, every ❓ and ⁉️ is a
+  button: click it and an editor opens under the question, loaded with the existing answer if
+  there is one. Save (or Ctrl+Enter) writes the answer into the file **in the question's own
+  syntax** — `> 💬` lines in a quote, a `> [!ANSWER]` block, an `**A:**` line, a `::: a` block,
+  an indented `> 💬` inside a list item — replacing the old answer in place and touching nothing
+  else. Esc cancels. If the question or its answer changed on disk meanwhile, the editor says so
+  or the server refuses (`409`); the text you typed is kept either way.
+- **Checkbox and status items are questions.** Every `- [ ]` / `- [x]` item, and every list
+  item opening with a status glyph — `✅ ⚠️ ⏳ 🎫 ❌ 🚫 ⛔ ❓ ⁉️ ☐ ☑️ ☒ ✔️` — can be answered the
+  same way (the QUESTIONS.md convention). **Check & Save** also ticks the box, or turns the glyph
+  into ✅.
+- **`- **Q:**` / `- **A:**` list items** are full question and answer blocks.
+- **[Q&A playground](doc/qa-playground.md)** — every form, answered and not, to try it on.
+
+### Fixed
+
+- Bullets and further paragraphs after an answer (`> 💬 Yes:` then `> - a`, or `**A:** Yes:`
+  then `- a`) render inside the answer instead of falling out under it.
+
 ## 1.1.1 — 2026-10-06
 
 The first release that writes — tick a checkbox in a `--rw` folder and that line is saved — and

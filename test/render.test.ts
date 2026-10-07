@@ -172,7 +172,10 @@ describe('Q: and A:', () => {
 describe('::: q / ::: a containers', () => {
   test('both spellings make blocks that carry data-line and hold any Markdown', async () => {
     const { html } = await render('::: question\nWhy?\n:::\n\n::: a\n- one\n- two\n:::\n', ctx);
-    expect(html).toMatch(/<div data-line="1" data-qa-form="container" data-hash="[0-9a-f]{8}" class="qa-block qa-q" role="note" aria-label="Question">/);
+    const open = /<div ([^>]*class="qa-block qa-q"[^>]*)>/.exec(html)?.[1] ?? '';
+    for (const attr of [/data-line="1"/, /data-qa-form="container"/, /data-hash="[0-9a-f]{8}"/, /role="note"/, /aria-label="Question"/]) {
+      expect(open).toMatch(attr);
+    }
     expect(html).toContain('<span class="qa-icon" aria-hidden="true">❓</span>');
     expect(html).toContain('<div data-line="5" class="qa-block qa-a" role="note" aria-label="Answer">');
     expect(html.match(/<li/g)?.length).toBe(2);

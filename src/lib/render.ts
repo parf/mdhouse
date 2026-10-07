@@ -19,7 +19,7 @@ import anchor from 'markdown-it-anchor';
 import footnote from 'markdown-it-footnote';
 import attrs from 'markdown-it-attrs';
 import container from 'markdown-it-container';
-import { lineHash, QA_LINE, qaQuestionRange, QUOTE_MARK, quoteKind, type QaForm, type QaKind } from './qa';
+import { isDone, lineHash, QA_LINE, qaQuestionRange, QUOTE_MARK, quoteKind, STATUS_GLYPH, type QaForm, type QaKind } from './qa';
 
 export { lineHash };
 import type { DiffHunk } from './git';
@@ -175,7 +175,7 @@ function alertPlugin(md: MarkdownIt): void {
       if (close !== -1) tokens[close]!.tag = 'div';
 
       // Strip the marker and turn the first paragraph into the alert's title.
-      inline.content = inline.content.slice(match[0].length);
+      inline.content = inline.content.slice(match![0].length);
       if (inline.children?.length) {
         const first = inline.children[0]!;
         if (first.type === 'text') first.content = first.content.replace(/^\[!\w+\]\s*/i, '');
@@ -397,10 +397,16 @@ export function toggleTask(
   return { src: lines.join('\n'), checked };
 }
 
+/** A list item's own text opening with a status glyph — `✅ done`, `⚠️ partly` — then a space. */
+const STATUS_ITEM = new RegExp(String.raw`^(${STATUS_GLYPH.source})\s+`, 'u');
+
 /**
  * Task list items become real checkboxes carrying their source line and a fingerprint of it
  * (`data-hash`), which is what lets a click be checked against the file before it is written.
  * They are rendered disabled here; the client enables them only for a writable root.
+ *
+ * A list item opening with a status glyph (`- ✅ …`, `- 🚫 …`) is a task item too, for
+ * answering: the glyph stays as written, in a `.task-glyph`, and is not counted as a checkbox.
  */
 function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number }): void {
   md.core.ruler.after('mdhouse_alerts', 'mdhouse_tasks', (state) => {
@@ -411,23 +417,39 @@ function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number })
       const inline = tokens[i + 2];
       if (tokens[i + 1]?.type !== 'paragraph_open' || inline?.type !== 'inline') continue;
 
-      const match = /^\[([ xX])\]\s+/.exec(inline.content);
-      if (!match) continue;
-
-      const done = match[1]!.toLowerCase() === 'x';
-      counts.total++;
-      if (done) counts.done++;
-
       const line = tokens[i]!.map ? tokens[i]!.map![0] + 1 : 0;
-      tokens[i]!.attrJoin('class', 'task-item');
+      const status = STATUS_ITEM.exec(inline.content);
+      const match = status ? null : /^\[([ xX])\]\s+/.exec(inline.content);
+      if (!match && !status) continue;
+
+      const done = isDone((match ?? status)![0]);
       // Every task item can be answered (QUESTIONS.md keeps its questions as checkboxes): the
       // item carries the same form and fingerprint a question block does.
       const range = line ? qaQuestionRange(bodyLinesOf(state.src), line - 1, 'task') : null;
       if (range) {
         tokens[i]!.attrSet('data-qa-form', 'task');
         tokens[i]!.attrSet('data-hash', lineHash(bodyLinesOf(state.src).slice(range.start, range.end).join('\n')));
+        if (done) tokens[i]!.attrSet('data-done', '');
       }
-      inline.content = inline.content.slice(match[0].length);
+
+      if (status) {
+        if (!range) continue;
+        tokens[i]!.attrJoin('class', 'status-item');
+        // Inline parsing has not run yet: the glyph comes off the text it will parse, and goes in
+        // front of it as markup, as the checkbox does.
+        const glyph = status[1]!;
+        inline.content = inline.content.slice(status[0].length);
+        const span = new state.Token('html_inline', '', 0);
+        span.content = `<span class="task-glyph">${glyph}</span>`;
+        inline.children!.unshift(span);
+        i += 2;
+        continue;
+      }
+
+      counts.total++;
+      if (done) counts.done++;
+      tokens[i]!.attrJoin('class', 'task-item');
+      inline.content = inline.content.slice(match![0].length);
       if (inline.children?.length && inline.children[0]!.type === 'text') {
         inline.children[0]!.content = inline.children[0]!.content.replace(/^\[[ xX]\]\s+/, '');
       }

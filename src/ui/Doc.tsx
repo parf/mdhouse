@@ -1,3 +1,4 @@
+import { render as mount } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
@@ -6,6 +7,7 @@ import { timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
 import { markChanges } from './mark-changes';
+import { AnswerEditor } from './AnswerEditor';
 import type { FileDiff } from '../lib/git';
 
 /** The two diff views; either can be the one a toggle turns on. */
@@ -261,6 +263,229 @@ export function Doc({
     el.addEventListener('change', onChange);
     return () => el.removeEventListener('change', onChange);
   }, [doc?.html, doc?.writable, view]);
+
+  /**
+   * Answering a question in place. In a writable folder and the plain document view, a
+   * question's ❓ / ⁉️ is a button — and a checkbox item gets one after its box — that opens an
+   * editor under it, loaded with the existing answer if there is one. The draft lives here, not
+   * in the DOM: the HTML is replaced whenever the file changes (after a save, or another tab's),
+   * and the editor is mounted again under the same question with the text the reader typed.
+   */
+  type Editing = {
+    line: number;
+    form: string;
+    hash: string;
+    answerHash: string;
+    note: string | null;
+    saving: boolean;
+    canCheck: boolean;
+  };
+  const [editing, setEditing] = useState<Editing | null>(null);
+  // The text being written. The editor owns it while it is mounted; this copy is what a remount
+  // (after the page is re-rendered) starts from, and what Save sends.
+  const draft = useRef('');
+  useEffect(() => setEditing(null), [doc?.url]);
+  const answerable = !!doc?.writable && view === 'doc';
+
+  const openEditor = async (block: HTMLElement) => {
+    if (!doc) return;
+    const line = Number(block.dataset.line);
+    const form = block.dataset.qaForm ?? '';
+    const hash = block.dataset.hash ?? '';
+    const canCheck = form === 'task' && !('done' in block.dataset);
+    try {
+      const { text, answerHash } = await api.qaAnswer(`${doc.root}/${doc.rel}`, line, form, hash);
+      draft.current = text;
+      setEditing({ line, form, hash, answerHash, note: null, saving: false, canCheck });
+    } catch (err) {
+      setTaskNote(`Could not open the answer: ${(err as Error).message}`);
+      onReload?.();
+    }
+  };
+
+  // The icons that are buttons — or plain icons again, outside a writable plain view.
+  useEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    for (const extra of el.querySelectorAll('.task-qa')) extra.remove();
+    for (const glyph of el.querySelectorAll<HTMLElement>('.task-glyph.qa-btn')) {
+      glyph.classList.remove('qa-btn');
+      glyph.removeAttribute('role');
+      glyph.removeAttribute('tabindex');
+      glyph.removeAttribute('title');
+    }
+    for (const block of el.querySelectorAll<HTMLElement>('[data-qa-form]')) {
+      let icon: HTMLElement | null;
+      if (block.dataset.qaForm === 'task') {
+        if (!answerable) continue;
+        // This item's own box or glyph and answer — not those of an item nested in it.
+        const own = (sel: string) => [...block.querySelectorAll<HTMLElement>(sel)].find((x) => x.closest('[data-qa-form]') === block);
+        const mark = own('.task-checkbox, .task-glyph');
+        if (mark?.matches('.task-glyph') && /^[❓⁉]/u.test(mark.textContent ?? '')) {
+          // An item marked ❓ or ⁉️ is already a question: its glyph is the button.
+          icon = mark;
+        } else {
+          // Otherwise one is added after the box or glyph — 💬 once the item has an answer, ❓
+          // until then.
+          icon = document.createElement('span');
+          icon.className = 'qa-icon task-qa';
+          icon.textContent = own('.markdown-alert-answer') ? '💬' : '❓';
+          mark ? mark.after(icon) : block.prepend(icon);
+        }
+      } else icon = block.querySelector<HTMLElement>(':scope > .qa-icon');
+      if (!icon) continue;
+      if (answerable) {
+        icon.classList.add('qa-btn');
+        icon.setAttribute('role', 'button');
+        icon.tabIndex = 0;
+        icon.title = 'Answer this question';
+      } else {
+        icon.classList.remove('qa-btn');
+        icon.removeAttribute('role');
+        icon.removeAttribute('tabindex');
+        icon.removeAttribute('title');
+      }
+    }
+    if (!answerable) return;
+
+    const activate = (e: Event) => {
+      const icon = (e.target as HTMLElement).closest<HTMLElement>('.qa-btn');
+      if (!icon) return;
+      if (e instanceof KeyboardEvent && e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      const block = icon.closest<HTMLElement>('[data-qa-form]');
+      if (block) void openEditor(block);
+    };
+    el.addEventListener('click', activate);
+    el.addEventListener('keydown', activate);
+    return () => {
+      el.removeEventListener('click', activate);
+      el.removeEventListener('keydown', activate);
+    };
+  }, [doc?.html, answerable]);
+
+  // Where the editor stands: placed under its question whenever the question or the HTML
+  // changes — not on every keystroke, which would rebuild the textarea and lose the cursor.
+  const host = useRef<HTMLElement | null>(null);
+  const editingKey = editing ? `${editing.form}:${editing.line}` : null;
+  useEffect(() => {
+    const el = body.current;
+    if (!el || !editing || !doc || !answerable) return;
+    // The question by its fingerprint — lines added above it move it — or else by its line.
+    const block =
+      el.querySelector<HTMLElement>(`[data-qa-form="${editing.form}"][data-hash="${editing.hash}"]`) ??
+      el.querySelector<HTMLElement>(`[data-qa-form="${editing.form}"][data-line="${editing.line}"]`);
+    if (!block) {
+      setEditing((e) => (e && !e.note ? { ...e, note: 'That question is no longer in the file — your text is kept.' } : e));
+      return;
+    }
+    // The page was re-rendered from a changed file. Follow the question to its new line; if the
+    // question itself or its answer changed, take them as they now are but say so before the
+    // reader saves over them — the draft is kept either way.
+    const line = Number(block.dataset.line);
+    const hash = block.dataset.hash ?? '';
+    if (line !== editing.line || hash !== editing.hash) {
+      void api
+        .qaAnswer(`${doc.root}/${doc.rel}`, line, editing.form, hash)
+        .then(({ answerHash }) =>
+          setEditing((e) => {
+            if (!e) return e;
+            const note =
+              hash !== e.hash
+                ? 'The question was changed in the file meanwhile — have a look; your text is kept.'
+                : answerHash !== e.answerHash
+                  ? 'Someone else answered this meanwhile — Save replaces their answer; your text is kept.'
+                  : e.note;
+            return { ...e, line, hash, answerHash, note };
+          }),
+        )
+        .catch(() => {});
+    } else {
+      // Same question on the same line — but the answer may have been written meanwhile.
+      void api
+        .qaAnswer(`${doc.root}/${doc.rel}`, line, editing.form, hash)
+        .then(({ answerHash }) =>
+          setEditing((e) =>
+            e && answerHash !== e.answerHash
+              ? { ...e, answerHash, note: 'Someone else answered this meanwhile — Save replaces their answer; your text is kept.' }
+              : e,
+          ),
+        )
+        .catch(() => {});
+    }
+
+    // Hide the answer being replaced; the editor stands where it was.
+    const existing =
+      editing.form === 'task'
+        ? block.querySelector<HTMLElement>(':scope > .markdown-alert-answer')
+        : (() => {
+            const next = block.nextElementSibling as HTMLElement | null;
+            return next?.matches('.markdown-alert-answer, .qa-a') ? next : null;
+          })();
+    if (existing) existing.hidden = true;
+    const spot = document.createElement('div');
+    spot.className = 'answer-host';
+    if (editing.form === 'task') block.append(spot);
+    else (existing ?? block).after(spot);
+    host.current = spot;
+    setHostTick((n) => n + 1);
+    return () => {
+      mount(null, spot);
+      spot.remove();
+      if (host.current === spot) host.current = null;
+      if (existing) existing.hidden = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingKey, editing?.hash, doc?.html, answerable]);
+
+  // The editor, rendered into its place on every change; Preact updates it in place.
+  const [hostTick, setHostTick] = useState(0);
+  useEffect(() => {
+    const spot = host.current;
+    if (!spot || !editing || !doc) return;
+    const save = async (check: boolean) => {
+      setEditing((e) => (e ? { ...e, saving: true, note: null } : e));
+      try {
+        await api.saveAnswer({
+          p: `${doc.root}/${doc.rel}`,
+          line: editing.line,
+          form: editing.form,
+          hash: editing.hash,
+          answerHash: editing.answerHash,
+          text: draft.current,
+          check,
+        });
+        setEditing(null);
+      } catch (err) {
+        setEditing((e) =>
+          e
+            ? {
+                ...e,
+                saving: false,
+                note:
+                  (err as { status?: number }).status === 409
+                    ? 'The file changed since this page was loaded — it has been reloaded, and your text is kept. Save again.'
+                    : (err as Error).message,
+              }
+            : e,
+        );
+      } finally {
+        onReload?.();
+      }
+    };
+    mount(
+      <AnswerEditor
+        initial={draft.current}
+        onText={(text) => (draft.current = text)}
+        onSave={(check) => void save(check)}
+        onCancel={() => setEditing(null)}
+        saving={editing.saving}
+        note={editing.note}
+        canCheck={editing.canCheck}
+      />,
+      spot,
+    );
+  }, [editing, hostTick]);
 
   // Each document starts at the default depth; H3 is a per-document choice, not a mode.
   useEffect(() => setTocDepth(2), [doc?.url]);

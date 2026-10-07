@@ -1,7 +1,7 @@
 # TODO — mdhouse
 
-**1.1.1** — checkboxes written back to disk in `--rw` folders (I.0–I.3, done; see
-[`DONE.md`](DONE.md)). User-facing history is in [`CHANGELOG.md`](../../CHANGELOG.md).
+**1.2** (unreleased) — answering questions in the browser, done; see [`DONE.md`](DONE.md).
+**1.1.1** — checkboxes written back to disk in `--rw` folders. User-facing history is in [`CHANGELOG.md`](../../CHANGELOG.md).
 
 Next step: **K.2b** or **J** — your pick.
 

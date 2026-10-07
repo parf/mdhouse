@@ -130,7 +130,8 @@ of the hour, in the tree as well as the lists.
 is listed, with live examples, in [**Markdown in mdhouse**](doc/markdown.md). In short: nested lists, tables, footnotes,
 task lists, GitHub alerts (`> [!NOTE]`), front matter set aside, syntax highlighting via shiki,
 and mermaid diagrams. Question, disagreement and answer blocks — `> [!QUESTION]`, `::: q`,
-`**Q:**` lines, `> ?` / `> ?!` / `> 💬` — have [their own page](doc/qa.md). Relative links and images
+`**Q:**` lines, `> ?` / `> ?!` / `> 💬`, `- [ ]` / `- ✅` items — have [their own page](doc/qa.md); in a
+`--rw` folder you can answer them right on the page. Relative links and images
 between documents just work. Light and dark follow your system.
 
 **Finds your repos.** Hand it a directory of repositories and it discovers each one, listing

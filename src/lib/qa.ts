@@ -23,13 +23,25 @@ export function lineHash(text: string): string {
 export type QaKind = 'question' | 'answer' | 'disagreement';
 /**
  * How a question was written: a glyph in a quote, an alert, a bold line, a `:::` container, or a
- * task item (`- [ ] question`, the QUESTIONS.md convention) whose answer is an indented quote.
+ * task item — `- [ ] question` (the QUESTIONS.md convention) or a list item opening with a status
+ * glyph, `- ✅ question` — whose answer is an indented quote.
  */
 export type QaForm = 'quote' | 'alert' | 'bold' | 'container' | 'task';
 export const QA_FORMS: readonly QaForm[] = ['quote', 'alert', 'bold', 'container', 'task'];
 
-/** A task item outside any quote; group 1 runs through the marker, so its length is the indent. */
-const TASK = /^(\s*(?:[-*+]|\d+[.)])\s+)\[([ xX])\]/;
+/**
+ * The status glyphs a list item may open with instead of a checkbox (/rd/.claude/Glyphs.md):
+ * ✅ done, ⚠️ partial, 🎫 handed off, ❌ failed, 🚫 dropped, ⛔ blocked, ⏳ in progress, ❓ open,
+ * ⁉️ disputed — and the checkbox characters ☐ ☑ ☒ and ✔️. The variation selector is optional.
+ */
+export const STATUS_GLYPH = /(?:✅|☑|✔|☐|☒|⚠|🎫|❌|🚫|⛔|⏳|❓|⁉)\uFE0F?/u;
+/** The glyphs (and `[x]`) that say an item is done. */
+export const isDone = (status: string) => /^(?:\[[xX]\]|✅|☑|✔)/u.test(status);
+/**
+ * A task item outside any quote: a checkbox or a status glyph after the list marker, then a space.
+ * Group 1 runs through the marker, so its length is the indent; group 2 is the status.
+ */
+const TASK = new RegExp(String.raw`^(\s*(?:[-*+]|\d+[.)])\s+)(\[[ xX]\]|${STATUS_GLYPH.source})(?=\s|$)`, 'u');
 const indentOf = (line: string) => line.length - line.trimStart().length;
 /** A line that starts its own list item, at any depth. */
 const ITEM = /^\s*(?:[-*+]|\d+[.)])\s/;
@@ -307,9 +319,12 @@ export function writeAnswer(
     const lead = req.form === 'alert' || req.form === 'container' ? [''] : [];
     raw.splice(found.question.end, 0, ...[...lead, ...written].map((l) => l + (crlf ? '\r' : '')));
   }
-  // The answer went in after the question, so the question's own line has not moved.
+  // The answer went in after the question, so the question's own line has not moved. A checkbox
+  // is ticked; a status glyph becomes ✅.
   if (req.check && req.form === 'task') {
-    raw[found.question.start] = raw[found.question.start]!.replace(TASK, (_: string, lead: string) => `${lead}[x]`);
+    raw[found.question.start] = raw[found.question.start]!.replace(TASK, (_: string, lead: string, status: string) =>
+      isDone(status) ? `${lead}${status}` : `${lead}${status.startsWith('[') ? '[x]' : '✅'}`,
+    );
   }
   return { src: raw.join('\n') };
 }

@@ -134,6 +134,24 @@ and raw HTML escaped — in a diff, the markup is the content.
   second tab followed live, a read-only folder's boxes stay disabled and a forced POST gets
   `403`, a stale fingerprint gets the note and no write.
 
+## Answering in the browser (1.2)
+
+- `src/lib/qa.ts` finds a question's and an answer's line ranges per form and writes the
+  answer; `GET`/`POST /api/qa/answer` → `writeAnswer()` → `Registry.writeFile()`, on the same
+  per-file queue as ticks (`queueWrite`). The renderer's `data-hash` and the server's are the
+  same `lineHash` over the same lines — a test checks every form.
+- **Trap:** the editor was first a controlled textarea whose text went through `Doc` state and
+  an effect that re-rendered it into its host. Keys typed faster than that round trip were
+  overwritten by an older render. The editor now owns its text; `Doc` keeps a copy for remounts.
+- **Trap:** on a re-render the editor silently took the question's new fingerprint and the
+  answer's, so a save after someone else's answer overwrote it without a word. It now says so.
+- **Trap:** the markdown-it core rule that marks task items runs before inline parsing:
+  `children` is still empty, so a status glyph is cut from `inline.content`, not from a text token.
+- Verified in headless Chrome on a scratch repo (the playground): every form inserted and
+  replaced, bullets inside the answer, Check & Save on a box and a glyph, Esc, a question
+  changed on disk and an answer written meanwhile under an open editor. A modified file opens
+  on its diff, where answering is off — the test switches back to the document first.
+
 ## Packaging
 
 - **Every npm release before 1.0.0 served `500 Build Failed` at `/`.** Bun bundles the UI at
