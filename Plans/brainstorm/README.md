@@ -51,6 +51,7 @@ The glyph is the **first symbol of the line** — status first, then severity
 | Glyph | Meaning | Use | Renders |
 |---|---|---|---|
 | 💬 | answer / reply — and nothing else | one 💬 per turn, under the ❓ / ⁉️ / item | green block |
+| 💡 | a suggested answer — proposed, not yet the answer | `💡 👾claude …` under a ❓; **✓ yes** makes it the answer (💡 → 💬), **✗ no** replies and hands it back (⏳) — both with an optional text | blue block, yes / no / edit |
 | 💬 ⚠️ | partial answer — "need more" | the line after it says what is missing; the item stays ❓ | amber block |
 
 ### Badges — a glyph glued to a name

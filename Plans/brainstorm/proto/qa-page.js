@@ -31,13 +31,13 @@
     request: [['✅', '✅ done'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
     comment: [],
   };
-  function editor(host, { kind = 'comment', prefill = '', onSave }) {
+  function editor(host, { kind = 'comment', prefill = '', placeholder = 'Reply…', save = '💬 Save', onSave }) {
     closeEditors();
     const ed = document.createElement('div');
     ed.className = kind === 'finding' ? 'f-edit' : 'c-edit';
     const extra = (ACTIONS[kind] || [])
       .map(([a, label, tip]) => `<button data-a="${a}"${tip ? ` data-tip="${tip}"` : ''}>${label}</button>`).join('');
-    ed.innerHTML = '<textarea placeholder="Reply…"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">💬 Save</button>'
+    ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">${save}</button>`
       + extra + '<button class="cancel">(ESC)Cancel</button>'
       + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;
     host.append(ed);
@@ -112,6 +112,42 @@
       });
       return;
     }
+    // ---- 💡 a suggestion: accept makes it the answer; edit answers with its text
+    const acc = e.target.closest('.s-act button');
+    if (acc) {
+      e.preventDefault();
+      const sug = acc.closest('.reply.suggest');
+      const host = sug.closest('details, .item');
+      const yes = acc.classList.contains('accept');
+      if (yes || acc.classList.contains('reject')) {
+        // YES / NO + an optional text
+        editor(host, {
+          kind: 'comment',
+          placeholder: yes ? 'Yes — anything to add? (optional)' : 'No — why? (optional)',
+          save: yes ? '✓ yes' : '✗ no',
+          onSave: (text, _, sign) => {
+            const th = threadOf(host, 'thread q-thread');
+            if (yes) {
+              sug.classList.remove('suggest');
+              sug.firstChild.textContent = '';
+              sug.querySelector('.s-act').remove();
+              if (text) th.append(reply(text, sign));
+              answered(host);
+            } else {
+              th.append(reply(text ? `no — ${text}` : 'no', sign));
+              setStage(host, '⏳');
+            }
+          },
+        });
+      } else {
+        editor(host, { kind: 'question', prefill: sug.querySelector('.txt').textContent, onSave: (text, action, sign) => {
+          if (text) threadOf(host, 'thread q-thread').append(reply(text, sign, action === 'partial'));
+          if (action && action !== 'partial') setStage(host, action);
+          else if (text && action !== 'partial') answered(host);
+        } });
+      }
+      return;
+    }
     // ---- a click anywhere on an unanswered question opens its form, as its glyph does
     const q = e.target.closest('.item.wait-me');
     if (q && !e.target.closest('a, input, label, button, .reply, .c-edit, .f-edit, .opts')) {
@@ -125,6 +161,19 @@
       editor(r.parentElement, { prefill: txt.textContent, onSave: (text) => { if (text) txt.textContent = text; } });
     }
   });
+
+  /** A question that got its answer: a green ?, no longer waiting on me. */
+  function answered(host) {
+    const g = host.querySelector(':scope > .head > .g .g-btn');
+    if (g && ['❓', '⁉️'].includes(g.textContent)) {
+      g.className = 'g-answered';
+      g.textContent = g.textContent === '⁉️' ? '!?' : '?';
+      g.dataset.tip = 'Answered — click to edit the answer';
+    }
+    host.classList.remove('wait-me');
+    host.dataset.k = (host.dataset.k || '').split(' ').filter((k) => k !== 'open').join(' ');
+    counts();
+  }
 
   /** The status glyph changes; a severity stays in the text. */
   function setStage(host, stage) {

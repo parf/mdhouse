@@ -41,6 +41,19 @@ turns so GitHub keeps them apart:
   | a request 👉 | ✅ done · ⏸️ defer · 🚫 drop | (the agent flips it to `⏳` when it starts)
 - GitHub: a list item with a quote under it — readable as a chat
 
+## 1c. A question with a suggested answer
+
+```markdown
+> ❓ Should the summary strip stay visible while scrolling a long findings file?
+> 💡 👾claude Keep it sticky: the counts are what you come back to.
+```
+
+- 💡 is a proposed answer — the question still waits on me
+- **✓ yes** (+ optional text): `💡` becomes `💬` — the suggestion is the answer; the text, if any,
+  follows as a reply
+- **✗ no** (+ optional text): a reply `💬 👤parf no — …`; the 💡 stays, the question goes to the agent (⏳)
+- **✎ edit**: answer with the suggestion's text, edited
+
 ## 2. Findings — stages
 
 ```markdown

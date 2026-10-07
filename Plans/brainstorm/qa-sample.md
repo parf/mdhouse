@@ -36,6 +36,11 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 > The one gap is the agent's side: it does not see your save until it re-reads the file, so a
 > long-running agent should re-read before it writes a second time — `/resolve-findings` does.
 
+> ❓ Should the summary strip stay visible while scrolling a long findings file, or scroll away
+> with the title like everything else on the page?
+> 💡 👾claude Keep it sticky: on a 200-line findings file the counts are what you come back to, and
+> one 30-pixel bar costs little.
+
 > ⁉️ The README says the service listens on 7777, but the unit file written by `service install
 > --port 8080` pins 8080 — which one is the documented default, and should the README name both?
 
@@ -63,6 +68,9 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 - ⏳ 🏷️ui Rename `?git=favs` to `?git=stars` across the git view, the README and the tests, keeping the
   old spelling working as an alias so bookmarks do not break?
   > 💬 👤parf yes — keep the old one working, and mention the rename in the changelog.
+- ❓ Who should be named on an answer written from the page — the git user, a name from the
+  config, or nobody unless I tick 👤me?
+  > 💡 👾claude Nobody by default; ticking 👤me signs it with the config name, else git's.
 - ✅ Should the summary strip count closed items at all, given that nobody filters for them?
   > 💬 📡slack 👥design asked the same on 📅2026-10-06 — keep both answers here.
   >
