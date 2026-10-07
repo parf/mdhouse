@@ -57,8 +57,9 @@
     "shiki": "^3.0.0"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.4.2",
     "@types/markdown-it": "^14.1.2",
-    "@types/markdown-it-container": "^4.0.1"
+    "@types/markdown-it-container": "^4.0.1",
+    "typescript": "^7.0.2"
   }
 }
