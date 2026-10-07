@@ -124,7 +124,7 @@ thresholds, not glyphs — each level includes the ones before it.
 |---|---|---|
 | **show (N)** | everything; resets the filter | all 6 |
 | **🔴** | high only | 🔴 |
-| **🟠** | medium and up, plus everything waiting on me (❓ ⁉️) | 🔴 + 🟠 + ❓ + ⁉️ |
+| **🟠** | medium and up, plus ❓ ⁉️ with no severity of their own | 🔴 + 🟠 + ❓ + ⁉️ |
 | **⚪** | every open line, any severity | 🔴 🟠 ⚪ 🔵 ⏳ ❓ ⁉️ |
 | **✅** | every closed line | ✅ 🚫 ⏸️ 🎫 |
 
@@ -135,7 +135,7 @@ thresholds, not glyphs — each level includes the ones before it.
 
 Edge cases:
 
-- `❓ 🔴` is in 🔴 and in 🟠 — severity high; ❓ lifts a line to 🟠 at least
+- a ❓ / ⁉️ with a severity goes by it: `❓ 🔴` = high, `❓ ⚪` = low (⚪ only); a bare ❓ / ⁉️ is 🟠
 - ⏳ (the agent is on it) is open → ⚪; in 🟠 only when its own severity is 🟠 / 🔴
 - 🔵 is open → ⚪ only
 - ⛔ ❌ ⚠️ are open, by their own severity

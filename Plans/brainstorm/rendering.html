@@ -156,7 +156,7 @@ What needs me stands out; what is settled is muted and folded — one click open
 Glyphs: <a href="README.md">README.md</a>.</p>
 
 <h2>Page summary strip</h2>
-<p class="lead">On every page with items: <b>show (all)</b> · 🔴 · 🟠 · ⚪ · ✅ — thresholds: 🔴 high; 🟠 medium and up plus ❓ ⁉️; ⚪ every open line; ✅ every closed one (✅ 🚫 ⏸️ 🎫). A click filters. Try it on the findings below.</p>
+<p class="lead">On every page with items: <b>show (all)</b> · 🔴 · 🟠 · ⚪ · ✅ — thresholds: 🔴 high; 🟠 medium and up, plus a bare ❓ ⁉️ (one with a severity goes by it: <code>❓ ⚪</code> = low); ⚪ every open line; ✅ every closed one (✅ 🚫 ⏸️ 🎫). A click filters. Try it on the findings below.</p>
 
 <!-- ============================================================ 1 -->
 <h2>1. Questions → answers</h2>
@@ -502,7 +502,8 @@ document.getElementById('one-g').addEventListener('click', (e) => {
   const levels = [
     ['show', () => true],
     ['🔴', (r) => open(r) && has(r, '🔴')],
-    ['🟠', (r) => open(r) && has(r, '🔴', '🟠', '❓', '⁉️')],
+    // a ❓ / ⁉️ goes by its own severity; a bare one counts as 🟠
+    ['🟠', (r) => open(r) && (has(r, '🔴', '🟠') || (has(r, '❓', '⁉️') && !has(r, '⚪', '🔵')))],
     ['⚪', open],
     ['✅', (r) => !open(r)],
   ];
