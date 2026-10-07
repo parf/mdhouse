@@ -9,6 +9,7 @@ generate/process this markups
 - [patterns.md](patterns.md) — patterns
 - [markup.md](markup.md) — suggested markups
 - [rendering.html](rendering.html) — markup → suggested rendering, every case
+- [qa-sample.md](qa-sample.md) — every case, long questions / answers → [qa-sample.html](qa-sample.html), rendered by [proto/qa-render.ts](proto/qa-render.ts)
 
 ## Glyphs
 
@@ -51,7 +52,7 @@ The glyph is the **first symbol of the line** — status first, then severity
 |---|---|---|---|
 | 💬 | answer / reply — and nothing else | one 💬 per turn, under the ❓ / ⁉️ / item | green block |
 | 💬 ⚠️ | partial answer — "need more" | the line after it says what is missing; the item stays ❓ | amber block |
-| 👤 | who is speaking | `💬 👤 parf: …` when a thread has more than one author | name chip |
+| 👤 | who is speaking | `💬 👤parf …` — the name right after 👤, up to the space | name chip |
 
 ### Options — choosing
 

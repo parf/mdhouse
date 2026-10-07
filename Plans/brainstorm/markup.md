@@ -13,16 +13,16 @@ Today:
 > 💬 Yes, redirect for a year.
 ```
 
-A thread — one 💬 per turn, the author after 👤, a blank `>` between
+A thread — one 💬 per turn, the author as `👤name`, a blank `>` between
 turns so GitHub keeps them apart:
 
 ```markdown
 - ❓ Do we keep the old URLs?
-  > 💬 👤 **agent:** Redirect `/d/<root>/x.md` → `/d/x.md` for a year?
+  > 💬 👤agent Redirect `/d/<root>/x.md` → `/d/x.md` for a year?
   >
-  > 💬 ⚠️ 👤 **parf:** need more — which links are out there?
+  > 💬 ⚠️ 👤parf need more — which links are out there?
   >
-  > 💬 👤 **agent:** 14 in README files, 2 in issues.
+  > 💬 👤agent 14 in README files, 2 in issues.
 ```
 
 - the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
@@ -34,13 +34,13 @@ turns so GitHub keeps them apart:
 ```markdown
 - 🔴 `src/cli.ts:536` --fg hands over on a busy port — the unit "succeeds", nothing retries. Fix: exit 1
 - ❓ 🟠 `package.json:46` dev script feeds `.` to the live instance
-  > 💬 👤 **agent:** pin `:7790` + own config, or drop it?
+  > 💬 👤agent pin `:7790` + own config, or drop it?
 - ⏸️ ⚪ `src/lib/search.ts:174` ReDoS without rg
-  > 💬 👤 **agent:** needs a design — later
+  > 💬 👤agent needs a design — later
 - ✅ 🟠 `test/control.test.ts:8` sockets in the real config dir
-  > 💬 👤 **agent:** `112b307` — temp config via preload
+  > 💬 👤agent `112b307` — temp config via preload
 - 🚫 ⚪ `CLAUDE.md:119` socket wait
-  > 💬 👤 **agent:** moot — the reload polls HTTP now
+  > 💬 👤agent moot — the reload polls HTTP now
 ```
 
 | Line starts with | Stage | Looks |
@@ -84,11 +84,11 @@ indented under it, as under any item):
 ```markdown
 - ✅ Dev server port:
   - (x) `7790`, own config 🌟
-    > 💬 👤 **parf:** and print the URL at start
+    > 💬 👤parf and print the URL at start
   - ( ) `port: 0`, printed at start
   - ( ) keep `7777`
-    > 💬 👤 **parf:** no — the live one is there
-  > 💬 👤 **parf:** revisit when we have a second dev
+    > 💬 👤parf no — the live one is there
+  > 💬 👤parf revisit when we have a second dev
 ```
 
 ## 4. Point at something and say …
@@ -111,7 +111,7 @@ Search falls back to a JS regex when rg is missing.
 
 - verbs: `ask` · `why` · `elaborate` · `rewrite` · `remove` — adding to a section is ↓ ⇊ on its heading already
 - a sentence inside a block: quote it in the request (`"falls back"`)
-- the agent answers under it (`> 💬 👤 **agent:** done — …`) or just does it and turns 👉 into ✅:
+- the agent answers under it (`> 💬 👤agent done — …`) or just does it and turns 👉 into ✅:
   `> ✅ 👉 **rewrite:** one pass …`
 - in mdhouse: select text → a 👉 button writes the request after its block, the quote prefilled
 

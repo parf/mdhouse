@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Q&amp;A sample — every case</title>
+<style>
+:root {
+  --bg: #fafaf7; --panel: #ffffff; --text: #1f2328; --dim: #6e7781; --line: #d8dee4;
+  --code-bg: #f3f4f1;
+  --q: #cf222e; --q-bg: #ffebe9; --dis: #bc4c00; --dis-bg: #fff1e5;
+  --a: #1a7f37; --a-bg: #dafbe1; --part: #9a6700; --part-bg: #fff8c5;
+  --sev-h: #cf222e; --sev-m: #bc4c00; --info: #0969da;
+  --muted: #8c959f; --pick: #0969da; --pick-bg: #ddf4ff; --title: #1a5d38;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --panel: #161b22; --text: #e6edf3; --dim: #8d96a0; --line: #30363d;
+    --code-bg: #1c2128;
+    --q: #ff7b72; --q-bg: #3d1a1a; --dis: #f0883e; --dis-bg: #3a2414;
+    --a: #3fb950; --a-bg: #12301b; --part: #d29922; --part-bg: #33290f;
+    --sev-h: #ff7b72; --sev-m: #f0883e; --info: #58a6ff;
+    --muted: #6e7681; --pick: #58a6ff; --pick-bg: #12263f; --title: #56d364;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117; --panel: #161b22; --text: #e6edf3; --dim: #8d96a0; --line: #30363d;
+  --code-bg: #1c2128;
+  --q: #ff7b72; --q-bg: #3d1a1a; --dis: #f0883e; --dis-bg: #3a2414;
+  --a: #3fb950; --a-bg: #12301b; --part: #d29922; --part-bg: #33290f;
+  --sev-h: #ff7b72; --sev-m: #f0883e; --info: #58a6ff;
+  --muted: #6e7681; --pick: #58a6ff; --pick-bg: #12263f; --title: #56d364;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { color: var(--title); font-size: 24px; margin: 0 0 4px; }
+h2 { color: var(--title); font-size: 19px; margin: 40px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 14px; margin: 22px 0 8px; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; }
+p.lead { color: var(--dim); margin: 0 0 8px; }
+.case { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin: 8px 0 18px; }
+@media (max-width: 760px) { .case { grid-template-columns: 1fr; } }
+.col-label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 12px; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+.out { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.notes { margin: 6px 0 0; padding-left: 18px; color: var(--dim); font-size: 13px; }
+code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg); padding: 0 3px; border-radius: 3px; }
+
+/* items */
+ul.items { list-style: none; margin: 0; padding: 0; }
+.item { padding: 6px 8px; border-radius: 6px; margin: 2px 0; }
+.item > .head { display: flex; gap: 6px; align-items: baseline; }
+.g { flex: none; }
+.sev-h { font-weight: 600; }
+.wait-me { background: var(--q-bg); }
+.wait-me.dis { background: var(--dis-bg); }
+.btn { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; border: 1px solid var(--line);
+  border-radius: 10px; padding: 0 7px; color: var(--dim); background: var(--panel); cursor: pointer; margin-left: auto; white-space: nowrap; }
+.btn.hot { border-color: var(--q); color: var(--q); }
+
+/* settled: muted and folded */
+details.settled { color: var(--muted); padding: 6px 8px; margin: 4px 0; border-radius: 6px; }
+/* same columns as .hang: every glyph at the same x, every text at the same x */
+details.settled > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
+/* the glyph column holds the first glyph only; a severity after a status is part of the text */
+details.settled > summary > .g, .item > .head > .g { text-align: center; white-space: nowrap; }
+details.settled > summary::-webkit-details-marker { display: none; }
+details.settled > summary .t { display: grid; min-width: 0; }
+/* folded: the question and its answer on lines of their own, each in its own colour, muted */
+.t-q, .t-a { overflow-wrap: anywhere; }
+.t-q { color: color-mix(in srgb, var(--q) 55%, var(--muted)); }
+.t-a { color: color-mix(in srgb, var(--a) 60%, var(--muted)); }
+details.settled[open] > summary .t-a { display: none; }
+details.settled > summary::after { content: "▸"; margin-left: auto; font-size: 11px; }
+details.settled[open] > summary::after { content: "▾"; }
+details.settled[open] { background: var(--code-bg); }
+.deferred { color: var(--muted); }
+
+/* answers / thread */
+.thread { margin: 4px 0 2px 22px; display: grid; gap: 4px; }
+.reply { background: var(--a-bg); border-left: 3px solid var(--a); border-radius: 4px; padding: 3px 8px; font-weight: 400; color: var(--text); }
+.reply.partial { background: var(--part-bg); border-left-color: var(--part); }
+.who { display: inline-block; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 8px;
+  background: var(--panel); border: 1px solid var(--line); margin-right: 4px; }
+.qblock { border-radius: 6px; padding: 6px 8px; margin: 4px 0; }
+/* hanging glyph: the glyph has a column of its own; wrapped lines line up with the text, not under the glyph */
+.hang { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
+.hang > .g { text-align: center; }
+/* an answered ❓ — a green "?" in its place: the question is settled */
+.g-answered { color: var(--a); font-weight: 800; font-size: 1.15em; line-height: 1.3; justify-self: center; width: 1.1em; text-align: center;
+  border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
+/* the ❓ / ⁉️ glyph is the answer button: framed on hover; no separate chip */
+.g-btn { cursor: pointer; border: 1px solid transparent; border-radius: 4px; padding: 0 1px; }
+.g-btn:hover { border-color: var(--q); background: var(--panel); box-shadow: 0 1px 0 var(--line); }
+.g-btn.dis:hover { border-color: var(--dis); }
+.g-btn.sev:hover { border-color: var(--dim); }
+/* the finding editor: a reply, and the stage it moves to */
+.f-edit { margin: 6px 0 2px 22px; display: grid; gap: 4px; }
+.f-edit textarea { font: inherit; padding: 4px 6px; border: 1px solid var(--a); border-radius: 4px; background: var(--panel); color: var(--text); min-height: 3em; }
+.f-edit .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.f-edit button { font-size: 12px; padding: 1px 9px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+.f-edit button.save { background: var(--a); color: #fff; border-color: var(--a); }
+.f-edit .lbl { font-size: 12px; color: var(--dim); }
+/* on hover the green ? turns into a button [?] — a click opens the answer editor */
+.g-answered:hover { border-color: var(--a); background: var(--a-bg); box-shadow: 0 1px 0 var(--line); }
+.qblock.q { background: var(--q-bg); }
+.qblock.d { background: var(--dis-bg); }
+.qblock.a { background: var(--a-bg); border-left: 4px solid var(--a); margin-left: 22px; }
+
+/* options */
+.opts { margin: 4px 0 2px 22px; display: grid; gap: 3px; font-weight: 400; }
+.opt { display: flex; gap: 8px; align-items: baseline; padding: 3px 8px; border-radius: 5px; cursor: pointer; border: 1px solid transparent; }
+.opt:hover { border-color: var(--line); }
+.opt input { margin: 0; accent-color: var(--pick); }
+.opt.picked { background: var(--pick-bg); border-color: var(--pick); font-weight: 600; }
+.opts.done .opt:not(.picked) { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.suggest { font-size: 12px; }
+/* comments on a line: a 💬 at its right end, shown on hover */
+.c-row { display: flex; align-items: center; gap: 6px; }
+.c-row > .opt { flex: 1; }
+.c-btn { visibility: hidden; flex: none; border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+  font-size: 12px; padding: 0 6px; cursor: pointer; }
+.c-row:hover > .c-btn, .c-btn:focus { visibility: visible; }
+.opt-thread { margin-left: 34px; }
+.opt-thread:empty { display: none; }
+.reply[title] { cursor: text; }
+.c-edit { display: grid; gap: 4px; }
+.c-edit textarea { font: inherit; padding: 4px 6px; border: 1px solid var(--a); border-radius: 4px; background: var(--panel); color: var(--text); min-height: 3em; }
+.c-edit .bar { display: flex; gap: 6px; }
+.c-edit button { font-size: 12px; padding: 1px 10px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+.c-edit button.save { background: var(--a); color: #fff; border-color: var(--a); }
+
+/* request */
+.req { border-left: 4px solid var(--info); background: var(--pick-bg); border-radius: 4px; padding: 4px 10px; margin: 6px 0; }
+.req b { color: var(--info); }
+
+/* strip */
+.strip { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 8px; }
+.chip { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 1px 9px; font-size: 13px; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--pick); background: var(--pick-bg); }
+.chip.zero { color: var(--muted); }
+.strip .label { font-size: 12px; color: var(--dim); }
+.chip, .g-btn, .g-answered, .c-btn { position: relative; }
+/* instant tooltips — no browser delay: data-tip, shown on hover / focus */
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; left: 0; top: calc(100% + 4px); z-index: 10;
+  white-space: nowrap; font: 12px/1.4 system-ui, sans-serif; font-weight: 400; color: var(--panel); background: var(--text);
+  padding: 2px 7px; border-radius: 4px; pointer-events: none; }
+.strip .sep { color: var(--line); font-size: 18px; line-height: 1; margin: 0 2px; }
+.filtered .item.hide, .filtered details.hide { display: none; }
+
+table { border-collapse: collapse; font-size: 13.5px; margin: 6px 0; }
+td, th { border: 1px solid var(--line); padding: 3px 8px; text-align: left; vertical-align: top; }
+th { background: var(--code-bg); }
+
+/* page: a rendered document, not the two-column mock */
+main { max-width: 900px; }
+main > h1 { margin-bottom: 8px; }
+.strip.top { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 6px 0; margin: 0 0 6px; border-bottom: 1px solid var(--line); }
+ul.items { margin: 6px 0 14px; }
+.qwrap { margin: 6px 0; }
+.qwrap > .thread, .req + .thread { margin-left: 30px; }
+.reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
+.item.info { color: var(--dim); }
+.filtered [data-k].hide { display: none; }
+</style>
+</head>
+<body>
+<main id="doc">
+<div class="strip top" id="strip"></div>
+<h1>Q&amp;A sample — every case</h1>
+<p>Plain Markdown around the items stays as it is: headings, paragraphs, <code>code</code>, lists without glyphs.</p>
+<ul>
+<li>an ordinary list item — no glyph, nothing happens</li>
+<li>another one</li>
+</ul>
+<h2>1. Questions in a quote</h2>
+
+<div class="qwrap" data-k="❓ open"><div class="qblock q hang"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><div>When the live instance already holds port 7777 and a second developer starts their own copy of mdhouse on the same machine, which port should the dev server pick, and should it remember that choice between restarts or ask every time?</div></div></div>
+<details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">Where does the dev server keep its configuration when the live instance and the dev one run side by side — and what happens to the favourites and folders a developer saves while testing?</span><span class="t-a">💬 In <code>.scratch/cfg</code> under the repo. It is gitignored, so it never meets <code>~/.config/mdhouse</code>, and resetting it is a plain <code>rm -r .scratch</code>. Favourites saved while testing stay there and never reach the live instance.</span></span></summary><div class="thread"><div class="reply"><span class="txt">In <code>.scratch/cfg</code> under the repo. It is gitignored, so it never meets <code>~/.config/mdhouse</code>, and resetting it is a plain <code>rm -r .scratch</code>. Favourites saved while testing stay there and never reach the live instance.</span></div></div></details>
+<div class="qwrap" data-k="⁉️ open"><div class="qblock d hang"><span class="g"><span class="g-btn dis" data-tip="Answer">⁉️</span></span><div>The README says the service listens on 7777, but the unit file written by <code>service install --port 8080</code> pins 8080 — which one is the documented default, and should the README name both?</div></div></div>
+<details class="settled" data-k="⁉️"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">!?</span><span class="t"><span class="t-q"><code>CLAUDE.md</code> says tests never touch the live config, while <code>control.test.ts</code> created sockets in <code>~/.config/mdhouse</code> on every run.</span><span class="t-a">💬 The test was wrong: it now runs against a temp <code>XDG_CONFIG_HOME</code> set in <code>test/preload.ts</code>. Checked by watching the real config dir during a full run — nothing appeared.</span></span></summary><div class="thread"><div class="reply"><span class="txt">The test was wrong: it now runs against a temp <code>XDG_CONFIG_HOME</code> set in <code>test/preload.ts</code>. Checked by watching the real config dir during a full run — nothing appeared.</span></div></div></details>
+<details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">What should a reload keep?</span><span class="t-a">💬 Everything a user added by hand:</span></span></summary><div class="thread"><div class="reply"><p>Everything a user added by hand:</p>
+<ul>
+<li>session-only folders, with their <code>--rw</code></li>
+<li>the port and host it was started with</li>
+</ul>
+<p>Nothing else — prefs live on disk anyway.</p>
+</div></div></details>
+<h2>2. Questions as list items — threads</h2>
+
+<ul class="items"><li class="item wait-me" data-k="❓ open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>Do we keep the old <code>/d/&lt;root&gt;/x.md</code> URLs working after the single-root change, or is it fine to break the links people have already pasted into tickets and chat?</span></div><div class="thread q-thread"><div class="reply"><span class="who">👤 agent</span><span class="txt">Redirect the old form to the new one for a year, then drop it — the redirect costs one route and a test.</span></div><div class="reply partial">⚠️ <span class="who">👤 parf</span><span class="txt">need more — which links are actually out there, and where? A year may be too long or too short depending on that.</span></div></div></li><li class="item" data-k="⏳ open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">⏳</span></span><span>Rename <code>?git=favs</code> to <code>?git=stars</code> across the git view, the README and the tests, keeping the old spelling working as an alias so bookmarks do not break?</span><span class="btn">waiting on agent</span></div><div class="thread q-thread"><div class="reply"><span class="who">👤 parf</span><span class="txt">yes — keep the old one working, and mention the rename in the changelog.</span></div></div></li><details class="settled" data-k="✅"><summary><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">✅</span></span><span class="t"><span class="t-q">Should the summary strip count closed items at all, given that nobody filters for them?</span><span class="t-a">💬 yes — ✅ is where I go to check what was decided, and the total must add up.</span></span></summary><div class="thread"><div class="reply"><span class="who">👤 parf</span><span class="txt">yes — ✅ is where I go to check what was decided, and the total must add up.</span></div></div></details></ul>
+<h2>3. Findings — stages</h2>
+
+<ul class="items"><li class="item sev-h" data-k="🔴 open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">🔴</span></span><span><code>src/cli.ts:536</code> <code>--fg</code> hands its folders over when the port is busy and exits 0, so under systemd the unit &quot;succeeds&quot;, nothing retries, and a copy started by hand silently becomes the live one. Fix: exit 1 under <code>MDHOUSE_SERVICE=1</code>.</span></div><div class="thread q-thread"></div></li><li class="item wait-me" data-k="❓ 🟠 open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>🟠 <code>package.json:46</code> the <code>dev</code> script feeds <code>.</code> to the live instance whenever :7777 is up, instead of starting anything.</span></div><div class="thread q-thread"><div class="reply"><span class="who">👤 agent</span><span class="txt">pin it to :7790 with its own config, or drop the script — it is advertised in the README, so dropping it needs a README change too.</span></div></div></li><li class="item" data-k="🟠 open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">🟠</span></span><span><code>src/server.ts:631</code> <code>/api/search</code> takes <code>limit=abc</code> as <code>NaN</code>, and <code>hits.length &gt;= NaN</code> is never true — the result has no cap at all.</span></div><div class="thread q-thread"></div></li><li class="item wait-me" data-k="❓ ⚪ open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>⚪ <code>doc/qa.md:155</code> the glyph table lists ⏳ as &quot;in progress&quot; while the brainstorm uses it for &quot;waiting on the agent&quot; — same thing, or two states?</span></div><div class="thread q-thread"></div></li><li class="item" data-k="⚪ open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">⚪</span></span><span><code>src/lib/control.ts:125</code> the client unlinks a socket after a failed connect; a daemon that has just bound a fresh one loses it.</span></div><div class="thread q-thread"></div></li><li class="item info" data-k="🔵 open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">🔵</span></span><span><code>README.md:12</code> &quot;browsable&quot; is fine but &quot;browse&quot; reads better in the first line.</span></div><div class="thread q-thread"></div></li><li class="item" data-k="⏳ 🟠 open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">⏳</span></span><span>🟠 <code>test/</code> every server test binds a fixed port in 617xx, so two <code>bun test</code> runs at once collide with errors that look like regressions.</span><span class="btn">waiting on agent</span></div><div class="thread q-thread"><div class="reply"><span class="who">👤 parf</span><span class="txt">go with <code>port: 0</code> and read the real port back.</span></div></div></li><li class="item" data-k="⛔ 🟠 open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">⛔</span></span><span>🟠 <code>npm</code> 2FA: the token in <code>~/.npmrc</code> is a long-lived classic one; switching to a granular token needs the npm account, which this session cannot reach.</span></div><div class="thread q-thread"></div></li><li class="item sev-h" data-k="❌ 🔴 open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">❌</span></span><span>🔴 the packed-install smoke test of 1.4.1: <code>/</code> answered <code>500 Build Failed</code>.</span></div><div class="thread q-thread"><div class="reply"><span class="who">👤 agent</span><span class="txt"><code>tsconfig.json</code> missing from <code>files</code> again — the release is stopped.</span></div></div></li><li class="item" data-k="⚠️ 🟠 open"><div class="head c-row"><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">⚠️</span></span><span>🟠 <code>CHANGELOG.md</code> split: 1.x and the betas are apart, but the link from the package points at a file the package does not ship.</span></div><div class="thread q-thread"></div></li><details class="settled" data-k="⏸️ ⚪"><summary><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">⏸️</span></span><span class="t"><span class="t-q">⚪ <code>src/lib/search.ts:174</code> the no-ripgrep fallback compiles the user's regex — <code>(a+)+$</code> on a big file blocks the single thread.</span><span class="t-a">💬 needs a design (a worker with a timeout, or no regex in the fallback) — later.</span></span></summary><div class="thread"><div class="reply"><span class="who">👤 agent</span><span class="txt">needs a design (a worker with a timeout, or no regex in the fallback) — later.</span></div></div></details><details class="settled" data-k="🎫 ⚪"><summary><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">🎫</span></span><span class="t"><span class="t-q">⚪ <code>bin/mdhouse</code> Windows paths with spaces — RLM-412.</span></span></summary><div class="thread"></div></details><details class="settled" data-k="✅ 🟠"><summary><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">✅</span></span><span class="t"><span class="t-q">🟠 <code>test/control.test.ts:8</code> the tests created control sockets in the real config dir, beside the live instance's own.</span><span class="t-a">💬 <code>112b307</code> — a temp config via <code>test/preload.ts</code>; checked by watching the real dir during a full run.</span></span></summary><div class="thread"><div class="reply"><span class="who">👤 agent</span><span class="txt"><code>112b307</code> — a temp config via <code>test/preload.ts</code>; checked by watching the real dir during a full run.</span></div></div></details><details class="settled" data-k="🚫 ⚪"><summary><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">🚫</span></span><span class="t"><span class="t-q">⚪ <code>CLAUDE.md:119</code> the reload waits for the socket file, which a SIGKILLed copy leaves behind.</span><span class="t-a">💬 moot — the reload polls HTTP now.</span></span></summary><div class="thread"><div class="reply"><span class="who">👤 agent</span><span class="txt">moot — the reload polls HTTP now.</span></div></div></details></ul>
+<h2>4. Suggestions — one of, any of</h2>
+
+<ul class="items"><li class="item wait-me" data-k="❓ open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>Which port should <code>bun run dev</code> use by default, given that the live instance holds 7777 and the smoke test of a release uses 7791?</span><button class="c-btn" data-tip="Comment on the question">💬</button></div><div class="opts radio" data-name="o18"><div class="c-wrap"><div class="c-row"><label class="opt"><input type="radio" name="o18"> <span><code>7790</code>, with its own config in <code>.scratch/</code> <span class="suggest">🌟 suggested</span></span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"></div></div><div class="c-wrap"><div class="c-row"><label class="opt"><input type="radio" name="o18"> <span><code>port: 0</code> — whatever is free, printed at start</span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"></div></div><div class="c-wrap"><div class="c-row"><label class="opt"><input type="radio" name="o18"> <span><code>7778</code>, next to the live one <span class="suggest">⭐ runner-up</span></span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"></div></div></div><div class="thread q-thread"></div></li><details class="settled" data-k="✅"><summary><span class="g"><span class="g-btn sev" data-tip="Reply, or set its stage">✅</span></span><span class="t"><span class="t-q">Where should the summary strip sit on a page that has both a table of contents and a git history panel?</span><span class="t-a">◉ right under the title, above everything else <span class="suggest">🌟 suggested</span></span></span></summary><div class="opts done radio" data-name="o19"><div class="c-wrap"><div class="c-row"><label class="opt picked"><input type="radio" name="o19" checked> <span>right under the title, above everything else <span class="suggest">🌟 suggested</span></span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"><div class="reply"><span class="who">👤 parf</span><span class="txt">and keep it sticky while scrolling a long findings file.</span></div></div></div><div class="c-wrap"><div class="c-row"><label class="opt"><input type="radio" name="o19"> <span>in the table of contents, as its first line</span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"></div></div><div class="c-wrap"><div class="c-row"><label class="opt"><input type="radio" name="o19"> <span>at the bottom of the page</span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"><div class="reply"><span class="who">👤 parf</span><span class="txt">no — nobody scrolls to the bottom to find out what is open.</span></div></div></div></div><div class="thread"><div class="reply"><span class="who">👤 parf</span><span class="txt">revisit once we have pages with more than a hundred items.</span></div></div></details><li class="item wait-me" data-k="❓ open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>What should ship in the npm package besides the code?</span><button class="c-btn" data-tip="Comment on the question">💬</button></div><div class="opts" data-name="o20"><div class="c-wrap"><div class="c-row"><label class="opt picked"><input type="checkbox" name="o20" checked> <span><code>doc/*.md</code> — the docs linked from the README <span class="suggest">🌟 suggested</span></span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"></div></div><div class="c-wrap"><div class="c-row"><label class="opt picked"><input type="checkbox" name="o20" checked> <span><code>CHANGELOG.md</code></span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"></div></div><div class="c-wrap"><div class="c-row"><label class="opt"><input type="checkbox" name="o20"> <span><code>doc/*.png</code> — 680 kB of screenshots</span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"></div></div><div class="c-wrap"><div class="c-row"><label class="opt"><input type="checkbox" name="o20"> <span><code>Plans/</code> — the design notes</span></label><button class="c-btn" data-tip="Comment on this option">💬</button></div><div class="thread opt-thread"><div class="reply"><span class="who">👤 parf</span><span class="txt">never — they are for us, not for users.</span></div></div></div></div><div class="thread q-thread"></div></li></ul>
+<h2>5. Requests on existing text</h2>
+<p>The parser walks the token stream twice: once to find headings for the table of contents, and
+once more to turn task items into checkboxes with their line and hash.</p>
+
+<div class="req" data-k="👉 open">👉 <strong>rewrite:</strong> one pass — shorter, and keep the numbers about the cost of the second walk.</div>
+<p>Search falls back to a JavaScript regex when ripgrep is missing from the machine.</p>
+
+<details class="settled" data-k="✅ 👉"><summary><span class="g"><span class="g-btn sev" data-tip="Reply">✅</span></span><span class="t"><span class="t-q">👉 <strong>why:</strong> &quot;falls back&quot; — is the fallback ever hit in practice, and how slow is it?</span><span class="t-a">💬 only without rg; about 40× slower on a 10 MB tree — noted in the README.</span></span></summary><div class="thread"><div class="reply"><span class="who">👤 agent</span><span class="txt">only without rg; about 40× slower on a 10 MB tree — noted in the README.</span></div></div></details>
+</main>
+<script>// Behaviour of a page rendered by qa-render.ts — in the browser only; nothing is written back.
+(() => {
+  const doc = document.getElementById('doc');
+
+  // ---- editors: one at a time
+  const closeEditors = () => doc.querySelectorAll('.c-edit, .f-edit').forEach((e) => e.remove());
+  const reply = (text) => {
+    const r = document.createElement('div');
+    r.className = 'reply';
+    r.innerHTML = '<span class="who">👤 you</span><span class="txt"></span>';
+    r.querySelector('.txt').textContent = text;
+    return r;
+  };
+  /** A textarea + Save / Cancel; `stages` adds the stage buttons a finding moves with. */
+  function editor(host, { prefill = '', stages = false, onSave }) {
+    closeEditors();
+    const ed = document.createElement('div');
+    ed.className = stages ? 'f-edit' : 'c-edit';
+    ed.innerHTML = '<textarea placeholder="Reply…"></textarea><div class="bar"><button class="save">💬 Save</button>'
+      + (stages ? '<span class="lbl">and set:</span><button data-s="✅">✅ done</button><button data-s="🚫">🚫 rejected</button>'
+        + '<button data-s="⏸️">⏸️ deferred</button><button data-s="❓">❓ needs my call</button>' : '')
+      + '<button class="cancel">Cancel</button></div>';
+    host.append(ed);
+    const ta = ed.querySelector('textarea');
+    ta.value = prefill;
+    ta.focus();
+    const done = (stage) => { onSave(ta.value.trim(), stage); ed.remove(); };
+    ed.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      e.preventDefault();
+      if (b.classList.contains('cancel')) return ed.remove();
+      done(b.dataset.s ?? null);
+    });
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') ed.remove();
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) done(null);
+    });
+  }
+  const threadOf = (host, cls = 'thread') => {
+    let th = host.querySelector(`:scope > .${cls.split(' ').at(-1)}`);
+    if (!th) { th = document.createElement('div'); th.className = cls; host.append(th); }
+    return th;
+  };
+
+  doc.addEventListener('click', (e) => {
+    // ---- the first glyph of a line is its button
+    const g = e.target.closest('.g-btn, .g-answered');
+    if (g) {
+      e.preventDefault();
+      const host = g.closest('details, .item, .qwrap, .req');
+      if (host.tagName === 'DETAILS') host.open = true;
+      // a ✅ on a radio question undoes the pick
+      const radios = host.querySelector(':scope > .opts.radio');
+      if (radios && g.textContent === '✅') {
+        radios.querySelectorAll('.opt').forEach((o) => { o.classList.remove('picked'); o.querySelector('input').checked = false; });
+        radios.classList.remove('done');
+        return setStage(host, '❓');
+      }
+      const finding = !g.classList.contains('g-answered') && host.classList.contains('item') && !host.classList.contains('wait-me');
+      const last = host.querySelector(':scope .reply:last-of-type .txt');
+      editor(host, {
+        prefill: g.classList.contains('g-answered') && last ? last.textContent : '',
+        stages: finding || host.tagName === 'DETAILS',
+        onSave: (text, stage) => {
+          if (text) threadOf(host, host.classList.contains('qwrap') ? 'thread' : 'thread q-thread').append(reply(text));
+          if (stage) setStage(host, stage);
+        },
+      });
+      return;
+    }
+    // ---- 💬 on a question / option line: a comment under it
+    const c = e.target.closest('.c-btn');
+    if (c) {
+      e.preventDefault();
+      const wrap = c.closest('.c-wrap');
+      const host = wrap ?? c.closest('.item, details');
+      const th = wrap ? wrap.querySelector('.opt-thread') : threadOf(host, 'thread q-thread');
+      editor(th, { onSave: (text) => text && th.append(reply(text)) });
+      return;
+    }
+    // ---- a click on a comment edits it
+    const r = e.target.closest('.reply');
+    if (r && !e.target.closest('.c-edit, .f-edit') && r.querySelector('.txt')) {
+      const txt = r.querySelector('.txt');
+      editor(r.parentElement, { prefill: txt.textContent, onSave: (text) => { if (text) txt.textContent = text; } });
+    }
+  });
+
+  /** The status glyph changes; a severity stays in the text. */
+  function setStage(host, stage) {
+    const g = host.querySelector(':scope > .head > .g .g-btn, :scope > summary .g-btn');
+    if (g) g.textContent = stage;
+    const keys = (host.dataset.k || '').split(' ').filter((k) => k !== 'open' && !['✅', '🚫', '⏸️', '🎫', '❓', '⁉️', '⏳'].includes(k));
+    const closed = ['✅', '🚫', '⏸️', '🎫'].includes(stage);
+    host.dataset.k = [stage, ...keys, ...(closed ? [] : ['open'])].join(' ');
+    host.style.opacity = closed ? '.55' : '';
+    host.classList.toggle('wait-me', stage === '❓');
+    counts();
+  }
+
+  // ---- options: a radio pick settles the question; checkboxes just tick
+  doc.addEventListener('change', (e) => {
+    const input = e.target.closest('.opt input');
+    if (!input) return;
+    const opts = input.closest('.opts');
+    const host = opts.parentElement;
+    if (input.type === 'radio') {
+      opts.querySelectorAll(':scope > .c-wrap > .c-row > .opt').forEach((o) => o.classList.toggle('picked', o.contains(input)));
+      opts.classList.add('done');
+      setStage(host, '✅');
+    } else input.closest('.opt').classList.toggle('picked', input.checked);
+  });
+
+  // ---- the strip: the total, then thresholds 🔴 ⊂ 🟠 ⊂ ⚪ (open), ✅ (closed)
+  const strip = document.getElementById('strip');
+  const has = (r, ...g) => r.dataset.k.split(' ').some((k) => g.includes(k));
+  const open = (r) => has(r, 'open');
+  const levels = [
+    ['all', () => true, (n) => `Show all ${n}`],
+    ['🔴', (r) => open(r) && has(r, '🔴'), (n) => `High — ${n}`],
+    ['🟠', (r) => open(r) && (has(r, '🔴', '🟠') || (has(r, '❓', '⁉️') && !has(r, '⚪', '🔵'))), (n) => `Medium and up, and ❓ ⁉️ without a severity — ${n}`],
+    ['⚪', open, (n) => `All open — ${n}`],
+    ['✅', (r) => !open(r), (n) => `All closed: ✅ 🚫 ⏸️ 🎫 — ${n}`],
+  ];
+  let on = null;
+  const rows = () => [...doc.querySelectorAll('[data-k]')];
+  function counts() {
+    for (const [k, test, tip] of levels) {
+      const b = strip.querySelector(`[data-level="${k}"]`);
+      const n = rows().filter(test).length;
+      b.textContent = k === 'all' ? `${n}` : `${k} ${n}`;
+      b.dataset.tip = tip(n);
+      b.classList.toggle('zero', !n);
+    }
+  }
+  for (const [k, test] of levels) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.dataset.level = k;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      on = on === k || k === 'all' ? null : k;
+      strip.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b && on !== null)));
+      doc.classList.toggle('filtered', on !== null);
+      rows().forEach((r) => r.classList.toggle('hide', on !== null && !test(r)));
+    });
+    strip.append(b);
+    if (k === 'all') strip.insertAdjacentHTML('beforeend', '<span class="sep" aria-hidden="true">│</span>');
+  }
+  counts();
+})();
+</script>
+</body>
+</html>
