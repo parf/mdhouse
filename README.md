@@ -163,10 +163,6 @@ A root may carry a **`.mdhouseignore`**: one directory name per line, `#` for co
 to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build output
 and the like).
 
-Addresses: a document is `/d/<root>/<path>/<file>.md` and a folder's page `/d/<root>/<path>/` —
-the `<root>/` part only when more than one folder is served — so pages can be linked and
-bookmarked.
-
 ---
 
 ## ▸ Development
