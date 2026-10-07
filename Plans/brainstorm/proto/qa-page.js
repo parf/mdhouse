@@ -7,7 +7,7 @@
   const reply = (text) => {
     const r = document.createElement('div');
     r.className = 'reply';
-    r.innerHTML = '<span class="who">👤 you</span><span class="txt"></span>';
+    r.innerHTML = '<span class="who" data-kind="person">👤you</span><span class="txt"></span>';
     r.querySelector('.txt').textContent = text;
     return r;
   };

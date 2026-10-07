@@ -36,15 +36,17 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 
 - ❓ Do we keep the old `/d/<root>/x.md` URLs working after the single-root change, or is it fine
   to break the links people have already pasted into tickets and chat?
-  > 💬 👤agent Redirect the old form to the new one for a year, then drop it — the redirect
+  > 💬 👾claude Redirect the old form to the new one for a year, then drop it — the redirect
   > costs one route and a test.
   >
   > 💬 ⚠️ 👤parf need more — which links are actually out there, and where? A year may be too
   > long or too short depending on that.
-- ⏳ Rename `?git=favs` to `?git=stars` across the git view, the README and the tests, keeping the
+- ⏳ 🏷️ui Rename `?git=favs` to `?git=stars` across the git view, the README and the tests, keeping the
   old spelling working as an alias so bookmarks do not break?
   > 💬 👤parf yes — keep the old one working, and mention the rename in the changelog.
 - ✅ Should the summary strip count closed items at all, given that nobody filters for them?
+  > 💬 📡slack 👥design asked the same on 📅2026-10-06 — keep both answers here.
+  >
   > 💬 👤parf yes — ✅ is where I go to check what was decided, and the total must add up.
 
 ## 3. Findings — stages
@@ -54,7 +56,7 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
   live one. Fix: exit 1 under `MDHOUSE_SERVICE=1`.
 - ❓ 🟠 `package.json:46` the `dev` script feeds `.` to the live instance whenever :7777 is up,
   instead of starting anything.
-  > 💬 👤agent pin it to :7790 with its own config, or drop the script — it is advertised in the
+  > 💬 👾claude pin it to :7790 with its own config, or drop the script — it is advertised in the
   > README, so dropping it needs a README change too.
 - 🟠 `src/server.ts:631` `/api/search` takes `limit=abc` as `NaN`, and `hits.length >= NaN` is never
   true — the result has no cap at all.
@@ -69,19 +71,19 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 - ⛔ 🟠 `npm` 2FA: the token in `~/.npmrc` is a long-lived classic one; switching to a granular token
   needs the npm account, which this session cannot reach.
 - ❌ 🔴 the packed-install smoke test of 1.4.1: `/` answered `500 Build Failed`.
-  > 💬 👤agent `tsconfig.json` missing from `files` again — the release is stopped.
+  > 💬 👾claude `tsconfig.json` missing from `files` again — the release is stopped.
 - ⚠️ 🟠 `CHANGELOG.md` split: 1.x and the betas are apart, but the link from the package points at a
   file the package does not ship.
 - ⏸️ ⚪ `src/lib/search.ts:174` the no-ripgrep fallback compiles the user's regex — `(a+)+$` on a big
   file blocks the single thread.
-  > 💬 👤agent needs a design (a worker with a timeout, or no regex in the fallback) — later.
-- 🎫 ⚪ `bin/mdhouse` Windows paths with spaces — RLM-412.
+  > 💬 👾claude needs a design (a worker with a timeout, or no regex in the fallback) — later.
+- 🎫 ⚪ `bin/mdhouse` Windows paths with spaces — 🎫RLM-412, 👥platform
 - ✅ 🟠 `test/control.test.ts:8` the tests created control sockets in the real config dir, beside the
   live instance's own.
-  > 💬 👤agent `112b307` — a temp config via `test/preload.ts`; checked by watching the real dir
+  > 💬 👾claude `112b307` — a temp config via `test/preload.ts`; checked by watching the real dir
   > during a full run.
 - 🚫 ⚪ `CLAUDE.md:119` the reload waits for the socket file, which a SIGKILLed copy leaves behind.
-  > 💬 👤agent moot — the reload polls HTTP now.
+  > 💬 👾claude moot — the reload polls HTTP now.
 
 ## 4. Suggestions — one of, any of
 
@@ -115,4 +117,4 @@ once more to turn task items into checkboxes with their line and hash.
 Search falls back to a JavaScript regex when ripgrep is missing from the machine.
 
 > ✅ 👉 **why:** "falls back" — is the fallback ever hit in practice, and how slow is it?
-> 💬 👤agent only without rg; about 40× slower on a 10 MB tree — noted in the README.
+> 💬 👾claude only without rg; about 40× slower on a 10 MB tree — noted in the README.

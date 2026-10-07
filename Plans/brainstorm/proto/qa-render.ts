@@ -23,6 +23,7 @@ const GLYPHS = ['❓', '⁉️', '⏳', '✅', '🚫', '⏸️', '🎫', '⛔', 
 const norm = (g: string) => g.replace(/️/g, '');
 const known = new Map(GLYPHS.map((g) => [norm(g), g]));
 
+/** `who` is the author badge as written: `👤parf`, `👾claude`. */
 interface Reply { partial: boolean; who: string | null; body: string }
 interface Item {
   glyphs: string[];
@@ -56,14 +57,25 @@ function parseReplies(lines: string[]): Reply[] {
       let rest = m[1]!;
       const partial = /^⚠️?\s*/u.test(rest);
       rest = rest.replace(/^⚠️?\s*/u, '');
-      // `👤name text`; the older `👤 **name:** text` is read too
-      const who = /^👤\s*(?:\*\*([^*]+?):\*\*|([^\s:*]+):?)\s*/u.exec(rest);
-      replies.push({ partial, who: who ? (who[1] ?? who[2]!) : null, body: who ? rest.slice(who[0].length) : rest });
+      // the author: a badge first — `👤parf`, `👾claude`, `📡slack`, …; the older `👤 **name:**` is read too
+      const who = /^(👤|👥|👾|📡)\s*(?:\*\*([^*]+?):\*\*|([^\s:*]+):?)\s*/u.exec(rest);
+      replies.push({ partial, who: who ? `${who[1]}${who[2] ?? who[3]}` : null, body: who ? rest.slice(who[0].length) : rest });
     } else if (replies.length) replies.at(-1)!.body += `\n${line}`;
   }
   for (const r of replies) r.body = r.body.replace(/\n+$/, '');
   return replies;
 }
+
+/**
+ * Badges: a badge glyph glued to a name — `👤parf`, `👥backend`, `👾claude`, `📡slack`, `🏷️ui`,
+ * `📅2026-10-07`, `🎫RLM-412`. With a space after it the glyph is just a glyph (`🎫 …` is a status).
+ */
+const BADGES: Record<string, string> = { '👤': 'person', '👥': 'team', '👾': 'agent', '📡': 'source', '🏷️': 'tag', '🏷': 'tag', '📅': 'date', '🎫': 'ticket' };
+// the name may hold inner dots and dashes (`v1.4.0`, `2026-10-06`), never a trailing `.` `,` `!` …
+const BADGE = /(👤|👥|👾|📡|🏷️?|📅|🎫)([^\s<>:,;.!?)&]+(?:[.\-/][^\s<>:,;.!?)&]+)*)/gu;
+const badge = (g: string, name: string) => `<span class="who" data-kind="${BADGES[g]}">${g.replace(/^🏷$/, '🏷️')}${name}</span>`;
+/** Badges in rendered HTML, outside code. */
+const badges = (html: string) => html.split(/(<code>[\s\S]*?<\/code>)/).map((part, i) => (i % 2 ? part : part.replace(BADGE, (_, g, n) => badge(g, n)))).join('');
 
 const unquote = (lines: string[]) => lines.map((l) => l.replace(/^>\s?/, ''));
 const indentOf = (l: string) => /^ */.exec(l)![0].length;
@@ -113,7 +125,7 @@ function parseList(lines: string[]): Item[] {
 // ---------------------------------------------------------------- render
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const inline = (s: string) => md.renderInline(s.replace(/\s*\n\s*/g, ' '));
+const inline = (s: string) => badges(md.renderInline(s.replace(/\s*\n\s*/g, ' ')));
 /** 🌟 / ⭐ in an option's text become labels. */
 const labels = (html: string) =>
   html.replace(/\s*🌟/gu, ' <span class="suggest">🌟 suggested</span>').replace(/\s*⭐/gu, ' <span class="suggest">⭐ runner-up</span>');
@@ -123,8 +135,8 @@ const firstLine = (r: Reply) => inline(r.body.split(/\n\s*\n|\n\s*[-*+]\s/)[0]!)
 const blocky = (body: string) => /\n\s*\n|\n\s*[-*+]\s|\n\s*\d+[.)]\s/.test(body);
 
 function replyHtml(r: Reply): string {
-  const who = r.who ? `<span class="who">👤 ${esc(r.who)}</span>` : '';
-  const body = blocky(r.body) ? md.render(r.body) : `<span class="txt">${inline(r.body)}</span>`;
+  const who = r.who ? badges(esc(r.who)) : '';
+  const body = blocky(r.body) ? badges(md.render(r.body)) : `<span class="txt">${inline(r.body)}</span>`;
   return `<div class="reply${r.partial ? ' partial' : ''}">${r.partial ? '⚠️ ' : ''}${who}${body}</div>`;
 }
 const threadHtml = (rs: Reply[], cls = 'thread') => `<div class="${cls}">${rs.map(replyHtml).join('')}</div>`;
@@ -274,6 +286,19 @@ ul.items { margin: 6px 0 14px; }
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
+/* badges: one chip shape, a tint per kind */
+.who[data-kind="agent"] { background: #f3e8ff; border-color: #c084fc; color: #6b21a8; }
+.who[data-kind="team"] { background: #e0f2fe; border-color: #7dd3fc; color: #075985; }
+.who[data-kind="source"] { background: #ecfeff; border-color: #67e8f9; color: #155e75; }
+.who[data-kind="ticket"] { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+.who[data-kind="tag"], .who[data-kind="date"] { font-weight: 400; color: var(--dim); }
+@media (prefers-color-scheme: dark) {
+  .who[data-kind="agent"] { background: #2e1065; border-color: #7e22ce; color: #e9d5ff; }
+  .who[data-kind="team"] { background: #082f49; border-color: #0369a1; color: #bae6fd; }
+  .who[data-kind="source"] { background: #083344; border-color: #0e7490; color: #a5f3fc; }
+  .who[data-kind="ticket"] { background: #431407; border-color: #c2410c; color: #fed7aa; }
+}
+.who { margin-right: 6px; }
 .filtered [data-k].hide { display: none; }
 </style>
 </head>

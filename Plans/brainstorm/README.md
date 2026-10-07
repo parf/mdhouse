@@ -52,7 +52,23 @@ The glyph is the **first symbol of the line** — status first, then severity
 |---|---|---|---|
 | 💬 | answer / reply — and nothing else | one 💬 per turn, under the ❓ / ⁉️ / item | green block |
 | 💬 ⚠️ | partial answer — "need more" | the line after it says what is missing; the item stays ❓ | amber block |
-| 👤 | who is speaking | `💬 👤parf …` — the name right after 👤, up to the space | name chip |
+
+### Badges — a glyph glued to a name
+
+A badge glyph with the name right after it, **no space**, becomes a chip: `👤parf`. With a space
+it is just a glyph — `🎫 …` is the handed-off status, `🎫RLM-412` a ticket badge. The name runs
+to the next space or punctuation; inner dots and dashes stay (`📅2026-10-06`, `🏷️v1.4`).
+First in a 💬 it is the author.
+
+| Badge | Kind | Example | Chip |
+|---|---|---|---|
+| 👤 | person | `💬 👤parf …` | neutral |
+| 👥 | team / group | `👥platform` | blue |
+| 👾 | AI agent | `💬 👾claude …` | purple |
+| 📡 | source — where it came from: a channel, a ticket system, mail | `📡slack` | teal |
+| 🎫 | ticket | `🎫RLM-412` | orange |
+| 🏷️ | tag / area | `🏷️ui` | quiet |
+| 📅 | date | `📅2026-10-06` | quiet |
 
 ### Options — choosing
 
