@@ -565,7 +565,7 @@ main {
 /* The name gives way down to a few words, then the tabs and ⚙ go to the next line together. */
 .home-head h1 { flex: 1 1 10em; }
 .head-right { display: flex; align-items: center; gap: 14px; margin-left: auto; min-width: 0; }
-.home-head h1 { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; color: var(--h1); margin: 0; display: flex; align-items: center; }
+.home-head h1 { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; color: var(--doc-title); margin: 0; display: flex; align-items: center; }
 .home-head .tabs { flex: 0 1 auto; flex-wrap: wrap; gap: 3px; }
 .home-head .tabs > a {
   display: flex; align-items: center; gap: 5px; padding: 5px 10px; flex: none;
