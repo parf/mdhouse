@@ -1001,11 +1001,7 @@ main {
 .md .qa { margin-right: 0.3em; }
 
 /* ::: q / ::: a blocks: a question, and its answer set in under it. */
-.md .qa-block {
-  display: flex; align-items: flex-start; gap: 0.5em;
-  margin: 0.9em 0; padding: 8px 16px;
-}
-.md .qa-block > .qa { margin: 0.1em 0 0; flex: none; }
+.md .qa-block { margin: 0.9em 0; padding: 8px 16px; }
 .md .qa-body { flex: 1; min-width: 0; }
 .md .qa-body > :first-child { margin-top: 0; }
 .md .qa-body > :last-child { margin-bottom: 0; }
@@ -1073,10 +1069,20 @@ main {
    title row. IMPORTANT, WARNING and CAUTION keep theirs: they are meant to stop the reader. */
 .md .markdown-alert-note > :first-child::before { content: 'ℹ️'; margin-right: 8px; }
 .md .markdown-alert-tip > :first-child::before { content: '💡'; margin-right: 8px; }
-.md .markdown-alert-question > :first-child::before { content: '❓'; margin-right: 8px; }
-.md .markdown-alert-answer > :first-child::before { content: '💬'; margin-right: 8px; }
-.md .markdown-alert-disagreement > :first-child::before { content: '⁉️'; margin-right: 8px; }
-.md :is(.markdown-alert-note, .markdown-alert-tip, .markdown-alert-question, .markdown-alert-answer, .markdown-alert-disagreement) > :first-child { margin-top: 0; }
+.md :is(.markdown-alert-note, .markdown-alert-tip) > :first-child { margin-top: 0; }
+
+/* Question / disagreement / answer blocks carry their icon as an element (it is the answer
+   button in a writable folder), set in a gutter of its own so a body of several lines or
+   paragraphs lines up beside it. */
+.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) {
+  position: relative;
+  padding-left: 42px;
+}
+.md .qa-icon { position: absolute; left: 14px; top: 8px; line-height: 1.6; }
+.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :nth-child(2) { margin-top: 0; }
+.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :last-child { margin-bottom: 0; }
+/* A list item that is a question or an answer is the block: no bullet beside it. */
+.md li:has(> :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer)) { list-style: none; }
 
 .md .footnotes { border-top: 1px solid var(--border); margin-top: 2.5em; font-size: 0.92em; color: var(--fg-muted); }
 

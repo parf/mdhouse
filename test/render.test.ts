@@ -172,9 +172,9 @@ describe('Q: and A:', () => {
 describe('::: q / ::: a containers', () => {
   test('both spellings make blocks that carry data-line and hold any Markdown', async () => {
     const { html } = await render('::: question\nWhy?\n:::\n\n::: a\n- one\n- two\n:::\n', ctx);
-    expect(html).toContain('<div data-line="1" class="qa-block qa-q">');
-    expect(html).toContain('aria-label="Q:">❓</span>');
-    expect(html).toContain('<div data-line="5" class="qa-block qa-a">');
+    expect(html).toMatch(/<div data-line="1" data-qa-form="container" data-hash="[0-9a-f]{8}" class="qa-block qa-q" role="note" aria-label="Question">/);
+    expect(html).toContain('<span class="qa-icon" aria-hidden="true">❓</span>');
+    expect(html).toContain('<div data-line="5" class="qa-block qa-a" role="note" aria-label="Answer">');
     expect(html.match(/<li/g)?.length).toBe(2);
   });
 
@@ -264,14 +264,17 @@ describe('alerts', () => {
 describe('**Q:** / **A:** paragraphs', () => {
   test('become one-line question and answer blocks, like [!QUESTION] / [!ANSWER]', async () => {
     const { html } = await render('**Q:** Is it **warm**?\n**A:** After the first request.\nIt stays warm.\n', ctx);
-    expect(html).toContain('<div class="markdown-alert markdown-alert-question" role="note" aria-label="Question" data-line="1">');
+    expect(html).toContain('<div class="markdown-alert markdown-alert-question" role="note" aria-label="Question" data-line="1" data-qa-form="bold"');
     expect(html).toContain('<p data-line="1">Is it <strong>warm</strong>?</p>');
     expect(html).toContain('<div class="markdown-alert markdown-alert-answer" role="note" aria-label="Answer" data-line="2">');
+    expect(html).toContain('<span class="qa-icon" aria-hidden="true">❓</span>');
     expect(html).toContain('After the first request.\nIt stays warm.</p>'); // an unmarked line stays with its block
   });
 
-  test('a list item keeps the inline icon; mid-sentence stays bold', async () => {
-    expect((await render('- **Q:** in a list\n', ctx)).html).toContain('<span class="qa" role="img" aria-label="Q:">❓</span>');
+  test('a list item is a question too; mid-sentence stays bold', async () => {
+    const { html } = await render('- **Q:** in a list?\n- **A:** yes\n', ctx);
+    expect(html).toContain('markdown-alert-question" role="note" aria-label="Question" data-line="1" data-qa-form="bold"');
+    expect(html).toContain('markdown-alert-answer');
     expect((await render('Text with **Q:** mid.\n', ctx)).html).toContain('<strong>Q:</strong>');
   });
 });

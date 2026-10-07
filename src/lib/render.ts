@@ -19,6 +19,9 @@ import anchor from 'markdown-it-anchor';
 import footnote from 'markdown-it-footnote';
 import attrs from 'markdown-it-attrs';
 import container from 'markdown-it-container';
+import { lineHash, QA_LINE, qaQuestionRange, QUOTE_MARK, quoteKind, type QaForm, type QaKind } from './qa';
+
+export { lineHash };
 import type { DiffHunk } from './git';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 
@@ -183,6 +186,20 @@ function alertPlugin(md: MarkdownIt): void {
       // A note, a tip, a question or an answer is one line: the icon sits in front of the text
       // (CSS), with no title row above it — the name is still there for a screen reader.
       if (ONE_LINE_ALERTS.has(kind)) {
+        if (kind === 'question' || kind === 'answer') {
+          // The same block as every other Q&A form: an icon element, and for a question its form
+          // and fingerprint. The opening tag replaces the quote's.
+          const tag = new state.Token('html_block', '', 0);
+          tag.content = qaOpenTag(kind, open.map![0], 'alert', bodyLines(state.src));
+          tokens[i] = tag;
+          if (close !== -1) {
+            const end = new state.Token('html_block', '', 0);
+            end.content = '</div>\n';
+            tokens[close] = end;
+          }
+          i += 1;
+          continue;
+        }
         open.attrSet('role', 'note');
         open.attrSet('aria-label', title);
         i += 1;
@@ -200,8 +217,43 @@ function alertPlugin(md: MarkdownIt): void {
   });
 }
 
-type QaKind = 'question' | 'answer' | 'disagreement';
 const QA_TITLE: Record<QaKind, string> = { question: 'Question', answer: 'Answer', disagreement: 'Disagreement' };
+const QA_ICON: Record<QaKind, string> = { question: '❓', answer: '💬', disagreement: '⁉️' };
+
+/** The document body as lines, `\r` removed — what qa.ts measures questions in. */
+const bodyLines = (src: string) => src.split('\n').map((l) => l.replace(/\r$/, ''));
+/** The same, split once per document however many task items ask for it. */
+let lastSrc = '';
+let lastLines: string[] = [];
+function bodyLinesOf(src: string): string[] {
+  if (src !== lastSrc) {
+    lastSrc = src;
+    lastLines = bodyLines(src);
+  }
+  return lastLines;
+}
+
+
+/**
+ * The data a question needs to be answered from the page: its form and the fingerprint of its
+ * source lines, by `qaQuestionRange` from qa.ts — the very function the server checks with.
+ */
+function qaMeta(srcLines: string[], line: number, form: QaForm): string {
+  const range = qaQuestionRange(srcLines, line, form);
+  return range ? ` data-qa-form="${form}" data-hash="${lineHash(srcLines.slice(range.start, range.end).join('\n'))}"` : '';
+}
+
+/**
+ * The opening tag of a question / disagreement / answer block, with its icon as a real element —
+ * in a writable folder the client makes a question's icon the button that opens the answer editor.
+ */
+function qaOpenTag(kind: QaKind, line: number, form: QaForm, srcLines: string[]): string {
+  return (
+    `<div class="markdown-alert markdown-alert-${kind}" role="note" aria-label="${QA_TITLE[kind]}" ` +
+    `data-line="${line + 1}"${kind === 'answer' ? '' : qaMeta(srcLines, line, form)}>` +
+    `<span class="qa-icon" aria-hidden="true">${QA_ICON[kind]}</span>\n`
+  );
+}
 
 /**
  * Split a paragraph into one-line question / answer / disagreement blocks — the same blocks as
@@ -212,11 +264,12 @@ const QA_TITLE: Record<QaKind, string> = { question: 'Question', answer: 'Answer
  * content, so their bold and links render as usual, and each keeps its own source line.
  */
 function qaBlocks(
-  state: { Token: typeof Token },
+  state: { Token: typeof Token; src: string },
   open: Token,
   inline: Token,
   marker: RegExp,
   kindOf: (mark: string) => QaKind,
+  form: QaForm,
 ): Token[] | null {
   if (!open.map || !marker.test(inline.content)) return null;
   const groups: Array<{ kind: QaKind; line: number; text: string[] }> = [];
@@ -226,12 +279,11 @@ function qaBlocks(
     else groups[groups.length - 1]!.text.push(text);
   });
 
+  const srcLines = bodyLines(state.src);
   const out: Token[] = [];
   for (const g of groups) {
     const start = new state.Token('html_block', '', 0);
-    start.content =
-      `<div class="markdown-alert markdown-alert-${g.kind}" role="note" ` +
-      `aria-label="${QA_TITLE[g.kind]}" data-line="${g.line + 1}">\n`;
+    start.content = qaOpenTag(g.kind, g.line, form, srcLines);
     const pOpen = new state.Token('paragraph_open', 'p', 1);
     pOpen.map = [g.line, g.line + g.text.length];
     const body = new state.Token('inline', '', 0);
@@ -245,22 +297,6 @@ function qaBlocks(
   }
   return out;
 }
-
-/** `**Q:**` / `**A:**` opening a line of a paragraph. */
-const QA_LINE = /^\*\*([QA]):\*\*\s*/;
-
-/**
- * The glyphs of a Q&A log, opening a line inside a quote (see /rd/.claude/Glyphs.md): `?` or ❓ a
- * question, `?!` / `!?` or ⁉️ a disagreement — two sources that contradict — and 💬 the answer;
- * also `Q:` / `A:`, and `Q` alone. Never a bare `A`: `> A quick note` is English, not an answer.
- */
-const QUOTE_MARK = /^(\?!|!\?|\u2049\uFE0F?|\?|\u2753|\u{1F4AC}|Q:|A:|Q(?=\s))\s*/u;
-const quoteKind = (mark: string): QaKind =>
-  mark === '?!' || mark === '!?' || mark.startsWith('\u2049')
-    ? 'disagreement'
-    : mark === '\u{1F4AC}' || mark === 'A:'
-      ? 'answer'
-      : 'question';
 
 /**
  * Two places a Q&A log becomes question / answer / disagreement blocks:
@@ -282,15 +318,22 @@ function qaLinesPlugin(md: MarkdownIt): void {
         let close = i + 1;
         while (close < tokens.length && !(tokens[close]!.type === 'blockquote_close' && tokens[close]!.level === open.level)) close++;
         const inner: Token[] = [];
+        // Where the last block's closing `</div>` sits: whatever follows a block in the quote —
+        // a list, another paragraph — is part of it, so it goes in before that close.
+        let lastClose = -1;
         for (let k = i + 1; k < close; k++) {
           const t = tokens[k]!;
           const blocks =
             t.type === 'paragraph_open' && t.level === open.level + 1 && tokens[k + 1]?.type === 'inline'
-              ? qaBlocks(state, t, tokens[k + 1]!, QUOTE_MARK, quoteKind)
+              ? qaBlocks(state, t, tokens[k + 1]!, QUOTE_MARK, quoteKind, 'quote')
               : null;
           if (blocks) {
             inner.push(...blocks);
+            lastClose = inner.length - 1;
             k += 2;
+          } else if (lastClose >= 0) {
+            inner.splice(lastClose, 0, t);
+            lastClose++;
           } else inner.push(t);
         }
         tokens.splice(i, close - i + 1, ...inner);
@@ -298,25 +341,27 @@ function qaLinesPlugin(md: MarkdownIt): void {
         continue;
       }
 
+      // Also inside list items (where a tight list hides the paragraph): `- **Q:** …` is a
+      // question like any other.
       const inline = tokens[i + 1]!;
-      if (open.type !== 'paragraph_open' || open.hidden || inline.type !== 'inline') continue;
-      const blocks = qaBlocks(state, open, inline, QA_LINE, (m) => (m === 'Q' ? 'question' : 'answer'));
+      if (open.type !== 'paragraph_open' || inline.type !== 'inline') continue;
+      const blocks = qaBlocks(state, open, inline, QA_LINE, (m) => (m === 'Q' ? 'question' : 'answer'), 'bold');
       if (!blocks) continue;
-      tokens.splice(i, 3, ...blocks);
+      // A list straight after the last line (no blank line between) belongs to that block:
+      // `**A:** Yes:` followed by `- a` is one answer with bullets.
+      const after = tokens[i + 3];
+      if (after && /^(bullet|ordered)_list_open$/.test(after.type) && after.map?.[0] === open.map?.[1]) {
+        let end = i + 4;
+        while (end < tokens.length && !(tokens[end]!.type === after.type.replace('_open', '_close') && tokens[end]!.level === after.level)) end++;
+        const list = tokens.slice(i + 3, end + 1);
+        blocks.splice(blocks.length - 1, 0, ...list);
+        tokens.splice(i, 3 + list.length, ...blocks);
+      } else tokens.splice(i, 3, ...blocks);
       i += blocks.length - 1;
     }
   });
 }
 
-/** FNV-1a, 32 bits, as hex: a fingerprint of one source line, cheap to compute on both ends. */
-export function lineHash(text: string): string {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return (h >>> 0).toString(16).padStart(8, '0');
-}
 
 /** A task item's marker, through the bracket: `- [ ]`, `1. [x]`, `> * [X]`. */
 const TASK_LINE = /^(\s*(?:>\s*)*(?:[-*+]|\d+[.)])\s+)\[([ xX])\]/;
@@ -375,6 +420,13 @@ function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number })
 
       const line = tokens[i]!.map ? tokens[i]!.map![0] + 1 : 0;
       tokens[i]!.attrJoin('class', 'task-item');
+      // Every task item can be answered (QUESTIONS.md keeps its questions as checkboxes): the
+      // item carries the same form and fingerprint a question block does.
+      const range = line ? qaQuestionRange(bodyLinesOf(state.src), line - 1, 'task') : null;
+      if (range) {
+        tokens[i]!.attrSet('data-qa-form', 'task');
+        tokens[i]!.attrSet('data-hash', lineHash(bodyLinesOf(state.src).slice(range.start, range.end).join('\n')));
+      }
       inline.content = inline.content.slice(match[0].length);
       if (inline.children?.length && inline.children[0]!.type === 'text') {
         inline.children[0]!.content = inline.children[0]!.content.replace(/^\[[ xX]\]\s+/, '');
@@ -472,6 +524,19 @@ const QA_EMOJI: Record<string, string> = { Q: '❓', A: '💬' };
 const QA_CONTAINERS: Record<string, 'q' | 'a'> = { q: 'q', question: 'q', a: 'a', answer: 'a' };
 
 function qaContainerPlugin(md: MarkdownIt): void {
+  // A question container carries its form and fingerprint like every other question block; the
+  // container's own render function below only sees tokens, so the data is put on them here.
+  md.core.ruler.after('block', 'mdhouse_qa_container_meta', (state) => {
+    let srcLines: string[] | null = null;
+    for (const t of state.tokens) {
+      if (!/^container_(q|question)_open$/.test(t.type) || !t.map) continue;
+      srcLines ??= bodyLines(state.src);
+      const range = qaQuestionRange(srcLines, t.map[0], 'container');
+      if (!range) continue;
+      t.attrSet('data-qa-form', 'container');
+      t.attrSet('data-hash', lineHash(srcLines.slice(range.start, range.end).join('\n')));
+    }
+  });
   for (const [name, kind] of Object.entries(QA_CONTAINERS)) {
     // Typed against an older @types/markdown-it, like markdown-it-attrs below; the runtime
     // contract is a plain plugin.
@@ -480,10 +545,12 @@ function qaContainerPlugin(md: MarkdownIt): void {
         const token = tokens[idx]!;
         if (token.nesting !== 1) return '</div></div>\n';
         token.attrJoin('class', `qa-block qa-${kind}`);
+        token.attrSet('role', 'note');
+        token.attrSet('aria-label', kind === 'q' ? 'Question' : 'Answer');
         const title = token.info.trim().slice(name.length).trim();
         return (
           `<div${self.renderAttrs(token)}>` +
-          `<span class="qa" role="img" aria-label="${kind === 'q' ? 'Q:' : 'A:'}">${QA_EMOJI[kind.toUpperCase()]}</span>` +
+          `<span class="qa-icon" aria-hidden="true">${QA_EMOJI[kind.toUpperCase()]}</span>` +
           `<div class="qa-body">\n${title ? `<p class="qa-title">${md.renderInline(title)}</p>\n` : ''}`
         );
       },
