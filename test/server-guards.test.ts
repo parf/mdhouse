@@ -131,6 +131,58 @@ describe('access — allow list and users', () => {
   });
 });
 
+describe('the git view — /api/git', () => {
+  test('a folder in no repo is 404; commit refuses a read-only folder and another site', async () => {
+    const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { run } = await import('../src/lib/gitpage');
+
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-gitapi-'));
+    const repo = join(base, 'repo');
+    const plain = join(base, 'plain');
+    await mkdir(repo);
+    await mkdir(plain);
+    await writeFile(join(repo, 'a.md'), 'a\n');
+    await writeFile(join(plain, 'b.md'), 'b\n');
+    await run(repo, ['init', '-q']);
+    await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '.']);
+    await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'first']);
+    await writeFile(join(repo, 'a.md'), 'a2\n');
+
+    const port = 61795;
+    const { server, watcher, control } = await serve({
+      registry: await Registry.create([repo, plain]),
+      prefs: await Prefs.load(join(base, 'prefs.json')),
+      port,
+      hostname: '127.0.0.1',
+    });
+    const url = (path: string) => `http://127.0.0.1:${port}${path}`;
+    const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+      fetch(url(path), { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+    try {
+      const info = await (await fetch(url('/api/git?p=repo/'))).json();
+      expect(info.dirty).toEqual([{ path: 'a.md', code: ' M', md: true }]);
+      expect(info.commitMessage).toBe('Update a.md');
+      expect(info.writable).toBe(false);
+      expect((await fetch(url('/api/git?p=plain/'))).status).toBe(404);
+      expect((await fetch(url('/api/git/commits?p=repo/'))).status).toBe(200);
+      const commit = { p: 'repo/', message: 'm', files: ['a.md'] };
+      expect((await post('/api/git/commit', commit)).status).toBe(403); // read-only
+      expect((await post('/api/git/commit', commit, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+      expect((await post('/api/git/push', { p: 'repo/' })).status).toBe(403);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('POST /api/task — ticking a box', () => {
   test('writes one line on a writable folder; refuses read-only, stale pages and other sites', async () => {
     const { mkdtemp, rm, writeFile, readFile } = await import('node:fs/promises');

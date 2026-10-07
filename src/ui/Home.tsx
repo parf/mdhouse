@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { api, type RootInfo } from './api';
+import { api, type GitInfo, type RootInfo } from './api';
+import { CommitsView, FilesView, GitActions, RemoteBar } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
-import { IconClock, IconGit, IconStar, IconUser } from './icons';
+import { IconClock, IconDoc, IconGit, IconStar, IconUser } from './icons';
+
+const IconFiles = IconDoc;
 import { preciseAgo, docName } from './format';
 import { Ago } from './Ago';
 
-export type HomeView = 'favorites' | 'recent' | 'mine';
+export type HomeView = 'favorites' | 'recent' | 'mine' | 'commits' | 'files';
 
 interface Props {
   rootId: string;
@@ -18,15 +21,19 @@ interface Props {
   onAbout?: () => void;
   /** The settings button, at the end of the header row. */
   gear?: preact.ComponentChildren;
-  /** The root's own folder page — every file in it, as a list. */
+  /** The folder this is the git view of, root-relative; '' for the root. */
+  dir: string;
+  /** The folder's own page — every file in it, as a list. */
   dirUrl: string;
   onOpenDir: () => void;
 }
 
-const VIEWS: Array<{ id: HomeView; label: string; Icon: (p: { size?: number }) => preact.JSX.Element }> = [
+const VIEWS: Array<{ id: HomeView; label: string; Icon: (p: { size?: number }) => preact.JSX.Element; git?: true }> = [
   { id: 'favorites', label: 'Favs', Icon: (p) => <IconStar {...p} filled /> },
   { id: 'recent', label: 'Recent', Icon: IconClock },
   { id: 'mine', label: 'Mine', Icon: IconUser },
+  { id: 'commits', label: 'Commits', Icon: IconGit, git: true },
+  { id: 'files', label: 'Files', Icon: IconFiles, git: true },
 ];
 
 /**
@@ -52,6 +59,25 @@ export function Home(props: Props) {
     };
   }, [props.rootId, props.showIgnored, props.revision]);
 
+  /** The folder's repo — branch, origin, uncommitted files — or null outside one. */
+  const p = `${props.rootId}/${props.dir}`;
+  const [git, setGit] = useState<GitInfo | null>(null);
+  const [gitTick, setGitTick] = useState(0);
+  useEffect(() => {
+    let live = true;
+    if (!props.rootId) return;
+    api
+      .git(p)
+      .then((g) => live && setGit(g))
+      .catch(() => live && setGit(null));
+    return () => {
+      live = false;
+    };
+  }, [p, props.revision, gitTick]);
+  useEffect(() => {
+    if (!git && (view === 'commits' || view === 'files')) setView('recent');
+  }, [git]);
+
   const me = props.tree?.user ?? null;
 
   // Directory rules are already resolved into per-file marks by the tree payload, so a
@@ -61,7 +87,8 @@ export function Home(props: Props) {
     [props.tree],
   );
 
-  const keep = (rel: string) => view !== 'favorites' || favorites.has(rel);
+  const under = props.dir ? `${props.dir}/` : '';
+  const keep = (rel: string) => rel.startsWith(under) && (view !== 'favorites' || favorites.has(rel));
   const isMine = (email: string, author: string) =>
     me ? (me.email ? email === me.email : author === me.name) : false;
   const mine = (email: string, author: string) => view !== 'mine' || isMine(email, author);
@@ -103,7 +130,7 @@ export function Home(props: Props) {
       <header class="home-head">
         <h1>
           <button class="mark" onClick={props.onAbout} title="About mdhouse" aria-label="About mdhouse" />
-          {root?.name ?? 'mdhouse'}
+          {props.dir ? <span class="git-dirname">{props.dir}/</span> : (root?.name ?? 'mdhouse')}
         </h1>
         {/* A real link, so a middle click opens it in a tab; a plain click stays in the app. */}
         <a
@@ -119,7 +146,7 @@ export function Home(props: Props) {
           DIR
         </a>
         <div class="tabs" role="tablist">
-          {VIEWS.map(({ id, label, Icon }) => (
+          {VIEWS.filter((v) => !v.git || git).map(({ id, label, Icon }) => (
             <button key={id} role="tab" aria-selected={view === id} onClick={() => setView(id)}>
               <Icon size={12} />
               <span>{label}</span>
@@ -129,8 +156,17 @@ export function Home(props: Props) {
         {props.gear}
       </header>
 
-      {digest?.head && <RepoLine head={digest.head} own={!!digest.head.commit && isMine(digest.head.commit.email, digest.head.commit.author)} />}
+      {(() => {
+        const head = git?.head ? { ...git.head, repo: git.repo } : digest?.head;
+        return head && <RepoLine head={head} own={!!head.commit && isMine(head.commit.email, head.commit.author)} />;
+      })()}
+      {git && <RemoteBar p={p} info={git} />}
+      {git?.writable && <GitActions p={p} info={git} onDone={() => setGitTick((n) => n + 1)} />}
 
+      {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
+      {view === 'files' && git && <FilesView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
+
+      {(view === 'commits' || view === 'files') ? null : <>
       {!digest && <div class="spinner" />}
 
       {digest && nothing && (
@@ -198,6 +234,7 @@ export function Home(props: Props) {
           </tbody>
         </table>
       )}
+      </>}
     </div>
   );
 }

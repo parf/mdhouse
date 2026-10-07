@@ -108,6 +108,10 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 | `/`, `Ctrl+K`, `Ctrl+P` | open the sidebar and focus search |
 | `?` | version, links and this list |
 | `Esc` | clear the search query, or close the dialog |
+| `e` | open the document in your editor |
+| `Ctrl+Enter` | in a form: save |
+| `Ctrl+Shift+Enter` | in an answer form: save, open the next unanswered question |
+| `Alt+E` | in a form: open the file at that line in your editor |
 
 ## ▸ Running it
 

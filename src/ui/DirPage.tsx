@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { TreePayload, FileEntry } from '../lib/store';
 import { IconClock } from './icons';
+import { api } from './api';
 import { docName, fileSize, likeMatcher } from './format';
 import { Ago } from './Ago';
 import { Dir } from './Home';
@@ -31,6 +32,8 @@ interface Props {
   onAbout?: () => void;
   gear?: preact.ComponentChildren;
   /** The root's front page — what git says changed — linked from the root's own folder page. */
+  rootId: string;
+  /** This folder's git view; the link shows only when the folder is inside a repo. */
   gitUrl: string;
   onOpenGit: () => void;
 }
@@ -53,7 +56,19 @@ const loadSort = (): Sort => {
  * Built from the tree the sidebar already holds, so it costs no request and follows live
  * changes with it.
  */
-export function DirPage({ tree, dir, onOpen, onOpenDir, onAbout, gear, gitUrl, onOpenGit }: Props) {
+export function DirPage({ tree, dir, onOpen, onOpenDir, onAbout, gear, rootId, gitUrl, onOpenGit }: Props) {
+  const [inRepo, setInRepo] = useState(false);
+  useEffect(() => {
+    let live = true;
+    setInRepo(false);
+    api
+      .git(`${rootId}/${dir}`)
+      .then(() => live && setInRepo(true))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [rootId, dir]);
   const [sort, setSort] = useState<Sort>(loadSort);
   const pick = (s: Sort) => {
     setSort(s);
@@ -124,9 +139,9 @@ export function DirPage({ tree, dir, onOpen, onOpenDir, onAbout, gear, gitUrl, o
           <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />
           {name}/
         </h1>
-        {/* The front page's DIR, the other way round: from the root's file list back to what
-            git says changed in it. */}
-        {!dir && (
+        {/* The git view's DIR, the other way round: from the folder's file list to what git
+            says changed in it. Only on a folder inside a repo. */}
+        {inRepo && (
           <a
             class="head-link git"
             href={gitUrl}

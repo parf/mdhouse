@@ -22,6 +22,9 @@ import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/ins
 import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 import { allowedAddress, Users } from './lib/access';
+import { commitable, dirtyFiles, folderLog, origin, remoteState, repoRel, run, suggestMessage, trackedFiles } from './lib/gitpage';
+import { repoHead } from './lib/git';
+import { stat } from 'node:fs/promises';
 
 export interface ServeOptions {
   registry: Registry;
@@ -102,6 +105,41 @@ export async function serve(opts: ServeOptions) {
     // Forget the file once its last queued write is done, so the map does not grow.
     void tail.then(() => fileWrites.get(abs) === tail && fileWrites.delete(abs));
     return run;
+  };
+
+  /** The folder a git request names (`p` = `<root>/<dir>`), and its repo. */
+  type GitAt = { root: Root; repo: string; dir: string } | { error: Response };
+  const gitAt = async (url: URL): Promise<GitAt> => gitFolder(url.searchParams.get('p') ?? '');
+  const gitFolder = async (p: string): Promise<GitAt> => {
+    if (opts.noGit) return { error: fail(404, 'git is off') };
+    const loc = await registry.resolve(p.replace(/\/+$/, ''));
+    if (!loc || !(await stat(loc.abs).catch(() => null))?.isDirectory()) return { error: fail(404, 'no such folder') };
+    const repo = await repoToplevel(loc.abs);
+    if (!repo) return { error: fail(404, 'not in a git repository') };
+    return { root: loc.root, repo, dir: repoRel(repo, loc.abs) };
+  };
+  const gitWrite = async (req: Request, p: string | undefined): Promise<GitAt> => {
+    if (!sameOrigin(req)) return { error: fail(403, 'cross-origin request refused') };
+    const at = await gitFolder(p ?? '');
+    if ('error' in at) return at;
+    if (!at.root.writable) return { error: fail(403, `${at.root.name} is read-only`) };
+    return at;
+  };
+  /** Pull or push: uncommitted files only when all Markdown, and confirmed. */
+  const syncRepo = async (req: Request, args: string[]): Promise<Response> => {
+    const body = (await req.json().catch(() => null)) as { p?: string; confirmed?: boolean } | null;
+    const at = await gitWrite(req, body?.p);
+    if ('error' in at) return at.error;
+    return queueWrite(`git:${at.repo}`, async () => {
+      const dirty = (await dirtyFiles(at.repo)).filter((f) => f.code !== '??' || f.md);
+      if (dirty.some((f) => !f.md)) {
+        return json({ error: 'You have uncommitted files that are not Markdown — commit them first', files: dirty }, 409);
+      }
+      if (dirty.length && !body?.confirmed) return json({ error: 'You have uncommitted files', confirm: true, files: dirty }, 409);
+      const r = await run(at.repo, args, 120_000);
+      const output = `${r.out}${r.err}`.trim();
+      return r.code === 0 ? json({ ok: true, output }) : fail(500, output || `git ${args[0]} failed`);
+    });
   };
 
   /** Resolve the `root` query parameter, defaulting to the first root. */
@@ -400,6 +438,70 @@ export async function serve(opts: ServeOptions) {
           return json(await removeRoots([root.path]));
         },
       },
+
+      /**
+       * The git view of a folder — see `lib/gitpage.ts`. 404 for a folder in no repo: the git
+       * link shows only on folders inside one.
+       */
+      '/api/git': async (req) => {
+        const at = await gitAt(new URL(req.url));
+        if ('error' in at) return at.error;
+        const [head, host, dirty] = await Promise.all([repoHead(at.repo), origin(at.repo), dirtyFiles(at.repo)]);
+        return json({
+          repo: at.repo.split('/').pop(),
+          dir: at.dir,
+          rootRel: repoRel(at.repo, at.root.path),
+          head,
+          origin: host,
+          dirty,
+          commitMessage: suggestMessage(commitable(dirty)),
+          writable: at.root.writable,
+        });
+      },
+      '/api/git/commits': async (req) => {
+        const url = new URL(req.url);
+        const at = await gitAt(url);
+        if ('error' in at) return at.error;
+        const skip = Math.max(0, Number(url.searchParams.get('skip')) || 0);
+        return json({ commits: await folderLog(at.repo, at.dir, skip, 50) });
+      },
+      '/api/git/files': async (req) => {
+        const at = await gitAt(new URL(req.url));
+        if ('error' in at) return at.error;
+        return json({ files: await trackedFiles(at.repo, at.dir) });
+      },
+      '/api/git/remote': async (req) => {
+        const at = await gitAt(new URL(req.url));
+        if ('error' in at) return at.error;
+        const head = await repoHead(at.repo);
+        return json(await remoteState(at.repo, head?.branch ?? 'HEAD'));
+      },
+      /**
+       * Commit, pull, push — a writable folder only, same origin, one at a time per repo.
+       * `git commit -a`: the page shows the files it takes, and a non-Markdown one has to be
+       * confirmed. Pull and push with uncommitted files: confirmed, and only when they are all
+       * Markdown.
+       */
+      '/api/git/commit': {
+        POST: async (req) => {
+          const body = (await req.json().catch(() => null)) as { p?: string; message?: string; files?: string[]; nonMd?: boolean } | null;
+          const at = await gitWrite(req, body?.p);
+          if ('error' in at) return at.error;
+          const message = body?.message?.trim();
+          if (!message) return fail(400, 'a commit message is needed');
+          return queueWrite(`git:${at.repo}`, async () => {
+            const files = commitable(await dirtyFiles(at.repo));
+            if (!files.length) return fail(409, 'nothing to commit');
+            const listed = [...(body?.files ?? [])].sort().join('\n');
+            if (listed !== files.map((f) => f.path).sort().join('\n')) return json({ error: 'the files changed meanwhile — have a look', files }, 409);
+            if (files.some((f) => !f.md) && !body?.nonMd) return json({ error: 'confirm the files that are not Markdown', files }, 409);
+            const r = await run(at.repo, ['commit', '-a', '-m', message]);
+            return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
+          });
+        },
+      },
+      '/api/git/pull': { POST: (req) => syncRepo(req, ['pull', '--ff-only']) },
+      '/api/git/push': { POST: (req) => syncRepo(req, ['push']) },
 
       '/api/tree': async (req) => {
         const url = new URL(req.url);

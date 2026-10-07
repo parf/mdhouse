@@ -14,24 +14,25 @@
   - [x] no TLS - doc how to forward port with ssh - [doc/access.md](../../doc/access.md)
 - [x] prefs.json.dist - pretty print json with comments - [doc/prefs.json.dist](../../doc/prefs.json.dist); comments are read, a save drops them
 - [x] wide mode - save in localStorage; one for all documents
+- [x] keyboard shortcuts popup is still outdated - update it (e, alt+e, ctrl+shift+enter)
 - [x] add shortcut for open in editor link ( open edit:/.. url ) - e
   - [x] add "edit" link to our forms (answer, add) - edit:/path.md:line
   - [x] alt+e in a form (textarea focused) uses this url; replaces the edit form with "opened in external editor" notice, instead of save button
   - [x] control+shift+enter in the answer form - submit form + open next one (next unanswered question)
 - [x] git history - on/off - we have it now - BUT we do not show state - add grey show/hide icons
 - [x] config: auto-rw-path: list; any added folder under it is auto-rw - can be turned off in web config - `mdhouse --auto-rw <path,…>`, switch on the settings page
-- [ ] git "root" page - where we show branch and recent commits - plan and questions: [git-page.md](git-page.md)
-  - [ ] url: /root/?git; add this switch to all directories (now root only)
-  - [ ] recent commits - all, even w/o md files; recent-commits page
-  - [ ] commit view - list all files; links to original repo web views (github/gitlab/most popular, or build a possible url)
-  - [ ] list all files of the repo
+- [x] git "root" page - where we show branch and recent commits - plan and questions: [git-page.md](git-page.md)
+  - [x] url: /root/?git; add this switch to all directories (now root only)
+  - [x] recent commits - all, even w/o md files; recent-commits page
+  - [x] commit view - list all files; links to original repo web views (github/gitlab/most popular, or build a possible url)
+  - [x] list all files of the repo
   - [ ] later: viewers for images, html, txt - not our main goal
-  - [ ] on-demand remote repo check - are there any new commits; read-only: `git ls-remote`, no fetch
-  - [ ] when RW mode - buttons: commit, pull (`git pull --ff-only` - good start, later we'll fine tune), push
-  - [ ] `/` - make it a redirect to the root's git view
-  - [ ] commit: git commit -a -m "ASK FOR message" - show file list to be commited; prefilled when obvious; checkbox when commiting non MD files (non ours)
-  - [ ] pull/push with uncommited files - ask to confirm "You have uncommited files", allow only when ONLY md files
-  - [ ] subfolder git view - that subfolder only; origin only; git link only on folders inside one repo
+  - [x] on-demand remote repo check - are there any new commits; read-only: `git ls-remote`, no fetch
+  - [x] when RW mode - buttons: commit, pull (`git pull --ff-only` - good start, later we'll fine tune), push
+  - [x] `/` - make it a redirect to the root's git view
+  - [x] commit: git commit -a -m "ASK FOR message" - show file list to be commited; prefilled when obvious; checkbox when commiting non MD files (non ours)
+  - [x] pull/push with uncommited files - ask to confirm "You have uncommited files", allow only when ONLY md files
+  - [x] subfolder git view - that subfolder only; origin only; git link only on folders inside one repo
 
 ## NEXT iteration
 

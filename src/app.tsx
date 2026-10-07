@@ -74,7 +74,10 @@ function App() {
   const [live, setLive] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
-  const [path, setPath] = useState(() => location.pathname);
+  /** Path and query: `?git` on a folder's url is its git view. */
+  const [full, setPath] = useState(() => location.pathname + location.search);
+  const path = full.split('?')[0] ?? '';
+  const gitView = /[?&]git(?:[=&]|$)/.test(full);
   const docPath = path.startsWith('/d/') ? path.slice(3) : '';
   const onSettings = path === '/settings';
   // `/d/<root>/<dir>/` — a trailing slash is a folder's page, not a document. With a single
@@ -84,20 +87,29 @@ function App() {
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
     setJumpLine(line ?? null);
-    if (url !== location.pathname + location.hash) history.pushState(null, '', url);
-    setPath(location.pathname);
+    if (url !== location.pathname + location.search + location.hash) history.pushState(null, '', url);
+    setPath(location.pathname + location.search);
   }, []);
 
   useEffect(() => {
     const onPop = () => {
       setJumpLine(null);
-      setPath(location.pathname);
+      setPath(location.pathname + location.search);
     };
     addEventListener('popstate', onPop);
     return () => removeEventListener('popstate', onPop);
   }, []);
 
   useEffect(() => save(LS_STATE, sidebar), [sidebar]);
+
+  // `/` is the root's git view: `/d/<root>/?git`.
+  useEffect(() => {
+    if (path !== '/' || !rootId || !roots.length) return;
+    const root = roots.find((r) => r.id === rootId);
+    const url = `/d/${roots.length > 1 && root ? `${encodeURIComponent(root.id)}/` : ''}?git`;
+    history.replaceState(null, '', url);
+    setPath(url);
+  }, [path, rootId, roots]);
   useEffect(() => save(LS_IGNORED, showIgnored), [showIgnored]);
 
   // ── data ────────────────────────────────────────────────────────────────
@@ -479,6 +491,20 @@ function App() {
             options={options}
             onOptions={setOptions}
           />
+        ) : dirTarget && gitView ? (
+          <Home
+            rootId={dirTarget.rootId}
+            roots={roots}
+            tree={tree?.root.id === dirTarget.rootId ? tree : null}
+            showIgnored={showIgnored}
+            revision={revision}
+            onOpen={openFile}
+            onAbout={() => setAboutOpen(true)}
+            gear={pageGear}
+            dir={dirTarget.dir}
+            dirUrl={dirPageUrl(dirTarget.dir, dirTarget.rootId)}
+            onOpenDir={() => openDirPage(dirTarget.dir, dirTarget.rootId)}
+          />
         ) : dirTarget ? (
           <DirPage
             tree={tree?.root.id === dirTarget.rootId ? tree : null}
@@ -487,8 +513,9 @@ function App() {
             onOpenDir={openDirPage}
             onAbout={() => setAboutOpen(true)}
             gear={pageGear}
-            gitUrl={roots.length > 1 ? `/?root=${encodeURIComponent(dirTarget.rootId)}` : '/'}
-            onOpenGit={() => go('/')}
+            rootId={dirTarget.rootId}
+            gitUrl={`${dirPageUrl(dirTarget.dir, dirTarget.rootId)}?git`}
+            onOpenGit={() => go(`${dirPageUrl(dirTarget.dir, dirTarget.rootId)}?git`)}
           />
         ) : !docPath ? (
           <Home
@@ -500,6 +527,7 @@ function App() {
             onOpen={openFile}
             onAbout={() => setAboutOpen(true)}
             gear={pageGear}
+            dir=""
             dirUrl={dirPageUrl('')}
             onOpenDir={() => openDirPage('')}
           />

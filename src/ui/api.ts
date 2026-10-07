@@ -64,7 +64,63 @@ async function get<T>(path: string, params: Record<string, string | number | boo
   return res.json() as Promise<T>;
 }
 
+/** A folder's git view — `/api/git`. */
+export interface GitInfo {
+  repo: string;
+  /** The folder, repo-relative; '' for the repo itself. */
+  dir: string;
+  /** The root, repo-relative: a repo path under it is a root path after this prefix. */
+  rootRel: string;
+  head: { branch: string; commit: { hash: string; author: string; email: string; date: number; subject: string } | null; pulledAt: number | null } | null;
+  origin: { web: string; commit: string; blob: string; kind: string } | null;
+  dirty: Array<{ path: string; code: string; md: boolean }>;
+  commitMessage: string;
+  writable: boolean;
+}
+
+export interface GitCommit {
+  hash: string;
+  author: string;
+  email: string;
+  date: number;
+  subject: string;
+  files: Array<{ status: string; path: string }>;
+}
+
+export interface RemoteState {
+  state: 'same' | 'ahead' | 'behind' | 'new' | 'diverged' | 'none';
+  ahead?: number;
+  behind?: number;
+  message?: string;
+}
+
+/** A refused git action: the reason, and the files it is about. */
+export class GitRefusal extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly files: GitInfo['dirty'] = [],
+    readonly confirm = false,
+  ) {
+    super(message);
+  }
+}
+
+async function gitPost(path: string, body: unknown): Promise<{ ok: true; output: string }> {
+  const res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const data = (await res.json().catch(() => null)) as { error?: string; files?: GitInfo['dirty']; confirm?: boolean; output?: string } | null;
+  if (!res.ok) throw new GitRefusal(data?.error ?? `${res.status} ${res.statusText}`, res.status, data?.files, !!data?.confirm);
+  return { ok: true, output: data?.output ?? '' };
+}
+
 export const api = {
+  git: (p: string) => get<GitInfo>('/api/git', { p }),
+  gitCommits: (p: string, skip = 0) => get<{ commits: GitCommit[] }>('/api/git/commits', { p, skip }),
+  gitFiles: (p: string) => get<{ files: string[] }>('/api/git/files', { p }),
+  gitRemote: (p: string) => get<RemoteState>('/api/git/remote', { p }),
+  gitCommit: (p: string, message: string, files: string[], nonMd: boolean) => gitPost('/api/git/commit', { p, message, files, nonMd }),
+  gitSync: (p: string, action: 'pull' | 'push', confirmed: boolean) => gitPost(`/api/git/${action}`, { p, confirmed }),
+
   roots: () => get<{ roots: RootInfo[]; single: boolean; home?: string }>('/api/roots'),
 
   tree: (root: string, ignored: boolean) => get<TreePayload>('/api/tree', { root, ignored: ignored ? 1 : 0 }),

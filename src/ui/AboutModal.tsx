@@ -85,9 +85,42 @@ export function AboutModal({ open, onClose }: Props) {
               </tr>
               <tr>
                 <td>
+                  <kbd>e</kbd>
+                </td>
+                <td>Open the document in your editor (the edit link)</td>
+              </tr>
+              <tr>
+                <td>
                   <kbd>?</kbd>
                 </td>
                 <td>Show this shortcuts & about dialog</td>
+              </tr>
+              <tr class="shortcuts-group">
+                <td colSpan={2}>In an answer or add form</td>
+              </tr>
+              <tr>
+                <td>
+                  <kbd>Ctrl+Enter</kbd>
+                </td>
+                <td>Save</td>
+              </tr>
+              <tr>
+                <td>
+                  <kbd>Ctrl+Shift+Enter</kbd>
+                </td>
+                <td>Save, and open the next unanswered question</td>
+              </tr>
+              <tr>
+                <td>
+                  <kbd>Alt+E</kbd>
+                </td>
+                <td>Open the file at this line in your editor</td>
+              </tr>
+              <tr>
+                <td>
+                  <kbd>Esc</kbd>
+                </td>
+                <td>Cancel</td>
               </tr>
             </tbody>
           </table>

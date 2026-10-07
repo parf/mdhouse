@@ -151,6 +151,11 @@ contents list, so a heading link and its contents entry cannot disagree.
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
   comes up where a start by hand does. Beside it, `control-<port>.sock`. Never a dotfile inside a
   browsed tree.
+- **Git view** — `/d/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
+  plus `GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
+  `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote`, POST
+  `/api/git/commit|pull|push` — writable folder, same origin, one at a time per repo; network
+  git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Host links from `origin`.
 - **Folder pages** are built in the browser from the tree payload it already holds; they cost
   no request.
 
