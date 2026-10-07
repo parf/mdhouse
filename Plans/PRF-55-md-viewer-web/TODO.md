@@ -6,6 +6,7 @@ Answers: [`questions.md`](questions.md)
   - [ ] cli flag; kept in prefs
   - [ ] localhost always allowed
   - [ ] out of CIDR or no passwd = access denied
+  - [ ] 404 when - no file + have access
 - [ ] config: login / password - simple HTTP AUTH
   - [ ] several users - user:passwd; cli: `mdhouse user-add l:p` / remove
   - [ ] asked from localhost too - protect from misconfigured nginx & alike proxies

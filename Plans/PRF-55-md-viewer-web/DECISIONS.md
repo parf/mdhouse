@@ -169,7 +169,7 @@ Planned, not built; the answers are in [`questions.md`](questions.md).
 - **For trusted networks and developers, no TLS.** Outside the intranet, forward the port with
   ssh.
 - **CIDR allow list and users are set from the CLI, kept in `prefs.json`.** Localhost is always
-  allowed; out of CIDR or no passwd = access denied. Users (`user:passwd`) are
+  allowed; out of CIDR or no passwd = access denied; 404 when - no file + have access. Users (`user:passwd`) are
   asked from localhost too — a misconfigured nginx or alike proxy makes every request local.
   With both set, both are required.
 - **auto-rw-path is a list:** any folder added from under it is writable; the web config can
