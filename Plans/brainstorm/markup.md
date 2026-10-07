@@ -117,6 +117,7 @@ Search falls back to a JS regex when rg is missing.
 ## Visual rules, from the markup alone
 
 - [ ] severity 🔴 🟠 and `❓` (waiting on me) — strong colour, never folded
+- [ ] an answered `❓` (a 💬 under it) shows as a green **?** — the file keeps `❓`
 - [ ] `⏳` — normal; `⏸️` — muted
 - [ ] `✅` `🚫` items and their threads — muted, folded: the question, and under it the answer on
   its own line, each in its own colour (never merged into one line); a click opens them
