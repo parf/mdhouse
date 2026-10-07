@@ -193,3 +193,20 @@ written, never the question. If the file changed since the page was loaded — t
 edited, or someone answered it meanwhile — the save is refused or the editor says so, and the
 text you typed is kept. A file with uncommitted changes opens on its diff; switch back to the
 document to answer.
+
+## A typical Q&A session
+
+How a plan gets worked through with an agent (Claude Code or alike), in a folder served `--rw`:
+
+1. **Ask** — the agent writes its open questions into a plan file, one `> ❓` block each,
+   with what it proposes beside them
+2. **Answer** — you open the file in mdhouse, click each ❓ and answer; Ctrl+Shift+Enter saves
+   and opens the next unanswered one
+3. **Decide** — the agent reads the answers and writes them up as decisions above the
+   questions; the questions and answers stay below, as the record
+4. **Track** — the work goes into `TODO.md` as checkboxes, one per decision, ticked as each
+   lands; 💬 on any item asks or notes something about it
+
+![Decisions above, answered questions below](qa-session-decided.png)
+
+![TODO.md — the decisions as checkboxes, ticked as the work lands](qa-session-todo.png)
