@@ -813,8 +813,8 @@ main {
 .doc-title-row > .doc-title { flex: 1 1 auto; min-width: 0; }
 .notice-gear { float: right; }
 .head-gear { margin-left: auto; }
-.doc-title { font-size: 25px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; color: var(--doc-title);
-  display: flex; align-items: center; gap: 8px; }
+.doc-title { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; color: var(--doc-title);
+  display: flex; align-items: center; }
 /* The house, at the size of the title it stands in front of. It is a raster with a white
    ground, so it is rounded into a tile rather than floated on the page background. */
 .mark {
@@ -834,10 +834,7 @@ main {
 .mark:active {
   transform: scale(0.96);
 }
-.doc-title .mark {
-  width: 1.55em; height: 0.9em;
-}
-.home-head .mark {
+.doc-title .mark, .home-head .mark {
   width: 1.45em; height: 0.85em; margin-right: 8px; vertical-align: -1px;
 }
 .brand .mark {
