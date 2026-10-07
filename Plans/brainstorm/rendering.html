@@ -141,6 +141,7 @@ details.settled[open] { background: var(--code-bg); }
 .chip[aria-pressed="true"] { border-color: var(--pick); background: var(--pick-bg); }
 .chip.zero { color: var(--muted); }
 .strip .label { font-size: 12px; color: var(--dim); }
+.strip .sep { color: var(--line); font-size: 18px; line-height: 1; margin: 0 2px; }
 .filtered .item.hide, .filtered details.hide { display: none; }
 
 table { border-collapse: collapse; font-size: 13.5px; margin: 6px 0; }
@@ -156,7 +157,7 @@ What needs me stands out; what is settled is muted and folded — one click open
 Glyphs: <a href="README.md">README.md</a>.</p>
 
 <h2>Page summary strip</h2>
-<p class="lead">On every page with items: <b>show (all)</b> · 🔴 · 🟠 · ⚪ · ✅ — thresholds: 🔴 high; 🟠 medium and up, plus a bare ❓ ⁉️ (one with a severity goes by it: <code>❓ ⚪</code> = low); ⚪ every open line; ✅ every closed one (✅ 🚫 ⏸️ 🎫). A click filters. Try it on the findings below.</p>
+<p class="lead">On every page with items: <b>9</b> │ 🔴 · 🟠 · ⚪ · ✅ — the total (a click shows all), then the filters on it; thresholds: 🔴 high; 🟠 medium and up, plus a bare ❓ ⁉️ (one with a severity goes by it: <code>❓ ⚪</code> = low); ⚪ every open line; ✅ every closed one (✅ 🚫 ⏸️ 🎫). A click filters. Try it on the findings below.</p>
 
 <!-- ============================================================ 1 -->
 <h2>1. Questions → answers</h2>
@@ -512,7 +513,8 @@ document.getElementById('one-g').addEventListener('click', (e) => {
     const n = rows.filter(test).length;
     const b = document.createElement('button');
     b.className = 'chip' + (n ? '' : ' zero');
-    b.textContent = k === 'show' ? `show (${n})` : `${k} ${n}`;
+    b.textContent = k === 'show' ? `${n}` : `${k} ${n}`;
+    if (k === 'show') b.title = 'Show all';
     b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', () => {
       on = on === k || k === 'show' ? null : k;
@@ -521,6 +523,8 @@ document.getElementById('one-g').addEventListener('click', (e) => {
       rows.forEach((r) => r.classList.toggle('hide', on !== null && !test(r)));
     });
     strip.append(b);
+    // after the total: the filters on it
+    if (k === 'show') strip.insertAdjacentHTML('beforeend', '<span class="sep" aria-hidden="true">│</span>');
   }
 })();
 </script>

@@ -117,21 +117,22 @@ Search falls back to a JS regex when rg is missing.
 
 ## Summary strip — filters by level
 
-At the top of a page with items: `show (6)` · `🔴 2` · `🟠 3` · `⚪ 4` · `✅ 2`. The buttons are
-thresholds, not glyphs — each level includes the ones before it.
+At the top of a page with items: `6` │ `🔴 2` `🟠 3` `⚪ 4` `✅ 2`. The first button is just the total
+(a click shows all); after the `│`, the filters on it — thresholds, not glyphs: each level
+includes the ones before it.
 
 | Button | Shows | Example |
 |---|---|---|
-| **show (N)** | everything; resets the filter | all 6 |
+| **N** (the total) | everything; resets the filter | all 6 |
 | **🔴** | high only | 🔴 |
 | **🟠** | medium and up, plus ❓ ⁉️ with no severity of their own | 🔴 + 🟠 + ❓ + ⁉️ |
 | **⚪** | every open line, any severity | 🔴 🟠 ⚪ 🔵 ⏳ ❓ ⁉️ |
 | **✅** | every closed line | ✅ 🚫 ⏸️ 🎫 |
 
 - counts are cumulative: 🔴 ⊂ 🟠 ⊂ ⚪, so the numbers grow left to right
-- ⚪ + ✅ = show: a line is open or closed
+- ⚪ + ✅ = the total: a line is open or closed
 - ⏸️ counts as closed — ✅ means "nothing to look at now"
-- one button at a time; a second click, or **show**, brings everything back
+- one button at a time; a second click, or the total, brings everything back
 
 Edge cases:
 
@@ -152,5 +153,5 @@ Edge cases:
 - [ ] unpicked options after a pick — muted
 - [ ] the glyph hangs: a column of its own, wrapped lines line up with the text, not under the glyph
 - [ ] every block aligned left alike — glyphs at one x, text at one x; no left border, the background is enough
-- [ ] a summary strip per page: `show (6)` · `🔴 2` · `🟠 3` · `⚪ 4` · `✅ 2` — thresholds, a click filters (above)
+- [ ] a summary strip per page: `6` │ `🔴 2` `🟠 3` `⚪ 4` `✅ 2` — the total, then threshold filters (above)
 - no extra markup for any of this: `<details>` stays available, but mdhouse folds by glyph
