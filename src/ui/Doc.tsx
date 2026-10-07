@@ -2,7 +2,7 @@ import { render as mount } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff } from './icons';
 import { timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -45,6 +45,9 @@ interface Props {
   /** The root, first in the breadcrumb, linking to its folder page. */
   rootName?: string;
   rootDirUrl?: string;
+  /** The root's git view; the button shows only when the root is inside a repo. */
+  rootGitUrl?: string;
+  onOpenRootGit?: () => void;
   onOpenRootDir?: () => void;
   /** `edit:/full/path` for this document, or null when the edit link is turned off. */
   editHref?: string | null;
@@ -94,6 +97,8 @@ export function Doc({
   gear,
   rootName,
   rootDirUrl,
+  rootGitUrl,
+  onOpenRootGit,
   onOpenRootDir,
   editHref,
   onReload,
@@ -133,6 +138,20 @@ export function Doc({
    * word was rendered. Now the page paints first and the two names arrive a moment later.
    */
   const [log, setLog] = useState<HistoryPayload | null>(null);
+  const docRootId = doc?.root;
+  const [rootInRepo, setRootInRepo] = useState(false);
+  useEffect(() => {
+    let live = true;
+    setRootInRepo(false);
+    if (docRootId)
+      api
+        .git(`${docRootId}/`)
+        .then(() => live && setRootInRepo(true))
+        .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [docRootId]);
   const [logFailed, setLogFailed] = useState(false);
   const docPath = doc ? `${doc.root}/${doc.rel}` : null;
 
@@ -857,6 +876,21 @@ export function Doc({
           </h1>
           {/* Hands the file to whatever handles `edit:` URLs — an editor, set up outside mdhouse.
               Settings turns it off where nothing does. */}
+          {rootInRepo && rootGitUrl && (
+            <a
+              class="icon-btn git-link"
+              href={rootGitUrl}
+              title="The git view — what changed, by commit"
+              aria-label="Git view"
+              onClick={(e) => {
+                if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                e.preventDefault();
+                onOpenRootGit?.();
+              }}
+            >
+              <IconGitMark />
+            </a>
+          )}
           {editHref && (
             <a class="icon-btn edit-link" href={editHref} title={`Edit ${editHref.slice(5)} (e)`} aria-label="Edit">
               <IconEdit />

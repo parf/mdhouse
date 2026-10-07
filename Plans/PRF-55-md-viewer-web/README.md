@@ -160,6 +160,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **One header** (`PageHead.tsx`) for a folder page and its git view: logo; folder name —
   on the folder page a link to its git view, everywhere else to the folder page; on the right
   GIT / Favs / Recent / Mine / Commits / Files (GIT, Commits, Files only inside a repo) and ⚙.
+  A document's header has a git button before ✎: the root's git view.
 - **Folder pages** are built in the browser from the tree payload it already holds; they cost
   no request.
 

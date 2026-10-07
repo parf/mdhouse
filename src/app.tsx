@@ -561,6 +561,8 @@ function App() {
           }
           rootDirUrl={dirPageUrl('', doc?.root)}
           onOpenRootDir={() => openDirPage('', doc?.root)}
+          rootGitUrl={`${dirPageUrl('', doc?.root)}?git`}
+          onOpenRootGit={() => go(`${dirPageUrl('', doc?.root)}?git`)}
         />
         )}
       </main>
