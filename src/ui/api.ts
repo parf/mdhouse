@@ -73,7 +73,7 @@ export interface GitInfo {
   rootRel: string;
   head: { branch: string; commit: { hash: string; author: string; email: string; date: number; subject: string } | null; pulledAt: number | null } | null;
   origin: { web: string; commit: string; blob: string; kind: string } | null;
-  dirty: Array<{ path: string; code: string; md: boolean }>;
+  dirty: Array<{ path: string; code: string; md: boolean; mtime?: number; size?: number }>;
   commitMessage: string;
   sync: {
     upstream: string | null;

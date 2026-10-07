@@ -16,7 +16,8 @@
     **pushed** and when; **unpushed** in yellow on red when the branch is not on origin; ↑N
     unpushed, ↓N to pull, ✎ N uncommitted. The line is green when all is committed and
     pushed, yellow when not
-  - two lists: **Unpushed commits**, and **Changed / added files** of any type
+  - two lists: **Unpushed commits**, and **Changed / added files** of any type — folder, file,
+    age, size, as a folder page shows them
   - origin is asked by itself once the page is up (ls-remote, kept 30 seconds); ↻ asks again
   - **Pull** is off when origin has nothing new, and stands out when it has
   - a merge, rebase or conflict under way is said, and commit / pull / push wait for it

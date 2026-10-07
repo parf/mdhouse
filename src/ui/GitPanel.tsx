@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import { api, GitRefusal, type GitCommit, type GitInfo, type RemoteState } from './api';
 import { Ago } from './Ago';
+import { Dir } from './Home';
+import { sizeClass, SizeMark } from './Tree';
+import { docName, fileSize } from './format';
 
 /** Where a repo file opens: here when it is Markdown under the root, else on its host, else nowhere. */
 type Target = { rel: string } | { href: string } | null;
@@ -387,36 +390,64 @@ export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: strin
           )}
         </section>
       )}
-      {info.dirty.length > 0 && (
-        <section class="git-list git-changed">
-          <h2>
-            Changed / added files <span class="n">{info.dirty.length}</span>
-          </h2>
-          <ul>
-            {info.dirty.map((f) => {
-              const md = f.md && f.path.startsWith(prefix) && !f.code.includes('D');
-              return (
-                <li key={f.path} class={f.md ? '' : 'non-md'}>
-                  <span class={`change ch-${changeOf(f.code).replace(' ', '-')}`}>{changeOf(f.code)}</span>
-                  {md ? (
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onOpen(f.path.slice(prefix.length));
-                      }}
-                    >
-                      {f.path}
-                    </a>
-                  ) : (
-                    <span class="git-file plain">{f.path}</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+      {info.dirty.length > 0 && <ChangedFiles info={info} onOpen={onOpen} />}
     </>
+  );
+}
+
+/**
+ * The changed and added files, laid out as a folder page lays out its files: folder (named once
+ * for a run), file, age, size — newest first. Markdown under the root opens here.
+ */
+function ChangedFiles({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) => void }) {
+  const prefix = info.rootRel ? `${info.rootRel}/` : '';
+  const files = [...info.dirty]
+    .map((f) => {
+      const cut = f.path.lastIndexOf('/');
+      return { ...f, dir: cut < 0 ? '' : f.path.slice(0, cut), name: f.path.slice(cut + 1) };
+    })
+    .sort((a, b) => a.dir.localeCompare(b.dir) || (b.mtime ?? 0) - (a.mtime ?? 0));
+  return (
+    <section class="git-list git-changed">
+      <h2>
+        Changed / added files <span class="n">{files.length}</span>
+      </h2>
+      <table class="home-table dir-table">
+        <tbody>
+          {files.map((f, i) => {
+            let span = 0;
+            if (i === 0 || files[i - 1]!.dir !== f.dir) {
+              span = 1;
+              while (i + span < files.length && files[i + span]!.dir === f.dir) span++;
+            }
+            const opens = f.md && f.path.startsWith(prefix) && f.size !== undefined;
+            const small = f.size !== undefined ? sizeClass(f.size) : '';
+            const change = changeOf(f.code);
+            return (
+              <tr
+                key={f.path}
+                class={`file${opens ? '' : ' other'}${small ? ` ${small}` : ''}`}
+                onClick={opens ? () => onOpen(f.path.slice(prefix.length)) : undefined}
+                title={f.path}
+              >
+                {span > 0 && (
+                  <td class="dir" rowSpan={span}>
+                    <Dir dir={f.dir} />
+                  </td>
+                )}
+                <td class="name">
+                  <span class={opens ? 'link' : 'plain'}>{f.md ? docName(f.name) : f.name}</span>
+                  {/* The same tags the front page's Uncommitted rows carry. */}
+                  <span class={`tag ch-${change.replace(' ', '-')}`}>{change}</span>
+                  {small === 'tiny' && <SizeMark size={f.size} />}
+                </td>
+                <td class="when">{f.mtime !== undefined && <Ago at={f.mtime} />}</td>
+                <td class={`size${small === 'small' ? ' small' : ''}`}>{f.size !== undefined ? fileSize(f.size) : ''}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
   );
 }

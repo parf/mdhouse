@@ -1582,3 +1582,7 @@ button.sync-chip { cursor: pointer; }
 .git-list .more { margin-top: 6px; }
 .git-btn.bright { color: #fff; background: var(--warn); border-color: var(--warn); font-weight: 650; box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 30%, transparent); }
 .git-btn.bright:hover:not(:disabled) { background: color-mix(in srgb, var(--warn) 85%, #000); }
+.git-changed .home-table .tag:is(.ch-new, .ch-added) { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.git-changed .home-table .tag:is(.ch-deleted, .ch-conflict) { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.git-changed tr.other { cursor: default; }
+.git-changed .plain { color: var(--fg-muted); }

@@ -451,13 +451,20 @@ export async function serve(opts: ServeOptions) {
         if ('error' in at) return at.error;
         const [head, host, dirty] = await Promise.all([repoHead(at.repo), origin(at.repo), dirtyFiles(at.repo)]);
         const sync = head ? await syncState(at.repo, head.branch) : null;
+        // Age and size, for the changed-files table — a deleted file has neither.
+        const changed = await Promise.all(
+          dirty.map(async (f) => {
+            const st = await stat(`${at.repo}/${f.path}`).catch(() => null);
+            return st?.isFile() ? { ...f, mtime: st.mtimeMs, size: st.size } : f;
+          }),
+        );
         return json({
           repo: at.repo.split('/').pop(),
           dir: at.dir,
           rootRel: repoRel(at.repo, at.root.path),
           head,
           origin: host,
-          dirty,
+          dirty: changed,
           commitMessage: suggestMessage(commitable(dirty)),
           sync,
           writable: at.root.writable,
