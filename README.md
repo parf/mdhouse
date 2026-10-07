@@ -110,12 +110,8 @@ mdhouse exit                     # stop it (--all: every port)
 mdhouse service install          # systemd: now and at every login; also status, uninstall
 ```
 
-- Runs in the background; `--fg` keeps it in the foreground. The start message says where its
-  log is (`journalctl -t mdhouse -f`, or `journalctl --user -u mdhouse -f` for the service).
-- Saved folders, port, host and settings live in `~/.config/mdhouse/prefs.json`.
-- The service serves only saved folders, writes only to those saved with `-p --rw`, and stays
-  stopped after `mdhouse exit` — `systemctl --user start mdhouse` brings it back.
-  `loginctl enable-linger $USER` starts it at boot.
+- Log: `journalctl -t mdhouse -f`
+- Config: `~/.config/mdhouse/prefs.json`
 
 ### ⚙ Settings
 
