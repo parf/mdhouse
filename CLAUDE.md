@@ -22,7 +22,7 @@ Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, r
   a claim. Confirm it by execution, then fix it without asking — or refuse with the evidence.
 - **Subagents liberally** for research and parallel analysis; one focused task each.
 - **Capture lessons.** After any correction from me, append rule / why / trigger to
-  `/rd/parf.local/lessons.md` (gitignored). Review it at session start.
+  `lessons.local.md` (gitignored). Review it at session start.
 - **Task hygiene.** Multi-step work as checkable items, marked off as you go; short summary
   per step; close with what actually changed.
 - **Stop marker.** Any stop or question ends the reply with a separate last line
@@ -47,7 +47,7 @@ Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, r
 - UI links are real `<a href>`; plain clicks go through `go(url)` (pushState), middle click
   opens a tab.
 
-## Glyphs (from `/rd/CLAUDE.md`)
+## Glyphs
 
 For findings, reviews and task status — in docs, pages and replies; not decoration:
 
