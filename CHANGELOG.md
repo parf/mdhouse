@@ -11,6 +11,10 @@
 - **The answer button of a checkbox item is a small grey 💬**, not ❓ — an item is not a
   question; it turns green once the item has an answer
 
+### Fixed
+
+- **Nested checkbox items are indented** under their parent again
+
 ## 1.3.0 — 2026-10-06
 
 ### Changed — the command line
