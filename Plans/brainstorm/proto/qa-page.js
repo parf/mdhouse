@@ -4,8 +4,8 @@
 
   // ---- editors: one at a time
   const closeEditors = () => doc.querySelectorAll('.c-edit, .f-edit').forEach((e) => e.remove());
-  // who I am — mdhouse would take the git user name; ?me=name here
-  const ME = new URLSearchParams(location.search).get('me') || 'parf';
+  // who I am: ?me= in the address, else what the renderer put in (config, else git)
+  const ME = new URLSearchParams(location.search).get('me') || doc.dataset.me || 'me';
   /** "👤me" in the editor: remembered per browser. */
   const signKey = 'mdhouse.qa.sign';
   // the sandboxed preview has no localStorage: the page remembers it for as long as it is open

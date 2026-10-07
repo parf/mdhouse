@@ -258,12 +258,28 @@ export function renderDoc(src: string): string {
   return out.join('\n');
 }
 
+/**
+ * Who "me" is, for the 👤me checkbox: `--me <name>` (in mdhouse: `"me"` in prefs.json settings)
+ * overrides; else git — the local part of user.email, which is one word as a badge name must be,
+ * else user.name without its spaces.
+ */
+function whoAmI(dir: string, override?: string): string {
+  if (override) return override;
+  const git = (key: string) => Bun.spawnSync(['git', '-C', dir, 'config', key]).stdout.toString().trim();
+  const email = git('user.email');
+  return email ? email.split('@')[0]! : git('user.name').replace(/\s+/g, '') || 'me';
+}
+
 if (import.meta.main) {
-  const file = process.argv[2];
+  const args = process.argv.slice(2);
+  const at = args.indexOf('--me');
+  const meArg = at >= 0 ? args.splice(at, 2)[1] : undefined;
+  const file = args[0];
   if (!file) {
-    console.error('usage: bun qa-render.ts <file.md>');
+    console.error('usage: bun qa-render.ts <file.md> [--me <name>]');
     process.exit(2);
   }
+  const me = whoAmI(dirname(file), meArg);
   const here = dirname(new URL(import.meta.url).pathname);
   const mock = readFileSync(join(here, '..', 'rendering.html'), 'utf8');
   const css = /<style>([\s\S]*?)<\/style>/.exec(mock)![1];
@@ -311,7 +327,7 @@ ul.items { margin: 6px 0 14px; }
 </style>
 </head>
 <body>
-<main id="doc">
+<main id="doc" data-me="${esc(me)}">
 <div class="strip top" id="strip"></div>
 ${body}
 </main>
