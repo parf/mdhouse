@@ -29,11 +29,7 @@ directory that has `.md` files in it.
 bun install -g mdhouse      # or: npm install -g mdhouse
 ```
 
-On npm: <https://www.npmjs.com/package/mdhouse>
-
-- [Bun](https://bun.sh) ≥ 1.4
-- git
-- optional: ripgrep (`rg`)
+Needs [Bun](https://bun.sh) ≥ 1.4 and git; optional: ripgrep (`rg`).
 
 <details>
 <summary>…or run it from a clone</summary>
