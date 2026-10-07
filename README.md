@@ -150,32 +150,29 @@ top bar keeps ☰, the dropdown, 🔍 and ⚙.
 
 ## ✎ Editing docs & answering / asking questions
 
-Serve a folder with `--rw` (**still in testing** — use it on folders under git) and its
-documents take a few small edits right on the page. Each one changes only its own lines, and
-is refused if the file changed since the page was loaded; what you typed is kept. Anything
-bigger is one click away in your own editor.
+With `--rw` (**still in testing** — use it on folders under git):
 
-**Answer a question.** Every ❓ and ⁉️ is a button. Click it, write the answer — plain Markdown,
-bullets welcome — and **Save** (Ctrl+Enter). It is written in the question's own syntax: `> 💬`
-under a quote, `> [!ANSWER]` under an alert, `**A:**` under a bold line, `::: a` under a
-container. An answered question opens its answer for editing.
-
-**Checkbox and status items are questions too** — `- [ ]`, `- ✅`, `- ⚠️`, `- 🚫` and the like.
-**Check & Save** answers and ticks it in one go. [Details](doc/qa.md#checkbox-and-status-items).
+- ☑️ **Tick a checkbox** — that one line is saved.
+- ❓ ⁉️ **Answer a question** — click the icon, write, **Save** (Ctrl+Enter). Written in the
+  question's own syntax; an answered one opens for editing.
+- `- [ ]` `- ✅` `- ⚠️` … **Checkbox and status items are questions too** — **Check & Save**
+  answers and ticks in one go. [Details](doc/qa.md#checkbox-and-status-items)
 
 <img src="doc/rw-answer.png" alt="An answered question with bullets, and a checkbox question with the answer editor open under it: Save, Check &amp; Save and Cancel" width="560">
 
-**Add under a heading.** Hover a heading: after its `#` come ✎ — open the file at that line in
-your editor (`edit:/path:line`) — ↓ add a block right under the heading, and ⇊ add one at the
-end of its section. Write it, then pick what it is: ¶ text, ❝ quote, ✍️ my quote (signed with
-your git name), 💡 tip, ❓ question, ⁉️ disagreement or 💬 answer — so asking a question is the
-same two clicks as answering one.
+- Hover a heading for three buttons after its `#`:
+  - ✎ open the file at that line in your editor (`edit:/path:line`)
+  - ↓ add a block right under the heading
+  - ⇊ add one at the end of its section
+- **Add as** ¶ text · ❝ quote · ✍️ my quote (signed) · 💡 tip · ❓ question · ⁉️ disagreement ·
+  💬 answer
 
 <img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with the Add as buttons" width="560">
 
-**Tick a checkbox** and that one line is saved. Esc cancels any editor. Every form, answered and
-not, is on the [Q&A playground](doc/qa-playground.md) to try; the syntax is in
-[Questions and answers](doc/qa.md).
+- 🛡 Each edit changes only its own lines; if the file changed meanwhile it is refused and your
+  text is kept. Esc cancels.
+- 🧪 Try every form on the [Q&A playground](doc/qa-playground.md); syntax in
+  [Questions and answers](doc/qa.md).
 
 ---
 
