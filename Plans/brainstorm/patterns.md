@@ -33,11 +33,11 @@ issue → answer → solved ✅ | rejected 🚫 | deferred ⏸️ | needs more d
 
 An item comes with options; I pick.
 
-- [ ] **one of many** (radio) and **several of many** (checkboxes) under a question
+- [ ] **one of many** (radio, `( )` / `(x)`) and **several of many** (checkboxes, `[ ]` / `[x]`) under a question
 - [ ] a pick is one click; it is written back to the file (the chosen option marked, the rest left as written)
 - [ ] a free-text 💬 still possible next to the options
 - [ ] once picked, the other options are muted
-- [ ] syntax: ❓ — what the options look like in Markdown, readable without mdhouse
+- [x] syntax: `( )` radio, `[ ]` checkbox — [markup.md](markup.md)
 
 ## 4. Working with existing documents — point at something and say …
 

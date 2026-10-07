@@ -215,43 +215,43 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 <!-- ============================================================ 3 -->
 <h2>3. Suggestions — choosing</h2>
 
-<h3>3a. One of — before and after the pick</h3>
+<h3>3a. One of — <code>( )</code>, before and after the pick</h3>
 <div class="case">
   <div><div class="col-label">Markup</div>
-<pre>- ❓ Dev server port — **one of**:
-  - [ ] `7790`, own config 🌟
-  - [ ] `port: 0`, printed at start
-  - [ ] keep `7777`
+<pre>- ❓ Dev server port:
+  - ( ) `7790`, own config 🌟
+  - ( ) `port: 0`, printed at start
+  - ( ) keep `7777`
 
 <i>after a click on the first:</i>
 
-- ✅ Dev server port — **one of**:
-  - [x] `7790`, own config 🌟
-  - [ ] `port: 0`, printed at start
-  - [ ] keep `7777`</pre></div>
+- ✅ Dev server port:
+  - (x) `7790`, own config 🌟
+  - ( ) `port: 0`, printed at start
+  - ( ) keep `7777`</pre></div>
   <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
-    <li class="item wait-me" id="one"><div class="head"><span class="g" id="one-g">❓</span><span>Dev server port — <b>one of</b>:</span><span class="btn hot">💬</span></div>
+    <li class="item wait-me" id="one"><div class="head"><span class="g" id="one-g">❓</span><span>Dev server port:</span><span class="btn hot">💬</span></div>
       <div class="opts" id="one-opts">
         <label class="opt"><input type="radio" name="port"> <span><code>7790</code>, own config <span class="suggest">🌟 suggested</span></span></label>
         <label class="opt"><input type="radio" name="port"> <span><code>port: 0</code>, printed at start</span></label>
         <label class="opt"><input type="radio" name="port"> <span>keep <code>7777</code></span></label>
       </div></li>
   </ul></div>
-  <ul class="notes"><li><b>one of</b> → radios; a click writes <code>[x]</code>, clears the others, turns ❓ into ✅ — try it</li>
+  <ul class="notes"><li><code>( )</code> → radios; a click writes <code>(x)</code>, clears the others, turns ❓ into ✅ — try it</li>
   <li>after the pick the others are muted and struck; the item drops to normal weight</li>
   <li>🌟 — the agent's suggestion, labelled</li></ul></div>
 </div>
 
-<h3>3b. Any of, and a free answer next to the options</h3>
+<h3>3b. Any of — <code>[ ]</code>, and a free answer next to the options</h3>
 <div class="case">
   <div><div class="col-label">Markup</div>
-<pre>- ❓ What ships in the package — **any of**:
+<pre>- ❓ What ships in the package:
   - [x] `doc/*.md` 🌟
   - [ ] `doc/*.png`
   - [ ] `Plans/done/CHANGELOG-beta.md`
   &gt; 💬 👤 **parf:** and LICENSE, always</pre></div>
   <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
-    <li class="item wait-me"><div class="head"><span class="g">❓</span><span>What ships in the package — <b>any of</b>:</span><span class="btn hot">✓ done</span></div>
+    <li class="item wait-me"><div class="head"><span class="g">❓</span><span>What ships in the package:</span><span class="btn hot">✓ done</span></div>
       <div class="opts">
         <label class="opt picked"><input type="checkbox" checked> <span><code>doc/*.md</code> <span class="suggest">🌟 suggested</span></span></label>
         <label class="opt"><input type="checkbox"> <span><code>doc/*.png</code></span></label>
@@ -259,7 +259,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
       </div>
       <div class="thread"><div class="reply"><span class="who">👤 parf</span>and LICENSE, always</div></div></li>
   </ul></div>
-  <ul class="notes"><li><b>any of</b> → checkboxes; each click writes its <code>[x]</code>; the item stays ❓ until <b>done</b> (✅)</li>
+  <ul class="notes"><li><code>[ ]</code> → checkboxes; each click writes its <code>[x]</code>; the item stays ❓ until <b>done</b> (✅)</li>
   <li>a 💬 under the options still works — "none, do X instead"</li></ul></div>
 </div>
 

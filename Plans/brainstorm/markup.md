@@ -53,30 +53,28 @@ turns so GitHub keeps them apart:
 
 ## 3. Suggestions — pick one, or several
 
-Options are GFM task items under the question — they render as checkboxes on GitHub too:
+The markup decides: `( )` / `(x)` — one of (radio), `[ ]` / `[x]` — any of (checkboxes, GFM).
+On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plain to see.
 
 ```markdown
-- ❓ Dev server port — **one of**:
-  - [ ] `7790`, own config 🌟
-  - [ ] `port: 0`, printed at start
-  - [ ] keep `7777`
+- ❓ Dev server port:
+  - ( ) `7790`, own config 🌟
+  - ( ) `port: 0`, printed at start
+  - ( ) keep `7777`
 ```
 
 ```markdown
-- ❓ What ships in the package — **any of**:
+- ❓ What ships in the package:
   - [x] `doc/*.md`
   - [ ] `doc/*.png`
   - [ ] `Plans/done/CHANGELOG-beta.md`
 ```
 
-- `one of` / `any of` in the question decides radio vs checkboxes; none → checkboxes
 - 🌟 = the suggested one (the agent's pick); ⭐ = runner-up, optional
-- a click writes `[x]`; with **one of**, it also clears the others
-- once something is picked, the unpicked options are muted; the question turns `✅` when I say so
-  (or on the pick, for **one of**)
+- a click on `( )` writes `(x)` and clears the others; the question turns `✅`
+- a click on `[ ]` writes `[x]`; the question stays `❓` until I say done
+- once something is picked, the unpicked options are muted
 - a 💬 under the options still works: "none — do X instead"
-
-Considered and dropped: `- ( )` / `- (x)` radios — plain text on GitHub, no checkbox.
 
 ## 4. Point at something and say …
 

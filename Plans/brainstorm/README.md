@@ -57,8 +57,8 @@ The glyph is the **first symbol of the line** — status first, then severity
 
 | Glyph / markup | Meaning | Use | Renders |
 |---|---|---|---|
-| `- [ ]` / `- [x]` under a ❓ | an option / the picked one | GFM task items | checkbox or radio |
-| **one of** / **any of** | radio vs checkboxes | in the question line | — |
+| `- ( )` / `- (x)` under a ❓ | one of — an option / the picked one | radio; a pick settles the ❓ | radio |
+| `- [ ]` / `- [x]` under a ❓ | any of — an option / a picked one | GFM task items | checkbox |
 | 🌟 | the suggested option (rank 1) | the agent's pick, one per question | highlighted |
 | ⭐ | runner-up (rank 2) | optional | slightly highlighted |
 
