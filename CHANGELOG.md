@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 — 2026-10-07
 
 ### Added
 
 - **The git view of a folder** — `/d/<root>/<dir>/?git`, and `/` goes to the root's:
-  - branch, HEAD, the repo on its host (`origin`), **Check remote** (`git ls-remote`, no fetch)
+  - branch, HEAD, the repo on its host (`origin`); origin is asked whether it moved (`git ls-remote`, no fetch)
   - **Commits** — every commit that touched the folder, any file type; a click lists its files,
     Markdown opening here, the rest on the host (GitHub, GitLab, Bitbucket, Gitea, or a likely url)
   - **Files** — every file git tracks under the folder
