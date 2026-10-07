@@ -100,6 +100,8 @@ export function RemoteBar({ p, info, onState }: { p: string; info: GitInfo; onSt
 export function GitActions({ p, info, onDone, remote }: { p: string; info: GitInfo; onDone: () => void; remote?: RemoteState | null }) {
   const busyGit = info.sync?.busy ?? null;
   // What origin said: nothing new there — Pull is off; something new — Pull stands out.
+  // Nothing to push: the branch is on origin and holds no commit origin lacks.
+  const nothingToPush = !!info.sync?.upstream && info.sync.ahead === 0 && remote?.state !== 'ahead' && remote?.state !== 'diverged';
   const toPull = remote ? (remote.state === 'same' || remote.state === 'ahead' ? 'none' : remote.state === 'none' ? null : 'some') : null;
   const files = info.dirty.filter((f) => f.code !== '??');
   const [open, setOpen] = useState(false);
@@ -160,7 +162,12 @@ export function GitActions({ p, info, onDone, remote }: { p: string; info: GitIn
         >
           {busy === 'pull' ? 'Pulling…' : 'Pull'}
         </button>
-        <button class="git-btn" disabled={!!busy || !!busyGit} onClick={() => void sync('push', false)} title="git push">
+        <button
+          class="git-btn"
+          disabled={!!busy || !!busyGit || nothingToPush}
+          onClick={() => void sync('push', false)}
+          title={nothingToPush ? 'Nothing to push — origin has every commit' : 'git push'}
+        >
           {busy === 'push' ? 'Pushing…' : 'Push'}
         </button>
         {busyGit && <span class="git-busy">{busyGit} — finish it in a terminal first</span>}

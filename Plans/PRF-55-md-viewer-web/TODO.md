@@ -47,6 +47,7 @@
 - [x] CHANGED / ADDED FILES - same format as for dirs: dir | filename | age | size
 - [x] Unpushed commits - hide author when it is me
 - [x] file links by branch: https://github.com/parf/mdhouse/blob/main/src/cli.ts - a sha link of a commit never pushed does not work; unpushed commits: files by branch, hash not linked
+- [x] disable push button when nothing to push
 
 ## NEXT iteration
 
