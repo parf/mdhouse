@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 — 2026-10-06
+
+The same as 1.2.0, published again while the registry was still processing 1.2.0.
+
 ## 1.2.0 — 2026-10-06
 
 **Read/Write support added.** In folders served with `--rw`: answer questions and add notes
