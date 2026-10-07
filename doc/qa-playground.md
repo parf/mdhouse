@@ -88,7 +88,7 @@ Eventually, once three things are true:
 
 ## Checkbox questions
 
-Every task item is a question. In a writable folder a ❓ after the
+Every task item is a question. In a writable folder a 💬 after the
 checkbox opens the editor; the answer is written as an indented `> 💬` inside the item, and
 **Check & Save** also ticks the box.
 
@@ -100,7 +100,7 @@ checkbox opens the editor; the answer is written as an indented `> 💬` inside 
 
 ## Status glyph items
 
-A list item that opens with a status glyph is a question with a status. The ❓ after the glyph
+A list item that opens with a status glyph is a question with a status. The 💬 after the glyph
 opens the editor; on a ❓ or ⁉️ item the glyph itself is the button. **Check & Save** turns the
 glyph into ✅.
 

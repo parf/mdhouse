@@ -13,7 +13,8 @@
 
 ### Fixed
 
-- **Nested checkbox items are indented** under their parent again
+- **Checkbox items hang:** a wrapped line and a nested item start under the item's text, not
+  under the box
 
 ## 1.3.0 — 2026-10-06
 

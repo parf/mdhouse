@@ -168,7 +168,7 @@ from the browser is always written as `> 💬`.
 ## Answering in the browser
 
 In a folder served with `--rw`, in the plain document view (not a diff), each ❓ and ⁉️ is a
-button; checkbox and status items get a ❓ after the box or glyph — 💬 once they have an answer —
+button; checkbox and status items get a small grey 💬 after the box or glyph — green once they have an answer —
 and an item marked ❓ or ⁉️ uses its own glyph. Click it (or Enter on it) and an editor opens
 under the question, loaded with the existing answer if there is one.
 
