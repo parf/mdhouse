@@ -88,6 +88,10 @@ details.settled[open] { background: var(--code-bg); }
 /* an answered ❓ — a green "?" in its place: the question is settled */
 .g-answered { color: var(--a); font-weight: 800; font-size: 1.15em; line-height: 1; width: 1.1em; text-align: center;
   border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
+/* the ❓ / ⁉️ glyph is the answer button: framed on hover; no separate chip */
+.g-btn { cursor: pointer; border: 1px solid transparent; border-radius: 4px; padding: 0 1px; }
+.g-btn:hover { border-color: var(--q); background: var(--panel); box-shadow: 0 1px 0 var(--line); }
+.g-btn.dis:hover { border-color: var(--dis); }
 /* on hover the green ? turns into a button [?] — a click opens the answer editor */
 .g-answered:hover { border-color: var(--a); background: var(--a-bg); box-shadow: 0 1px 0 var(--line); }
 .qblock.q { background: var(--q-bg); border-left: 4px solid var(--q); }
@@ -144,13 +148,13 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 
 &gt; ⁉️ README says :7777, the unit says :8080.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out">
-    <div class="qblock q hang"><span class="g">❓</span><div>Do we keep the old URLs?</div><span class="btn hot">💬 answer</span></div>
+    <div class="qblock q hang"><span class="g g-btn" title="Answer">❓</span><div>Do we keep the old URLs?</div></div>
     <details class="settled"><summary><span class="g g-answered" title="Answered — click to edit the answer" onclick="event.preventDefault(); event.stopPropagation(); alert('Opens the answer editor, loaded with the answer')">?</span><span class="t"><span class="t-q">Which port for the dev server?</span><span class="t-a">💬 7790, with its own config.</span></span></summary>
       <div class="qblock a" style="margin-top:4px">💬 7790, with its own config.</div>
     </details>
-    <div class="qblock d hang"><span class="g">⁉️</span><div>README says :7777, the unit says :8080.</div><span class="btn hot">💬 answer</span></div>
+    <div class="qblock d hang"><span class="g g-btn dis" title="Answer">⁉️</span><div>README says :7777, the unit says :8080.</div></div>
   </div>
-  <ul class="notes"><li>unanswered ❓ / ⁉️ — loud, with the answer button</li>
+  <ul class="notes"><li>unanswered ❓ / ⁉️ — loud; the glyph itself is the answer button (framed on hover) — no separate chip</li>
   <li>answered — the ❓ shows as a green <b style="color:var(--a)">?</b>; on hover it turns into a button [?] — a click opens the answer editor; folded: the question, and the answer on its own line under it, each in its own colour; muted</li></ul></div>
 </div>
 
@@ -166,7 +170,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 &gt; 💬 In .scratch/cfg under the repo — gitignored, so it
 &gt; never meets ~/.config/mdhouse, and a reset is rm -r.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out">
-    <div class="qblock q hang"><span class="g">❓</span><div>Which port should the dev server use when the live instance already holds 7777 and a second developer runs their own copy on the same machine?</div><span class="btn hot">💬</span></div>
+    <div class="qblock q hang"><span class="g g-btn" title="Answer">❓</span><div>Which port should the dev server use when the live instance already holds 7777 and a second developer runs their own copy on the same machine?</div></div>
     <details class="settled"><summary><span class="g g-answered" title="Answered — click to edit the answer" onclick="event.preventDefault(); event.stopPropagation(); alert('Opens the answer editor, loaded with the answer')">?</span><span class="t"><span class="t-q">Where does the dev server keep its config when the live instance and the dev one run side by side?</span><span class="t-a">💬 In .scratch/cfg under the repo — gitignored, so it never meets ~/.config/mdhouse, and a reset is rm -r.</span></span></summary>
       <div class="qblock a" style="margin-top:4px">💬 In <code>.scratch/cfg</code> under the repo — gitignored, so it never meets <code>~/.config/mdhouse</code>, and a reset is <code>rm -r</code>.</div>
     </details>
@@ -191,7 +195,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   &gt; 💬 👤 **parf:** yes, keep the old one
   &gt; working.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
-    <li class="item wait-me"><div class="head"><span class="g">❓</span><span>Do we keep the old URLs?</span><span class="btn hot">💬 reply</span></div>
+    <li class="item wait-me"><div class="head"><span class="g g-btn" title="Reply">❓</span><span>Do we keep the old URLs?</span></div>
       <div class="thread">
         <div class="reply"><span class="who">👤 agent</span>Redirect for a year?</div>
         <div class="reply partial">⚠️ <span class="who">👤 parf</span>need more — which links are out there?</div>
@@ -201,7 +205,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   </ul></div>
   <ul class="notes"><li><code>💬 ⚠️</code> — a partial answer: amber; the item stays ❓ (waiting on me)</li>
   <li>⏳ — the agent is on it: normal weight, a "waiting on agent" chip</li>
-  <li>the reply button adds the next 💬 under the last one</li></ul></div>
+  <li>a click on the ❓ adds the next 💬 under the last one</li></ul></div>
 </div>
 
 <!-- ============================================================ 2 -->
@@ -228,7 +232,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
     <div class="strip" id="strip"><span class="label">Show:</span></div>
     <ul class="items">
       <li class="item sev-h" data-k="🔴 open"><div class="head"><span class="g">🔴</span><span><code>src/cli.ts:536</code> --fg hands over on a busy port. Fix: exit 1</span><span class="btn">💬</span></div></li>
-      <li class="item wait-me" data-k="❓ 🟠 open"><div class="head"><span class="g">❓ 🟠</span><span><code>package.json:46</code> dev script feeds <code>.</code> to the live instance</span><span class="btn hot">💬 reply</span></div>
+      <li class="item wait-me" data-k="❓ 🟠 open"><div class="head"><span class="g"><span class="g-btn" title="Reply">❓</span> 🟠</span><span><code>package.json:46</code> dev script feeds <code>.</code> to the live instance</span></div>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span>pin :7790, or drop it?</div></div></li>
       <li class="item" data-k="🟠 open" style="font-weight:600"><div class="head"><span class="g">🟠</span><span><code>src/server.ts:631</code> limit=abc → no cap</span><span class="btn">💬</span></div></li>
       <li class="item" data-k="⚪ open"><div class="head"><span class="g">⚪</span><span><code>control.ts:125</code> unlink race</span><span class="btn">💬</span></div></li>
@@ -265,7 +269,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   - ( ) `port: 0`, printed at start
   - ( ) keep `7777`</pre></div>
   <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
-    <li class="item wait-me" id="one"><div class="head"><span class="g" id="one-g" style="cursor:pointer" title="Click ✅ to undo the pick">❓</span><span>Dev server port:</span><span class="btn hot">💬</span></div>
+    <li class="item wait-me" id="one"><div class="head"><span class="g g-btn" id="one-g" title="Answer — or, once ✅, undo the pick">❓</span><span>Dev server port:</span></div>
       <div class="opts" id="one-opts">
         <label class="opt"><input type="radio" name="port"> <span><code>7790</code>, own config <span class="suggest">🌟 suggested</span></span></label>
         <label class="opt"><input type="radio" name="port"> <span><code>port: 0</code>, printed at start</span></label>
@@ -287,7 +291,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   - [ ] `Plans/done/CHANGELOG-beta.md`
   &gt; 💬 👤 **parf:** and LICENSE, always</pre></div>
   <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
-    <li class="item wait-me"><div class="head"><span class="g">❓</span><span>What ships in the package:</span><span class="btn hot">✓ done</span></div>
+    <li class="item wait-me"><div class="head"><span class="g g-btn" title="Answer">❓</span><span>What ships in the package:</span><span class="btn hot">✓ done</span></div>
       <div class="opts">
         <label class="opt picked"><input type="checkbox" checked> <span><code>doc/*.md</code> <span class="suggest">🌟 suggested</span></span></label>
         <label class="opt"><input type="checkbox"> <span><code>doc/*.png</code></span></label>
@@ -349,7 +353,7 @@ Search falls back to a JS regex.
 <h2>Loudness, at a glance</h2>
 <table>
   <tr><th>Level</th><th>Glyphs</th><th>Look</th></tr>
-  <tr><td>waiting on me</td><td>❓ ⁉️</td><td>tinted block, red/orange edge, answer button — not bold: questions can be long</td></tr>
+  <tr><td>waiting on me</td><td>❓ ⁉️</td><td>tinted block, red/orange edge; the glyph is the answer button — not bold: questions can be long</td></tr>
   <tr><td>high / medium</td><td>🔴 🟠 ❌ ⛔ ⚠️</td><td>bold (🔴), normal (🟠)</td></tr>
   <tr><td>normal</td><td>⚪ ⏳</td><td>plain</td></tr>
   <tr><td>quiet</td><td>🔵 ⏸️ 🎫</td><td>grey text</td></tr>
