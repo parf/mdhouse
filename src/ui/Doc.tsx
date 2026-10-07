@@ -314,6 +314,9 @@ export function Doc({
     canCheck: boolean;
   };
   const [editing, setEditing] = useState<Editing | null>(null);
+  // For the icons' click handler, which is set up once per render of the document.
+  const editingNow = useRef(editing);
+  editingNow.current = editing;
   // The text being written, as the editor reports it: what Save sends.
   const draft = useRef('');
   const opened = useRef(0);
@@ -327,9 +330,10 @@ export function Doc({
     const line = Number(block.dataset.line);
     const form = block.dataset.qaForm ?? '';
     const hash = block.dataset.hash ?? '';
-    // Its icon again, while it is open: back to the text being written, not a fresh start.
+    // Its icon again, while it is open: closes it, as Cancel does.
+    const editing = editingNow.current;
     if (editing && editing.form === form && editing.line === line) {
-      host.current?.querySelector('textarea')?.focus();
+      setEditing(null);
       return;
     }
     const canCheck = form === 'task' && !('done' in block.dataset);
@@ -593,6 +597,8 @@ export function Doc({
    */
   type Adding = { id: number; line: number; hash: string; where: 'below' | 'end'; note: string | null; saving: boolean };
   const [adding, setAdding] = useState<Adding | null>(null);
+  const addingNow = useRef(adding);
+  addingNow.current = adding;
   const addDraft = useRef('');
   useEffect(() => setAdding(null), [doc?.url]);
 
@@ -632,15 +638,16 @@ export function Doc({
       const h = b?.closest<HTMLElement>('[data-hash]');
       if (!b || !h) return;
       e.preventDefault();
+      const line = Number(h.dataset.line);
+      const where = b.dataset.where === 'end' ? 'end' : 'below';
+      // The same button again, while its editor is open: closes it, as Cancel does.
+      const open = addingNow.current;
+      if (open && open.line === line && open.where === where) {
+        setAdding(null);
+        return;
+      }
       addDraft.current = '';
-      setAdding({
-        id: ++opened.current,
-        line: Number(h.dataset.line),
-        hash: h.dataset.hash ?? '',
-        where: b.dataset.where === 'end' ? 'end' : 'below',
-        note: null,
-        saving: false,
-      });
+      setAdding({ id: ++opened.current, line, hash: h.dataset.hash ?? '', where, note: null, saving: false });
     };
     el.addEventListener('click', click);
     return () => el.removeEventListener('click', click);

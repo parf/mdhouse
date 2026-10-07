@@ -173,7 +173,7 @@ and an item marked ❓ or ⁉️ uses its own glyph. Click it (or Enter on it) a
 under the question, loaded with the existing answer if there is one.
 
 Write the answer — plain Markdown; lines starting with `-` are bullets — and **Save** or
-Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next unanswered question; Esc or **Cancel**
+Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next unanswered question; Esc, **Cancel** or its icon again
 closes it without saving. On a checkbox or status item **Check & Save** also ticks `[ ]` to
 `[x]`, or turns the glyph into ✅. The form's ✎ (or Alt+E) opens the file at the question in
 your editor instead.
