@@ -3,7 +3,7 @@
 A page to try answering in the browser. Serve it writable and open it:
 
 ```bash
-mdhouse doc -P --rw        # from the repository root — or any folder holding a copy of this file
+mdhouse doc -p --rw        # from the repository root — or any folder holding a copy of this file
 ```
 
 In a `--rw` folder the ❓ and ⁉️ icons are buttons: click one, write the answer, **Save** (or

@@ -32,7 +32,7 @@ bun install -g mdhouse      #  bun 1.4+ required
 ## ▸ Start
 
 ```bash
-mdhouse ~/notes ~/src -P     # serve folders, -P = save them for every later start, start in background
+mdhouse ~/notes ~/src -p     # serve folders, -p = save them for every later start, start in background
 mdhouse service install      # starts now and at every login, serving the saved folders
 ```
 
@@ -102,9 +102,9 @@ With `--rw` (**still in testing** — use it on folders under git):
 ## ▸ Running it
 
 ```bash
-mdhouse                          # serve the saved folders (or this one, when nothing is saved)
+mdhouse                          # serve the saved folders
 mdhouse ~/src                    # add a folder to the running one — never a second server
-mdhouse ~/notes -P --port 8080   # save folders, and the port / host, for every later start
+mdhouse ~/notes -p --port 8080   # save folders, and the port / host, for every later start
 mdhouse --rm ~/notes             # forget a folder and stop serving it
 mdhouse exit                     # stop it (--all: every port)
 mdhouse service install          # systemd: now and at every login; also status, uninstall
@@ -113,7 +113,7 @@ mdhouse service install          # systemd: now and at every login; also status,
 - Runs in the background; `--fg` keeps it in the foreground. The start message says where its
   log is (`journalctl -t mdhouse -f`, or `journalctl --user -u mdhouse -f` for the service).
 - Saved folders, port, host and settings live in `~/.config/mdhouse/prefs.json`.
-- The service serves only saved folders, writes only to those saved with `-P --rw`, and stays
+- The service serves only saved folders, writes only to those saved with `-p --rw`, and stays
   stopped after `mdhouse exit` — `systemctl --user start mdhouse` brings it back.
   `loginctl enable-linger $USER` starts it at boot.
 
@@ -122,7 +122,7 @@ mdhouse service install          # systemd: now and at every login; also status,
 The **⚙** on each page's title line (in the top bar when the sidebar is off):
 
 - **Directories** — what is served, which folders are saved and which are only for this session,
-  and a button to remove one. Adding is done from a terminal, with `-P`.
+  and a button to remove one. Adding is done from a terminal, with `-p`.
 - **Documents → Edit link** — on by default: the ✎ beside each title, linking to
   `edit:/full/path`. It needs something on your machine that opens `edit:` URLs in your editor;
   turn it off if nothing does.
@@ -131,7 +131,7 @@ The **⚙** on each page's title line (in the top bar when the sidebar is off):
 
 ## 🔒 Read-only unless you say, and local
 
-- 📖 **Read-only by default.** Write access - cli only `mdhouse -P --rw dir` (-P = save)
+- 📖 **Read-only by default.** Write access - cli only `mdhouse -p --rw dir` (-p = save)
 - ✏️ **Small, checked writes** — a ticked checkbox, an answer, a block under a heading.
 - 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`.
 - ⚙ Your settings live in `~/.config/mdhouse/`, never inside a served folder.
@@ -149,23 +149,15 @@ The **⚙** on each page's title line (in the top bar when the sidebar is off):
 
 ## ▸ Options
 
-| Flag | Default | |
-| --- | --- | --- |
-| `-p, --port <n>` | `7777` | one mdhouse per port; a second one hands over its folders |
-| `-h, --host <addr>` | `127.0.0.1` | `0.0.0.0` to share on your LAN. `-h` is the host, not help |
-| `-o, --open` | off | open a browser on start |
-| `-a, --all` | off | include gitignored `.md` files — with `exit`, stop every mdhouse |
-| `-f, --fg` | off | stay in the foreground instead of detaching |
-| `--git-log <n>` | `200` | commits scanned for recents and the front page |
-| `--no-git` | off | skip git entirely; recents by modification time only |
-| `--rw` | off | **testing** — the folders named may be written: checkbox ticks and answers are saved; with `-P`, saved so |
-| `-P, --perm` | off | save the folders, and any `--port` / `--host` given: used on every start |
-| `--rm` | off | forget the folders and stop serving them |
-| `--help` | | the usage text |
+| Flag | |
+| --- | --- |
+| `-p, --perm` | save the folders, and any `--port` / `--host` given, for every later start |
+| `--rw` | **testing** — the folders named may be written: checkbox ticks, answers, notes |
+| `--rm` | forget the folders and stop serving them |
+| `--host <addr>` | address to bind — default `127.0.0.1`; `0.0.0.0` to share on your LAN |
+| `--port <n>` | port — default `7777`; one mdhouse per port |
 
-Port and host come from the flag, else `MDHOUSE_PORT` / `MDHOUSE_HOST`, else what `-P` saved,
-else `7777` on `127.0.0.1`. `MDHOUSE_ROOT` is the folder used when none is named and none is
-saved.
+For all other options: `mdhouse --help`.
 
 A root may carry a **`.mdhouseignore`**: one directory name per line, `#` for comments, `!name`
 to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build output

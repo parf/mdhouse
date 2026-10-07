@@ -639,7 +639,7 @@ export async function serve(opts: ServeOptions) {
       const known = new Set(registry.list().map((r) => r.id));
       const root = await registry.add(dir, writable);
       // `--rw` for a folder already served read-only upgrades it in place. Never the other way:
-      // taking write access away is `-P` without `--rw` and a restart, or `--rm`.
+      // taking write access away is `-p` without `--rw` and a restart, or `--rm`.
       if (writable && !root.writable) {
         registry.setWritable(root.id, true);
         upgraded.add(root.id);

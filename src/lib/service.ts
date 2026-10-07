@@ -1,7 +1,7 @@
 /**
  * `mdhouse service install | uninstall | status` — mdhouse as a systemd user service.
  *
- * The unit runs `mdhouse --fg`, which serves the saved directories (`mdhouse <dir> -P`). With
+ * The unit runs `mdhouse --fg`, which serves the saved directories (`mdhouse <dir> -p`). With
  * nothing saved it would fall back to the current directory, which under systemd is $HOME —
  * so `install` refuses until something is saved, and the service itself exits cleanly if the
  * list has been emptied since (MDHOUSE_SERVICE tells it where it is running).
@@ -110,7 +110,7 @@ export async function runService(action: string, opts: { port: number; explicit?
   const saved = (await Prefs.load()).savedDirs();
   if (!saved.length) {
     console.error('mdhouse: nothing saved for the service to serve.');
-    console.error('         Save a directory first:  mdhouse <dir> -P');
+    console.error('         Save a directory first:  mdhouse <dir> -p');
     return 1;
   }
 
@@ -151,6 +151,6 @@ export async function runService(action: string, opts: { port: number; explicit?
   console.log(`\n  Log:        journalctl --user -u ${name} -f`);
   console.log(`  At boot, before you log in:  loginctl enable-linger ${process.env.USER ?? '$USER'}`);
   console.log(`  Remove it:  mdhouse service uninstall${pinned ? ` --port ${opts.port}` : ''}`);
-  if (!pinned) console.log(`  It listens where a plain \`mdhouse\` does; change that with:  mdhouse -P --port <n> --host <addr>`);
+  if (!pinned) console.log(`  It listens where a plain \`mdhouse\` does; change that with:  mdhouse -p --port <n> --host <addr>`);
   return 0;
 }

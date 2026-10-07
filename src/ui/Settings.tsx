@@ -21,7 +21,7 @@ interface Props {
  * options become sections beneath it rather than a rework.
  *
  * Removing is the only action here. Adding needs a path typed into a browser that cannot
- * check it exists or offer completion; `mdhouse <dir> -P` in a terminal does both.
+ * check it exists or offer completion; `mdhouse <dir> -p` in a terminal does both.
  */
 export function Settings({ roots, onChanged, gear, options, onOptions }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -86,8 +86,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions }: Props) 
         </ul>
         {error && <p class="settings-error">{error}</p>}
         <p class="settings-note">
-          Add one from a terminal: <code>mdhouse &lt;dir&gt; -P</code> serves it now and on every start.
-          Without <code>-P</code> it lasts until mdhouse stops.
+          Add one from a terminal: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start.
+          Without <code>-p</code> it lasts until mdhouse stops.
         </p>
       </section>
 

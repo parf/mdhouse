@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed — the command line
+
+- **`-p` is now save** (`--perm`); `-P` is gone. The short forms `-p` (port), `-h` (host) and
+  `-f` (foreground) are gone too: use `--port`, `--host`, `--fg`. The old spellings say what
+  replaced them instead of doing anything.
+- **`MDHOUSE_ROOT` is gone, and so is serving the current folder by default.** With no folder
+  named and none saved, `mdhouse` asks for one (`mdhouse <dir> -p`); with one already running,
+  it says what that one serves.
+
 ## 1.2.1 — 2026-10-06
 
 The same as 1.2.0, published again while the registry was still processing 1.2.0.

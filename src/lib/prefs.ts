@@ -13,7 +13,7 @@
  *   ignored   hidden outright, like .gitignore — revealed only by the "show ignored" toggle
  *
  * The same file holds `saved`: the directories mdhouse serves every time it starts, added with
- * `mdhouse <dir> -P` and removed with `mdhouse --rm <dir>` or from the settings page. One config
+ * `mdhouse <dir> -p` and removed with `mdhouse --rm <dir>` or from the settings page. One config
  * file, not two — there is nothing about a directory list that wants a file of its own.
  */
 
@@ -38,7 +38,7 @@ interface PrefsFile {
   /** Absolute, symlink-resolved directories served on every start. */
   saved: string[];
   /**
-   * The saved directories mdhouse may write to — saved with `-P --rw`. Writability belongs to
+   * The saved directories mdhouse may write to — saved with `-p --rw`. Writability belongs to
    * the folder it was asked for, never to the process: starting with `--rw` for one folder does
    * not make the saved ones writable.
    */
@@ -46,7 +46,7 @@ interface PrefsFile {
   /** The settings page's options. */
   settings: Settings;
   /**
-   * Where to listen, saved with `-P --port … --host …` so every start — by hand or as the
+   * Where to listen, saved with `-p --port … --host …` so every start — by hand or as the
    * systemd service — comes up the same way. Missing means the built-in defaults.
    */
   server: ServerConfig;
@@ -232,7 +232,7 @@ export class Prefs {
     return this.data.saved.includes(dir);
   }
 
-  /** Saved with `-P --rw`: mdhouse may write to it on every start. */
+  /** Saved with `-p --rw`: mdhouse may write to it on every start. */
   isWritableSaved(dir: string): boolean {
     return this.data.writable.includes(dir);
   }

@@ -18,7 +18,7 @@ export interface AddRequest {
   dirs: string[];
   /** Whether the new roots may be written to — `--rw` on the second invocation. */
   rw?: boolean;
-  /** Also save them, so they are served on every start — `-P` / `--perm`. */
+  /** Also save them, so they are served on every start — `-p` / `--perm`. */
   save?: boolean;
 }
 

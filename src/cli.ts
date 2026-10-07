@@ -25,23 +25,23 @@ const USAGE = `mdhouse — browse every .md file under a directory
   mdhouse service uninstall|status
 
 Options
-  -p, --port <n>       port to listen on            (default 7777)
-  -h, --host <addr>    address to bind              (default 127.0.0.1; -h is not help)
+  -p, --perm           save the folders (and any --port/--host given): used on every start
+      --rw             testing: the folders named may be written (checkbox ticks, answers,
+                       notes under headings); with -p, saved writable. Other folders are not affected
+      --rm             forget the folders and stop serving them
+      --host <addr>    address to bind              (default 127.0.0.1)
+      --port <n>       port to listen on            (default 7777)
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
-  -f, --fg             stay in the foreground; Ctrl+C stops it
+      --fg             stay in the foreground; Ctrl+C stops it
       --git-log <n>    commits scanned for recents and the front page (default 200)
       --no-git         skip git entirely; filesystem recents only
-      --rw             testing: the folders named may be written (checkbox ticks and
-                       answers are saved); with -P, saved writable. Other folders are not affected
-  -P, --perm           save the folders (and any --port/--host given): used on every start
-      --rm             forget the folders and stop serving them
       --help           show this
 
-With no folder named, the saved ones are served — or $MDHOUSE_ROOT, or the current folder,
-when none are saved. Saved folders live in ~/.config/mdhouse/prefs.json, beside the favourites.
-Port and host: the flag, else $MDHOUSE_PORT / $MDHOUSE_HOST, else what -P saved, else
+With no folder named, the saved ones are served; with none saved, it asks for one. Saved
+folders live in ~/.config/mdhouse/prefs.json, beside the favourites.
+Port and host: the flag, else $MDHOUSE_PORT / $MDHOUSE_HOST, else what -p saved, else
 127.0.0.1:7777.
 `;
 
@@ -85,17 +85,23 @@ function parse(argv: string[]): Options {
     const next = () => argv[++i] ?? '';
 
     switch (arg) {
-      case '-p': case '--port': o.port = Number(next()); o.portGiven = true; break;
-      case '-h': case '--host': o.host = next(); o.hostGiven = true; break;
+      case '--port': o.port = Number(next()); o.portGiven = true; break;
+      case '--host': o.host = next(); o.hostGiven = true; break;
       case '-o': case '--open': o.open = true; break;
       case '-a': case '--all': o.all = true; break;
-      case '-f': case '--fg': case '--foreground': o.fg = true; break;
+      case '--fg': case '--foreground': o.fg = true; break;
       case '--git-log': o.gitLog = Number(next()); break;
       case '--no-git': o.noGit = true; break;
       case '--rw': o.rw = true; break;
-      case '-P': case '--perm': o.perm = true; break;
+      case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
       case '--help': console.log(USAGE); process.exit(0);
+      // Retired short forms: say what replaced them rather than just "unknown".
+      case '-P': case '-f': case '-h': {
+        const now = { '-P': '-p (--perm)', '-f': '--fg', '-h': '--host' }[arg];
+        console.error(`mdhouse: ${arg} is now ${now}`);
+        process.exit(2);
+      }
       default:
         if (arg.startsWith('-')) {
           console.error(`mdhouse: unknown option ${arg}\n`);
@@ -165,7 +171,7 @@ const openBrowser = (target: string): void => {
 
 /**
  * Where to listen: a flag on this command, else `MDHOUSE_PORT` / `MDHOUSE_HOST`, else the port
- * and host saved in the config (`-P --port …`), else 7777 on 127.0.0.1. Every command resolves it
+ * and host saved in the config (`-p --port …`), else 7777 on 127.0.0.1. Every command resolves it
  * the same way, so a plain `mdhouse exit` finds the daemon a plain `mdhouse` started, and the
  * service comes up where a start by hand would.
  */
@@ -248,7 +254,7 @@ if (opts.rm) {
 
 // ---------------------------------------------------------------- mdhouse [dir ...]
 
-// `-P` saves where to listen as well as what to serve: `mdhouse ~/notes -P --port 8080` makes
+// `-p` saves where to listen as well as what to serve: `mdhouse ~/notes -p --port 8080` makes
 // 8080 the port every later start — and the service — comes up on.
 if (opts.perm && (opts.portGiven || opts.hostGiven)) {
   const server = await prefs.setServer({
@@ -280,11 +286,18 @@ const saved = prefs.savedDirs().filter((dir) => {
 if (!dirs.length) {
   if (saved.length) dirs.push(...saved);
   else if (process.env.MDHOUSE_SERVICE === '1') {
-    // Under systemd the current directory is $HOME, and serving all of it is never what was
-    // meant. Exit cleanly rather than fail, so the unit is not restarted in a loop.
-    console.error('mdhouse: no saved directories — nothing to serve. Save one with:  mdhouse <dir> -P');
+    // Nothing to serve. Exit cleanly rather than fail, so the unit is not restarted in a loop.
+    console.error('mdhouse: no saved directories — nothing to serve. Save one with:  mdhouse <dir> -p');
     process.exit(0);
-  } else dirs.push(resolve(process.env.MDHOUSE_ROOT ?? process.cwd()));
+  } else if (!opts.fg && (await askPing(opts.port))) {
+    // One is running already (with folders added for the session): say what it serves.
+    await handOver(await askDaemon(opts.port, { dirs: [], rw: false, save: false }));
+  } else {
+    // Nothing named, nothing saved: ask for a folder rather than guess one.
+    console.error('mdhouse: which folder? Name one, and -p saves it for every later start:');
+    console.error('           mdhouse <dir> -p');
+    process.exit(1);
+  }
 }
 
 /**
@@ -365,8 +378,8 @@ if (!opts.fg) {
   const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
   // The launcher opens the browser itself, once it knows the daemon answered. Passing `-o` on
   // would have the daemon open a second tab the moment it binds.
-  // `-P` is done already: the directories are in the prefs the daemon will read.
-  const forwarded = argv.filter((a) => !['-o', '--open', '-P', '--perm'].includes(a));
+  // `-p` is done already: the directories are in the prefs the daemon will read.
+  const forwarded = argv.filter((a) => !['-o', '--open', '-p', '--perm'].includes(a));
   const self = [process.execPath, process.argv[1]!, ...forwarded, '--fg'].map(quote).join(' ');
   // Without `logger` there is nowhere to put the output; discard it rather than leave the
   // daemon writing into a pipe whose other end does not exist.
@@ -405,7 +418,7 @@ if (!opts.fg) {
     false,
   );
   if (!opts.perm && !prefs.savedDirs().length) {
-    console.log('\n  Serve these on every start:  mdhouse <dir> -P');
+    console.log('\n  Serve these on every start:  mdhouse <dir> -p');
   }
   console.log(writeNote(live.roots));
   console.log(`\n  Running in the background (pid ${live.pid}).  Stop it with:  ${stopHint}`);
@@ -416,11 +429,11 @@ if (!opts.fg) {
   process.exit(0);
 }
 
-// The daemon itself: what it was asked for, plus everything saved — `-P` is a promise that a
+// The daemon itself: what it was asked for, plus everything saved — `-p` is a promise that a
 // directory comes back on every start, however the start was asked for.
 if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw);
 // Writability per folder: `--rw` covers the folders named on this command, and a saved folder is
-// writable only if it was saved with `-P --rw`. One `--rw` never spreads to the others.
+// writable only if it was saved with `-p --rw`. One `--rw` never spreads to the others.
 const named = new Set(dirs.map(canonical));
 const registry = await Registry.create(
   [...new Set([...named, ...saved.map(canonical)])].map((path) => ({

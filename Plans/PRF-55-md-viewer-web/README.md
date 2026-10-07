@@ -41,7 +41,7 @@ No server code ships to the browser.
 ### Never write to a tree that did not ask for it
 
 Writability belongs to a **folder**, never to the process. A folder named on a command gets
-that command's `--rw`; a saved folder is writable only if it was saved with `-P --rw`
+that command's `--rw`; a saved folder is writable only if it was saved with `-p --rw`
 (`writable` in prefs); `--rw` for an already-served folder upgrades it in place
 (`Registry.setWritable`), never downgrades. Write access is granted only from a terminal — no
 page can turn it on.
@@ -137,7 +137,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   `lib/search.ts`.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
-  (`port`, `host`) saved by `-P --port/--host`. Port and host resolve as flag → env → config →
+  (`port`, `host`) saved by `-p --port/--host`. Port and host resolve as flag → env → config →
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
   comes up where a start by hand does. Beside it, `control-<port>.sock`. Never a dotfile inside a
   browsed tree.
@@ -156,5 +156,5 @@ contents list, so a heading link and its contents entry cannot disagree.
   change is read–apply–write against the file as it is now, one at a time within a process
   (`Prefs.queue`), written to a uniquely named temp file and renamed
   into place; a file that does not parse is moved aside as `prefs.json.broken-<time>`, never
-  written over. The CLI still sends `-P` / `--rm` to a running daemon, so its open tabs update.
+  written over. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
 - Tests: `bun test`; types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.
