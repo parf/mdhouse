@@ -13,6 +13,7 @@
   editor; the form gives way to an "Opened in external editor" notice, with Back to return to
   your text
 - **Ctrl+Shift+Enter in the answer form** saves and opens the next unanswered question
+- **The History panel shows its state** — a grey eye when shown, crossed out when hidden
 - **Wide mode is remembered** in this browser, one setting for all documents
 
 ### Changed

@@ -859,6 +859,8 @@ main {
   align-items: center;
   gap: 5px;
 }
+.gitlog .gitlog-state { margin-left: auto; display: inline-flex; color: var(--fg-faint); }
+.gitlog summary:hover .gitlog-state { color: var(--fg-muted); }
 .gitlog .commit {
   display: block;
   width: 100%;

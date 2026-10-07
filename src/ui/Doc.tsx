@@ -2,7 +2,7 @@ import { render as mount } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff, IconDiffDoc, IconEdit } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff } from './icons';
 import { timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -1062,6 +1062,10 @@ function History({
     <details class="gitlog" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary>
         <IconGit size={12} /> History
+        {/* Its state, at a glance: a closed panel otherwise reads as an empty one. */}
+        <span class="gitlog-state" title={open ? 'Shown — click to hide' : 'Hidden — click to show'}>
+          {open ? <IconEye size={13} /> : <IconEyeOff size={13} />}
+        </span>
       </summary>
 
       {!log && !failed && <div class="spinner" />}

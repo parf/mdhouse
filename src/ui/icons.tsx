@@ -89,6 +89,15 @@ export const IconMute = (p: Props) =>
     p,
   );
 
+export const IconEye = (p: Props) =>
+  svg(
+    <>
+      <path d="M2 8s2.4-3.6 6-3.6S14 8 14 8s-2.4 3.6-6 3.6S2 8 2 8z" />
+      <circle cx="8" cy="8" r="1.8" />
+    </>,
+    p,
+  );
+
 export const IconEyeOff = (p: Props) =>
   svg(
     <>
