@@ -6,6 +6,7 @@
 - config: auto-rw-path: (all subpath are auto-rw) - can be turned on/off in web config
 - git "root" page - where we show branch and recent commits; on-demand remote repo check - are there any new commits
   - when RW mode - add buttons for pull/push
+  - assign url for this page - now it is always "localhost/" - no dedicated page
 
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../../CHANGELOG.md).
