@@ -52,7 +52,8 @@ turns so GitHub keeps them apart:
 - **✓ yes** (+ optional text): `💡` becomes `💬` — the suggestion is the answer; the text, if any,
   follows as a reply
 - **✗ no** (+ optional text): a reply `💬 👤parf no — …`; the 💡 stays, the question goes to the agent (⏳)
-- **✎ edit**: answer with the suggestion's text, edited
+- **💬 reply**: neither — a reply; the question stays open
+- each opens the same form with the three saves — ✓ yes · ✗ no · 💬 reply — the text optional
 
 ## 2. Findings — stages
 

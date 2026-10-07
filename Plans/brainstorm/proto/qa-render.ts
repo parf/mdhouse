@@ -139,9 +139,9 @@ function replyHtml(r: Reply): string {
   if (r.suggest) {
     const acts = '<span class="s-act"><button class="accept" data-tip="Yes — it is the answer (💡 becomes 💬), with a note if you like">✓ yes</button>'
       + '<button class="reject" data-tip="No — say why; it goes back to the agent">✗ no</button>'
-      + '<button class="s-edit" data-tip="Answer with this text, edited">✎ edit</button></span>';
+      + '<button class="s-reply" data-tip="Reply — neither yes nor no">💬 reply</button></span>';
     const who = r.who ? badges(esc(r.who)) : '';
-    return `<div class="reply suggest">💡 ${who}<span class="txt">${inline(r.body)}</span>${acts}</div>`;
+    return `<div class="reply proposal">💡 ${who}<span class="txt">${inline(r.body)}</span>${acts}</div>`;
   }
   const lead = `${r.partial ? '⚠️ ' : ''}${r.who ? badges(esc(r.who)) : ''}`;
   // a long reply: the author opens its first paragraph rather than standing on a line of its own
@@ -313,7 +313,7 @@ ul.items { margin: 6px 0 14px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
 /* 💡 a suggested answer: blue, with accept / edit */
-.reply.suggest { background: var(--pick-bg); border-left-color: var(--pick); }
+.reply.proposal { background: var(--pick-bg); border-left-color: var(--pick); }
 .s-act { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: middle; }
 .s-act button { font-size: 12px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--pick); background: var(--panel); color: var(--pick); cursor: pointer; position: relative; }
 .s-act button.accept { background: var(--a); border-color: var(--a); color: #fff; }

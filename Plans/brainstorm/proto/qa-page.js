@@ -29,6 +29,7 @@
     finding: [['✅', '✅ done'], ['🚫', '🚫 rejected'], ['⏸️', '⏸️ deferred'], ['🎫', '🎫 ticketed'], ['⏳', '⏳ to agent'], ['❓', '❓ my call', 'Waiting on me'], ['⚠️', '⚠️ partial']],
     option: [['pick', 'pick it', 'Save and pick this option']],
     request: [['✅', '✅ done'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
+    proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
     comment: [],
   };
   function editor(host, { kind = 'comment', prefill = '', placeholder = 'Reply…', save = '💬 Save', onSave }) {
@@ -40,6 +41,8 @@
     ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">${save}</button>`
       + extra + '<button class="cancel">(ESC)Cancel</button>'
       + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;
+    // a suggestion's form reads YES / NO / REPLY
+    if (kind === 'proposal') ed.querySelector('[data-a="no"]').after(ed.querySelector('.bar > button:first-child'));
     host.append(ed);
     const ta = ed.querySelector('textarea');
     ta.value = prefill;
@@ -116,36 +119,30 @@
     const acc = e.target.closest('.s-act button');
     if (acc) {
       e.preventDefault();
-      const sug = acc.closest('.reply.suggest');
+      const sug = acc.closest('.reply.proposal');
       const host = sug.closest('details, .item');
-      const yes = acc.classList.contains('accept');
-      if (yes || acc.classList.contains('reject')) {
-        // YES / NO + an optional text
-        editor(host, {
-          kind: 'comment',
-          placeholder: yes ? 'Yes — anything to add? (optional)' : 'No — why? (optional)',
-          save: yes ? '✓ yes' : '✗ no',
-          onSave: (text, _, sign) => {
-            const th = threadOf(host, 'thread q-thread');
-            if (yes) {
-              sug.classList.remove('suggest');
-              sug.firstChild.textContent = '';
-              sug.querySelector('.s-act').remove();
-              if (text) th.append(reply(text, sign));
-              answered(host);
-            } else {
-              th.append(reply(text ? `no — ${text}` : 'no', sign));
-              setStage(host, '⏳');
-            }
-          },
-        });
-      } else {
-        editor(host, { kind: 'question', prefill: sug.querySelector('.txt').textContent, onSave: (text, action, sign) => {
-          if (text) threadOf(host, 'thread q-thread').append(reply(text, sign, action === 'partial'));
-          if (action && action !== 'partial') setStage(host, action);
-          else if (text && action !== 'partial') answered(host);
-        } });
-      }
+      // one form, three ways to save it: YES / NO / REPLY — the text is optional for each
+      const first = acc.classList.contains('accept') ? 'yes' : acc.classList.contains('reject') ? 'no' : 'reply';
+      editor(host, {
+        kind: 'proposal',
+        placeholder: { yes: 'Yes — anything to add? (optional)', no: 'No — why? (optional)', reply: 'Reply…' }[first],
+        save: '💬 reply',
+        onSave: (text, action, sign) => {
+          const th = threadOf(host, 'thread q-thread');
+          if (action === 'yes') {
+            sug.classList.remove('proposal');
+            sug.firstChild.textContent = '';
+            sug.querySelector('.s-act').remove();
+            if (text) th.append(reply(text, sign));
+            answered(host);
+          } else if (action === 'no') {
+            th.append(reply(text ? `no — ${text}` : 'no', sign));
+            setStage(host, '⏳');
+          } else if (text) th.append(reply(text, sign));
+        },
+      });
+      const bar = document.querySelector('.c-edit .bar');
+      bar.querySelector(`[data-a="${first}"]`)?.classList.add('save');
       return;
     }
     // ---- a click anywhere on an unanswered question opens its form, as its glyph does
