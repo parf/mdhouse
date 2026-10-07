@@ -138,7 +138,8 @@ includes the ones before it.
 Edge cases:
 
 - a ❓ / ⁉️ with a severity goes by it: `❓ 🔴` = high, `❓ ⚪` = low (⚪ only); a bare ❓ / ⁉️ is 🟠
-- ⏳ (the agent is on it) is open → ⚪; in 🟠 only when its own severity is 🟠 / 🔴
+- ⏳ = unsolved (the agent is on it) — a state, not a priority: a bare ⏳ is not ⚪ low, it is just
+  open (in the ⚪ "all open" filter only); with a priority it goes by it — `⏳ 🟠` is 🟠
 - 🔵 is open → ⚪ only
 - ⛔ ❌ ⚠️ are open, by their own severity
 
