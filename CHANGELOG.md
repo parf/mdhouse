@@ -8,6 +8,7 @@
   git view, git view → the folder page); GIT / Favs / Recent / Mine / Commits / Files and ⚙ on
   the right, links each — the tab is in the url (`?git=favs|mine|commits|files`)
 - A folder page and its git view honor wide mode
+- Folder page table sized by its content: age and size right after the names
 - Git view: Unpushed commits fold (▸ in its heading), remembered
 - Commits tab: an `unpushed` badge on each commit not on origin; the Unpushed commits block is
   left out there
