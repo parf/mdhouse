@@ -1081,14 +1081,30 @@ main {
 .md .qa-icon { position: absolute; left: 14px; top: 8px; line-height: 1.6; }
 .md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :nth-child(2) { margin-top: 0; }
 .md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :last-child { margin-bottom: 0; }
-/* In a writable folder a question's icon is the button that opens the answer editor. */
-.md .qa-btn { cursor: pointer; border-radius: 4px; }
+/* In a writable folder a question's icon is the button that opens the answer editor: a raised
+   chip in the block's colour, so it reads as clickable at rest, and stronger on hover / focus.
+   The negative margin keeps the glyph where the plain icon stood. */
+.md .qa-btn {
+  cursor: pointer; border-radius: 6px;
+  padding: 1px 3px; margin: -2.5px -4.5px;
+  background: var(--bg);
+  border: 1.5px solid color-mix(in srgb, var(--qa, var(--qa-question)) 70%, transparent);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--qa, var(--qa-question)) 45%, transparent);
+  transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+}
+.md .qa-btn.qa-has-answer { --qa: var(--qa-answer); }
 .md .qa-btn:hover, .md .qa-btn:focus-visible {
-  outline: 2px solid var(--qa, var(--qa-question)); outline-offset: 2px;
-  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  background: color-mix(in srgb, var(--qa, var(--qa-question)) 22%, var(--bg));
+  border-color: var(--qa, var(--qa-question));
+  outline: 2px solid var(--qa, var(--qa-question)); outline-offset: 1px;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--qa, var(--qa-question)) 60%, transparent);
+  transform: scale(1.15);
 }
 /* A checkbox question gets its button after the box, in the line of text — not in a gutter. */
 .md .task-qa { position: static; margin: 0 6px 0 2px; }
+.md .qa-icon.qa-btn:not(.task-qa) { left: 12px; }
+.md .task-qa.qa-btn { margin: -2.5px 8px -2.5px 2px; }
+.md .task-glyph.qa-btn { margin: -2.5px 8px -2.5px -3px; }
 .md .task-glyph { margin-right: 0.35em; }
 .md .task-glyph + .task-qa { margin-left: -0.1em; }
 /* The editor: the answer block it will become, being written. */

@@ -329,7 +329,9 @@ export function Doc({
           // until then.
           icon = document.createElement('span');
           icon.className = 'qa-icon task-qa';
-          icon.textContent = own('.markdown-alert-answer') ? '💬' : '❓';
+          const answered = !!own('.markdown-alert-answer');
+          icon.textContent = answered ? '💬' : '❓';
+          if (answered) icon.classList.add('qa-has-answer');
           mark ? mark.after(icon) : block.prepend(icon);
         }
       } else icon = block.querySelector<HTMLElement>(':scope > .qa-icon');
