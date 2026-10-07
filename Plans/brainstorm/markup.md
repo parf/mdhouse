@@ -88,18 +88,12 @@ The parser walks the token stream twice: once for headings, once for tasks.
 ```
 
 ```markdown
-## Install
-
-> 👉 **add at the top:** a one-line `bunx mdhouse` quick start
-```
-
-```markdown
 Search falls back to a JS regex when rg is missing.
 
 > 👉 **why:** "falls back" — is the fallback ever hit in practice?
 ```
 
-- verbs: `ask` · `why` · `elaborate` · `rewrite` · `add at the top` / `add at the bottom` · `remove`
+- verbs: `ask` · `why` · `elaborate` · `rewrite` · `remove` — adding to a section is ↓ ⇊ on its heading already
 - a sentence inside a block: quote it in the request (`"falls back"`)
 - the agent answers under it (`> 💬 **agent:** done — …`) or just does it and turns 👉 into ✅:
   `> ✅ 👉 **rewrite:** one pass …`

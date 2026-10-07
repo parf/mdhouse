@@ -42,8 +42,7 @@ An item comes with options; I pick.
 ## 4. Working with existing documents — point at something and say …
 
 - [ ] select a block / a sentence → ask a question, ask to elaborate, ask for a rewrite
-- [ ] requests: "add X at the top / bottom" of a section
-- [x] add under a heading (✎ ↓ ⇊) — the start of this
+- [x] add at the top / bottom of a section — ↓ ⇊ on a heading
 - [ ] the request is written next to what it points at (anchored), so an agent finds it
 - [ ] an agent's reply / rewrite lands there too; the request then reads as done
 
