@@ -337,13 +337,12 @@ export function Doc({
           // An item marked ❓ or ⁉️ is already a question: its glyph is the button.
           icon = mark;
         } else {
-          // Otherwise one is added after the box or glyph — 💬 once the item has an answer, ❓
-          // until then.
+          // Otherwise a 💬 is added after the box or glyph — small and grey until the item has
+          // an answer: an item is not a question, so it must not look like one.
           icon = document.createElement('span');
           icon.className = 'qa-icon task-qa';
-          const answered = !!own('.markdown-alert-answer');
-          icon.textContent = answered ? '💬' : '❓';
-          if (answered) icon.classList.add('qa-has-answer');
+          icon.textContent = '💬';
+          if (own('.markdown-alert-answer')) icon.classList.add('qa-has-answer');
           mark ? mark.after(icon) : block.prepend(icon);
         }
       } else icon = block.querySelector<HTMLElement>(':scope > .qa-icon');
@@ -352,7 +351,7 @@ export function Doc({
         icon.classList.add('qa-btn');
         icon.setAttribute('role', 'button');
         icon.tabIndex = 0;
-        icon.title = 'Answer this question';
+        icon.title = icon.matches('.task-qa') ? 'Answer or note on this item' : 'Answer this question';
       } else {
         icon.classList.remove('qa-btn');
         icon.removeAttribute('role');

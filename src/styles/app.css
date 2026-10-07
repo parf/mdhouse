@@ -1107,6 +1107,10 @@ main {
 .md .task-glyph.qa-btn { margin: -2.5px 8px -2.5px -3px; }
 .md .task-glyph { margin-right: 0.35em; }
 .md .task-glyph + .task-qa { margin-left: -0.1em; }
+.md .task-qa.qa-btn { --qa: var(--fg-faint); font-size: 0.75em; vertical-align: 0.1em; box-shadow: none; }
+.md .task-qa.qa-btn:not(.qa-has-answer) { filter: grayscale(1); opacity: 0.6; }
+.md .task-qa.qa-btn:not(.qa-has-answer):is(:hover, :focus-visible) { filter: none; opacity: 1; }
+.md .task-qa.qa-btn.qa-has-answer { --qa: var(--qa-answer); }
 /* The editor: the answer block it will become, being written. */
 .md .answer-editor {
   position: relative; margin: 6px 0 14px 1.4em; padding: 8px 16px 10px 42px;

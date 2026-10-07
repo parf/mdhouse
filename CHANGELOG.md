@@ -6,6 +6,11 @@
 
 - **`e` opens the document in the editor**, as the ✎ beside the title does
 
+### Changed
+
+- **The answer button of a checkbox item is a small grey 💬**, not ❓ — an item is not a
+  question; it turns green once the item has an answer
+
 ## 1.3.0 — 2026-10-06
 
 ### Changed — the command line
