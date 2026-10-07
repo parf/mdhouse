@@ -185,10 +185,6 @@ bun test
 bunx tsc --noEmit
 ```
 
-No build step: `Bun.serve` bundles `src/index.html` and everything it imports, so what you run is
-what you edited. How it is built and why is in
-[`Plans/PRF-55-md-viewer-web/`](Plans/PRF-55-md-viewer-web/README.md).
-
 What changed in each release: [`CHANGELOG.md`](CHANGELOG.md).
 
 Licensed under the **GNU General Public License v2** — see [`LICENSE`](LICENSE).
