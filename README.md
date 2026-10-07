@@ -148,6 +148,39 @@ top bar keeps ☰, the dropdown, 🔍 and ⚙.
 
 ---
 
+## ✎ Editing docs & answering / asking questions
+
+Serve a folder with `--rw` (**still in testing** — use it on folders under git) and its
+documents take a few small edits right on the page. Each one changes only its own lines, and
+is refused if the file changed since the page was loaded; what you typed is kept. Anything
+bigger is one click away in your own editor.
+
+**Answer a question.** Every ❓ and ⁉️ is a button. Click it, write the answer — plain Markdown,
+bullets welcome — and **Save** (Ctrl+Enter). It is written in the question's own syntax: `> 💬`
+under a quote, `> [!ANSWER]` under an alert, `**A:**` under a bold line, `::: a` under a
+container. An answered question opens its answer for editing.
+
+**Checkbox and status items are questions too** — `- [ ] …`, and items opening with a status
+glyph such as `- ✅`, `- ⚠️`, `- 🚫` (the `QUESTIONS.md` convention). The answer goes in as an
+indented `> 💬` inside the item, and **Check & Save** also ticks the box, or turns the glyph
+into ✅.
+
+<img src="doc/rw-answer.png" alt="An answered question with bullets, and a checkbox question with the answer editor open under it: Save, Check &amp; Save and Cancel" width="560">
+
+**Add under a heading.** Hover a heading: after its `#` come ✎ — open the file at that line in
+your editor (`edit:/path:line`) — ↓ add a block right under the heading, and ⇊ add one at the
+end of its section. Write it, then pick what it is: ¶ text, ❝ quote, ✍️ my quote (signed with
+your git name), 💡 tip, ❓ question, ⁉️ disagreement or 💬 answer — so asking a question is the
+same two clicks as answering one.
+
+<img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with the Add as buttons" width="560">
+
+**Tick a checkbox** and that one line is saved. Esc cancels any editor. Every form, answered and
+not, is on the [Q&A playground](doc/qa-playground.md) to try; the syntax is in
+[Questions and answers](doc/qa.md).
+
+---
+
 ## ▸ Running it
 
 **In the background.** `mdhouse <folder>` detaches and returns; `mdhouse exit` (or `stop`) ends
@@ -210,13 +243,7 @@ they are, but write access is only ever granted from a terminal.
 It writes three things: a ticked checkbox, only that line; an answer saved from the page, only
 the answer's lines; and a block added under a heading. The page sends the line and a fingerprint
 of what it showed, and the server refuses if the file no longer matches — a stale tab can never
-change whatever now sits on that line; it reloads and keeps what you typed.
-
-**Adding under a heading.** In a `--rw` folder, hovering a heading shows three buttons after its
-`#`: ✎ opens the file at that line (`edit:/path:line`, when the edit link is on), ↓ adds a block
-right under the heading, ⇊ at the end of its section. Write it, then add it as ¶ text, ❝ a
-quote, ✍️ a quote signed with your git name, 💡 a tip, ❓ a question, ⁉️ a disagreement or 💬 an
-answer. Every write goes
+change whatever now sits on that line; it reloads and keeps what you typed. Every write goes
 through one function that refuses a read-only folder and resolves symlinks before it decides.
 Your favourites, saved folders and settings live in `~/.config/mdhouse/`, never inside a tree.
 
