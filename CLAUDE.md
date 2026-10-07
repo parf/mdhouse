@@ -128,11 +128,11 @@ pgrep -af "^/usr/bin/bun .*bin/mdhouse"'
 
 ## Deploy (release to npm)
 
-Only on "publish". "bump" = patch unless I say otherwise ("bump 0.1" = minor).
+Only on "publish".
 
 - [ ] Clean tree except my own files; on `main`
 - [ ] `bun test` green, `npx tsc --noEmit -p .` clean
-- [ ] `package.json` `version` bumped
+- [ ] Bump semver version in `package.json` (+0.0.1 — minor feature, +0.1 otherwise); then changelog
 - [ ] `CHANGELOG.md`: `## Unreleased` → `## X.Y.Z — YYYY-MM-DD`; covers every commit since the
       last release (`git log <last "mdhouse X.Y.Z" commit>..`); drop no-change entries
 - [ ] `Plans/…/README.md`, `TODO.md`, `DONE.md` current
