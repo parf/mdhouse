@@ -39,7 +39,7 @@ Options
       --no-git         skip git entirely; filesystem recents only
       --help           show this
 
-No folder named: serves the saved ones. Config: ~/.config/mdhouse/prefs.json
+No folder passed - serves saved from ~/.config/mdhouse/prefs.json
 `;
 
 interface Options {
