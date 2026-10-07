@@ -54,15 +54,17 @@ ul.items { list-style: none; margin: 0; padding: 0; }
 .item > .head { display: flex; gap: 6px; align-items: baseline; }
 .g { flex: none; }
 .sev-h { font-weight: 600; }
-.wait-me { background: var(--q-bg); box-shadow: inset 3px 0 0 var(--q); }
-.wait-me.dis { background: var(--dis-bg); box-shadow: inset 3px 0 0 var(--dis); }
+.wait-me { background: var(--q-bg); }
+.wait-me.dis { background: var(--dis-bg); }
 .btn { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; border: 1px solid var(--line);
   border-radius: 10px; padding: 0 7px; color: var(--dim); background: var(--panel); cursor: pointer; margin-left: auto; white-space: nowrap; }
 .btn.hot { border-color: var(--q); color: var(--q); }
 
 /* settled: muted and folded */
-details.settled { color: var(--muted); padding: 2px 8px; border-radius: 6px; }
-details.settled > summary { cursor: pointer; list-style: none; display: flex; gap: 6px; align-items: baseline; }
+details.settled { color: var(--muted); padding: 6px 8px; margin: 4px 0; border-radius: 6px; }
+/* same columns as .hang: every glyph at the same x, every text at the same x */
+details.settled > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
+details.settled > summary > .g { text-align: center; }
 details.settled > summary::-webkit-details-marker { display: none; }
 details.settled > summary .t { display: grid; min-width: 0; }
 /* folded: the question and its answer on lines of their own, each in its own colour, muted */
@@ -81,12 +83,12 @@ details.settled[open] { background: var(--code-bg); }
 .reply.partial { background: var(--part-bg); border-left-color: var(--part); }
 .who { display: inline-block; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 8px;
   background: var(--panel); border: 1px solid var(--line); margin-right: 4px; }
-.qblock { border-radius: 6px; padding: 6px 10px; margin: 4px 0; }
+.qblock { border-radius: 6px; padding: 6px 8px; margin: 4px 0; }
 /* hanging glyph: the glyph has a column of its own; wrapped lines line up with the text, not under the glyph */
 .hang { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
 .hang > .g { text-align: center; }
 /* an answered ❓ — a green "?" in its place: the question is settled */
-.g-answered { color: var(--a); font-weight: 800; font-size: 1.15em; line-height: 1; width: 1.1em; text-align: center;
+.g-answered { color: var(--a); font-weight: 800; font-size: 1.15em; line-height: 1.3; justify-self: center; width: 1.1em; text-align: center;
   border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
 /* the ❓ / ⁉️ glyph is the answer button: framed on hover; no separate chip */
 .g-btn { cursor: pointer; border: 1px solid transparent; border-radius: 4px; padding: 0 1px; }
@@ -94,8 +96,8 @@ details.settled[open] { background: var(--code-bg); }
 .g-btn.dis:hover { border-color: var(--dis); }
 /* on hover the green ? turns into a button [?] — a click opens the answer editor */
 .g-answered:hover { border-color: var(--a); background: var(--a-bg); box-shadow: 0 1px 0 var(--line); }
-.qblock.q { background: var(--q-bg); border-left: 4px solid var(--q); }
-.qblock.d { background: var(--dis-bg); border-left: 4px solid var(--dis); }
+.qblock.q { background: var(--q-bg); }
+.qblock.d { background: var(--dis-bg); }
 .qblock.a { background: var(--a-bg); border-left: 4px solid var(--a); margin-left: 22px; }
 
 /* options */
@@ -353,7 +355,7 @@ Search falls back to a JS regex.
 <h2>Loudness, at a glance</h2>
 <table>
   <tr><th>Level</th><th>Glyphs</th><th>Look</th></tr>
-  <tr><td>waiting on me</td><td>❓ ⁉️</td><td>tinted block, red/orange edge; the glyph is the answer button — not bold: questions can be long</td></tr>
+  <tr><td>waiting on me</td><td>❓ ⁉️</td><td>tinted block; the glyph is the answer button — not bold: questions can be long</td></tr>
   <tr><td>high / medium</td><td>🔴 🟠 ❌ ⛔ ⚠️</td><td>bold (🔴), normal (🟠)</td></tr>
   <tr><td>normal</td><td>⚪ ⏳</td><td>plain</td></tr>
   <tr><td>quiet</td><td>🔵 ⏸️ 🎫</td><td>grey text</td></tr>
