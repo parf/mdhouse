@@ -4,10 +4,18 @@
 
   // ---- editors: one at a time
   const closeEditors = () => doc.querySelectorAll('.c-edit, .f-edit').forEach((e) => e.remove());
-  const reply = (text) => {
+  // who I am — mdhouse would take the git user name; ?me=name here
+  const ME = new URLSearchParams(location.search).get('me') || 'parf';
+  /** "👤me" in the editor: remembered per browser. */
+  const signKey = 'mdhouse.qa.sign';
+  // the sandboxed preview has no localStorage: the page remembers it for as long as it is open
+  let signMem = false;
+  const signed = () => { try { return localStorage.getItem(signKey) === '1'; } catch { return signMem; } };
+  const setSigned = (on) => { signMem = on; try { localStorage.setItem(signKey, on ? '1' : '0'); } catch {} };
+  const reply = (text, sign) => {
     const r = document.createElement('div');
     r.className = 'reply';
-    r.innerHTML = '<span class="who" data-kind="person">👤you</span><span class="txt"></span>';
+    r.innerHTML = (sign ? `<span class="who" data-kind="person">👤${ME}</span>` : '') + '<span class="txt"></span>';
     r.querySelector('.txt').textContent = text;
     return r;
   };
@@ -19,12 +27,16 @@
     ed.innerHTML = '<textarea placeholder="Reply…"></textarea><div class="bar"><button class="save">💬 Save</button>'
       + (stages ? '<span class="lbl">and set:</span><button data-s="✅">✅ done</button><button data-s="🚫">🚫 rejected</button>'
         + '<button data-s="⏸️">⏸️ deferred</button><button data-s="❓">❓ needs my call</button>' : '')
-      + '<button class="cancel">(ESC)Cancel</button></div>';
+      + '<button class="cancel">(ESC)Cancel</button>'
+      + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤${ME}</label></div>`;
     host.append(ed);
     const ta = ed.querySelector('textarea');
     ta.value = prefill;
     ta.focus();
-    const done = (stage) => { onSave(ta.value.trim(), stage); ed.remove(); };
+    const sign = ed.querySelector('.sign input');
+    sign.checked = signed();
+    sign.addEventListener('change', () => setSigned(sign.checked));
+    const done = (stage) => { onSave(ta.value.trim(), stage, sign.checked); ed.remove(); };
     ed.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -62,8 +74,8 @@
       editor(host, {
         prefill: g.classList.contains('g-answered') && last ? last.textContent : '',
         stages: finding || host.tagName === 'DETAILS',
-        onSave: (text, stage) => {
-          if (text) threadOf(host, host.classList.contains('qwrap') ? 'thread' : 'thread q-thread').append(reply(text));
+        onSave: (text, stage, sign) => {
+          if (text) threadOf(host, 'thread q-thread').append(reply(text, sign));
           if (stage) setStage(host, stage);
         },
       });
@@ -76,7 +88,7 @@
       const wrap = c.closest('.c-wrap');
       const host = wrap ?? c.closest('.item, details');
       const th = wrap ? wrap.querySelector('.opt-thread') : threadOf(host, 'thread q-thread');
-      editor(th, { onSave: (text) => text && th.append(reply(text)) });
+      editor(th, { onSave: (text, _, sign) => text && th.append(reply(text, sign)) });
       return;
     }
     // ---- a click on a comment edits it

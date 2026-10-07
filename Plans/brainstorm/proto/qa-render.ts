@@ -289,6 +289,9 @@ ul.items { margin: 6px 0 14px; }
 /* every line: the glyph in a column of its own, the same as a folded one */
 .item > .head { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto auto; column-gap: 4px; align-items: start; }
 .item > .head > .g { text-align: center; }
+/* the editor bar: actions on the left, "👤me" at the far right */
+.c-edit .bar, .f-edit .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bar .sign { margin-left: auto; font-size: 12px; color: var(--dim); display: inline-flex; gap: 4px; align-items: center; cursor: pointer; position: relative; }
 /* an editor starts where the text does */
 .item > .c-edit, .item > .f-edit, details > .c-edit, details > .f-edit { margin: 6px 0 2px calc(1.6em + 4px); }
 /* badges: one chip shape, a tint per kind */

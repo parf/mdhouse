@@ -26,6 +26,8 @@ turns so GitHub keeps them apart:
 ```
 
 - the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
+- the editor has a `[ ] 👤me` checkbox at the far right: set, the reply starts with my badge
+  (`💬 👤parf …`, the name from git); remembered per browser
 - "need more" = my `💬 ⚠️` while the glyph stays `❓` (the agent flips it to `⏳` when it starts)
 - GitHub: a list item with a quote under it — readable as a chat
 
