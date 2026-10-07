@@ -203,10 +203,13 @@ function itemHtml(it: Item): string {
       + `<span class="t"><span class="t-q">${text}</span>${answer}</span></summary>`
       + `${opts}${threadHtml(it.replies)}</details>`;
   }
-  const cls = ['item', ask ? 'wait-me' : '', status === '⁉️' ? 'dis' : '', status === '🔴' || more[0] === '🔴' ? 'sev-h' : '', status === '🔵' ? 'info' : '']
+  const sev = it.glyphs.find((g) => SEVERITY.includes(g));
+  // an open finding — a line with a severity — works as an unanswered question does
+  const finding = !!sev && !ask;
+  const cls = ['item', ask ? 'wait-me' : '', finding ? 'finding' : '', status === '⁉️' ? 'dis' : '', status === '🔴' || more[0] === '🔴' ? 'sev-h' : '', status === '🔵' ? 'info' : '']
     .filter(Boolean).join(' ');
   const chip = status === '⏳' ? '<span class="btn">waiting on agent</span>' : '';
-  return `<li class="${cls}" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
+  return `<li class="${cls}" data-k="${key}"${sev ? ` data-sev="${sev}"` : ''}><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
     + `${options.length ? '<button class="c-btn" data-tip="Comment on the question">💬</button>' : ''}</div>`
     + `${opts}${threadHtml(it.replies, 'thread q-thread')}</li>`;
 }
@@ -350,9 +353,21 @@ details.settled[open] .more { display: none; }
 .item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--dis) 35%, transparent); }
 .item.wait-me > .head .g-btn:hover { border-color: var(--q); background: var(--panel); }
 .item.wait-me.dis > .head .g-btn:hover { border-color: var(--dis); }
+/* an open finding: its first glyph always framed, in its severity's colour; a click anywhere opens the form */
+.item.finding { cursor: pointer; }
+.item.finding .reply, .item.finding .opts, .item.finding textarea { cursor: auto; }
+.item.finding > .head .g-btn { border-color: color-mix(in srgb, var(--dim) 35%, transparent); background: color-mix(in srgb, var(--panel) 60%, transparent); }
+.item.finding[data-sev="🔴"] > .head .g-btn { border-color: color-mix(in srgb, var(--q) 40%, transparent); }
+.item.finding[data-sev="🟠"] > .head .g-btn { border-color: color-mix(in srgb, var(--dis) 40%, transparent); }
+.item.finding > .head .g-btn:hover { border-color: var(--dim); background: var(--panel); }
+.item.finding[data-sev="🔴"] > .head .g-btn:hover { border-color: var(--q); }
+.item.finding[data-sev="🟠"] > .head .g-btn:hover { border-color: var(--dis); }
+.item.finding:hover { background: color-mix(in srgb, var(--code-bg) 70%, transparent); }
 /* an unanswered question opens its form on a click anywhere on it */
 .item.wait-me { cursor: pointer; }
 .item.wait-me .reply, .item.wait-me .opts, .item.wait-me textarea { cursor: auto; }
+/* an editor never inherits a bold line */
+.c-edit, .f-edit { font-weight: 400; }
 /* an editor starts where the text does */
 .item > .c-edit, .item > .f-edit, details > .c-edit, details > .f-edit { margin: 6px 0 2px calc(1.6em + 4px); }
 /* badges: one chip shape, a tint per kind */

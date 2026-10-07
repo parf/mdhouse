@@ -155,8 +155,8 @@
       bar.querySelector(`[data-a="${first}"]`)?.classList.add('save');
       return;
     }
-    // ---- a click anywhere on an unanswered question opens its form, as its glyph does
-    const q = e.target.closest('.item.wait-me');
+    // ---- a click anywhere on an unanswered question or an open finding opens its form, as its glyph does
+    const q = e.target.closest('.item.wait-me, .item.finding');
     if (q && !e.target.closest('a, input, label, button, .reply, .c-edit, .f-edit, .opts')) {
       q.querySelector(':scope > .head .g-btn')?.click();
       return;

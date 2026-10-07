@@ -186,6 +186,8 @@ Edge cases:
 - [ ] questions are not bold — they can be long; the tinted background is the highlight
 - [ ] a click anywhere on an unanswered question opens its form (links, options and replies keep their own clicks)
 - [ ] an unanswered question's ❓ / ⁉️ always shows a light button frame (full on hover)
+- [ ] an open finding works the same: its first glyph always framed (in its severity's colour), a click
+  anywhere on it opens its form
 - [ ] the first glyph of a line is its button (framed on hover) — ❓ / ⁉️ answer, 🔴 🟠 ⚪ 🔵 ⏳ ⏸️ ✅ 🚫 reply + set the stage; no separate chips
 - [ ] an answered `❓` (a 💬 under it) shows as a green **?** — HTML only, no such glyph: the file keeps `❓`; on hover it is a button [?] — a click edits the answer
 - [ ] `⏳` — normal; `⏸️` — muted
