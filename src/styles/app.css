@@ -1436,3 +1436,42 @@ kbd {
   to { opacity: 1; transform: scale(1); }
 }
 
+
+/* Adding under a heading: ✎ ↓ ⇊ after the # link, shown with it on hover. */
+.md .heading-actions { opacity: 0; margin-left: 0.3em; font-size: 13px; font-weight: 400; vertical-align: middle; white-space: nowrap; }
+.md :is(h1, h2, h3, h4, h5, h6):hover .heading-actions, .md .heading-actions:focus-within { opacity: 1; }
+.md .heading-act {
+  display: inline-block; min-width: 1.7em; margin-left: 0.25em; padding: 0 0.35em; line-height: 1.5;
+  font: inherit; text-align: center; text-decoration: none; cursor: pointer;
+  color: var(--accent); background: var(--bg); border: 1px solid var(--border-strong); border-radius: 5px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--fg) 15%, transparent);
+  transition: transform 0.12s, background 0.12s, border-color 0.12s;
+}
+.md .heading-act:hover, .md .heading-act:focus-visible {
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg)); border-color: var(--accent);
+  outline: 2px solid var(--accent); outline-offset: 1px; transform: scale(1.12);
+}
+/* The editor: a neutral block, since it is not yet any kind. */
+.md .add-editor {
+  margin: 10px 0 16px; padding: 8px 14px 10px;
+  border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+}
+.md .add-where { margin: 0 0 6px; font-size: 13px; color: var(--fg-muted); }
+.md .add-editor textarea {
+  display: block; width: 100%; box-sizing: border-box; resize: vertical; min-height: 4.5em;
+  font: inherit; line-height: 1.5; padding: 6px 8px; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+}
+.md .add-editor textarea:focus { outline: none; border-color: var(--accent); }
+.md .add-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.md .add-as { font-size: 13px; color: var(--fg-muted); margin-right: 2px; }
+.md .add-buttons button { font: inherit; font-size: 13px; padding: 3px 10px; border-radius: var(--radius); cursor: pointer; }
+.md .add-kind { color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); }
+.md .add-kind:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+.md .add-kind.add-last { border-color: var(--accent); font-weight: 600; }
+.md .add-kind[data-kind='question'] { border-color: color-mix(in srgb, var(--qa-question) 60%, var(--border-strong)); }
+.md .add-kind[data-kind='disagreement'] { border-color: color-mix(in srgb, var(--qa-disagreement) 60%, var(--border-strong)); }
+.md .add-kind[data-kind='answer'] { border-color: color-mix(in srgb, var(--qa-answer) 60%, var(--border-strong)); }
+.md .add-kind:disabled { opacity: 0.45; cursor: default; }
+.md .add-buttons .answer-cancel { margin-left: auto; }

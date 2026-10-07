@@ -139,7 +139,14 @@ function isExternal(href: string): boolean {
 /** Copy every block token's source line onto the rendered element. */
 function lineMapPlugin(md: MarkdownIt): void {
   md.core.ruler.push('mdhouse_line_map', (state) => {
-    for (const token of state.tokens) applyLine(token);
+    for (const token of state.tokens) {
+      applyLine(token);
+      // A heading of the document itself (not inside a list or a quote) carries a fingerprint of
+      // its line: a block can be added under it, and the server checks it is still the same one.
+      if (token.type === 'heading_open' && token.level === 0 && token.map) {
+        token.attrSet('data-hash', lineHash(bodyLinesOf(state.src)[token.map[0]] ?? ''));
+      }
+    }
   });
 
   function applyLine(token: Token): void {

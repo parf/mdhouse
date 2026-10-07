@@ -8,6 +8,7 @@ import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
 import { markChanges } from './mark-changes';
 import { AnswerEditor } from './AnswerEditor';
+import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 
 /** The two diff views; either can be the one a toggle turns on. */
@@ -522,6 +523,183 @@ export function Doc({
       spot,
     );
   }, [editing, hostTick]);
+
+  /**
+   * Adding under a heading. In a writable folder and the plain document view, hovering a heading
+   * shows, after its # link: ✎ to open the file at that line (the `edit:` link, when it is on),
+   * ↓ to add a block right under the heading, and ⇊ to add one at the end of its section. Adding
+   * works like answering: an editor in place, the draft kept across reloads, one write.
+   */
+  type Adding = { id: number; line: number; hash: string; where: 'below' | 'end'; heading: string; note: string | null; saving: boolean };
+  const [adding, setAdding] = useState<Adding | null>(null);
+  const addDraft = useRef('');
+  useEffect(() => setAdding(null), [doc?.url]);
+
+  useEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    for (const old of el.querySelectorAll('.heading-actions')) old.remove();
+    if (!answerable || !doc) return;
+    for (const h of el.querySelectorAll<HTMLElement>(':is(h1, h2, h3, h4, h5, h6)[data-hash]')) {
+      const actions = document.createElement('span');
+      actions.className = 'heading-actions';
+      if (editHref) {
+        const line = Number(h.dataset.line) + (doc.lineOffset ?? 0);
+        const edit = document.createElement('a');
+        edit.className = 'heading-act heading-edit';
+        edit.href = `${editHref}:${line}`;
+        edit.textContent = '✎';
+        edit.title = `Edit at line ${line}`;
+        actions.append(edit);
+      }
+      for (const [where, glyph, title] of [
+        ['below', '↓', 'Add a block right under this heading'],
+        ['end', '⇊', 'Add a block at the end of this section'],
+      ] as const) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'heading-act heading-add';
+        b.dataset.where = where;
+        b.textContent = glyph;
+        b.title = title;
+        actions.append(b);
+      }
+      (h.querySelector('.header-anchor') ?? h.lastChild)?.after(actions);
+    }
+    const click = (e: Event) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('.heading-add');
+      const h = b?.closest<HTMLElement>('[data-hash]');
+      if (!b || !h) return;
+      e.preventDefault();
+      addDraft.current = '';
+      setAdding({
+        id: ++opened.current,
+        line: Number(h.dataset.line),
+        hash: h.dataset.hash ?? '',
+        where: b.dataset.where === 'end' ? 'end' : 'below',
+        heading: [...h.childNodes]
+          .filter((n) => !(n instanceof HTMLElement && n.matches('.header-anchor, .heading-actions')))
+          .map((n) => n.textContent)
+          .join('')
+          .trim(),
+        note: null,
+        saving: false,
+      });
+    };
+    el.addEventListener('click', click);
+    return () => el.removeEventListener('click', click);
+  }, [doc?.html, answerable, editHref, doc?.lineOffset]);
+
+  // The add editor's element: made once per opened editor and moved on re-render, like the
+  // answer editor's.
+  const addHost = useRef<HTMLElement | null>(null);
+  const [addTick, setAddTick] = useState(0);
+  const addFocused = useRef(false);
+  const addPlacedFor = useRef(0);
+  useEffect(() => {
+    if (!adding) return;
+    const spot = document.createElement('div');
+    spot.className = 'add-host';
+    spot.addEventListener('focusin', () => (addFocused.current = true));
+    spot.addEventListener('focusout', () => queueMicrotask(() => spot.isConnected && (addFocused.current = false)));
+    addHost.current = spot;
+    setAddTick((n) => n + 1);
+    return () => {
+      mount(null, spot);
+      spot.remove();
+      if (addHost.current === spot) addHost.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adding?.id]);
+
+  useEffect(() => {
+    const el = body.current;
+    const spot = addHost.current;
+    if (!el || !spot || !adding || !answerable) return;
+    const all = [...el.querySelectorAll<HTMLElement>(':is(h1, h2, h3, h4, h5, h6)[data-hash]')];
+    const alike = all.filter((h) => h.dataset.hash === adding.hash);
+    const h =
+      alike.find((x) => Number(x.dataset.line) === adding.line) ??
+      alike.sort((a, b) => Math.abs(Number(a.dataset.line) - adding.line) - Math.abs(Number(b.dataset.line) - adding.line))[0] ??
+      all.find((x) => Number(x.dataset.line) === adding.line);
+    if (h && h.dataset.hash !== adding.hash) {
+      // Edited in place: take it as it now is, and say so before anything is added under it.
+      const hash = h.dataset.hash ?? '';
+      setAdding((a) => (a && a.id === adding.id ? { ...a, hash, note: 'The heading was changed in the file meanwhile — have a look; your text is kept.' } : a));
+    }
+    if (!h) {
+      el.prepend(spot);
+      setAdding((a) => (a && !a.note ? { ...a, note: 'That heading is no longer in the file — your text is kept.' } : a));
+    } else {
+      const line = Number(h.dataset.line);
+      if (line !== adding.line) setAdding((a) => (a && a.id === adding.id ? { ...a, line } : a));
+      if (adding.where === 'below') h.after(spot);
+      else {
+        // Before the next heading of this level or higher, or at the end of the document.
+        const level = Number(h.tagName[1]);
+        let next = h.nextElementSibling;
+        while (next && !(/^H[1-6]$/.test(next.tagName) && Number(next.tagName[1]) <= level)) next = next.nextElementSibling;
+        next ? next.before(spot) : h.parentElement?.append(spot);
+      }
+    }
+    const area = spot.querySelector('textarea');
+    if (area && addPlacedFor.current !== adding.id) {
+      addPlacedFor.current = adding.id;
+      area.focus();
+      area.scrollIntoView({ block: 'nearest' });
+    } else if (area && addFocused.current && !spot.contains(document.activeElement)) area.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adding?.id, adding?.line, adding?.hash, doc?.html, answerable, addTick]);
+
+  const addSaving = useRef(false);
+  useEffect(() => {
+    const spot = addHost.current;
+    if (!spot || !adding || !doc) return;
+    const add = async (kind: string) => {
+      if (addSaving.current) return;
+      addSaving.current = true;
+      setAdding((a) => (a ? { ...a, saving: true, note: null } : a));
+      try {
+        await api.insertBlock({
+          p: `${doc.root}/${doc.rel}`,
+          line: adding.line,
+          hash: adding.hash,
+          where: adding.where,
+          kind,
+          text: addDraft.current,
+        });
+        setAdding(null);
+      } catch (err) {
+        setAdding((a) =>
+          a
+            ? {
+                ...a,
+                saving: false,
+                note:
+                  (err as { status?: number }).status === 409
+                    ? 'The heading changed since this page was loaded — it has been reloaded, and your text is kept.'
+                    : (err as Error).message,
+              }
+            : a,
+        );
+      } finally {
+        addSaving.current = false;
+        onReload?.();
+      }
+    };
+    mount(
+      <AddEditor
+        where={adding.where}
+        heading={adding.heading}
+        onText={(text) => (addDraft.current = text)}
+        onAdd={(kind) => void add(kind)}
+        onCancel={() => setAdding(null)}
+        saving={adding.saving}
+        note={adding.note}
+      />,
+      spot,
+    );
+  }, [adding, addTick]);
 
   // Each document starts at the default depth; H3 is a per-document choice, not a mode.
   useEffect(() => setTocDepth(2), [doc?.url]);

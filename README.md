@@ -207,10 +207,16 @@ they are, but write access is only ever granted from a terminal.
 > **`--rw` is still in testing.** Writing works and is guarded as described here, but it is new:
 > use it on folders under git, where any change is one `git diff` away from being seen or undone.
 
-It writes two things: a ticked checkbox, only that line, and an answer saved from the page, only
-the answer's lines. The page sends the line and a fingerprint of what it showed, and the server
-refuses if the file no longer matches — a stale tab can never change whatever now sits on that
-line; it reloads and keeps what you typed. Every write goes
+It writes three things: a ticked checkbox, only that line; an answer saved from the page, only
+the answer's lines; and a block added under a heading. The page sends the line and a fingerprint
+of what it showed, and the server refuses if the file no longer matches — a stale tab can never
+change whatever now sits on that line; it reloads and keeps what you typed.
+
+**Adding under a heading.** In a `--rw` folder, hovering a heading shows three buttons after its
+`#`: ✎ opens the file at that line (`edit:/path:line`, when the edit link is on), ↓ adds a block
+right under the heading, ⇊ at the end of its section. Write it, then add it as ¶ text, ❝ a
+quote, ✍️ a quote signed with your git name, 💡 a tip, ❓ a question, ⁉️ a disagreement or 💬 an
+answer. Every write goes
 through one function that refuses a read-only folder and resolves symlinks before it decides.
 Your favourites, saved folders and settings live in `~/.config/mdhouse/`, never inside a tree.
 

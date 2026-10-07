@@ -47,8 +47,9 @@ that command's `--rw`; a saved folder is writable only if it was saved with `-P 
 page can turn it on.
 
 Every disk write to a served tree goes through the one chokepoint `Registry.writeFile()`, which
-refuses a read-only root. Its callers are `POST /api/task` (a checkbox tick) and
-`POST /api/qa/answer` (an answer saved from the page). mdhouse's own config (`prefs.json`, the
+refuses a read-only root. Its callers are `POST /api/task` (a checkbox tick),
+`POST /api/qa/answer` (an answer saved from the page) and `POST /api/insert` (a block added
+under a heading). mdhouse's own config (`prefs.json`, the
 control socket) lives outside every tree.
 
 ### An answer changes the answer, or nothing
@@ -62,6 +63,14 @@ rendered with `data-qa-form`, `data-line` and `data-hash` (`lineHash` of the que
 POST writes only if both fingerprints still match — else `409`. Only answers are written, never
 the question; writes share the per-file queue with ticks. The draft lives in `Doc`, not the DOM,
 so a re-render re-attaches the editor with the text kept.
+
+### An added block goes where the heading says, or nowhere
+
+`src/lib/insert.ts`: top-level headings render with `data-hash` (`lineHash` of the heading line);
+`insertBlock` re-checks it, then inserts right under the heading or at the end of its section —
+the next ATX heading of its level or higher, `#` lines in code fences skipped, trailing blank lines
+kept after the block — separated by blank lines, in the chosen kind's syntax. A signed quote takes
+the repository's `git config user.name` (else the login), resolved on the server.
 
 ### A tick changes one line, or nothing
 
@@ -111,7 +120,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   name. Anything else is `421`. This is the DNS-rebinding guard: a rebound page looks
   same-origin in every header except the name it was addressed to. `guard()` in `server.ts` wraps
   every route; the HTML bundle is left alone.
-- **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa/answer`, `/api/roots/remove`, `/api/settings` — and the
+- **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa/answer`, `/api/insert`, `/api/roots/remove`, `/api/settings` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.

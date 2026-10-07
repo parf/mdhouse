@@ -8,7 +8,7 @@
 import type { ServerWebSocket } from 'bun';
 import index from './index.html';
 import { realpath } from 'node:fs/promises';
-import { homedir, hostname as machineName } from 'node:os';
+import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { repoToplevel } from './lib/scan';
@@ -17,7 +17,8 @@ import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
 import { answerText, findQuestion, QA_FORMS, writeAnswer, type AnswerRequest, type QaForm } from './lib/qa';
 import { searchContent } from './lib/search';
-import { commitDiff, commitInfo, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
+import { commitDiff, commitInfo, currentUser, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
+import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 
@@ -281,6 +282,56 @@ export async function serve(opts: ServeOptions) {
             return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
           }
           return json({ ok: true });
+        },
+      },
+
+      /**
+       * Add a block under a heading — right under it or at the end of its section — as text, a
+       * quote, a quote signed with the git user's name, a tip, a question, a disagreement or an
+       * answer. Same guards as an answer: same origin, a writable folder, the heading's
+       * fingerprint.
+       */
+      '/api/insert': {
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as (Partial<AddRequest> & { p?: string }) | null;
+          if (
+            !body?.p ||
+            !Number.isInteger(body.line) ||
+            typeof body.hash !== 'string' ||
+            (body.where !== 'below' && body.where !== 'end') ||
+            !ADD_KINDS.includes(body.kind as AddKind) ||
+            typeof body.text !== 'string'
+          ) {
+            return fail(400, 'expected {p, line, hash, where, kind, text}');
+          }
+          if (body.text.length > 100_000) return fail(413, 'the text is too long');
+          const loc = await registry.resolve(body.p);
+          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to add to it`);
+
+          // Who signs a "my quote": the git identity of the file's repository, else the login.
+          let who = '';
+          if (body.kind === 'my-quote') {
+            const where = opts.noGit ? null : await store.repoFor(loc.root, loc.rel);
+            who = (where && (await currentUser(where.repo))?.name) || userInfo().username;
+          }
+          const result = await queueWrite(loc.abs, async () => {
+            const src = await Bun.file(loc.abs).text();
+            const result = insertBlock(src, splitFrontmatter(src).offset, body as AddRequest, who);
+            if ('error' in result) return result;
+            await registry.writeFile(body.p!, result.src);
+            return result;
+          });
+          if ('error' in result) {
+            const message = {
+              stale: 'the file changed since this page was loaded',
+              'not-a-heading': 'that is no longer a heading',
+              empty: 'there is nothing to add',
+            }[result.error];
+            return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
+          }
+          return json({ ok: true, line: result.line });
         },
       },
 

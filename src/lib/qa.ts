@@ -245,7 +245,7 @@ const STRUCTURAL: Record<QaForm, RegExp> = {
   bold: /^(?:=+\s*$|-+\s*$|#|>|```|~~~|\*\*[QA]:\*\*)/,
 };
 
-function escapeLine(line: string, form: QaForm): string {
+export function escapeLine(line: string, form: QaForm): string {
   const lead = line.match(/^\s*/)![0];
   const rest = line.slice(lead.length);
   if (!rest || !STRUCTURAL[form].test(rest)) return line;

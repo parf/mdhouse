@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Add under a heading** (`--rw`, still in testing). Hovering a heading shows ✎ ↓ ⇊ after its
+  `#`: ✎ opens the file at that line in your editor (`edit:/path:line`), ↓ adds a block right
+  under the heading, ⇊ at the end of its section — after its subsections, before the next heading
+  of its level. The block is written as ¶ text, ❝ a quote, ✍️ a quote signed with your git name
+  (`> **name:** …`), 💡 a tip, ❓ a question, ⁉️ a disagreement or 💬 an answer, separated by
+  blank lines; refused if the heading changed since the page was loaded.
+
 ## 1.2.0 — 2026-10-06
 
 Answer questions right on the page. **`--rw` is still in testing** — writing is guarded (a

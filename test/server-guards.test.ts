@@ -216,3 +216,58 @@ describe('/api/qa/answer — answering a question', () => {
     }
   });
 });
+
+describe('POST /api/insert — adding under a heading', () => {
+  test('writes on a writable folder; refuses read-only, a changed heading, bad input and other sites', async () => {
+    const { mkdtemp, rm, readFile } = await import('node:fs/promises');
+    const { tmpdir, userInfo } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { lineHash } = await import('../src/lib/qa');
+
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-insert-'));
+    const rw = join(base, 'rw');
+    const ro = join(base, 'ro');
+    await Bun.write(join(rw, 'n.md'), '# N\n\n## A\n\none\n\n## B\n');
+    await Bun.write(join(ro, 'n.md'), '# Locked\n');
+
+    const port = 61793;
+    const registry = await Registry.create([
+      { path: rw, writable: true },
+      { path: ro, writable: false },
+    ]);
+    const { server, watcher, control } = await serve({
+      registry,
+      prefs: await Prefs.load(join(base, 'prefs.json')),
+      port,
+      hostname: '127.0.0.1',
+      noGit: true,
+    });
+    const [rwId, roId] = registry.list().map((r) => r.id);
+    const post = (body: unknown, headers: Record<string, string> = {}) =>
+      fetch(`http://127.0.0.1:${port}/api/insert`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...headers },
+        body: JSON.stringify(body),
+      });
+    const a = { p: `${rwId}/n.md`, line: 3, hash: lineHash('## A') };
+
+    try {
+      expect((await post({ ...a, where: 'end', kind: 'my-quote', text: 'mine' })).status).toBe(200);
+      expect(await readFile(join(rw, 'n.md'), 'utf8')).toBe(`# N\n\n## A\n\none\n\n> **${userInfo().username}:** mine\n\n## B\n`);
+      expect((await post({ ...a, hash: lineHash('## Z'), where: 'below', kind: 'text', text: 'x' })).status).toBe(409);
+      expect((await post({ ...a, where: 'sideways', kind: 'text', text: 'x' })).status).toBe(400);
+      expect((await post({ ...a, where: 'below', kind: 'poem', text: 'x' })).status).toBe(400);
+      expect((await post({ p: `${roId}/n.md`, line: 1, hash: lineHash('# Locked'), where: 'below', kind: 'text', text: 'x' })).status).toBe(403);
+      expect((await post({ ...a, where: 'below', kind: 'text', text: 'x' }, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+      expect(await readFile(join(ro, 'n.md'), 'utf8')).toBe('# Locked\n');
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+});

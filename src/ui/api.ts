@@ -121,6 +121,19 @@ export const api = {
     }
   },
 
+  /** Add a block under the heading on `line` of document `p` — right under it, or at the end of its section. */
+  async insertBlock(req: { p: string; line: number; hash: string; where: 'below' | 'end'; kind: string; text: string }): Promise<void> {
+    const res = await fetch('/api/insert', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+    }
+  },
+
   /**
    * Tick or untick the task on `line` of document `p` (a wire path), if that line still has the
    * fingerprint `hash` the page was rendered with. A refusal throws with the server's reason;
