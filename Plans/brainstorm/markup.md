@@ -121,5 +121,6 @@ Search falls back to a JS regex when rg is missing.
 - [ ] `✅` `🚫` items and their threads — muted, folded: the question, and under it the answer on
   its own line, each in its own colour (never merged into one line); a click opens them
 - [ ] unpicked options after a pick — muted
+- [ ] the glyph hangs: a column of its own, wrapped lines line up with the text, not under the glyph
 - [ ] a header strip per page: `❓ 3 · 🔴 1 · 🟠 4 · ✅ 12` — a click filters
 - no extra markup for any of this: `<details>` stays available, but mdhouse folds by glyph

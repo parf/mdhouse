@@ -82,6 +82,9 @@ details.settled[open] { background: var(--code-bg); }
 .who { display: inline-block; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 8px;
   background: var(--panel); border: 1px solid var(--line); margin-right: 4px; }
 .qblock { border-radius: 6px; padding: 6px 10px; margin: 4px 0; }
+/* hanging glyph: the glyph has a column of its own; wrapped lines line up with the text, not under the glyph */
+.hang { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
+.hang > .g { text-align: center; }
 .qblock.q { background: var(--q-bg); border-left: 4px solid var(--q); font-weight: 600; }
 .qblock.d { background: var(--dis-bg); border-left: 4px solid var(--dis); font-weight: 600; }
 .qblock.a { background: var(--a-bg); border-left: 4px solid var(--a); margin-left: 22px; }
@@ -136,15 +139,33 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 
 &gt; ⁉️ README says :7777, the unit says :8080.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out">
-    <div class="qblock q">❓ Do we keep the old URLs? <span class="btn hot">💬 answer</span></div>
+    <div class="qblock q hang"><span class="g">❓</span><div>Do we keep the old URLs?</div><span class="btn hot">💬 answer</span></div>
     <details class="settled"><summary><span class="g">❓</span><span class="t"><span class="t-q">Which port for the dev server?</span><span class="t-a">💬 7790, with its own config.</span></span></summary>
-      <div class="qblock q" style="font-weight:400;opacity:.8">❓ Which port for the dev server?</div>
-      <div class="qblock a">💬 7790, with its own config.</div>
+      <div class="qblock q hang" style="font-weight:400;opacity:.8"><span class="g">❓</span><div>Which port for the dev server?</div></div>
+      <div class="qblock a hang"><span class="g">💬</span><div>7790, with its own config.</div></div>
     </details>
-    <div class="qblock d">⁉️ README says :7777, the unit says :8080. <span class="btn hot">💬 answer</span></div>
+    <div class="qblock d hang"><span class="g">⁉️</span><div>README says :7777, the unit says :8080.</div><span class="btn hot">💬 answer</span></div>
   </div>
   <ul class="notes"><li>unanswered ❓ / ⁉️ — loud, with the answer button</li>
   <li>answered — folded: the question, and the answer on its own line under it, each in its own colour; muted</li></ul></div>
+</div>
+
+<h3>1a′. Long lines — the glyph hangs</h3>
+<div class="case">
+  <div><div class="col-label">Markup</div>
+<pre>&gt; ❓ Which port should the dev server use when the live
+&gt; instance already holds 7777 and a second developer runs
+&gt; their own copy on the same machine?
+&gt; 💬 7790 with its own config dir; a second developer
+&gt; passes --port, and the start banner prints the URL.</pre></div>
+  <div><div class="col-label">Rendered</div><div class="out">
+    <div class="qblock q hang"><span class="g">❓</span><div>Which port should the dev server use when the live instance already holds 7777 and a second developer runs their own copy on the same machine?</div><span class="btn hot">💬</span></div>
+    <div class="qblock a hang"><span class="g">💬</span><div>7790 with its own config dir; a second developer passes <code>--port</code>, and the start banner prints the URL.</div></div>
+    <div class="col-label" style="margin-top:10px">Not like this</div>
+    <div class="qblock q" style="opacity:.6">❓ Which port should the dev server use when the live instance already holds 7777 and a second developer runs their own copy on the same machine?</div>
+  </div>
+  <ul class="notes"><li>the glyph sits in a column of its own (<code>display: grid; grid-template-columns: 1.6em 1fr</code>) — like <code>&lt;td valign=top&gt;❓&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;</code>, with divs</li>
+  <li>every glyph-led block: ❓ ⁉️ 💬, list items, options, requests</li></ul></div>
 </div>
 
 <h3>1b. A thread, with "need more"</h3>
