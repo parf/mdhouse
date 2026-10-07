@@ -24,9 +24,9 @@ const USAGE = `mdhouse — browse every .md file under a directory
   mdhouse exit [options]          stop the one running  (also: stop)
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
-  mdhouse user-add <login:passwd>  ask for a login from then on (any user turns it on)
+  mdhouse user-add <login:pwd>    ask for a login from then on (any user turns it on)
   mdhouse user-rm <login>
-  mdhouse users                    list users and allowed networks
+  mdhouse users                   list users and allowed networks
 
 Options
   -p, --perm           save the folders (and any --port/--host given): used on every start
