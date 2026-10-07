@@ -366,6 +366,10 @@ details.settled[open] .more { display: none; }
 /* an unanswered question opens its form on a click anywhere on it */
 .item.wait-me { cursor: pointer; }
 .item.wait-me .reply, .item.wait-me .opts, .item.wait-me textarea { cursor: auto; }
+/* a tooltip sits under its own element — every element with one is its anchor */
+[data-tip] { position: relative; }
+/* near the right edge it opens leftwards */
+.bar .sign[data-tip]:hover::after, .bar > :last-child[data-tip]:hover::after { left: auto; right: 0; }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
 /* a compact bar: less side padding, smaller gaps */

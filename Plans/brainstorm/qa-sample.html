@@ -203,6 +203,10 @@ details.settled[open] .more { display: none; }
 /* an unanswered question opens its form on a click anywhere on it */
 .item.wait-me { cursor: pointer; }
 .item.wait-me .reply, .item.wait-me .opts, .item.wait-me textarea { cursor: auto; }
+/* a tooltip sits under its own element — every element with one is its anchor */
+[data-tip] { position: relative; }
+/* near the right edge it opens leftwards */
+.bar .sign[data-tip]:hover::after, .bar > :last-child[data-tip]:hover::after { left: auto; right: 0; }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
 /* a compact bar: less side padding, smaller gaps */
@@ -308,7 +312,7 @@ once more to turn task items into checkboxes with their line and hash.</p>
    */
   const ACTIONS = {
     question: [['partial', '⚠️ need more', 'A partial answer: it stays open'], ['✅', '✅ settled'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
-    finding: [['✅', '✅ done'], ['🚫', '🚫 reject'], ['⏸️', '⏸️ defer'], ['🎫', '🎫 ticket'], ['⏳', '⏳ agent'], ['❓', '❓ me', 'My call — waiting on me'], ['⚠️', '⚠️ partial']],
+    finding: [['✅', '✅ done', 'Fixed / done'], ['🚫', '🚫 reject', 'Rejected — say why'], ['⏸️', '⏸️ defer', 'Deferred — later'], ['🎫', '🎫 ticket', 'Handed off to a ticket'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['❓', '❓ me', 'My call — waiting on me'], ['⚠️', '⚠️ partial', 'Partly done — follow-up needed']],
     option: [['pick', 'pick it', 'Save and pick this option']],
     request: [['✅', '✅ done'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
     proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
