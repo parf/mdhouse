@@ -24,7 +24,7 @@
   - [ ] list all files of the repo
   - [ ] later: viewers for images, html, txt - not our main goal
   - [ ] on-demand remote repo check - are there any new commits; read-only: `git ls-remote`, no fetch
-  - [ ] when RW mode - buttons: commit, pull (`git pull --ff-only`), push
+  - [ ] when RW mode - buttons: commit, pull (`git pull --ff-only` - good start, later we'll fine tune), push
 
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../../CHANGELOG.md).
