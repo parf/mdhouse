@@ -114,13 +114,7 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 
 ### ⚙ Settings
 
-The **⚙** on each page's title line (in the top bar when the sidebar is off):
-
-- **Directories** — what is served, which folders are saved and which are only for this session,
-  and a button to remove one. Adding is done from a terminal, with `-p`.
-- **Documents → Edit link** — on by default: the ✎ beside each title, linking to
-  `edit:/full/path`. It needs something on your machine that opens `edit:` URLs in your editor;
-  turn it off if nothing does.
+⚙ on the title line: served / saved folders (remove one) · ✎ edit link (`edit:/full/path`) on or off
 
 ---
 
