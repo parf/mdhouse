@@ -263,6 +263,31 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   <li>a 💬 under the options still works — "none, do X instead"</li></ul></div>
 </div>
 
+<h3>3c. A comment on an option, and on the question</h3>
+<div class="case">
+  <div><div class="col-label">Markup</div>
+<pre>- ✅ Dev server port:
+  - (x) `7790`, own config 🌟
+    &gt; 💬 👤 **parf:** and print the URL at start
+  - ( ) `port: 0`, printed at start
+  - ( ) keep `7777`
+    &gt; 💬 👤 **parf:** no — the live one is there
+  &gt; 💬 👤 **parf:** revisit when we have a second dev</pre></div>
+  <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
+    <li class="item"><div class="head"><span class="g">✅</span><span>Dev server port:</span></div>
+      <div class="opts done">
+        <label class="opt picked"><input type="radio" name="port3" checked> <span><code>7790</code>, own config <span class="suggest">🌟 suggested</span></span></label>
+        <div class="thread" style="margin-left:34px"><div class="reply"><span class="who">👤 parf</span>and print the URL at start</div></div>
+        <label class="opt"><input type="radio" name="port3"> <span><code>port: 0</code>, printed at start</span></label>
+        <label class="opt"><input type="radio" name="port3"> <span>keep <code>7777</code></span></label>
+        <div class="thread" style="margin-left:34px;opacity:.7"><div class="reply"><span class="who">👤 parf</span>no — the live one is there</div></div>
+      </div>
+      <div class="thread"><div class="reply"><span class="who">👤 parf</span>revisit when we have a second dev</div></div></li>
+  </ul></div>
+  <ul class="notes"><li>each option has its own 💬 — a click on the option's 💬 (on hover) adds one</li>
+  <li>a comment on a rejected option stays visible, muted — it says why not</li></ul></div>
+</div>
+
 <!-- ============================================================ 4 -->
 <h2>4. Requests on existing text <small style="color:var(--dim);font-weight:400">— ⏸️ not this iteration</small></h2>
 <div class="case">
