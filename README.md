@@ -173,10 +173,9 @@ Run it from a clone:
 git clone https://github.com/parf/mdhouse
 cd mdhouse
 bun install
-sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your PATH
+sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse    # put on your PATH
+mdhouse dir  # run it
 ```
-
-Then run it as `mdhouse`, as above.
 
 Want to debug:
 
