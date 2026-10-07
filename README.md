@@ -31,18 +31,6 @@ bun install -g mdhouse      # or: npm install -g mdhouse
 
 Needs [Bun](https://bun.sh) ≥ 1.4 and git; optional: ripgrep (`rg`).
 
-<details>
-<summary>…or run it from a clone</summary>
-
-```bash
-git clone https://github.com/parf/mdhouse
-cd mdhouse
-bun install
-sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your PATH
-```
-
-</details>
-
 ## ▸ Start
 
 ```bash
@@ -281,8 +269,18 @@ can send.
 
 ## ▸ Development
 
+Run it from a clone:
+
 ```bash
+git clone https://github.com/parf/mdhouse
+cd mdhouse
 bun install
+sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your PATH
+```
+
+Then:
+
+```bash
 bun run dev          # serves this repo with hot reload, in the foreground
 bun test
 bunx tsc --noEmit
