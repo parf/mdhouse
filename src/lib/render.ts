@@ -617,7 +617,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   let hasMermaid = false;
 
   const md: MarkdownIt = new MarkdownIt({
-    html: true, // docs are trusted; --sanitize mode is applied by the caller
+    html: true, // docs are trusted: their HTML is rendered as written, there is no sanitizer
     linkify: true,
     breaks: false,
     highlight(code: string, lang: string): string {

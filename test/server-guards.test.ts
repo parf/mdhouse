@@ -421,3 +421,44 @@ describe('POST /api/insert — adding under a heading', () => {
     }
   });
 });
+
+describe('request limits', () => {
+  test('a limit that is not a number falls back to the default cap; an over-long marks path is refused', async () => {
+    const { mkdtemp, rm, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-limits-'));
+    // 30 files × 20 hits: more than the 500 cap.
+    for (let i = 0; i < 30; i++) await writeFile(join(dir, `f${i}.md`), 'needle\n'.repeat(20));
+    const port = 61798;
+    const base = `http://127.0.0.1:${port}`;
+    const { server, watcher, control } = await serve({
+      registry: await Registry.create([dir]),
+      prefs: await Prefs.load(join(dir, 'prefs.json')),
+      port,
+      hostname: '127.0.0.1',
+      noGit: true,
+    });
+    try {
+      const hits = async (limit: string) => ((await (await fetch(`${base}/api/search?q=needle&limit=${limit}`)).json()) as { hits: unknown[] }).hits.length;
+      expect(await hits('abc')).toBe(500);
+      expect(await hits('3')).toBe(3);
+      expect(await hits('100000')).toBe(500);
+      expect((await fetch(`${base}/api/recents?limit=abc`)).status).toBe(200);
+
+      const mark = (path: string) =>
+        fetch(`${base}/api/marks`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path, mark: 'favorite' }) });
+      expect((await mark('x'.repeat(5000))).status).toBe(413);
+      expect((await mark('f1.md')).status).toBe(200);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

@@ -157,6 +157,9 @@ export async function serve(opts: ServeOptions) {
     const v = url.searchParams.get(name);
     return v === null ? dflt : v !== '0' && v !== 'false';
   };
+  /** A `limit` query parameter: a whole number in 1..max, `dflt` when missing or not a number. */
+  const limitOf = (url: URL, dflt: number, max: number): number =>
+    Math.min(Math.max(Math.trunc(Number(url.searchParams.get('limit'))) || dflt, 1), max);
 
   /**
    * Who may come in at all — `lib/access.ts`. Off until the CLI sets an allow list or a user;
@@ -514,6 +517,7 @@ export async function serve(opts: ServeOptions) {
           if ('error' in at) return at.error;
           const message = body?.message?.trim();
           if (!message) return fail(400, 'a commit message is needed');
+          if (message.length > 100_000) return fail(413, 'the commit message is too long');
           return queueWrite(`git:${at.repo}`, async () => {
             const files = commitable(await dirtyFiles(at.repo));
             if (!files.length) return fail(409, 'nothing to commit');
@@ -537,11 +541,12 @@ export async function serve(opts: ServeOptions) {
           const repo = await repoToplevel(loc.abs.replace(/\/[^/]*$/, ''));
           if (!repo) return fail(404, 'not in a git repository');
           const rel = repoRel(repo, loc.abs);
-          return queueWrite(loc.abs, async () => {
+          // One git write at a time per repo, as commit / pull / push; and after any write to the file.
+          return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
             if ((await run(repo, ['ls-files', '--error-unmatch', '--', rel])).code !== 0) return fail(409, 'git has never seen this file');
             const r = await run(repo, ['checkout', 'HEAD', '--', rel]);
             return r.code === 0 ? json({ ok: true }) : fail(500, (r.err || r.out).trim());
-          });
+          }));
         },
       },
       '/api/git/pull': { POST: (req) => syncRepo(req, ['pull', '--ff-only']) },
@@ -624,7 +629,7 @@ export async function serve(opts: ServeOptions) {
         const result = await searchContent(root.path, scan.files, q, {
           regex: flag(url, 'regex'),
           includeIgnored,
-          maxHits: Number(url.searchParams.get('limit') ?? 500),
+          maxHits: limitOf(url, 500, 500),
         });
         return json(result);
       },
@@ -634,7 +639,7 @@ export async function serve(opts: ServeOptions) {
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
 
-        const limit = Math.min(Number(url.searchParams.get('limit') ?? 50), 500);
+        const limit = limitOf(url, 50, 500);
         const includeIgnored = flag(url, 'ignored', opts.includeIgnoredDefault);
 
         return json({ entries: await store.recents(root, limit, includeIgnored) });
@@ -645,7 +650,7 @@ export async function serve(opts: ServeOptions) {
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
 
-        const limit = Math.min(Number(url.searchParams.get('limit') ?? 60), 300);
+        const limit = limitOf(url, 60, 300);
         return json(await store.digest(root, limit, flag(url, 'ignored', opts.includeIgnoredDefault)));
       },
 
@@ -660,7 +665,7 @@ export async function serve(opts: ServeOptions) {
         if (!where) return json(empty);
         // A handful of recent commits is what the panel is for; a worklog with two hundred of
         // them made the page a history browser with a document attached.
-        const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 5, 1), 50);
+        const limit = limitOf(url, 5, 50);
         // Authorship rides along: finding the creating commit is the expensive part of this
         // page, and the document must not wait for it. Cached in the store per file.
         const [log, by] = await Promise.all([
@@ -751,6 +756,7 @@ export async function serve(opts: ServeOptions) {
             on?: boolean;
           } | null;
           if (!body?.path || !body.mark || !MARKS.includes(body.mark)) return fail(400, 'path and mark are required');
+          if (body.path.length > 4096) return fail(413, 'the path is too long');
 
           const root = body.root ? registry.get(body.root) : registry.defaultRoot();
           if (!root) return fail(404, 'unknown root');

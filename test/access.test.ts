@@ -76,4 +76,17 @@ describe('Basic credentials', () => {
     // Password changed: the remembered header no longer counts.
     expect(await check.check(basic('ann:secret'), { ann: await hashPassword('other') })).toBe(false);
   });
+  test('an unknown login takes as long as a wrong password: the delay does not reveal which logins exist', async () => {
+    const users = { ann: await hashPassword('secret') };
+    const check = new Users();
+    const time = async (cred: string) => {
+      const t = performance.now();
+      await check.check(basic(cred), users);
+      return performance.now() - t;
+    };
+    await time('nobody:x'); // the dummy hash is made once
+    const wrong = await time('ann:wrong');
+    const unknown = await time('nobody:x');
+    expect(unknown).toBeGreaterThan(wrong / 3);
+  });
 });

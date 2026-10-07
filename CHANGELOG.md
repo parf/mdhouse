@@ -19,6 +19,15 @@
 - A document's header: a git button before ✎, to the root's git view (inside a repo only)
 - List items opening with a severity glyph — `🔴 🟠 ⚪ 🟢` — can be answered too
 
+### Fixed
+
+- A login that does not exist answers as slowly as a wrong password — the delay no longer tells
+  which logins exist
+- `limit` that is not a number (`/api/search`, recents, digest, history) falls back to the default
+  cap instead of no cap
+- **Reset file** waits for a commit / pull / push in the same repo, as they wait for each other
+- A favorite path and a commit message have a length cap (413)
+
 ## 1.4.0 — 2026-10-07
 
 ### Added

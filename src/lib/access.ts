@@ -99,6 +99,9 @@ export function basicCredentials(header: string | null): { login: string; passwo
 /** A login may not hold `:` (Basic auth splits on the first one) or spaces. */
 export const validLogin = (login: string): boolean => /^[^\s:]{1,64}$/.test(login);
 
+let dummy: Promise<string> | undefined;
+const dummyHash = () => (dummy ??= Bun.password.hash('mdhouse: no such login'));
+
 /**
  * Checks Basic credentials against the stored hashes. A password hash is slow on purpose, and a
  * browser sends the header with every request, so a header already verified against the same
@@ -112,8 +115,13 @@ export class Users {
     const stamp = JSON.stringify(users);
     if (this.verified.get(header) === stamp) return true;
     const cred = basicCredentials(header);
-    const hash = cred && Object.hasOwn(users, cred.login) ? users[cred.login] : null;
-    if (!cred || !hash) return false;
+    if (!cred) return false;
+    const hash = Object.hasOwn(users, cred.login) ? users[cred.login] : null;
+    if (!hash) {
+      // An unknown login costs the same hash an existing one does, so the delay does not tell them apart.
+      await Bun.password.verify(cred.password, await dummyHash()).catch(() => false);
+      return false;
+    }
     let ok = false;
     try {
       ok = await Bun.password.verify(cred.password, hash);
