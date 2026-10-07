@@ -67,6 +67,8 @@ export interface PingReply {
   pid: number;
   url: string;
   roots: Array<{ name: string; path: string; writable: boolean; saved?: boolean }>;
+  /** The systemd unit it runs as, if any — `mdhouse exit` leaves that one to systemctl. */
+  service?: string;
 }
 
 export interface Handlers {

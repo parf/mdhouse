@@ -216,8 +216,15 @@ const portHint = opts.portGiven ? ` --port ${opts.port}` : '';
 if (command === 'exit') {
   const ports = opts.all ? knownPorts() : [opts.port];
   let stopped = 0;
+  let units = 0;
 
   for (const port of ports) {
+    const unit = (await askPing(port))?.service;
+    if (unit) {
+      units++;
+      console.error(`mdhouse: port ${port} is the systemd unit ${unit} — stop it with:  systemctl --user stop ${unit}`);
+      continue;
+    }
     const who = await askExit(port);
     if (!who) continue;
     stopped++;
@@ -225,6 +232,7 @@ if (command === 'exit') {
     for (const root of who.roots) console.log(`  ${root.path}${root.writable ? '  [RW]' : ''}`);
   }
 
+  if (units) process.exit(1);
   if (!stopped) {
     console.error(
       opts.all ? 'mdhouse: nothing running.' : `mdhouse: nothing running on port ${opts.port}.`,
@@ -531,6 +539,12 @@ try {
 } catch (err) {
   const code = (err as { code?: string }).code;
   if (code !== 'EADDRINUSE') throw err;
+  if (process.env.MDHOUSE_SERVICE === '1') {
+    // Under systemd, handing over would end the unit "successfully" while another copy serves:
+    // fail instead, so Restart=on-failure keeps trying until the port is free.
+    console.error(`mdhouse: port ${opts.port} is taken — not starting; systemd will retry`);
+    process.exit(1);
+  }
 
   /**
    * The port is taken. If an mdhouse is behind it, hand it these directories rather than

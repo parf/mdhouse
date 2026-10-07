@@ -6,11 +6,12 @@
  * so `install` refuses until something is saved, and the service itself exits cleanly if the
  * list has been emptied since (MDHOUSE_SERVICE tells it where it is running).
  *
- * Its output goes to the journal: `journalctl --user -u mdhouse -f`. `mdhouse exit` still
- * stops it, with status 0, which `Restart=on-failure` leaves alone.
+ * Its output goes to the journal: `journalctl --user -u mdhouse -f`. `mdhouse exit` does not stop
+ * it — a stop with status 0 is one `Restart=on-failure` leaves alone, and the next `mdhouse <dir>`
+ * would start a copy outside systemd — it names the `systemctl` command instead.
  */
 
-import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { Prefs } from './prefs';
@@ -25,6 +26,16 @@ const DEFAULT_PORT = 7777;
  */
 export function unitName(port: number, explicit = false): string {
   return explicit && port !== DEFAULT_PORT ? `mdhouse-${port}.service` : 'mdhouse.service';
+}
+
+/** The systemd unit this process runs in, when a unit started it; from its cgroup on Linux. */
+export function ownUnit(): string | undefined {
+  if (process.env.MDHOUSE_SERVICE !== '1') return undefined;
+  try {
+    return /\/([^/\n]+\.service)$/m.exec(readFileSync('/proc/self/cgroup', 'utf8'))?.[1] ?? 'mdhouse.service';
+  } catch {
+    return 'mdhouse.service';
+  }
 }
 
 /** Where systemd looks for a user's own units. */

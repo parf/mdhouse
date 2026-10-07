@@ -177,4 +177,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   (`Prefs.queue`), written to a uniquely named temp file and renamed
   into place; a file that does not parse is moved aside as `prefs.json.broken-<time>`, never
   written over. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
+- The systemd unit (`MDHOUSE_SERVICE=1`) is stopped by `systemctl` only: `mdhouse exit` sees
+  `service` in the ping and names the command instead (exit 1); its `--fg` with the port taken
+  exits 1 instead of handing over, so `Restart=on-failure` retries.
 - Tests: `bun test`, against a temp config dir (`test/preload.ts`); types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { unitName, unitText } from '../src/lib/service';
+import { ownUnit, unitName, unitText } from '../src/lib/service';
 
 const spec = { bun: '/usr/bin/bun', cli: '/opt/mdhouse/bin/mdhouse', path: '/usr/bin:/bin' };
 
@@ -35,5 +35,18 @@ describe('the systemd unit', () => {
     const text = unitText({ ...spec, cli: "/home/o'neil/100%/$HOME/mdhouse" });
     expect(text).toContain(`ExecStart=/usr/bin/bun "/home/o'neil/100%%/$$HOME/mdhouse" --fg`);
     expect(unitText({ ...spec, path: '/opt/50%/bin' })).toContain('Environment=PATH=/opt/50%%/bin');
+  });
+
+  test('a process knows its own unit only when a unit started it', () => {
+    const was = process.env.MDHOUSE_SERVICE;
+    try {
+      delete process.env.MDHOUSE_SERVICE;
+      expect(ownUnit()).toBeUndefined();
+      process.env.MDHOUSE_SERVICE = '1';
+      expect(ownUnit()).toMatch(/\.service$/);
+    } finally {
+      if (was === undefined) delete process.env.MDHOUSE_SERVICE;
+      else process.env.MDHOUSE_SERVICE = was;
+    }
   });
 });

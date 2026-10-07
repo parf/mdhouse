@@ -157,8 +157,8 @@ pgrep -af "^/usr/bin/bun .*bin/mdhouse"'
 
 - `pgrep` shows one `--fg` process, no `logger` pipe
 - then tell me to reload the page (new bundle)
-- never `mdhouse exit` + `mdhouse`: `exit` stops the unit with status 0, systemd doesn't
-  restart it, and a detached copy runs instead
+- `mdhouse exit` refuses the unit and names `systemctl --user stop mdhouse.service`; the unit's
+  `--fg` exits 1 when the port is taken, so systemd retries — never start a copy by hand on :7777
 
 ## Deploy (release to npm)
 

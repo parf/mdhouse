@@ -21,6 +21,7 @@ import { commitDiff, commitInfo, currentUser, fileHistory, newFileDiff, workingD
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
+import { ownUnit } from './lib/service';
 import { allowedAddress, Users } from './lib/access';
 import { commitable, dirtyFiles, folderLog, origin, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
@@ -919,6 +920,7 @@ export async function serve(opts: ServeOptions) {
         writable: r.writable,
         saved: prefs.isSaved(r.path),
       })),
+      service: ownUnit(),
     }),
     // `mdhouse exit`. The daemon runs detached with no terminal attached to it, so asking it
     // over the socket is the supported way to stop it — there is no Ctrl+C to press.

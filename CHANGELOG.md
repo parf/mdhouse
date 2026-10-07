@@ -21,6 +21,10 @@
 
 ### Fixed
 
+- `mdhouse exit` no longer stops the systemd service — it would stay down, and the next
+  `mdhouse <dir>` started a copy outside systemd; it names `systemctl --user stop …` instead
+- The service, with its port taken, fails so systemd retries, instead of handing its folders to
+  whatever copy holds the port and ending "successfully"
 - A login that does not exist answers as slowly as a wrong password — the delay no longer tells
   which logins exist
 - `limit` that is not a number (`/api/search`, recents, digest, history) falls back to the default
