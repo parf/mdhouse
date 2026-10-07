@@ -74,8 +74,7 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 - allow edits: `mdhouse -p --rw folder(s)`
 - ☑️ **Tick a checkbox** — that one line is saved
 - ❓⁉️ **Answer a question** — **Save** (Ctrl+Enter)
-- `- [ ]` `- ✅` `- ⚠️` … **Checkbox and status items are questions too** — **Check & Save**
-  answers and ticks in one go. [Details](doc/qa.md#checkbox-and-status-items)
+- ✅, ⚠️, … - Click & Answer (many options) - [Details](doc/qa.md#checkbox-and-status-items)
 
 <img src="doc/rw-answer.png" alt="An answered question with bullets, and a checkbox question with the answer editor open under it: Save, Check &amp; Save and Cancel" width="560">
 
