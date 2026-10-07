@@ -80,8 +80,7 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 
 - Hover a heading for three buttons after its `#`:
   - ✎ open the file at that line in your editor (`edit:/path:line`)
-  - ↓ add a block right under the heading
-  - ⇊ add one at the end of its section
+  - ↓ add a block right under the heading · ⇊ at the end of its section
 - **Add as** ¶ text · ❝ quote · ✍️ my quote (signed) · 💡 tip · ❓ question · ⁉️ disagreement ·
   💬 answer
 
