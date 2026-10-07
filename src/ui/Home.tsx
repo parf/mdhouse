@@ -172,7 +172,7 @@ export function Home(props: Props) {
       })()}
       {git && <RemoteBar p={p} info={git} onState={setRemote} />}
       {git?.writable && <GitActions p={p} info={git} remote={remote} onDone={() => setGitTick((n) => n + 1)} />}
-      {git && <SyncLists info={git} onOpen={props.onOpen} />}
+      {git && <SyncLists info={git} onOpen={props.onOpen} isMine={isMine} />}
 
       {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
       {view === 'files' && git && <FilesView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}

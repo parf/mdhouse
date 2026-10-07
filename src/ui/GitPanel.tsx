@@ -357,7 +357,7 @@ function changeOf(code: string): string {
  * What this checkout has that origin does not, in two lists: the commits not pushed, and the
  * files changed or added and not committed — every file type.
  */
-export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) => void }) {
+export function SyncLists({ info, onOpen, isMine }: { info: GitInfo; onOpen: (rel: string) => void; isMine: (email: string, author: string) => boolean }) {
   const unpushed = info.sync?.unpushed ?? [];
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
   // A long run of unpushed work would push everything else off the page: the newest few, then
@@ -378,7 +378,8 @@ export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: strin
                 <span class="when">
                   <Ago at={c.date} />
                 </span>
-                <span class="who">{c.author}</span>
+                {/* Unpushed work is nearly always your own: a name only when it is someone else's. */}
+                {!isMine(c.email, c.author) && <span class="who">{c.author}</span>}
                 <span class="sha">{c.hash.slice(0, 8)}</span>
               </li>
             ))}

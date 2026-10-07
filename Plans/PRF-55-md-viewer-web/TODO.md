@@ -45,6 +45,7 @@
   - [x] merge / rebase / conflicts in progress - warning, commit/pull/push off
 - [x] known nothing to pull - pull button disabled; something to pull - bright
 - [x] CHANGED / ADDED FILES - same format as for dirs: dir | filename | age | size
+- [x] Unpushed commits - hide author when it is me
 
 ## NEXT iteration
 
