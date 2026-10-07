@@ -19,13 +19,13 @@ A raw list (from a chat, a ticket) or questions about one `.md` file.
 Findings have **stages**, not just open / answered:
 
 ```
-issue → answer → solved ✅ | rejected 🚫 | deferred ⏳ | needs more details ❓ → (agent elaborates) → …
+issue → answer → solved ✅ | rejected 🚫 | deferred ⏸️ | needs more details ❓ → (agent elaborates ⏳) → …
 ```
 
 - [x] format: severity first (`- 🔴 file:line …`), status glyph in front once decided (`- ✅ 🔴 …`), 💬 under it
 - [x] `/review` writes, `/resolve-findings` processes, answers in place
 - [ ] several rounds on one item: answer → agent replies → I answer — a thread, not one 💬
-- [ ] I set the stage from the page (✅ / 🚫 / ⏳ / ❓) without typing the glyph
+- [ ] I set the stage from the page (✅ / 🚫 / ⏸️ / ❓) without typing the glyph
 - [ ] counts per stage and severity at the top; "open only" filter
 - [ ] actions / decisions extracted — rarely, so manual is fine
 
@@ -41,7 +41,7 @@ An item comes with options; I pick.
 
 ## 4. Working with existing documents — point at something and say …
 
-⏳ So far ok — we'll not improve it in this iteration.
+⏸️ So far ok — we'll not improve it in this iteration.
 
 - [ ] select a block / a sentence → ask a question, ask to elaborate, ask for a rewrite
 - [x] add at the top / bottom of a section — ↓ ⇊ on a heading
