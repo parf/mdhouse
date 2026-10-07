@@ -57,6 +57,9 @@ export function RemoteBar({ p, info, onState }: { p: string; info: GitInfo; onSt
   const [remote, setRemote] = useState<RemoteState | 'checking' | null>(null);
   useEffect(() => onState?.(remote === 'checking' ? null : remote), [remote]);
   const head = info.head?.commit?.hash;
+  // Asked again when the branch moved against origin — a pull or push here (or in a terminal)
+  // makes the last answer wrong.
+  const moved = `${info.sync?.last?.at}:${info.sync?.ahead}:${info.sync?.behind}`;
   useEffect(() => {
     let live = true;
     setRemote('checking');
@@ -67,7 +70,7 @@ export function RemoteBar({ p, info, onState }: { p: string; info: GitInfo; onSt
     return () => {
       live = false;
     };
-  }, [p, head]);
+  }, [p, head, moved]);
   return (
     <div class="git-remote">
       {info.origin && (
