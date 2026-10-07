@@ -44,8 +44,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 
 ## ❖ What you get
 
-Websocket controlled, git integrated, markdown viewer that supports Github Flavoured Markdown
-along with other dialects.
+Live, git-aware Markdown viewer — GFM and more.
 
 - 📁 **Browse** — a sidebar tree of `.md` / `.mdx` files only, in three widths (`Ctrl+B`), with
   age, size, git status (`M` `U` `S` `D`), and stubs marked **∅**.
