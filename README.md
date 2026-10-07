@@ -179,41 +179,20 @@ With `--rw` (**still in testing** — use it on folders under git):
 ## ▸ Running it
 
 ```bash
-mdhouse                     # the saved folders, or this one when nothing is saved
-mdhouse exit                # stop it
+mdhouse                          # serve the saved folders (or this one, when nothing is saved)
+mdhouse ~/src                    # add a folder to the running one — never a second server
+mdhouse ~/notes -P --port 8080   # save folders, and the port / host, for every later start
+mdhouse --rm ~/notes             # forget a folder and stop serving it
+mdhouse exit                     # stop it (--all: every port)
+mdhouse service install          # systemd: now and at every login; also status, uninstall
 ```
 
-**In the background.** `mdhouse <folder>` detaches and returns; `mdhouse exit` (or `stop`) ends
-it, and `exit --all` ends every one you have running. Its output goes to the system log, and
-the start message says how to read it here — `journalctl -t mdhouse -f` with journald,
-`log stream` on macOS. `--fg` keeps it in the foreground, where Ctrl+C stops it.
-
-**It adds, never replaces.** With one already running on the port, `mdhouse ~/src` hands `~/src`
-to it: no error, no rival server, and your open tabs keep the tree they were reading. The
-request travels over a `0600` unix socket in `~/.config/mdhouse/`, so only a process running as
-you can make it.
-
-**Saved folders, port and host.** `-P` (`--perm`) saves the folders you name; from then on
-every start serves them, alongside any you name that time. Give `--port` or `--host` with `-P`
-and those are saved too — `mdhouse ~/notes -P --port 8080` — so plain `mdhouse`, `mdhouse exit`
-and the service all use them. `mdhouse --rm <folder>` forgets a folder and stops serving it —
-though the last one being served stays up until `exit`. It all lives in
-`~/.config/mdhouse/prefs.json`, with your favourites and settings.
-
-**As a service** (Linux, systemd):
-
-```bash
-mdhouse service install      # starts now and at every login, serving the saved folders
-mdhouse service status
-mdhouse service uninstall
-```
-
-It asks you to save a folder first, and it starts the way a plain `mdhouse` does — the saved
-folders, on the saved port and host, and writes only to folders saved with `-P --rw`.
-`mdhouse exit` stops it, and systemd leaves it stopped: start it again with
-`systemctl --user start mdhouse`. The log is `journalctl --user -u mdhouse -f`;
-`loginctl enable-linger $USER` starts it at boot, before you log in. `service install --port <n>`
-installs a second, pinned instance as `mdhouse-<n>.service`.
+- Runs in the background; `--fg` keeps it in the foreground. The start message says where its
+  log is (`journalctl -t mdhouse -f`, or `journalctl --user -u mdhouse -f` for the service).
+- Saved folders, port, host and settings live in `~/.config/mdhouse/prefs.json`.
+- The service serves only saved folders, writes only to those saved with `-P --rw`, and stays
+  stopped after `mdhouse exit` — `systemctl --user start mdhouse` brings it back.
+  `loginctl enable-linger $USER` starts it at boot.
 
 ### ⚙ Settings
 
