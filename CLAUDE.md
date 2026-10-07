@@ -42,7 +42,6 @@ Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, r
   never delete the questions file unasked.
 - **My files:** don't commit, reset or delete my uncommitted edits (TODO ticks, playground
   docs) unless asked. Commit only the paths you changed (`git commit <paths>`).
-- **Commits** end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - **Push / publish only when I say "publish"** (or "deploy").
 - localStorage: every access in try/catch; keys `mdhouse.*`.
 - UI links are real `<a href>`; plain clicks go through `go(url)` (pushState), middle click
