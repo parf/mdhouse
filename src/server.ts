@@ -79,7 +79,14 @@ export function sameOrigin(req: Request): boolean {
   }
 }
 
-const RAW_EXT = /\.(mmd|mermaid|txt|sql|sh|ya?ml|json|csv|ini|conf|toml|howto|local|log|env|dist|example|readme)$/i;
+/** Files `/api/raw` shows: as text, except HTML (below). */
+const RAW_EXT = /\.(mmd|mermaid|txt|sql|sh|ya?ml|json|csv|ini|conf|toml|howto|local|log|env|dist|example|readme|html?|css|scss|sass|less)$/i;
+/**
+ * HTML is rendered, sandboxed: its scripts run, but in an opaque origin — no cookies, and every
+ * request it makes back here is cross-site, so the write routes refuse it and reads stay unreadable.
+ */
+const HTML_EXT = /\.html?$/i;
+const SANDBOXED_HTML = { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': 'sandbox allow-scripts' };
 const ASSET_EXT = /\.(png|jpe?g|gif|webp|svg|avif|ico)$/i;
 
 /** Resolved once at startup; mermaid is a direct dependency so this always exists. */
@@ -605,7 +612,9 @@ export async function serve(opts: ServeOptions) {
 
         const file = Bun.file(loc.abs);
         if (!(await file.exists())) return fail(404, 'not found');
-        return new Response(file, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
+        return new Response(file, {
+          headers: HTML_EXT.test(loc.rel) ? SANDBOXED_HTML : { 'content-type': 'text/plain; charset=utf-8' },
+        });
       },
 
       '/api/asset': async (req) => {

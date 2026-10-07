@@ -462,3 +462,45 @@ describe('request limits', () => {
     }
   });
 });
+
+describe('/api/raw', () => {
+  test('text files as text; HTML rendered, sandboxed; anything else refused', async () => {
+    const { mkdtemp, rm, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-raw-'));
+    for (const f of ['a.html', 'a.css', 'a.scss', 'a.txt', 'a.exe']) await writeFile(join(dir, f), 'x');
+    const port = 61799;
+    const { server, watcher, control } = await serve({
+      registry: await Registry.create([dir]),
+      prefs: await Prefs.load(join(dir, 'prefs.json')),
+      port,
+      hostname: '127.0.0.1',
+      noGit: true,
+    });
+    try {
+      const root = (await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()).roots[0].id;
+      const raw = (f: string) => fetch(`http://127.0.0.1:${port}/api/raw?p=${root}/${f}`);
+      const html = await raw('a.html');
+      expect(html.status).toBe(200);
+      expect(html.headers.get('content-type')).toStartWith('text/html');
+      expect(html.headers.get('content-security-policy')).toBe('sandbox allow-scripts');
+      for (const f of ['a.css', 'a.scss', 'a.txt']) {
+        const r = await raw(f);
+        expect(r.status).toBe(200);
+        expect(r.headers.get('content-type')).toStartWith('text/plain');
+        expect(r.headers.get('content-security-policy')).toBeNull();
+      }
+      expect((await raw('a.exe')).status).toBe(415);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

@@ -18,6 +18,8 @@
   commit, after a confirm — `POST /api/git/reset`
 - A document's header: a git button before ✎, to the root's git view (inside a repo only)
 - List items opening with a severity glyph — `🔴 🟠 ⚪ 🟢` — can be answered too
+- A linked `.html` file opens rendered, sandboxed — its scripts run, but cannot reach mdhouse;
+  `.css`, `.scss`, `.sass`, `.less` open as text
 - The npm package leaves out the README screenshots (833 kB → 184 kB); npmjs shows them from GitHub
 
 ### Fixed

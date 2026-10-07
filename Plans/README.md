@@ -130,6 +130,10 @@ contents list, so a heading link and its contents entry cannot disagree.
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.
+- `/api/raw` serves a linked non-Markdown file from a short list (`RAW_EXT`: txt, json, yaml, css,
+  scss, …) as `text/plain`; `.html` is rendered, under `Content-Security-Policy: sandbox
+  allow-scripts` — an opaque origin, so its requests back are cross-site: writes refused,
+  reads unreadable.
 - The CLI goes over the `0600` unix socket instead, which a browser cannot reach at all.
 
 ## Data sources
