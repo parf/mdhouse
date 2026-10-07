@@ -48,6 +48,36 @@ Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, r
 - UI links are real `<a href>`; plain clicks go through `go(url)` (pushState), middle click
   opens a tab.
 
+## Glyphs (from `/rd/CLAUDE.md`)
+
+For findings, reviews and task status — in docs, pages and replies; not decoration:
+
+- **Severity:** 🔴 high · 🟠 medium · ⚪ low
+- **Status:** ✅ done · ⚠️ partial / follow-up · 🎫 handed off · ❌ ran and failed ·
+  🚫 cancelled by decision · ⛔ cannot be done (nothing ran)
+- **Open:** ❓ no answer yet · ⁉️ two sources contradict — both come off once settled
+- **Green always means OK.** Green on something that needs action is a defect.
+- No substitutes (no 🟡 / ◯). ❌ only for something that ran and did not pass.
+
+## Code idioms
+
+- `const` by default, `let` only when reassigned, never `var`.
+- **Fetch:** check `res.ok` before `res.json()` (a proxy error page is HTML); a duplicate-request
+  guard (flag set on entry, cleared in `finally`); `AbortController` when a newer request
+  supersedes an older one — on `AbortError` return silently.
+- **Comments: current contract only.** What it does now, invariants, non-obvious behavior.
+  No history, investigation notes or plans — those go in `DONE.md` / `DECISIONS.md`.
+  Short direct sentences that start with the behavior (`Returns…`, `Skips…`).
+
+## Shell tricks
+
+- Feed text on stdin through a **quoted** heredoc — nothing gets escaped:
+  `git commit -q -F - <<'EOF' … EOF`, `bun - <<'TS' … TS`. Unquoted `<<EOF` still expands `$`.
+- My shell is fish: wrap bash-isms (`$(…)`, `<<<`, `for … do`) in `bash -c '…'`.
+- Check logs proactively after a change: `journalctl --user -u mdhouse.service -n 50`
+  (live), or the `--fg` output (scratch).
+- Never force-push; never `git commit -a` together with paths — `git commit <paths>`.
+
 ## Commands
 
 ```sh
