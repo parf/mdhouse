@@ -117,6 +117,7 @@ Search falls back to a JS regex when rg is missing.
 ## Visual rules, from the markup alone
 
 - [ ] severity 🔴 🟠 and `❓` (waiting on me) — strong colour, never folded
+- [ ] questions are not bold — they can be long; the tinted background is the highlight
 - [ ] an answered `❓` (a 💬 under it) shows as a green **?** — HTML only, no such glyph: the file keeps `❓`
 - [ ] `⏳` — normal; `⏸️` — muted
 - [ ] `✅` `🚫` items and their threads — muted, folded: the question, and under it the answer on

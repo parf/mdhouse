@@ -54,7 +54,7 @@ ul.items { list-style: none; margin: 0; padding: 0; }
 .item > .head { display: flex; gap: 6px; align-items: baseline; }
 .g { flex: none; }
 .sev-h { font-weight: 600; }
-.wait-me { background: var(--q-bg); box-shadow: inset 3px 0 0 var(--q); font-weight: 600; }
+.wait-me { background: var(--q-bg); box-shadow: inset 3px 0 0 var(--q); }
 .wait-me.dis { background: var(--dis-bg); box-shadow: inset 3px 0 0 var(--dis); }
 .btn { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; border: 1px solid var(--line);
   border-radius: 10px; padding: 0 7px; color: var(--dim); background: var(--panel); cursor: pointer; margin-left: auto; white-space: nowrap; }
@@ -87,8 +87,8 @@ details.settled[open] { background: var(--code-bg); }
 .hang > .g { text-align: center; }
 /* an answered ❓ — a green "?" in its place: the question is settled */
 .g-answered { color: var(--a); font-weight: 800; font-size: 1.15em; line-height: 1; width: 1.1em; text-align: center; }
-.qblock.q { background: var(--q-bg); border-left: 4px solid var(--q); font-weight: 600; }
-.qblock.d { background: var(--dis-bg); border-left: 4px solid var(--dis); font-weight: 600; }
+.qblock.q { background: var(--q-bg); border-left: 4px solid var(--q); }
+.qblock.d { background: var(--dis-bg); border-left: 4px solid var(--dis); }
 .qblock.a { background: var(--a-bg); border-left: 4px solid var(--a); margin-left: 22px; }
 
 /* options */
@@ -346,7 +346,7 @@ Search falls back to a JS regex.
 <h2>Loudness, at a glance</h2>
 <table>
   <tr><th>Level</th><th>Glyphs</th><th>Look</th></tr>
-  <tr><td>waiting on me</td><td>❓ ⁉️</td><td>tinted block, bold, red/orange edge, answer button</td></tr>
+  <tr><td>waiting on me</td><td>❓ ⁉️</td><td>tinted block, red/orange edge, answer button — not bold: questions can be long</td></tr>
   <tr><td>high / medium</td><td>🔴 🟠 ❌ ⛔ ⚠️</td><td>bold (🔴), normal (🟠)</td></tr>
   <tr><td>normal</td><td>⚪ ⏳</td><td>plain</td></tr>
   <tr><td>quiet</td><td>🔵 ⏸️ 🎫</td><td>grey text</td></tr>
