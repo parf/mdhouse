@@ -71,7 +71,7 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 
 ## ✎ Editing docs & answering / asking questions
 
-With `--rw` (**still in testing** — use it on folders under git):
+With `--rw`:
 
 - ☑️ **Tick a checkbox** — that one line is saved
 - ❓ ⁉️ **Answer a question** — click the icon, write, **Save** (Ctrl+Enter). Written in the

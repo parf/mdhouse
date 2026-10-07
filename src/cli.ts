@@ -26,8 +26,8 @@ const USAGE = `mdhouse — browse every .md file under a directory
 
 Options
   -p, --perm           save the folders (and any --port/--host given): used on every start
-      --rw             testing: the folders named may be written (checkbox ticks, answers,
-                       notes under headings); with -p, saved writable. Other folders are not affected
+      --rw             the folders named may be written (checkbox ticks, answers, notes
+                       under headings); with -p, saved writable
       --rm             forget the folders and stop serving them
       --host <addr>    address to bind              (default 127.0.0.1)
       --port <n>       port to listen on            (default 7777)
