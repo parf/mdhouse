@@ -230,6 +230,9 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
   const [commits, setCommits] = useState<GitCommit[] | null>(null);
   const [more, setMore] = useState(true);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  // A commit origin does not have yet has no page there, and neither do its files at that
+  // commit: its files link by branch, its hash links nowhere.
+  const notOnOrigin = new Set(info.sync?.unpushed.map((c) => c.hash));
 
   useEffect(() => {
     let live = true;
@@ -270,12 +273,14 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
               </span>
               <span class="who">{c.author}</span>
             </button>
-            {info.origin ? (
+            {info.origin && !notOnOrigin.has(c.hash) ? (
               <a class="sha" href={info.origin.commit.replace('{sha}', c.hash)} target="_blank" rel="noopener noreferrer" title="On its host">
                 {c.hash.slice(0, 8)}
               </a>
             ) : (
-              <span class="sha">{c.hash.slice(0, 8)}</span>
+              <span class="sha" title={info.origin ? 'Not on origin yet' : undefined}>
+                {c.hash.slice(0, 8)}
+              </span>
             )}
             {shown && (
               <ul class="git-commit-files">
@@ -285,7 +290,7 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
                     {f.status === 'D' ? (
                       <span class="git-file plain">{f.path.slice(prefix.length) || f.path}</span>
                     ) : (
-                      <FileLink info={info} path={f.path} sha={c.hash} onOpen={onOpen} label={f.path.startsWith(prefix) ? f.path.slice(prefix.length) : f.path} />
+                      <FileLink info={info} path={f.path} sha={notOnOrigin.has(c.hash) ? info.head?.branch : c.hash} onOpen={onOpen} label={f.path.startsWith(prefix) ? f.path.slice(prefix.length) : f.path} />
                     )}
                   </li>
                 ))}
@@ -323,7 +328,8 @@ export function FilesView({ p, info, onOpen, revision }: { p: string; info: GitI
   if (!files) return <div class="spinner" />;
   if (!files.length) return <p class="empty">git tracks no files here.</p>;
   const prefix = info.dir ? `${info.dir}/` : '';
-  const sha = info.head?.commit?.hash;
+  // By branch, as the host's own file pages are linked: `…/blob/main/src/cli.ts`.
+  const sha = info.head?.branch;
   let lastDir = '\0';
   return (
     <ul class="git-files">
@@ -438,7 +444,12 @@ function ChangedFiles({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) =
                   </td>
                 )}
                 <td class="name">
-                  <span class={opens ? 'link' : 'plain'}>{f.md ? docName(f.name) : f.name}</span>
+                  {opens || f.size === undefined || !info.origin ? (
+                    <span class={opens ? 'link' : 'plain'}>{f.md ? docName(f.name) : f.name}</span>
+                  ) : (
+                    // Not opened here: the file on its host, on this branch — as it was last pushed.
+                    <FileLink info={info} path={f.path} sha={info.head?.branch} onOpen={onOpen} label={f.name} />
+                  )}
                   {/* The same tags the front page's Uncommitted rows carry. */}
                   <span class={`tag ch-${change.replace(' ', '-')}`}>{change}</span>
                   {small === 'tiny' && <SizeMark size={f.size} />}

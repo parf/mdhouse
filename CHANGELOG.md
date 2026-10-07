@@ -20,6 +20,7 @@
     age, size, as a folder page shows them
   - origin is asked by itself once the page is up (ls-remote, kept 30 seconds); ↻ asks again
   - **Pull** is off when origin has nothing new, and stands out when it has
+  - file links go by branch (`…/blob/main/src/cli.ts`); a commit not on origin yet is not linked
   - a merge, rebase or conflict under way is said, and commit / pull / push wait for it
   - git over ssh finds your ssh agent even under the systemd service, which does not inherit
     `SSH_AUTH_SOCK` (`/run/user/<uid>/ssh-agent.socket`, `gcr/ssh`, `keyring/ssh`)
