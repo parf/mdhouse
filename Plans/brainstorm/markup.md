@@ -38,7 +38,7 @@ turns so GitHub keeps them apart:
   | Editing | Actions between Save and Cancel |
   |---|---|
   | a question ❓ ⁉️ (answered or not) | ⚠️ need more · ✅ settled · ⏳ to agent · ⏸️ defer · 🚫 drop |
-  | a finding (a line with a severity) | ✅ done · 🚫 rejected · ⏸️ deferred · 🎫 ticketed · ⏳ to agent · ❓ my call · ⚠️ partial |
+  | a finding (a line with a severity) | ✅ done · 🚫 reject · ⏸️ defer · 🎫 ticket · ⏳ to agent · ❓ my call · ⚠️ partial |
   | a comment on an option | pick it |
   | a request 👉 | ✅ done · ⏸️ defer · 🚫 drop |
 

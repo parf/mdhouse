@@ -26,7 +26,7 @@
    */
   const ACTIONS = {
     question: [['partial', '⚠️ need more', 'A partial answer: it stays open'], ['✅', '✅ settled'], ['⏳', '⏳ to agent', 'Waiting on the agent'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
-    finding: [['✅', '✅ done'], ['🚫', '🚫 rejected'], ['⏸️', '⏸️ deferred'], ['🎫', '🎫 ticketed'], ['⏳', '⏳ to agent'], ['❓', '❓ my call', 'Waiting on me'], ['⚠️', '⚠️ partial']],
+    finding: [['✅', '✅ done'], ['🚫', '🚫 reject'], ['⏸️', '⏸️ defer'], ['🎫', '🎫 ticket'], ['⏳', '⏳ to agent'], ['❓', '❓ my call', 'Waiting on me'], ['⚠️', '⚠️ partial']],
     option: [['pick', 'pick it', 'Save and pick this option']],
     request: [['✅', '✅ done'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
     proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
