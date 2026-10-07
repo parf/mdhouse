@@ -8,6 +8,7 @@
   git view, git view → the folder page); GIT / Favs / Recent / Mine / Commits / Files and ⚙ on
   the right, links each — the tab is in the url (`?git=favs|mine|commits|files`)
 - A folder page and its git view honor wide mode
+- Git view: Unpushed commits fold (▸ in its heading), remembered
 - A document's header: a git button before ✎, to the root's git view (inside a repo only)
 
 ## 1.4.0 — 2026-10-07

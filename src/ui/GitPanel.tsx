@@ -4,6 +4,9 @@ import { Ago } from './Ago';
 import { Dir } from './Home';
 import { sizeClass, SizeMark } from './Tree';
 import { docName, fileSize } from './format';
+import { IconChevron } from './icons';
+
+const LS_UNPUSHED = 'mdhouse.unpushedOpen';
 
 /** Where a repo file opens: here when it is Markdown under the root, else on its host, else nowhere. */
 type Target = { rel: string } | { href: string } | null;
@@ -382,13 +385,33 @@ export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: strin
   // the rest on request.
   const [allUnpushed, setAllUnpushed] = useState(false);
   const shown = allUnpushed ? unpushed : unpushed.slice(0, 5);
+  // Folded or not, kept for the next visit: the count in the heading says enough once you know.
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(LS_UNPUSHED) !== '0';
+    } catch {
+      return true;
+    }
+  });
+  const toggle = () => {
+    setOpen(!open);
+    try {
+      localStorage.setItem(LS_UNPUSHED, open ? '0' : '1');
+    } catch {
+      /* a per-viewer convenience; fine without it */
+    }
+  };
   return (
     <>
       {unpushed.length > 0 && (
         <section class="git-list git-unpushed">
           <h2>
-            Unpushed commits <span class="n">{unpushed.length}{unpushed.length === 100 ? '+' : ''}</span>
+            <button class="fold" aria-expanded={open} onClick={toggle} title={open ? 'Hide' : 'Show'}>
+              <IconChevron open={open} size={12} />
+              Unpushed commits <span class="n">{unpushed.length}{unpushed.length === 100 ? '+' : ''}</span>
+            </button>
           </h2>
+          {open && <>
           <ul>
             {shown.map((c) => (
               <li key={c.hash}>
@@ -407,6 +430,7 @@ export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: strin
               All {unpushed.length}
             </button>
           )}
+          </>}
         </section>
       )}
       {info.dirty.length > 0 && <ChangedFiles info={info} onOpen={onOpen} />}
