@@ -62,10 +62,14 @@ ul.items { list-style: none; margin: 0; padding: 0; }
 
 /* settled: muted and folded */
 details.settled { color: var(--muted); padding: 2px 8px; border-radius: 6px; }
-details.settled > summary { cursor: pointer; list-style: none; display: flex; gap: 6px; align-items: baseline;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+details.settled > summary { cursor: pointer; list-style: none; display: flex; gap: 6px; align-items: baseline; }
 details.settled > summary::-webkit-details-marker { display: none; }
-details.settled > summary .t { overflow: hidden; text-overflow: ellipsis; }
+details.settled > summary .t { display: grid; min-width: 0; }
+/* folded: the question and its answer on lines of their own, each in its own colour, muted */
+.t-q, .t-a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-q { color: color-mix(in srgb, var(--q) 55%, var(--muted)); }
+.t-a { color: color-mix(in srgb, var(--a) 60%, var(--muted)); padding-left: 1.2em; }
+details.settled[open] > summary .t-a { display: none; }
 details.settled > summary::after { content: "▸"; margin-left: auto; font-size: 11px; }
 details.settled[open] > summary::after { content: "▾"; }
 details.settled[open] { background: var(--code-bg); }
@@ -133,14 +137,14 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 &gt; ⁉️ README says :7777, the unit says :8080.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out">
     <div class="qblock q">❓ Do we keep the old URLs? <span class="btn hot">💬 answer</span></div>
-    <details class="settled"><summary><span class="g">❓</span><span class="t">Which port for the dev server? — 💬 7790, with its own config.</span></summary>
+    <details class="settled"><summary><span class="g">❓</span><span class="t"><span class="t-q">Which port for the dev server?</span><span class="t-a">💬 7790, with its own config.</span></span></summary>
       <div class="qblock q" style="font-weight:400;opacity:.8">❓ Which port for the dev server?</div>
       <div class="qblock a">💬 7790, with its own config.</div>
     </details>
     <div class="qblock d">⁉️ README says :7777, the unit says :8080. <span class="btn hot">💬 answer</span></div>
   </div>
   <ul class="notes"><li>unanswered ❓ / ⁉️ — loud, with the answer button</li>
-  <li>answered — folded to one line: question — answer; muted</li></ul></div>
+  <li>answered — folded: the question, and the answer on its own line under it, each in its own colour; muted</li></ul></div>
 </div>
 
 <h3>1b. A thread, with "need more"</h3>
@@ -201,9 +205,9 @@ Glyphs: <a href="README.md">README.md</a>.</p>
       <li class="item" data-k="⏳ 🟠 open"><div class="head"><span class="g">⏳ 🟠</span><span><code>test/</code> fixed ports collide</span><span class="btn">waiting on agent</span></div>
         <div class="thread"><div class="reply"><span class="who">👤 parf</span>go with port: 0</div></div></li>
       <li class="item deferred" data-k="⏸️ ⚪"><div class="head"><span class="g">⏸️ ⚪</span><span><code>search.ts:174</code> ReDoS without rg — <i>needs a design — later</i></span></div></li>
-      <details class="settled" data-k="✅ 🟠"><summary><span class="g">✅ 🟠</span><span class="t"><code>test/control.test.ts:8</code> real config dir — 💬 112b307 — temp config</span></summary>
+      <details class="settled" data-k="✅ 🟠"><summary><span class="g">✅ 🟠</span><span class="t"><span class="t-q"><code>test/control.test.ts:8</code> real config dir</span><span class="t-a">💬 112b307 — temp config</span></span></summary>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span><code>112b307</code> — temp config</div></div></details>
-      <details class="settled" data-k="🚫 ⚪"><summary><span class="g">🚫 ⚪</span><span class="t"><code>CLAUDE.md:119</code> socket wait — 💬 moot — reload polls HTTP</span></summary>
+      <details class="settled" data-k="🚫 ⚪"><summary><span class="g">🚫 ⚪</span><span class="t"><span class="t-q"><code>CLAUDE.md:119</code> socket wait</span><span class="t-a">💬 moot — reload polls HTTP</span></span></summary>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span>moot — reload polls HTTP</div></div></details>
     </ul>
   </div>
@@ -305,7 +309,7 @@ Search falls back to a JS regex.
     <p style="margin:0 0 4px">The parser walks the tokens twice.</p>
     <div class="req">👉 <b>rewrite:</b> one pass — shorter</div>
     <p style="margin:10px 0 4px">Search falls back to a JS regex.</p>
-    <details class="settled"><summary><span class="g">✅ 👉</span><span class="t">why: "falls back" — ever hit? — 💬 only without rg</span></summary>
+    <details class="settled"><summary><span class="g">✅ 👉</span><span class="t"><span class="t-q">why: "falls back" — ever hit?</span><span class="t-a">💬 only without rg</span></span></summary>
       <div class="thread"><div class="reply"><span class="who">👤 agent</span>only without rg; noted in README</div></div></details>
   </div></div>
 </div>
@@ -318,7 +322,7 @@ Search falls back to a JS regex.
   <tr><td>high / medium</td><td>🔴 🟠 ❌ ⛔ ⚠️</td><td>bold (🔴), normal (🟠)</td></tr>
   <tr><td>normal</td><td>⚪ ⏳</td><td>plain</td></tr>
   <tr><td>quiet</td><td>🔵 ⏸️ 🎫</td><td>grey text</td></tr>
-  <tr><td>settled</td><td>✅ 🚫 ✅ 👉</td><td>grey, folded to one line; ▸ opens</td></tr>
+  <tr><td>settled</td><td>✅ 🚫 ✅ 👉</td><td>grey, folded to two lines — the question and its answer; ▸ opens</td></tr>
 </table>
 </main>
 
