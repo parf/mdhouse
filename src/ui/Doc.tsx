@@ -819,6 +819,26 @@ export function Doc({
   const listed = doc.headings.filter((h) => h.level <= tocDepth);
   const hasSubs = doc.headings.some((h) => h.level === 3);
 
+  /** Uncommitted changes in a writable folder: back to the last commit, after a confirm. */
+  const resetButton = diff?.kind === 'working' && diff.hunks.length > 0 && doc.writable && (
+    <button
+      class="diff-reset"
+      title="Throw away the uncommitted changes in this file: git checkout HEAD -- file"
+      onClick={async () => {
+        if (!confirm(`Reset ${doc.rel} to the last commit? Its uncommitted changes are lost.`)) return;
+        try {
+          await api.gitReset(`${doc.root}/${doc.rel}`);
+          setView('doc');
+          onReload?.();
+        } catch (err) {
+          setTaskNote(`Could not reset the file: ${(err as Error).message}`);
+        }
+      }}
+    >
+      Reset file
+    </button>
+  );
+
   return (
     <article class={`doc-wrap${fullWidth ? ' full' : ''}`}>
       <header class="doc-head">
@@ -1009,6 +1029,7 @@ export function Doc({
 
       {view === 'marked' && diff && diff.kind !== 'none' && (
         <DiffHead diff={diff}>
+          {resetButton}
           {!diff.current && <span class="warn-note">this revision is not the file on disk</span>}
           {diff.current && !diff.hunks.length && <span class="sep">· nothing to mark</span>}
         </DiffHead>
@@ -1017,7 +1038,7 @@ export function Doc({
       {/* The marked view falls back to the patch when the marks cannot be trusted: a diff of an
           older revision describes a text this page is not showing. */}
       {(view === 'patch' || (view === 'marked' && diff?.current === false)) && (
-        <Diff diff={diff} loading={!diff} />
+        <Diff diff={diff} loading={!diff} actions={resetButton} />
       )}
       {/* Hidden rather than unmounted: the rendered body carries the link handler, the mermaid
           diagrams and the scroll target, and none of that should be rebuilt by a toggle. */}

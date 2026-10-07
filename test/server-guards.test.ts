@@ -183,6 +183,55 @@ describe('the git view — /api/git', () => {
   });
 });
 
+test('POST /api/git/reset — a file back to its last commit; refuses read-only, untracked and other sites', async () => {
+  const { mkdtemp, rm, writeFile, readFile, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const { run } = await import('../src/lib/gitpage');
+
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-reset-'));
+  const repo = join(base, 'repo');
+  const ro = join(base, 'repo', 'ro');
+  await mkdir(ro, { recursive: true });
+  await writeFile(join(repo, 'a.md'), 'a\n');
+  await writeFile(join(ro, 'b.md'), 'b\n');
+  await run(repo, ['init', '-q']);
+  await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '.']);
+  await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'first']);
+  await writeFile(join(repo, 'a.md'), 'a changed\n');
+  await writeFile(join(repo, 'new.md'), 'n\n');
+  await writeFile(join(ro, 'b.md'), 'b changed\n');
+
+  const port = 61797;
+  const registry = await Registry.create([
+    { path: repo, writable: true },
+    { path: ro, writable: false },
+  ]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
+  const [rwId, roId] = registry.list().map((r) => r.id);
+  const post = (p: string, headers: Record<string, string> = {}) =>
+    fetch(`http://127.0.0.1:${port}/api/git/reset`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify({ p }) });
+  try {
+    expect((await post(`${rwId}/a.md`, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+    expect(await readFile(join(repo, 'a.md'), 'utf8')).toBe('a changed\n');
+    expect((await post(`${roId}/b.md`)).status).toBe(403);
+    expect(await readFile(join(ro, 'b.md'), 'utf8')).toBe('b changed\n');
+    expect((await post(`${rwId}/new.md`)).status).toBe(409);
+    expect((await post(`${rwId}/nope.md`)).status).toBe(404);
+    expect((await post(`${rwId}/a.md`)).status).toBe(200);
+    expect(await readFile(join(repo, 'a.md'), 'utf8')).toBe('a\n');
+    expect(await readFile(join(repo, 'new.md'), 'utf8')).toBe('n\n');
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
 describe('POST /api/task — ticking a box', () => {
   test('writes one line on a writable folder; refuses read-only, stale pages and other sites', async () => {
     const { mkdtemp, rm, writeFile, readFile } = await import('node:fs/promises');

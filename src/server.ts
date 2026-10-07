@@ -525,6 +525,25 @@ export async function serve(opts: ServeOptions) {
           });
         },
       },
+      /** One document back to its last commit — its uncommitted changes thrown away. */
+      '/api/git/reset': {
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          if (opts.noGit) return fail(404, 'git is off');
+          const body = (await req.json().catch(() => null)) as { p?: string } | null;
+          const loc = body?.p ? await registry.resolve(body.p) : null;
+          if (!loc || !(await stat(loc.abs).catch(() => null))?.isFile()) return fail(404, 'no such file');
+          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only`);
+          const repo = await repoToplevel(loc.abs.replace(/\/[^/]*$/, ''));
+          if (!repo) return fail(404, 'not in a git repository');
+          const rel = repoRel(repo, loc.abs);
+          return queueWrite(loc.abs, async () => {
+            if ((await run(repo, ['ls-files', '--error-unmatch', '--', rel])).code !== 0) return fail(409, 'git has never seen this file');
+            const r = await run(repo, ['checkout', 'HEAD', '--', rel]);
+            return r.code === 0 ? json({ ok: true }) : fail(500, (r.err || r.out).trim());
+          });
+        },
+      },
       '/api/git/pull': { POST: (req) => syncRepo(req, ['pull', '--ff-only']) },
       '/api/git/push': { POST: (req) => syncRepo(req, ['push']) },
 

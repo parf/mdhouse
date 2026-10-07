@@ -8,7 +8,7 @@ import { Ago } from './Ago';
  * diff --color-moved` show them, because "which line is this now" and "which line was it
  * before" are different questions and a Markdown document answers both badly from context.
  */
-export function Diff({ diff, loading }: { diff: FileDiff | null; loading: boolean }) {
+export function Diff({ diff, loading, actions }: { diff: FileDiff | null; loading: boolean; actions?: preact.ComponentChildren }) {
   if (loading || !diff) return <div class="spinner" />;
 
   if (diff.kind === 'none') {
@@ -20,7 +20,7 @@ export function Diff({ diff, loading }: { diff: FileDiff | null; loading: boolea
 
   return (
     <div class="diff">
-      <DiffHead diff={diff} />
+      <DiffHead diff={diff}>{actions}</DiffHead>
 
       {diff.hunks.map((hunk, i) => (
         <table class="diff-hunk" key={i}>

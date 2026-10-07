@@ -1600,3 +1600,10 @@ button.sync-chip { cursor: pointer; }
 .git-changed .home-table .tag:is(.ch-deleted, .ch-conflict) { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .git-changed tr.other { cursor: default; }
 .git-changed .plain { color: var(--fg-muted); }
+
+/* Reset file, in the diff's head: plain until hovered, then the colour of what it does. */
+.diff-reset {
+  font-size: 11.5px; padding: 1px 8px; margin-left: 10px; border-radius: var(--radius);
+  border: 1px solid var(--border-strong); color: var(--fg-muted); background: var(--bg-raised);
+}
+.diff-reset:hover { color: #b91c1c; border-color: #b91c1c; }
