@@ -12,6 +12,13 @@
   - in `--rw`: **Commit** (`git commit -a`, the files listed first, non-Markdown ones confirmed),
     **Pull** (`--ff-only`), **Push** — with uncommitted files only when all Markdown, and confirmed
   - a **GIT** link on every folder page inside a repo
+  - how the branch stands with origin, from the last exchange either way: **pulled** or
+    **pushed** and when; **unpushed** in yellow on red when the branch is not on origin; ↑N
+    unpushed, ↓N to pull, ✎ N uncommitted. The line is green when all is committed and
+    pushed, yellow when not
+  - two lists: **Unpushed commits**, and **Changed / added files** of any type
+  - origin is asked by itself once the page is up (ls-remote, kept 30 seconds); ↻ asks again
+  - a merge, rebase or conflict under way is said, and commit / pull / push wait for it
   - git over ssh finds your ssh agent even under the systemd service, which does not inherit
     `SSH_AUTH_SOCK` (`/run/user/<uid>/ssh-agent.socket`, `gcr/ssh`, `keyring/ssh`)
 - **Access control** — [doc/access.md](doc/access.md): `mdhouse user-add login:passwd` turns

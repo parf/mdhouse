@@ -125,7 +125,7 @@ export const api = {
   git: (p: string) => get<GitInfo>('/api/git', { p }),
   gitCommits: (p: string, skip = 0) => get<{ commits: GitCommit[] }>('/api/git/commits', { p, skip }),
   gitFiles: (p: string) => get<{ files: string[] }>('/api/git/files', { p }),
-  gitRemote: (p: string) => get<RemoteState>('/api/git/remote', { p }),
+  gitRemote: (p: string, fresh = false) => get<RemoteState & { cachedAt: number | null }>('/api/git/remote', { p, fresh: fresh ? 1 : undefined }),
   gitCommit: (p: string, message: string, files: string[], nonMd: boolean) => gitPost('/api/git/commit', { p, message, files, nonMd }),
   gitSync: (p: string, action: 'pull' | 'push', confirmed: boolean) => gitPost(`/api/git/${action}`, { p, confirmed }),
 

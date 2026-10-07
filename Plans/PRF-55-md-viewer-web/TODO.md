@@ -34,14 +34,15 @@
   - [x] pull/push with uncommited files - ask to confirm "You have uncommited files", allow only when ONLY md files
   - [x] subfolder git view - that subfolder only; origin only; git link only on folders inside one repo
 
-- [ ] git page - sync with origin, not "pulled 21d ago": the last exchange with origin, whichever direction
-  - [ ] came from origin, pulled yesterday → pulled yesterday
-  - [ ] created locally, never pushed → unpushed - yellow-on-red
-  - [ ] created locally, pushed → pushed <date>; + ↑N when commits came after the push
-  - [ ] separately: 1. unpushed commits  2. changed / added files (any type)
-  - [ ] ✎ N uncommitted in the same line - opens Commit
-  - [ ] line color: green = all committed and pushed, yellow = uncommitted/unpushed, yellow-on-red = no branch on origin
-  - [ ] merge / rebase / conflicts in progress - warning, commit/pull/push off
+- [x] git page - sync with origin, not "pulled 21d ago": the last exchange with origin, whichever direction
+  - [x] came from origin, pulled yesterday → pulled yesterday
+  - [x] created locally, never pushed → unpushed - yellow-on-red
+  - [x] created locally, pushed → pushed <date>; + ↑N when commits came after the push
+  - [x] separately: 1. unpushed commits  2. changed / added files (any type)
+  - [x] ✎ N uncommitted in the same line - opens Commit
+  - [x] line color: green = all committed and pushed, yellow = uncommitted/unpushed, yellow-on-red = no branch on origin
+  - [x] remote check (ahead of origin by N…) runs by itself, async, after the page; server caches it 30 sec
+  - [x] merge / rebase / conflicts in progress - warning, commit/pull/push off
 
 ## NEXT iteration
 

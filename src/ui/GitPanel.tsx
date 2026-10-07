@@ -46,10 +46,24 @@ const REMOTE_TEXT: Record<RemoteState['state'], (r: RemoteState) => string> = {
   none: (r) => r.message ?? 'no origin',
 };
 
-/** The repo on its host, and an on-demand look at whether origin moved — ls-remote, no fetch. */
+/**
+ * The repo on its host, and whether origin moved — ls-remote, no fetch. Asked by itself once the
+ * page is up (the server keeps the answer 30 seconds); the button asks afresh.
+ */
 export function RemoteBar({ p, info }: { p: string; info: GitInfo }) {
   const [remote, setRemote] = useState<RemoteState | 'checking' | null>(null);
-  useEffect(() => setRemote(null), [p]);
+  const head = info.head?.commit?.hash;
+  useEffect(() => {
+    let live = true;
+    setRemote('checking');
+    void api
+      .gitRemote(p)
+      .then((r) => live && setRemote(r))
+      .catch((e) => live && setRemote({ state: 'none', message: (e as Error).message }));
+    return () => {
+      live = false;
+    };
+  }, [p, head]);
   return (
     <div class="git-remote">
       {info.origin && (
@@ -62,11 +76,11 @@ export function RemoteBar({ p, info }: { p: string; info: GitInfo }) {
         disabled={remote === 'checking'}
         onClick={async () => {
           setRemote('checking');
-          setRemote(await api.gitRemote(p).catch((e) => ({ state: 'none' as const, message: (e as Error).message })));
+          setRemote(await api.gitRemote(p, true).catch((e) => ({ state: 'none' as const, message: (e as Error).message })));
         }}
-        title="Ask origin for its branch head — read-only, nothing is fetched"
+        title="Ask origin again — read-only, nothing is fetched"
       >
-        Check remote
+        ↻
       </button>
       {remote && remote !== 'checking' && <span class={`git-remote-state ${remote.state}`}>{REMOTE_TEXT[remote.state](remote)}</span>}
       {remote === 'checking' && <span class="git-remote-state">asking origin…</span>}
@@ -80,6 +94,7 @@ export function RemoteBar({ p, info }: { p: string; info: GitInfo }) {
  * files ask first, and only go when those are all Markdown.
  */
 export function GitActions({ p, info, onDone }: { p: string; info: GitInfo; onDone: () => void }) {
+  const busyGit = info.sync?.busy ?? null;
   const files = info.dirty.filter((f) => f.code !== '??');
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState(info.commitMessage);
@@ -128,15 +143,16 @@ export function GitActions({ p, info, onDone }: { p: string; info: GitInfo; onDo
   return (
     <div class="git-actions">
       <div class="git-buttons">
-        <button class="git-btn" disabled={!files.length || !!busy} onClick={() => setOpen((o) => !o)} title="git commit -a">
+        <button class="git-btn" disabled={!files.length || !!busy || !!busyGit} onClick={() => setOpen((o) => !o)} title="git commit -a">
           Commit{files.length ? ` (${files.length})` : ''}
         </button>
-        <button class="git-btn" disabled={!!busy} onClick={() => void sync('pull', false)} title="git pull --ff-only">
+        <button class="git-btn" disabled={!!busy || !!busyGit} onClick={() => void sync('pull', false)} title="git pull --ff-only">
           {busy === 'pull' ? 'Pulling…' : 'Pull'}
         </button>
-        <button class="git-btn" disabled={!!busy} onClick={() => void sync('push', false)} title="git push">
+        <button class="git-btn" disabled={!!busy || !!busyGit} onClick={() => void sync('push', false)} title="git push">
           {busy === 'push' ? 'Pushing…' : 'Push'}
         </button>
+        {busyGit && <span class="git-busy">{busyGit} — finish it in a terminal first</span>}
       </div>
 
       {confirm && (
@@ -314,5 +330,85 @@ export function FilesView({ p, info, onOpen, revision }: { p: string; info: GitI
         );
       })}
     </ul>
+  );
+}
+
+const CHANGE: Record<string, string> = { M: 'modified', A: 'added', D: 'deleted', R: 'renamed', C: 'copied', T: 'type changed', U: 'conflict' };
+/** `git status` letters as a word: `??` new, ` M` modified, `A ` added (staged)… */
+function changeOf(code: string): string {
+  if (code === '??') return 'new';
+  if (code.includes('U') || code === 'AA' || code === 'DD') return 'conflict';
+  const letter = code.trim()[0] ?? 'M';
+  return CHANGE[letter] ?? letter;
+}
+
+/**
+ * What this checkout has that origin does not, in two lists: the commits not pushed, and the
+ * files changed or added and not committed — every file type.
+ */
+export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) => void }) {
+  const unpushed = info.sync?.unpushed ?? [];
+  const prefix = info.rootRel ? `${info.rootRel}/` : '';
+  // A long run of unpushed work would push everything else off the page: the newest few, then
+  // the rest on request.
+  const [allUnpushed, setAllUnpushed] = useState(false);
+  const shown = allUnpushed ? unpushed : unpushed.slice(0, 5);
+  return (
+    <>
+      {unpushed.length > 0 && (
+        <section class="git-list git-unpushed">
+          <h2>
+            Unpushed commits <span class="n">{unpushed.length}{unpushed.length === 100 ? '+' : ''}</span>
+          </h2>
+          <ul>
+            {shown.map((c) => (
+              <li key={c.hash}>
+                <span class="subject">{c.subject}</span>
+                <span class="when">
+                  <Ago at={c.date} />
+                </span>
+                <span class="who">{c.author}</span>
+                <span class="sha">{c.hash.slice(0, 8)}</span>
+              </li>
+            ))}
+          </ul>
+          {shown.length < unpushed.length && (
+            <button class="git-btn more" onClick={() => setAllUnpushed(true)}>
+              All {unpushed.length}
+            </button>
+          )}
+        </section>
+      )}
+      {info.dirty.length > 0 && (
+        <section class="git-list git-changed">
+          <h2>
+            Changed / added files <span class="n">{info.dirty.length}</span>
+          </h2>
+          <ul>
+            {info.dirty.map((f) => {
+              const md = f.md && f.path.startsWith(prefix) && !f.code.includes('D');
+              return (
+                <li key={f.path} class={f.md ? '' : 'non-md'}>
+                  <span class={`change ch-${changeOf(f.code).replace(' ', '-')}`}>{changeOf(f.code)}</span>
+                  {md ? (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onOpen(f.path.slice(prefix.length));
+                      }}
+                    >
+                      {f.path}
+                    </a>
+                  ) : (
+                    <span class="git-file plain">{f.path}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+    </>
   );
 }

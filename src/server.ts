@@ -107,6 +107,9 @@ export async function serve(opts: ServeOptions) {
     return run;
   };
 
+  /** `git ls-remote` answers, 30 seconds each — see `/api/git/remote`. */
+  const remoteCache = new Map<string, { at: number; state: ReturnType<typeof remoteState> }>();
+
   /** The folder a git request names (`p` = `<root>/<dir>`), and its repo. */
   type GitAt = { root: Root; repo: string; dir: string } | { error: Response };
   const gitAt = async (url: URL): Promise<GitAt> => gitFolder(url.searchParams.get('p') ?? '');
@@ -473,10 +476,19 @@ export async function serve(opts: ServeOptions) {
         return json({ files: await trackedFiles(at.repo, at.dir) });
       },
       '/api/git/remote': async (req) => {
-        const at = await gitAt(new URL(req.url));
+        const url = new URL(req.url);
+        const at = await gitAt(url);
         if ('error' in at) return at.error;
         const head = await repoHead(at.repo);
-        return json(await remoteState(at.repo, head?.branch ?? 'HEAD'));
+        const key = `${at.repo}\0${head?.branch}\0${head?.commit?.hash}`;
+        const hit = remoteCache.get(key);
+        // The page asks by itself on every visit: origin is asked at most every 30 seconds per
+        // repo, branch and HEAD; the button asks afresh.
+        if (hit && Date.now() - hit.at < 30_000 && !flag(url, 'fresh')) return json({ ...(await hit.state), cachedAt: hit.at });
+        const state = remoteState(at.repo, head?.branch ?? 'HEAD');
+        remoteCache.set(key, { at: Date.now(), state });
+        if (remoteCache.size > 50) remoteCache.delete(remoteCache.keys().next().value!);
+        return json({ ...(await state), cachedAt: null });
       },
       /**
        * Commit, pull, push — a writable folder only, same origin, one at a time per repo.

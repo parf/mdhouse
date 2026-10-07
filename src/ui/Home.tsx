@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { api, type GitInfo, type RootInfo } from './api';
-import { CommitsView, FilesView, GitActions, RemoteBar } from './GitPanel';
+import { CommitsView, FilesView, GitActions, RemoteBar, SyncLists } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
 import { IconClock, IconDoc, IconGit, IconStar, IconUser } from './icons';
 
@@ -106,7 +106,7 @@ export function Home(props: Props) {
   const nothing = !uncommitted.length && !commits.length && !recent.length;
 
   const rows: Row[] = [];
-  if (uncommitted.length) {
+  if (uncommitted.length && !git) {
     rows.push({ kind: 'head', key: 'h:uncommitted', label: 'Uncommitted' });
     rows.push(...fileRows(uncommitted, 'u', true));
   }
@@ -158,10 +158,20 @@ export function Home(props: Props) {
 
       {(() => {
         const head = git?.head ? { ...git.head, repo: git.repo } : digest?.head;
-        return head && <RepoLine head={head} own={!!head.commit && isMine(head.commit.email, head.commit.author)} />;
+        return (
+          head && (
+            <RepoLine
+              head={head}
+              own={!!head.commit && isMine(head.commit.email, head.commit.author)}
+              git={git}
+              onUncommitted={() => document.querySelector('.git-changed')?.scrollIntoView({ block: 'center' })}
+            />
+          )
+        );
       })()}
       {git && <RemoteBar p={p} info={git} />}
       {git?.writable && <GitActions p={p} info={git} onDone={() => setGitTick((n) => n + 1)} />}
+      {git && <SyncLists info={git} onOpen={props.onOpen} />}
 
       {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
       {view === 'files' && git && <FilesView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
@@ -245,10 +255,15 @@ export function Home(props: Props) {
  * the newest commit of any kind, so it answers "is this checkout current" rather than "what
  * changed in the docs".
  */
-function RepoLine({ head, own }: { head: NonNullable<Digest['head']>; own: boolean }) {
+function RepoLine({ head, own, git, onUncommitted }: { head: NonNullable<Digest['head']>; own: boolean; git?: GitInfo | null; onUncommitted?: () => void }) {
   const c = head.commit;
+  const sync = git?.sync ?? null;
+  const uncommitted = git?.dirty.length ?? 0;
+  // Green: all committed and on origin. Yellow: something is not. Red: the branch is not on
+  // origin at all.
+  const state = !sync ? '' : !sync.upstream ? ' sync-none' : sync.ahead || uncommitted || sync.busy ? ' sync-some' : ' sync-ok';
   return (
-    <div class={own ? 'repo-line mine' : 'repo-line'}>
+    <div class={`repo-line${own && !sync ? ' mine' : ''}${state}`}>
       {/* Two rows: the checkout (branch, last pull), then its HEAD commit laid out exactly like
           the commit bands below — subject, age, author. Branch names run long, and so do
           subjects; on one line each would squeeze the other into an ellipsis. */}
@@ -258,10 +273,44 @@ function RepoLine({ head, own }: { head: NonNullable<Digest['head']>; own: boole
           {head.repo && <span class="repo">{head.repo}</span>}
           <span class="name">{head.branch}</span>
         </span>
-        {head.pulledAt !== null && (
-          <span class="pulled" title={`Last fetch or pull: ${new Date(head.pulledAt).toLocaleString()}`}>
-            pulled <Ago at={head.pulledAt} flame={false} format={preciseAgo} />
+        {sync ? (
+          <span class="sync">
+            {sync.busy && <span class="sync-busy">{sync.busy}</span>}
+            {uncommitted > 0 && (
+              <button class="sync-chip warn" onClick={onUncommitted} title="Changed and added files — below">
+                ✎ {uncommitted} uncommitted
+              </button>
+            )}
+            {!sync.upstream ? (
+              <span class="sync-chip alert" title="This branch is not on origin">
+                unpushed
+              </span>
+            ) : (
+              <>
+                {sync.ahead > 0 && (
+                  <span class="sync-chip warn" title="Commits not on origin — below">
+                    ↑{sync.ahead} unpushed
+                  </span>
+                )}
+                {sync.behind > 0 && (
+                  <span class="sync-chip" title="On origin and not here, as of the last fetch">
+                    ↓{sync.behind} to pull
+                  </span>
+                )}
+                {sync.last && (
+                  <span class="pulled" title={`Last ${sync.last.way === 'pushed' ? 'push' : 'fetch or pull'}: ${new Date(sync.last.at).toLocaleString()}`}>
+                    {sync.last.way} <Ago at={sync.last.at} flame={false} format={preciseAgo} />
+                  </span>
+                )}
+              </>
+            )}
           </span>
+        ) : (
+          head.pulledAt !== null && (
+            <span class="pulled" title={`Last fetch or pull: ${new Date(head.pulledAt).toLocaleString()}`}>
+              pulled <Ago at={head.pulledAt} flame={false} format={preciseAgo} />
+            </span>
+          )
         )}
       </div>
       {c && (
