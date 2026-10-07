@@ -133,6 +133,7 @@ includes the ones before it.
 - ⚪ + ✅ = the total: a line is open or closed
 - ⏸️ counts as closed — ✅ means "nothing to look at now"
 - one button at a time; a second click, or the total, brings everything back
+- every button has an instant tooltip (no browser delay): `Show all 9`, `High — 1`, `All open — 6`, …
 
 Edge cases:
 

@@ -141,6 +141,12 @@ details.settled[open] { background: var(--code-bg); }
 .chip[aria-pressed="true"] { border-color: var(--pick); background: var(--pick-bg); }
 .chip.zero { color: var(--muted); }
 .strip .label { font-size: 12px; color: var(--dim); }
+.chip, .g-btn, .g-answered, .c-btn { position: relative; }
+/* instant tooltips — no browser delay: data-tip, shown on hover / focus */
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; left: 0; top: calc(100% + 4px); z-index: 10;
+  white-space: nowrap; font: 12px/1.4 system-ui, sans-serif; font-weight: 400; color: var(--panel); background: var(--text);
+  padding: 2px 7px; border-radius: 4px; pointer-events: none; }
 .strip .sep { color: var(--line); font-size: 18px; line-height: 1; margin: 0 2px; }
 .filtered .item.hide, .filtered details.hide { display: none; }
 
@@ -493,6 +499,11 @@ document.getElementById('one-g').addEventListener('click', (e) => {
     });
   });
 })();
+// Every title in a rendered example becomes an instant tooltip.
+document.querySelectorAll('.out [title]').forEach((el) => {
+  el.dataset.tip = el.title;
+  el.removeAttribute('title');
+});
 // Summary strip: thresholds — 🔴 ⊂ 🟠 ⊂ ⚪ (open), ✅ (closed), show (all).
 (() => {
   const box = document.getElementById('findings');
@@ -500,6 +511,13 @@ document.getElementById('one-g').addEventListener('click', (e) => {
   const rows = [...box.querySelectorAll('[data-k]')];
   const has = (r, ...g) => r.dataset.k.split(' ').some((k) => g.includes(k));
   const open = (r) => has(r, 'open');
+  const tips = {
+    show: (n) => `Show all ${n}`,
+    '🔴': (n) => `High — ${n}`,
+    '🟠': (n) => `Medium and up, and ❓ ⁉️ without a severity — ${n}`,
+    '⚪': (n) => `All open — ${n}`,
+    '✅': (n) => `All closed: ✅ 🚫 ⏸️ 🎫 — ${n}`,
+  };
   const levels = [
     ['show', () => true],
     ['🔴', (r) => open(r) && has(r, '🔴')],
@@ -514,7 +532,7 @@ document.getElementById('one-g').addEventListener('click', (e) => {
     const b = document.createElement('button');
     b.className = 'chip' + (n ? '' : ' zero');
     b.textContent = k === 'show' ? `${n}` : `${k} ${n}`;
-    if (k === 'show') b.title = 'Show all';
+    b.dataset.tip = tips[k](n);
     b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', () => {
       on = on === k || k === 'show' ? null : k;
