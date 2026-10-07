@@ -28,6 +28,10 @@
   - [ ] later: viewers for images, html, txt - not our main goal
   - [ ] on-demand remote repo check - are there any new commits; read-only: `git ls-remote`, no fetch
   - [ ] when RW mode - buttons: commit, pull (`git pull --ff-only` - good start, later we'll fine tune), push
+  - [ ] `/` - make it a redirect to the root's git view
+  - [ ] commit: git commit -a -m "ASK FOR message" - show file list to be commited; prefilled when obvious; checkbox when commiting non MD files (non ours)
+  - [ ] pull/push with uncommited files - ask to confirm "You have uncommited files", allow only when ONLY md files
+  - [ ] subfolder git view - that subfolder only; origin only; git link only on folders inside one repo
 
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../../CHANGELOG.md).

@@ -41,24 +41,46 @@ the rest link to the host's file view.
 - **Pull** — `git pull --ff-only`; refused (with git's message) when it cannot fast-forward
 - **Push** — `git push` to the branch's upstream; never `--force`
 
+## Decided — answers below
+
+- `/` redirects to the root's git view, `/d/<root>/?git`; the git view keeps what `/` showed
+- Commit = `git commit -a -m "<message>"`: the files it will take are listed first; message
+  prefilled when obvious (one file: "Update TODO.md"); a non-`.md` file in the list needs a
+  checkbox ticked first
+- Pull / push with uncommitted files: confirm "You have uncommitted files" — allowed only when
+  they are all `.md`, refused otherwise
+- A subfolder's git view: that subfolder only
+- Remote: `origin` only
+- The git link appears only on folders inside one repo
+
 ## Questions
 
 > ❓ `/` — keep it as the front page it is now (md-only commits, Favs / Recent / Mine), with the
 > new git view beside it at `/d/<root>/?git`? Or should `/` become the root's git view?
+> 💬 make it a redirect
 
 > ❓ Commit — what goes in: every change under the folder (`git add -A <dir>`), only `.md`
 > files, or only the files changed from the page (ticks, answers, notes)?
+> 💬 git commit -a -m "ASK FOR message" << show file list to be commited
 
 > ❓ Commit message — always typed, or prefilled (e.g. "mdhouse: answers in TODO.md") and
 > editable?
+> 💬 prefilled when obvious
 
 > ❓ Pull / push with uncommitted changes in the folder — allow (git refuses only on a real
 > conflict), or refuse until committed?
+> 💬 ask to confirm - "You have uncommited files"
+>  but allow (when ONLY md files)
+>
+> ask for checkbox when commiting non MD files (non ours)
 
 > ❓ Git view of a subfolder — commits and files of that subfolder only, or always the whole
 > repo with the subfolder highlighted?
+> 💬  that subfolder only,
 
 > ❓ Remote — only `origin`, or every remote the repo has?
+> 💬 origin
 
 > ❓ A root that holds many repos (`~/src`) — the git view lists the repos and each has its own
 > page, or the git link appears only on folders inside one repo?
+> 💬  git link appears only on folders inside one repo
