@@ -29,11 +29,10 @@ repository ignores; `~/src` — ~30 sibling repositories.
 - `<img src>` inside raw HTML is rewritten through `/api/asset`, like Markdown images.
 - Links with spaces or non-ASCII were double-encoded (`%2520`); decoding happens once, per path
   segment, in `resolveRelative`, the funnel every rewrite shares.
-- `**Q:**` / `**A:**` leading a paragraph, list item or line become ❓ / 💬
-  (`questionsAndAnswers`), and keep their own line.
-- `::: q` / `::: question` / `::: a` / `::: answer` are markdown-it-container blocks
-  (`qaContainerPlugin`). The container's open token has a `map`, so the existing line-map rule
-  tags it with `data-line` with no extra work; the custom renderer emits it via `renderAttrs`.
+- Q&A blocks in five forms (quote glyphs, alerts, bold lines, `:::` containers, checkbox and
+  status items) all render as the same one-line blocks, with `data-qa-form` / `data-hash` on
+  questions. `::: q` / `::: a` are markdown-it-container blocks; their open token has a `map`, so
+  the line-map rule tags them with no extra work.
 
 ## Search
 
@@ -134,47 +133,31 @@ and raw HTML escaped — in a diff, the markup is the content.
   second tab followed live, a read-only folder's boxes stay disabled and a forced POST gets
   `403`, a stale fingerprint gets the note and no write.
 
-## Answering in the browser (1.2)
+## Answering and adding in the browser (1.2)
 
-- `src/lib/qa.ts` finds a question's and an answer's line ranges per form and writes the
-  answer; `GET`/`POST /api/qa/answer` → `writeAnswer()` → `Registry.writeFile()`, on the same
-  per-file queue as ticks (`queueWrite`). The renderer's `data-hash` and the server's are the
-  same `lineHash` over the same lines — a test checks every form.
-- **Trap:** the editor was first a controlled textarea whose text went through `Doc` state and
-  an effect that re-rendered it into its host. Keys typed faster than that round trip were
-  overwritten by an older render. The editor now owns its text; `Doc` keeps a copy for remounts.
-- **Trap:** on a re-render the editor silently took the question's new fingerprint and the
-  answer's, so a save after someone else's answer overwrote it without a word. It now says so.
-- **Trap:** the markdown-it core rule that marks task items runs before inline parsing:
-  `children` is still empty, so a status glyph is cut from `inline.content`, not from a text token.
-- **A deep review before 1.2** found ten bugs, all fixed and tested:
-  - **Two questions with the same text.** The editor found its question by fingerprint alone, so a
-    click on the second `- [ ] TBD` landed the editor, and the answer, under the first. It now
-    matches fingerprint and line, then the fingerprint nearest the old line.
-  - **Ranges that disagreed with the page.**
-    - A question's follow-on paragraphs, a context quote in a task item, and the list after a
-      bold answer were each taken as the answer.
-    - A bold answer's bullets were left behind when the answer was replaced.
-    - Answers in a list item were written at column 0, which split the list.
-  - **Answer text that became markup.**
-    - A line starting `?` or `💬` turned into a new question.
-    - A `:::` line closed the container early.
-    - A `---` line turned a bold answer into a heading.
-    - Such lines are now written with their first character escaped (`\?`, `&#128172;`) and
-      read back as typed.
-  - **CRLF.** A CRLF file with no final newline was given a stray `\r`.
-  - **Client.**
-    - Clicking an open question's icon again desynced the draft.
-    - A vanished question took the editor with it.
-    - Every reload of the file rebuilt the editor, losing the caret and undo. The editor's element
-      is now made once and moved.
-- A fuzzer run during the review (kept out of the repo) put about 12k random documents through the renderer and the server, checking two
-  things: every question the page marks hashes the same on both sides, and an answer written
-  back reads back unchanged.
-- Verified in headless Chrome on a scratch repo (the playground): every form inserted and
-  replaced, bullets inside the answer, Check & Save on a box and a glyph, Esc, a question
-  changed on disk and an answer written meanwhile under an open editor. A modified file opens
-  on its diff, where answering is off — the test switches back to the document first.
+- `src/lib/qa.ts` finds a question's and its answer's line ranges per form and writes the
+  answer in the question's own syntax; `src/lib/insert.ts` adds a block under a heading. Both go
+  `POST` → pure function → `Registry.writeFile()`, on the per-file queue ticks use. The page's
+  `data-hash` and the server's are the same `lineHash` over the same lines; a test checks every
+  form.
+- **Traps:**
+  - A controlled textarea whose text went through `Doc` state lost keys typed faster than the
+    re-render. The editor owns its text, and its element is made once and moved on reload, so the
+    caret and undo survive another program writing the file.
+  - The markdown-it rule that marks task items runs before inline parsing: `children` is still
+    empty, so a status glyph is cut from `inline.content`.
+  - A question found by fingerprint alone put the answer under the first of two alike questions;
+    it now matches fingerprint and line first.
+  - Answer text could become markup (`?` → a new question, `:::` → the end of a container, `---`
+    → a heading); such lines are escaped on write and read back as typed.
+  - Ranges must match the page: follow-on paragraphs, context quotes and lazy lines belong to the
+    question; a bold answer's list belongs to the answer.
+- A deep review before 1.2 found ten such bugs; a fuzzer (about 12k random documents, kept out of
+  the repo) then checked that page and server agree on every question and that every answer
+  reads back unchanged.
+- Verified in headless Chrome on a scratch repo: every form inserted and replaced, Check & Save on
+  a box and a glyph, a question changed and an answer written on disk under an open editor, and
+  each heading action. A modified file opens on its diff, where editing is off.
 
 ## Packaging
 
@@ -191,6 +174,6 @@ and raw HTML escaped — in a diff, the markup is the content.
 - UI changes are checked in headless Chrome against the real trees, including at narrow widths
   and with a root of ~1 800 files.
 - Anything that writes config is tested against a temporary `XDG_CONFIG_HOME` and a spare port,
-  never against the live instance. 121 tests.
+  never against the live instance. 182 tests.
 - Restarting the live instance re-adds folders that were added for the session only — a bare
   restart brings back just the saved ones.
