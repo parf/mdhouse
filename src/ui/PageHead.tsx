@@ -1,4 +1,4 @@
-import { IconClock, IconDoc, IconGit, IconStar, IconUser } from './icons';
+import { IconClock, IconDoc, IconGit, IconGitMark, IconStar, IconUser } from './icons';
 
 export type HomeView = 'favorites' | 'recent' | 'mine' | 'commits' | 'files';
 
@@ -94,10 +94,11 @@ export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAb
             </Link>
           )}
         </h1>
+        <div class="head-right">
         <div class="tabs" role="tablist">
           {repo && (
             <Link class="git-tab" role="tab" selected={onGit} href={`${dirUrl}?git`} go={go} title="What changed here, by commit">
-              <IconGit size={12} />
+              <IconGitMark size={13} />
               <span>GIT</span>
             </Link>
           )}
@@ -109,6 +110,7 @@ export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAb
           ))}
         </div>
         {gear}
+        </div>
       </header>
     </>
   );

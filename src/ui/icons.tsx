@@ -128,6 +128,18 @@ export const IconGit = (p: Props) =>
     p,
   );
 
+/** The git mark — a diamond with a branch in it: the git view, as against its Commits tab. */
+export const IconGitMark = (p: Props) =>
+  svg(
+    <>
+      <path d="M8 1.4 14.6 8 8 14.6 1.4 8z" />
+      <path d="M5.6 5.6 8 8v2.4M8 8h2.2" stroke-width="1.3" />
+      <circle cx="8" cy="10.6" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="10.4" cy="8" r="0.9" fill="currentColor" stroke="none" />
+    </>,
+    p,
+  );
+
 /** A file with a plus above a minus: what a diff is, in the shape the octicon set uses. */
 export const IconDiff = (p: Props) =>
   svg(
