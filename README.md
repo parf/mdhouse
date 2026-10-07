@@ -31,12 +31,9 @@ bun install -g mdhouse      # or: npm install -g mdhouse
 
 On npm: <https://www.npmjs.com/package/mdhouse>
 
-- **[Bun](https://bun.sh) ≥ 1.4** — the only hard requirement, **also when you install with
-  npm**: npm installs the package, Bun runs it. Without Bun, `mdhouse` says so and points here.
-- **git** — optional. Without it you still get the tree and search; recents fall back to
-  modification time and the sidebar footer says `no git`.
-- **ripgrep** (`rg`) — optional. Without it full-text search uses a slower in-process scan that
-  gives the same answers.
+- [Bun](https://bun.sh) ≥ 1.4
+- git
+- optional: ripgrep (`rg`)
 
 <details>
 <summary>…or run it from a clone</summary>
