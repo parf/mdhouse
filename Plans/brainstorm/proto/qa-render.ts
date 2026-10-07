@@ -129,8 +129,8 @@ const inline = (s: string) => badges(md.renderInline(s.replace(/\s*\n\s*/g, ' ')
 /** 🌟 / ⭐ in an option's text become labels. */
 const labels = (html: string) =>
   html.replace(/\s*🌟/gu, ' <span class="suggest">🌟 suggested</span>').replace(/\s*⭐/gu, ' <span class="suggest">⭐ runner-up</span>');
-/** The first paragraph of a reply, up to a list or a blank line — what a folded item shows. */
-const firstLine = (r: Reply) => `${r.who ? `${badges(esc(r.who))}` : ''}${inline(r.body.split(/\n\s*\n|\n\s*[-*+]\s/)[0]!)}`;
+/** The whole reply as one run of text — a folded item shows its first three lines. */
+const firstLine = (r: Reply) => `${r.who ? `${badges(esc(r.who))}` : ''}${inline(r.body.replace(/^\s*[-*+]\s+/gm, '• '))}`;
 /** A body with paragraphs or a list is rendered as blocks; a run of lines is one inline paragraph. */
 const blocky = (body: string) => /\n\s*\n|\n\s*[-*+]\s|\n\s*\d+[.)]\s/.test(body);
 
@@ -303,6 +303,13 @@ ul.items { margin: 6px 0 14px; }
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
+/* folded: three lines of the question, three of the answer; anything cut shows "▾ show all" */
+details.settled:not([open]) .t-q, details.settled:not([open]) .t-a {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+details.settled > summary::after { content: none; }
+.more { grid-column: 2; justify-self: start; margin-top: 2px; font-size: 12px; color: var(--pick);
+  border: 1px solid var(--line); border-radius: 10px; padding: 0 8px; background: var(--panel); }
+details.settled[open] .more { display: none; }
 /* every line: the glyph in a column of its own, the same as a folded one */
 .item > .head { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto auto; column-gap: 4px; align-items: start; }
 .item > .head > .g { text-align: center; }

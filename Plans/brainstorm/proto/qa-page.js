@@ -154,6 +154,25 @@
     } else input.closest('.opt').classList.toggle('picked', input.checked);
   });
 
+  // ---- folded lines: a clear "▾ show all" when anything is cut or left out
+  function markHidden() {
+    doc.querySelectorAll('details.settled').forEach((d) => {
+      d.querySelector(':scope > summary > .more')?.remove();
+      if (d.open) return;
+      const cut = [...d.querySelectorAll(':scope > summary .t-q, :scope > summary .t-a')].some((el) => el.scrollHeight > el.clientHeight + 1);
+      const replies = d.querySelectorAll(':scope > .thread > .reply').length;
+      const extra = replies > 1 || d.querySelector(':scope > .opts');
+      if (!cut && !extra) return;
+      const more = document.createElement('span');
+      more.className = 'more';
+      more.textContent = '▾ show all' + (replies > 1 ? ` · ${replies} replies` : '');
+      d.querySelector(':scope > summary').append(more);
+    });
+  }
+  markHidden();
+  doc.addEventListener('toggle', markHidden, true);
+  addEventListener('resize', markHidden);
+
   // ---- the strip: the total, then thresholds 🔴 ⊂ 🟠 ⊂ ⚪ (open), ✅ (closed)
   const strip = document.getElementById('strip');
   const has = (r, ...g) => r.dataset.k.split(' ').some((k) => g.includes(k));

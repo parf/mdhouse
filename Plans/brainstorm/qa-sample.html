@@ -164,6 +164,13 @@ ul.items { margin: 6px 0 14px; }
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
+/* folded: three lines of the question, three of the answer; anything cut shows "▾ show all" */
+details.settled:not([open]) .t-q, details.settled:not([open]) .t-a {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+details.settled > summary::after { content: none; }
+.more { grid-column: 2; justify-self: start; margin-top: 2px; font-size: 12px; color: var(--pick);
+  border: 1px solid var(--line); border-radius: 10px; padding: 0 8px; background: var(--panel); }
+details.settled[open] .more { display: none; }
 /* every line: the glyph in a column of its own, the same as a folded one */
 .item > .head { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto auto; column-gap: 4px; align-items: start; }
 .item > .head > .g { text-align: center; }
@@ -205,7 +212,7 @@ ul.items { margin: 6px 0 14px; }
 
 <ul class="items"><li class="item wait-me" data-k="❓ open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>When the live instance already holds port 7777 and a second developer starts their own copy of mdhouse on the same machine, which port should the dev server pick, and should it remember that choice between restarts or ask every time?</span></div></li></ul>
 <details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">Where does the dev server keep its configuration when the live instance and the dev one run side by side — and what happens to the favourites and folders a developer saves while testing?</span><span class="t-a">💬 In <code>.scratch/cfg</code> under the repo. It is gitignored, so it never meets <code>~/.config/mdhouse</code>, and resetting it is a plain <code>rm -r .scratch</code>. Favourites saved while testing stay there and never reach the live instance.</span></span></summary><div class="thread"><div class="reply"><span class="txt">In <code>.scratch/cfg</code> under the repo. It is gitignored, so it never meets <code>~/.config/mdhouse</code>, and resetting it is a plain <code>rm -r .scratch</code>. Favourites saved while testing stay there and never reach the live instance.</span></div></div></details>
-<details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">When a reviewer agent writes findings into <code>Plans/findings.md</code> while I am answering other items in the same file in the browser, and both of us save within a few seconds of each other, what exactly happens to my unsaved draft, to the agent's write, and to the page I am looking at — and is there any case where one of the two silently overwrites the other?</span><span class="t-a">💬 <span class="who" data-kind="agent">👾claude</span>Neither overwrites the other. Every write from the page carries a fingerprint of the lines it touches; the server re-reads the file inside a per-file queue and refuses the save with a 409 if those lines changed since the page was rendered. The agent writes the file directly, so its write always lands; the watcher then pushes a reload to every open tab.</span></span></summary><div class="thread"><div class="reply"><p><span class="who" data-kind="agent">👾claude</span>Neither overwrites the other. Every write from the page carries a fingerprint of the
+<details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">When a reviewer agent writes findings into <code>Plans/findings.md</code> while I am answering other items in the same file in the browser, and both of us save within a few seconds of each other, what exactly happens to my unsaved draft, to the agent's write, and to the page I am looking at — and is there any case where one of the two silently overwrites the other?</span><span class="t-a">💬 <span class="who" data-kind="agent">👾claude</span>Neither overwrites the other. Every write from the page carries a fingerprint of the lines it touches; the server re-reads the file inside a per-file queue and refuses the save with a 409 if those lines changed since the page was rendered. The agent writes the file directly, so its write always lands; the watcher then pushes a reload to every open tab. Your draft survives that reload: the editor keeps its text, re-attaches to the question by its line and hash, and says the file changed. If the question itself moved or was rewritten, the draft stays open with a note instead of being dropped, and saving it again goes through the same fingerprint check against the new text. The one gap is the agent's side: it does not see your save until it re-reads the file, so a long-running agent should re-read before it writes a second time — <code>/resolve-findings</code> does.</span></span></summary><div class="thread"><div class="reply"><p><span class="who" data-kind="agent">👾claude</span>Neither overwrites the other. Every write from the page carries a fingerprint of the
 lines it touches; the server re-reads the file inside a per-file queue and refuses the save with
 a 409 if those lines changed since the page was rendered. The agent writes the file directly,
 so its write always lands; the watcher then pushes a reload to every open tab.</p>
@@ -218,7 +225,7 @@ long-running agent should re-read before it writes a second time — <code>/reso
 </div></div></details>
 <ul class="items"><li class="item wait-me dis" data-k="⁉️ open"><div class="head c-row"><span class="g"><span class="g-btn dis" data-tip="Answer">⁉️</span></span><span>The README says the service listens on 7777, but the unit file written by <code>service install --port 8080</code> pins 8080 — which one is the documented default, and should the README name both?</span></div></li></ul>
 <details class="settled" data-k="⁉️"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">!?</span><span class="t"><span class="t-q"><code>CLAUDE.md</code> says tests never touch the live config, while <code>control.test.ts</code> created sockets in <code>~/.config/mdhouse</code> on every run.</span><span class="t-a">💬 The test was wrong: it now runs against a temp <code>XDG_CONFIG_HOME</code> set in <code>test/preload.ts</code>. Checked by watching the real config dir during a full run — nothing appeared.</span></span></summary><div class="thread"><div class="reply"><span class="txt">The test was wrong: it now runs against a temp <code>XDG_CONFIG_HOME</code> set in <code>test/preload.ts</code>. Checked by watching the real config dir during a full run — nothing appeared.</span></div></div></details>
-<details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">What should a reload keep?</span><span class="t-a">💬 Everything a user added by hand:</span></span></summary><div class="thread"><div class="reply"><p>Everything a user added by hand:</p>
+<details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">What should a reload keep?</span><span class="t-a">💬 Everything a user added by hand: • session-only folders, with their <code>--rw</code> • the port and host it was started with Nothing else — prefs live on disk anyway.</span></span></summary><div class="thread"><div class="reply"><p>Everything a user added by hand:</p>
 <ul>
 <li>session-only folders, with their <code>--rw</code></li>
 <li>the port and host it was started with</li>
@@ -398,6 +405,25 @@ once more to turn task items into checkboxes with their line and hash.</p>
       setStage(host, '✅');
     } else input.closest('.opt').classList.toggle('picked', input.checked);
   });
+
+  // ---- folded lines: a clear "▾ show all" when anything is cut or left out
+  function markHidden() {
+    doc.querySelectorAll('details.settled').forEach((d) => {
+      d.querySelector(':scope > summary > .more')?.remove();
+      if (d.open) return;
+      const cut = [...d.querySelectorAll(':scope > summary .t-q, :scope > summary .t-a')].some((el) => el.scrollHeight > el.clientHeight + 1);
+      const replies = d.querySelectorAll(':scope > .thread > .reply').length;
+      const extra = replies > 1 || d.querySelector(':scope > .opts');
+      if (!cut && !extra) return;
+      const more = document.createElement('span');
+      more.className = 'more';
+      more.textContent = '▾ show all' + (replies > 1 ? ` · ${replies} replies` : '');
+      d.querySelector(':scope > summary').append(more);
+    });
+  }
+  markHidden();
+  doc.addEventListener('toggle', markHidden, true);
+  addEventListener('resize', markHidden);
 
   // ---- the strip: the total, then thresholds 🔴 ⊂ 🟠 ⊂ ⚪ (open), ✅ (closed)
   const strip = document.getElementById('strip');

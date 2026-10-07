@@ -165,6 +165,8 @@ Edge cases:
 - [ ] `⏳` — normal; `⏸️` — muted
 - [ ] `✅` `🚫` items and their threads — muted, folded: the question, and under it the answer on
   its own line, each in its own colour (never merged into one line); a click opens them
+- [ ] folded = up to 3 lines of the question + 3 lines of the answer; anything cut or left out
+  (more replies, options) shows a clear **▾ show all** — never hidden silently
 - [ ] unpicked options after a pick — muted
 - [ ] the glyph hangs: a column of its own, wrapped lines line up with the text, not under the glyph
 - [ ] every block aligned left alike — glyphs at one x, text at one x; no left border, the background is enough
