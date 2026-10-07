@@ -29,7 +29,7 @@ The glyph is the **first symbol of the line** — status first, then severity
 
 | Glyph | Meaning | Use | Renders |
 |---|---|---|---|
-| ❓ | open question — needs an answer and has none; **waiting on me** | a question; a finding that needs my call (`- ❓ 🟠 …`) | loudest, an answer button; with a 💬 under it — a green **?**, muted |
+| ❓ | open question — needs an answer and has none; **waiting on me** | a question; a finding that needs my call (`- ❓ 🟠 …`) | loudest, an answer button; with a 💬 under it — a green **?** (HTML only, no such glyph), muted |
 | ⁉️ | disagreement — two sources contradict | name both sources | loudest, an answer button |
 | ⏳ | **new** — in progress: the agent is on it, waiting on the agent | after my answer, until the agent replies | normal |
 
