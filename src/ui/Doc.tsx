@@ -17,6 +17,9 @@ type DiffView = 'patch' | 'marked';
 type DocView = 'doc' | DiffView;
 
 /** The tooltip for a diff button, which depends on what there is to compare. */
+/** Wide mode, kept for this browser. */
+const LS_WIDE = 'mdhouse.wide';
+
 const whatDiff = (dirty: boolean, how: string) =>
   `${dirty ? 'Show your uncommitted changes' : 'Compare with the previous revision'} — ${how}`;
 
@@ -96,9 +99,23 @@ export function Doc({
   /**
    * Full-bleed reading. The measure is capped at 900px because prose is easier to read that
    * way, but a document that is mostly wide tables or long code lines wants the window. Kept
-   * across navigation — it is a way of reading, not a property of one file.
+   * across navigation and reloads, one setting for all documents — it is a way of reading, not
+   * a property of one file.
    */
-  const [fullWidth, setFullWidth] = useState(false);
+  const [fullWidth, setFullWidth] = useState(() => {
+    try {
+      return localStorage.getItem(LS_WIDE) === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_WIDE, fullWidth ? '1' : '0');
+    } catch {
+      /* a per-viewer convenience; fine without it */
+    }
+  }, [fullWidth]);
 
   /**
    * Git history, fetched on its own once the document is up.

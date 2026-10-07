@@ -12,7 +12,7 @@
   - [ ] with CIDR list - both required
   - [ ] no TLS - doc how to forward port with ssh
 - [ ] prefs.json.dist - pretty print json with comments
-- [ ] wide mode - save in localStorage; one for all documents
+- [x] wide mode - save in localStorage; one for all documents
 - [x] add shortcut for open in editor link ( open edit:/.. url ) - e
   - [x] add "edit" link to our forms (answer, add) - edit:/path.md:line
   - [x] alt+e in a form (textarea focused) uses this url; replaces the edit form with "opened in external editor" notice, instead of save button
