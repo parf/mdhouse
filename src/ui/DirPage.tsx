@@ -7,6 +7,7 @@ import { Ago } from './Ago';
 import { Dir } from './Home';
 import { sizeClass, SizeMark } from './Tree';
 import { PageHead } from './PageHead';
+import { loadWide } from './wide';
 
 type Sort = 'new' | 'az';
 
@@ -109,7 +110,7 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
   const sub = (f: FileEntry) => (f.dir === dir ? '' : dir ? f.dir.slice(dir.length + 1) : f.dir);
 
   return (
-    <div class="home dir-page">
+    <div class={`home dir-page${loadWide() ? ' full' : ''}`}>
       <PageHead
         rootName={tree?.root.name ?? ''}
         dir={dir}

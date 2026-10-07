@@ -1,5 +1,6 @@
 import { render as mount } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
 import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff } from './icons';
@@ -24,7 +25,6 @@ const isAnswered = (block: HTMLElement) =>
     : !!block.nextElementSibling?.matches('.markdown-alert-answer, .qa-a');
 
 /** Wide mode, kept for this browser. */
-const LS_WIDE = 'mdhouse.wide';
 
 const whatDiff = (dirty: boolean, how: string) =>
   `${dirty ? 'Show your uncommitted changes' : 'Compare with the previous revision'} — ${how}`;
@@ -113,20 +113,8 @@ export function Doc({
    * across navigation and reloads, one setting for all documents — it is a way of reading, not
    * a property of one file.
    */
-  const [fullWidth, setFullWidth] = useState(() => {
-    try {
-      return localStorage.getItem(LS_WIDE) === '1';
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_WIDE, fullWidth ? '1' : '0');
-    } catch {
-      /* a per-viewer convenience; fine without it */
-    }
-  }, [fullWidth]);
+  const [fullWidth, setFullWidth] = useState(loadWide);
+  useEffect(() => saveWide(fullWidth), [fullWidth]);
 
   /**
    * Git history, fetched on its own once the document is up.

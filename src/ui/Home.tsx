@@ -3,6 +3,7 @@ import { api, type GitInfo, type RemoteState, type RootInfo } from './api';
 import { CommitsView, FilesView, GitActions, RemoteBar, SyncLists } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
 import { PageHead, type HomeView } from './PageHead';
+import { loadWide } from './wide';
 import { IconGit } from './icons';
 import { preciseAgo, docName } from './format';
 import { Ago } from './Ago';
@@ -120,7 +121,7 @@ export function Home(props: Props) {
   }
 
   return (
-    <div class="home">
+    <div class={`home${loadWide() ? ' full' : ''}`}>
       <PageHead
         rootName={root?.name ?? 'mdhouse'}
         dir={props.dir}
