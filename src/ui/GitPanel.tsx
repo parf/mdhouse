@@ -50,8 +50,9 @@ const REMOTE_TEXT: Record<RemoteState['state'], (r: RemoteState) => string> = {
  * The repo on its host, and whether origin moved — ls-remote, no fetch. Asked by itself once the
  * page is up (the server keeps the answer 30 seconds); the button asks afresh.
  */
-export function RemoteBar({ p, info }: { p: string; info: GitInfo }) {
+export function RemoteBar({ p, info, onState }: { p: string; info: GitInfo; onState?: (r: RemoteState | null) => void }) {
   const [remote, setRemote] = useState<RemoteState | 'checking' | null>(null);
+  useEffect(() => onState?.(remote === 'checking' ? null : remote), [remote]);
   const head = info.head?.commit?.hash;
   useEffect(() => {
     let live = true;
@@ -93,8 +94,10 @@ export function RemoteBar({ p, info }: { p: string; info: GitInfo }) {
  * listed first, and any that is not Markdown has to be ticked. Pull and push with uncommitted
  * files ask first, and only go when those are all Markdown.
  */
-export function GitActions({ p, info, onDone }: { p: string; info: GitInfo; onDone: () => void }) {
+export function GitActions({ p, info, onDone, remote }: { p: string; info: GitInfo; onDone: () => void; remote?: RemoteState | null }) {
   const busyGit = info.sync?.busy ?? null;
+  // What origin said: nothing new there — Pull has nothing to do; something new — Pull stands out.
+  const toPull = remote ? (remote.state === 'same' || remote.state === 'ahead' ? 'none' : remote.state === 'none' ? null : 'some') : null;
   const files = info.dirty.filter((f) => f.code !== '??');
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState(info.commitMessage);
@@ -146,7 +149,12 @@ export function GitActions({ p, info, onDone }: { p: string; info: GitInfo; onDo
         <button class="git-btn" disabled={!files.length || !!busy || !!busyGit} onClick={() => setOpen((o) => !o)} title="git commit -a">
           Commit{files.length ? ` (${files.length})` : ''}
         </button>
-        <button class="git-btn" disabled={!!busy || !!busyGit} onClick={() => void sync('pull', false)} title="git pull --ff-only">
+        <button
+          class={`git-btn${toPull === 'some' ? ' bright' : ''}`}
+          disabled={!!busy || !!busyGit || toPull === 'none'}
+          onClick={() => void sync('pull', false)}
+          title={toPull === 'none' ? 'Nothing to pull — origin has nothing new' : toPull === 'some' ? 'origin has new commits — git pull --ff-only' : 'git pull --ff-only'}
+        >
           {busy === 'pull' ? 'Pulling…' : 'Pull'}
         </button>
         <button class="git-btn" disabled={!!busy || !!busyGit} onClick={() => void sync('push', false)} title="git push">

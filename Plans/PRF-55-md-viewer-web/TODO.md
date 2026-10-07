@@ -43,6 +43,7 @@
   - [x] line color: green = all committed and pushed, yellow = uncommitted/unpushed, yellow-on-red = no branch on origin
   - [x] remote check (ahead of origin by N…) runs by itself, async, after the page; server caches it 30 sec
   - [x] merge / rebase / conflicts in progress - warning, commit/pull/push off
+- [x] known nothing to pull - pull button disabled; something to pull - bright
 
 ## NEXT iteration
 

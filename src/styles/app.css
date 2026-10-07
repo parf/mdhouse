@@ -1580,3 +1580,5 @@ button.sync-chip { cursor: pointer; }
 .git-changed .ch-deleted, .git-changed .ch-conflict { color: var(--danger); }
 .git-changed li.non-md .git-file { color: var(--fg-muted); }
 .git-list .more { margin-top: 6px; }
+.git-btn.bright { color: #fff; background: var(--warn); border-color: var(--warn); font-weight: 650; box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 30%, transparent); }
+.git-btn.bright:hover:not(:disabled) { background: color-mix(in srgb, var(--warn) 85%, #000); }

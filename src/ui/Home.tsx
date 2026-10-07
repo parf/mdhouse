@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { api, type GitInfo, type RootInfo } from './api';
+import { api, type GitInfo, type RemoteState, type RootInfo } from './api';
 import { CommitsView, FilesView, GitActions, RemoteBar, SyncLists } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
 import { IconClock, IconDoc, IconGit, IconStar, IconUser } from './icons';
@@ -63,6 +63,7 @@ export function Home(props: Props) {
   const p = `${props.rootId}/${props.dir}`;
   const [git, setGit] = useState<GitInfo | null>(null);
   const [gitTick, setGitTick] = useState(0);
+  const [remote, setRemote] = useState<RemoteState | null>(null);
   useEffect(() => {
     let live = true;
     if (!props.rootId) return;
@@ -169,8 +170,8 @@ export function Home(props: Props) {
           )
         );
       })()}
-      {git && <RemoteBar p={p} info={git} />}
-      {git?.writable && <GitActions p={p} info={git} onDone={() => setGitTick((n) => n + 1)} />}
+      {git && <RemoteBar p={p} info={git} onState={setRemote} />}
+      {git?.writable && <GitActions p={p} info={git} remote={remote} onDone={() => setGitTick((n) => n + 1)} />}
       {git && <SyncLists info={git} onOpen={props.onOpen} />}
 
       {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
