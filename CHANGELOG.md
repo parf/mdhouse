@@ -9,6 +9,8 @@
   the right, links each — the tab is in the url (`?git=favs|mine|commits|files`)
 - A folder page and its git view honor wide mode
 - Git view: Unpushed commits fold (▸ in its heading), remembered
+- Commits tab: an `unpushed` badge on each commit not on origin; the Unpushed commits block is
+  left out there
 - A document's header: a git button before ✎, to the root's git view (inside a repo only)
 
 ## 1.4.0 — 2026-10-07

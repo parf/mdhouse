@@ -281,6 +281,7 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
               }
             >
               <span class="subject">{c.subject}</span>
+              {notOnOrigin.has(c.hash) && <span class="sync-chip warn unpushed-tag">unpushed</span>}
               <span class="count">{c.files.length}</span>
               <span class="when">
                 <Ago at={c.date} />
@@ -377,7 +378,7 @@ function changeOf(code: string): string {
  * What this checkout has that origin does not, in two lists: the commits not pushed, and the
  * files changed or added and not committed — every file type.
  */
-export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) => void }) {
+export function SyncLists({ info, onOpen, commits }: { info: GitInfo; onOpen: (rel: string) => void; commits?: boolean }) {
   const isMine = (email: string, author: string) => !!info.me && (info.me.email ? email === info.me.email : author === info.me.name);
   const unpushed = info.sync?.unpushed ?? [];
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
@@ -403,7 +404,8 @@ export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: strin
   };
   return (
     <>
-      {unpushed.length > 0 && (
+      {/* The Commits tab marks them in its own list instead. */}
+      {unpushed.length > 0 && !commits && (
         <section class="git-list git-unpushed">
           <h2>
             <button class="fold" aria-expanded={open} onClick={toggle} title={open ? 'Hide' : 'Show'}>
