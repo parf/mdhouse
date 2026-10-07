@@ -57,6 +57,7 @@ For findings, reviews and task status — in docs, pages and replies; not decora
 - **Open:** ❓ no answer yet · ⁉️ two sources contradict — both come off once settled
 - **Green always means OK.** Green on something that needs action is a defect.
 - No substitutes (no 🟡 / ◯). ❌ only for something that ran and did not pass.
+- Status, severity, open — always the first symbol in the line.
 
 ## Code idioms
 
