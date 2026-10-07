@@ -41,6 +41,8 @@ An item comes with options; I pick.
 
 ## 4. Working with existing documents — point at something and say …
 
+⏳ So far ok — we'll not improve it in this iteration.
+
 - [ ] select a block / a sentence → ask a question, ask to elaborate, ask for a rewrite
 - [x] add at the top / bottom of a section — ↓ ⇊ on a heading
 - [ ] the request is written next to what it points at (anchored), so an agent finds it

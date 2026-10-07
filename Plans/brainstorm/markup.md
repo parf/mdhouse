@@ -79,6 +79,8 @@ Considered and dropped: `- ( )` / `- (x)` radios — plain text on GitHub, no ch
 
 ## 4. Point at something and say …
 
+⏳ So far ok — we'll not improve it in this iteration.
+
 A request is a quote **right after** the block it is about, opening with 👉 and a verb:
 
 ```markdown
