@@ -1018,7 +1018,7 @@ main {
 .md h1:hover .header-anchor, .md h2:hover .header-anchor,
 .md h3:hover .header-anchor, .md h4:hover .header-anchor { opacity: 1; }
 
-.md :is(li.task-item, li.status-item) { list-style: none; margin-left: -1.35em; }
+.md li.task-item { list-style: none; margin-left: -1.35em; }
 .md .task-checkbox { margin-right: 0.5em; vertical-align: -1px; accent-color: var(--accent); }
 .md .task-checkbox:disabled { cursor: default; }
 .md .task-checkbox:not(:disabled) { cursor: pointer; }
