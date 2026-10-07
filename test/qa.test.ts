@@ -95,6 +95,67 @@ describe('writing an answer, in the question’s own syntax', () => {
   });
 });
 
+describe('found in review: the answer lands where the page shows it, and stays an answer', () => {
+  test('a quote question keeps its own follow-on paragraphs; a blank > before the answer is skipped', () => {
+    const src = '> ? Should we migrate?\n>\n> Context: the old DB is EOL.\n';
+    expect(srcOf(answer(src, 1, 'quote', 'Yes'))).toBe('> ? Should we migrate?\n>\n> Context: the old DB is EOL.\n> 💬 Yes\n');
+    const spaced = '> ? q\n>\n> 💬 old\n';
+    expect(findQuestion(spaced, 0, 1, 'quote')!.answer).toEqual({ start: 2, end: 3 });
+    expect(srcOf(answer(spaced, 1, 'quote', 'new'))).toBe('> ? q\n>\n> 💬 new\n');
+  });
+
+  test('a task item keeps its context quote, sub-list and lazy line; the answer goes after them', () => {
+    expect(srcOf(answer('- [ ] Migrate?\n  > Context: DB is EOL.\n', 1, 'task', 'Yes'))).toBe(
+      '- [ ] Migrate?\n  > Context: DB is EOL.\n  > 💬 Yes\n',
+    );
+    const sub = '- [ ] q\n  - sub\n  > 💬 old\n- next\n';
+    expect(answerText(findQuestion(sub, 0, 1, 'task')!.lines.slice(2, 3), 'task')).toBe('old');
+    expect(srcOf(answer(sub, 1, 'task', 'new'))).toBe('- [ ] q\n  - sub\n  > 💬 new\n- next\n');
+    expect(srcOf(answer('- [ ] question\ncontinues here\n', 1, 'task', 'a'))).toBe('- [ ] question\ncontinues here\n  > 💬 a\n');
+  });
+
+  test('a bold answer with a list is replaced whole, in and out of a list', () => {
+    const once = srcOf(answer('**Q:** Warm?\n', 1, 'bold', 'Yes:\n- a\n- b'));
+    expect(once).toBe('**Q:** Warm?\n**A:** Yes:\n- a\n- b\n');
+    const found = findQuestion(once, 0, 1, 'bold')!;
+    expect(answerText(found.lines.slice(found.answer!.start, found.answer!.end), 'bold')).toBe('Yes:\n- a\n- b');
+    expect(srcOf(answer(once, 1, 'bold', 'No:\n- c'))).toBe('**Q:** Warm?\n**A:** No:\n- c\n');
+    const list = '- **Q:** Warm?\n- **A:** Yes:\n  - a\n- other\n';
+    expect(srcOf(answer(list, 1, 'bold', 'No.'))).toBe('- **Q:** Warm?\n- **A:** No.\n- other\n');
+  });
+
+  test('an indented **A:** under a list-item question is its answer', () => {
+    const src = '- **Q:** what?\n  **A:** this.\n- next\n';
+    expect(findQuestion(src, 0, 1, 'bold')!.answer).toEqual({ start: 1, end: 2 });
+    expect(srcOf(answer(src, 1, 'bold', 'that.'))).toBe('- **Q:** what?\n  **A:** that.\n- next\n');
+  });
+
+  test('a quote or alert question inside a list item is answered inside it', () => {
+    expect(srcOf(answer('- item\n  > ? q\n- next\n', 2, 'quote', 'Yes'))).toBe('- item\n  > ? q\n  > 💬 Yes\n- next\n');
+    expect(srcOf(answer('- item\n\n  > [!QUESTION]\n  > q\n', 3, 'alert', 'Yes'))).toBe(
+      '- item\n\n  > [!QUESTION]\n  > q\n\n  > [!ANSWER]\n  > Yes\n',
+    );
+  });
+
+  test('answer lines that would read as markup are escaped, and read back as typed', () => {
+    const cases: [string, QaForm, string, string][] = [
+      ['> ? q\n', 'quote', 'because\n? really\n💬 and\nQ: this', '> 💬 because\n> \\? really\n> &#128172; and\n> &#81;: this'],
+      ['::: q q\n:::\n', 'container', 'see\n:::\ntail', '::: a\nsee\n\\:::\ntail\n:::'],
+      ['**Q:** q\n', 'bold', 'Yes\n---\n**Q:** sneaky\n# no', '**A:** Yes\n\\---\n\\**Q:** sneaky\n\\# no'],
+    ];
+    for (const [src, form, text, written] of cases) {
+      const out = srcOf(answer(src, 1, form, text));
+      expect(out).toContain(written);
+      const found = findQuestion(out, 0, 1, form)!;
+      expect(answerText(found.lines.slice(found.answer!.start, found.answer!.end), form)).toBe(text);
+    }
+  });
+
+  test('a CRLF file whose question is its last line, with no final newline', () => {
+    expect(srcOf(answer('a\r\n> ? q', 2, 'quote', 'ans'))).toBe('a\r\n> ? q\r\n> 💬 ans');
+  });
+});
+
 describe('a page older than the file is refused', () => {
   test('the question changed', () => {
     const r = writeAnswer('> ? Who now?\n', 0, { line: 1, form: 'quote', hash: lineHash('> ? Who?'), answerHash: '', text: 'x' });

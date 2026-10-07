@@ -191,6 +191,9 @@ describe('/api/qa/answer — answering a question', () => {
       expect((await fetch(`${url}?p=${rwId}/q.md&line=3&form=quote&hash=${lineHash('> ? Whom?')}`)).status).toBe(409);
       expect((await post({ p: `${rwId}/q.md`, line: 7, form: 'task', hash: lineHash('- ⚠️ Fixed?'), answerHash: '', text: '  ' })).status).toBe(400);
 
+      expect((await post({ p: `${rwId}/q.md`, line: 7, form: 'task', hash: lineHash('- ⚠️ Fixed?'), answerHash: '', text: 'x', check: 'no' })).status).toBe(400);
+      expect((await post({ p: `${rwId}/q.md`, line: 7, form: 'task', hash: lineHash('- ⚠️ Fixed?'), answerHash: '', text: 'x'.repeat(100_001) })).status).toBe(413);
+
       // Check & Save on a status item: answered, and the glyph becomes ✅.
       const check = await post({ p: `${rwId}/q.md`, line: 7, form: 'task', hash: lineHash('- ⚠️ Fixed?'), answerHash: '', text: 'Yes.', check: true });
       expect(check.status).toBe(200);

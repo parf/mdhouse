@@ -203,9 +203,14 @@ writable and nothing else, `-P --rw` saves it that way, and saving it again with
 takes write access away. A writable folder has a green `RW` badge; the Settings page shows which
 they are, but write access is only ever granted from a terminal.
 
-The one thing it writes is a ticked checkbox, and only that line. The page sends the line and a
-fingerprint of it, and the server refuses if the file no longer matches — a stale tab can never
-flip whatever now sits on that line; it reloads and asks you to tick again. Every write goes
+> [!WARNING]
+> **`--rw` is still in testing.** Writing works and is guarded as described here, but it is new:
+> use it on folders under git, where any change is one `git diff` away from being seen or undone.
+
+It writes two things: a ticked checkbox, only that line, and an answer saved from the page, only
+the answer's lines. The page sends the line and a fingerprint of what it showed, and the server
+refuses if the file no longer matches — a stale tab can never change whatever now sits on that
+line; it reloads and keeps what you typed. Every write goes
 through one function that refuses a read-only folder and resolves symlinks before it decides.
 Your favourites, saved folders and settings live in `~/.config/mdhouse/`, never inside a tree.
 
@@ -238,7 +243,7 @@ are refused.
 | `-f, --fg` | off | stay in the foreground instead of detaching |
 | `--git-log <n>` | `200` | commits scanned for recents and the front page |
 | `--no-git` | off | skip git entirely; recents by modification time only |
-| `--rw` | off | the folders named may be written — ticking a checkbox saves it; with `-P`, saved so |
+| `--rw` | off | **testing** — the folders named may be written: checkbox ticks and answers are saved; with `-P`, saved so |
 | `-P, --perm` | off | save the folders, and any `--port` / `--host` given: used on every start |
 | `--rm` | off | forget the folders and stop serving them |
 | `--help` | | the usage text |
@@ -259,8 +264,8 @@ bookmarked.
 
 ## ▸ Status
 
-**1.1** — checkboxes you can tick, in folders served with `--rw`; everything else is read-only.
-In daily use. Next:
+**1.2** — in folders served with `--rw` (still in testing) you can tick checkboxes and answer
+questions right on the page; everything else is read-only. In daily use. Next:
 
 - a changed / added / removed listing for a whole root, on top of the per-file diffs
 - pushing a selected section to Claude or Codex for feedback, streamed back over the WebSocket

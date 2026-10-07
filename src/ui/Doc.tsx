@@ -272,6 +272,8 @@ export function Doc({
    * and the editor is mounted again under the same question with the text the reader typed.
    */
   type Editing = {
+    /** One per opened editor: the editor keeps its element, and its text, for as long as it is open. */
+    id: number;
     line: number;
     form: string;
     hash: string;
@@ -281,9 +283,11 @@ export function Doc({
     canCheck: boolean;
   };
   const [editing, setEditing] = useState<Editing | null>(null);
-  // The text being written. The editor owns it while it is mounted; this copy is what a remount
-  // (after the page is re-rendered) starts from, and what Save sends.
+  // The text being written, as the editor reports it: what Save sends.
   const draft = useRef('');
+  const opened = useRef(0);
+  const docUrl = useRef<string | undefined>(undefined);
+  docUrl.current = doc?.url;
   useEffect(() => setEditing(null), [doc?.url]);
   const answerable = !!doc?.writable && view === 'doc';
 
@@ -292,11 +296,18 @@ export function Doc({
     const line = Number(block.dataset.line);
     const form = block.dataset.qaForm ?? '';
     const hash = block.dataset.hash ?? '';
+    // Its icon again, while it is open: back to the text being written, not a fresh start.
+    if (editing && editing.form === form && editing.line === line) {
+      host.current?.querySelector('textarea')?.focus();
+      return;
+    }
     const canCheck = form === 'task' && !('done' in block.dataset);
+    const url = doc.url;
     try {
       const { text, answerHash } = await api.qaAnswer(`${doc.root}/${doc.rel}`, line, form, hash);
+      if (docUrl.current !== url) return; // the reader has moved on to another document
       draft.current = text;
-      setEditing({ line, form, hash, answerHash, note: null, saving: false, canCheck });
+      setEditing({ id: ++opened.current, line, form, hash, answerHash, note: null, saving: false, canCheck });
     } catch (err) {
       setTaskNote(`Could not open the answer: ${(err as Error).message}`);
       onReload?.();
@@ -366,55 +377,81 @@ export function Doc({
     };
   }, [doc?.html, answerable]);
 
-  // Where the editor stands: placed under its question whenever the question or the HTML
-  // changes — not on every keystroke, which would rebuild the textarea and lose the cursor.
+  // The editor's element: made once per opened editor, and moved — never rebuilt — when the page
+  // is re-rendered from a changed file, so the text, the cursor and undo survive another
+  // program writing to the file. Focus is given back if the move took it away.
   const host = useRef<HTMLElement | null>(null);
-  const editingKey = editing ? `${editing.form}:${editing.line}` : null;
+  const [hostTick, setHostTick] = useState(0);
+  const hadFocus = useRef(false);
+  const placedFor = useRef(0);
+  useEffect(() => {
+    if (!editing) return;
+    const spot = document.createElement('div');
+    spot.className = 'answer-host';
+    spot.addEventListener('focusin', () => (hadFocus.current = true));
+    // Taken out of the page with the old HTML is not the reader leaving it.
+    spot.addEventListener('focusout', () => queueMicrotask(() => spot.isConnected && (hadFocus.current = false)));
+    host.current = spot;
+    setHostTick((n) => n + 1);
+    return () => {
+      mount(null, spot);
+      spot.remove();
+      if (host.current === spot) host.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing?.id]);
+
+  // Where the editor stands: under its question, placed again whenever the HTML changes.
   useEffect(() => {
     const el = body.current;
-    if (!el || !editing || !doc || !answerable) return;
-    // The question by its fingerprint — lines added above it move it — or else by its line.
+    const spot = host.current;
+    if (!el || !spot || !editing || !doc || !answerable) return;
+    // The question by its fingerprint and line; else the same fingerprint nearest its old line —
+    // lines added above move it, and two questions may read alike; else whatever is on its line.
+    const all = [...el.querySelectorAll<HTMLElement>(`[data-qa-form="${editing.form}"]`)];
+    const alike = all.filter((b) => b.dataset.hash === editing.hash);
     const block =
-      el.querySelector<HTMLElement>(`[data-qa-form="${editing.form}"][data-hash="${editing.hash}"]`) ??
-      el.querySelector<HTMLElement>(`[data-qa-form="${editing.form}"][data-line="${editing.line}"]`);
+      alike.find((b) => Number(b.dataset.line) === editing.line) ??
+      alike.sort((a, b) => Math.abs(Number(a.dataset.line) - editing.line) - Math.abs(Number(b.dataset.line) - editing.line))[0] ??
+      all.find((b) => Number(b.dataset.line) === editing.line);
+    const refocus = () => {
+      const area = spot.querySelector('textarea');
+      if (!area) return;
+      if (placedFor.current !== editing.id) {
+        // Just opened: the editor was rendered before it stood in the page, so focus it now.
+        placedFor.current = editing.id;
+        area.focus();
+        area.selectionStart = area.selectionEnd = area.value.length;
+      } else if (hadFocus.current && !spot.contains(document.activeElement)) area.focus();
+    };
     if (!block) {
+      // Gone from the file: the editor stays — at the top of the page — with the text and a note.
+      el.prepend(spot);
+      refocus();
       setEditing((e) => (e && !e.note ? { ...e, note: 'That question is no longer in the file — your text is kept.' } : e));
       return;
     }
-    // The page was re-rendered from a changed file. Follow the question to its new line; if the
-    // question itself or its answer changed, take them as they now are but say so before the
-    // reader saves over them — the draft is kept either way.
+    // Follow the question to its new line; if the question itself or its answer changed, take
+    // them as they now are but say so before the reader saves over them.
     const line = Number(block.dataset.line);
     const hash = block.dataset.hash ?? '';
-    if (line !== editing.line || hash !== editing.hash) {
-      void api
-        .qaAnswer(`${doc.root}/${doc.rel}`, line, editing.form, hash)
-        .then(({ answerHash }) =>
-          setEditing((e) => {
-            if (!e) return e;
-            const note =
-              hash !== e.hash
-                ? 'The question was changed in the file meanwhile — have a look; your text is kept.'
-                : answerHash !== e.answerHash
-                  ? 'Someone else answered this meanwhile — Save replaces their answer; your text is kept.'
-                  : e.note;
-            return { ...e, line, hash, answerHash, note };
-          }),
-        )
-        .catch(() => {});
-    } else {
-      // Same question on the same line — but the answer may have been written meanwhile.
-      void api
-        .qaAnswer(`${doc.root}/${doc.rel}`, line, editing.form, hash)
-        .then(({ answerHash }) =>
-          setEditing((e) =>
-            e && answerHash !== e.answerHash
-              ? { ...e, answerHash, note: 'Someone else answered this meanwhile — Save replaces their answer; your text is kept.' }
-              : e,
-          ),
-        )
-        .catch(() => {});
-    }
+    const id = editing.id;
+    void api
+      .qaAnswer(`${doc.root}/${doc.rel}`, line, editing.form, hash)
+      .then(({ answerHash }) =>
+        setEditing((e) => {
+          if (!e || e.id !== id) return e;
+          if (line === e.line && hash === e.hash && answerHash === e.answerHash) return e;
+          const note =
+            hash !== e.hash
+              ? 'The question was changed in the file meanwhile — have a look; your text is kept.'
+              : answerHash !== e.answerHash
+                ? 'Someone else answered this meanwhile — Save replaces their answer; your text is kept.'
+                : e.note;
+          return { ...e, line, hash, answerHash, note };
+        }),
+      )
+      .catch(() => {});
 
     // Hide the answer being replaced; the editor stands where it was.
     const existing =
@@ -425,27 +462,23 @@ export function Doc({
             return next?.matches('.markdown-alert-answer, .qa-a') ? next : null;
           })();
     if (existing) existing.hidden = true;
-    const spot = document.createElement('div');
-    spot.className = 'answer-host';
     if (editing.form === 'task') block.append(spot);
     else (existing ?? block).after(spot);
-    host.current = spot;
-    setHostTick((n) => n + 1);
+    refocus();
     return () => {
-      mount(null, spot);
-      spot.remove();
-      if (host.current === spot) host.current = null;
       if (existing) existing.hidden = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingKey, editing?.hash, doc?.html, answerable]);
+  }, [editing?.id, editing?.line, editing?.hash, doc?.html, answerable, hostTick]);
 
   // The editor, rendered into its place on every change; Preact updates it in place.
-  const [hostTick, setHostTick] = useState(0);
+  const saving = useRef(false);
   useEffect(() => {
     const spot = host.current;
     if (!spot || !editing || !doc) return;
     const save = async (check: boolean) => {
+      if (saving.current) return; // a repeated Ctrl+Enter before the first save is back
+      saving.current = true;
       setEditing((e) => (e ? { ...e, saving: true, note: null } : e));
       try {
         await api.saveAnswer({
@@ -472,6 +505,7 @@ export function Doc({
             : e,
         );
       } finally {
+        saving.current = false;
         onReload?.();
       }
     };

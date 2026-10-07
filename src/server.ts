@@ -254,10 +254,13 @@ export async function serve(opts: ServeOptions) {
             !QA_FORMS.includes(body.form as QaForm) ||
             typeof body.hash !== 'string' ||
             typeof body.answerHash !== 'string' ||
-            typeof body.text !== 'string'
+            typeof body.text !== 'string' ||
+            (body.check !== undefined && typeof body.check !== 'boolean')
           ) {
-            return fail(400, 'expected {p, line, form, hash, answerHash, text}');
+            return fail(400, 'expected {p, line, form, hash, answerHash, text, check?}');
           }
+          // An answer is a few paragraphs; anything near this is not one.
+          if (body.text.length > 100_000) return fail(413, 'the answer is too long');
           const loc = await registry.resolve(body.p);
           if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to answer`);

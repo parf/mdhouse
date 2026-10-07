@@ -61,8 +61,11 @@ export const quoteKind = (mark: string): QaKind =>
 
 /** `**Q:**` / `**A:**` opening a line of a paragraph (as markdown-it hands it over, no list marker). */
 export const QA_LINE = /^\*\*([QA]):\*\*\s*/;
-/** The same in the source, where it may follow a list marker: `- **Q:** …`. Group 2 is Q or A. */
-const BOLD = /^(\s*(?:[-*+]|\d+[.)])\s+)?\*\*([QA]):\*\*\s*/;
+/**
+ * The same in the source, where it may follow a list marker (`- **Q:** …`) or be indented under
+ * one (a continuation line of a list item). Group 1 is what comes before it; group 2 is Q or A.
+ */
+const BOLD = /^(\s*(?:[-*+]|\d+[.)])\s+|\s+)?\*\*([QA]):\*\*\s*/;
 
 const QUOTE = /^\s*>/;
 const quoteBody = (line: string) => line.replace(/^\s*>\s?/, '');
@@ -104,9 +107,11 @@ export function qaQuestionRange(lines: string[], start: number, form: QaForm): R
     case 'quote': {
       const kind = quoteMark(first);
       if (kind !== 'question' && kind !== 'disagreement') return null;
+      // Everything after it in the quote is the question's — more paragraphs, a list — up to the
+      // next marked line, as the page shows it; trailing blank `>` lines belong to neither.
       let end = start + 1;
-      // Unmarked lines of the same paragraph continue it.
-      while (end < lines.length && QUOTE.test(lines[end]!) && !blank(quoteBody(lines[end]!)) && !quoteMark(lines[end]!)) end++;
+      while (end < lines.length && QUOTE.test(lines[end]!) && !quoteMark(lines[end]!)) end++;
+      while (end > start + 1 && blank(quoteBody(lines[end - 1]!))) end--;
       return { start, end };
     }
     case 'alert':
@@ -114,7 +119,7 @@ export function qaQuestionRange(lines: string[], start: number, form: QaForm): R
     case 'bold': {
       const m = BOLD.exec(first);
       if (!m || m[2] !== 'Q') return null;
-      return { start, end: boldEnd(lines, start) };
+      return { start, end: boldRange(lines, start, m[1]) };
     }
     case 'container': {
       if (!OPEN_Q.test(first)) return null;
@@ -125,26 +130,54 @@ export function qaQuestionRange(lines: string[], start: number, form: QaForm): R
     case 'task': {
       const m = TASK.exec(first);
       if (!m) return null;
-      // Continuation lines are indented into the item; a quote (the answer) or a new item ends it.
+      // Everything indented into the item is the question's — continuation lines, a sub-list, a
+      // context quote — up to its answer (an indented `> 💬` quote), a blank line, or a line that
+      // leaves the item. Unindented lazy lines continue the item's first paragraph.
       const indent = m[1]!.length;
       let end = start + 1;
-      while (
-        end < lines.length &&
-        !blank(lines[end]!) &&
-        indentOf(lines[end]!) >= indent &&
-        !QUOTE.test(lines[end]!) &&
-        !ITEM.test(lines[end]!)
-      )
+      let paragraph = true;
+      while (end < lines.length && !blank(lines[end]!)) {
+        const line = lines[end]!;
+        if (indentOf(line) >= indent) {
+          if (quoteMark(line) === 'answer') break;
+          if (QUOTE.test(line) || ITEM.test(line)) paragraph = false;
+        } else if (!paragraph || !LAZY.test(line)) break;
         end++;
+      }
       return { start, end };
     }
   }
 }
 
-/** The end of a bold-line question or answer: its continuation lines, up to a blank line, the next marked line, or the next list item. */
+/** A line that may lazily continue a paragraph: one that does not start a block of its own. */
+const LAZY = /^(?!\s*(?:[-*+]\s|\d+[.)]\s|>|#|```|~~~|:::|\*\*[QA]:\*\*))/;
+
+/** The end of a bold line's paragraph: its continuation lines, up to a blank line, the next marked line, or a line that starts a block. */
 function boldEnd(lines: string[], start: number): number {
   let end = start + 1;
-  while (end < lines.length && !blank(lines[end]!) && !BOLD.test(lines[end]!) && !ITEM.test(lines[end]!)) end++;
+  while (end < lines.length && !blank(lines[end]!) && !BOLD.test(lines[end]!) && LAZY.test(lines[end]!)) end++;
+  return end;
+}
+
+/**
+ * The end of a bold-line question or answer: its paragraph, and a list straight after it, which
+ * the page shows inside the block — for a list-item (or indented) line, the lines indented under
+ * it; otherwise the list items that follow.
+ */
+function boldRange(lines: string[], start: number, lead: string | undefined): number {
+  const para = boldEnd(lines, start);
+  const nested = lead !== undefined;
+  const from = indentOf(lines[start]!);
+  let end = para;
+  while (end < lines.length && !blank(lines[end]!) && !BOLD.test(lines[end]!)) {
+    const line = lines[end]!;
+    const inList = end > para; // the list has begun: its items' lazy lines are part of it
+    const takes = nested
+      ? indentOf(line) > from || (inList && LAZY.test(line))
+      : ITEM.test(line) || (inList && (indentOf(line) > 0 || LAZY.test(line)));
+    if (!takes) break;
+    end++;
+  }
   return end;
 }
 
@@ -160,6 +193,8 @@ export function qaAnswerRange(lines: string[], after: number, form: QaForm): Ran
   if (form === 'alert' || form === 'bold' || form === 'container') {
     while (at < lines.length && blank(lines[at]!)) at++;
   }
+  // In a quote, blank `>` lines may stand between the question and its answer.
+  if (form === 'quote') while (at < lines.length && QUOTE.test(lines[at]!) && blank(quoteBody(lines[at]!))) at++;
   const first = lines[at];
   if (first === undefined) return null;
   switch (form) {
@@ -186,7 +221,7 @@ export function qaAnswerRange(lines: string[], after: number, form: QaForm): Ran
     case 'bold': {
       const m = BOLD.exec(first);
       if (!m || m[2] !== 'A') return null;
-      return { start: at, end: boldEnd(lines, at) };
+      return { start: at, end: boldRange(lines, at, m[1]) };
     }
     case 'container': {
       if (!OPEN_A.test(first)) return null;
@@ -197,8 +232,47 @@ export function qaAnswerRange(lines: string[], after: number, form: QaForm): Ran
   }
 }
 
+/**
+ * Lines of an answer that the page would read as something else — a new question in a quote, the
+ * end of a `:::` block, a heading or a new Q&A line under a bold answer. They are written with
+ * their first character escaped, and read back without it.
+ */
+const STRUCTURAL: Record<QaForm, RegExp> = {
+  quote: QUOTE_MARK,
+  task: QUOTE_MARK,
+  alert: /^\[!(?:QUESTION|ANSWER)\]/i,
+  container: /^:::/,
+  bold: /^(?:=+\s*$|-+\s*$|#|>|```|~~~|\*\*[QA]:\*\*)/,
+};
+
+function escapeLine(line: string, form: QaForm): string {
+  const lead = line.match(/^\s*/)![0];
+  const rest = line.slice(lead.length);
+  if (!rest || !STRUCTURAL[form].test(rest)) return line;
+  const ch = String.fromCodePoint(rest.codePointAt(0)!);
+  // ASCII punctuation takes a backslash; anything else (a letter, an emoji) a character reference.
+  const escaped = /[!-/:-@[-`{-~]/.test(ch) ? `\\${ch}` : `&#${ch.codePointAt(0)};`;
+  return lead + escaped + rest.slice(ch.length);
+}
+
+function unescapeLine(line: string, form: QaForm): string {
+  const lead = line.match(/^\s*/)![0];
+  const rest = line.slice(lead.length);
+  const m = /^(?:\\([!-/:-@[-`{-~])|&#(\d+);)/.exec(rest);
+  if (!m) return line;
+  const plain = (m[1] ?? String.fromCodePoint(Number(m[2]))) + rest.slice(m[0].length);
+  return STRUCTURAL[form].test(plain) ? lead + plain : line;
+}
+
 /** An answer's lines as the text a person edits: markers, quote prefixes and fences removed. */
 export function answerText(answer: string[], form: QaForm): string {
+  return answerLines(answer, form)
+    .map((line, n) => (n === 0 && form !== 'container' && form !== 'alert' ? line : unescapeLine(line, form)))
+    .join('\n')
+    .trim();
+}
+
+function answerLines(answer: string[], form: QaForm): string[] {
   const out: string[] = [];
   switch (form) {
     case 'task':
@@ -226,7 +300,7 @@ export function answerText(answer: string[], form: QaForm): string {
       break;
     }
   }
-  return out.join('\n').trim();
+  return out;
 }
 
 /**
@@ -234,15 +308,18 @@ export function answerText(answer: string[], form: QaForm): string {
  * answer marker; `A:` is read, but not written. `indent` places a task item's answer inside it.
  */
 export function formatAnswer(text: string, form: QaForm, indent = 0, listMarker = ''): string[] {
-  let body = text.replace(/\r/g, '').replace(/\s+$/, '').split('\n');
+  let body = text
+    .replace(/\r/g, '')
+    .replace(/\s+$/, '')
+    .split('\n')
+    .map((line, n) => (n === 0 && form !== 'container' && form !== 'alert' ? line : escapeLine(line, form)));
   const pad = ' '.repeat(indent);
   switch (form) {
     case 'task':
-      return body.map((line, n) => (n === 0 ? `${pad}> \u{1F4AC} ${line}` : line ? `${pad}> ${line}` : `${pad}>`));
     case 'quote':
-      return body.map((line, n) => (n === 0 ? `> \u{1F4AC} ${line}` : line ? `> ${line}` : '>'));
+      return body.map((line, n) => (n === 0 ? `${pad}> \u{1F4AC} ${line}` : line ? `${pad}> ${line}` : `${pad}>`));
     case 'alert':
-      return ['> [!ANSWER]', ...body.map((line) => (line ? `> ${line}` : '>'))];
+      return [`${pad}> [!ANSWER]`, ...body.map((line) => (line ? `${pad}> ${line}` : `${pad}>`))];
     case 'bold':
       // A blank line would end the paragraph and split the answer in two; a bold-line answer is
       // one paragraph (plus a list straight after it).
@@ -306,18 +383,35 @@ export function writeAnswer(
   const crlf = src.includes('\r\n');
   const raw = src.split('\n');
   const qLine = found.lines[found.question.start]!;
+  // Where the answer stands: inside a task item; under a quote or alert at the question's own
+  // indent (one inside a list item stays in it); a bold answer like the one it replaces, or as
+  // the question was written — the next item of its list.
+  const aLine = found.answer ? found.lines[found.answer.start]! : null;
   const written = formatAnswer(
     req.text,
     req.form,
-    req.form === 'task' ? taskIndent(qLine) : 0,
-    req.form === 'bold' ? (BOLD.exec(qLine)?.[1] ?? '') : '',
+    req.form === 'task' ? taskIndent(qLine) : req.form === 'bold' || req.form === 'container' ? 0 : indentOf(qLine),
+    req.form === 'bold' ? (BOLD.exec(aLine ?? qLine)?.[1] ?? '') : '',
   );
+  const eol = (l: string) => l + (crlf ? '\r' : '');
   if (found.answer) {
-    raw.splice(found.answer.start, found.answer.end - found.answer.start, ...written.map((l) => l + (crlf ? '\r' : '')));
+    raw.splice(found.answer.start, found.answer.end - found.answer.start, ...written.map(eol));
   } else {
-    // A separate block gets a blank line before it; a quote or bold line joins the question's.
-    const lead = req.form === 'alert' || req.form === 'container' ? [''] : [];
-    raw.splice(found.question.end, 0, ...[...lead, ...written].map((l) => l + (crlf ? '\r' : '')));
+    // A separate block gets a blank line before it; a quote or bold line joins the question's —
+    // unless the question ends in a list, which the answer line would only continue.
+    const listEnded =
+      req.form === 'bold' && BOLD.exec(qLine)?.[1] === undefined && found.question.end > boldEnd(found.lines, found.question.start);
+    const lead = req.form === 'alert' || req.form === 'container' || listEnded ? [''] : [];
+    // A `---` or `===` straight under a bold answer would make it a heading.
+    const next = found.lines[found.question.end];
+    const tail = req.form === 'bold' && next !== undefined && /^\s*(?:=+|-+)\s*$/.test(next) ? [''] : [];
+    raw.splice(found.question.end, 0, ...[...lead, ...written, ...tail].map(eol));
+  }
+  // A file without a final newline: whatever is now its last line has none either, and the line
+  // that used to be last now ends like every other.
+  if (crlf && !src.endsWith('\n')) {
+    for (let i = found.question.start; i < raw.length - 1; i++) if (!raw[i]!.endsWith('\r')) raw[i] += '\r';
+    raw[raw.length - 1] = raw[raw.length - 1]!.replace(/\r$/, '');
   }
   // The answer went in after the question, so the question's own line has not moved. A checkbox
   // is ticked; a status glyph becomes ✅.

@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased — 1.2
+## 1.2.0 — 2026-10-06
+
+Answer questions right on the page. **`--rw` is still in testing** — writing is guarded (a
+fingerprint check per save, read-only folders refused), but new: use it on folders under git.
 
 ### Added
 

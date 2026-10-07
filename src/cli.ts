@@ -33,8 +33,8 @@ Options
   -f, --fg             stay in the foreground; Ctrl+C stops it
       --git-log <n>    commits scanned for recents and the front page (default 200)
       --no-git         skip git entirely; filesystem recents only
-      --rw             the folders named may be written (ticking a checkbox saves it);
-                       with -P, saved writable. Other folders are not affected
+      --rw             testing: the folders named may be written (checkbox ticks and
+                       answers are saved); with -P, saved writable. Other folders are not affected
   -P, --perm           save the folders (and any --port/--host given): used on every start
       --rm             forget the folders and stop serving them
       --help           show this

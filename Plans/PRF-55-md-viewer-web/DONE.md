@@ -147,6 +147,30 @@ and raw HTML escaped — in a diff, the markup is the content.
   answer's, so a save after someone else's answer overwrote it without a word. It now says so.
 - **Trap:** the markdown-it core rule that marks task items runs before inline parsing:
   `children` is still empty, so a status glyph is cut from `inline.content`, not from a text token.
+- **A deep review before 1.2** found ten bugs, all fixed and tested:
+  - **Two questions with the same text.** The editor found its question by fingerprint alone, so a
+    click on the second `- [ ] TBD` landed the editor, and the answer, under the first. It now
+    matches fingerprint and line, then the fingerprint nearest the old line.
+  - **Ranges that disagreed with the page.**
+    - A question's follow-on paragraphs, a context quote in a task item, and the list after a
+      bold answer were each taken as the answer.
+    - A bold answer's bullets were left behind when the answer was replaced.
+    - Answers in a list item were written at column 0, which split the list.
+  - **Answer text that became markup.**
+    - A line starting `?` or `💬` turned into a new question.
+    - A `:::` line closed the container early.
+    - A `---` line turned a bold answer into a heading.
+    - Such lines are now written with their first character escaped (`\?`, `&#128172;`) and
+      read back as typed.
+  - **CRLF.** A CRLF file with no final newline was given a stray `\r`.
+  - **Client.**
+    - Clicking an open question's icon again desynced the draft.
+    - A vanished question took the editor with it.
+    - Every reload of the file rebuilt the editor, losing the caret and undo. The editor's element
+      is now made once and moved.
+- A fuzzer run during the review (kept out of the repo) put about 12k random documents through the renderer and the server, checking two
+  things: every question the page marks hashes the same on both sides, and an answer written
+  back reads back unchanged.
 - Verified in headless Chrome on a scratch repo (the playground): every form inserted and
   replaced, bullets inside the answer, Check & Save on a box and a glyph, Esc, a question
   changed on disk and an answer written meanwhile under an open editor. A modified file opens
