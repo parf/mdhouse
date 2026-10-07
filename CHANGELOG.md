@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **`e` opens the document in the editor**, as the ✎ beside the title does
+
 ## 1.3.0 — 2026-10-06
 
 ### Changed — the command line

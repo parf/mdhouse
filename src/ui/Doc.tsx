@@ -378,6 +378,20 @@ export function Doc({
     };
   }, [doc?.html, answerable]);
 
+  /** `e` opens the file in the editor, as the ✎ beside the title does — not while typing. */
+  useEffect(() => {
+    if (!editHref) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'e' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement;
+      if (t.closest('input, textarea, select, [contenteditable]')) return;
+      e.preventDefault();
+      location.href = editHref;
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editHref]);
+
   // The editor's element: made once per opened editor, and moved — never rebuilt — when the page
   // is re-rendered from a changed file, so the text, the cursor and undo survive another
   // program writing to the file. Focus is given back if the move took it away.
@@ -803,7 +817,7 @@ export function Doc({
           {/* Hands the file to whatever handles `edit:` URLs — an editor, set up outside mdhouse.
               Settings turns it off where nothing does. */}
           {editHref && (
-            <a class="icon-btn edit-link" href={editHref} title={`Edit ${editHref.slice(5)}`} aria-label="Edit">
+            <a class="icon-btn edit-link" href={editHref} title={`Edit ${editHref.slice(5)} (e)`} aria-label="Edit">
               <IconEdit />
             </a>
           )}

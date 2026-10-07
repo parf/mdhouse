@@ -14,7 +14,7 @@ Answers: [`questions.md`](questions.md)
   - [ ] no TLS - doc how to forward port with ssh
 - [ ] prefs.json.dist - pretty print json with comments
 - [ ] wide mode - save in localStorage; one for all documents
-- [ ] add shortcut for open in editor link ( open edit:/.. url ) - control + e
+- [x] add shortcut for open in editor link ( open edit:/.. url ) - e
   - [ ] add "edit" link to our forms (answer, add) - edit:/path.md:line
   - [ ] control+e in a form (textarea focused) uses this url; replaces the edit form with "opened in external editor" notice, instead of save button
 - [ ] config: auto-rw-path: list; any added folder under it is auto-rw - can be turned off in web config
