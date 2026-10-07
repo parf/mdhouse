@@ -1,5 +1,7 @@
 # Q&A sample — every case
 
+Rendered by the prototype: [qa-sample.html](qa-sample.html)
+
 Plain Markdown around the items stays as it is: headings, paragraphs, `code`, lists without glyphs.
 
 - an ordinary list item — no glyph, nothing happens
