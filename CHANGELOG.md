@@ -110,6 +110,8 @@ The same as 1.2.0, published again while the registry was still processing 1.2.0
 right on the page. **`--rw` is still in testing** — writing is guarded (a fingerprint check per
 save, read-only folders refused), but new: use it on folders under git.
 
+1.1.0 and 1.1.1 were never published; their changes, below, are part of this release.
+
 ### Added
 
 - **Answer questions on the page.** In a folder served with `--rw`, every ❓ and ⁉️ is a
@@ -135,11 +137,11 @@ save, read-only folders refused), but new: use it on folders under git.
 - Bullets and further paragraphs after an answer (`> 💬 Yes:` then `> - a`, or `**A:** Yes:`
   then `- a`) render inside the answer instead of falling out under it.
 
-## 1.1.1 — 2026-10-06
+## 1.1.1 — never published
 
 The first release that writes — tick a checkbox in a `--rw` folder and that line is saved — and
 a much richer Markdown: `/rd`-style alerts, question / disagreement / answer blocks in four
-forms, and two new docs. 1.1.0 was never published; its changes are part of this release.
+forms, and two new docs. Neither 1.1.0 nor 1.1.1 reached npm: they shipped in 1.2.0.
 
 ### Added
 
