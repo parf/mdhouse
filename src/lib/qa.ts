@@ -32,9 +32,10 @@ export const QA_FORMS: readonly QaForm[] = ['quote', 'alert', 'bold', 'container
 /**
  * The status glyphs a list item may open with instead of a checkbox (/rd/.claude/Glyphs.md):
  * ✅ done, ⚠️ partial, 🎫 handed off, ❌ failed, 🚫 dropped, ⛔ blocked, ⏳ in progress, ❓ open,
- * ⁉️ disputed — and the checkbox characters ☐ ☑ ☒ and ✔️. The variation selector is optional.
+ * ⁉️ disputed; the severities 🔴 high, 🟠 medium, ⚪ low and 🟢 OK — and the checkbox characters
+ * ☐ ☑ ☒ and ✔️. The variation selector is optional.
  */
-export const STATUS_GLYPH = /(?:✅|☑|✔|☐|☒|⚠|🎫|❌|🚫|⛔|⏳|❓|⁉)\uFE0F?/u;
+export const STATUS_GLYPH = /(?:✅|☑|✔|☐|☒|⚠|🎫|❌|🚫|⛔|⏳|❓|⁉|🔴|🟠|⚪|🟢)\uFE0F?/u;
 /** The glyphs (and `[x]`) that say an item is done. */
 export const isDone = (status: string) => /^(?:\[[xX]\]|✅|☑|✔)/u.test(status);
 /**

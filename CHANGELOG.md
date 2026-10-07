@@ -17,6 +17,7 @@
 - **Reset file** in the head of a document's uncommitted changes (`--rw`): back to the last
   commit, after a confirm — `POST /api/git/reset`
 - A document's header: a git button before ✎, to the root's git view (inside a repo only)
+- List items opening with a severity glyph — `🔴 🟠 ⚪ 🟢` — can be answered too
 
 ## 1.4.0 — 2026-10-07
 

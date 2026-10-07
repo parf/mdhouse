@@ -80,7 +80,7 @@ describe('writing an answer, in the question’s own syntax', () => {
     // Already done: Check & Save leaves the glyph alone.
     expect(srcOf(answer('- ✔️ Done?\n', 1, 'task', 'Yes.', true))).toBe('- ✔️ Done?\n  > 💬 Yes.\n');
     // Every glyph of the set, with or without the variation selector; a glyph glued to the text is not one.
-    for (const g of ['✅', '☑️', '☑', '✔️', '☐', '☒', '⚠️', '⚠', '🎫', '❌', '🚫', '⛔', '⏳', '❓', '⁉️']) {
+    for (const g of ['✅', '☑️', '☑', '✔️', '☐', '☒', '⚠️', '⚠', '🎫', '❌', '🚫', '⛔', '⏳', '❓', '⁉️', '🔴', '🟠', '⚪', '⚪️', '🟢']) {
       expect(findQuestion(`- ${g} Why?\n`, 0, 1, 'task')).not.toBeNull();
     }
     expect(findQuestion('- ✅Why?\n', 0, 1, 'task')).toBeNull();

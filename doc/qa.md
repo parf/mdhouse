@@ -159,6 +159,8 @@ The status glyphs, with the meanings `/rd/.claude/Glyphs.md` gives them; the var
 | `☒` | crossed out |
 | `❓` | open question |
 | `⁉️` | disagreement — two sources contradict |
+| `🔴` `🟠` `⚪` | severity — high, medium, low |
+| `🟢` | OK |
 
 The glyph must be followed by a space; any other emoji (`- 🎉 …`) leaves the item a plain list
 item. Only `[ ]` / `[x]` are checkboxes — counted in the page header and tickable in a `--rw`
