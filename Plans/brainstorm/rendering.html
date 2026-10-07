@@ -94,6 +94,14 @@ details.settled[open] { background: var(--code-bg); }
 .g-btn { cursor: pointer; border: 1px solid transparent; border-radius: 4px; padding: 0 1px; }
 .g-btn:hover { border-color: var(--q); background: var(--panel); box-shadow: 0 1px 0 var(--line); }
 .g-btn.dis:hover { border-color: var(--dis); }
+.g-btn.sev:hover { border-color: var(--dim); }
+/* the finding editor: a reply, and the stage it moves to */
+.f-edit { margin: 6px 0 2px 22px; display: grid; gap: 4px; }
+.f-edit textarea { font: inherit; padding: 4px 6px; border: 1px solid var(--a); border-radius: 4px; background: var(--panel); color: var(--text); min-height: 3em; }
+.f-edit .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.f-edit button { font-size: 12px; padding: 1px 9px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+.f-edit button.save { background: var(--a); color: #fff; border-color: var(--a); }
+.f-edit .lbl { font-size: 12px; color: var(--dim); }
 /* on hover the green ? turns into a button [?] — a click opens the answer editor */
 .g-answered:hover { border-color: var(--a); background: var(--a-bg); box-shadow: 0 1px 0 var(--line); }
 .qblock.q { background: var(--q-bg); }
@@ -247,23 +255,23 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   <div><div class="col-label">Rendered</div><div class="out" id="findings">
     <div class="strip" id="strip"><span class="label">Show:</span></div>
     <ul class="items">
-      <li class="item sev-h" data-k="🔴 open"><div class="head"><span class="g">🔴</span><span><code>src/cli.ts:536</code> --fg hands over on a busy port. Fix: exit 1</span><span class="btn">💬</span></div></li>
+      <li class="item sev-h" data-k="🔴 open"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🔴</span></span><span><code>src/cli.ts:536</code> --fg hands over on a busy port. Fix: exit 1</span></div></li>
       <li class="item wait-me" data-k="❓ 🟠 open"><div class="head"><span class="g"><span class="g-btn" title="Reply">❓</span> 🟠</span><span><code>package.json:46</code> dev script feeds <code>.</code> to the live instance</span></div>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span>pin :7790, or drop it?</div></div></li>
-      <li class="item" data-k="🟠 open" style="font-weight:600"><div class="head"><span class="g">🟠</span><span><code>src/server.ts:631</code> limit=abc → no cap</span><span class="btn">💬</span></div></li>
-      <li class="item" data-k="⚪ open"><div class="head"><span class="g">⚪</span><span><code>control.ts:125</code> unlink race</span><span class="btn">💬</span></div></li>
-      <li class="item" data-k="🔵 open" style="color:var(--dim)"><div class="head"><span class="g">🔵</span><span><code>README.md:12</code> wording</span></div></li>
-      <li class="item" data-k="⏳ 🟠 open"><div class="head"><span class="g">⏳ 🟠</span><span><code>test/</code> fixed ports collide</span><span class="btn">waiting on agent</span></div>
+      <li class="item" data-k="🟠 open" style="font-weight:600"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🟠</span></span><span><code>src/server.ts:631</code> limit=abc → no cap</span></div></li>
+      <li class="item" data-k="⚪ open"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⚪</span></span><span><code>control.ts:125</code> unlink race</span></div></li>
+      <li class="item" data-k="🔵 open" style="color:var(--dim)"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🔵</span></span><span><code>README.md:12</code> wording</span></div></li>
+      <li class="item" data-k="⏳ 🟠 open"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⏳</span> 🟠</span><span><code>test/</code> fixed ports collide</span><span class="btn">waiting on agent</span></div>
         <div class="thread"><div class="reply"><span class="who">👤 parf</span>go with port: 0</div></div></li>
-      <li class="item deferred" data-k="⏸️ ⚪"><div class="head"><span class="g">⏸️ ⚪</span><span><code>search.ts:174</code> ReDoS without rg — <i>needs a design — later</i></span></div></li>
-      <details class="settled" data-k="✅ 🟠"><summary><span class="g">✅ 🟠</span><span class="t"><span class="t-q"><code>test/control.test.ts:8</code> real config dir</span><span class="t-a">💬 112b307 — temp config</span></span></summary>
+      <li class="item deferred" data-k="⏸️ ⚪"><div class="head"><span class="g"><span class="g-btn sev" title="Reply, or set its stage">⏸️</span> ⚪</span><span><code>search.ts:174</code> ReDoS without rg — <i>needs a design — later</i></span></div></li>
+      <details class="settled" data-k="✅ 🟠"><summary><span class="g"><span class="g-btn sev" title="Reply, or set its stage">✅</span> 🟠</span><span class="t"><span class="t-q"><code>test/control.test.ts:8</code> real config dir</span><span class="t-a">💬 112b307 — temp config</span></span></summary>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span><code>112b307</code> — temp config</div></div></details>
-      <details class="settled" data-k="🚫 ⚪"><summary><span class="g">🚫 ⚪</span><span class="t"><span class="t-q"><code>CLAUDE.md:119</code> socket wait</span><span class="t-a">💬 moot — reload polls HTTP</span></span></summary>
+      <details class="settled" data-k="🚫 ⚪"><summary><span class="g"><span class="g-btn sev" title="Reply, or set its stage">🚫</span> ⚪</span><span class="t"><span class="t-q"><code>CLAUDE.md:119</code> socket wait</span><span class="t-a">💬 moot — reload polls HTTP</span></span></summary>
         <div class="thread"><div class="reply"><span class="who">👤 agent</span>moot — reload polls HTTP</div></div></details>
     </ul>
   </div>
   <ul class="notes"><li>loudness: ❓ (waiting on me) &gt; 🔴 &gt; 🟠 &gt; ⚪ &gt; 🔵; ⏳ normal; ⏸️ muted; ✅ 🚫 muted and folded</li>
-  <li>the stage is set from the page: a small menu on the glyph — ✅ 🚫 ⏸️ ❓ — writes the glyph in front</li>
+  <li>the first glyph of every line is the button (framed on hover), settled ones too: a click opens a reply under the finding, with the stage it moves to — ✅ 🚫 ⏸️ ❓; the stage glyph is written in front, the severity stays — try it</li>
   <li>order stays as written — no reordering, the file is the source</li></ul></div>
 </div>
 
@@ -441,6 +449,48 @@ document.getElementById('one-g').addEventListener('click', (e) => {
     }
     const reply = e.target.closest('.reply');
     if (reply && !e.target.closest('.c-edit')) editor(null, reply);
+  });
+})();
+// Findings: a click on the glyph opens a reply with the stage buttons.
+(() => {
+  const box = document.getElementById('findings');
+  box.addEventListener('click', (e) => {
+    const g = e.target.closest('.g-btn');
+    if (!g) return;
+    e.preventDefault(); // a settled one stays folded or open as it was
+    const item = g.closest('.item, details');
+    box.querySelector('.f-edit')?.remove();
+    const ed = document.createElement('div');
+    ed.className = 'f-edit';
+    ed.innerHTML = '<textarea placeholder="Reply… (optional with a stage)"></textarea><div class="bar">'
+      + '<button class="save">💬 Reply</button><span class="lbl">and set:</span>'
+      + '<button data-s="✅">✅ done</button><button data-s="🚫">🚫 rejected</button><button data-s="⏸️">⏸️ deferred</button><button data-s="❓">❓ needs my call</button>'
+      + '<button class="cancel">Cancel</button></div>';
+    item.append(ed);
+    if (item.tagName === 'DETAILS') item.open = true; // the editor must be seen
+    const ta = ed.querySelector('textarea');
+    ta.focus();
+    ed.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.classList.contains('cancel')) return ed.remove();
+      const text = ta.value.trim();
+      if (text) {
+        let th = item.querySelector(':scope > .thread');
+        if (!th) { th = document.createElement('div'); th.className = 'thread'; item.insertBefore(th, ed); }
+        const r = document.createElement('div');
+        r.className = 'reply';
+        r.innerHTML = '<span class="who">👤 you</span><span class="txt"></span>';
+        r.querySelector('.txt').textContent = text;
+        th.append(r);
+      }
+      if (b.dataset.s) {
+        const sev = item.dataset.k.split(' ').find((k) => ['🔴', '🟠', '⚪', '🔵'].includes(k)) ?? '';
+        item.querySelector('.head > .g, summary > .g').innerHTML = `<span class="g-btn sev">${b.dataset.s}</span> ${sev}`;
+        item.style.opacity = ['✅', '🚫', '⏸️'].includes(b.dataset.s) ? '.55' : '';
+      }
+      ed.remove();
+    });
   });
 })();
 // Summary strip: counts per glyph, a click filters.
