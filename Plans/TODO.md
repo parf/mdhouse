@@ -54,8 +54,8 @@
 - [x] unify styles (git/dir) view
   - Logo ; Dir_Name - справа вкладки [GIT] / Favs / Recent / Mine / Commits / Files и ⚙ - everywhere
   - on dir page "Dir Name" link to "git"; everywhere else - link to dir
-- [ ] git status in breadcrumbs
-- [ ] ez git page access
+- [x] git status in breadcrumbs
+- [x] ez git page access
 - [ ] Questions with suggests - questions with suggested options - radio buttons or just buttons/checkboxes
 - [ ] create MD file (SKILL) with typical instructions how to write questions+suggestions / desisions / answers
 
