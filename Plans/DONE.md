@@ -1,7 +1,7 @@
 # DONE
 
 The engineering record: how things work, what was measured, and the traps found on the way.
-What each release changed for users is in [`CHANGELOG.md`](../../CHANGELOG.md); why things are
+What each release changed for users is in [`CHANGELOG.md`](../CHANGELOG.md); why things are
 the way they are is in [`DECISIONS.md`](DECISIONS.md).
 
 Test trees named below: **the docs tree** — ~1 000 `.md` files in one large repository, with

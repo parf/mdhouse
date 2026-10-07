@@ -3,7 +3,7 @@
 Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, repo
 `github.com/parf/mdhouse`.
 
-- Project knowledge (modules, URLs, invariants, prefs, security rules): `Plans/PRF-55-md-viewer-web/README.md`
+- Project knowledge (modules, URLs, invariants, prefs, security rules): `Plans/README.md`
 - Open items `TODO.md` · choices `DECISIONS.md` · engineering record `DONE.md` (same folder)
 - User-facing history: `CHANGELOG.md`
 
@@ -35,7 +35,7 @@ Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, r
   one line where one will do. Offer improvements in one line instead of making them. Never
   bundle unrequested code/config changes into a doc edit.
 - **Keep docs in the same commit:**
-  - `Plans/…/README.md` — any route, lib module, prefs key, git call shape or security rule
+  - `Plans/README.md` — any route, lib module, prefs key, git call shape or security rule
   - `TODO.md` — tick / reword items as each step lands; `DECISIONS.md` when a choice changes
   - `CHANGELOG.md` `## Unreleased` — every user-visible change
 - **Questions files:** when folding answers into TODO/DECISIONS, carry over every answer;
@@ -169,7 +169,7 @@ Only on "publish".
 - [ ] Bump semver version in `package.json` (+0.0.1 — minor feature, +0.1 otherwise); then changelog
 - [ ] `CHANGELOG.md`: `## Unreleased` → `## X.Y.Z — YYYY-MM-DD`; covers every commit since the
       last release (`git log <last "mdhouse X.Y.Z" commit>..`); drop no-change entries
-- [ ] `Plans/…/README.md`, `TODO.md`, `DONE.md` current
+- [ ] `Plans/README.md`, `TODO.md`, `DONE.md` current
 - [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh

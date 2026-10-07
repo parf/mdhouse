@@ -2,7 +2,7 @@
 
 Stable knowledge for working on mdhouse. Open work is in [`TODO.md`](TODO.md), finished work in
 [`DONE.md`](DONE.md), decisions in [`DECISIONS.md`](DECISIONS.md), and what each release changed
-for users in [`CHANGELOG.md`](../../CHANGELOG.md).
+for users in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## Purpose
 
@@ -125,7 +125,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   Read from `prefs.json` for every request (re-read when its mtime changes), so `user-add`
   applies to a running server at once. The page routes hand out the HTML bundle's page from a
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
-  code with no data, and stay open. [doc/access.md](../../doc/access.md).
+  code with no data, and stay open. [doc/access.md](../doc/access.md).
 - **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa/answer`, `/api/insert`, `/api/roots/remove`, `/api/settings` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between

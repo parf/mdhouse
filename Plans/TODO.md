@@ -11,8 +11,8 @@
   - [x] keep good hash(passwd) not passwd itself - argon2id
   - [x] asked from localhost too - protect from misconfigured nginx & alike proxies
   - [x] with CIDR list - both required
-  - [x] no TLS - doc how to forward port with ssh - [doc/access.md](../../doc/access.md)
-- [x] prefs.json.dist - pretty print json with comments - [doc/prefs.json.dist](../../doc/prefs.json.dist); comments are read, a save drops them
+  - [x] no TLS - doc how to forward port with ssh - [doc/access.md](../doc/access.md)
+- [x] prefs.json.dist - pretty print json with comments - [doc/prefs.json.dist](../doc/prefs.json.dist); comments are read, a save drops them
 - [x] wide mode - save in localStorage; one for all documents
 - [x] keyboard shortcuts popup is still outdated - update it (e, alt+e, ctrl+shift+enter)
 - [x] add shortcut for open in editor link ( open edit:/.. url ) - e
@@ -60,4 +60,4 @@
 - [ ] create MD file (SKILL) with typical instructions how to write questions+suggestions / desisions / answers
 
 What is done is in [`DONE.md`](DONE.md); user-facing history in
-[`CHANGELOG.md`](../../CHANGELOG.md).
+[`CHANGELOG.md`](../CHANGELOG.md).
