@@ -68,7 +68,7 @@ details.settled > summary .t { display: grid; min-width: 0; }
 /* folded: the question and its answer on lines of their own, each in its own colour, muted */
 .t-q, .t-a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .t-q { color: color-mix(in srgb, var(--q) 55%, var(--muted)); }
-.t-a { color: color-mix(in srgb, var(--a) 60%, var(--muted)); padding-left: 1.2em; }
+.t-a { color: color-mix(in srgb, var(--a) 60%, var(--muted)); }
 details.settled[open] > summary .t-a { display: none; }
 details.settled > summary::after { content: "▸"; margin-left: auto; font-size: 11px; }
 details.settled[open] > summary::after { content: "▾"; }
