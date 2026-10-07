@@ -27,12 +27,12 @@
 
 - ✅ 🟠 `test/control.test.ts:8` `controlPath(PORT)` and every `serve()` test (`test/server-guards.test.ts:60,98,156,208,251,311,386`) → `src/server.ts:904` `serveControl()` → `src/lib/control.ts:80,174` create `control-6179x.sock` in the **real** `~/.config/mdhouse` (CONFIG_DIR from env at import, `src/lib/prefs.ts:85`). Visible to `knownPorts()` → `mdhouse exit --all` during a run targets test sockets; a crashed run leaves stale sockets beside `control-7777.sock`. Contradicts "never on the live instance". Fix: `bunfig.toml` `[test] env` or `process.env.XDG_CONFIG_HOME` set in a preload before `control.ts` is imported.
   > 💬 `112b307` — `test/preload.ts`. Proof: without it the real dir got `control-61790/61794/61795.sock` during the run; with it, nothing.
-- ❓ 🟠 `package.json:46` `"dev"` script — same hazard as above for humans: with the service up it silently feeds `.` to :7777 (`src/cli.ts:536-541`). Pin a port and config: `XDG_CONFIG_HOME=.scratch/cfg bun --hot run src/cli.ts . --fg --port 7790` (or drop the script; README.md:162 advertises it as "hot reload").
-  > 💬 Confirmed: with :7777 up, `bun run dev` adds `.` to the live instance. Pin it (`XDG_CONFIG_HOME=.scratch/cfg … --port 7790`), or drop the script? README advertises it.
+- ✅ 🟠 `package.json:46` `"dev"` script — same hazard as above for humans: with the service up it silently feeds `.` to :7777 (`src/cli.ts:536-541`). Pin a port and config: `XDG_CONFIG_HOME=.scratch/cfg bun --hot run src/cli.ts . --fg --port 7790` (or drop the script; README.md:162 advertises it as "hot reload").
+  > 💬 `bff63ce` — `:7790`, `XDG_CONFIG_HOME=.scratch/cfg` (gitignored). Ran it with :7777 up: served on :7790, live untouched.
 - ⏳ ⚪ `test/server-guards.test.ts:60…386`, `test/control.test.ts:7` fixed ports/sockets — two concurrent `bun test` runs (agent + user) collide with `EADDRINUSE`/`EADDRINUSE`-shaped failures that look like regressions. `port: 0` + `server.port` where the test doesn't need a known port.
   > 💬 Deferred: moving tests to `port: 0` touches every server test; collisions need two `bun test` runs at once.
-- ❓ ⚪ `src/cli.ts:536` `--fg` + port busy → `handOver()` to whatever mdhouse answers: a supervisor's `--fg` (unit `ExecStart … --fg`) started while a hand-run daemon holds 7777 exits 0 "already running — added to it", `Restart=on-failure` doesn't fire, and the service is silently not the one serving. `--fg` should refuse (`exit 1`) rather than hand over; hand-over belongs to the launcher path only.
-  > 💬 Same path as `--fg` in *Deploy & service — addendum* → answered there.
+- ✅ ⚪ `src/cli.ts:536` `--fg` + port busy → `handOver()` to whatever mdhouse answers: a supervisor's `--fg` (unit `ExecStart … --fg`) started while a hand-run daemon holds 7777 exits 0 "already running — added to it", `Restart=on-failure` doesn't fire, and the service is silently not the one serving. `--fg` should refuse (`exit 1`) rather than hand over; hand-over belongs to the launcher path only.
+  > 💬 `2ec89f3` — see `src/cli.ts:536-541` below.
 
 
 ## Deploy & service
@@ -45,16 +45,16 @@
   > 💬 `6da9649` — polls HTTP; stops with the journal if it never answers. Ran it on :7777: up, one `--fg` copy.
 - ✅ 🟠 Reload: `R=$(curl -s …)` empty on 401 (login on), no jq, or daemon down → session-only folders dropped silently. `set -e`; `curl -fsS … | jq … || exit 1`
   > 💬 `6da9649` — `set -e`, `curl -fsS … | jq`.
-- ❓ 🟠 Tag releases: `git tag vX.Y.Z`, push with main; changelog range `git log vA.B.C..` — the last tag is `v0.1.2`
-  > 💬 Confirmed: only `v0.1.2` exists. Tag each release `vX.Y.Z` and push it with main?
-- ❓ 🟠 Order: `npm publish` before `git push` — a failed publish (OTP, 403) then costs a local amend, not a public commit + tag
-  > 💬 `npm publish` before `git push` — change the order?
+- ✅ 🟠 Tag releases: `git tag vX.Y.Z`, push with main; changelog range `git log vA.B.C..` — the last tag is `v0.1.2`
+  > 💬 `eb60912` — tag + `git push origin main --tags` in Deploy; published releases since 0.3.0 tagged locally (checked against `npm view mdhouse versions`), pushed with the next publish.
+- ✅ 🟠 Order: `npm publish` before `git push` — a failed publish (OTP, 403) then costs a local amend, not a public commit + tag
+  > 💬 `eb60912` — publish, then tag + push.
 - ✅ 🟠 Post-publish: install `mdhouse@X.Y.Z` from the registry into a temp prefix and run it — `npm view` only proves the manifest
   > 💬 `6da9649` — "install `mdhouse@X.Y.Z` from the registry, run it" added.
 - ✅ 🟠 Rollback: `npm deprecate mdhouse@X.Y.Z "broken — use …"`, fix, bump, republish; never `npm unpublish`
   > 💬 `6da9649` — deprecate, fix, bump, publish; never unpublish.
-- ❓ ⚪ Semver line ambiguous: `+0.0.1 fix · +0.1 feature · +1 breaking (URL, prefs key, CLI flag removed/renamed)`
-  > 💬 Your rule stays ("+0.0.1 minor feature, +0.1 otherwise"). Add "+1 breaking — URL, prefs key, CLI flag removed"?
+- ✅ ⚪ Semver line ambiguous: `+0.0.1 fix · +0.1 feature · +1 breaking (URL, prefs key, CLI flag removed/renamed)`
+  > 💬 `eb60912` — "+1 — breaking: URL, prefs key, CLI flag removed or renamed" added to your rule.
 - ⚠️ ⚪ Auth: `npm whoami` before publish; `~/.npmrc` holds a long-lived classic token — 2FA / granular token; `--provenance` is CI-only
   > 💬 `6da9649` — `npm whoami` added. 2FA / granular token is your account: not touched.
 
@@ -125,20 +125,20 @@
   > 💬 Moot: the reload polls HTTP now.
 - ✅ ⚪ `CLAUDE.md:117,120` `./bin/mdhouse $a` is unquoted word-splitting — a root path with a space breaks. `jq -r '.roots[] | select(.saved|not) | [(if .writable then "--rw" else empty end), .path] | @sh'` and `eval ./bin/mdhouse $a`
   > 💬 `6da9649` — `@sh` + `eval`. Ran it with a `--rw` root named `a b`: back with `--rw`.
-- ⏳ ⚪ `CLAUDE.md:139` add the baseline so a stray file shows: `npm pack --dry-run` → `62 files, 832 kB` (1.4.0)
-  > 💬 Waits for the PNG question below — the size changes with it.
+- ✅ ⚪ `CLAUDE.md:139` add the baseline so a stray file shows: `npm pack --dry-run` → `62 files, 832 kB` (1.4.0)
+  > 💬 `eb60912` — "~55 files, ~184 kB (1.4.x)", after the PNGs left.
 
 ### Code
 
-- ❓ 🟠 `src/cli.ts:216-240`, `src/server.ts:907-913` `mdhouse exit` cannot tell it is stopping the unit: the ping reply has no `service` field, `/exit` → `process.exit(0)` → unit inactive, `Restart=on-failure` idle, and the next `mdhouse <dir>` starts a detached copy on :7777. Fix: ping returns `service: process.env.MDHOUSE_SERVICE === '1'`; `exit` on such a daemon prints `systemctl --user stop mdhouse.service` and exits 1 (or runs it).
-  > 💬 Confirmed by reading: ping has no `service` field. `mdhouse exit` on the unit — print `systemctl --user stop mdhouse.service` and exit 1, or run it?
-- ❓ 🟠 `src/cli.ts:536-541` `--fg` on `EADDRINUSE` hands over and exits 0 — under `MDHOUSE_SERVICE=1` that makes a detached/hand-started copy the live one for good (unit "succeeded", no retry). Service mode should `exit 1` here so systemd keeps retrying (Workflow ⚪ above is the same path).
-  > 💬 Under `MDHOUSE_SERVICE=1`, `--fg` with a busy port: exit 1 (systemd retries) instead of handing over?
+- ✅ 🟠 `src/cli.ts:216-240`, `src/server.ts:907-913` `mdhouse exit` cannot tell it is stopping the unit: the ping reply has no `service` field, `/exit` → `process.exit(0)` → unit inactive, `Restart=on-failure` idle, and the next `mdhouse <dir>` starts a detached copy on :7777. Fix: ping returns `service: process.env.MDHOUSE_SERVICE === '1'`; `exit` on such a daemon prints `systemctl --user stop mdhouse.service` and exits 1 (or runs it).
+  > 💬 `2ec89f3` — ping carries `service` (unit from `/proc/self/cgroup`); `exit` prints `systemctl --user stop mdhouse.service`, exit 1. Ran on a scratch `MDHOUSE_SERVICE=1` instance: refused, still up; a plain daemon still stops.
+- ✅ 🟠 `src/cli.ts:536-541` `--fg` on `EADDRINUSE` hands over and exits 0 — under `MDHOUSE_SERVICE=1` that makes a detached/hand-started copy the live one for good (unit "succeeded", no retry). Service mode should `exit 1` here so systemd keeps retrying (Workflow ⚪ above is the same path).
+  > 💬 `2ec89f3` — under `MDHOUSE_SERVICE=1`: "port taken — not starting; systemd will retry", exit 1. Ran it: exit 1, the first copy untouched.
 - ⏳ ⚪ `src/lib/control.ts:125-131` the client unlinks a socket after a failed connect; a daemon that has just unlinked the stale file and bound a fresh one (`:178-185`) loses it — unreachable until restart. `statSync(sock).ino` before the fetch, unlink only if unchanged; or leave cleanup to `serveControl` alone.
   > 💬 Deferred: no reproduction yet.
-- ❓ ⚪ `package.json:35-43` `files` ships `doc/*.png` (~680 kB of the 832 kB tarball) and `doc/qa-playground.md`; README image links are relative and npmjs resolves them to GitHub via `repository`. Add `"!doc/*.png"` (or move the PNGs out of `doc/`).
-  > 💬 Exclude `doc/*.png` (~680 kB of 832 kB) from the package? Needs a check that npmjs still shows the README images.
-- ❓ ⚪ `package.json:44-48` no `prepublishOnly` — `npm publish` can ship red tests: `"prepublishOnly": "bun test && tsc --noEmit -p ."`
-  > 💬 Add `prepublishOnly: bun test && tsc --noEmit -p .`?
+- ✅ ⚪ `package.json:35-43` `files` ships `doc/*.png` (~680 kB of the 832 kB tarball) and `doc/qa-playground.md`; README image links are relative and npmjs resolves them to GitHub via `repository`. Add `"!doc/*.png"` (or move the PNGs out of `doc/`).
+  > 💬 `bff63ce` — `!doc/*.png`: 62 files / 833 kB → 55 / 184 kB. npmjs images: check after the next publish (Deploy checklist).
+- ✅ ⚪ `package.json:44-48` no `prepublishOnly` — `npm publish` can ship red tests: `"prepublishOnly": "bun test && tsc --noEmit -p ."`
+  > 💬 `bff63ce` — `bun test && tsc --noEmit -p .`; `npm run prepublishOnly` green.
 - ✅ ⚪ `package.json:59-63` `typescript` is not a devDep — `npx tsc` runs a transitive `node_modules/typescript` (7.0.2 today); `@types/bun: latest` — the type check drifts by day. Pin both.
   > 💬 `9fc58c2` — `typescript ^7.0.2`, `@types/bun ^1.4.2` in devDependencies.
