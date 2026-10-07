@@ -12,6 +12,8 @@
   - in `--rw`: **Commit** (`git commit -a`, the files listed first, non-Markdown ones confirmed),
     **Pull** (`--ff-only`), **Push** — with uncommitted files only when all Markdown, and confirmed
   - a **GIT** link on every folder page inside a repo
+  - git over ssh finds your ssh agent even under the systemd service, which does not inherit
+    `SSH_AUTH_SOCK` (`/run/user/<uid>/ssh-agent.socket`, `gcr/ssh`, `keyring/ssh`)
 - **Access control** — [doc/access.md](doc/access.md): `mdhouse user-add login:passwd` turns
   on a login (Basic auth, the password kept as an argon2id hash); `mdhouse --allow <cidr,…>`
   lets in only those networks, this machine always. Both off by default; changes apply to a

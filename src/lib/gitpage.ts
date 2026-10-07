@@ -7,12 +7,25 @@
  * git's message instead of hanging the request.
  */
 
-import { relative, sep } from 'node:path';
+import { existsSync } from 'node:fs';
+import { isAbsolute, join, relative, sep } from 'node:path';
 
 export interface RunResult {
   code: number;
   out: string;
   err: string;
+}
+
+/**
+ * The ssh agent, for a pull or push over ssh. A systemd user service does not inherit the
+ * login session's SSH_AUTH_SOCK, so where it is unset the usual places are tried: the systemd
+ * user ssh-agent, GNOME's gcr and keyring.
+ */
+export function agentSocket(env: Record<string, string | undefined> = process.env, exists = existsSync): string | undefined {
+  if (env.SSH_AUTH_SOCK) return env.SSH_AUTH_SOCK;
+  const dir = env.XDG_RUNTIME_DIR || (process.getuid ? `/run/user/${process.getuid()}` : '');
+  if (!dir) return undefined;
+  return ['ssh-agent.socket', 'gcr/ssh', 'keyring/ssh', 'openssh_agent'].map((f) => `${dir}/${f}`).find((p) => exists(p));
 }
 
 /** git with its exit code and stderr — the messages commit, pull and push report. */
@@ -28,6 +41,7 @@ export async function run(cwd: string, args: string[], timeoutMs = 20_000): Prom
         GIT_TERMINAL_PROMPT: '0',
         GIT_SSH_COMMAND: process.env.GIT_SSH_COMMAND ?? 'ssh -o BatchMode=yes',
         GIT_OPTIONAL_LOCKS: '0',
+        ...(agentSocket() ? { SSH_AUTH_SOCK: agentSocket() } : {}),
       },
     });
     const timer = setTimeout(() => proc.kill(), timeoutMs);
@@ -213,4 +227,93 @@ export function suggestMessage(files: DirtyFile[]): string {
   if (names.length === 1) return `Update ${names[0]}`;
   if (names.length <= 3) return `Update ${names.join(', ')}`;
   return '';
+}
+
+export interface SyncState {
+  /** The branch's upstream, `origin/main` — or null: it was never pushed. */
+  upstream: string | null;
+  /** The last exchange with origin, whichever way it went; null when there was none. */
+  last: { way: 'pulled' | 'pushed'; at: number } | null;
+  /** Commits here and not on the upstream (as of the last fetch). */
+  ahead: number;
+  /** Commits on the upstream and not here (as of the last fetch). */
+  behind: number;
+  /** The commits not on origin, newest first — `ahead` of them, or every one when no upstream. */
+  unpushed: Array<{ hash: string; author: string; email: string; date: number; subject: string }>;
+  /** merge, rebase, cherry-pick or revert under way; conflicts. Commit / pull / push wait. */
+  busy: string | null;
+}
+
+/**
+ * How the branch stands with origin — all local, no network. The time of the last exchange
+ * comes from the reflog of `origin/<branch>`: "update by push" for a push, "fetch" / "pull"
+ * for a pull; FETCH_HEAD's time when that reflog is gone.
+ */
+export async function syncState(repo: string, branch: string): Promise<SyncState> {
+  const up = await run(repo, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']);
+  let upstream = up.code === 0 ? up.out.trim() : null;
+  if (!upstream && (await run(repo, ['rev-parse', '--verify', '-q', `refs/remotes/origin/${branch}`])).code === 0) {
+    upstream = `origin/${branch}`;
+  }
+
+  let last: SyncState['last'] = null;
+  if (upstream) {
+    const log = await run(repo, ['reflog', 'show', '--date=unix', '--format=%gd%x1f%gs', `refs/remotes/${upstream}`]);
+    for (const line of log.out.split('\n')) {
+      const [ref = '', what = ''] = line.split(SEP);
+      const at = Number(/@\{(\d+)\}/.exec(ref)?.[1]) * 1000;
+      if (!at) continue;
+      const way = what.startsWith('update by push') ? 'pushed' : /^(fetch|pull)/.test(what) ? 'pulled' : null;
+      if (way) {
+        last = { way, at };
+        break;
+      }
+    }
+    if (!last) {
+      const path = (await run(repo, ['rev-parse', '--git-path', 'FETCH_HEAD'])).out.trim();
+      const fetched = Bun.file(isAbsolute(path) ? path : join(repo, path));
+      if (await fetched.exists()) last = { way: 'pulled', at: fetched.lastModified };
+    }
+  }
+
+  let ahead = 0;
+  let behind = 0;
+  if (upstream) {
+    const counts = (await run(repo, ['rev-list', '--left-right', '--count', `${upstream}...HEAD`])).out.trim().split(/\s+/);
+    behind = Number(counts[0]) || 0;
+    ahead = Number(counts[1]) || 0;
+  }
+  // Without an upstream: every commit no remote has.
+  const range = upstream ? [`${upstream}..HEAD`] : ['HEAD', '--not', '--remotes'];
+  const out = await run(repo, ['log', '-n100', '--format=%H%x1f%an%x1f%ae%x1f%aI%x1f%s', ...range]);
+  const unpushed = out.out
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [hash = '', author = '', email = '', iso = '', ...rest] = line.split(SEP);
+      return { hash, author, email, date: Date.parse(iso) || 0, subject: rest.join(SEP) };
+    });
+
+  const marks: Array<[string, string]> = [
+    ['MERGE_HEAD', 'a merge'],
+    ['rebase-merge', 'a rebase'],
+    ['rebase-apply', 'a rebase'],
+    ['CHERRY_PICK_HEAD', 'a cherry-pick'],
+    ['REVERT_HEAD', 'a revert'],
+  ];
+  // --git-path: right in a linked worktree too, where these live in its own git dir.
+  const paths = (await run(repo, ['rev-parse', ...marks.flatMap(([f]) => ['--git-path', f])])).out.split('\n');
+  let busy: string | null = null;
+  for (const [i, [, what]] of marks.entries()) {
+    const path = paths[i]?.trim();
+    if (path && existsSync(isAbsolute(path) ? path : join(repo, path))) {
+      busy = `${what} is under way`;
+      break;
+    }
+  }
+  if (!busy) {
+    const dirty = await dirtyFiles(repo);
+    if (dirty.some((f) => /^(DD|AU|UD|UA|DU|AA|UU)$/.test(f.code))) busy = 'there are conflicts';
+  }
+  return { upstream, last, ahead, behind, unpushed, busy };
 }

@@ -75,6 +75,14 @@ export interface GitInfo {
   origin: { web: string; commit: string; blob: string; kind: string } | null;
   dirty: Array<{ path: string; code: string; md: boolean }>;
   commitMessage: string;
+  sync: {
+    upstream: string | null;
+    last: { way: 'pulled' | 'pushed'; at: number } | null;
+    ahead: number;
+    behind: number;
+    unpushed: Array<{ hash: string; author: string; email: string; date: number; subject: string }>;
+    busy: string | null;
+  } | null;
   writable: boolean;
 }
 

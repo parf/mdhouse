@@ -22,7 +22,7 @@ import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/ins
 import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 import { allowedAddress, Users } from './lib/access';
-import { commitable, dirtyFiles, folderLog, origin, remoteState, repoRel, run, suggestMessage, trackedFiles } from './lib/gitpage';
+import { commitable, dirtyFiles, folderLog, origin, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
 import { stat } from 'node:fs/promises';
 
@@ -447,6 +447,7 @@ export async function serve(opts: ServeOptions) {
         const at = await gitAt(new URL(req.url));
         if ('error' in at) return at.error;
         const [head, host, dirty] = await Promise.all([repoHead(at.repo), origin(at.repo), dirtyFiles(at.repo)]);
+        const sync = head ? await syncState(at.repo, head.branch) : null;
         return json({
           repo: at.repo.split('/').pop(),
           dir: at.dir,
@@ -455,6 +456,7 @@ export async function serve(opts: ServeOptions) {
           origin: host,
           dirty,
           commitMessage: suggestMessage(commitable(dirty)),
+          sync,
           writable: at.root.writable,
         });
       },

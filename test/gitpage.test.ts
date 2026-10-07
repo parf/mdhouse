@@ -96,3 +96,67 @@ describe('a real repo', () => {
     expect((await dirtyFiles(repo)).length).toBe(0); // ls-remote wrote nothing
   });
 });
+
+describe('syncState — how the branch stands with origin, without the network', () => {
+  test('unpushed, pushed, ahead, pulled, a merge under way', async () => {
+    const { syncState } = await import('../src/lib/gitpage');
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-sync-'));
+    const repo = join(base, 'work');
+    const g = (...args: string[]) => run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args]);
+    try {
+      await run(base, ['init', '-q', '--bare', '-b', 'main', join(base, 'origin.git')]);
+      await run(base, ['init', '-q', '-b', 'main', repo]);
+      await g('remote', 'add', 'origin', join(base, 'origin.git'));
+      await writeFile(join(repo, 'a.md'), 'a\n');
+      await g('add', '.');
+      await g('commit', '-qm', 'one');
+
+      // Never pushed: no upstream, every commit is unpushed.
+      let s = await syncState(repo, 'main');
+      expect(s).toMatchObject({ upstream: null, last: null, ahead: 0, busy: null });
+      expect(s.unpushed.map((c) => c.subject)).toEqual(['one']);
+
+      await g('push', '-q', '-u', 'origin', 'main');
+      s = await syncState(repo, 'main');
+      expect(s.upstream).toBe('origin/main');
+      expect(s.last?.way).toBe('pushed');
+      expect(s.unpushed).toEqual([]);
+
+      await writeFile(join(repo, 'a.md'), 'b\n');
+      await g('commit', '-qam', 'two');
+      s = await syncState(repo, 'main');
+      expect(s.ahead).toBe(1);
+      expect(s.unpushed.map((c) => c.subject)).toEqual(['two']);
+
+      // Someone else pushes; we fetch: last exchange is now a pull, and we are behind.
+      const other = join(base, 'other');
+      await run(base, ['clone', '-q', join(base, 'origin.git'), other]);
+      await writeFile(join(other, 'c.md'), 'c\n');
+      await run(other, ['-c', 'user.name=o', '-c', 'user.email=o@o', 'add', '.']);
+      await run(other, ['-c', 'user.name=o', '-c', 'user.email=o@o', 'commit', '-qm', 'theirs']);
+      await run(other, ['push', '-q']);
+      await Bun.sleep(1100); // reflog times are in seconds
+      await g('fetch', '-q');
+      s = await syncState(repo, 'main');
+      expect(s).toMatchObject({ ahead: 1, behind: 1 });
+      expect(s.last?.way).toBe('pulled');
+
+      // A merge stopped on a conflict.
+      await writeFile(join(other, 'a.md'), 'theirs\n');
+      await run(other, ['-c', 'user.name=o', '-c', 'user.email=o@o', 'commit', '-qam', 'clash']);
+      await run(other, ['push', '-q']);
+      await g('pull', '-q', '--no-rebase', '--no-edit');
+      expect((await syncState(repo, 'main')).busy).toBe('a merge is under way');
+    } finally {
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+});
+
+test('agentSocket: the environment first, then the usual places', async () => {
+  const { agentSocket } = await import('../src/lib/gitpage');
+  expect(agentSocket({ SSH_AUTH_SOCK: '/tmp/a' }, () => false)).toBe('/tmp/a');
+  const have = new Set(['/run/user/7/gcr/ssh']);
+  expect(agentSocket({ XDG_RUNTIME_DIR: '/run/user/7' }, (p) => have.has(String(p)))).toBe('/run/user/7/gcr/ssh');
+  expect(agentSocket({ XDG_RUNTIME_DIR: '/run/user/7' }, () => false)).toBeUndefined();
+});
