@@ -44,8 +44,8 @@ Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, r
   docs) unless asked. Commit only the paths you changed (`git commit <paths>`).
 - **Push / publish only when I say "publish"** (or "deploy").
 - localStorage: every access in try/catch; keys `mdhouse.*`.
-- UI links are real `<a href>`; plain clicks go through `go(url)` (pushState), middle click
-  opens a tab.
+- UI links are real `<a href>`; `onClick` returns on `e.button !== 0 || metaKey || ctrlKey ||
+  shiftKey` (a real tab), else `preventDefault()` + `go(url)` (pushState) — `src/ui/PageHead.tsx`.
 
 ## Glyphs
 
@@ -63,11 +63,29 @@ For findings, reviews and task status — in docs, pages and replies; not decora
 
 - `const` by default, `let` only when reassigned, never `var`.
 - **Fetch:** check `res.ok` before `res.json()` (a proxy error page is HTML); a duplicate-request
-  guard (flag set on entry, cleared in `finally`); `AbortController` when a newer request
-  supersedes an older one — on `AbortError` return silently.
+  guard (flag set on entry, cleared in `finally`). A newer request supersedes an older one by a seq
+  counter (`src/app.tsx`) or a `live` flag cleared in the effect's cleanup — not `AbortController`.
+- TS: `import type`; `noUncheckedIndexedAccess` — `arr[0]!` or `?? ''`. Preact: `class=`, hooks
+  from `preact/hooks`.
 - **Comments: current contract only.** What it does now, invariants, non-obvious behavior.
   No history, investigation notes or plans — those go in `DONE.md` / `DECISIONS.md`.
   Short direct sentences that start with the behavior (`Returns…`, `Skips…`).
+
+## Server invariants
+
+- **Document write route, in order:** `sameOrigin` → 403 · body shape → 400 · `registry.resolve(p)`
+  + `.md` → 404 · read-only root → 403 · `queueWrite(loc.abs)` · re-read, `lineHash` → 409
+  `{error, reason: 'stale'}` · `registry.writeFile()` (the only write to a tree).
+- **Git write:** `gitWrite()`, then `queueWrite('git:' + repo)` — one at a time per repo.
+- Errors: `fail(status, msg)` → `{error}`: 400 · 403 · 404 · 409 stale · 413 too long · 421 bad Host.
+- A request value becomes a path only through `registry.resolve`. git/rg run as argv arrays,
+  `--` before paths; a `rev` must match `/^[0-9a-f]{4,40}$/`.
+- `opts.noGit` short-circuits every route that runs git.
+- `Root.writable` is a getter (`--rw` / auto-rw) — never cache it. `prefs.json` changes only via
+  `Prefs.mutate`.
+- Rendered HTML is trusted (`html: true`), no sanitizer: page input is written to the file as
+  Markdown, never injected as HTML.
+- `/__app/` (code only) sits outside `guard()`; every other route is behind `trustedHost` → `admit`.
 
 ## Shell tricks
 
@@ -81,22 +99,32 @@ For findings, reviews and task status — in docs, pages and replies; not decora
 ## Commands
 
 ```sh
-bun test                    # all tests
+bun test                    # all tests — a temp config dir (test/preload.ts)
 npx tsc --noEmit -p .       # types
-bun run dev                 # hot reload, this folder, foreground
 ```
+
+- never bare `bun run dev` while :7777 runs — the port is busy, so it hands `.` to the live instance
+- lib → `test/<module>.test.ts`; a route → `serve()` on its own 617xx port, torn down in
+  `finally` (`test/server-guards.test.ts`); `src/ui` has no unit tests — the browser check is the test
 
 ## Testing in a browser — never on the live instance
 
-Scratch repo + spare port + temp config:
+`S` = the session's scratchpad dir. Scratch repo (git views need ≥1 commit; `doc/qa-playground.md`
+has every Q&A form) + spare port + temp config:
 
 ```sh
-XDG_CONFIG_HOME=$S/cfg ./bin/mdhouse $S/repo --rw --port 7790 --fg
+mkdir -p $S/repo $S/cfg && cp doc/*.md $S/repo && git -C $S/repo init -q && git -C $S/repo add -A && git -C $S/repo commit -qm init
+XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7790 --fg
 ```
 
-Stop it by pid (`ss -ltnpH 'sport = :7790'`), not `pkill -f`. Headless Chrome for clicks and
-screenshots. Never install/uninstall `mdhouse.service` in tests — use
-`service --port <spare>` with a temp `XDG_CONFIG_HOME`.
+- `./bin/mdhouse` instead of `bun --hot` → restart it after every `src/` edit (bundle built at start)
+- stop it by pid (`ss -ltnpH 'sport = :7790'`), not `pkill -f`
+- look at it in light + dark, and ≤720px
+- headless Chrome — an SPA needs the time budget, without it the DOM is empty:
+  `google-chrome --headless=new --disable-gpu --window-size=1280,900 --virtual-time-budget=3000 --screenshot=$S/a.png <url>`
+  (`--dump-dom` the same way); clicks: `--remote-debugging-port` + a small CDP script in `$S`
+- never install/uninstall `mdhouse.service` in tests — `service --port <spare>` with a temp
+  `XDG_CONFIG_HOME`
 
 ## Live instance (:7777) — start / stop / reload
 
@@ -115,12 +143,17 @@ journalctl --user -u mdhouse.service -n 50   # log
 
 ```sh
 bash -c '
-R=$(curl -s localhost:7777/api/roots | jq -r ".roots[] | select(.saved|not) | (if .writable then \"--rw \" else \"\" end) + .path")
+set -e
+R=$(curl -fsS localhost:7777/api/roots | jq -r ".roots[] | select(.saved|not) | [(if .writable then \"--rw\" else empty end), .path] | @sh")
 systemctl --user restart mdhouse.service
-for i in $(seq 50); do [ -S ~/.config/mdhouse/control-7777.sock ] && break; sleep 0.1; done
-while read -r a; do [ -n "$a" ] && ./bin/mdhouse $a; done <<< "$R"
+for i in $(seq 50); do curl -so /dev/null localhost:7777/ && break; sleep 0.1; done
+curl -so /dev/null localhost:7777/ || { journalctl --user -u mdhouse.service -n 30; exit 1; }
+while read -r a; do [ -n "$a" ] && eval ./bin/mdhouse $a; done <<< "$R"
 pgrep -af "^/usr/bin/bun .*bin/mdhouse"'
 ```
+
+- waits for HTTP, not the socket file: a SIGKILLed copy leaves a stale socket; if the new code
+  fails at start it stops with the journal instead of starting a detached copy
 
 - `pgrep` shows one `--fg` process, no `logger` pipe
 - then tell me to reload the page (new bundle)
@@ -140,7 +173,7 @@ Only on "publish".
 - [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh
-      T=$SCRATCH/rel; mkdir -p $T/prefix $T/cfg $T/notes
+      T=$S/rel; mkdir -p $T/prefix $T/cfg $T/notes
       npm pack --pack-destination $T
       printf '# Notes\n\n**Q:** works?\n**A:** yes\n' > $T/notes/a.md
       npm install -g --prefix $T/prefix $T/mdhouse-X.Y.Z.tgz
@@ -148,6 +181,10 @@ Only on "publish".
       ```
       load `/` and a doc in headless Chrome — renders, no 500; stop it by pid
 - [ ] Release commit `mdhouse X.Y.Z` (package.json + CHANGELOG), body = what changed
+- [ ] `npm whoami` → the right account
 - [ ] `git push origin main && npm publish`
-- [ ] `npm view mdhouse version` shows X.Y.Z
+- [ ] Install `mdhouse@X.Y.Z` from the registry into a temp prefix, run it as in the smoke test —
+      `npm view` proves only the manifest
+- [ ] Broken release: `npm deprecate mdhouse@X.Y.Z "broken — use …"`, fix, bump, publish; never
+      `npm unpublish`
 - [ ] Restart the live instance (above)
