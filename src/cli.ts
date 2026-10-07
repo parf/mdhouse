@@ -39,9 +39,7 @@ Options
       --no-git         skip git entirely; filesystem recents only
       --help           show this
 
-With no folder named, the saved ones are served (from ~/.config/mdhouse/prefs.json).
-Port and host: the flag, else $MDHOUSE_PORT / $MDHOUSE_HOST, else what -p saved, else
-127.0.0.1:7777.
+No folder named: serves the saved ones. Config: ~/.config/mdhouse/prefs.json
 `;
 
 interface Options {
