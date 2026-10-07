@@ -145,3 +145,6 @@ vite.config.ts.timestamp-*
 # Local-only files (never committed)
 *.local
 *.local.*
+
+# bun run dev: its own config, beside the live one
+.scratch/

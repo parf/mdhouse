@@ -159,7 +159,7 @@ mdhouse dir  # run it
 Want to debug:
 
 ```bash
-bun run dev          # serves this repo with hot reload, in the foreground
+bun run dev          # this repo on :7790 with hot reload, its own config (.scratch/), foreground
 bun test
 bunx tsc --noEmit
 ```

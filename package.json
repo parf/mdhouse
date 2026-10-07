@@ -36,6 +36,7 @@
     "bin",
     "src",
     "doc",
+    "!doc/*.png",
     "README.md",
     "CHANGELOG.md",
     "LICENSE",
@@ -43,7 +44,8 @@
   ],
   "scripts": {
     "start": "bun run src/cli.ts",
-    "dev": "bun --hot run src/cli.ts . --fg",
+    "dev": "XDG_CONFIG_HOME=.scratch/cfg bun --hot run src/cli.ts . --fg --port 7790",
+    "prepublishOnly": "bun test && tsc --noEmit -p .",
     "test": "bun test"
   },
   "dependencies": {
