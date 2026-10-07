@@ -33,5 +33,10 @@
   - [ ] pull/push with uncommited files - ask to confirm "You have uncommited files", allow only when ONLY md files
   - [ ] subfolder git view - that subfolder only; origin only; git link only on folders inside one repo
 
+## NEXT iteration
+
+- [ ] Questions with suggests - questions with suggested options - radio buttons or just buttons/checkboxes
+- [ ] create MD file (SKILL) with typical instructions how to write questions+suggestions / desisions / answers
+
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../../CHANGELOG.md).
