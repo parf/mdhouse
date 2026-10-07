@@ -16,7 +16,7 @@
 - [x] add shortcut for open in editor link ( open edit:/.. url ) - e
   - [x] add "edit" link to our forms (answer, add) - edit:/path.md:line
   - [x] alt+e in a form (textarea focused) uses this url; replaces the edit form with "opened in external editor" notice, instead of save button
-  - [ ] control+shift+enter in the answer form - submit form + open next one (next unanswered question)
+  - [x] control+shift+enter in the answer form - submit form + open next one (next unanswered question)
 - [ ] config: auto-rw-path: list; any added folder under it is auto-rw - can be turned off in web config
 - [ ] git "root" page - where we show branch and recent commits
   - [ ] url: /root/?git; add this switch to all directories (now root only)

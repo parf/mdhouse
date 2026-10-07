@@ -17,6 +17,12 @@ type DiffView = 'patch' | 'marked';
 type DocView = 'doc' | DiffView;
 
 /** The tooltip for a diff button, which depends on what there is to compare. */
+/** A question with its answer already under it — for a checkbox item, inside it. */
+const isAnswered = (block: HTMLElement) =>
+  block.dataset.qaForm === 'task'
+    ? [...block.querySelectorAll('.markdown-alert-answer')].some((a) => a.closest('[data-qa-form]') === block)
+    : !!block.nextElementSibling?.matches('.markdown-alert-answer, .qa-a');
+
 /** Wide mode, kept for this browser. */
 const LS_WIDE = 'mdhouse.wide';
 
@@ -504,10 +510,26 @@ export function Doc({
 
   // The editor, rendered into its place on every change; Preact updates it in place.
   const saving = useRef(false);
+  /** Saved with Ctrl+Shift+Enter: once the page is back, open the next unanswered question. */
+  const nextAfter = useRef<{ url: string; line: number } | null>(null);
+  useEffect(() => {
+    const el = body.current;
+    const after = nextAfter.current;
+    if (!el || !after || !doc || !answerable || after.url !== doc.url) return;
+    nextAfter.current = null;
+    const block = [...el.querySelectorAll<HTMLElement>('[data-qa-form]')].find(
+      (b) => Number(b.dataset.line) > after.line && !('done' in b.dataset) && !isAnswered(b),
+    );
+    if (block) {
+      block.scrollIntoView({ block: 'center' });
+      void openEditor(block);
+    } else setTaskNote('No unanswered question below.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.html, answerable]);
   useEffect(() => {
     const spot = host.current;
     if (!spot || !editing || !doc) return;
-    const save = async (check: boolean) => {
+    const save = async (check: boolean, next: boolean) => {
       if (saving.current) return; // a repeated Ctrl+Enter before the first save is back
       saving.current = true;
       setEditing((e) => (e ? { ...e, saving: true, note: null } : e));
@@ -521,6 +543,7 @@ export function Doc({
           text: draft.current,
           check,
         });
+        if (next) nextAfter.current = { url: doc.url, line: editing.line };
         setEditing(null);
       } catch (err) {
         setEditing((e) =>
@@ -544,7 +567,7 @@ export function Doc({
       <AnswerEditor
         initial={draft.current}
         onText={(text) => (draft.current = text)}
-        onSave={(check) => void save(check)}
+        onSave={(check, next) => void save(check, next)}
         onCancel={() => setEditing(null)}
         saving={editing.saving}
         note={editing.note}

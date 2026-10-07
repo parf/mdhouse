@@ -8,6 +8,7 @@
 - **The answer and add forms have a ✎** (and Alt+E) that opens the file at that line in the
   editor; the form gives way to an "Opened in external editor" notice, with Back to return to
   your text
+- **Ctrl+Shift+Enter in the answer form** saves and opens the next unanswered question
 - **Wide mode is remembered** in this browser, one setting for all documents
 
 ### Changed

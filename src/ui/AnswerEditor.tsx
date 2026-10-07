@@ -6,8 +6,9 @@ interface Props {
   initial: string;
   /** Every change, so the draft outlives this editor (the page re-renders after a reload). */
   onText: (text: string) => void;
-  /** Save; `check` also ticks a checkbox question ("Check & Save"). */
-  onSave: (check: boolean) => void;
+  /** Save; `check` also ticks a checkbox question ("Check & Save"), `next` then opens the next
+   *  unanswered question. */
+  onSave: (check: boolean, next: boolean) => void;
   onCancel: () => void;
   saving: boolean;
   /** Why the last save did not go through, or anything else worth saying. */
@@ -20,8 +21,9 @@ interface Props {
 
 /**
  * The answer being written, under its question: a textarea that grows with the text, and Save
- * below it. Ctrl/⌘+Enter saves, Esc cancels, Alt+E opens the file at the question instead.
- * Styled as the answer block it will become.
+ * below it. Ctrl/⌘+Enter saves, Ctrl/⌘+Shift+Enter saves and opens the next unanswered
+ * question, Esc cancels, Alt+E opens the file at the question instead. Styled as the answer
+ * block it will become.
  */
 export function AnswerEditor({ initial, onText, onSave, onCancel, saving, note, canCheck, editHref }: Props) {
   const area = useRef<HTMLTextAreaElement>(null);
@@ -71,17 +73,17 @@ export function AnswerEditor({ initial, onText, onSave, onCancel, saving, note, 
             setOpened(true);
           } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !empty && !saving) {
             e.preventDefault();
-            onSave(false);
+            onSave(false, e.shiftKey);
           }
         }}
       />
       {note && <p class="answer-note">{note}</p>}
       <div class="answer-buttons">
-        <button class="answer-save" disabled={empty || saving} onClick={() => onSave(false)} title="Save (Ctrl+Enter)">
+        <button class="answer-save" disabled={empty || saving} onClick={() => onSave(false, false)} title="Save (Ctrl+Enter) — Ctrl+Shift+Enter: save and open the next unanswered question">
           {saving ? 'Saving…' : 'Save'}
         </button>
         {canCheck && (
-          <button class="answer-save" disabled={empty || saving} onClick={() => onSave(true)} title="Save, and tick the checkbox">
+          <button class="answer-save" disabled={empty || saving} onClick={() => onSave(true, false)} title="Save, and tick the checkbox">
             Check &amp; Save
           </button>
         )}
