@@ -4,6 +4,8 @@
 - config: login / password - simple HTTP AUTH
 - wide mode - save in cookie
 - config: auto-rw-path: (all subpath are auto-rw) - can be turned on/off in web config
+- git root mode; on-demand remote repo check - are there any new commits
+  - when RW mode - add buttons for pull/push
 
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../../CHANGELOG.md).
