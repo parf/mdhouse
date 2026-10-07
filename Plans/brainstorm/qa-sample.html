@@ -300,11 +300,12 @@ once more to turn task items into checkboxes with their line and hash.</p>
         radios.classList.remove('done');
         return setStage(host, '❓');
       }
-      const finding = !g.classList.contains('g-answered') && host.classList.contains('item') && !host.classList.contains('wait-me');
+      // stage buttons for a finding only — a line with a severity; every question gets the same plain form
+      const finding = /🔴|🟠|⚪|🔵/u.test(host.dataset.k || '') && !g.classList.contains('g-answered');
       const last = host.querySelector(':scope .reply:last-of-type .txt');
       editor(host, {
         prefill: g.classList.contains('g-answered') && last ? last.textContent : '',
-        stages: finding || host.tagName === 'DETAILS',
+        stages: finding,
         onSave: (text, stage, sign) => {
           if (text) threadOf(host, 'thread q-thread').append(reply(text, sign));
           if (stage) setStage(host, stage);
