@@ -19,6 +19,7 @@
 
 import { homedir } from 'node:os';
 import { mkdir, rename } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
@@ -52,6 +53,11 @@ interface PrefsFile {
   server: ServerConfig;
   /** Who may open mdhouse — see `lib/access.ts`. Set from the CLI only. */
   access: AccessConfig;
+  /**
+   * auto-rw paths, `mdhouse --auto-rw <path,…>`: every folder served from under one is writable
+   * without `--rw` — while `settings.autoRw` is on; the settings page turns it off and on.
+   */
+  autoRw: string[];
 }
 
 export interface AccessConfig {
@@ -70,9 +76,11 @@ export interface ServerConfig {
 export interface Settings {
   /** An `edit:` link on every document, for a URL handler that opens the file in an editor. */
   editLink: boolean;
+  /** Folders under the auto-rw paths are writable. */
+  autoRw: boolean;
 }
 
-const DEFAULT_SETTINGS: Settings = { editLink: true };
+const DEFAULT_SETTINGS: Settings = { editLink: true, autoRw: true };
 
 export const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
 const PREFS_PATH = `${CONFIG_DIR}/prefs.json`;
@@ -98,6 +106,7 @@ const fresh = (): PrefsFile => ({
   settings: { ...DEFAULT_SETTINGS },
   server: {},
   access: { allow: [], users: {} },
+  autoRw: [],
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
@@ -131,6 +140,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     settings,
     server,
     access,
+    autoRw: Array.isArray(parsed.autoRw) ? parsed.autoRw.filter((d) => typeof d === 'string') : [],
   };
 }
 
@@ -246,22 +256,48 @@ export class Prefs {
   }
 
   /**
-   * The access settings as the file holds them now. The CLI changes them while the server runs,
-   * and a new user must apply at once, so the server asks for every request; the file is read
-   * again only when it changed.
+   * Take in what other processes wrote. The CLI changes access and auto-rw while the server runs,
+   * and they must apply at once, so the server calls this for every request that needs them;
+   * the file is read again only when it changed.
    */
-  async currentAccess(): Promise<AccessConfig> {
+  refresh(): void {
     const file = Bun.file(this.path);
     // Time and size: two saves within one millisecond still differ in what they hold, mostly.
     const stamp = `${file.lastModified}:${file.size}`;
-    if (stamp !== this.accessStamp) {
-      const found = await readFile(this.path);
-      if (typeof found === 'object') this.data.access = found.access;
-      this.accessStamp = stamp;
+    if (stamp === this.stamp) return;
+    this.stamp = stamp;
+    try {
+      this.data = normalizeFile(Bun.JSONC.parse(readFileSync(this.path, 'utf8')) as Partial<PrefsFile>);
+    } catch {
+      /* missing, or mid-edit by hand: keep what we have */
     }
+  }
+  private stamp = '';
+
+  /** The access settings as the file holds them now. */
+  async currentAccess(): Promise<AccessConfig> {
+    this.refresh();
     return this.access;
   }
-  private accessStamp = '';
+
+  /** The auto-rw paths. */
+  get autoRw(): string[] {
+    return [...this.data.autoRw];
+  }
+
+  /** Is a folder writable by an auto-rw path — one of them or under one, with the setting on? */
+  autoRwCovers(dir: string): boolean {
+    this.refresh();
+    return this.data.settings.autoRw && this.data.autoRw.some((p) => dir === p || dir.startsWith(p.endsWith('/') ? p : `${p}/`));
+  }
+
+  /** Replace the auto-rw paths. */
+  async setAutoRw(paths: string[]): Promise<string[]> {
+    await this.mutate((data) => {
+      data.autoRw = [...paths];
+    });
+    return this.autoRw;
+  }
 
   /** Replace the allow list. */
   async setAllow(allow: string[]): Promise<AccessConfig> {

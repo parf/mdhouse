@@ -122,6 +122,40 @@ export function Settings({ roots, onChanged, gear, options, onOptions }: Props) 
             </a>
           </span>
         </div>
+        {/* The paths are set from the CLI; here only the switch. */}
+        {!!options.autoRwPaths?.length && (
+          <div class="settings-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={options.autoRw}
+                onChange={async (e) => {
+                  const autoRw = (e.target as HTMLInputElement).checked;
+                  onOptions({ ...options, autoRw });
+                  try {
+                    onOptions(await api.setSettings({ autoRw }));
+                    onChanged();
+                  } catch (err) {
+                    onOptions(options);
+                    setError((err as Error).message);
+                  }
+                }}
+              />
+              <span>
+                <b>Auto-RW</b> — folders under {options.autoRwPaths.map((p, i) => (
+                  <>
+                    {i > 0 && ', '}
+                    <code>{p}</code>
+                  </>
+                ))}{' '}
+                are writable.
+              </span>
+            </label>
+            <span class="settings-hint">
+              Set with <code>mdhouse --auto-rw &lt;path,…&gt;</code>
+            </span>
+          </div>
+        )}
       </section>
     </div>
   );

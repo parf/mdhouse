@@ -67,7 +67,7 @@ describe('settings', () => {
   test('unknown keys and wrong types are ignored', async () => {
     const prefs = await Prefs.load(join(dir, 'settings2.json'));
     const after = await prefs.updateSettings({ editLink: 'no', nonsense: 1 });
-    expect(after).toEqual({ editLink: true });
+    expect(after).toEqual({ editLink: true, autoRw: true });
   });
 });
 
@@ -183,5 +183,39 @@ describe('writable saved folders', () => {
     const loaded = await Prefs.load(g);
     expect(loaded.isWritableSaved('/x')).toBe(true);
     expect(loaded.isWritableSaved('/not-saved')).toBe(false);
+  });
+});
+
+describe('auto-rw', () => {
+  test('a folder under an auto-rw path is writable while the setting is on; the CLI applies at once', async () => {
+    const { Registry } = await import('../src/lib/roots');
+    const { mkdtemp, mkdir: mk, rm: rmd } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-autorw-'));
+    try {
+      await mk(join(base, 'src/a'), { recursive: true });
+      await mk(join(base, 'srcx'), { recursive: true });
+      const f = join(base, 'prefs.json');
+      const daemon = await Prefs.load(f);
+      const registry = await Registry.create([join(base, 'src/a'), join(base, 'srcx')]);
+      registry.autoRw = (d) => daemon.autoRwCovers(d);
+      const [a, x] = registry.list();
+      expect([a!.writable, x!.writable]).toEqual([false, false]);
+
+      const cli = await Prefs.load(f);
+      await Bun.sleep(5);
+      await cli.setAutoRw([join(base, 'src')]);
+      expect([a!.writable, x!.writable]).toEqual([true, false]); // srcx is not under src/
+
+      await Bun.sleep(5);
+      await cli.updateSettings({ autoRw: false });
+      expect(a!.writable).toBe(false);
+
+      // --rw for it still counts, whatever the switch.
+      registry.setWritable(a!.id, true);
+      expect(a!.writable).toBe(true);
+    } finally {
+      await rmd(base, { recursive: true, force: true });
+    }
   });
 });

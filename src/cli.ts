@@ -37,6 +37,8 @@ Options
       --port <n>       port to listen on            (default 7777)
       --allow <cidr,…> only these networks (and this machine) get in; saved
                        --allow none: every address again
+      --auto-rw <p,…>  folders under these are writable (switch in settings); saved
+                       --auto-rw none: no such paths
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
@@ -65,6 +67,8 @@ interface Options {
   rm: boolean;
   /** `--allow`: the networks to save, or null when not given. */
   allow: string[] | null;
+  /** `--auto-rw`: the paths to save, or null when not given. */
+  autoRw: string[] | null;
 }
 
 function parse(argv: string[]): Options {
@@ -84,6 +88,7 @@ function parse(argv: string[]): Options {
     perm: false,
     rm: false,
     allow: null,
+    autoRw: null,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -101,6 +106,7 @@ function parse(argv: string[]): Options {
       case '--rw': o.rw = true; break;
       case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
+      case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--allow': o.allow = [...(o.allow ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--help': console.log(USAGE); process.exit(0);
       // Retired short forms: say what replaced them rather than just "unknown".
@@ -280,6 +286,14 @@ if (opts.allow) {
   }
   await prefs.setAllow(allow);
   printAccess();
+  if (!opts.dirs.length) process.exit(0);
+}
+
+if (opts.autoRw) {
+  const paths = opts.autoRw.length === 1 && opts.autoRw[0] === 'none' ? [] : opts.autoRw.map(canonical);
+  const saved = await prefs.setAutoRw(paths);
+  const on = prefs.settings.autoRw ? '' : '  (switched off in settings)';
+  console.log(`mdhouse  auto-rw:  ${saved.length ? saved.join(', ') : 'none'}${saved.length ? on : ''}`);
   if (!opts.dirs.length) process.exit(0);
 }
 

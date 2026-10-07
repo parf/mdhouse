@@ -16,8 +16,13 @@ export interface Root {
   name: string;
   /** Absolute, symlink-resolved path. */
   path: string;
-  /** false => every write through writeFile() throws. False unless `--rw` was passed. */
-  writable: boolean;
+  /**
+   * false => every write through writeFile() throws. True when `--rw` was passed for it, or it
+   * sits under an auto-rw path with that setting on — worked out each time it is read.
+   */
+  readonly writable: boolean;
+  /** `--rw` was passed for it. */
+  rwAsked?: boolean;
 }
 
 export interface Resolved {
@@ -107,9 +112,12 @@ export class Registry {
   setWritable(id: string, on: boolean): boolean {
     const root = this.byId.get(id);
     if (!root) return false;
-    root.writable = on;
+    root.rwAsked = on;
     return true;
   }
+
+  /** Is a folder writable without `--rw`? Set by the server to its auto-rw check. */
+  autoRw: (dir: string) => boolean = () => false;
 
   /**
    * Serve one more directory, for the lifetime of the process.
@@ -127,7 +135,16 @@ export class Registry {
     let id = slugify(name);
     for (let n = 2; this.byId.has(id); n++) id = `${slugify(name)}-${n}`;
 
-    const root: Root = { id, name, path: abs, writable };
+    const registry = this;
+    const root: Root = {
+      id,
+      name,
+      path: abs,
+      rwAsked: writable,
+      get writable() {
+        return !!this.rwAsked || registry.autoRw(this.path);
+      },
+    };
     this.byId.set(id, root);
     return root;
   }

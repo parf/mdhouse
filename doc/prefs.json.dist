@@ -10,6 +10,10 @@
   // The saved ones mdhouse may write to: `mdhouse -p --rw <dir>`
   "writable": ["/home/you/notes"],
 
+  // Every folder served from under these is writable without --rw: `mdhouse --auto-rw ~/src`
+  // (switched off and on by settings.autoRw, on the settings page)
+  "autoRw": ["/home/you/src"],
+
   // Where to listen: `mdhouse -p --port 8080 --host 0.0.0.0`
   // Default 127.0.0.1:7777. MDHOUSE_PORT / MDHOUSE_HOST and --port / --host override it
   "server": { "port": 7777, "host": "127.0.0.1" },
@@ -25,7 +29,9 @@
   // The settings page
   "settings": {
     // ✎ beside each title, opening edit:/full/path (and `e`)
-    "editLink": true
+    "editLink": true,
+    // Folders under the autoRw paths are writable
+    "autoRw": true
   },
 
   // Marks per served folder, by absolute path: ★ favorite, muted, ignored (hidden)

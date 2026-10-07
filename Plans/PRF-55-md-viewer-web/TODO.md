@@ -19,7 +19,7 @@
   - [x] alt+e in a form (textarea focused) uses this url; replaces the edit form with "opened in external editor" notice, instead of save button
   - [x] control+shift+enter in the answer form - submit form + open next one (next unanswered question)
 - [x] git history - on/off - we have it now - BUT we do not show state - add grey show/hide icons
-- [ ] config: auto-rw-path: list; any added folder under it is auto-rw - can be turned off in web config
+- [x] config: auto-rw-path: list; any added folder under it is auto-rw - can be turned off in web config - `mdhouse --auto-rw <path,…>`, switch on the settings page
 - [ ] git "root" page - where we show branch and recent commits
   - [ ] url: /root/?git; add this switch to all directories (now root only)
   - [ ] recent commits - all, even w/o md files; recent-commits page

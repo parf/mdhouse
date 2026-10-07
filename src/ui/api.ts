@@ -8,6 +8,10 @@ import type { FileDiff, FileHistory, FileStatus } from '../lib/git';
 
 export interface Settings {
   editLink: boolean;
+  /** Folders under the auto-rw paths are writable. */
+  autoRw: boolean;
+  /** Set from the CLI, `mdhouse --auto-rw`; shown, not edited, here. */
+  autoRwPaths?: string[];
 }
 
 export interface RootInfo {

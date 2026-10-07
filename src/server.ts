@@ -84,6 +84,12 @@ const MERMAID_DIST = new URL('../node_modules/mermaid/dist', import.meta.url).pa
 export async function serve(opts: ServeOptions) {
   const { registry, prefs, port, hostname } = opts;
   const store = new Store(registry, prefs, { noGit: opts.noGit, gitLogLimit: opts.gitLogLimit });
+  registry.autoRw = (dir) => prefs.autoRwCovers(dir);
+  /** The settings page's options, and the auto-rw paths its switch is about (set from the CLI). */
+  const settingsPayload = () => {
+    prefs.refresh();
+    return { ...prefs.settings, autoRwPaths: prefs.autoRw };
+  };
   /**
    * Writes to documents in flight, per file, so they apply one after another — two quick clicks
    * (a tick and an answer, or two ticks) each run against the file the previous one left.
@@ -370,12 +376,18 @@ export async function serve(opts: ServeOptions) {
 
       /** The settings page's options. Changing one is held to the same same-origin rule. */
       '/api/settings': {
-        GET: () => json(prefs.settings),
+        GET: () => json(settingsPayload()),
         POST: async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
           if (!body) return fail(400, 'expected a JSON object');
-          return json(await prefs.updateSettings(body));
+          const before = prefs.settings.autoRw;
+          await prefs.updateSettings(body);
+          // Auto-rw on or off changes which folders are writable: every tab shows it.
+          if (prefs.settings.autoRw !== before) {
+            server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
+          }
+          return json(settingsPayload());
         },
       },
 

@@ -10,6 +10,8 @@
   running mdhouse at once
 - **[doc/prefs.json.dist](doc/prefs.json.dist)** — every config key, with comments; prefs.json
   may hold comments now (a save writes plain JSON)
+- **auto-rw paths** — `mdhouse --auto-rw ~/src`: every folder served from under one is
+  writable without `--rw`; a switch on the settings page turns it off and on, at once
 - **`e` opens the document in the editor**, as the ✎ beside the title does
 - **The answer and add forms have a ✎** (and Alt+E) that opens the file at that line in the
   editor; the form gives way to an "Opened in external editor" notice, with Back to return to
