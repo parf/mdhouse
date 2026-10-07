@@ -61,7 +61,6 @@ along with other dialects.
   and the file's last five commits.
 - ⊟ **Diffs** — what changed, as a patch or ▤ laid over the whole document, rendered.
 - ↔ full width · ★ favourite · 🔇 mute · 🔗 copy link · ✎ open in your editor
-  ([Settings](#-settings)).
 - 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week.
 - 🖋 **Renders properly** — GFM, alerts, footnotes, shiki highlighting, mermaid, front matter,
   [and more](doc/markdown.md); [questions and answers](doc/qa.md) in several forms.
@@ -111,10 +110,6 @@ mdhouse service install          # systemd: now and at every login; also status,
 ```
 
 Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
-
-### ⚙ Settings
-
-⚙ on the title line: served / saved folders (remove one) · ✎ edit link (`edit:/full/path`) on or off
 
 ---
 
