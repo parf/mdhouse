@@ -12,6 +12,8 @@
 - Git view: Unpushed commits fold (▸ in its heading), remembered
 - Commits tab: an `unpushed` badge on each commit not on origin; the Unpushed commits block is
   left out there
+- History: a file changed locally has an **Uncommitted changes** row on top (+x −y), shown
+  even with the panel hidden; a click shows the changes
 - **Reset file** in the head of a document's uncommitted changes (`--rw`): back to the last
   commit, after a confirm — `POST /api/git/reset`
 - A document's header: a git button before ✎, to the root's git view (inside a repo only)

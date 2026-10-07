@@ -202,6 +202,21 @@ export function Doc({
     };
   }, [docPath, diffOn, diffRev]);
 
+  /** The file's uncommitted changes, counted for the History panel's top row. */
+  const [local, setLocal] = useState<{ added: number; removed: number } | null>(null);
+  useEffect(() => {
+    setLocal(null);
+    if (!docPath || !dirty) return;
+    let live = true;
+    api
+      .diff(docPath)
+      .then((d) => live && setLocal({ added: d.added, removed: d.removed }))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [docPath, dirty, doc?.mtime]);
+
   /**
    * The marked-up document: the change marks laid over the rendered text, and taken off again
    * when the view or the diff changes. Only possible when the diff describes the file on disk
@@ -1018,6 +1033,13 @@ export function Doc({
           log={log}
           failed={logFailed}
           activeRev={diffOn ? diffRev : null}
+          local={dirty ? { ...(local ?? { added: 0, removed: 0 }), loading: !local, at: doc.mtime, isNew: doc.status === 'untracked' } : null}
+          localOn={diffOn && diffRev === null}
+          onPickLocal={() => {
+            const showing = diffOn && diffRev === null;
+            setDiffRev(null);
+            setView(showing ? 'doc' : diffView);
+          }}
           onPickRev={(hash) => {
             // Clicking the revision already on screen puts the document back.
             const showing = diffOn && diffRev === hash;
@@ -1099,7 +1121,14 @@ function History({
   failed,
   activeRev,
   onPickRev,
+  local,
+  localOn,
+  onPickLocal,
 }: {
+  /** Uncommitted changes to the file: always shown, even with the panel hidden. */
+  local: { added: number; removed: number; loading: boolean; at: number; isNew: boolean } | null;
+  localOn: boolean;
+  onPickLocal: () => void;
   log: HistoryPayload | null;
   failed: boolean;
   /** The revision the page is diffing, so the row that produced it can say so. */
@@ -1109,15 +1138,34 @@ function History({
   const [open, setOpen] = useState(true);
 
   return (
-    <details class="gitlog" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary>
+    <section class="gitlog">
+      <div class="summary" role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen(!open)}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(!open))}>
         <IconGit size={12} /> History
         {/* Its state, at a glance: a closed panel otherwise reads as an empty one. */}
         <span class="gitlog-state" title={open ? 'Shown — click to hide' : 'Hidden — click to show'}>
           {open ? <IconEye size={13} /> : <IconEyeOff size={13} />}
         </span>
-      </summary>
+      </div>
+      {/* Outside the folding part: the panel's hide never hides work not yet committed. */}
+      {local && (
+        <button class="commit local" aria-pressed={localOn} title="Your uncommitted changes to this file" onClick={onPickLocal}>
+          <div class="commit-subject">{local.isNew ? 'Not committed yet' : 'Uncommitted changes'}</div>
+          <div class="commit-meta">
+            <span class="who">local</span>
+            <Ago at={local.at} flame={false} />
+            {!local.loading && (
+              <span class="churn">
+                <span class="plus">+{local.added}</span>
+                <span class="minus">−{local.removed}</span>
+              </span>
+            )}
+          </div>
+        </button>
+      )}
 
+      {open && (
+        <>
       {!log && !failed && <div class="spinner" />}
       {failed && <p class="empty">git is unavailable here.</p>}
       {log && !log.commits.length && <p class="empty">Not committed yet.</p>}
@@ -1145,7 +1193,9 @@ function History({
           </div>
         </button>
       ))}
-    </details>
+        </>
+      )}
+    </section>
   );
 }
 

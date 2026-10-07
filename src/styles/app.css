@@ -863,7 +863,7 @@ main {
   padding: 10px 12px;
   font-size: 12.5px;
 }
-.gitlog summary {
+.gitlog > .summary {
   cursor: pointer;
   color: var(--fg-muted);
   font-size: 12px;
@@ -872,7 +872,7 @@ main {
   gap: 5px;
 }
 .gitlog .gitlog-state { margin-left: auto; display: inline-flex; color: var(--fg-faint); }
-.gitlog summary:hover .gitlog-state { color: var(--fg-muted); }
+.gitlog > .summary:hover .gitlog-state { color: var(--fg-muted); }
 .gitlog .commit {
   display: block;
   width: 100%;
