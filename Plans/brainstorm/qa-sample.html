@@ -323,7 +323,7 @@ once more to turn task items into checkboxes with their line and hash.</p>
     ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Save — Ctrl+Enter">${save}</button>`
       + extra + '<button data-a="elaborate" data-tip="Ask for more: a reply \'elaborate — …\'; the item stays open">🔍 more</button>'
       + '<button class="cancel">(ESC)Cancel</button>'
-      + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;
+      + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤</label></div>`;
     // a suggestion's form reads YES / NO / REPLY
     if (kind === 'proposal') ed.querySelector('[data-a="no"]').after(ed.querySelector('.bar > button:first-child'));
     host.append(ed);
