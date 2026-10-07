@@ -99,7 +99,7 @@ export function RemoteBar({ p, info, onState }: { p: string; info: GitInfo; onSt
  */
 export function GitActions({ p, info, onDone, remote }: { p: string; info: GitInfo; onDone: () => void; remote?: RemoteState | null }) {
   const busyGit = info.sync?.busy ?? null;
-  // What origin said: nothing new there — Pull has nothing to do; something new — Pull stands out.
+  // What origin said: nothing new there — Pull is off; something new — Pull stands out.
   const toPull = remote ? (remote.state === 'same' || remote.state === 'ahead' ? 'none' : remote.state === 'none' ? null : 'some') : null;
   const files = info.dirty.filter((f) => f.code !== '??');
   const [open, setOpen] = useState(false);
@@ -357,7 +357,8 @@ function changeOf(code: string): string {
  * What this checkout has that origin does not, in two lists: the commits not pushed, and the
  * files changed or added and not committed — every file type.
  */
-export function SyncLists({ info, onOpen, isMine }: { info: GitInfo; onOpen: (rel: string) => void; isMine: (email: string, author: string) => boolean }) {
+export function SyncLists({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) => void }) {
+  const isMine = (email: string, author: string) => !!info.me && (info.me.email ? email === info.me.email : author === info.me.name);
   const unpushed = info.sync?.unpushed ?? [];
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
   // A long run of unpushed work would push everything else off the page: the newest few, then

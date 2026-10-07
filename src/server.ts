@@ -467,6 +467,8 @@ export async function serve(opts: ServeOptions) {
           dirty: changed,
           commitMessage: suggestMessage(commitable(dirty)),
           sync,
+          // Who "me" is in this repo — its git user — so the page can leave your own name out.
+          me: await currentUser(at.repo),
           writable: at.root.writable,
         });
       },

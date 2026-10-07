@@ -83,6 +83,7 @@ export interface GitInfo {
     unpushed: Array<{ hash: string; author: string; email: string; date: number; subject: string }>;
     busy: string | null;
   } | null;
+  me: { name: string; email: string } | null;
   writable: boolean;
 }
 
