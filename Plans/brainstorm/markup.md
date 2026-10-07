@@ -76,6 +76,19 @@ On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plai
 - once something is picked, the unpicked options are muted
 - a 💬 under the options still works: "none — do X instead"
 
+A comment — on the whole question, or on one option (an option is a list item, so its 💬 goes
+indented under it, as under any item):
+
+```markdown
+- ✅ Dev server port:
+  - (x) `7790`, own config 🌟
+    > 💬 👤 **parf:** and print the URL at start
+  - ( ) `port: 0`, printed at start
+  - ( ) keep `7777`
+    > 💬 👤 **parf:** no — the live one is there
+  > 💬 👤 **parf:** revisit when we have a second dev
+```
+
 ## 4. Point at something and say …
 
 ⏸️ So far ok — we'll not improve it in this iteration.

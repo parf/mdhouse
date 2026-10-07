@@ -36,6 +36,7 @@ An item comes with options; I pick.
 - [ ] **one of many** (radio, `( )` / `(x)`) and **several of many** (checkboxes, `[ ]` / `[x]`) under a question
 - [ ] a pick is one click; it is written back to the file (the chosen option marked, the rest left as written)
 - [ ] a free-text 💬 still possible next to the options
+- [ ] a comment on each option — on the picked one ("yes, and …") or on a rejected one ("no, because …")
 - [ ] once picked, the other options are muted
 - [x] syntax: `( )` radio, `[ ]` checkbox — [markup.md](markup.md)
 
