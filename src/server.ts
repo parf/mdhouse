@@ -140,6 +140,8 @@ export async function serve(opts: ServeOptions) {
       }
       if (dirty.length && !body?.confirmed) return json({ error: 'You have uncommitted files', confirm: true, files: dirty }, 409);
       const r = await run(at.repo, args, 120_000);
+      // What origin said before is stale now.
+      for (const key of remoteCache.keys()) if (key.startsWith(`${at.repo}\0`)) remoteCache.delete(key);
       const output = `${r.out}${r.err}`.trim();
       return r.code === 0 ? json({ ok: true, output }) : fail(500, output || `git ${args[0]} failed`);
     });
