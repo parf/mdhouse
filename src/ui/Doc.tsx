@@ -1152,7 +1152,6 @@ function History({
         <button class="commit local" aria-pressed={localOn} title="Your uncommitted changes to this file" onClick={onPickLocal}>
           <div class="commit-subject">{local.isNew ? 'Not committed yet' : 'Uncommitted changes'}</div>
           <div class="commit-meta">
-            <span class="who">local</span>
             <Ago at={local.at} flame={false} />
             {!local.loading && (
               <span class="churn">
