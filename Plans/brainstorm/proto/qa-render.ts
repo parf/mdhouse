@@ -24,8 +24,8 @@ const norm = (g: string) => g.replace(/️/g, '');
 const known = new Map(GLYPHS.map((g) => [norm(g), g]));
 
 /** `who` is the author badge as written: `👤parf`, `👾claude`. */
-/** `suggest`: a 💡 line — a proposed answer, waiting to be accepted. */
-interface Reply { partial: boolean; suggest: boolean; who: string | null; body: string }
+/** `suggest`: a 💡 line — a proposed answer; `verdict` ✅ / 🚫 once it is accepted or rejected. */
+interface Reply { partial: boolean; suggest: boolean; verdict: '✅' | '🚫' | null; who: string | null; body: string }
 interface Item {
   glyphs: string[];
   head: string;
@@ -53,14 +53,14 @@ function leadGlyphs(text: string): { glyphs: string[]; rest: string } {
 function parseReplies(lines: string[]): Reply[] {
   const replies: Reply[] = [];
   for (const line of lines) {
-    const m = /^(💬|💡)\uFE0F?\s*(.*)$/u.exec(line);
-    if (m) {
-      let rest = m[2]!;
+    const m = /^(?:(✅|🚫)\s*)?(💬|💡)\uFE0F?\s*(.*)$/u.exec(line);
+    if (m && (!m[1] || m[2] === '💡')) {
+      let rest = m[3]!;
       const partial = /^⚠️?\s*/u.test(rest);
       rest = rest.replace(/^⚠️?\s*/u, '');
       // the author: a badge first — `👤parf`, `👾claude`, `📡slack`, …; the older `👤 **name:**` is read too
       const who = /^(👤|👥|👾|📡)\s*(?:\*\*([^*]+?):\*\*|([^\s:*]+):?)\s*/u.exec(rest);
-      replies.push({ partial, suggest: m[1] === '💡', who: who ? `${who[1]}${who[2] ?? who[3]}` : null, body: who ? rest.slice(who[0].length) : rest });
+      replies.push({ partial, suggest: m[2] === '💡', verdict: (m[1] as Reply['verdict']) ?? null, who: who ? `${who[1]}${who[2] ?? who[3]}` : null, body: who ? rest.slice(who[0].length) : rest });
     } else if (replies.length) replies.at(-1)!.body += `\n${line}`;
   }
   for (const r of replies) r.body = r.body.replace(/\n+$/, '');
@@ -136,6 +136,11 @@ const firstLine = (r: Reply) => `${r.who ? `${badges(esc(r.who))}` : ''}${inline
 const blocky = (body: string) => /\n\s*\n|\n\s*[-*+]\s|\n\s*\d+[.)]\s/.test(body);
 
 function replyHtml(r: Reply): string {
+  if (r.suggest && r.verdict) {
+    // decided: ✅ 💡 taken, 🚫 💡 turned down — kept, quiet, no buttons
+    const who = r.who ? badges(esc(r.who)) : '';
+    return `<div class="reply proposal decided ${r.verdict === '✅' ? 'taken' : 'declined'}">${r.verdict} 💡 ${who}<span class="txt">${inline(r.body)}</span></div>`;
+  }
   if (r.suggest) {
     const acts = '<span class="s-act"><button class="accept" data-tip="Yes — it is the answer (💡 becomes 💬), with a note if you like">✓ yes</button>'
       + '<button class="reject" data-tip="No — say why; it goes back to the agent">✗ no</button>'
@@ -170,11 +175,16 @@ let uid = 0;
 function itemHtml(it: Item): string {
   const [status = '', ...more] = it.glyphs;
   const options = it.items.filter((s) => s.option);
-  const closed = CLOSED.includes(status);
   const ask = ASK.includes(status);
+  // a ❓ / ⁉️ item is answered as a quote one is: its last 💬 is whole (not ⚠️) and from a person —
+  // an agent's or a source's reply asks me again
+  const answer = it.replies.filter((r) => !r.suggest).at(-1);
+  const answeredAsk = ask && !options.length && !!answer && !answer.partial && !/^(👾|📡)/u.test(answer.who ?? '');
+  const closed = CLOSED.includes(status) || answeredAsk;
   const sevText = more.length ? `${more.join(' ')} ` : '';
   const text = `${sevText}${inline(it.head)}`;
   const key = keyOf(it.glyphs, !closed);
+  const mark = answeredAsk ? `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>` : null;
   const radio = options.some((o) => o.option === 'radio');
   const name = `o${++uid}`;
   const opts = options.length
@@ -187,7 +197,7 @@ function itemHtml(it: Item): string {
     // folded: the answer line is the pick when there are options, else the last reply
     const pick = options.filter((o) => o.picked).map((o) => `${o.option === 'radio' ? '◉' : '☑'} ${labels(inline(o.head))}`).join(' · ');
     const answer = options.length ? (pick ? `<span class="t-a">${pick}</span>` : '') : last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : '';
-    return `<details class="settled" data-k="${key}"><summary><span class="g">${glyphButton(status, tip)}</span>`
+    return `<details class="settled" data-k="${key}"><summary>${mark ?? `<span class="g">${glyphButton(status, tip)}</span>`}`
       + `<span class="t"><span class="t-q">${text}</span>${answer}</span></summary>`
       + `${opts}${threadHtml(it.replies)}</details>`;
   }
@@ -206,7 +216,7 @@ function listHtml(items: Item[]): string {
 /** A quote opening with ❓ / ⁉️ / 👉 / ✅ 👉: the question, then its replies. */
 function quoteHtml(lines: string[]): string {
   const body = unquote(lines);
-  const split = body.findIndex((l, i) => i > 0 && /^(💬|💡)/u.test(l));
+  const split = body.findIndex((l, i) => i > 0 && /^(?:(?:✅|🚫)\s*)?(💬|💡)/u.test(l));
   const q = split < 0 ? body : body.slice(0, split);
   const replies = split < 0 ? [] : parseReplies(body.slice(split));
   const { glyphs, rest } = leadGlyphs(q[0]!);
@@ -314,10 +324,12 @@ ul.items { margin: 6px 0 14px; }
 .item.info { color: var(--dim); }
 /* 💡 a suggested answer: blue, with accept / edit */
 .reply.proposal { background: var(--pick-bg); border-left-color: var(--pick); }
-.s-act { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: middle; }
-.s-act button { font-size: 12px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--pick); background: var(--panel); color: var(--pick); cursor: pointer; position: relative; }
+.s-act { display: flex; gap: 8px; margin: 0; padding: 8px 0 2px; }
+.s-act button { font-size: 13px; padding: 2px 12px; border-radius: 10px; border: 1px solid var(--pick); background: var(--panel); color: var(--pick); cursor: pointer; position: relative; }
 .s-act button.accept { background: var(--a); border-color: var(--a); color: #fff; }
 .s-act button.reject { border-color: var(--q); color: var(--q); }
+.reply.proposal.decided { opacity: .75; }
+.reply.proposal.declined .txt { text-decoration: line-through; text-decoration-color: var(--muted); }
 /* folded: three lines of the question, three of the answer; anything cut shows "▾ show all" */
 details.settled:not([open]) .t-q, details.settled:not([open]) .t-a {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }

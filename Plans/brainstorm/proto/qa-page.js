@@ -129,15 +129,14 @@
         save: '💬 reply',
         onSave: (text, action, sign) => {
           const th = threadOf(host, 'thread q-thread');
-          if (action === 'yes') {
-            sug.classList.remove('proposal');
-            sug.firstChild.textContent = '';
+          if (action === 'yes' || action === 'no') {
+            // 💡 → ✅ 💡 / 🚫 💡, and the answer, signed: 💬 👤me yes — … / no — …
+            const v = action === 'yes' ? '✅' : '🚫';
+            sug.classList.add('decided', action === 'yes' ? 'taken' : 'declined');
+            sug.firstChild.textContent = `${v} 💡 `;
             sug.querySelector('.s-act').remove();
-            if (text) th.append(reply(text, sign));
+            th.append(reply(text ? `${action} — ${text}` : action, true));
             answered(host);
-          } else if (action === 'no') {
-            th.append(reply(text ? `no — ${text}` : 'no', sign));
-            setStage(host, '⏳');
           } else if (text) th.append(reply(text, sign));
         },
       });

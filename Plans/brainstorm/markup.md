@@ -26,6 +26,8 @@ turns so GitHub keeps them apart:
 ```
 
 - the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
+- a `❓` / `⁉️` item is answered, as a quote one is, when its last 💬 is whole (not ⚠️) and from a
+  person — a reply from 👾 / 📡 asks me again
 - every editor: 💬 Save, the actions that fit (below), (ESC)Cancel, and `[ ] 👤me` at the far right —
   set, the reply starts with my badge
   (`💬 👤parf …`); remembered per browser. The name: `"me"` in prefs.json settings overrides;
@@ -49,11 +51,17 @@ turns so GitHub keeps them apart:
 ```
 
 - 💡 is a proposed answer — the question still waits on me
-- **✓ yes** (+ optional text): `💡` becomes `💬` — the suggestion is the answer; the text, if any,
-  follows as a reply
-- **✗ no** (+ optional text): a reply `💬 👤parf no — …`; the 💡 stays, the question goes to the agent (⏳)
+- **✓ yes** (+ optional text): `💡` → `✅ 💡`, and an answer `💬 👤parf yes — …` — signed, always
+- **✗ no** (+ optional text): `💡` → `🚫 💡`, and an answer `💬 👤parf no — …`
 - **💬 reply**: neither — a reply; the question stays open
 - each opens the same form with the three saves — ✓ yes · ✗ no · 💬 reply — the text optional
+- after yes / no the question is answered; the answer is editable later, like any other
+
+```markdown
+- ❓ Should a folded answer show the author's badge?
+  > ✅ 💡 👾claude Show it — who answered matters as much as what.
+  > 💬 👤parf yes — and keep it first, before the text.
+```
 
 ## 2. Findings — stages
 

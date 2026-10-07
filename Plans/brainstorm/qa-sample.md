@@ -71,6 +71,12 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 - ❓ Who should be named on an answer written from the page — the git user, a name from the
   config, or nobody unless I tick 👤me?
   > 💡 👾claude Nobody by default; ticking 👤me signs it with the config name, else git's.
+- ❓ Should a folded answer show the author's badge, or only the text?
+  > ✅ 💡 👾claude Show it — who answered matters as much as what.
+  > 💬 👤parf yes — and keep it first, before the text.
+- ❓ Should the strip hide when a page has fewer than five items?
+  > 🚫 💡 👾claude Hide it below five — it adds noise to a short page.
+  > 💬 👤parf no — the total is useful on every page, even with two items.
 - ✅ Should the summary strip count closed items at all, given that nobody filters for them?
   > 💬 📡slack 👥design asked the same on 📅2026-10-06 — keep both answers here.
   >
