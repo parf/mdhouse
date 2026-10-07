@@ -215,7 +215,7 @@ function quoteHtml(lines: string[]): string {
       + `<span class="t"><span class="t-q">${lead}${inline(question)}</span>${last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : ''}</span></summary>`
       + `${threadHtml(replies)}</details>`;
   }
-  if (request) return `<div class="req" data-k="${key}">👉 ${inline(question)}</div>${replies.length ? threadHtml(replies) : ''}`;
+  if (request) return `<div class="req" data-k="${key}">${glyphButton('👉', 'Reply, or close the request')} ${inline(question)}${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</div>`;
   // the same block a list question gets: one form for every unanswered question
   return `<ul class="items"><li class="item wait-me${status === '⁉️' ? ' dis' : ''}" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Answer')}</span><span>${inline(question)}</span></div>`
     + `${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</li></ul>`;

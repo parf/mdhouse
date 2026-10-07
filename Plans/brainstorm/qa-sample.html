@@ -224,7 +224,7 @@ ul.items { margin: 6px 0 14px; }
 <p>The parser walks the token stream twice: once to find headings for the table of contents, and
 once more to turn task items into checkboxes with their line and hash.</p>
 
-<div class="req" data-k="👉 open">👉 <strong>rewrite:</strong> one pass — shorter, and keep the numbers about the cost of the second walk.</div>
+<div class="req" data-k="👉 open"><span class="g-btn sev" data-tip="Reply, or close the request">👉</span> <strong>rewrite:</strong> one pass — shorter, and keep the numbers about the cost of the second walk.</div>
 <p>Search falls back to a JavaScript regex when ripgrep is missing from the machine.</p>
 
 <details class="settled" data-k="✅ 👉"><summary><span class="g"><span class="g-btn sev" data-tip="Reply">✅</span></span><span class="t"><span class="t-q">👉 <strong>why:</strong> &quot;falls back&quot; — is the fallback ever hit in practice, and how slow is it?</span><span class="t-a">💬 only without rg; about 40× slower on a 10 MB tree — noted in the README.</span></span></summary><div class="thread"><div class="reply"><span class="who" data-kind="agent">👾claude</span><span class="txt">only without rg; about 40× slower on a 10 MB tree — noted in the README.</span></div></div></details>
@@ -243,23 +243,34 @@ once more to turn task items into checkboxes with their line and hash.</p>
   let signMem = false;
   const signed = () => { try { return localStorage.getItem(signKey) === '1'; } catch { return signMem; } };
   const setSigned = (on) => { signMem = on; try { localStorage.setItem(signKey, on ? '1' : '0'); } catch {} };
-  const reply = (text, sign) => {
+  const reply = (text, sign, partial = false) => {
     const r = document.createElement('div');
-    r.className = 'reply';
-    r.innerHTML = (sign ? `<span class="who" data-kind="person">👤${ME}</span>` : '') + '<span class="txt"></span>';
+    r.className = partial ? 'reply partial' : 'reply';
+    r.innerHTML = (partial ? '⚠️ ' : '') + (sign ? `<span class="who" data-kind="person">👤${ME}</span>` : '') + '<span class="txt"></span>';
     r.querySelector('.txt').textContent = text;
     return r;
   };
-  /** A textarea + Save / Cancel; `stages` adds the stage buttons a finding moves with. */
-  function editor(host, { prefill = '', stages = false, onSave }) {
+  /**
+   * Every form has 💬 Save, (ESC)Cancel and 👤me; the buttons between them are what fits what is
+   * edited. A button with `s` saves and moves the line to that stage; `partial` saves the reply as
+   * 💬 ⚠️ (need more); `pick` saves and picks the option the comment is on.
+   */
+  const ACTIONS = {
+    question: [['partial', '⚠️ need more', 'A partial answer: it stays open'], ['✅', '✅ settled'], ['⏳', '⏳ to agent', 'Waiting on the agent'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
+    finding: [['✅', '✅ done'], ['🚫', '🚫 rejected'], ['⏸️', '⏸️ deferred'], ['🎫', '🎫 ticketed'], ['⏳', '⏳ to agent'], ['❓', '❓ my call', 'Waiting on me'], ['⚠️', '⚠️ partial']],
+    option: [['pick', 'pick it', 'Save and pick this option']],
+    request: [['✅', '✅ done'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
+    comment: [],
+  };
+  function editor(host, { kind = 'comment', prefill = '', onSave }) {
     closeEditors();
     const ed = document.createElement('div');
-    ed.className = stages ? 'f-edit' : 'c-edit';
-    ed.innerHTML = '<textarea placeholder="Reply…"></textarea><div class="bar"><button class="save">💬 Save</button>'
-      + (stages ? '<span class="lbl">and set:</span><button data-s="✅">✅ done</button><button data-s="🚫">🚫 rejected</button>'
-        + '<button data-s="⏸️">⏸️ deferred</button><button data-s="❓">❓ needs my call</button>' : '')
-      + '<button class="cancel">(ESC)Cancel</button>'
-      + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤${ME}</label></div>`;
+    ed.className = kind === 'finding' ? 'f-edit' : 'c-edit';
+    const extra = (ACTIONS[kind] || [])
+      .map(([a, label, tip]) => `<button data-a="${a}"${tip ? ` data-tip="${tip}"` : ''}>${label}</button>`).join('');
+    ed.innerHTML = '<textarea placeholder="Reply…"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">💬 Save</button>'
+      + extra + '<button class="cancel">(ESC)Cancel</button>'
+      + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;
     host.append(ed);
     const ta = ed.querySelector('textarea');
     ta.value = prefill;
@@ -267,13 +278,13 @@ once more to turn task items into checkboxes with their line and hash.</p>
     const sign = ed.querySelector('.sign input');
     sign.checked = signed();
     sign.addEventListener('change', () => setSigned(sign.checked));
-    const done = (stage) => { onSave(ta.value.trim(), stage, sign.checked); ed.remove(); };
+    const done = (action) => { onSave(ta.value.trim(), action, sign.checked); ed.remove(); };
     ed.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
       e.preventDefault();
       if (b.classList.contains('cancel')) return ed.remove();
-      done(b.dataset.s ?? null);
+      done(b.dataset.a ?? null);
     });
     ta.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') ed.remove();
@@ -301,14 +312,17 @@ once more to turn task items into checkboxes with their line and hash.</p>
         return setStage(host, '❓');
       }
       // stage buttons for a finding only — a line with a severity; every question gets the same plain form
-      const finding = /🔴|🟠|⚪|🔵/u.test(host.dataset.k || '') && !g.classList.contains('g-answered');
+      const k = host.dataset.k || '';
+      const kind = host.classList.contains('req') || /👉/u.test(k) ? 'request'
+        : /🔴|🟠|⚪|🔵/u.test(k) ? 'finding' : 'question';
       const last = host.querySelector(':scope .reply:last-of-type .txt');
       editor(host, {
+        kind,
         prefill: g.classList.contains('g-answered') && last ? last.textContent : '',
-        stages: finding,
-        onSave: (text, stage, sign) => {
-          if (text) threadOf(host, 'thread q-thread').append(reply(text, sign));
-          if (stage) setStage(host, stage);
+        onSave: (text, action, sign) => {
+          if (text) threadOf(host, 'thread q-thread').append(reply(text, sign, action === 'partial'));
+          if (action === 'partial') setStage(host, '❓');
+          else if (action) setStage(host, action);
         },
       });
       return;
@@ -320,7 +334,13 @@ once more to turn task items into checkboxes with their line and hash.</p>
       const wrap = c.closest('.c-wrap');
       const host = wrap ?? c.closest('.item, details');
       const th = wrap ? wrap.querySelector('.opt-thread') : threadOf(host, 'thread q-thread');
-      editor(th, { onSave: (text, _, sign) => text && th.append(reply(text, sign)) });
+      editor(th, {
+        kind: wrap ? 'option' : 'comment',
+        onSave: (text, action, sign) => {
+          if (text) th.append(reply(text, sign));
+          if (action === 'pick') wrap.querySelector('.opt input').click();
+        },
+      });
       return;
     }
     // ---- a click on a comment edits it
@@ -333,8 +353,11 @@ once more to turn task items into checkboxes with their line and hash.</p>
 
   /** The status glyph changes; a severity stays in the text. */
   function setStage(host, stage) {
-    const g = host.querySelector(':scope > .head > .g .g-btn, :scope > summary .g-btn');
-    if (g) g.textContent = stage;
+    const g = host.querySelector(':scope > .head > .g .g-btn, :scope > summary .g-btn, :scope > summary .g-answered');
+    if (g) {
+      if (g.classList.contains('g-answered')) { g.className = 'g g-btn sev'; }
+      g.textContent = stage;
+    }
     const keys = (host.dataset.k || '').split(' ').filter((k) => k !== 'open' && !['✅', '🚫', '⏸️', '🎫', '❓', '⁉️', '⏳'].includes(k));
     const closed = ['✅', '🚫', '⏸️', '🎫'].includes(stage);
     host.dataset.k = [stage, ...keys, ...(closed ? [] : ['open'])].join(' ');

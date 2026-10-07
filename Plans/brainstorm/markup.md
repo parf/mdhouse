@@ -26,11 +26,19 @@ turns so GitHub keeps them apart:
 ```
 
 - the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
-- the editor has a `[ ] 👤me` checkbox at the far right: set, the reply starts with my badge
+- every editor: 💬 Save, the actions that fit (below), (ESC)Cancel, and `[ ] 👤me` at the far right —
+  set, the reply starts with my badge
   (`💬 👤parf …`); remembered per browser. The name: `"me"` in prefs.json settings overrides;
   default from git — the local part of `user.email` (a badge name is one word), else `user.name`
   without spaces
-- "need more" = my `💬 ⚠️` while the glyph stays `❓` (the agent flips it to `⏳` when it starts)
+- "need more" = my `💬 ⚠️` while the glyph stays `❓`
+
+  | Editing | Actions between Save and Cancel |
+  |---|---|
+  | a question ❓ ⁉️ (answered or not) | ⚠️ need more · ✅ settled · ⏳ to agent · ⏸️ defer · 🚫 drop |
+  | a finding (a line with a severity) | ✅ done · 🚫 rejected · ⏸️ deferred · 🎫 ticketed · ⏳ to agent · ❓ my call · ⚠️ partial |
+  | a comment on an option | pick it |
+  | a request 👉 | ✅ done · ⏸️ defer · 🚫 drop | (the agent flips it to `⏳` when it starts)
 - GitHub: a list item with a quote under it — readable as a chat
 
 ## 2. Findings — stages
