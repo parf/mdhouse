@@ -164,19 +164,23 @@ GitHub as the hand-written answers around it. `> A:` answers are read but 💬 i
 
 ## Access, auto-rw and the git page — 2026-10-07
 
-Planned, not built; the answers are in [`questions.md`](questions.md).
+Planned, not built.
 
 - **For trusted networks and developers, no TLS.** Outside the intranet, forward the port with
   ssh.
 - **CIDR allow list and users are set from the CLI, kept in `prefs.json`.** Localhost is always
-  allowed; out of CIDR or no passwd = access denied; 404 when - no file + have access. Users (`user:passwd`) are
-  asked from localhost too — a misconfigured nginx or alike proxy makes every request local.
-  With both set, both are required.
+  allowed; out of CIDR or no passwd = access denied; 404 only when the file is missing and
+  access is granted. Users (`user:passwd`) are asked from localhost too — a misconfigured
+  nginx or alike proxy makes every request local. With both set, both are required.
 - **auto-rw-path is a list:** any folder added from under it is writable; the web config can
   turn it off.
 - **Wide mode is one setting for all documents, in localStorage.**
+- **Shortcuts:** `e` opens the document in the editor (not while typing). In the forms,
+  Ctrl+E opens `edit:/path.md:line` and shows "opened in external editor" instead of Save;
+  Ctrl+Shift+Enter in the answer form saves and opens the next unanswered question.
 - **Git page at `/<root>/?git`** — `/<root>/` is the dir view. All commits, even ones with no
-  `.md`; files link to the repo's web view (GitHub, GitLab, the popular ones, or a built URL).
+  `.md`; it lists all files of the repo, each linked to the repo's web view (GitHub, GitLab,
+  the popular ones, or a built URL) — viewers for other file types are not the goal.
   The remote check is read-only, `git ls-remote`, no fetch. In `--rw`: commit, pull
   (`--ff-only`), push.
 
