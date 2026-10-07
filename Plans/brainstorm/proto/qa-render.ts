@@ -368,6 +368,9 @@ details.settled[open] .more { display: none; }
 .item.wait-me .reply, .item.wait-me .opts, .item.wait-me textarea { cursor: auto; }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
+/* a compact bar: less side padding, smaller gaps */
+.c-edit .bar, .f-edit .bar { gap: 4px; }
+.c-edit button, .f-edit button { padding: 1px 5px; }
 /* an editor starts where the text does */
 .item > .c-edit, .item > .f-edit, details > .c-edit, details > .f-edit { margin: 6px 0 2px calc(1.6em + 4px); }
 /* badges: one chip shape, a tint per kind */

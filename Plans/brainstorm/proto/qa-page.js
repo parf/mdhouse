@@ -25,8 +25,8 @@
    * 💬 ⚠️ (need more); `pick` saves and picks the option the comment is on.
    */
   const ACTIONS = {
-    question: [['partial', '⚠️ need more', 'A partial answer: it stays open'], ['✅', '✅ settled'], ['⏳', '⏳ to agent', 'Waiting on the agent'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
-    finding: [['✅', '✅ done'], ['🚫', '🚫 reject'], ['⏸️', '⏸️ defer'], ['🎫', '🎫 ticket'], ['⏳', '⏳ to agent'], ['❓', '❓ my call', 'Waiting on me'], ['⚠️', '⚠️ partial']],
+    question: [['partial', '⚠️ need more', 'A partial answer: it stays open'], ['✅', '✅ settled'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
+    finding: [['✅', '✅ done'], ['🚫', '🚫 reject'], ['⏸️', '⏸️ defer'], ['🎫', '🎫 ticket'], ['⏳', '⏳ agent'], ['❓', '❓ me', 'My call — waiting on me'], ['⚠️', '⚠️ partial']],
     option: [['pick', 'pick it', 'Save and pick this option']],
     request: [['✅', '✅ done'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
     proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
@@ -39,7 +39,7 @@
     const extra = (ACTIONS[kind] || [])
       .map(([a, label, tip]) => `<button data-a="${a}"${tip ? ` data-tip="${tip}"` : ''}>${label}</button>`).join('');
     ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">${save}</button>`
-      + extra + '<button data-a="elaborate" data-tip="Ask for more: a reply \'elaborate — …\'; the item stays open">🔍 elaborate</button>'
+      + extra + '<button data-a="elaborate" data-tip="Ask for more: a reply \'elaborate — …\'; the item stays open">🔍 more</button>'
       + '<button class="cancel">(ESC)Cancel</button>'
       + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;
     // a suggestion's form reads YES / NO / REPLY
