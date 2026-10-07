@@ -108,6 +108,20 @@ details.settled[open] { background: var(--code-bg); }
 .opt.picked { background: var(--pick-bg); border-color: var(--pick); font-weight: 600; }
 .opts.done .opt:not(.picked) { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
 .suggest { font-size: 12px; }
+/* comments on a line: a 💬 at its right end, shown on hover */
+.c-row { display: flex; align-items: center; gap: 6px; }
+.c-row > .opt { flex: 1; }
+.c-btn { visibility: hidden; flex: none; border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+  font-size: 12px; padding: 0 6px; cursor: pointer; }
+.c-row:hover > .c-btn, .c-btn:focus { visibility: visible; }
+.opt-thread { margin-left: 34px; }
+.opt-thread:empty { display: none; }
+.reply[title] { cursor: text; }
+.c-edit { display: grid; gap: 4px; }
+.c-edit textarea { font: inherit; padding: 4px 6px; border: 1px solid var(--a); border-radius: 4px; background: var(--panel); color: var(--text); min-height: 3em; }
+.c-edit .bar { display: flex; gap: 6px; }
+.c-edit button { font-size: 12px; padding: 1px 10px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+.c-edit button.save { background: var(--a); color: #fff; border-color: var(--a); }
 
 /* request */
 .req { border-left: 4px solid var(--info); background: var(--pick-bg); border-radius: 4px; padding: 4px 10px; margin: 6px 0; }
@@ -315,18 +329,22 @@ Glyphs: <a href="README.md">README.md</a>.</p>
   - ( ) keep `7777`
     &gt; 💬 👤 **parf:** no — the live one is there
   &gt; 💬 👤 **parf:** revisit when we have a second dev</pre></div>
-  <div><div class="col-label">Rendered</div><div class="out"><ul class="items">
-    <li class="item"><div class="head"><span class="g">✅</span><span>Dev server port:</span></div>
+  <div><div class="col-label">Rendered — hover a line, click its 💬</div><div class="out" id="c3"><ul class="items">
+    <li class="item"><div class="head c-row"><span class="g">✅</span><span>Dev server port:</span><button class="c-btn" title="Comment on the question">💬</button></div>
       <div class="opts done">
-        <label class="opt picked"><input type="radio" name="port3" checked> <span><code>7790</code>, own config <span class="suggest">🌟 suggested</span></span></label>
-        <div class="thread" style="margin-left:34px"><div class="reply"><span class="who">👤 parf</span>and print the URL at start</div></div>
-        <label class="opt"><input type="radio" name="port3"> <span><code>port: 0</code>, printed at start</span></label>
-        <label class="opt"><input type="radio" name="port3"> <span>keep <code>7777</code></span></label>
-        <div class="thread" style="margin-left:34px;opacity:.7"><div class="reply"><span class="who">👤 parf</span>no — the live one is there</div></div>
+        <div class="c-wrap"><div class="c-row"><label class="opt picked"><input type="radio" name="port3" checked> <span><code>7790</code>, own config <span class="suggest">🌟 suggested</span></span></label><button class="c-btn" title="Comment on this option">💬</button></div>
+          <div class="thread opt-thread"><div class="reply" title="Click to edit"><span class="who">👤 parf</span><span class="txt">and print the URL at start</span></div></div></div>
+        <div class="c-wrap"><div class="c-row"><label class="opt"><input type="radio" name="port3"> <span><code>port: 0</code>, printed at start</span></label><button class="c-btn" title="Comment on this option">💬</button></div>
+          <div class="thread opt-thread"></div></div>
+        <div class="c-wrap"><div class="c-row"><label class="opt"><input type="radio" name="port3"> <span>keep <code>7777</code></span></label><button class="c-btn" title="Comment on this option">💬</button></div>
+          <div class="thread opt-thread" style="opacity:.7"><div class="reply" title="Click to edit"><span class="who">👤 parf</span><span class="txt">no — the live one is there</span></div></div></div>
       </div>
-      <div class="thread"><div class="reply"><span class="who">👤 parf</span>revisit when we have a second dev</div></div></li>
+      <div class="thread q-thread"><div class="reply" title="Click to edit"><span class="who">👤 parf</span><span class="txt">revisit when we have a second dev</span></div></div></li>
   </ul></div>
-  <ul class="notes"><li>each option has its own 💬 — a click on the option's 💬 (on hover) adds one</li>
+  <ul class="notes"><li>hover a line — the question or an option — and a 💬 shows at its right end; a click opens the editor under that line</li>
+  <li>a click on an existing comment opens it for editing</li>
+  <li>Save (or Ctrl+Enter) writes <code>&gt; 💬 👤 **you:** …</code> under that option / the question; Esc cancels</li>
+  <li>✅ is not the comment button — a click on it undoes the pick</li>
   <li>a comment on a rejected option stays visible, muted — it says why not</li></ul></div>
 </div>
 
@@ -346,7 +364,7 @@ Search falls back to a JS regex.
     <p style="margin:0 0 4px">The parser walks the tokens twice.</p>
     <div class="req">👉 <b>rewrite:</b> one pass — shorter</div>
     <p style="margin:10px 0 4px">Search falls back to a JS regex.</p>
-    <details class="settled"><summary><span class="g">✅ 👉</span><span class="t"><span class="t-q">why: "falls back" — ever hit?</span><span class="t-a">💬 only without rg</span></span></summary>
+    <details class="settled"><summary><span class="g">✅</span><span class="t"><span class="t-q">👉 why: "falls back" — ever hit?</span><span class="t-a">💬 only without rg</span></span></summary>
       <div class="thread"><div class="reply"><span class="who">👤 agent</span>only without rg; noted in README</div></div></details>
   </div></div>
 </div>
@@ -386,6 +404,45 @@ document.getElementById('one-g').addEventListener('click', (e) => {
   g.textContent = '❓';
   document.getElementById('one').classList.add('wait-me');
 });
+// Comments: 💬 on a line opens an editor under it; a click on a comment edits it.
+(() => {
+  const box = document.getElementById('c3');
+  const editor = (thread, reply) => {
+    box.querySelector('.c-edit')?.remove();
+    const ed = document.createElement('div');
+    ed.className = 'c-edit';
+    ed.innerHTML = '<textarea placeholder="Comment…"></textarea><div class="bar"><button class="save">Save</button><button class="cancel">Cancel</button></div>';
+    const ta = ed.querySelector('textarea');
+    if (reply) { ta.value = reply.querySelector('.txt').textContent; reply.replaceWith(ed); } else thread.append(ed);
+    ta.focus();
+    const close = (text) => {
+      if (text) {
+        const r = document.createElement('div');
+        r.className = 'reply'; r.title = 'Click to edit';
+        r.innerHTML = '<span class="who">👤 you</span><span class="txt"></span>';
+        r.querySelector('.txt').textContent = text;
+        ed.replaceWith(r);
+      } else if (reply) ed.replaceWith(reply); else ed.remove();
+    };
+    ed.querySelector('.save').onclick = () => close(ta.value.trim());
+    ed.querySelector('.cancel').onclick = () => close('');
+    ta.onkeydown = (e) => {
+      if (e.key === 'Escape') close('');
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) close(ta.value.trim());
+    };
+  };
+  box.addEventListener('click', (e) => {
+    const btn = e.target.closest('.c-btn');
+    if (btn) {
+      e.preventDefault();
+      const wrap = btn.closest('.c-wrap');
+      editor(wrap ? wrap.querySelector('.opt-thread') : box.querySelector('.q-thread'));
+      return;
+    }
+    const reply = e.target.closest('.reply');
+    if (reply && !e.target.closest('.c-edit')) editor(null, reply);
+  });
+})();
 // Summary strip: counts per glyph, a click filters.
 (() => {
   const box = document.getElementById('findings');

@@ -76,6 +76,7 @@ On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plai
 - a click on `[ ]` writes `[x]`; the question stays `❓` until I say done
 - once something is picked, the unpicked options are muted
 - a 💬 under the options still works: "none — do X instead"
+- to comment: hover a line (the question or an option) → 💬 at its right end → editor under that line; a click on a comment edits it
 
 A comment — on the whole question, or on one option (an option is a list item, so its 💬 goes
 indented under it, as under any item):
