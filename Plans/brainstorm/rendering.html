@@ -86,7 +86,10 @@ details.settled[open] { background: var(--code-bg); }
 .hang { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
 .hang > .g { text-align: center; }
 /* an answered ❓ — a green "?" in its place: the question is settled */
-.g-answered { color: var(--a); font-weight: 800; font-size: 1.15em; line-height: 1; width: 1.1em; text-align: center; }
+.g-answered { color: var(--a); font-weight: 800; font-size: 1.15em; line-height: 1; width: 1.1em; text-align: center;
+  border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
+/* on hover the green ? turns into a button [?] — a click opens the answer editor */
+.g-answered:hover { border-color: var(--a); background: var(--a-bg); box-shadow: 0 1px 0 var(--line); }
 .qblock.q { background: var(--q-bg); border-left: 4px solid var(--q); }
 .qblock.d { background: var(--dis-bg); border-left: 4px solid var(--dis); }
 .qblock.a { background: var(--a-bg); border-left: 4px solid var(--a); margin-left: 22px; }
@@ -142,13 +145,13 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 &gt; ⁉️ README says :7777, the unit says :8080.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out">
     <div class="qblock q hang"><span class="g">❓</span><div>Do we keep the old URLs?</div><span class="btn hot">💬 answer</span></div>
-    <details class="settled"><summary><span class="g g-answered" title="answered">?</span><span class="t"><span class="t-q">Which port for the dev server?</span><span class="t-a">💬 7790, with its own config.</span></span></summary>
+    <details class="settled"><summary><span class="g g-answered" title="Answered — click to edit the answer" onclick="event.preventDefault(); event.stopPropagation(); alert('Opens the answer editor, loaded with the answer')">?</span><span class="t"><span class="t-q">Which port for the dev server?</span><span class="t-a">💬 7790, with its own config.</span></span></summary>
       <div class="qblock a" style="margin-top:4px">💬 7790, with its own config.</div>
     </details>
     <div class="qblock d hang"><span class="g">⁉️</span><div>README says :7777, the unit says :8080.</div><span class="btn hot">💬 answer</span></div>
   </div>
   <ul class="notes"><li>unanswered ❓ / ⁉️ — loud, with the answer button</li>
-  <li>answered — the ❓ shows as a green <b style="color:var(--a)">?</b>; folded: the question, and the answer on its own line under it, each in its own colour; muted</li></ul></div>
+  <li>answered — the ❓ shows as a green <b style="color:var(--a)">?</b>; on hover it turns into a button [?] — a click opens the answer editor; folded: the question, and the answer on its own line under it, each in its own colour; muted</li></ul></div>
 </div>
 
 <h3>1a′. Long lines — the glyph hangs</h3>
@@ -164,7 +167,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 &gt; never meets ~/.config/mdhouse, and a reset is rm -r.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out">
     <div class="qblock q hang"><span class="g">❓</span><div>Which port should the dev server use when the live instance already holds 7777 and a second developer runs their own copy on the same machine?</div><span class="btn hot">💬</span></div>
-    <details class="settled"><summary><span class="g g-answered" title="answered">?</span><span class="t"><span class="t-q">Where does the dev server keep its config when the live instance and the dev one run side by side?</span><span class="t-a">💬 In .scratch/cfg under the repo — gitignored, so it never meets ~/.config/mdhouse, and a reset is rm -r.</span></span></summary>
+    <details class="settled"><summary><span class="g g-answered" title="Answered — click to edit the answer" onclick="event.preventDefault(); event.stopPropagation(); alert('Opens the answer editor, loaded with the answer')">?</span><span class="t"><span class="t-q">Where does the dev server keep its config when the live instance and the dev one run side by side?</span><span class="t-a">💬 In .scratch/cfg under the repo — gitignored, so it never meets ~/.config/mdhouse, and a reset is rm -r.</span></span></summary>
       <div class="qblock a" style="margin-top:4px">💬 In <code>.scratch/cfg</code> under the repo — gitignored, so it never meets <code>~/.config/mdhouse</code>, and a reset is <code>rm -r</code>.</div>
     </details>
     <div class="col-label" style="margin-top:10px">Not like this</div>
