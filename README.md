@@ -164,7 +164,8 @@ container. An answered question opens its answer for editing.
 `[ ]` (open) ☐ (open) `[x]` (done) ✅ (done) ✔️ (done) ☑️ (done) ⚠️ (partial) ⏳ (in progress)
 🎫 (handed off) ❌ (failed) 🚫 (dropped) ⛔ (blocked) ☒ (crossed out) ❓ (open question)
 ⁉️ (disagreement). The answer goes in as an indented `> 💬` inside the item, and **Check &
-Save** also ticks the box, or turns the glyph into ✅.
+Save** also ticks the box, or turns the glyph into ✅. Details:
+[checkbox and status items](doc/qa.md#checkbox-and-status-items).
 
 <img src="doc/rw-answer.png" alt="An answered question with bullets, and a checkbox question with the answer editor open under it: Save, Check &amp; Save and Cancel" width="560">
 
