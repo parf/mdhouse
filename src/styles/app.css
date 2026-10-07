@@ -1610,4 +1610,4 @@ button.sync-chip { cursor: pointer; }
   border: 1px solid var(--border-strong); color: var(--fg-muted); background: var(--bg-raised);
 }
 .diff-reset:hover { color: #b91c1c; border-color: #b91c1c; }
-.gitlog .commit.local .commit-subject { color: var(--uncommitted); font-weight: 600; }
+.gitlog .commit.local .commit-subject { color: var(--uncommitted); font-weight: 600; display: flex; align-items: center; gap: 5px; }
