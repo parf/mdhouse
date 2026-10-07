@@ -430,7 +430,7 @@ function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number })
       if (!match && !status) continue;
 
       const done = isDone((match ?? status)![0]);
-      // Every task item can be answered (QUESTIONS.md keeps its questions as checkboxes): the
+      // Every task item can be answered (open-question lists keep their questions as checkboxes): the
       // item carries the same form and fingerprint a question block does.
       const range = line ? qaQuestionRange(bodyLinesOf(state.src), line - 1, 'task') : null;
       if (range) {

@@ -88,7 +88,7 @@ Eventually, once three things are true:
 
 ## Checkbox questions
 
-The `QUESTIONS.md` convention: every task item is a question. In a writable folder a ❓ after the
+Every task item is a question. In a writable folder a ❓ after the
 checkbox opens the editor; the answer is written as an indented `> 💬` inside the item, and
 **Check & Save** also ticks the box.
 

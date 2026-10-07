@@ -27,7 +27,7 @@ fingerprint check per save, read-only folders refused), but new: use it on folde
   or the server refuses (`409`); the text you typed is kept either way.
 - **Checkbox and status items are questions.** Every `- [ ]` / `- [x]` item, and every list
   item opening with a status glyph — `✅ ⚠️ ⏳ 🎫 ❌ 🚫 ⛔ ❓ ⁉️ ☐ ☑️ ☒ ✔️` — can be answered the
-  same way (the QUESTIONS.md convention). **Check & Save** also ticks the box, or turns the glyph
+  same way. **Check & Save** also ticks the box, or turns the glyph
   into ✅.
 - **`- **Q:**` / `- **A:**` list items** are full question and answer blocks.
 - **[Q&A playground](doc/qa-playground.md)** — every form, answered and not, to try it on.

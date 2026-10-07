@@ -23,7 +23,7 @@ export function lineHash(text: string): string {
 export type QaKind = 'question' | 'answer' | 'disagreement';
 /**
  * How a question was written: a glyph in a quote, an alert, a bold line, a `:::` container, or a
- * task item — `- [ ] question` (the QUESTIONS.md convention) or a list item opening with a status
+ * task item — `- [ ] question` — or a list item opening with a status
  * glyph, `- ✅ question` — whose answer is an indented quote.
  */
 export type QaForm = 'quote' | 'alert' | 'bold' | 'container' | 'task';

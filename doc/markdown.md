@@ -16,7 +16,7 @@ mdhouse and every example below renders live.
 | [Q&A container blocks](qa.md#container-blocks) | `::: q` / `::: question`, `::: a` / `::: answer` | VuePress / VitePress |
 | [Bold `Q:` / `A:` lines](qa.md#bold-lines) | a leading `**Q:**` / `**A:**` | **mdhouse** |
 | [Q&A glyphs in a quote](qa.md#glyphs-in-a-quote) | `> ?` `> ?!` `> 💬` `> Q:` `> A:` | **mdhouse** |
-| [Checkbox and status items](qa.md#checkbox-and-status-items) | `- [ ]` `- ✅` `- ⚠️` `- 🚫` … as questions | QUESTIONS.md / **mdhouse** |
+| [Checkbox and status items](qa.md#checkbox-and-status-items) | `- [ ]` `- ✅` `- ⚠️` `- 🚫` … as questions | **mdhouse** |
 | [Heading anchors](#heading-anchors) | every heading gets an `id` and a `#` link | markdown-it-anchor |
 | [Attributes](#attributes) | `{#id .class}` after a heading or paragraph | markdown-it-attrs |
 | [Code highlighting](#code) | ` ```ts ` fences | shiki |

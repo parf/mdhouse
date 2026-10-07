@@ -1,6 +1,6 @@
 # Questions and answers in mdhouse
 
-Plan folders collect question-and-answer logs — `QUESTIONS.md`, review threads, FAQs. mdhouse
+Plan folders collect question-and-answer logs — open-question lists, review threads, FAQs. mdhouse
 renders every common way of writing one as the same one-line blocks: an icon in front of the
 text, and a bright fill that says what the line is.
 
@@ -23,7 +23,7 @@ items, which are questions with a status:
 | [Containers](#container-blocks) | `::: q` / `::: question` | | `::: a` / `::: answer` | VuePress / VitePress |
 | [Bold lines](#bold-lines) | `**Q:**` | | `**A:**` | mdhouse |
 | [Glyphs in a quote](#glyphs-in-a-quote) | `> ?` `> ❓` `> Q:` `> Q` | `> ?!` `> !?` `> ⁉️` | `> 💬` `> A:` | mdhouse |
-| [Checkbox and status items](#checkbox-and-status-items) | `- [ ]` `- [x]` `- ✅` `- ⚠️` … | `- ⁉️` | indented `> 💬` | QUESTIONS.md |
+| [Checkbox and status items](#checkbox-and-status-items) | `- [ ]` `- [x]` `- ✅` `- ⚠️` … | `- ⁉️` | indented `> 💬` | mdhouse |
 
 In a folder served with `--rw` they can be [answered in the browser](#answering-in-the-browser).
 To try every form, open the [Q&A playground](qa-playground.md).
@@ -126,8 +126,8 @@ marker — `> A quick note` is English — so an answer needs `A:` or 💬.
 
 ## Checkbox and status items
 
-The `QUESTIONS.md` convention: every list item that opens with a checkbox or a status glyph is a
-question, and the checkbox or glyph is its status. Its answer is an indented quote inside the item:
+Every list item that opens with a checkbox or a status glyph is a question, and the checkbox or
+glyph is its status. Its answer is an indented quote inside the item:
 
 ```markdown
 - [ ] Which hosts take the new adapter?
