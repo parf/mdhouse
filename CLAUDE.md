@@ -166,11 +166,13 @@ Only on "publish".
 
 - [ ] Clean tree except my own files; on `main`
 - [ ] `bun test` green, `npx tsc --noEmit -p .` clean
-- [ ] Bump semver version in `package.json` (+0.0.1 — minor feature, +0.1 otherwise); then changelog
+- [ ] Bump semver version in `package.json` (+0.0.1 — minor feature, +0.1 otherwise, +1 — breaking:
+      URL, prefs key, CLI flag removed or renamed); then changelog
 - [ ] `CHANGELOG.md`: `## Unreleased` → `## X.Y.Z — YYYY-MM-DD`; covers every commit since the
-      last release (`git log <last "mdhouse X.Y.Z" commit>..`); drop no-change entries
+      last release (`git log $(git describe --tags --abbrev=0)..`); drop no-change entries
 - [ ] `Plans/README.md`, `TODO.md`, `DONE.md` current
-- [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`
+- [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, no PNGs —
+      ~55 files, ~184 kB (1.4.x); much more means a stray file
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh
       T=$S/rel; mkdir -p $T/prefix $T/cfg $T/notes
@@ -182,9 +184,12 @@ Only on "publish".
       load `/` and a doc in headless Chrome — renders, no 500; stop it by pid
 - [ ] Release commit `mdhouse X.Y.Z` (package.json + CHANGELOG), body = what changed
 - [ ] `npm whoami` → the right account
-- [ ] `git push origin main && npm publish`
+- [ ] `npm publish` (`prepublishOnly` runs the tests and tsc again) — before the push, so a failed
+      publish costs a local amend, not a public commit
+- [ ] `git tag vX.Y.Z && git push origin main --tags`
 - [ ] Install `mdhouse@X.Y.Z` from the registry into a temp prefix, run it as in the smoke test —
       `npm view` proves only the manifest
+- [ ] npmjs.com/package/mdhouse shows the README images (they come from GitHub)
 - [ ] Broken release: `npm deprecate mdhouse@X.Y.Z "broken — use …"`, fix, bump, publish; never
       `npm unpublish`
 - [ ] Restart the live instance (above)
