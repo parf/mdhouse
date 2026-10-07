@@ -98,6 +98,14 @@ checkbox opens the editor; the answer is written as an indented `> 💬` inside 
 - [x] Does every provider accept a duplicate when the API call succeeds but the ack does not?
   > 💬 No — two of them reject it; those calls are made idempotent with a request key.
 
+### Deferred
+
+As they appear in a real `QUESTIONS.md` — Russian text, continuation lines indented under the item:
+
+- [ ] Какие service-groups понадобятся кроме initial `parf` и `prod`?
+- [ ] Какой residual duplicate policy принимает каждый external provider,
+      когда API success и JetStream ACK не атомарны?
+
 ## Not questions — these must stay as they are
 
 > A quick note: a quote starting with "A" is English, not an answer.
