@@ -4,6 +4,10 @@
 
 ### Added
 
+- **Access control** — [doc/access.md](doc/access.md): `mdhouse user-add login:passwd` turns
+  on a login (Basic auth, the password kept as an argon2id hash); `mdhouse --allow <cidr,…>`
+  lets in only those networks, this machine always. Both off by default; changes apply to a
+  running mdhouse at once
 - **`e` opens the document in the editor**, as the ✎ beside the title does
 - **The answer and add forms have a ✎** (and Alt+E) that opens the file at that line in the
   editor; the form gives way to an "Opened in external editor" notice, with Back to return to

@@ -50,6 +50,15 @@ interface PrefsFile {
    * systemd service — comes up the same way. Missing means the built-in defaults.
    */
   server: ServerConfig;
+  /** Who may open mdhouse — see `lib/access.ts`. Set from the CLI only. */
+  access: AccessConfig;
+}
+
+export interface AccessConfig {
+  /** Networks allowed in besides this machine, `192.168.1.0/24`; empty allows every address. */
+  allow: string[];
+  /** login -> password hash; none means no login is asked. */
+  users: Record<string, string>;
 }
 
 export interface ServerConfig {
@@ -88,6 +97,7 @@ const fresh = (): PrefsFile => ({
   writable: [],
   settings: { ...DEFAULT_SETTINGS },
   server: {},
+  access: { allow: [], users: {} },
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
@@ -107,6 +117,12 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   const server: ServerConfig = {};
   if (validPort(parsed.server?.port)) server.port = parsed.server.port;
   if (typeof parsed.server?.host === 'string' && parsed.server.host) server.host = parsed.server.host;
+  const access: AccessConfig = { allow: [], users: {} };
+  if (Array.isArray(parsed.access?.allow)) access.allow = parsed.access.allow.filter((c) => typeof c === 'string');
+  const users = parsed.access?.users;
+  if (users && typeof users === 'object') {
+    for (const [login, hash] of Object.entries(users)) if (typeof hash === 'string') access.users[login] = hash;
+  }
   return {
     version: 1,
     roots: parsed.roots && typeof parsed.roots === 'object' ? parsed.roots : {},
@@ -114,6 +130,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     writable,
     settings,
     server,
+    access,
   };
 }
 
@@ -221,6 +238,55 @@ export class Prefs {
       if (patch.host) data.server.host = patch.host;
     });
     return this.server;
+  }
+
+  get access(): AccessConfig {
+    return { allow: [...this.data.access.allow], users: { ...this.data.access.users } };
+  }
+
+  /**
+   * The access settings as the file holds them now. The CLI changes them while the server runs,
+   * and a new user must apply at once, so the server asks for every request; the file is read
+   * again only when it changed.
+   */
+  async currentAccess(): Promise<AccessConfig> {
+    const file = Bun.file(this.path);
+    // Time and size: two saves within one millisecond still differ in what they hold, mostly.
+    const stamp = `${file.lastModified}:${file.size}`;
+    if (stamp !== this.accessStamp) {
+      const found = await readFile(this.path);
+      if (typeof found === 'object') this.data.access = found.access;
+      this.accessStamp = stamp;
+    }
+    return this.access;
+  }
+  private accessStamp = '';
+
+  /** Replace the allow list. */
+  async setAllow(allow: string[]): Promise<AccessConfig> {
+    await this.mutate((data) => {
+      data.access.allow = [...allow];
+    });
+    return this.access;
+  }
+
+  /** Add or replace a user; true when the login is new. */
+  setUser(login: string, hash: string): Promise<boolean> {
+    return this.mutate((data) => {
+      const isNew = !Object.hasOwn(data.access.users, login);
+      data.access.users = { ...data.access.users, [login]: hash };
+      return isNew;
+    });
+  }
+
+  /** Remove a user; true when there was one. */
+  removeUser(login: string): Promise<boolean> {
+    return this.mutate((data) => {
+      if (!Object.hasOwn(data.access.users, login)) return false;
+      const { [login]: _gone, ...rest } = data.access.users;
+      data.access.users = rest;
+      return true;
+    });
   }
 
   /** The directories to serve on every start. */

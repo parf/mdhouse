@@ -119,7 +119,13 @@ contents list, so a heading link and its contents entry cannot disagree.
   `localhost`, an IP literal, or — when bound to the network with `--host` — this machine's own
   name. Anything else is `421`. This is the DNS-rebinding guard: a rebound page looks
   same-origin in every header except the name it was addressed to. `guard()` in `server.ts` wraps
-  every route; the HTML bundle is left alone.
+  every route.
+- **Then access** — `admit()`, `lib/access.ts`, off until set from the CLI: an address outside
+  `--allow` (this machine always passes) is `403`; with any user, no valid Basic login is `401`.
+  Read from `prefs.json` for every request (re-read when its mtime changes), so `user-add`
+  applies to a running server at once. The page routes hand out the HTML bundle's page from a
+  hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
+  code with no data, and stay open. [doc/access.md](../../doc/access.md).
 - **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa/answer`, `/api/insert`, `/api/roots/remove`, `/api/settings` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
@@ -137,7 +143,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   `lib/search.ts`.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
-  (`port`, `host`) saved by `-p --port/--host`. Port and host resolve as flag → env → config →
+  (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
+  argon2id hash). Port and host resolve as flag → env → config →
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
   comes up where a start by hand does. Beside it, `control-<port>.sock`. Never a dotfile inside a
   browsed tree.

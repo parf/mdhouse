@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * `mdhouse [dir ...] [options]`, `mdhouse exit` and `mdhouse service …`.
+ * `mdhouse [dir ...] [options]`, `mdhouse exit`, `mdhouse service …` and the access commands.
  *
  * By default this process is only a launcher: it starts the real server detached, in its own
  * session, waits until it answers on the control socket, prints where it is, and returns the
@@ -16,6 +16,7 @@ import { serve } from './server';
 import { askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply } from './lib/control';
 import { runService } from './lib/service';
 import { logHints } from './lib/loghint';
+import { hashPassword, parseCidr, validLogin } from './lib/access';
 
 const USAGE = `mdhouse — browse every .md file under a directory
 
@@ -23,6 +24,9 @@ const USAGE = `mdhouse — browse every .md file under a directory
   mdhouse exit [options]          stop the one running  (also: stop)
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
+  mdhouse user-add <login:passwd>  ask for a login from then on (any user turns it on)
+  mdhouse user-rm <login>
+  mdhouse users                    list users and allowed networks
 
 Options
   -p, --perm           save the folders (and any --port/--host given): used on every start
@@ -31,6 +35,8 @@ Options
       --rm             forget the folders and stop serving them
       --host <addr>    address to bind              (default 127.0.0.1)
       --port <n>       port to listen on            (default 7777)
+      --allow <cidr,…> only these networks (and this machine) get in; saved
+                       --allow none: every address again
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
@@ -57,6 +63,8 @@ interface Options {
   fg: boolean;
   perm: boolean;
   rm: boolean;
+  /** `--allow`: the networks to save, or null when not given. */
+  allow: string[] | null;
 }
 
 function parse(argv: string[]): Options {
@@ -75,6 +83,7 @@ function parse(argv: string[]): Options {
     fg: false,
     perm: false,
     rm: false,
+    allow: null,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -92,6 +101,7 @@ function parse(argv: string[]): Options {
       case '--rw': o.rw = true; break;
       case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
+      case '--allow': o.allow = [...(o.allow ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--help': console.log(USAGE); process.exit(0);
       // Retired short forms: say what replaced them rather than just "unknown".
       case '-P': case '-f': case '-h': {
@@ -114,8 +124,15 @@ function parse(argv: string[]): Options {
 }
 
 const argv = process.argv.slice(2);
+const USER_COMMANDS = ['user-add', 'user-rm', 'users'];
 const command =
-  argv[0] === 'exit' || argv[0] === 'stop' ? 'exit' : argv[0] === 'service' ? 'service' : 'serve';
+  argv[0] === 'exit' || argv[0] === 'stop'
+    ? 'exit'
+    : argv[0] === 'service'
+      ? 'service'
+      : USER_COMMANDS.includes(argv[0] ?? '')
+        ? 'access'
+        : 'serve';
 // `mdhouse service install --port 8080` and `mdhouse service --port 8080 install` are the same
 // request: the action is whichever word names one, wherever it sits.
 const SERVICE_ACTIONS = ['install', 'uninstall', 'status'];
@@ -125,7 +142,9 @@ const opts = parse(
     ? argv
     : command === 'service'
       ? argv.slice(1).filter((a) => a !== serviceAction)
-      : argv.slice(1),
+      : command === 'access'
+        ? argv.slice(2).filter((a) => a.startsWith('-'))
+        : argv.slice(1),
 );
 
 const LOG = logHints({ platform: process.platform, which: (c) => !!Bun.which(c), exists: existsSync });
@@ -217,6 +236,51 @@ if (command === 'exit') {
 
 if (command === 'service') {
   process.exit(await runService(serviceAction, { port: opts.port, explicit: opts.portGiven }));
+}
+
+// ---------------------------------------------------------------- access: users, --allow
+
+/** The access settings, as `mdhouse users` and every change print them. */
+const printAccess = (): void => {
+  const { allow, users } = prefs.access;
+  const logins = Object.keys(users).sort();
+  console.log(`mdhouse  users:  ${logins.length ? logins.join(', ') : 'none — no login asked'}`);
+  console.log(`mdhouse  allow:  ${allow.length ? `${allow.join(', ')} + this machine` : 'every address'}`);
+};
+
+if (command === 'access') {
+  const [verb = '', arg = ''] = argv;
+  if (verb === 'user-add') {
+    const colon = arg.indexOf(':');
+    const login = colon < 0 ? arg : arg.slice(0, colon);
+    const password = colon < 0 ? '' : arg.slice(colon + 1);
+    if (!validLogin(login) || !password) {
+      console.error('mdhouse: user-add <login:passwd> — a login without spaces or ":", and a password');
+      process.exit(2);
+    }
+    const isNew = await prefs.setUser(login, await hashPassword(password));
+    console.log(`mdhouse  ${login}  ${isNew ? 'added' : 'password changed'}`);
+  } else if (verb === 'user-rm') {
+    if (!(await prefs.removeUser(arg))) {
+      console.error(`mdhouse: no user ${arg || '(none given)'}`);
+      process.exit(1);
+    }
+    console.log(`mdhouse  ${arg}  removed`);
+  }
+  printAccess();
+  process.exit(0);
+}
+
+if (opts.allow) {
+  const allow = opts.allow.length === 1 && opts.allow[0] === 'none' ? [] : opts.allow;
+  const bad = allow.filter((c) => !parseCidr(c));
+  if (bad.length) {
+    console.error(`mdhouse: not a network: ${bad.join(', ')}  (like 192.168.1.0/24, 10.0.0.5, fd00::/8)`);
+    process.exit(2);
+  }
+  await prefs.setAllow(allow);
+  printAccess();
+  if (!opts.dirs.length) process.exit(0);
 }
 
 // ---------------------------------------------------------------- mdhouse --rm [dir ...]

@@ -82,6 +82,55 @@ describe('a running server', () => {
   });
 });
 
+describe('access — allow list and users', () => {
+  test('off by default; a user asks for a login on every route, the page too', async () => {
+    const { mkdtemp, rm, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { hashPassword } = await import('../src/lib/access');
+
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-access-'));
+    await writeFile(join(dir, 'a.md'), '# a\n');
+    const prefs = await Prefs.load(join(dir, 'prefs.json'));
+    const port = 61794;
+    const { server, watcher, control } = await serve({ registry: await Registry.create([dir]), prefs, port, hostname: '127.0.0.1', noGit: true });
+    const get = (path: string, auth?: string) =>
+      fetch(`http://127.0.0.1:${port}${path}`, auth ? { headers: { authorization: `Basic ${btoa(auth)}` } } : {});
+
+    try {
+      expect((await get('/api/roots')).status).toBe(200);
+      // Another process (the CLI) adds a user: it applies at once.
+      const cli = await Prefs.load(join(dir, 'prefs.json'));
+      await Bun.sleep(5); // a different mtime
+      await cli.setUser('ann', await hashPassword('s3cret'));
+      for (const path of ['/api/roots', '/', '/d/a.md', '/settings', '/ws', '/nope']) {
+        const r = await get(path);
+        expect(r.status).toBe(401);
+        expect(r.headers.get('www-authenticate')).toContain('Basic');
+      }
+      expect((await get('/api/roots', 'ann:wrong')).status).toBe(401);
+      expect((await get('/api/roots', 'ann:s3cret')).status).toBe(200);
+      const page = await get('/d/a.md', 'ann:s3cret');
+      expect(page.status).toBe(200);
+      expect(await page.text()).toContain('<!doctype html>');
+      expect((await get('/nope', 'ann:s3cret')).status).toBe(404);
+      // This machine is always allowed by the list; the login is still asked.
+      await cli.setAllow(['10.9.0.0/16']);
+      expect((await get('/api/roots', 'ann:s3cret')).status).toBe(200);
+      await cli.removeUser('ann');
+      expect((await get('/api/roots')).status).toBe(200);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('POST /api/task — ticking a box', () => {
   test('writes one line on a writable folder; refuses read-only, stale pages and other sites', async () => {
     const { mkdtemp, rm, writeFile, readFile } = await import('node:fs/promises');

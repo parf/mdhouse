@@ -21,6 +21,7 @@ import { commitDiff, commitInfo, currentUser, fileHistory, newFileDiff, workingD
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
+import { allowedAddress, Users } from './lib/access';
 
 export interface ServeOptions {
   registry: Registry;
@@ -109,12 +110,43 @@ export async function serve(opts: ServeOptions) {
   };
 
   /**
-   * Every handler behind the host check. The app's HTML entry is left as it is — it is the
-   * bundle, the same for everyone, and carries no data.
+   * Who may come in at all — `lib/access.ts`. Off until the CLI sets an allow list or a user;
+   * read from prefs.json for every request, so a change applies to a running server at once.
    */
+  const users = new Users();
+  const admit = async (req: Request): Promise<Response | null> => {
+    const access = await prefs.currentAccess();
+    if (!allowedAddress(server.requestIP(req)?.address, access.allow)) return new Response('access denied\n', { status: 403 });
+    if (Object.keys(access.users).length && !(await users.check(req.headers.get('authorization'), access.users))) {
+      return new Response('access denied\n', {
+        status: 401,
+        headers: { 'www-authenticate': 'Basic realm="mdhouse", charset="UTF-8"' },
+      });
+    }
+    return null;
+  };
+
+  /** Every handler behind the host check, then the access check. */
   type Handler = (req: Request) => Response | Promise<Response>;
-  const check = (h: Handler): Handler => (req) =>
-    trustedHost(req.headers.get('host'), hostname) ? h(req) : fail(421, 'unrecognised host name');
+  const check = (h: Handler): Handler => async (req) =>
+    !trustedHost(req.headers.get('host'), hostname) ? fail(421, 'unrecognised host name') : ((await admit(req)) ?? h(req));
+
+  /**
+   * The app's page. Bun serves the HTML bundle only as a route of its own, which no check can
+   * wrap, so it sits at `/__app/` and the page routes hand out its HTML from there, behind the
+   * checks. The bundle is code, the same for everyone — no data — so `/__app/` and the script
+   * chunks it loads need none.
+   */
+  let appHtml: Promise<string> | null = null;
+  const page: Handler = async () => {
+    appHtml ??= fetch(new URL('/__app/', server.url)).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`app page: ${r.status}`))));
+    try {
+      return new Response(await appHtml, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    } catch (err) {
+      appHtml = null;
+      return fail(500, (err as Error).message);
+    }
+  };
   function guard<R extends string>(routes: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
     const out: Record<string, unknown> = {};
     for (const [path, route] of Object.entries(routes)) {
@@ -142,10 +174,11 @@ export async function serve(opts: ServeOptions) {
     reusePort: false,
 
     routes: guard({
-      '/': index,
+      '/__app/': index,
+      '/': page,
       // Every document URL is `/d/<path>/<file>.md`; the SPA takes it from here.
-      '/d/*': index,
-      '/settings': index,
+      '/d/*': page,
+      '/settings': page,
 
       /**
        * Mermaid's own ESM build, served straight from node_modules so it stays out of the app
@@ -574,6 +607,8 @@ export async function serve(opts: ServeOptions) {
 
     async fetch(req, srv) {
       if (!trustedHost(req.headers.get('host'), hostname)) return fail(421, 'unrecognised host name');
+      const denied = await admit(req);
+      if (denied) return denied;
       const url = new URL(req.url);
       if (url.pathname === '/ws') {
         // A cross-site page must not subscribe to the live channel: it names every root and
