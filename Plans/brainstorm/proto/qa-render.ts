@@ -345,6 +345,11 @@ details.settled[open] .more { display: none; }
 /* the editor bar: actions on the left, "👤me" at the far right */
 .c-edit .bar, .f-edit .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .bar .sign { margin-left: auto; font-size: 12px; color: var(--dim); display: inline-flex; gap: 4px; align-items: center; cursor: pointer; position: relative; }
+/* an unanswered question: its ❓ / ⁉️ always looks like a button — a light frame; hover makes it full */
+.item.wait-me > .head .g-btn { border-color: color-mix(in srgb, var(--q) 35%, transparent); background: color-mix(in srgb, var(--panel) 60%, transparent); }
+.item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--dis) 35%, transparent); }
+.item.wait-me > .head .g-btn:hover { border-color: var(--q); background: var(--panel); }
+.item.wait-me.dis > .head .g-btn:hover { border-color: var(--dis); }
 /* an unanswered question opens its form on a click anywhere on it */
 .item.wait-me { cursor: pointer; }
 .item.wait-me .reply, .item.wait-me .opts, .item.wait-me textarea { cursor: auto; }
