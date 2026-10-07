@@ -70,6 +70,7 @@ details.settled > summary .t { display: grid; min-width: 0; }
 .t-q { color: color-mix(in srgb, var(--q) 55%, var(--muted)); }
 .t-a { color: color-mix(in srgb, var(--a) 60%, var(--muted)); }
 details.settled[open] > summary .t-a { display: none; }
+details.settled[open] > summary .t-q { white-space: normal; }
 details.settled > summary::after { content: "▸"; margin-left: auto; font-size: 11px; }
 details.settled[open] > summary::after { content: "▾"; }
 details.settled[open] { background: var(--code-bg); }
@@ -142,7 +143,7 @@ Glyphs: <a href="README.md">README.md</a>.</p>
     <div class="qblock q hang"><span class="g">❓</span><div>Do we keep the old URLs?</div><span class="btn hot">💬 answer</span></div>
     <details class="settled"><summary><span class="g">❓</span><span class="t"><span class="t-q">Which port for the dev server?</span><span class="t-a">💬 7790, with its own config.</span></span></summary>
       <div class="qblock q hang" style="font-weight:400;opacity:.8"><span class="g">❓</span><div>Which port for the dev server?</div></div>
-      <div class="qblock a hang"><span class="g">💬</span><div>7790, with its own config.</div></div>
+      <div class="qblock a">💬 7790, with its own config.</div>
     </details>
     <div class="qblock d hang"><span class="g">⁉️</span><div>README says :7777, the unit says :8080.</div><span class="btn hot">💬 answer</span></div>
   </div>
@@ -156,16 +157,22 @@ Glyphs: <a href="README.md">README.md</a>.</p>
 <pre>&gt; ❓ Which port should the dev server use when the live
 &gt; instance already holds 7777 and a second developer runs
 &gt; their own copy on the same machine?
-&gt; 💬 7790 with its own config dir; a second developer
-&gt; passes --port, and the start banner prints the URL.</pre></div>
+
+&gt; ❓ Where does the dev server keep its config when the
+&gt; live instance and the dev one run side by side?
+&gt; 💬 In .scratch/cfg under the repo — gitignored, so it
+&gt; never meets ~/.config/mdhouse, and a reset is rm -r.</pre></div>
   <div><div class="col-label">Rendered</div><div class="out">
     <div class="qblock q hang"><span class="g">❓</span><div>Which port should the dev server use when the live instance already holds 7777 and a second developer runs their own copy on the same machine?</div><span class="btn hot">💬</span></div>
-    <div class="qblock a hang"><span class="g">💬</span><div>7790 with its own config dir; a second developer passes <code>--port</code>, and the start banner prints the URL.</div></div>
+    <details class="settled" open><summary><span class="g">❓</span><span class="t"><span class="t-q">Where does the dev server keep its config when the live instance and the dev one run side by side?</span><span class="t-a">💬 In .scratch/cfg under the repo — gitignored, so it never meets ~/.config/mdhouse, and a reset is rm -r.</span></span></summary>
+      <div class="qblock a" style="margin-top:4px">💬 In <code>.scratch/cfg</code> under the repo — gitignored, so it never meets <code>~/.config/mdhouse</code>, and a reset is <code>rm -r</code>.</div>
+    </details>
     <div class="col-label" style="margin-top:10px">Not like this</div>
     <div class="qblock q" style="opacity:.6">❓ Which port should the dev server use when the live instance already holds 7777 and a second developer runs their own copy on the same machine?</div>
   </div>
-  <ul class="notes"><li>the glyph sits in a column of its own (<code>display: grid; grid-template-columns: 1.6em 1fr</code>) — like <code>&lt;td valign=top&gt;❓&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;</code>, with divs</li>
-  <li>every glyph-led block: ❓ ⁉️ 💬, list items, options, requests</li></ul></div>
+  <ul class="notes"><li>the question glyph sits in a column of its own (<code>display: grid; grid-template-columns: 1.6em 1fr</code>) — like <code>&lt;td valign=top&gt;❓&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;</code>, with divs</li>
+  <li>💬 is part of the answer's text — no column of its own</li>
+  <li>answered → muted; opened here to show the long answer, ▸ folds it back to two lines</li></ul></div>
 </div>
 
 <h3>1b. A thread, with "need more"</h3>
