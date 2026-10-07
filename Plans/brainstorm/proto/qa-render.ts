@@ -308,6 +308,9 @@ ul.items { margin: 6px 0 14px; }
 /* the editor bar: actions on the left, "👤me" at the far right */
 .c-edit .bar, .f-edit .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .bar .sign { margin-left: auto; font-size: 12px; color: var(--dim); display: inline-flex; gap: 4px; align-items: center; cursor: pointer; position: relative; }
+/* an unanswered question opens its form on a click anywhere on it */
+.item.wait-me { cursor: pointer; }
+.item.wait-me .reply, .item.wait-me .opts, .item.wait-me textarea { cursor: auto; }
 /* an editor starts where the text does */
 .item > .c-edit, .item > .f-edit, details > .c-edit, details > .f-edit { margin: 6px 0 2px calc(1.6em + 4px); }
 /* badges: one chip shape, a tint per kind */

@@ -112,6 +112,12 @@
       });
       return;
     }
+    // ---- a click anywhere on an unanswered question opens its form, as its glyph does
+    const q = e.target.closest('.item.wait-me');
+    if (q && !e.target.closest('a, input, label, button, .reply, .c-edit, .f-edit, .opts')) {
+      q.querySelector(':scope > .head .g-btn')?.click();
+      return;
+    }
     // ---- a click on a comment edits it
     const r = e.target.closest('.reply');
     if (r && !e.target.closest('.c-edit, .f-edit') && r.querySelector('.txt')) {

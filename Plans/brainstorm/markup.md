@@ -159,6 +159,7 @@ Edge cases:
 
 - [ ] severity 🔴 🟠 and `❓` (waiting on me) — strong colour, never folded
 - [ ] questions are not bold — they can be long; the tinted background is the highlight
+- [ ] a click anywhere on an unanswered question opens its form (links, options and replies keep their own clicks)
 - [ ] the first glyph of a line is its button (framed on hover) — ❓ / ⁉️ answer, 🔴 🟠 ⚪ 🔵 ⏳ ⏸️ ✅ 🚫 reply + set the stage; no separate chips
 - [ ] an answered `❓` (a 💬 under it) shows as a green **?** — HTML only, no such glyph: the file keeps `❓`; on hover it is a button [?] — a click edits the answer
 - [ ] `⏳` — normal; `⏸️` — muted
