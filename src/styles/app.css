@@ -1133,6 +1133,16 @@ main {
 .md .answer-save:disabled { opacity: 0.45; cursor: default; }
 .md .answer-cancel { color: var(--fg-muted); background: transparent; border: 1px solid var(--border-strong); }
 .md .answer-note { margin: 6px 0 0; font-size: 12.5px; color: var(--warn); }
+.md .form-edit { display: inline-flex; align-items: center; padding: 0 4px; color: var(--fg-muted); }
+.md .answer-buttons .form-edit { margin-left: auto; }
+/* The add form's row of kinds is full: its ✎ sits in the textarea's corner. */
+.md .add-editor { position: relative; }
+.md .add-editor > .form-edit { position: absolute; top: 14px; right: 22px; }
+.md .add-editor textarea { padding-right: 28px; }
+.md .form-edit:hover { color: var(--accent); }
+.md .form-opened { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 8px 12px; font-size: 13px; color: var(--fg-muted); background: var(--bg-panel); border: 1px dashed var(--border-strong); border-radius: var(--radius); }
+.md .form-opened span { margin-right: auto; }
+.md .form-opened button { font: inherit; font-size: 13px; padding: 3px 10px; border-radius: var(--radius); cursor: pointer; }
 .md li > .answer-host .answer-editor { margin-left: 0; }
 
 /* A list item that is a question or an answer is the block: no bullet beside it. */

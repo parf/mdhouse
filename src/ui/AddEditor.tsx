@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { EditLink, OpenedNotice, isEditKey } from './ExternalEdit';
 
 /** What a block can be added as, with the glyph its button shows — in the order shown. */
 export const ADD_AS: readonly { kind: string; glyph: string; label: string; title: string }[] = [
@@ -18,17 +19,21 @@ interface Props {
   onCancel: () => void;
   saving: boolean;
   note: string | null;
+  /** `edit:/path:line` at the heading, or null when the edit link is off. */
+  editHref: string | null;
 }
 
 /**
  * A block being added under a heading: a textarea that grows with the text, and one button per
  * kind of block below it. Ctrl/⌘+Enter adds it as the kind last used (text at first); Esc
- * cancels. The editor keeps its own text — see AnswerEditor.
+ * cancels; Alt+E opens the file at the heading instead. The editor keeps its own text — see
+ * AnswerEditor.
  */
-export function AddEditor({ onText, onAdd, onCancel, saving, note }: Props) {
+export function AddEditor({ onText, onAdd, onCancel, saving, note, editHref }: Props) {
   const area = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
   const [last, setLast] = useState('text');
+  const [opened, setOpened] = useState(false);
 
   useEffect(() => {
     const el = area.current;
@@ -43,6 +48,7 @@ export function AddEditor({ onText, onAdd, onCancel, saving, note }: Props) {
     setLast(kind);
     onAdd(kind);
   };
+  if (opened) return <OpenedNotice onBack={() => setOpened(false)} onClose={onCancel} />;
   return (
     <div class="add-editor" role="group" aria-label="Add a block">
       <textarea
@@ -59,12 +65,17 @@ export function AddEditor({ onText, onAdd, onCancel, saving, note }: Props) {
           if (e.key === 'Escape') {
             e.preventDefault();
             onCancel();
+          } else if (editHref && isEditKey(e)) {
+            e.preventDefault();
+            location.href = editHref;
+            setOpened(true);
           } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             add(last);
           }
         }}
       />
+      {editHref && <EditLink href={editHref} onOpen={() => setOpened(true)} />}
       {note && <p class="answer-note">{note}</p>}
       <div class="add-buttons">
         <span class="add-as">Add as:</span>

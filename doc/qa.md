@@ -174,7 +174,8 @@ under the question, loaded with the existing answer if there is one.
 
 Write the answer — plain Markdown; lines starting with `-` are bullets — and **Save** or
 Ctrl+Enter; Esc or **Cancel** closes it without saving. On a checkbox or status item **Check &
-Save** also ticks `[ ]` to `[x]`, or turns the glyph into ✅.
+Save** also ticks `[ ]` to `[x]`, or turns the glyph into ✅. The form's ✎ (or Alt+E) opens
+the file at the question in your editor instead.
 
 The answer is written in the question's own syntax:
 

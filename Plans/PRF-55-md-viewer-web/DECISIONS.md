@@ -175,8 +175,9 @@ Planned, not built.
 - **auto-rw-path is a list:** any folder added from under it is writable; the web config can
   turn it off.
 - **Wide mode is one setting for all documents, in localStorage.**
-- **Shortcuts:** `e` opens the document in the editor (not while typing). In the forms,
-  Ctrl+E opens `edit:/path.md:line` and shows "opened in external editor" instead of Save;
+- **Shortcuts:** `e` opens the document in the editor (not while typing). In the forms — where
+  `e` types — Alt+E (by key code: on a Mac Option+E types an accent) opens `edit:/path.md:line`
+  and shows "opened in external editor" instead of the form;
   Ctrl+Shift+Enter in the answer form saves and opens the next unanswered question.
 - **Git page at `/<root>/?git`** — `/<root>/` is the dir view. All commits, even ones with no
   `.md`; it lists all files of the repo, each linked to the repo's web view (GitHub, GitLab,

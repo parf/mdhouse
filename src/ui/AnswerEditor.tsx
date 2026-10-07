@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { EditLink, OpenedNotice, isEditKey } from './ExternalEdit';
 
 interface Props {
   /** The draft to start from; from then on the editor keeps the text itself. */
@@ -13,17 +14,21 @@ interface Props {
   note: string | null;
   /** A checkbox question that is not ticked yet: offer "Check & Save". */
   canCheck: boolean;
+  /** `edit:/path:line` at the question, or null when the edit link is off. */
+  editHref: string | null;
 }
 
 /**
  * The answer being written, under its question: a textarea that grows with the text, and Save
- * below it. Ctrl/⌘+Enter saves, Esc cancels. Styled as the answer block it will become.
+ * below it. Ctrl/⌘+Enter saves, Esc cancels, Alt+E opens the file at the question instead.
+ * Styled as the answer block it will become.
  */
-export function AnswerEditor({ initial, onText, onSave, onCancel, saving, note, canCheck }: Props) {
+export function AnswerEditor({ initial, onText, onSave, onCancel, saving, note, canCheck, editHref }: Props) {
   const area = useRef<HTMLTextAreaElement>(null);
   // Held here, not in the page: a round trip through the page per keystroke loses keys typed
   // faster than it re-renders.
   const [text, setText] = useState(initial);
+  const [opened, setOpened] = useState(false);
 
   useEffect(() => {
     area.current?.focus();
@@ -40,6 +45,7 @@ export function AnswerEditor({ initial, onText, onSave, onCancel, saving, note, 
   }, [text]);
 
   const empty = !text.trim();
+  if (opened) return <OpenedNotice onBack={() => setOpened(false)} onClose={onCancel} />;
   return (
     <div class="answer-editor" role="group" aria-label="Answer">
       <span class="qa-icon" aria-hidden="true">
@@ -59,6 +65,10 @@ export function AnswerEditor({ initial, onText, onSave, onCancel, saving, note, 
           if (e.key === 'Escape') {
             e.preventDefault();
             onCancel();
+          } else if (editHref && isEditKey(e)) {
+            e.preventDefault();
+            location.href = editHref;
+            setOpened(true);
           } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !empty && !saving) {
             e.preventDefault();
             onSave(false);
@@ -78,6 +88,7 @@ export function AnswerEditor({ initial, onText, onSave, onCancel, saving, note, 
         <button class="answer-cancel" disabled={saving} onClick={onCancel} title="Cancel (Esc)">
           Cancel
         </button>
+        {editHref && <EditLink href={editHref} onOpen={() => setOpened(true)} />}
       </div>
     </div>
   );

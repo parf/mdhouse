@@ -532,6 +532,7 @@ export function Doc({
         saving={editing.saving}
         note={editing.note}
         canCheck={editing.canCheck}
+        editHref={editHref ? `${editHref}:${editing.line + (doc.lineOffset ?? 0)}` : null}
       />,
       spot,
     );
@@ -702,6 +703,7 @@ export function Doc({
         onCancel={() => setAdding(null)}
         saving={adding.saving}
         note={adding.note}
+        editHref={editHref ? `${editHref}:${adding.line + (doc.lineOffset ?? 0)}` : null}
       />,
       spot,
     );
