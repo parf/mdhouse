@@ -81,8 +81,6 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 - Hover a heading for three buttons after its `#`:
   - ✎ open the file at that line in your editor (`edit:/path:line`)
   - ↓ add a block right under the heading · ⇊ at the end of its section
-- **Add as** ¶ text · ❝ quote · ✍️ my quote (signed) · 💡 tip · ❓ question · ⁉️ disagreement ·
-  💬 answer
 
 <img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with the Add as buttons" width="560">
 
