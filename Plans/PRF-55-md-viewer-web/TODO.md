@@ -38,8 +38,8 @@
   - [ ] came from origin, pulled yesterday → pulled yesterday
   - [ ] created locally, never pushed → unpushed - yellow-on-red
   - [ ] created locally, pushed → pushed <date>; + ↑N when commits came after the push
-  - [ ] unpushed commits - a separate list
-  - [ ] ✎ N uncommitted in the same line - opens Commit; non-md files shown in Uncommitted too
+  - [ ] separately: 1. unpushed commits  2. changed / added files (any type)
+  - [ ] ✎ N uncommitted in the same line - opens Commit
   - [ ] line color: green = all committed and pushed, yellow = uncommitted/unpushed, yellow-on-red = no branch on origin
   - [ ] merge / rebase / conflicts in progress - warning, commit/pull/push off
 
