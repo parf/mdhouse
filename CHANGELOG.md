@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 — 2026-10-06
 
 ### Changed — the command line
 
@@ -10,6 +10,11 @@
 - **`MDHOUSE_ROOT` is gone, and so is serving the current folder by default.** With no folder
   named and none saved, `mdhouse` asks for one (`mdhouse <dir> -p`); with one already running,
   it says what that one serves.
+- **`--help` and the README are much shorter.**
+
+### Fixed
+
+- A list item opening with a status glyph (`- ✅ …`) keeps its bullet, as on GitHub.
 
 ## 1.2.1 — 2026-10-06
 
