@@ -177,4 +177,4 @@ contents list, so a heading link and its contents entry cannot disagree.
   (`Prefs.queue`), written to a uniquely named temp file and renamed
   into place; a file that does not parse is moved aside as `prefs.json.broken-<time>`, never
   written over. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
-- Tests: `bun test`; types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.
+- Tests: `bun test`, against a temp config dir (`test/preload.ts`); types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.
