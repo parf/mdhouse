@@ -139,7 +139,7 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 | `--rw <folder(s)>` | allow editing |
 | `--rm <folder(s)>` | forget the folders and stop serving them |
 | `--host <addr>` | address to bind — default `127.0.0.1`; `0.0.0.0` to share on your LAN |
-| `--port <n>` | port — default `7777`; one mdhouse per port |
+| `--port <n>` | default 7777 |
 
 A root may carry a **`.mdhouseignore`**: one directory name per line, `#` for comments, `!name`
 to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build output
