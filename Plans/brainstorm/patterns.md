@@ -1,6 +1,7 @@
 # Interactive patterns — what mdhouse should support
 
 The page is where I answer; the file is the conversation; an agent reads it back.
+Markup: [markup.md](markup.md).
 Four patterns, one visual rule: **what needs me stands out, what is settled gets out of the way.**
 
 ## 1. Questions → decisions / actions
