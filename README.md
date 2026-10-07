@@ -71,7 +71,7 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 
 ## ✎ Editing docs & answering / asking questions
 
-With `--rw`:
+allow edits: `mdhouse -p --rw folder(s)`
 
 - ☑️ **Tick a checkbox** — that one line is saved
 - ❓ ⁉️ **Answer a question** — click the icon, write, **Save** (Ctrl+Enter). Written in the
