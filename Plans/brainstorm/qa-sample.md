@@ -19,6 +19,23 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 > resetting it is a plain `rm -r .scratch`. Favourites saved while testing stay there and never
 > reach the live instance.
 
+> ❓ When a reviewer agent writes findings into `Plans/findings.md` while I am answering other
+> items in the same file in the browser, and both of us save within a few seconds of each other,
+> what exactly happens to my unsaved draft, to the agent's write, and to the page I am looking at
+> — and is there any case where one of the two silently overwrites the other?
+> 💬 👾claude Neither overwrites the other. Every write from the page carries a fingerprint of the
+> lines it touches; the server re-reads the file inside a per-file queue and refuses the save with
+> a 409 if those lines changed since the page was rendered. The agent writes the file directly,
+> so its write always lands; the watcher then pushes a reload to every open tab.
+>
+> Your draft survives that reload: the editor keeps its text, re-attaches to the question by its
+> line and hash, and says the file changed. If the question itself moved or was rewritten, the
+> draft stays open with a note instead of being dropped, and saving it again goes through the
+> same fingerprint check against the new text.
+>
+> The one gap is the agent's side: it does not see your save until it re-reads the file, so a
+> long-running agent should re-read before it writes a second time — `/resolve-findings` does.
+
 > ⁉️ The README says the service listens on 7777, but the unit file written by `service install
 > --port 8080` pins 8080 — which one is the documented default, and should the README name both?
 

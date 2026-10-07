@@ -130,14 +130,15 @@ const inline = (s: string) => badges(md.renderInline(s.replace(/\s*\n\s*/g, ' ')
 const labels = (html: string) =>
   html.replace(/\s*🌟/gu, ' <span class="suggest">🌟 suggested</span>').replace(/\s*⭐/gu, ' <span class="suggest">⭐ runner-up</span>');
 /** The first paragraph of a reply, up to a list or a blank line — what a folded item shows. */
-const firstLine = (r: Reply) => inline(r.body.split(/\n\s*\n|\n\s*[-*+]\s/)[0]!);
+const firstLine = (r: Reply) => `${r.who ? `${badges(esc(r.who))}` : ''}${inline(r.body.split(/\n\s*\n|\n\s*[-*+]\s/)[0]!)}`;
 /** A body with paragraphs or a list is rendered as blocks; a run of lines is one inline paragraph. */
 const blocky = (body: string) => /\n\s*\n|\n\s*[-*+]\s|\n\s*\d+[.)]\s/.test(body);
 
 function replyHtml(r: Reply): string {
-  const who = r.who ? badges(esc(r.who)) : '';
-  const body = blocky(r.body) ? badges(md.render(r.body)) : `<span class="txt">${inline(r.body)}</span>`;
-  return `<div class="reply${r.partial ? ' partial' : ''}">${r.partial ? '⚠️ ' : ''}${who}${body}</div>`;
+  const lead = `${r.partial ? '⚠️ ' : ''}${r.who ? badges(esc(r.who)) : ''}`;
+  // a long reply: the author opens its first paragraph rather than standing on a line of its own
+  if (blocky(r.body)) return `<div class="reply${r.partial ? ' partial' : ''}">${badges(md.render(r.body)).replace(/^<p>/, `<p>${lead}`)}</div>`;
+  return `<div class="reply${r.partial ? ' partial' : ''}">${lead}<span class="txt">${inline(r.body)}</span></div>`;
 }
 const threadHtml = (rs: Reply[], cls = 'thread') => `<div class="${cls}">${rs.map(replyHtml).join('')}</div>`;
 
