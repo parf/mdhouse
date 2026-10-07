@@ -115,6 +115,31 @@ Search falls back to a JS regex when rg is missing.
   `> ✅ 👉 **rewrite:** one pass …`
 - in mdhouse: select text → a 👉 button writes the request after its block, the quote prefilled
 
+## Summary strip — filters by level
+
+At the top of a page with items: `show (6)` · `🔴 2` · `🟠 3` · `⚪ 4` · `✅ 2`. The buttons are
+thresholds, not glyphs — each level includes the ones before it.
+
+| Button | Shows | Example |
+|---|---|---|
+| **show (N)** | everything; resets the filter | all 6 |
+| **🔴** | high only | 🔴 |
+| **🟠** | medium and up, plus everything waiting on me (❓ ⁉️) | 🔴 + 🟠 + ❓ + ⁉️ |
+| **⚪** | every open line, any severity | 🔴 🟠 ⚪ 🔵 ⏳ ❓ ⁉️ |
+| **✅** | every closed line | ✅ 🚫 ⏸️ 🎫 |
+
+- counts are cumulative: 🔴 ⊂ 🟠 ⊂ ⚪, so the numbers grow left to right
+- ⚪ + ✅ = show: a line is open or closed
+- ⏸️ counts as closed — ✅ means "nothing to look at now"
+- one button at a time; a second click, or **show**, brings everything back
+
+Edge cases:
+
+- `❓ 🔴` is in 🔴 and in 🟠 — severity high; ❓ lifts a line to 🟠 at least
+- ⏳ (the agent is on it) is open → ⚪; in 🟠 only when its own severity is 🟠 / 🔴
+- 🔵 is open → ⚪ only
+- ⛔ ❌ ⚠️ are open, by their own severity
+
 ## Visual rules, from the markup alone
 
 - [ ] severity 🔴 🟠 and `❓` (waiting on me) — strong colour, never folded
@@ -127,5 +152,5 @@ Search falls back to a JS regex when rg is missing.
 - [ ] unpicked options after a pick — muted
 - [ ] the glyph hangs: a column of its own, wrapped lines line up with the text, not under the glyph
 - [ ] every block aligned left alike — glyphs at one x, text at one x; no left border, the background is enough
-- [ ] a header strip per page: `❓ 3 · 🔴 1 · 🟠 4 · ✅ 12` — a click filters
+- [ ] a summary strip per page: `show (6)` · `🔴 2` · `🟠 3` · `⚪ 4` · `✅ 2` — thresholds, a click filters (above)
 - no extra markup for any of this: `<details>` stays available, but mdhouse folds by glyph
