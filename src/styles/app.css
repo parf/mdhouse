@@ -263,7 +263,8 @@ main {
 .settings-roots li:first-child { border-radius: var(--radius) var(--radius) 0 0; }
 .settings-roots li:last-child { border-radius: 0 0 var(--radius) var(--radius); }
 .settings-roots .what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.settings-roots .name { font-weight: 600; color: var(--dir); }
+.settings-roots .name { font-weight: 600; color: var(--dir); text-decoration: none; }
+.settings-roots .name:hover { text-decoration: underline; }
 .settings-roots .path { font: 11.5px var(--mono); color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-roots .tag { flex: none; font-size: 10.5px; padding: 1px 6px; border-radius: 3px; color: var(--fg-muted); border: 1px solid var(--border-strong); }
 .settings-roots .tag.saved { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }

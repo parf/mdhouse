@@ -14,6 +14,9 @@ interface Props {
   gear?: preact.ComponentChildren;
   options: Options;
   onOptions: (o: Options) => void;
+  /** A root's folder page, and moving there in the app. */
+  rootUrl: (id: string) => string;
+  go: (url: string) => void;
 }
 
 /**
@@ -23,7 +26,7 @@ interface Props {
  * Removing is the only action here. Adding needs a path typed into a browser that cannot
  * check it exists or offer completion; `mdhouse <dir> -p` in a terminal does both.
  */
-export function Settings({ roots, onChanged, gear, options, onOptions }: Props) {
+export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const last = roots.length === 1;
@@ -56,7 +59,18 @@ export function Settings({ roots, onChanged, gear, options, onOptions }: Props) 
           {roots.map((root) => (
             <li key={root.id}>
               <div class="what">
-                <span class="name">{root.name}</span>
+                <a
+                  class="name"
+                  href={rootUrl(root.id)}
+                  title={`${root.name}/ — every file, as a list`}
+                  onClick={(e) => {
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                    e.preventDefault();
+                    go(rootUrl(root.id));
+                  }}
+                >
+                  {root.name}
+                </a>
                 <span class="path" title={root.path}>
                   {root.path}
                 </span>

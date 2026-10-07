@@ -491,6 +491,8 @@ function App() {
             gear={pageGear}
             options={options}
             onOptions={setOptions}
+            rootUrl={(id) => dirPageUrl('', id)}
+            go={go}
           />
         ) : dirTarget && gitView ? (
           <Home
