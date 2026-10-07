@@ -144,7 +144,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
-  argon2id hash). Port and host resolve as flag → env → config →
+  argon2id hash). Read as JSON with comments; every key is in `doc/prefs.json.dist`. Port and host resolve as flag → env → config →
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
   comes up where a start by hand does. Beside it, `control-<port>.sock`. Never a dotfile inside a
   browsed tree.

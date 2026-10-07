@@ -1,0 +1,40 @@
+// mdhouse config — ~/.config/mdhouse/prefs.json ($XDG_CONFIG_HOME respected)
+//
+// Every key is optional. mdhouse writes this file itself (marks, -p, user-add, the settings
+// page) as plain JSON, so comments you add are dropped on its next save.
+{
+  "version": 1,
+
+  // Served on every start: `mdhouse <dir> -p`; forget with `mdhouse --rm <dir>`
+  "saved": ["/home/you/notes", "/home/you/src/project"],
+  // The saved ones mdhouse may write to: `mdhouse -p --rw <dir>`
+  "writable": ["/home/you/notes"],
+
+  // Where to listen: `mdhouse -p --port 8080 --host 0.0.0.0`
+  // Default 127.0.0.1:7777. MDHOUSE_PORT / MDHOUSE_HOST and --port / --host override it
+  "server": { "port": 7777, "host": "127.0.0.1" },
+
+  // Who may come in — doc/access.md. Both off until set, from the CLI only
+  "access": {
+    // `mdhouse --allow 192.168.1.0/24,10.0.0.5`; this machine always gets in; [] = everyone
+    "allow": ["192.168.1.0/24"],
+    // `mdhouse user-add login:pwd` / `user-rm login`; login -> argon2id hash, never the password
+    "users": { "ann": "$argon2id$v=19$m=65536,t=2,p=1$…" }
+  },
+
+  // The settings page
+  "settings": {
+    // ✎ beside each title, opening edit:/full/path (and `e`)
+    "editLink": true
+  },
+
+  // Marks per served folder, by absolute path: ★ favorite, muted, ignored (hidden)
+  // A path ending in / covers its whole subtree
+  "roots": {
+    "/home/you/notes": {
+      "favorite": ["inbox.md", "plans/"],
+      "muted": ["archive/"],
+      "ignored": ["drafts/old.md"]
+    }
+  }
+}

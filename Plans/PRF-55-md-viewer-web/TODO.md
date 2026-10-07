@@ -12,7 +12,7 @@
   - [x] asked from localhost too - protect from misconfigured nginx & alike proxies
   - [x] with CIDR list - both required
   - [x] no TLS - doc how to forward port with ssh - [doc/access.md](../../doc/access.md)
-- [ ] prefs.json.dist - pretty print json with comments
+- [x] prefs.json.dist - pretty print json with comments - [doc/prefs.json.dist](../../doc/prefs.json.dist); comments are read, a save drops them
 - [x] wide mode - save in localStorage; one for all documents
 - [x] add shortcut for open in editor link ( open edit:/.. url ) - e
   - [x] add "edit" link to our forms (answer, add) - edit:/path.md:line

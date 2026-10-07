@@ -8,6 +8,8 @@
   on a login (Basic auth, the password kept as an argon2id hash); `mdhouse --allow <cidr,…>`
   lets in only those networks, this machine always. Both off by default; changes apply to a
   running mdhouse at once
+- **[doc/prefs.json.dist](doc/prefs.json.dist)** — every config key, with comments; prefs.json
+  may hold comments now (a save writes plain JSON)
 - **`e` opens the document in the editor**, as the ✎ beside the title does
 - **The answer and add forms have a ✎** (and Alt+E) that opens the file at that line in the
   editor; the form gives way to an "Opened in external editor" notice, with Back to return to

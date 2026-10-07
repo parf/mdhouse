@@ -143,7 +143,8 @@ async function readFile(path: string): Promise<PrefsFile | 'missing' | 'broken'>
   const file = Bun.file(path);
   if (!(await file.exists())) return 'missing';
   try {
-    return normalizeFile((await file.json()) as Partial<PrefsFile>);
+    // Comments are read (doc/prefs.json.dist has them), though a save writes plain JSON.
+    return normalizeFile(Bun.JSONC.parse(await file.text()) as Partial<PrefsFile>);
   } catch {
     return 'broken';
   }
