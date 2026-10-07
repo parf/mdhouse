@@ -39,6 +39,7 @@
     "!doc/*.png",
     "README.md",
     "CHANGELOG.md",
+    "CHANGELOG-beta.md",
     "LICENSE",
     "tsconfig.json"
   ],
