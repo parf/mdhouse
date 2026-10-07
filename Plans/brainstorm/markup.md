@@ -40,7 +40,10 @@ turns so GitHub keeps them apart:
   | a question ❓ ⁉️ (answered or not) | ⚠️ need more · ✅ settled · ⏳ to agent · ⏸️ defer · 🚫 drop |
   | a finding (a line with a severity) | ✅ done · 🚫 rejected · ⏸️ deferred · 🎫 ticketed · ⏳ to agent · ❓ my call · ⚠️ partial |
   | a comment on an option | pick it |
-  | a request 👉 | ✅ done · ⏸️ defer · 🚫 drop | (the agent flips it to `⏳` when it starts)
+  | a request 👉 | ✅ done · ⏸️ defer · 🚫 drop |
+
+  Every form also has **🔍 elaborate**: a signed reply `💬 👤parf elaborate — …` (text optional). It is
+  never an answer and never closes the item — like `💬 ⚠️`, it asks for more. (the agent flips it to `⏳` when it starts)
 - GitHub: a list item with a quote under it — readable as a chat
 
 ## 1c. A question with a suggested answer

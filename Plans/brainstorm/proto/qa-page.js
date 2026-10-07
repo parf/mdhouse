@@ -39,7 +39,8 @@
     const extra = (ACTIONS[kind] || [])
       .map(([a, label, tip]) => `<button data-a="${a}"${tip ? ` data-tip="${tip}"` : ''}>${label}</button>`).join('');
     ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">${save}</button>`
-      + extra + '<button class="cancel">(ESC)Cancel</button>'
+      + extra + '<button data-a="elaborate" data-tip="Ask for more: a reply \'elaborate — …\'; the item stays open">🔍 elaborate</button>'
+      + '<button class="cancel">(ESC)Cancel</button>'
       + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;
     // a suggestion's form reads YES / NO / REPLY
     if (kind === 'proposal') ed.querySelector('[data-a="no"]').after(ed.querySelector('.bar > button:first-child'));
@@ -50,7 +51,17 @@
     const sign = ed.querySelector('.sign input');
     sign.checked = signed();
     sign.addEventListener('change', () => setSigned(sign.checked));
-    const done = (action) => { onSave(ta.value.trim(), action, sign.checked); ed.remove(); };
+    const done = (action) => {
+      if (action === 'elaborate') {
+        // every form: a signed reply that asks for more; the item never closes
+        const text = ta.value.trim();
+        const th = host.classList.contains('opt-thread') || host.classList.contains('thread') ? host : threadOf(host, 'thread q-thread');
+        th.append(reply(text ? `elaborate — ${text}` : 'elaborate', true, true));
+        const item = th.closest('details, .item, .req');
+        if (item) reopen(item);
+      } else onSave(ta.value.trim(), action, sign.checked);
+      ed.remove();
+    };
     ed.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -157,6 +168,15 @@
       editor(r.parentElement, { prefill: txt.textContent, onSave: (text) => { if (text) txt.textContent = text; } });
     }
   });
+
+  /** Asked to elaborate: open again, whatever it was — nothing about it is settled. */
+  function reopen(host) {
+    if (host.tagName === 'DETAILS') host.open = true;
+    const k = (host.dataset.k || '').split(' ');
+    if (!k.includes('open')) host.dataset.k = [...k, 'open'].join(' ');
+    host.style.opacity = '';
+    counts();
+  }
 
   /** A question that got its answer: a green ?, no longer waiting on me. */
   function answered(host) {

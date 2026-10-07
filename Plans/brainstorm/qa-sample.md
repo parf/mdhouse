@@ -49,6 +49,10 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 > 💬 The test was wrong: it now runs against a temp `XDG_CONFIG_HOME` set in `test/preload.ts`.
 > Checked by watching the real config dir during a full run — nothing appeared.
 
+> ❓ What happens to a favourite when the file it points at is renamed in git?
+> 💬 👾claude It is dropped on the next scan, silently.
+> 💬 👤parf elaborate — dropped where, and can it follow the rename instead?
+
 > ❓ What should a reload keep?
 > 💬 Everything a user added by hand:
 > - session-only folders, with their `--rw`

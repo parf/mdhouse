@@ -56,10 +56,12 @@ function parseReplies(lines: string[]): Reply[] {
     const m = /^(?:(✅|🚫)\s*)?(💬|💡)\uFE0F?\s*(.*)$/u.exec(line);
     if (m && (!m[1] || m[2] === '💡')) {
       let rest = m[3]!;
-      const partial = /^⚠️?\s*/u.test(rest);
+      let partial = /^⚠️?\s*/u.test(rest);
       rest = rest.replace(/^⚠️?\s*/u, '');
       // the author: a badge first — `👤parf`, `👾claude`, `📡slack`, …; the older `👤 **name:**` is read too
       const who = /^(👤|👥|👾|📡)\s*(?:\*\*([^*]+?):\*\*|([^\s:*]+):?)\s*/u.exec(rest);
+      // "elaborate" asks for more: never an answer, like 💬 ⚠️
+      if (/^(?:(?:👤|👥|👾|📡)\S+\s+)?elaborate\b/iu.test(rest)) partial = true;
       replies.push({ partial, suggest: m[2] === '💡', verdict: (m[1] as Reply['verdict']) ?? null, who: who ? `${who[1]}${who[2] ?? who[3]}` : null, body: who ? rest.slice(who[0].length) : rest });
     } else if (replies.length) replies.at(-1)!.body += `\n${line}`;
   }

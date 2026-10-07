@@ -234,6 +234,7 @@ long-running agent should re-read before it writes a second time — <code>/reso
 <ul class="items"><li class="item wait-me" data-k="❓ open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>Should the summary strip stay visible while scrolling a long findings file, or scroll away with the title like everything else on the page?</span></div><div class="thread q-thread"><div class="reply proposal">💡 <span class="who" data-kind="agent">👾claude</span><span class="txt">Keep it sticky: on a 200-line findings file the counts are what you come back to, and one 30-pixel bar costs little.</span><span class="s-act"><button class="accept" data-tip="Yes — it is the answer (💡 becomes 💬), with a note if you like">✓ yes</button><button class="reject" data-tip="No — say why; it goes back to the agent">✗ no</button><button class="s-reply" data-tip="Reply — neither yes nor no">💬 reply</button></span></div></div></li></ul>
 <ul class="items"><li class="item wait-me dis" data-k="⁉️ open"><div class="head c-row"><span class="g"><span class="g-btn dis" data-tip="Answer">⁉️</span></span><span>The README says the service listens on 7777, but the unit file written by <code>service install --port 8080</code> pins 8080 — which one is the documented default, and should the README name both?</span></div></li></ul>
 <details class="settled" data-k="⁉️"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">!?</span><span class="t"><span class="t-q"><code>CLAUDE.md</code> says tests never touch the live config, while <code>control.test.ts</code> created sockets in <code>~/.config/mdhouse</code> on every run.</span><span class="t-a">💬 The test was wrong: it now runs against a temp <code>XDG_CONFIG_HOME</code> set in <code>test/preload.ts</code>. Checked by watching the real config dir during a full run — nothing appeared.</span></span></summary><div class="thread"><div class="reply"><span class="txt">The test was wrong: it now runs against a temp <code>XDG_CONFIG_HOME</code> set in <code>test/preload.ts</code>. Checked by watching the real config dir during a full run — nothing appeared.</span></div></div></details>
+<ul class="items"><li class="item wait-me" data-k="❓ open"><div class="head c-row"><span class="g"><span class="g-btn" data-tip="Answer">❓</span></span><span>What happens to a favourite when the file it points at is renamed in git?</span></div><div class="thread q-thread"><div class="reply"><span class="who" data-kind="agent">👾claude</span><span class="txt">It is dropped on the next scan, silently.</span></div><div class="reply partial">⚠️ <span class="who" data-kind="person">👤parf</span><span class="txt">elaborate — dropped where, and can it follow the rename instead?</span></div></div></li></ul>
 <details class="settled" data-k="❓"><summary><span class="g g-answered" data-tip="Answered — click to edit the answer">?</span><span class="t"><span class="t-q">What should a reload keep?</span><span class="t-a">💬 Everything a user added by hand: • session-only folders, with their <code>--rw</code> • the port and host it was started with Nothing else — prefs live on disk anyway.</span></span></summary><div class="thread"><div class="reply"><p>Everything a user added by hand:</p>
 <ul>
 <li>session-only folders, with their <code>--rw</code></li>
@@ -300,7 +301,8 @@ once more to turn task items into checkboxes with their line and hash.</p>
     const extra = (ACTIONS[kind] || [])
       .map(([a, label, tip]) => `<button data-a="${a}"${tip ? ` data-tip="${tip}"` : ''}>${label}</button>`).join('');
     ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Ctrl+Enter">${save}</button>`
-      + extra + '<button class="cancel">(ESC)Cancel</button>'
+      + extra + '<button data-a="elaborate" data-tip="Ask for more: a reply \'elaborate — …\'; the item stays open">🔍 elaborate</button>'
+      + '<button class="cancel">(ESC)Cancel</button>'
       + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤me</label></div>`;
     // a suggestion's form reads YES / NO / REPLY
     if (kind === 'proposal') ed.querySelector('[data-a="no"]').after(ed.querySelector('.bar > button:first-child'));
@@ -311,7 +313,17 @@ once more to turn task items into checkboxes with their line and hash.</p>
     const sign = ed.querySelector('.sign input');
     sign.checked = signed();
     sign.addEventListener('change', () => setSigned(sign.checked));
-    const done = (action) => { onSave(ta.value.trim(), action, sign.checked); ed.remove(); };
+    const done = (action) => {
+      if (action === 'elaborate') {
+        // every form: a signed reply that asks for more; the item never closes
+        const text = ta.value.trim();
+        const th = host.classList.contains('opt-thread') || host.classList.contains('thread') ? host : threadOf(host, 'thread q-thread');
+        th.append(reply(text ? `elaborate — ${text}` : 'elaborate', true, true));
+        const item = th.closest('details, .item, .req');
+        if (item) reopen(item);
+      } else onSave(ta.value.trim(), action, sign.checked);
+      ed.remove();
+    };
     ed.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -418,6 +430,15 @@ once more to turn task items into checkboxes with their line and hash.</p>
       editor(r.parentElement, { prefill: txt.textContent, onSave: (text) => { if (text) txt.textContent = text; } });
     }
   });
+
+  /** Asked to elaborate: open again, whatever it was — nothing about it is settled. */
+  function reopen(host) {
+    if (host.tagName === 'DETAILS') host.open = true;
+    const k = (host.dataset.k || '').split(' ');
+    if (!k.includes('open')) host.dataset.k = [...k, 'open'].join(' ');
+    host.style.opacity = '';
+    counts();
+  }
 
   /** A question that got its answer: a green ?, no longer waiting on me. */
   function answered(host) {
