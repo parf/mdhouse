@@ -98,21 +98,6 @@ With `--rw` (**still in testing** — use it on folders under git):
 
 ---
 
-## ▸ Running it
-
-```bash
-mdhouse                          # serve the saved folders
-mdhouse ~/src                    # add a folder to the running one — never a second server
-mdhouse ~/notes -p --port 8080   # save folders, and the port / host, for every later start
-mdhouse --rm ~/notes             # forget a folder and stop serving it
-mdhouse exit                     # stop it (--all: every port)
-mdhouse service install          # systemd: now and at every login; also status, uninstall
-```
-
-Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
-
----
-
 ## 🔒 Read-only unless you say, and local
 
 - 📖 **Read-only by default.** Write access - cli only `mdhouse -p --rw dir` (-p = save)
@@ -131,17 +116,30 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 | `?` | version, links and this list |
 | `Esc` | clear the search query, or close the dialog |
 
+## ▸ Running it
+
+```bash
+mdhouse                          # serve the saved folders
+mdhouse ~/src                    # add a folder to the running one — never a second server
+mdhouse ~/notes -p --port 8080   # save folders, and the port / host, for every later start
+mdhouse --rm ~/notes             # forget a folder and stop serving it
+mdhouse exit                     # stop it (--all: every port)
+mdhouse service install          # systemd: now and at every login; also status, uninstall
+```
+
+Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
+
+---
+
 ## ▸ Options
 
 | Flag | |
 | --- | --- |
 | `-p, --perm` | save the folders, and any `--port` / `--host` given, for every later start |
-| `--rw` | **testing** — the folders named may be written: checkbox ticks, answers, notes |
-| `--rm` | forget the folders and stop serving them |
+| `--rw <folder(s)>` | **testing** — the folders named may be written: checkbox ticks, answers, notes |
+| `--rm <folder(s)>` | forget the folders and stop serving them |
 | `--host <addr>` | address to bind — default `127.0.0.1`; `0.0.0.0` to share on your LAN |
 | `--port <n>` | port — default `7777`; one mdhouse per port |
-
-For all other options: `mdhouse --help`.
 
 A root may carry a **`.mdhouseignore`**: one directory name per line, `#` for comments, `!name`
 to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build output
