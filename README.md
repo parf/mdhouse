@@ -110,8 +110,7 @@ mdhouse exit                     # stop it (--all: every port)
 mdhouse service install          # systemd: now and at every login; also status, uninstall
 ```
 
-- Log: `journalctl -t mdhouse -f`
-- Config: `~/.config/mdhouse/prefs.json`
+Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 
 ### ⚙ Settings
 
