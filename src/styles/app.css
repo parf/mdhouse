@@ -1611,3 +1611,4 @@ button.sync-chip { cursor: pointer; }
 }
 .diff-reset:hover { color: #b91c1c; border-color: #b91c1c; }
 .gitlog .commit.local .commit-subject { color: var(--uncommitted); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+.gitlog .local-dot { font-size: 10px; }

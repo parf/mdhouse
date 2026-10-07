@@ -128,17 +128,6 @@ export const IconGit = (p: Props) =>
     p,
   );
 
-/** A circle with an exclamation mark: something needs attention. */
-export const IconAlertCircle = (p: Props) =>
-  svg(
-    <>
-      <circle cx="8" cy="8" r="6.25" />
-      <path d="M8 4.8v3.6" />
-      <circle cx="8" cy="11" r="0.6" fill="currentColor" stroke="none" />
-    </>,
-    p,
-  );
-
 /** The git mark — a diamond with a branch in it: the git view, as against its Commits tab. */
 export const IconGitMark = (p: Props) =>
   svg(

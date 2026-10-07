@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff, IconAlertCircle } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff } from './icons';
 import { timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -1151,7 +1151,7 @@ function History({
       {local && (
         <button class="commit local" aria-pressed={localOn} title="Your uncommitted changes to this file" onClick={onPickLocal}>
           <div class="commit-subject">
-            <IconAlertCircle size={13} /> {local.isNew ? 'Not committed yet' : 'Uncommitted changes'}
+            <span class="local-dot">🟠</span> {local.isNew ? 'Not committed yet' : 'Uncommitted changes'}
           </div>
           <div class="commit-meta">
             <Ago at={local.at} flame={false} />
