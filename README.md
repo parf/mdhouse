@@ -53,15 +53,15 @@ sudo ln -sfn "$PWD/bin/mdhouse" /usr/local/bin/mdhouse   # or put bin/ on your P
 ## ▸ Start
 
 ```bash
-mdhouse ~/notes ~/src       # serve these folders — plain notes, a repo, a pile of repos
-mdhouse ~/notes ~/src -P    # …and save them, so every later start serves them too
-mdhouse                     # the saved folders, or this one when nothing is saved
-mdhouse exit                # stop it
+mdhouse ~/notes ~/src -P     # serve these folders, and save them for every later start
+mdhouse service install      # starts now and at every login, serving the saved folders
 ```
 
-Then open <http://127.0.0.1:7777>. It runs in the background — the terminal comes straight back
-and the server outlives the shell — and running `mdhouse <folder>` again adds that folder to the
-one already running rather than starting a rival. More in [Running it](#-running-it).
+- Open <http://127.0.0.1:7777>.
+- It runs in the background; `mdhouse <folder>` again adds that folder to the running one.
+- Leave out `-P` to serve folders for this session only; add `--rw` to
+  [edit and answer on the page](#-editing-docs--answering--asking-questions).
+- More in [Running it](#-running-it).
 
 ---
 
@@ -177,6 +177,11 @@ With `--rw` (**still in testing** — use it on folders under git):
 ---
 
 ## ▸ Running it
+
+```bash
+mdhouse                     # the saved folders, or this one when nothing is saved
+mdhouse exit                # stop it
+```
 
 **In the background.** `mdhouse <folder>` detaches and returns; `mdhouse exit` (or `stop`) ends
 it, and `exit --all` ends every one you have running. Its output goes to the system log, and
