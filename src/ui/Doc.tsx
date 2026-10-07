@@ -530,7 +530,7 @@ export function Doc({
    * ↓ to add a block right under the heading, and ⇊ to add one at the end of its section. Adding
    * works like answering: an editor in place, the draft kept across reloads, one write.
    */
-  type Adding = { id: number; line: number; hash: string; where: 'below' | 'end'; heading: string; note: string | null; saving: boolean };
+  type Adding = { id: number; line: number; hash: string; where: 'below' | 'end'; note: string | null; saving: boolean };
   const [adding, setAdding] = useState<Adding | null>(null);
   const addDraft = useRef('');
   useEffect(() => setAdding(null), [doc?.url]);
@@ -577,11 +577,6 @@ export function Doc({
         line: Number(h.dataset.line),
         hash: h.dataset.hash ?? '',
         where: b.dataset.where === 'end' ? 'end' : 'below',
-        heading: [...h.childNodes]
-          .filter((n) => !(n instanceof HTMLElement && n.matches('.header-anchor, .heading-actions')))
-          .map((n) => n.textContent)
-          .join('')
-          .trim(),
         note: null,
         saving: false,
       });
@@ -689,8 +684,6 @@ export function Doc({
     };
     mount(
       <AddEditor
-        where={adding.where}
-        heading={adding.heading}
         onText={(text) => (addDraft.current = text)}
         onAdd={(kind) => void add(kind)}
         onCancel={() => setAdding(null)}

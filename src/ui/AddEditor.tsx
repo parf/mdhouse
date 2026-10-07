@@ -12,9 +12,6 @@ export const ADD_AS: readonly { kind: string; glyph: string; label: string; titl
 ];
 
 interface Props {
-  /** ↓ right under the heading, or ⇊ at the end of its section — said above the textarea. */
-  where: 'below' | 'end';
-  heading: string;
   onText: (text: string) => void;
   /** Add the text as this kind of block. */
   onAdd: (kind: string) => void;
@@ -28,7 +25,7 @@ interface Props {
  * kind of block below it. Ctrl/⌘+Enter adds it as the kind last used (text at first); Esc
  * cancels. The editor keeps its own text — see AnswerEditor.
  */
-export function AddEditor({ where, heading, onText, onAdd, onCancel, saving, note }: Props) {
+export function AddEditor({ onText, onAdd, onCancel, saving, note }: Props) {
   const area = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
   const [last, setLast] = useState('text');
@@ -48,9 +45,6 @@ export function AddEditor({ where, heading, onText, onAdd, onCancel, saving, not
   };
   return (
     <div class="add-editor" role="group" aria-label="Add a block">
-      <p class="add-where">
-        {where === 'below' ? '↓ Right under' : '⇊ At the end of'} <b>{heading}</b>
-      </p>
       <textarea
         ref={area}
         value={text}

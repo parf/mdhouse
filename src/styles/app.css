@@ -1457,7 +1457,6 @@ kbd {
   border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0;
   background: color-mix(in srgb, var(--accent) 7%, var(--bg));
 }
-.md .add-where { margin: 0 0 6px; font-size: 13px; color: var(--fg-muted); }
 .md .add-editor textarea {
   display: block; width: 100%; box-sizing: border-box; resize: vertical; min-height: 4.5em;
   font: inherit; line-height: 1.5; padding: 6px 8px; color: var(--fg); background: var(--bg);
