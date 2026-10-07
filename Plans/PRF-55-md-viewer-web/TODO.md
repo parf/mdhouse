@@ -51,6 +51,9 @@
 
 ## NEXT iteration
 
+- [ ] unify styles (git/dir) view
+- [ ] git status in breadcrumbs
+- [ ] ez git page access
 - [ ] Questions with suggests - questions with suggested options - radio buttons or just buttons/checkboxes
 - [ ] create MD file (SKILL) with typical instructions how to write questions+suggestions / desisions / answers
 
