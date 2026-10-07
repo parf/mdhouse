@@ -162,6 +162,24 @@ GitHub as the hand-written answers around it. `> A:` answers are read but 💬 i
   then line). A changed question or a meanwhile answer is said in the editor before Save, and a
   stale POST is refused — the draft is kept in every case.
 
+## Access, auto-rw and the git page — 2026-10-07
+
+Planned, not built; the answers are in [`questions.md`](questions.md).
+
+- **For trusted networks and developers, no TLS.** Outside the intranet, forward the port with
+  ssh.
+- **CIDR allow list and users are set from the CLI, kept in `prefs.json`.** Localhost is always
+  allowed; an address outside the list gets 404, as an unknown file. Users (`user:passwd`) are
+  asked from localhost too — a misconfigured nginx or alike proxy makes every request local.
+  With both set, both are required.
+- **auto-rw-path is a list:** any folder added from under it is writable; the web config can
+  turn it off.
+- **Wide mode is one setting for all documents, in localStorage.**
+- **Git page at `/<root>/?git`** — `/<root>/` is the dir view. All commits, even ones with no
+  `.md`; files link to the repo's web view (GitHub, GitLab, the popular ones, or a built URL).
+  The remote check is read-only, `git ls-remote`, no fetch. In `--rw`: commit, pull
+  (`--ff-only`), push.
+
 ## A review is a list of claims, not a list of changes
 
 Reproduce before editing. Every finding from an outside review gets a script against the real
