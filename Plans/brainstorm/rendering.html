@@ -63,8 +63,9 @@ ul.items { list-style: none; margin: 0; padding: 0; }
 /* settled: muted and folded */
 details.settled { color: var(--muted); padding: 6px 8px; margin: 4px 0; border-radius: 6px; }
 /* same columns as .hang: every glyph at the same x, every text at the same x */
-details.settled > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; column-gap: 4px; align-items: start; }
-details.settled > summary > .g { text-align: center; }
+details.settled > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: minmax(1.6em, max-content) minmax(0, 1fr) auto; column-gap: 6px; align-items: start; }
+/* one glyph or two (status + severity) — never wrapped */
+details.settled > summary > .g, .item > .head > .g { text-align: center; white-space: nowrap; }
 details.settled > summary::-webkit-details-marker { display: none; }
 details.settled > summary .t { display: grid; min-width: 0; }
 /* folded: the question and its answer on lines of their own, each in its own colour, muted */
