@@ -280,8 +280,8 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
                 })
               }
             >
-              <span class="subject">{c.subject}</span>
               {notOnOrigin.has(c.hash) && <span class="sync-chip warn unpushed-tag">unpushed</span>}
+              <span class="subject">{c.subject}</span>
               <span class="count">{c.files.length}</span>
               <span class="when">
                 <Ago at={c.date} />
