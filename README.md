@@ -36,36 +36,36 @@ mdhouse ~/notes ~/src -p     # serve folders, -p = save them for every later sta
 mdhouse service install      # starts now and at every login, serving the saved folders
 ```
 
-- Open <http://127.0.0.1:7777>.
-- `mdhouse --rw <folder>` - add new folder and allow to [edit and answer on the page](#-editing-docs--answering--asking-questions).
-- More in [Running it](#-running-it).
+- Open <http://127.0.0.1:7777>
+- `mdhouse --rw <folder>` - add new folder and allow to [edit and answer on the page](#-editing-docs--answering--asking-questions)
+- More in [Running it](#-running-it)
 
 ---
 
 ## ❖ What you get
 
-Live, git-aware Markdown viewer — GithubMarkdown and more flavours.
+Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 
 - 📁 **Browse** — a sidebar tree of `.md` / `.mdx` files only, in three widths (`Ctrl+B`), with
-  age, size, git status (`M` `U` `S` `D`), and stubs marked **∅**.
-- 🔍 **Search** — file names as you type; full text through ripgrep, a hit opens *at that line*.
+  age, size, git status (`M` `U` `S` `D`), and stubs marked **∅**
+- 🔍 **Search** — file names as you type; full text through ripgrep, a hit opens *at that line*
 - 🕐 **Recent** and 👤 **Mine** — what changed here, and your own work, uncommitted first; plus
-  📄 **Files** and ★ **Favs**.
+  📄 **Files** and ★ **Favs**
 
 ![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and ages that run from red to grey](doc/recent.png)
 
-- 🏠 **Front page** — branch, last pull and commit; then what changed, grouped by commit.
-- 📂 **Folder pages** — every `.md` under a folder in one table, newest first or A–Z, with filters.
+- 🏠 **Front page** — branch, last pull and commit; then what changed, grouped by commit
+- 📂 **Folder pages** — every `.md` under a folder in one table, newest first or A–Z, with filters
 - 📄 **Document page** — breadcrumb, age, author, `N/M done` for checkboxes, a table of contents
-  and the file's last five commits.
-- ⊟ **Diffs** — what changed, as a patch or ▤ laid over the whole document, rendered.
+  and the file's last five commits
+- ⊟ **Diffs** — what changed, as a patch or ▤ laid over the whole document, rendered
 - ↔ full width · ★ favourite · 🔇 mute · 🔗 copy link · ✎ open in your editor
-- 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week.
+- 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week
 - 🖋 **Renders properly** — GFM, alerts, footnotes, shiki highlighting, mermaid, front matter,
-  [and more](doc/markdown.md); [questions and answers](doc/qa.md) in several forms.
-- 🗂 **Finds your repos** — point it at a folder of repositories; `.gitignore` is honoured.
-- ⚡ **Live** — edit in your editor and the page follows, over a WebSocket.
-- ☀️ / 🌙 light and dark follow your system; `?` shows the shortcuts.
+  [and more](doc/markdown.md); [questions and answers](doc/qa.md) in several forms
+- 🗂 **Finds your repos** — point it at a folder of repositories; `.gitignore` is honoured
+- ⚡ **Live** — edit in your editor and the page follows, over a WebSocket
+- ☀️ / 🌙 light and dark follow your system; `?` shows the shortcuts
 
 ---
 
@@ -73,9 +73,9 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours.
 
 With `--rw` (**still in testing** — use it on folders under git):
 
-- ☑️ **Tick a checkbox** — that one line is saved.
+- ☑️ **Tick a checkbox** — that one line is saved
 - ❓ ⁉️ **Answer a question** — click the icon, write, **Save** (Ctrl+Enter). Written in the
-  question's own syntax; an answered one opens for editing.
+  question's own syntax; an answered one opens for editing
 - `- [ ]` `- ✅` `- ⚠️` … **Checkbox and status items are questions too** — **Check & Save**
   answers and ticks in one go. [Details](doc/qa.md#checkbox-and-status-items)
 
@@ -91,18 +91,18 @@ With `--rw` (**still in testing** — use it on folders under git):
 <img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with the Add as buttons" width="560">
 
 - 🛡 Each edit changes only its own lines; if the file changed meanwhile it is refused and your
-  text is kept. Esc cancels.
+  text is kept. Esc cancels
 - 🧪 Try every form on the [Q&A playground](doc/qa-playground.md); syntax in
-  [Questions and answers](doc/qa.md).
+  [Questions and answers](doc/qa.md)
 
 ---
 
 ## 🔒 Read-only unless you say, and local
 
 - 📖 **Read-only by default.** Write access - cli only `mdhouse -p --rw dir` (-p = save)
-- ✏️ **Small, checked writes** — a ticked checkbox, an answer, a block under a heading.
-- 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`.
-- ⚙ Your settings live in `~/.config/mdhouse/`, never inside a served folder.
+- ✏️ **Small, checked writes** — a ticked checkbox, an answer, a block under a heading
+- 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`
+- ⚙ Your settings live in `~/.config/mdhouse/`, never inside a served folder
 
 ---
 
@@ -142,7 +142,7 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 
 A root may carry a **`.mdhouseignore`**: one directory name per line, `#` for comments, `!name`
 to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build output
-and the like).
+and the like)
 
 ---
 
@@ -166,6 +166,6 @@ bun test
 bunx tsc --noEmit
 ```
 
-What changed in each release: [`CHANGELOG.md`](CHANGELOG.md).
+What changed in each release: [`CHANGELOG.md`](CHANGELOG.md)
 
-Licensed under the **GNU General Public License v2** — see [`LICENSE`](LICENSE).
+Licensed under the **GNU General Public License v2** — see [`LICENSE`](LICENSE)
