@@ -68,18 +68,34 @@ Stop it by pid (`ss -ltnpH 'sport = :7790'`), not `pkill -f`. Headless Chrome fo
 screenshots. Never install/uninstall `mdhouse.service` in tests — use
 `service --port <spare>` with a temp `XDG_CONFIG_HOME`.
 
-## Live instance (:7777)
+## Live instance (:7777) — start / stop / reload
 
-systemd user unit `mdhouse.service`. To pick up new code:
+systemd user unit `mdhouse.service` (`ExecStart=bun …/bin/mdhouse --fg`, saved folders from
+`~/.config/mdhouse/prefs.json`, `Restart=on-failure`). It runs this clone's code, so a reload
+is all a code change needs — no build step.
 
-1. List session-only roots: `curl -s localhost:7777/api/roots` (entries without `"saved": true`)
-2. `systemctl --user restart mdhouse.service`
-3. Wait for `~/.config/mdhouse/control-7777.sock`
-4. `./bin/mdhouse <dir>` for each session-only root (usually `/home/parf/src/mdhouse`)
-5. `pgrep -af bin/mdhouse` — one `--fg` process
+```sh
+systemctl --user start   mdhouse.service
+systemctl --user stop    mdhouse.service
+systemctl --user status  mdhouse.service
+journalctl --user -u mdhouse.service -n 50   # log
+```
 
-Never `mdhouse exit` + `mdhouse`: `exit` stops the unit with status 0, systemd doesn't restart
-it, and a detached copy runs instead. Tell me to reload the page (new bundle).
+**Reload** (keeps session-only folders — the ones added without `-p`):
+
+```sh
+bash -c '
+R=$(curl -s localhost:7777/api/roots | jq -r ".roots[] | select(.saved|not) | (if .writable then \"--rw \" else \"\" end) + .path")
+systemctl --user restart mdhouse.service
+for i in $(seq 50); do [ -S ~/.config/mdhouse/control-7777.sock ] && break; sleep 0.1; done
+while read -r a; do [ -n "$a" ] && ./bin/mdhouse $a; done <<< "$R"
+pgrep -af "^/usr/bin/bun .*bin/mdhouse"'
+```
+
+- `pgrep` shows one `--fg` process, no `logger` pipe
+- then tell me to reload the page (new bundle)
+- never `mdhouse exit` + `mdhouse`: `exit` stops the unit with status 0, systemd doesn't
+  restart it, and a detached copy runs instead
 
 ## Deploy (release to npm)
 
