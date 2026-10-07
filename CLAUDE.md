@@ -172,7 +172,7 @@ Only on "publish".
       last release (`git log $(git describe --tags --abbrev=0)..`); drop no-change entries
 - [ ] `Plans/README.md`, `TODO.md`, `DONE.md` current
 - [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, no PNGs —
-      ~56 files, ~184 kB (1.4.x); much more means a stray file
+      ~55 files, ~184 kB (1.4.x); much more means a stray file
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh
       T=$S/rel; mkdir -p $T/prefix $T/cfg $T/notes

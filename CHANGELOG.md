@@ -252,4 +252,4 @@ serves. `--rw` is reserved for 1.1, where ticked checkboxes will be saved.
 
 ## Before 1.0
 
-The 0.x betas: [`CHANGELOG-beta.md`](CHANGELOG-beta.md).
+The 0.x betas: [`Plans/done/CHANGELOG-beta.md`](Plans/done/CHANGELOG-beta.md).

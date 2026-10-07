@@ -1,6 +1,6 @@
 # Changelog — 0.x betas
 
-Releases from 1.0 on: [`CHANGELOG.md`](CHANGELOG.md).
+Releases from 1.0 on: [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## 0.8.0 — 2026-10-06
 
