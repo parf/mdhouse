@@ -10,6 +10,7 @@ generate/process this markups
 - [markup.md](markup.md) — suggested markups
 - [rendering.html](rendering.html) — markup → suggested rendering, every case
 - [qa-sample.md](qa-sample.md) — every case, long questions / answers → [qa-sample.html](qa-sample.html), rendered by [proto/qa-render.ts](proto/qa-render.ts)
+- skills — [ask](skills/ask.md) → [review-questions](skills/review-questions.md), [review](skills/review.md) → [resolve](skills/resolve.md)
 
 ## Glyphs
 
