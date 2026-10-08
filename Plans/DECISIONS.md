@@ -172,7 +172,7 @@ GitHub as the hand-written answers around it. `> A:` answers are read but 💬 i
 
 Replaces "An answer is written in the question's own syntax".
 
-- The markup of `Plans/brainstorm/markup.md`, states of `skills/qa-states.md`. Items are found on
+- The markup of `Plans/brainstorm/2026-10-07/markup.md`, states of `skills/qa-states.md`. Items are found on
   markdown-it's block parse (`qa.ts` `qaItems`) — the renderer and the server read the same
   parse, so a lazy line, a blank line before a thread, a sub-item's reply never split them.
 - Old forms are rewritten into it on every read (`legacy.ts`); a write writes the converted file.

@@ -1,6 +1,6 @@
 /**
  * Prototype: renders the Q&A markup of ../markup.md into a standalone page styled like
- * ../rendering.html. `bun Plans/brainstorm/proto/qa-render.ts <in.md> > <out.html>`.
+ * ../rendering.html. `bun Plans/brainstorm/2026-10-07/proto/qa-render.ts <in.md> > <out.html>`.
  *
  * Line-based: a quote opening with ❓ ⁉️ 👉 (or ✅ 👉), and a list whose first item opens with a
  * glyph, are Q&A blocks; everything else goes to markdown-it as it is. The page's buttons work

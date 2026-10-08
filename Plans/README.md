@@ -55,7 +55,7 @@ control socket) lives outside every tree.
 
 ### A Q&A change touches its item, or nothing
 
-- `src/lib/qa.ts` — the item model of the markup (`Plans/brainstorm/markup.md`): `qaItems` on markdown-it's
+- `src/lib/qa.ts` — the item model of the markup (`Plans/brainstorm/2026-10-07/markup.md`): `qaItems` on markdown-it's
   block tokens, shared by the renderer and the server; `stateOf` (qa-states.md); `applyQa` — say ·
   verdict · pick · tick · done · target · edit
 - `src/lib/qa-html.ts` — an item as HTML: `data-qa`, `data-line`, `data-hash` (`lineHash` of the item's

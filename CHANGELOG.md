@@ -4,7 +4,7 @@
 
 ### Changed
 
-- **One Q&A markup** (`Plans/brainstorm/markup.md`): a list item opening with a glyph — `- ❓ …`,
+- **One Q&A markup** (`Plans/brainstorm/2026-10-07/markup.md`): a list item opening with a glyph — `- ❓ …`,
   `- 🔴 D1 …`, `- ✅ 🟠 …` — or a `> ❓` quote; its thread quoted under it, one `💬` per turn,
   badges `👤name` `👾`; options `( )` / `[ ]`; `💡` proposals; 🎯 selected
 - Settled items (✅ 🚫 ⏸️, an answered ❓, 🔵 notes) fold, muted; open questions and 🔴 / 🟠 issues
