@@ -210,3 +210,15 @@ test('under systemd the banner names systemctl, not `mdhouse exit` (C10)', async
     svc.kill();
   }
 }, 20000);
+
+describe('user-add', () => {
+  test('with no :pwd reads the password from stdin, so it is not in argv (C11)', () => {
+    const s = scratch();
+    const r = s.run(['user-add', 'ann'], {}, 's3cret\n');
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('ann  added');
+    expect(s.prefs().access.users.ann).toStartWith('$argon2id$');
+    expect(s.run(['user-add', 'bob'], {}, '').code).toBe(2); // no password
+    expect(s.run(['user-add', 'cy:pw']).out).toContain('cy  added'); // login:pwd still works
+  });
+});

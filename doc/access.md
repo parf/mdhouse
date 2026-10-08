@@ -4,7 +4,7 @@ mdhouse is for trusted networks. By default it listens on 127.0.0.1 only, asks n
 allows every address
 
 ```sh
-mdhouse user-add ann:s3cret       # any user turns the login on
+mdhouse user-add ann              # asks the password (or reads stdin); any user turns the login on
 mdhouse user-rm ann
 mdhouse users                     # users and allowed networks
 mdhouse --allow 192.168.1.0/24,10.0.0.5   # only these networks (and this machine)

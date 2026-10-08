@@ -20,6 +20,8 @@
 - A tick or an answer always goes to the document on screen, even when the previous one had the
   same HTML
 - Check & Save is gone: closing an item is ✅ in its form; a plain `- [ ]` is ticked, not answered
+- `mdhouse user-add <login>` asks for the password (echo off) or reads it from stdin — not in
+  shell history or the process list; `<login:pwd>` still works
 
 ### Fixed
 

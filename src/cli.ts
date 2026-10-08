@@ -24,7 +24,9 @@ const USAGE = `mdhouse — browse every .md file under a directory
   mdhouse exit [options]          stop the one running  (also: stop)
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
-  mdhouse user-add <login:pwd>    ask for a login from then on (any user turns it on)
+  mdhouse user-add <login>        ask for a login from then on (any user turns it on);
+                                  the password is asked for, or read from stdin
+                                  (<login:pwd> also works, but stays in shell history)
   mdhouse user-rm <login>
   mdhouse users                   list users and allowed networks
 
@@ -295,14 +297,43 @@ const printAccess = (): void => {
   console.log(`mdhouse  allow:  ${allow.length ? `${allow.join(', ')} + this machine` : 'every address'}`);
 };
 
+/**
+ * The password for `user-add <login>`: asked for on a terminal with echo off, else the first line
+ * of stdin — never in argv, where shell history and the process list keep it.
+ */
+async function readPassword(): Promise<string> {
+  const tty = !!process.stdin.isTTY;
+  const echo = (on: boolean) => {
+    if (tty) Bun.spawnSync(['stty', on ? 'echo' : '-echo'], { stdin: 'inherit' });
+  };
+  if (tty) process.stderr.write('password: ');
+  echo(false);
+  process.once('SIGINT', () => {
+    echo(true);
+    process.stderr.write('\n');
+    process.exit(130);
+  });
+  try {
+    for await (const line of console) return line.replace(/\r$/, '');
+    return '';
+  } finally {
+    echo(true);
+    if (tty) process.stderr.write('\n');
+  }
+}
+
 if (command === 'access') {
   const [verb = '', arg = ''] = argv;
   if (verb === 'user-add') {
     const colon = arg.indexOf(':');
     const login = colon < 0 ? arg : arg.slice(0, colon);
-    const password = colon < 0 ? '' : arg.slice(colon + 1);
-    if (!validLogin(login) || !password) {
-      console.error('mdhouse: user-add <login:passwd> — a login without spaces or ":", and a password');
+    if (!validLogin(login)) {
+      console.error('mdhouse: user-add <login> — a login without spaces or ":"');
+      process.exit(2);
+    }
+    const password = colon < 0 ? await readPassword() : arg.slice(colon + 1);
+    if (!password) {
+      console.error('mdhouse: user-add — no password given');
       process.exit(2);
     }
     const isNew = await prefs.setUser(login, await hashPassword(password));

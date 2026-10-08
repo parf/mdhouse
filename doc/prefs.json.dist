@@ -22,7 +22,7 @@
   "access": {
     // `mdhouse --allow 192.168.1.0/24,10.0.0.5`; this machine always gets in; [] = everyone
     "allow": ["192.168.1.0/24"],
-    // `mdhouse user-add login:pwd` / `user-rm login`; login -> argon2id hash, never the password
+    // `mdhouse user-add login` / `user-rm login`; login -> argon2id hash, never the password
     "users": { "ann": "$argon2id$v=19$m=65536,t=2,p=1$…" }
   },
 
