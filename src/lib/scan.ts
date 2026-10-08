@@ -203,3 +203,46 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
   files.sort((a, b) => a.rel.localeCompare(b.rel, undefined, { numeric: true, sensitivity: 'base' }));
   return { files, repos: [...new Set(repos)], scannedAt: Date.now(), degraded };
 }
+
+/** A file of any type under a folder — the folder page's ALL view. */
+export interface AnyFile {
+  rel: string;
+  name: string;
+  dir: string;
+  mtime: number;
+  size: number;
+}
+
+/** At most this many files: a folder page is not a file manager. */
+const LIST_CAP = 5000;
+
+/**
+ * Every file under `abs` (a folder inside the root at `rootPath`), root-relative: in a repository
+ * what git lists (tracked plus untracked-not-ignored, so `.gitignore` holds), elsewhere a walk
+ * that skips dot-folders and `node_modules`. `capped` says the list was cut at LIST_CAP.
+ */
+export async function listFiles(rootPath: string, abs: string, opts: { noGit?: boolean } = {}): Promise<{ files: AnyFile[]; capped: boolean }> {
+  let paths = opts.noGit || !(await repoToplevel(abs)) ? null : (await git(abs, ['ls-files', '-co', '--exclude-standard', '-z']))?.split('\0').filter(Boolean) ?? null;
+  if (!paths) {
+    paths = [];
+    for await (const p of new Bun.Glob('**/*').scan({ cwd: abs, onlyFiles: true, dot: false })) {
+      if (p.split('/').some((seg) => seg === 'node_modules')) continue;
+      paths.push(p);
+      if (paths.length > LIST_CAP) break;
+    }
+  }
+  const capped = paths.length > LIST_CAP;
+  const prefix = relative(rootPath, abs).split(sep).join('/');
+  const files: AnyFile[] = [];
+  await Promise.all(
+    paths.slice(0, LIST_CAP).map(async (p) => {
+      const info = await stat(join(abs, p)).catch(() => null);
+      if (!info?.isFile()) return;
+      const rel = prefix ? `${prefix}/${p}` : p;
+      const slash = rel.lastIndexOf('/');
+      files.push({ rel, name: rel.slice(slash + 1), dir: slash === -1 ? '' : rel.slice(0, slash), mtime: info.mtimeMs, size: info.size });
+    }),
+  );
+  files.sort((a, b) => a.rel.localeCompare(b.rel, undefined, { numeric: true, sensitivity: 'base' }));
+  return { files, capped };
+}

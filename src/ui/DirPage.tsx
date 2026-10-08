@@ -8,6 +8,7 @@ import { Dir } from './Home';
 import { sizeClass, SizeMark } from './Tree';
 import { PageHead } from './PageHead';
 import { loadWide } from './wide';
+import { ASSET_EXT, MD_EXT, RAW_EXT } from '../lib/filetypes';
 
 type Sort = 'new' | 'az';
 
@@ -37,6 +38,16 @@ interface Props {
   gear?: preact.ComponentChildren;
   rootId: string;
 }
+
+const LS_KIND = 'mdhouse.dirKind';
+
+/** How a file opens from the ALL view: Markdown in the app, images and text through the server, the rest not at all. */
+const opener = (rel: string, rootId: string): string | null => {
+  const p = encodeURIComponent(`${rootId}/${rel}`);
+  if (ASSET_EXT.test(rel)) return `/api/asset?p=${p}`;
+  if (RAW_EXT.test(rel)) return `/api/raw?p=${p}`;
+  return null;
+};
 
 const loadSort = (): Sort => {
   try {
@@ -79,6 +90,36 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
     }
   };
 
+  // MD (the tree's Markdown) or ALL (every file, from the server) — remembered per browser.
+  const [kind, setKind] = useState<'md' | 'all'>(() => {
+    try {
+      return localStorage.getItem(LS_KIND) === 'all' ? 'all' : 'md';
+    } catch {
+      return 'md';
+    }
+  });
+  const pickKind = (k: 'md' | 'all') => {
+    setKind(k);
+    try {
+      localStorage.setItem(LS_KIND, k);
+    } catch {
+      /* a per-viewer convenience; fine without it */
+    }
+  };
+  const [others, setOthers] = useState<{ files: FileEntry[]; capped: boolean } | null>(null);
+  useEffect(() => {
+    if (kind !== 'all') return;
+    let live = true;
+    api
+      .files(`${rootId}/${dir}`)
+      .then((r) => live && setOthers(r))
+      .catch(() => live && setOthers({ files: [], capped: false }));
+    return () => {
+      live = false;
+    };
+    // `tree` changes when the folder does: the list follows it.
+  }, [kind, rootId, dir, tree]);
+
   // Two filters, one per column; they start empty on every folder.
   const [dirQuery, setDirQuery] = useState('');
   const [nameQuery, setNameQuery] = useState('');
@@ -88,8 +129,11 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
   }, [dir]);
 
   const all = useMemo(
-    () => (tree?.files ?? []).filter((f) => f.size > 0 && (!dir || f.rel.startsWith(`${dir}/`))),
-    [tree, dir],
+    () =>
+      kind === 'all'
+        ? (others?.files ?? [])
+        : (tree?.files ?? []).filter((f) => f.size > 0 && (!dir || f.rel.startsWith(`${dir}/`))),
+    [tree, dir, kind, others],
   );
   const filterable = all.length > FILTER_FROM;
 
@@ -127,10 +171,11 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
         <span>
           {files.length !== all.length && `${files.length} of `}
           {all.length} {all.length === 1 ? 'file' : 'files'} · {fileSize(total)}
+          {kind === 'all' && others?.capped && ' — the first 5000 only'}
         </span>
       </div>
 
-      {!tree ? (
+      {!tree || (kind === 'all' && !others) ? (
         <div class="spinner" />
       ) : !all.length ? (
         <p class="empty">No Markdown files here.</p>
@@ -173,7 +218,16 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
                   )}
                 </button>
               </td>
-              <td class="size" />
+              <td class="size">
+                <div class="kind-flip" role="group" aria-label="Which files">
+                  <button aria-pressed={kind === 'all'} onClick={() => pickKind('all')} title="Every file in this folder">
+                    ALL
+                  </button>
+                  <button aria-pressed={kind === 'md'} onClick={() => pickKind('md')} title="Markdown only">
+                    MD
+                  </button>
+                </div>
+              </td>
             </tr>
           </thead>
           <tbody>
@@ -192,13 +246,15 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
                 span = 1;
                 while (i + span < files.length && sub(files[i + span]!) === at) span++;
               }
-              const small = sizeClass(f.size);
+              const md = MD_EXT.test(f.name);
+              const small = md ? sizeClass(f.size) : null;
               const muted = f.marks?.includes('muted');
+              const href = md ? null : opener(f.rel, rootId);
               return (
                 <tr
                   key={f.rel}
-                  class={`file${small ? ` ${small}` : ''}${muted ? ' muted' : ''}`}
-                  onClick={() => onOpen(f.rel)}
+                  class={`file${small ? ` ${small}` : ''}${muted ? ' muted' : ''}${!md && !href ? ' inert' : ''}`}
+                  onClick={() => (md ? onOpen(f.rel) : href && window.open(href, '_blank', 'noopener'))}
                   title={f.rel}
                 >
                   {span > 0 && (
@@ -220,7 +276,7 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
                     </td>
                   )}
                   <td class="name">
-                    <span class="link">{docName(f.name)}</span>
+                    <span class="link">{md ? docName(f.name) : f.name}</span>
                     {small === 'tiny' && <SizeMark size={f.size} />}
                   </td>
                   <td class="when">

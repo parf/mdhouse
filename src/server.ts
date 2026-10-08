@@ -11,7 +11,8 @@ import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
-import { repoToplevel } from './lib/scan';
+import { listFiles, repoToplevel } from './lib/scan';
+import { ASSET_EXT, HTML_EXT, RAW_EXT } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
@@ -79,15 +80,11 @@ export function sameOrigin(req: Request): boolean {
   }
 }
 
-/** Files `/api/raw` shows: as text, except HTML (below). */
-const RAW_EXT = /\.(mmd|mermaid|txt|sql|sh|ya?ml|json|csv|ini|conf|toml|howto|local|log|env|dist|example|readme|html?|css|scss|sass|less)$/i;
 /**
  * HTML is rendered, sandboxed: its scripts run, but in an opaque origin — no cookies, and every
  * request it makes back here is cross-site, so the write routes refuse it and reads stay unreadable.
  */
-const HTML_EXT = /\.html?$/i;
 const SANDBOXED_HTML = { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': 'sandbox allow-scripts' };
-const ASSET_EXT = /\.(png|jpe?g|gif|webp|svg|avif|ico)$/i;
 
 /** Resolved once at startup; mermaid is a direct dependency so this always exists. */
 const MERMAID_DIST = new URL('../node_modules/mermaid/dist', import.meta.url).pathname;
@@ -615,6 +612,15 @@ export async function serve(opts: ServeOptions) {
         return new Response(file, {
           headers: HTML_EXT.test(loc.rel) ? SANDBOXED_HTML : { 'content-type': 'text/plain; charset=utf-8' },
         });
+      },
+
+      /** Every file under a folder, not only Markdown — the folder page's ALL view. */
+      '/api/files': async (req) => {
+        const url = new URL(req.url);
+        const loc = await registry.resolve((url.searchParams.get('p') ?? '').replace(/\/+$/, ''));
+        if (!loc) return fail(403, 'path outside any root');
+        if (!(await stat(loc.abs).catch(() => null))?.isDirectory()) return fail(404, 'no such folder');
+        return json(await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit }));
       },
 
       '/api/asset': async (req) => {

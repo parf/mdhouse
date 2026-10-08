@@ -662,6 +662,12 @@ main {
   border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised);
 }
 .dir-table .sort-flip:hover { color: var(--fg); border-color: var(--accent); }
+/* ALL | MD over the size column */
+.dir-table .kind-flip { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.dir-table .kind-flip button { font: inherit; font-size: 11px; padding: 1px 6px; border: 0; background: none; color: var(--fg-muted); cursor: pointer; }
+.dir-table .kind-flip button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.dir-table tr.inert { cursor: default; }
+.dir-table tr.inert .link { color: var(--fg-muted); text-decoration: none; }
 .dir-table .col-filter {
   width: 100%; font: inherit; font-size: 12px; padding: 3px 7px;
   color: var(--fg); background: var(--bg-raised);

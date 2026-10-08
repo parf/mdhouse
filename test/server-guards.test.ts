@@ -504,3 +504,44 @@ describe('/api/raw', () => {
     }
   });
 });
+
+describe('/api/files', () => {
+  test('every file under a folder, not only Markdown; dot-folders and node_modules left out', async () => {
+    const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-files-'));
+    await mkdir(join(dir, 'sub', 'deep'), { recursive: true });
+    await mkdir(join(dir, 'node_modules'), { recursive: true });
+    await mkdir(join(dir, '.hidden'), { recursive: true });
+    for (const f of ['a.md', 'sub/b.txt', 'sub/c.png', 'sub/deep/d.js', 'node_modules/x.js', '.hidden/y.txt']) await writeFile(join(dir, f), 'x');
+    const port = 61800;
+    const { server, watcher, control } = await serve({
+      registry: await Registry.create([dir]),
+      prefs: await Prefs.load(join(dir, 'prefs.json')),
+      port,
+      hostname: '127.0.0.1',
+      noGit: true,
+    });
+    try {
+      const root = (await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()).roots[0].id;
+      const list = async (p: string) => fetch(`http://127.0.0.1:${port}/api/files?p=${root}/${p}`);
+      const all = (await (await list('')).json()) as { files: { rel: string }[]; capped: boolean };
+      // prefs.json is the test's own config, written into the folder
+      expect(all.files.map((f) => f.rel).filter((r) => r !== 'prefs.json')).toEqual(['a.md', 'sub/b.txt', 'sub/c.png', 'sub/deep/d.js']);
+      const sub = (await (await list('sub')).json()) as { files: { rel: string; dir: string }[] };
+      expect(sub.files.map((f) => f.rel)).toEqual(['sub/b.txt', 'sub/c.png', 'sub/deep/d.js']);
+      expect((await list('a.md')).status).toBe(404);
+      expect((await fetch(`http://127.0.0.1:${port}/api/files?p=nope/x`)).status).toBe(403);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

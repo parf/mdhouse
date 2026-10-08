@@ -1,6 +1,7 @@
 /** Server calls and the live-update socket. */
 
 import type { TreePayload, RecentEntry, Digest } from '../lib/store';
+import type { AnyFile } from '../lib/scan';
 import type { SearchResult } from '../lib/search';
 import type { Heading } from '../lib/render';
 import type { Mark } from '../lib/prefs';
@@ -134,6 +135,8 @@ export const api = {
   roots: () => get<{ roots: RootInfo[]; single: boolean; home?: string }>('/api/roots'),
 
   tree: (root: string, ignored: boolean) => get<TreePayload>('/api/tree', { root, ignored: ignored ? 1 : 0 }),
+  /** Every file under a folder (`p` = `<root>/<dir>`), not only Markdown. */
+  files: (p: string) => get<{ files: AnyFile[]; capped: boolean }>('/api/files', { p }),
 
   /** `d` is the part of the URL after `/d/` — the server maps it back to a root and path. */
   doc: (docPath: string) => get<DocPayload>('/api/doc', { d: docPath }),
