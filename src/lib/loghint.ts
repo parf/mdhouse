@@ -1,11 +1,4 @@
-/**
- * How to read what a detached daemon says — or null when nothing keeps it.
- *
- * Its output goes through `logger` to the system log, so the right command depends on what that
- * log is here: the unified log on macOS, journald where it runs, a syslog file elsewhere. A
- * container often has no `logger` and no log at all, and pointing at `journalctl` there sends
- * people looking in a place that does not exist.
- */
+/** What `logHints` asks of the system it runs on. */
 export interface Host {
   platform: string;
   /** Is this command on the PATH? */
@@ -15,6 +8,14 @@ export interface Host {
   readable: (path: string) => boolean;
 }
 
+/**
+ * How to read what a detached daemon says — or null when nothing keeps it.
+ *
+ * Its output goes through `logger` to the system log, so the right command depends on what that
+ * log is here: the unified log on macOS, journald where it runs, a syslog file elsewhere. A
+ * container often has no `logger` and no log at all, and pointing at `journalctl` there sends
+ * people looking in a place that does not exist.
+ */
 export function logHints(h: Host): { recent: string; follow: string } | null {
   if (!h.which('logger')) return null;
   if (h.platform === 'darwin') {
