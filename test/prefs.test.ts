@@ -279,3 +279,18 @@ describe('a file from a newer mdhouse (D5)', () => {
     expect(prefs.savedDirs()).toEqual(['/keep']);
   });
 });
+
+test('prefs.json is written 0600 in a config dir created 0700 — it holds password hashes (D3)', async () => {
+  const { stat } = await import('node:fs/promises');
+  const f = join(dir, 'private', 'cfg', 'prefs.json');
+  const old = process.umask(0o002);
+  try {
+    await (await Prefs.load(f)).setUser('ann', '$argon2id$x');
+    expect((await stat(f)).mode & 0o777).toBe(0o600);
+    expect((await stat(join(dir, 'private', 'cfg'))).mode & 0o777).toBe(0o700);
+    await (await Prefs.load(f)).addSaved('/x');
+    expect((await stat(f)).mode & 0o777).toBe(0o600);
+  } finally {
+    process.umask(old);
+  }
+});

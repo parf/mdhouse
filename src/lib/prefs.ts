@@ -18,7 +18,7 @@
  */
 
 import { homedir } from 'node:os';
-import { mkdir, rename } from 'node:fs/promises';
+import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -240,11 +240,14 @@ export class Prefs {
     return result;
   }
 
-  /** Written to a temporary file and renamed over the old one, so no reader sees half of it. */
+  /**
+   * Written to a temporary file and renamed over the old one, so no reader sees half of it.
+   * Mode 0600 in a directory created 0700: the file holds password hashes.
+   */
   private async write(): Promise<void> {
-    await mkdir(dirname(this.path), { recursive: true });
+    await mkdir(dirname(this.path), { recursive: true, mode: 0o700 });
     const tmp = `${this.path}.${process.pid}.${++tmpSeq}.tmp`;
-    await Bun.write(tmp, JSON.stringify(this.data, null, 2) + '\n');
+    await writeFile(tmp, JSON.stringify(this.data, null, 2) + '\n', { mode: 0o600 });
     await rename(tmp, this.path);
   }
 

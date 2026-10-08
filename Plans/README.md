@@ -189,7 +189,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   silent (TODO M.6).
 - `prefs.json` has several writers (the CLI, a daemon per port, the systemd service). Every
   change is read–apply–write against the file as it is now, one at a time within a process
-  (`Prefs.queue`), written to a uniquely named temp file and renamed
+  (`Prefs.queue`), written to a uniquely named temp file (0600, the dir created 0700) and renamed
   into place; a file that does not parse is moved aside as `prefs.json.broken-<time>`, never
   written over. Unknown top-level keys are kept; a file with `version` above 1 is never written. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
 - The systemd unit (`MDHOUSE_SERVICE=1`) is stopped by `systemctl` only: `mdhouse exit` sees
