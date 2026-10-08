@@ -617,6 +617,16 @@ export async function serve(opts: ServeOptions) {
           rootId: loc.root.id,
           docPath: loc.rel,
           docUrl: (rel) => registry.docUrl(loc.root, rel),
+          // a file named in the text is a link when it is a file in this root
+          exists: async (rels) => {
+            const files = await Promise.all(
+              rels.map(async (rel) => {
+                const at = await registry.resolve(`${loc.root.id}/${rel}`);
+                return at && at.root === loc.root && (await stat(at.abs).catch(() => null))?.isFile() ? rel : null;
+              }),
+            );
+            return new Set(files.filter((r): r is string => r !== null));
+          },
         });
 
         const stat = await file.stat();

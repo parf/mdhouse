@@ -293,3 +293,30 @@ describe('curly braces (B3)', () => {
     expect(await html('para {.note}\n')).toContain('<p class="note"');
   });
 });
+
+describe('file names in the text are links to the files', () => {
+  const have = new Set(['CHANGELOG.md', 'Plans/README.md', 'src/server.ts', 'docs/other.md', 'doc/logo.png']);
+  const fctx = { ...ctx, exists: async (rels: string[]) => new Set(rels.filter((r) => have.has(r))) };
+  const html = async (s: string) => (await render(s, fctx)).html;
+
+  test('a code span that is a path, a word with a / or a .md name — when the file exists', async () => {
+    const out = await html('See CHANGELOG.md, `Plans/README.md`, `src/server.ts:557`, other.md and doc/logo.png.\n');
+    expect(out).toContain('<a href="/d/CHANGELOG.md" class="md-local-link">CHANGELOG.md</a>');
+    expect(out).toContain('<a href="/d/Plans/README.md" class="md-local-link"><code>Plans/README.md</code></a>');
+    expect(out).toContain('href="/api/raw?p=r%2Fsrc%2Fserver.ts#L557"');
+    expect(out).toContain('<a href="/d/docs/other.md" class="md-local-link">other.md</a>');
+    expect(out).toContain('href="/api/asset?p=r%2Fdoc%2Flogo.png"');
+  });
+
+  test('not a file, inside a link, in a code block: left as written', async () => {
+    const out = await html('missing.md `nope.md` [CHANGELOG.md](https://x.io) e.g. v1.5.0\n\n```\nCHANGELOG.md\n```\n');
+    expect(out).toContain('missing.md <code>nope.md</code> <a href="https://x.io"');
+    expect(out).toContain('<code>CHANGELOG.md\n</code>');
+  });
+
+  test('a name is never taken for a domain (.md, .py, .sh); a real one still is', async () => {
+    const out = await html('setup.py run.sh github.com/parf/mdhouse www.example.com\n');
+    expect(out).toContain('<p data-line="1">setup.py run.sh <a href="http://github.com/parf/mdhouse"');
+    expect(out).toContain('href="http://www.example.com"');
+  });
+});

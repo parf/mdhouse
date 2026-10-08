@@ -34,7 +34,8 @@ interface Props {
   error: string | null;
   /** Line to scroll to and flash, from a search hit. */
   jumpLine: number | null;
-  onNavigate: (url: string) => void;
+  /** `line`: a body line to scroll to and flash. */
+  onNavigate: (url: string, line?: number) => void;
   onMark: (path: string, mark: Mark, on: boolean) => void;
   /** A breadcrumb folder: open its page, and reveal it in the sidebar tree. */
   onOpenDir: (dir: string) => void;
@@ -255,7 +256,9 @@ export function Doc({
       const href = link.getAttribute('href') ?? '';
       if (href.startsWith('/d/')) {
         e.preventDefault();
-        onNavigate(href);
+        // `#L557`: a line of the file — the body's line once front matter is counted out
+        const at = /#L(\d+)$/.exec(href);
+        onNavigate(href, at ? Number(at[1]) - (doc?.lineOffset ?? 0) : undefined);
       } else if (href.startsWith('#')) {
         e.preventDefault();
         const target = el.querySelector(`[id="${CSS.escape(href.slice(1))}"]`);
@@ -802,10 +805,13 @@ export function Doc({
     const el = body.current;
     if (!el || !doc) return;
 
+    const fileLine = /^#L(\d+)$/.exec(location.hash);
     const target =
       jumpLine !== null
         ? nearestByLine(el, jumpLine)
-        : location.hash
+        : fileLine
+          ? nearestByLine(el, Number(fileLine[1]) - (doc.lineOffset ?? 0))
+          : location.hash
           ? el.querySelector<HTMLElement>(`[id="${CSS.escape(decodeURIComponent(location.hash.slice(1)))}"]`)
           : null;
 

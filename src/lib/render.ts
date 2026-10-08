@@ -32,6 +32,8 @@ export interface RenderContext {
   docPath: string;
   /** Root-relative path -> browser URL (`/d/<path>/<file>.md`). Supplied by the registry. */
   docUrl: (rel: string) => string;
+  /** Which of these root-relative paths are files: a file named in the text becomes a link to it. */
+  exists?: (rels: string[]) => Promise<Set<string>>;
 }
 
 export interface Heading {
@@ -373,6 +375,90 @@ function curlyTextPlugin(md: MarkdownIt): void {
 }
 
 /** Rewrite relative links and images to in-app routes and the asset proxy. */
+/** Where a root-relative file is shown: a document's page, an image, or the raw file. */
+function localHref(ctx: RenderContext, target: string, hash?: string): string {
+  const p = `${ctx.rootId}/${target}`;
+  if (MD_EXT.test(target)) return `${ctx.docUrl(target)}${hash ? `#${hash}` : ''}`;
+  if (IMAGE_EXT.test(target)) return `/api/asset?p=${encodeURIComponent(p)}`;
+  return `/api/raw?p=${encodeURIComponent(p)}`;
+}
+
+/**
+ * Files named in the text become links to them: a code span that is a whole path
+ * (`src/cli.ts`, `src/server.ts:557`) and a word in text that is a path with a `/` or a Markdown
+ * name (`Plans/README.md`, `CHANGELOG.md`) — when the file exists, from the document's folder,
+ * else from the root. Never inside a link, never in a code block.
+ */
+const PATH = String.raw`(?:\.{1,2}\/)?(?:[\w@.-]+\/)*[\w@-][\w@.-]*\.[A-Za-z]\w{0,7}`;
+const CODE_PATH = new RegExp(String.raw`^(${PATH})(?::(\d+)(?:-\d+)?)?$`);
+const TEXT_PATH = new RegExp(String.raw`(?<![\w@/.:\\-])(${PATH})(?=$|[\s),;:!?'"\]]|\.(?:\s|$))`, 'g');
+const mentionable = (p: string) => p.includes('/') || MD_EXT.test(p);
+/** The root-relative paths a mention may mean, nearest first. */
+const meanings = (docPath: string, p: string) =>
+  [...new Set([resolveRelative(docPath, p), resolveRelative('', p)])].filter((x): x is string => !!x);
+
+/** Every path the source mentions that is a file: mention → its root-relative path. */
+async function fileMentions(src: string, ctx: RenderContext): Promise<Map<string, string>> {
+  const found = new Map<string, string>();
+  if (!ctx.exists) return found;
+  const said = new Set<string>();
+  for (const m of src.matchAll(/`([^`\n]+)`/g)) {
+    const c = CODE_PATH.exec(m[1]!.trim());
+    if (c) said.add(c[1]!);
+  }
+  for (const m of src.matchAll(TEXT_PATH)) if (mentionable(m[1]!)) said.add(m[1]!);
+  const wanted = [...said].slice(0, 500);
+  const files = await ctx.exists([...new Set(wanted.flatMap((p) => meanings(ctx.docPath, p)))]);
+  for (const p of wanted) {
+    const rel = meanings(ctx.docPath, p).find((r) => files.has(r));
+    if (rel) found.set(p, rel);
+  }
+  return found;
+}
+
+function fileLinkPlugin(md: MarkdownIt, opts: { ctx: RenderContext; files: Map<string, string> }): void {
+  const { ctx, files } = opts;
+  md.core.ruler.after('linkify', 'mdhouse_file_links', (state) => {
+    const text = (content: string) => Object.assign(new state.Token('text', '', 0), { content });
+    const link = (rel: string, inner: Token[], line?: string): Token[] => {
+      const open = new state.Token('link_open', 'a', 1);
+      open.attrs = [['href', `${localHref(ctx, rel)}${line ? `#L${line}` : ''}`], ['class', 'md-local-link']];
+      return [open, ...inner, new state.Token('link_close', 'a', -1)];
+    };
+    for (const t of state.tokens) {
+      if (t.type !== 'inline' || !t.children) continue;
+      const out: Token[] = [];
+      let depth = 0;
+      const kids = t.children;
+      for (let i = 0; i < kids.length; i++) {
+        const c = kids[i]!;
+        if (c.type === 'link_open') depth++;
+        if (c.type === 'link_close') depth--;
+        if (depth > 0 || c.type === 'link_close') {
+          out.push(c);
+          continue;
+        }
+        if (c.type === 'code_inline') {
+          const m = CODE_PATH.exec(c.content.trim());
+          const rel = m && files.get(m[1]!);
+          out.push(...(rel ? link(rel, [c], m[2]) : [c]));
+        } else if (c.type === 'text') {
+          let at = 0;
+          for (const m of c.content.matchAll(TEXT_PATH)) {
+            const rel = mentionable(m[1]!) && files.get(m[1]!);
+            if (!rel) continue;
+            if (m.index! > at) out.push(text(c.content.slice(at, m.index)));
+            out.push(...link(rel, [text(m[1]!)]));
+            at = m.index! + m[1]!.length;
+          }
+          out.push(...(at === 0 ? [c] : at < c.content.length ? [text(c.content.slice(at))] : []));
+        } else out.push(c);
+      }
+      t.children = out;
+    }
+  });
+}
+
 function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
   const defaultLink =
     md.renderer.rules.link_open ??
@@ -387,10 +473,7 @@ function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
       const target = pathPart ? resolveRelative(ctx.docPath, pathPart) : null;
 
       if (target) {
-        const p = `${ctx.rootId}/${target}`;
-        if (MD_EXT.test(target)) token.attrSet('href', `${ctx.docUrl(target)}${hash ? `#${hash}` : ''}`);
-        else if (IMAGE_EXT.test(target)) token.attrSet('href', `/api/asset?p=${encodeURIComponent(p)}`);
-        else token.attrSet('href', `/api/raw?p=${encodeURIComponent(p)}`);
+        token.attrSet('href', localHref(ctx, target, hash));
         token.attrJoin('class', 'md-local-link');
       }
     } else if (href && isExternal(href)) {
@@ -436,8 +519,18 @@ function rewriteHtmlImages(html: string, ctx: RenderContext): string {
   });
 }
 
+/**
+ * The zones a link with no scheme may end in (`github.com/parf/mdhouse`): the common ones, never a
+ * file extension — `CHANGELOG.md`, `setup.py`, `run.sh` are files, not Moldova, Paraguay, St Helena.
+ */
+const LINK_TLDS = (
+  'com org net edu gov mil int io co ai app dev me info biz xyz tech site online cloud page blog ' +
+  'ru de uk us eu fr it nl jp cn in ca au ch se no fi be at cz es pt ua by kz il kr br tv su рф'
+).split(' ');
+
 export async function render(src: string, ctx: RenderContext): Promise<Rendered> {
   await preloadLanguages(src);
+  const files = await fileMentions(src, ctx);
   const hl = await highlighter();
 
   const headings: Heading[] = [];
@@ -472,6 +565,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
     },
   });
 
+  md.linkify.tlds(LINK_TLDS);
   md.use(lineMapPlugin);
   md.use(alertPlugin);
   md.use(taskListPlugin, tasks);
@@ -495,6 +589,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
       });
     },
   });
+  md.use(fileLinkPlugin, { ctx, files });
   md.use(linkPlugin, ctx);
 
   const html = rewriteHtmlImages(md.render(src), ctx);
