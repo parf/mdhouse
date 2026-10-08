@@ -21,7 +21,7 @@
   - [x] control+shift+enter in the answer form - submit form + open next one (next unanswered question)
 - [x] git history - on/off - we have it now - BUT we do not show state - add grey show/hide icons
 - [x] config: auto-rw-path: list; any added folder under it is auto-rw - can be turned off in web config - `mdhouse --auto-rw <path,…>`, switch on the settings page
-- [x] git "root" page - where we show branch and recent commits - plan and questions: [git-page.md](git-page.md)
+- [x] git "root" page - where we show branch and recent commits - plan and questions: [git-page.md](done/git-page.md)
   - [x] url: /root/?git; add this switch to all directories (now root only)
   - [x] recent commits - all, even w/o md files; recent-commits page
   - [x] commit view - list all files; links to original repo web views (github/gitlab/most popular, or build a possible url)
