@@ -48,6 +48,7 @@
 - An alert that quotes something keeps the rest of its text inside the box
 - A code block over 100 KB is shown plain, not highlighted: a pasted log or dump no longer takes
   seconds and tens of MB per view
+- An added block that starts with Enter no longer opens with an empty line
 
 ## 1.5.0 — 2026-10-07
 

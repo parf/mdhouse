@@ -47,6 +47,9 @@ describe('adding a block under a heading', () => {
     for (const [kind, block] of cases) expect(add('# H\n', 1, 'below', kind, 'a\n- b')).toBe(`# H\n\n${block}\n`);
     // A plain quote stays plain even if a line opens with a Q&A mark.
     expect(add('# H\n', 1, 'below', 'quote', '? not a question')).toBe('# H\n\n> \\? not a question\n');
+    // Leading blank lines are dropped: the first line is the first one with text.
+    expect(add('# H\n', 1, 'below', 'question', '\n \nfoo')).toBe('# H\n\n> ❓ foo\n');
+    expect(add('# H\n', 1, 'below', 'quote', '\nfoo')).toBe('# H\n\n> foo\n');
   });
 
   test('a setext heading, front matter, CRLF', () => {

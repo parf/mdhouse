@@ -40,7 +40,7 @@ export function sectionOf(lines: string[], at: number): { span: number; end: num
 
 /** The block as Markdown. A signed quote carries `who`; quote lines that would read as Q&A are escaped. */
 export function formatBlock(text: string, kind: AddKind, who: string): string[] {
-  const [first = '', ...rest] = text.replace(/\r/g, '').replace(/\s+$/, '').split('\n');
+  const [first = '', ...rest] = text.replace(/\r/g, '').replace(/\s+$/, '').replace(/^\s*\n/, '').split('\n');
   const quoted = (mark: string) => [`> ${mark}${first}`, ...quoteLines(rest, '> ')];
   switch (kind) {
     case 'text':
