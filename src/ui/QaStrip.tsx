@@ -33,7 +33,9 @@ export function QaStrip({ body, html, url }: { body: RefObject<HTMLDivElement>; 
   useEffect(() => setOn(null), [url]);
   useEffect(() => {
     const keys = rowsOf(body.current).map(keyOf);
-    setCounts(LEVELS.map((l) => keys.filter(l.test).length));
+    const next = LEVELS.map((l) => keys.filter(l.test).length);
+    setCounts(next);
+    setOn((cur) => (cur && !next[LEVELS.findIndex((l) => l.key === cur)] ? null : cur));
   }, [html]);
   useEffect(() => {
     const el = body.current;
@@ -44,24 +46,27 @@ export function QaStrip({ body, html, url }: { body: RefObject<HTMLDivElement>; 
   }, [on, html]);
 
   if (!counts[0]) return null;
+  // A level with nothing in it is left out; a │ stands only between groups that both show.
+  const shown = LEVELS.map((l, i) => ({ l, n: counts[i] ?? 0 })).filter(({ l, n }) => l.key === 'all' || n > 0);
+  const group = (key: string) => (key === 'all' ? 0 : key === '🎯' ? 2 : 1);
   return (
     <div class="qa-strip" role="toolbar" aria-label="Filter questions and issues">
-      {LEVELS.map((l, i) => (
+      {shown.map(({ l, n }, i) => (
         <>
-          <button
-            type="button"
-            class={`chip${counts[i] ? '' : ' zero'}`}
-            aria-pressed={on === l.key && l.key !== 'all'}
-            data-tip={l.tip(counts[i] ?? 0)}
-            onClick={() => setOn(on === l.key || l.key === 'all' ? null : l.key)}
-          >
-            {l.key === 'all' ? counts[i] : `${l.key} ${counts[i]}`}
-          </button>
-          {(l.key === 'all' || l.key === '✅') && (
+          {i > 0 && group(l.key) !== group(shown[i - 1]!.l.key) && (
             <span class="sep" aria-hidden="true">
               │
             </span>
           )}
+          <button
+            type="button"
+            class="chip"
+            aria-pressed={on === l.key && l.key !== 'all'}
+            data-tip={l.tip(n)}
+            onClick={() => setOn(on === l.key || l.key === 'all' ? null : l.key)}
+          >
+            {l.key === 'all' ? n : `${l.key} ${n}`}
+          </button>
         </>
       ))}
     </div>
