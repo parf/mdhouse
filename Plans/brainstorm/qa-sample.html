@@ -420,7 +420,10 @@ once more to turn task items into checkboxes with their line and hash.</p>
         kind,
         prefill: g.classList.contains('g-answered') && last ? last.textContent : '',
         onSave: (text, action, sign) => {
-          if (text) threadOf(host, 'thread q-thread').append(reply(text, sign, action === 'partial'));
+          // a ✅ set by a person always carries their badge: `💬 👤me settled — …` — so ✅ + 👤 reads
+          // "closed by me, nothing to carry", and ✅ + 👾 "processed by the agent"
+          if (action === '✅') threadOf(host, 'thread q-thread').append(reply(text ? `settled — ${text}` : 'settled', true));
+          else if (text) threadOf(host, 'thread q-thread').append(reply(text, sign, action === 'partial'));
           if (action === 'partial') setStage(host, '❓');
           else if (action) setStage(host, action);
         },

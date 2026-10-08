@@ -32,7 +32,12 @@ Append — never edit or delete a turn, never touch the user's words.
 ## The state of an item
 
 **✅ is the agent's**: the user answers on the page (the item shows answered, the file keeps `❓`);
-the agent sets `✅` once it carried the answer over or did the fix. So `✅` means *processed*.
+the agent sets `✅` once it carried the answer over or did the fix. Who set a `✅` is in the turn that
+closed it:
+
+- `✅` + a last `💬 👾claude → …` / `` `sha` `` record — **processed by the agent**
+- `✅` + a `💬 👤<name> settled …` — **closed by the user** on the page (the page always signs it):
+  nothing to carry
 
 | First glyph | State | Who acts |
 |---|---|---|

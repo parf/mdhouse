@@ -6,7 +6,8 @@ Glyph first in the line (status, then severity).
 
 **✅ is the agent's.** On the page I answer (💬, a pick, yes / no) — the item shows answered (green ?),
 the file keeps `❓`. The agent, once it carried the answer over or did the fix, sets `✅` and says where it
-went. The ✅ action in the form stays for the rare "close it, nothing to carry".
+went. The ✅ action in the form stays for the rare "close it, nothing to carry" — and a ✅ set by a
+person always goes with their badge: the page writes `💬 👤parf settled — …`.
 
 ## 1. Questions → answers, with a thread
 
