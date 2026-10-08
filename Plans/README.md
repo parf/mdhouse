@@ -154,7 +154,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   any repo, or that its repo ignores. `lib/scan.ts`.
 - **Git history, status, HEAD** — `git log --name-status`, `git status --porcelain`, and
   `rev-parse` plus `FETCH_HEAD`'s mtime for the front page's branch and last pull. `lib/git.ts`.
-- **Content search** — `rg --json` when ripgrep is installed, an in-process scan when it is not.
+- **Content search** — `rg --json --hidden` when ripgrep is installed, an in-process scan when it
+  is not; hits only in the scanned tree.
   `lib/search.ts`.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`

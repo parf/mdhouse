@@ -3,7 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { searchContent, searchInProcess } from '../src/lib/search';
-import type { MdFile } from '../src/lib/scan';
+import { scanRoot, type MdFile } from '../src/lib/scan';
+import { loadRootRules } from '../src/lib/ignore';
 
 let dir: string;
 let files: MdFile[];
@@ -76,4 +77,20 @@ describe('content search', () => {
     const { hits } = await searchContent(dir, files, 'owner2_name.');
     expect(hits).toHaveLength(0);
   });
+});
+
+test('ripgrep searches what the tree lists: dot-folders and any case in, the deny list out', async () => {
+  const repo = await mkdtemp(join(tmpdir(), 'mdhouse-search-tree-'));
+  try {
+    for (const rel of ['.github/CONTRIBUTING.md', 'dist/d.md', 'A.Md', 'n.md']) await Bun.write(join(repo, rel), 'needle\n');
+    Bun.spawnSync(['git', 'init', '-q'], { cwd: repo });
+    Bun.spawnSync(['git', 'add', '.'], { cwd: repo });
+    const scan = await scanRoot({ id: 'r', name: 'r', path: repo, writable: false }, await loadRootRules(repo));
+    expect(scan.files.map((f) => f.rel)).toEqual(['.github/CONTRIBUTING.md', 'A.Md', 'n.md']);
+    const { hits, degraded } = await searchContent(repo, scan.files, 'needle');
+    expect(degraded).toBe(false);
+    expect(hits.map((h) => h.rel).sort()).toEqual(['.github/CONTRIBUTING.md', 'A.Md', 'n.md']);
+  } finally {
+    await rm(repo, { recursive: true, force: true });
+  }
 });

@@ -77,14 +77,18 @@ async function hasRipgrep(): Promise<boolean> {
 
 let ripgrepAvailable: Promise<boolean> | null = null;
 
-async function searchWithRipgrep(rootPath: string, query: string, opts: SearchOptions): Promise<SearchResult | null> {
+/**
+ * Keeps only hits in `listed` — the scanned tree. ripgrep's file filter is not the scan's (the deny
+ * list, dot-folders), so it searches wider — `--hidden`, any case of `.md` — and the tree decides.
+ */
+async function searchWithRipgrep(rootPath: string, listed: Set<string>, query: string, opts: SearchOptions): Promise<SearchResult | null> {
   const { regex = false, maxHits = 500, maxPerFile = 20, includeIgnored = false } = opts;
 
   const args = [
     '--json',
-    '--glob', '*.md',
-    '--glob', '*.mdx',
-    '--glob', '*.MD',
+    '--hidden',
+    '--iglob', '*.md',
+    '--iglob', '*.mdx',
     '--smart-case',
     '--max-count', String(maxPerFile),
     '--max-filesize', '8M',
@@ -126,19 +130,21 @@ async function searchWithRipgrep(rootPath: string, query: string, opts: SearchOp
         continue;
       }
       if (event.type !== 'match') continue;
+      const path: string = event.data.path?.text ?? '';
+      const rel = path.startsWith(prefix) ? path.slice(prefix.length) : path;
+      if (!listed.has(rel)) continue;
       if (hits.length >= maxHits) {
         truncated = true;
         proc.kill();
         break;
       }
 
-      const path: string = event.data.path?.text ?? '';
       const raw: string = (event.data.lines?.text ?? '').replace(/\n$/, '');
       const { text, shift } = clipLine(raw);
       const toChar = byteOffsetMapper(raw);
 
       hits.push({
-        rel: path.startsWith(prefix) ? path.slice(prefix.length) : path,
+        rel,
         line: event.data.line_number ?? 0,
         text,
         ranges: (event.data.submatches ?? [])
@@ -237,7 +243,7 @@ export async function searchContent(
 
   ripgrepAvailable ??= hasRipgrep();
   if (await ripgrepAvailable) {
-    const result = await searchWithRipgrep(rootPath, query, opts);
+    const result = await searchWithRipgrep(rootPath, new Set(files.map((f) => f.rel)), query, opts);
     if (result) return result;
   }
   return searchInProcess(rootPath, files, query, opts);
