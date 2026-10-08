@@ -18,7 +18,7 @@ Today:
 > 💬 Yes, redirect for a year.
 ```
 
-A thread — one 💬 per turn, the author as a badge (`👤parf`, `👾claude`, `📡slack` — [README](README.md#badges--a-glyph-glued-to-a-name)), a blank `>` between
+A thread — one 💬 per turn, the author as a badge (`👤parf`, `👾claude`, `📡slack` — [glyphs](glyphs.md#badges--a-glyph-glued-to-a-name)), a blank `>` between
 turns so GitHub keeps them apart:
 
 ```markdown
