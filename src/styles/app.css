@@ -445,7 +445,7 @@ main {
   min-height: 23px;
   border-radius: 0;
 }
-.row:hover { background: var(--bg-hover); }
+.row:hover { background: var(--bg-hover); text-decoration: none; }
 .row[aria-current="true"] { background: var(--bg-active); color: var(--accent); font-weight: 550; }
 .row .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
 .row .twist { width: 12px; flex: none; color: var(--fg-faint); display: flex; justify-content: center; }
@@ -515,11 +515,12 @@ main {
 .hit {
   display: block;
   width: 100%;
+  color: inherit;
   text-align: left;
   padding: 5px 10px;
   border-bottom: 1px solid var(--border);
 }
-.hit:hover { background: var(--bg-hover); }
+.hit:hover { background: var(--bg-hover); text-decoration: none; }
 .hit .hit-path { display: flex; gap: 6px; align-items: baseline; font-size: 12px; }
 .hit .hit-name { font-weight: 550; }
 /* Your own work, marked in the mixed list. Uncommitted entries keep their status colour. */

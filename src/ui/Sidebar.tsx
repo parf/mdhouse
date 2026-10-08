@@ -9,6 +9,7 @@ import { Tree } from './Tree';
 import { highlightRanges, docName } from './format';
 import { Ago } from './Ago';
 import { RootSelect } from './RootSelect';
+import { follow } from './PageHead';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
   IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
@@ -69,6 +70,8 @@ export interface SidebarProps {
   onToggleDir: (path: string) => void;
   onOpenDirPage: (path: string) => void;
   onOpen: (path: string, line?: number) => void;
+  /** A document's URL, for the links in the lists. */
+  fileUrl: (path: string) => string;
   onMark: (path: string, mark: Mark, on: boolean) => void;
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
@@ -270,6 +273,7 @@ export function Sidebar(props: SidebarProps) {
               onToggleDir={props.onToggleDir}
               onOpenDirPage={props.onOpenDirPage}
               onOpen={props.onOpen}
+              fileUrl={props.fileUrl}
               onMark={props.onMark}
             />
           ) : (
@@ -321,22 +325,47 @@ function Favorites(props: SidebarProps & { sizes: Sizes; favorites: FavEntry[] }
 
   return (
     <div>
-      {props.favorites.map((f) => (
-        <button
-          key={f.rel}
-          class={`hit${f.missing ? ' muted' : ''}${sizeCls(props.sizes, f.rel)}`}
-          onClick={() => (f.isDir ? props.onTab('files') : props.onOpen(f.rel))}
-          title={f.missing ? `${f.rel} — not in the current tree` : f.rel}
-        >
-          <HitPath
-            name={f.isDir ? `${f.name}/` : f.name}
-            dir={f.dir} lead={f.isDir && <IconFolder size={12} />}
-            tail={<SizeMark size={props.sizes.get(f.rel)} end />}
-          />
-          {f.missing && <span class="meta">missing</span>}
-        </button>
-      ))}
+      {props.favorites.map((f) => {
+        const cls = `hit${f.missing ? ' muted' : ''}${sizeCls(props.sizes, f.rel)}`;
+        const title = f.missing ? `${f.rel} — not in the current tree` : f.rel;
+        const body = (
+          <>
+            <HitPath
+              name={f.isDir ? `${f.name}/` : f.name}
+              dir={f.dir} lead={f.isDir && <IconFolder size={12} />}
+              tail={<SizeMark size={props.sizes.get(f.rel)} end />}
+            />
+            {f.missing && <span class="meta">missing</span>}
+          </>
+        );
+        return f.isDir ? (
+          <button key={f.rel} class={cls} onClick={() => props.onTab('files')} title={title}>
+            {body}
+          </button>
+        ) : (
+          <FileHit key={f.rel} fileUrl={props.fileUrl} onOpen={props.onOpen} rel={f.rel} class={cls} title={title}>
+            {body}
+          </FileHit>
+        );
+      })}
     </div>
+  );
+}
+
+/** A list row that opens a document — a real link, so a middle click opens a tab. */
+function FileHit(p: {
+  fileUrl: (rel: string) => string;
+  onOpen: (rel: string, line?: number) => void;
+  rel: string;
+  line?: number;
+  class: string;
+  title: string;
+  children: preact.ComponentChildren;
+}) {
+  return (
+    <a class={p.class} href={p.fileUrl(p.rel)} title={p.title} onClick={(e) => follow(e, () => p.onOpen(p.rel, p.line))}>
+      {p.children}
+    </a>
   );
 }
 
@@ -427,10 +456,12 @@ function Recents(props: SidebarProps & { sizes: Sizes }) {
   return (
     <div>
       {entries.map((e) => (
-        <button
+        <FileHit
+          fileUrl={props.fileUrl}
+          onOpen={props.onOpen}
           class={`hit recent${e.uncommitted ? ` uncommitted ${e.status}` : ''}${sizeCls(props.sizes, e.rel)}`}
           key={`${e.rel}-${e.hash ?? e.at}`}
-          onClick={() => props.onOpen(e.rel)}
+          rel={e.rel}
           title={e.uncommitted ? `${e.rel} — ${e.status}, not committed` : e.rel}
         >
           <span class="recent-head">
@@ -455,7 +486,7 @@ function Recents(props: SidebarProps & { sizes: Sizes }) {
               {e.subject}
             </div>
           )}
-        </button>
+        </FileHit>
       ))}
     </div>
   );
@@ -493,13 +524,13 @@ function SearchResults(props: SidebarProps & { sizes: Sizes; nameHits: Array<{ f
           <div class="group-title">Files</div>
           {!nameHits.length && <p class="empty">No file names match.</p>}
           {nameHits.map(({ file }) => (
-            <button class={`hit${sizeCls(props.sizes, file.rel)}`} key={file.rel} onClick={() => props.onOpen(file.rel)} title={file.rel}>
+            <FileHit fileUrl={props.fileUrl} onOpen={props.onOpen} class={`hit${sizeCls(props.sizes, file.rel)}`} key={file.rel} rel={file.rel} title={file.rel}>
               <HitPath
                 name={file.name}
                 dir={file.dir}
                 tail={<SizeMark size={props.sizes.get(file.rel)} end />}
               />
-            </button>
+            </FileHit>
           ))}
         </>
       )}
@@ -514,9 +545,11 @@ function SearchResults(props: SidebarProps & { sizes: Sizes; nameHits: Array<{ f
 
       {searchIn.text &&
         textHits.map((hit, i) => (
-        <button
+        <FileHit
+          fileUrl={props.fileUrl}
+          onOpen={props.onOpen}
           class={`hit${sizeCls(props.sizes, hit.rel)}`}
-          key={`${hit.rel}:${hit.line}:${i}`} onClick={() => props.onOpen(hit.rel, hit.line)} title={hit.rel}>
+          key={`${hit.rel}:${hit.line}:${i}`} rel={hit.rel} line={hit.line} title={hit.rel}>
           <HitPath
             name={hit.rel.split('/').pop()!}
             dir={hit.rel.split('/').slice(0, -1).join('/')}
@@ -527,7 +560,7 @@ function SearchResults(props: SidebarProps & { sizes: Sizes; nameHits: Array<{ f
               part.hit ? <mark key={n}>{part.text}</mark> : <span key={n}>{part.text}</span>,
             )}
           </div>
-        </button>
+        </FileHit>
       ))}
 
       {searchIn.text && search?.truncated && <p class="empty">More matches exist — narrow the search.</p>}

@@ -6,7 +6,7 @@ import { docName, fileSize, likeMatcher } from './format';
 import { Ago } from './Ago';
 import { Dir } from './Home';
 import { sizeClass, SizeMark } from './Tree';
-import { PageHead } from './PageHead';
+import { PageHead, follow, inLink } from './PageHead';
 import { loadWide } from './wide';
 import { ASSET_EXT, MD_EXT, RAW_EXT } from '../lib/filetypes';
 
@@ -31,6 +31,8 @@ interface Props {
   /** Root-relative folder, '' for the root itself. */
   dir: string;
   onOpen: (rel: string) => void;
+  /** A document's URL, for the file links. */
+  fileUrl: (rel: string) => string;
   /** A folder's page url, root-relative dir. */
   dirUrl: (dir: string) => string;
   go: (url: string) => void;
@@ -67,7 +69,7 @@ const loadSort = (): Sort => {
  * Built from the tree the sidebar already holds, so it costs no request and follows live
  * changes with it.
  */
-export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }: Props) {
+export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear, rootId }: Props) {
   const [inRepo, setInRepo] = useState(false);
   useEffect(() => {
     let live = true;
@@ -254,7 +256,7 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
                 <tr
                   key={f.rel}
                   class={`file${small ? ` ${small}` : ''}${muted ? ' muted' : ''}${!md && !href ? ' inert' : ''}`}
-                  onClick={() => (md ? onOpen(f.rel) : href && window.open(href, '_blank', 'noopener'))}
+                  onClick={(e) => !inLink(e) && (md ? onOpen(f.rel) : href && window.open(href, '_blank', 'noopener'))}
                   title={f.rel}
                 >
                   {span > 0 && (
@@ -276,7 +278,17 @@ export function DirPage({ tree, dir, onOpen, dirUrl, go, onAbout, gear, rootId }
                     </td>
                   )}
                   <td class="name">
-                    <span class="link">{md ? docName(f.name) : f.name}</span>
+                    {md ? (
+                      <a class="link" href={fileUrl(f.rel)} onClick={(e) => follow(e, () => onOpen(f.rel))}>
+                        {docName(f.name)}
+                      </a>
+                    ) : href ? (
+                      <a class="link" href={href} target="_blank" rel="noopener">
+                        {f.name}
+                      </a>
+                    ) : (
+                      <span class="link">{f.name}</span>
+                    )}
                     {small === 'tiny' && <SizeMark size={f.size} />}
                   </td>
                   <td class="when">

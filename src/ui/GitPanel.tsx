@@ -6,6 +6,7 @@ import { sizeClass, SizeMark } from './Tree';
 import { docName, fileSize } from './format';
 import { IconChevron } from './icons';
 import { MD_EXT } from '../lib/filetypes';
+import { follow, inLink } from './PageHead';
 
 const LS_UNPUSHED = 'mdhouse.unpushedOpen';
 
@@ -19,7 +20,7 @@ export function targetOf(info: GitInfo, path: string, sha: string | undefined): 
   return { href: info.origin.blob.replace('{sha}', sha).replace('{path}', path.split('/').map(encodeURIComponent).join('/')) };
 }
 
-function FileLink({ info, path, sha, onOpen, label }: { info: GitInfo; path: string; sha?: string; onOpen: (rel: string) => void; label?: string }) {
+function FileLink({ info, path, sha, onOpen, fileUrl, label }: { info: GitInfo; path: string; sha?: string; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; label?: string }) {
   const t = targetOf(info, path, sha);
   const text = label ?? path;
   if (!t) return <span class="git-file plain">{text}</span>;
@@ -31,14 +32,7 @@ function FileLink({ info, path, sha, onOpen, label }: { info: GitInfo; path: str
     );
   }
   return (
-    <a
-      class="git-file"
-      href="#"
-      onClick={(e) => {
-        e.preventDefault();
-        onOpen(t.rel);
-      }}
-    >
+    <a class="git-file" href={fileUrl(t.rel)} onClick={(e) => follow(e, () => onOpen(t.rel))}>
       {text}
     </a>
   );
@@ -241,7 +235,7 @@ export function GitActions({ p, info, onDone, remote }: { p: string; info: GitIn
 }
 
 /** Every commit that touched the folder, any file type; a click shows its files. */
-export function CommitsView({ p, info, onOpen, revision }: { p: string; info: GitInfo; onOpen: (rel: string) => void; revision: number }) {
+export function CommitsView({ p, info, onOpen, fileUrl, revision }: { p: string; info: GitInfo; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; revision: number }) {
   const [commits, setCommits] = useState<GitCommit[] | null>(null);
   const [more, setMore] = useState(true);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -306,7 +300,7 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
                     {f.status === 'D' ? (
                       <span class="git-file plain">{f.path.slice(prefix.length) || f.path}</span>
                     ) : (
-                      <FileLink info={info} path={f.path} sha={notOnOrigin.has(c.hash) ? info.head?.branch : c.hash} onOpen={onOpen} label={f.path.startsWith(prefix) ? f.path.slice(prefix.length) : f.path} />
+                      <FileLink info={info} path={f.path} sha={notOnOrigin.has(c.hash) ? info.head?.branch : c.hash} onOpen={onOpen} fileUrl={fileUrl} label={f.path.startsWith(prefix) ? f.path.slice(prefix.length) : f.path} />
                     )}
                   </li>
                 ))}
@@ -332,7 +326,7 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
 }
 
 /** Every file git tracks under the folder: Markdown opens here, the rest on its host. */
-export function FilesView({ p, info, onOpen, revision }: { p: string; info: GitInfo; onOpen: (rel: string) => void; revision: number }) {
+export function FilesView({ p, info, onOpen, fileUrl, revision }: { p: string; info: GitInfo; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; revision: number }) {
   const [files, setFiles] = useState<string[] | null>(null);
   const [capped, setCapped] = useState(false);
   useEffect(() => {
@@ -364,7 +358,7 @@ export function FilesView({ p, info, onOpen, revision }: { p: string; info: GitI
           return (
             <li key={path} class={head ? 'first' : ''}>
               <span class="git-dir">{head ? (dir ? `${dir}/` : '') : ''}</span>
-              <FileLink info={info} path={path} sha={sha} onOpen={onOpen} label={rel.slice(cut + 1)} />
+              <FileLink info={info} path={path} sha={sha} onOpen={onOpen} fileUrl={fileUrl} label={rel.slice(cut + 1)} />
             </li>
           );
         })}
@@ -387,7 +381,7 @@ function changeOf(code: string): string {
  * What this checkout has that origin does not, in two lists: the commits not pushed, and the
  * files changed or added and not committed — every file type.
  */
-export function SyncLists({ info, onOpen, commits }: { info: GitInfo; onOpen: (rel: string) => void; commits?: boolean }) {
+export function SyncLists({ info, onOpen, fileUrl, commits }: { info: GitInfo; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; commits?: boolean }) {
   const isMine = (email: string, author: string) => !!info.me && (info.me.email ? email === info.me.email : author === info.me.name);
   const unpushed = info.sync?.unpushed ?? [];
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
@@ -444,7 +438,7 @@ export function SyncLists({ info, onOpen, commits }: { info: GitInfo; onOpen: (r
           </>}
         </section>
       )}
-      {info.dirty.length > 0 && <ChangedFiles info={info} onOpen={onOpen} />}
+      {info.dirty.length > 0 && <ChangedFiles info={info} onOpen={onOpen} fileUrl={fileUrl} />}
     </>
   );
 }
@@ -453,7 +447,7 @@ export function SyncLists({ info, onOpen, commits }: { info: GitInfo; onOpen: (r
  * The changed and added files, laid out as a folder page lays out its files: folder (named once
  * for a run), file, age, size — newest first. Markdown under the root opens here.
  */
-function ChangedFiles({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) => void }) {
+function ChangedFiles({ info, onOpen, fileUrl }: { info: GitInfo; onOpen: (rel: string) => void; fileUrl: (rel: string) => string }) {
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
   const files = [...info.dirty]
     .map((f) => {
@@ -481,7 +475,7 @@ function ChangedFiles({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) =
               <tr
                 key={f.path}
                 class={`file${opens ? '' : ' other'}${small ? ` ${small}` : ''}`}
-                onClick={opens ? () => onOpen(f.path.slice(prefix.length)) : undefined}
+                onClick={opens ? (e) => !inLink(e) && onOpen(f.path.slice(prefix.length)) : undefined}
                 title={f.path}
               >
                 {span > 0 && (
@@ -490,11 +484,15 @@ function ChangedFiles({ info, onOpen }: { info: GitInfo; onOpen: (rel: string) =
                   </td>
                 )}
                 <td class="name">
-                  {opens || f.size === undefined || !info.origin ? (
-                    <span class={opens ? 'link' : 'plain'}>{f.md ? docName(f.name) : f.name}</span>
+                  {opens ? (
+                    <a class="link" href={fileUrl(f.path.slice(prefix.length))} onClick={(e) => follow(e, () => onOpen(f.path.slice(prefix.length)))}>
+                      {docName(f.name)}
+                    </a>
+                  ) : f.size === undefined || !info.origin ? (
+                    <span class="plain">{f.md ? docName(f.name) : f.name}</span>
                   ) : (
                     // Not opened here: the file on its host, on this branch — as it was last pushed.
-                    <FileLink info={info} path={f.path} sha={info.head?.branch} onOpen={onOpen} label={f.name} />
+                    <FileLink info={info} path={f.path} sha={info.head?.branch} onOpen={onOpen} fileUrl={fileUrl} label={f.name} />
                   )}
                   {/* The same tags the front page's Uncommitted rows carry. */}
                   <span class={`tag ch-${change.replace(' ', '-')}`}>{change}</span>

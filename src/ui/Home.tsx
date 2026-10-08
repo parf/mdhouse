@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { api, type GitInfo, type RemoteState, type RootInfo } from './api';
 import { CommitsView, FilesView, GitActions, RemoteBar, SyncLists } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
-import { PageHead, type HomeView } from './PageHead';
+import { PageHead, follow, inLink, type HomeView } from './PageHead';
 import { loadWide } from './wide';
 import { IconGit } from './icons';
 import { preciseAgo, docName } from './format';
@@ -18,6 +18,8 @@ interface Props {
   /** Bumped by the live channel so the page reloads when the tree changes underneath it. */
   revision: number;
   onOpen: (path: string) => void;
+  /** A document's URL, for the file links. */
+  fileUrl: (path: string) => string;
   onAbout?: () => void;
   /** The settings button, at the end of the header row. */
   gear?: preact.ComponentChildren;
@@ -151,10 +153,10 @@ export function Home(props: Props) {
       })()}
       {git && <RemoteBar p={p} info={git} onState={setRemote} />}
       {git?.writable && <GitActions p={p} info={git} remote={remote} onDone={() => setGitTick((n) => n + 1)} />}
-      {git && <SyncLists info={git} onOpen={props.onOpen} commits={view === 'commits'} />}
+      {git && <SyncLists info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} commits={view === 'commits'} />}
 
-      {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
-      {view === 'files' && git && <FilesView p={p} info={git} onOpen={props.onOpen} revision={props.revision + gitTick} />}
+      {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} revision={props.revision + gitTick} />}
+      {view === 'files' && git && <FilesView p={p} info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} revision={props.revision + gitTick} />}
 
       {(view === 'commits' || view === 'files') ? null : <>
       {!digest && <div class="spinner" />}
@@ -203,7 +205,7 @@ export function Home(props: Props) {
                 <tr
                   class={row.loud ? 'file loud' : 'file'}
                   key={row.key}
-                  onClick={() => props.onOpen(row.r.rel)}
+                  onClick={(e) => !inLink(e) && props.onOpen(row.r.rel)}
                   title={row.r.rel}
                 >
                   {row.span > 0 && (
@@ -212,7 +214,9 @@ export function Home(props: Props) {
                     </td>
                   )}
                   <td class="name">
-                    <span class="link">{docName(row.r.name)}</span>
+                    <a class="link" href={props.fileUrl(row.r.rel)} onClick={(e) => follow(e, () => props.onOpen(row.r.rel))}>
+                      {docName(row.r.name)}
+                    </a>
                     {tagOf(row.r.status, row.loud) && <span class="tag">{tagOf(row.r.status, row.loud)}</span>}
                   </td>
                   {/* Empty under a commit — the commit's own age heads its block — but the cell

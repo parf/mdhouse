@@ -3,6 +3,7 @@ import type { Mark } from '../lib/prefs';
 import { IconChevron, IconFolder, IconStar, IconMute } from './icons';
 import { docName, fileSize, shortAgo } from './format';
 import { Ago, RecentHeat } from './Ago';
+import { follow } from './PageHead';
 
 interface Props {
   nodes: Node[];
@@ -13,6 +14,8 @@ interface Props {
   /** Open a folder's own page — the count badge on its row. */
   onOpenDirPage: (path: string) => void;
   onOpen: (path: string) => void;
+  /** A document's URL, for the row's link. */
+  fileUrl: (path: string) => string;
   onMark: (path: string, mark: Mark, on: boolean) => void;
 }
 
@@ -112,11 +115,12 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
   const small = sizeClass(size);
 
   return (
-    <button
+    <a
       class={`row file${isMuted ? ' muted' : ''}${isFav ? ' fav' : ''}${small ? ` ${small}` : ''}`}
       style={{ '--indent': `${indent}px` }}
       aria-current={p.current === file.path ? 'true' : undefined}
-      onClick={() => p.onOpen(file.path)}
+      href={p.fileUrl(file.path)}
+      onClick={(e) => follow(e, () => p.onOpen(file.path))}
       title={`${file.path} · ${size < 1000 ? `${size} B` : fileSize(size)}`}
     >
       {/* No page icon: every row here is a Markdown file, so it would say nothing. A favourite's
@@ -157,7 +161,7 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
           </MarkButton>
         </span>
       )}
-    </button>
+    </a>
   );
 }
 
@@ -177,7 +181,9 @@ function MarkButton({
       title={label}
       aria-label={label}
       aria-pressed={on}
+      // Inside the row's link: neither the row's handler nor the link's navigation.
       onClick={(e) => {
+        e.preventDefault();
         e.stopPropagation();
         onPress();
       }}

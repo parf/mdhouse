@@ -314,14 +314,16 @@ function App() {
 
   // ── actions ─────────────────────────────────────────────────────────────
 
-  const openFile = useCallback(
-    (rel: string, line?: number) => {
-      const root = roots.find((r) => r.id === rootId);
+  /** A document's URL; the root's id leads it only when more than one root is served. */
+  const fileUrl = useCallback(
+    (rel: string, inRoot = rootId) => {
+      const root = roots.find((r) => r.id === inRoot);
       const prefix = roots.length > 1 && root ? `${root.id}/` : '';
-      go(`/d/${(prefix + rel).split('/').map(encodeURIComponent).join('/')}`, line);
+      return `/d/${(prefix + rel).split('/').map(encodeURIComponent).join('/')}`;
     },
-    [go, roots, rootId],
+    [roots, rootId],
   );
+  const openFile = useCallback((rel: string, line?: number) => go(fileUrl(rel), line), [go, fileUrl]);
 
   /** A folder page's URL, built the way document URLs are; `''` is the root's own page. */
   const dirPageUrl = useCallback(
@@ -491,6 +493,7 @@ function App() {
           onToggleDir={toggleDir}
           onOpenDirPage={openDirPage}
           onOpen={openFile}
+          fileUrl={fileUrl}
           onMark={setMark}
           onHome={() => go('/')}
           onAbout={() => setAboutOpen(true)}
@@ -519,6 +522,7 @@ function App() {
             showIgnored={showIgnored}
             revision={revision}
             onOpen={openFile}
+            fileUrl={fileUrl}
             onAbout={() => setAboutOpen(true)}
             gear={pageGear}
             dir={dirTarget.dir}
@@ -532,6 +536,7 @@ function App() {
             tree={tree?.root.id === dirTarget.rootId ? tree : null}
             dir={dirTarget.dir}
             onOpen={openFile}
+            fileUrl={fileUrl}
             dirUrl={(d) => dirPageUrl(d, dirTarget.rootId)}
             go={go}
             onAbout={() => setAboutOpen(true)}
@@ -546,6 +551,7 @@ function App() {
             showIgnored={showIgnored}
             revision={revision}
             onOpen={openFile}
+            fileUrl={fileUrl}
             onAbout={() => setAboutOpen(true)}
             gear={pageGear}
             dir=""
@@ -574,6 +580,7 @@ function App() {
           rootName={docRoot?.name}
           editHref={editHref}
           onReload={refreshDoc}
+          dirUrl={(dir) => dirPageUrl(dir, doc?.root)}
           rootDirUrl={dirPageUrl('', doc?.root)}
           onOpenRootDir={() => openDirPage('', doc?.root)}
           rootGitUrl={`${dirPageUrl('', doc?.root)}?git`}

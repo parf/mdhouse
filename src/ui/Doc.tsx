@@ -15,6 +15,7 @@ import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
 import { MD_EXT } from '../lib/filetypes';
+import { follow } from './PageHead';
 
 /** The two diff views; either can be the one a toggle turns on. */
 type DiffView = 'patch' | 'marked';
@@ -39,6 +40,8 @@ interface Props {
   onMark: (path: string, mark: Mark, on: boolean) => void;
   /** A breadcrumb folder: open its page, and reveal it in the sidebar tree. */
   onOpenDir: (dir: string) => void;
+  /** A breadcrumb folder's page url. */
+  dirUrl: (dir: string) => string;
   onAbout?: () => void;
   /** The settings button, placed on the title's line. */
   gear?: preact.ComponentChildren;
@@ -93,6 +96,7 @@ export function Doc({
   onNavigate,
   onMark,
   onOpenDir,
+  dirUrl,
   onAbout,
   gear,
   rootName,
@@ -907,13 +911,14 @@ export function Doc({
             const last = i === dirs.length - 1;
             return (
               <span key={path}>
-                <button
+                <a
                   class={`crumb${last ? ' here' : ''}`}
-                  onClick={() => onOpenDir(path)}
+                  href={dirUrl(path)}
+                  onClick={(e) => follow(e, () => onOpenDir(path))}
                   title={`Open ${path}/ — every file in it`}
                 >
                   {d}
-                </button>
+                </a>
                 {!last && <span class="sep"> / </span>}
               </span>
             );

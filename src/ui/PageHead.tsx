@@ -18,6 +18,16 @@ export const viewQuery = (id: HomeView) => {
   return param ? `?git=${param}` : '?git';
 };
 
+/** A link's click: a plain left click runs `run` in the app; a middle or modified click is the browser's (a new tab). */
+export function follow(e: MouseEvent, run: () => void) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+  e.preventDefault();
+  run();
+}
+
+/** True for a click inside a link — a clickable row leaves those to the link. */
+export const inLink = (e: MouseEvent) => !!(e.target as Element | null)?.closest('a');
+
 /** A real link, so a middle click opens a tab; a plain click stays in the app. */
 function Link(props: { href: string; go: (url: string) => void; class?: string; title?: string; role?: 'tab'; selected?: boolean; children: preact.ComponentChildren }) {
   return (
@@ -27,11 +37,7 @@ function Link(props: { href: string; go: (url: string) => void; class?: string; 
       title={props.title}
       role={props.role}
       aria-selected={props.role ? props.selected : undefined}
-      onClick={(e) => {
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-        e.preventDefault();
-        props.go(props.href);
-      }}
+      onClick={(e) => follow(e, () => props.go(props.href))}
     >
       {props.children}
     </a>

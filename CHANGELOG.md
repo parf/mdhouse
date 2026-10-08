@@ -114,6 +114,8 @@
 - The folder switcher writes `~` for the home folder when `$HOME` ends in `/`
 - At ≤720px the sidebar lies over the page, which keeps the whole width (a 400px phone had an 80px
   text column); a tap beside it closes it
+- Every file in the tree, search, Favs / Recent / Mine, the front page, folder pages and the git
+  view, and a document's breadcrumb folders, is a real link: middle-click, Ctrl-click and copy link work
 
 ## 1.5.0 — 2026-10-07
 
