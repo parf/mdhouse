@@ -35,6 +35,7 @@
   (`version` above 1) is read, never written over
 - `prefs.json` is written 0600 (its folder created 0700): other local users can no longer read the
   password hashes
+- A symlinked `prefs.json` (stow, chezmoi) stays a link; a save writes its target
 - A `{word}` at the end of a line stays on the page (`GET /users/{id}`, a `{placeholder}`, a table
   cell); only `{#id .class key=value}` is an attribute list
 - A tick, an answer or an added block is written whole or not at all: a write cut short (disk

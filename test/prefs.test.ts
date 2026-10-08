@@ -294,3 +294,15 @@ test('prefs.json is written 0600 in a config dir created 0700 — it holds passw
     process.umask(old);
   }
 });
+
+test('a symlinked prefs.json stays a link; the save goes to its target (D6)', async () => {
+  const { lstat, mkdir, readFile: read, symlink } = await import('node:fs/promises');
+  await mkdir(join(dir, 'dotfiles'));
+  const real = join(dir, 'dotfiles', 'prefs.json');
+  const link = join(dir, 'linked.json');
+  await writeFile(real, '{}');
+  await symlink(real, link);
+  await (await Prefs.load(link)).addSaved('/x');
+  expect((await lstat(link)).isSymbolicLink()).toBe(true);
+  expect(JSON.parse(await read(real, 'utf8')).saved).toEqual(['/x']);
+});
