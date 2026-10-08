@@ -168,6 +168,21 @@ Search falls back to a JS regex when rg is missing.
   `> ✅ 👉 **rewrite:** one pass …`
 - in mdhouse: select text → a 👉 button writes the request after its block, the quote prefilled
 
+## 🎯 Selecting what to process
+
+After `/findings` I pick the few that matter: **double-click** an item (or **9 🎯** in its form) marks it
+`🎯`, written first in the line:
+
+```markdown
+- 🎯 🔴 `src/cli.ts:536` --fg hands its folders over …
+- 🎯 ❓ 🟠 `package.json:46` the dev script …
+- 🟠 `src/server.ts:631` limit=abc …          ← not selected: left for later
+```
+
+- when any item carries `🎯`, `/fixes` and `/answers` act on those only
+- the agent removes the `🎯` from each item it acted on
+- the strip has a `🎯 N` filter; a selected item has a ring
+
 ## Summary strip — filters by level
 
 At the top of a page with items: `6` │ `🔴 2` `🟠 3` `⚪ 4` `✅ 2`. The first button is just the total

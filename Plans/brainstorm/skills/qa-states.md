@@ -30,6 +30,13 @@ Append; never edit or delete a turn, never touch the user's words. The agent's *
 `💬👾 → …`, `` 💬👾 `<sha>` — … ``, `💬👾 🎫<ID> → …` — are not turns: they never
 reopen an item and never count as its last word.
 
+## 🎯 Selected
+
+`🎯` first in an item (before its stage and severity: `- 🎯 🔴 …`) selects it for the next run. **When
+any item in the file carries `🎯`, `/answers` and `/fixes` act on the `🎯` items only** — the rest wait.
+Acting on one removes its `🎯` (`- 🎯 🔴 …` → `- ✅ 🔴 …`, or `- ❓ 🔴 …` after a reply). Never add `🎯`
+yourself.
+
 ## The state of an item
 
 `✅` `🚫` `⏸️` are **closed** — the agent never acts on them. To reopen, the user sets `⏳` or `❓`.

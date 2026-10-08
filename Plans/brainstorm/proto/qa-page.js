@@ -25,15 +25,15 @@
    * 💬 ⚠️ (need more); `pick` saves and picks the option the comment is on.
    */
   const ACTIONS = {
-    question: [['✅', '✅ settled'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['partial', '⚠️ need more', 'A partial answer: it stays open'], ['🎫', '🎫 ticket', 'File a ticket — name who takes it: 👤name or 👥team']],
-    finding: [['✅', '✅ done', 'Fixed / done'], ['🚫', '🚫 reject', 'Rejected — say why'], ['⏸️', '⏸️ defer', 'Deferred — later'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⚠️', '⚠️ partial', 'Partly done — follow-up needed'], ['🎫', '🎫 ticket', 'File a ticket — name who takes it: 👤name or 👥team']],
+    question: [['✅', '✅ settled'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['partial', '⚠️ need more', 'A partial answer: it stays open'], ['🎫', '🎫 ticket', 'File a ticket — name who takes it: 👤name or 👥team'], ['🎯', '🎯 target', 'Select it for the next run — the agent then acts on the 🎯 ones only']],
+    finding: [['✅', '✅ done', 'Fixed / done'], ['🚫', '🚫 reject', 'Rejected — say why'], ['⏸️', '⏸️ defer', 'Deferred — later'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⚠️', '⚠️ partial', 'Partly done — follow-up needed'], ['🎫', '🎫 ticket', 'File a ticket — name who takes it: 👤name or 👥team'], ['🎯', '🎯 target', 'Select it for the next run — the agent then acts on the 🎯 ones only']],
     option: [['pick', 'pick it', 'Save and pick this option']],
-    request: [['✅', '✅ done'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer']],
+    request: [['✅', '✅ done'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer'], ['🎯', '🎯 target', 'Select it for the next run — the agent then acts on the 🎯 ones only']],
     proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
     comment: [],
   };
   /** One number per action, the same in every form — Alt+number presses it. */
-  const NUM = { '✅': 1, yes: 1, '🚫': 2, no: 2, '⏸️': 3, '⏳': 4, partial: 5, '⚠️': 5, '🎫': 6, elaborate: 7, pick: 8 };
+  const NUM = { '✅': 1, yes: 1, '🚫': 2, no: 2, '⏸️': 3, '⏳': 4, partial: 5, '⚠️': 5, '🎫': 6, elaborate: 7, pick: 8, '🎯': 9 };
   function editor(host, { kind = 'comment', prefill = '', placeholder = 'Reply…', save = '💬', onSave }) {
     closeEditors();
     const ed = document.createElement('div');
@@ -56,6 +56,14 @@
     sign.checked = signed();
     sign.addEventListener('change', () => setSigned(sign.checked));
     const done = (action) => {
+      if (action === '🎯') {
+        const item = (host.closest && host.closest('details, .item, .req')) || host;
+        const text = ta.value.trim();
+        if (text) threadOf(item, 'thread q-thread').append(reply(text, sign.checked));
+        toggleTarget(item);
+        ed.remove();
+        return;
+      }
       // 🎫 asks the agent to file a ticket: it needs at least who takes it
       if (action === '🎫' && !/(👤|👥)\S+/u.test(ta.value)) {
         ta.placeholder = '🎫 needs who takes it: 👤name or 👥team (and what, if not obvious)';
@@ -284,6 +292,23 @@
   doc.addEventListener('toggle', markHidden, true);
   addEventListener('resize', markHidden);
 
+  // ---- 🎯 select for the next run: double-click an item, or 🎯 in its form
+  function toggleTarget(host) {
+    const k = (host.dataset.k || '').split(' ').filter(Boolean);
+    host.dataset.k = (k.includes('🎯') ? k.filter((x) => x !== '🎯') : [...k, '🎯']).join(' ');
+    counts();
+  }
+  doc.addEventListener('dblclick', (e) => {
+    if (e.target.closest('textarea, input, button, a, .c-edit, .f-edit')) return;
+    const host = e.target.closest('details[data-k], .item[data-k], .req[data-k]');
+    if (!host) return;
+    e.preventDefault();
+    getSelection()?.removeAllRanges();
+    // the first click of the two opened the form (a click anywhere does) — a double-click means select
+    closeEditors();
+    toggleTarget(host);
+  });
+
   // ---- the strip: the total, then thresholds 🔴 ⊂ 🟠 ⊂ ⚪ (open), ✅ (closed)
   const strip = document.getElementById('strip');
   const has = (r, ...g) => r.dataset.k.split(' ').some((k) => g.includes(k));
@@ -293,7 +318,8 @@
     ['🔴', (r) => open(r) && has(r, '🔴'), (n) => `High — ${n}`],
     ['🟠', (r) => open(r) && (has(r, '🔴', '🟠') || (has(r, '❓', '⁉️') && !has(r, '⚪', '🔵'))), (n) => `Medium and up, and ❓ ⁉️ without a severity — ${n}`],
     ['⚪', open, (n) => `All open — ${n}`],
-    ['✅', (r) => !open(r), (n) => `All closed: ✅ 🚫 ⏸️ 🎫 — ${n}`],
+    ['✅', (r) => !open(r), (n) => `All closed: ✅ 🚫 ⏸️ — ${n}`],
+    ['🎯', (r) => has(r, '🎯'), (n) => `Selected for the next run — ${n} (double-click an item to select)`],
   ];
   let on = null;
   const rows = () => [...doc.querySelectorAll('[data-k]')];
@@ -318,7 +344,7 @@
       rows().forEach((r) => r.classList.toggle('hide', on !== null && !test(r)));
     });
     strip.append(b);
-    if (k === 'all') strip.insertAdjacentHTML('beforeend', '<span class="sep" aria-hidden="true">│</span>');
+    if (k === 'all' || k === '✅') strip.insertAdjacentHTML('beforeend', '<span class="sep" aria-hidden="true">│</span>');
   }
   counts();
 })();

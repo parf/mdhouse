@@ -21,7 +21,7 @@ const SEVERITY = ['🔴', '🟠', '⚪', '🔵'];
 /** 🎫 is not closed: a ticket requested — the agent files it, then sets ✅ with the ticket's id. */
 const CLOSED = ['✅', '🚫', '⏸️'];
 const ASK = ['❓', '⁉️'];
-const GLYPHS = ['❓', '⁉️', '⏳', '✅', '🚫', '⏸️', '🎫', '⛔', '❌', '⚠️', '👉', ...SEVERITY];
+const GLYPHS = ['❓', '⁉️', '⏳', '✅', '🚫', '⏸️', '🎫', '⛔', '❌', '⚠️', '👉', '🎯', ...SEVERITY];
 /** A glyph as written, with or without its variation selector. */
 const norm = (g: string) => g.replace(/️/g, '');
 const known = new Map(GLYPHS.map((g) => [norm(g), g]));
@@ -31,6 +31,8 @@ const known = new Map(GLYPHS.map((g) => [norm(g), g]));
 interface Reply { partial: boolean; suggest: boolean; verdict: '✅' | '🚫' | null; who: string | null; body: string }
 interface Item {
   glyphs: string[];
+  /** 🎯 — selected for the next run */
+  target: boolean;
   head: string;
   option: 'radio' | 'check' | null;
   picked: boolean;
@@ -39,17 +41,20 @@ interface Item {
 }
 
 /** The glyphs a line opens with (at most three), and the rest of it. */
-function leadGlyphs(text: string): { glyphs: string[]; rest: string } {
+function leadGlyphs(text: string): { glyphs: string[]; rest: string; target: boolean } {
   const glyphs: string[] = [];
   let rest = text;
-  for (let n = 0; n < 3; n++) {
-    const m = /^(\p{Extended_Pictographic}|[⁉⚠⏸])️?(?:\s+|$)/u.exec(rest);
+  let target = false;
+  for (let n = 0; n < 4; n++) {
+    const m = /^(\p{Extended_Pictographic}|[⁉⚠⏸])\uFE0F?(?:\s+|$)/u.exec(rest);
     const g = m && known.get(norm(m[0].trim()));
     if (!g) break;
-    glyphs.push(g);
+    // 🎯 selects the item for the next run — a flag, not a stage
+    if (g === '🎯') target = true;
+    else glyphs.push(g);
     rest = rest.slice(m![0].length);
   }
-  return { glyphs, rest };
+  return { glyphs, rest, target };
 }
 
 /** `> 💬 ⚠️ 👤name text` lines, the `>` already off: one reply per 💬. */
@@ -129,11 +134,11 @@ function parseItem(first: string, children: string[]): Item {
     picked = box[2] !== ' ';
     text = text.slice(box[0].length);
   }
-  const { glyphs, rest } = leadGlyphs(text);
+  const { glyphs, rest, target } = leadGlyphs(text);
   const head = [rest];
   let i = 0;
   while (i < children.length && !/^(>|[-*+]\s)/.test(children[i]!)) head.push(children[i++]!);
-  const item: Item = { glyphs, head: head.join('\n'), option, picked, replies: [], items: [] };
+  const item: Item = { glyphs, target, head: head.join('\n'), option, picked, replies: [], items: [] };
   while (i < children.length) {
     if (children[i]!.startsWith('>')) {
       const q: string[] = [];
@@ -201,7 +206,7 @@ function threadHtml(rs: Reply[], cls = 'thread', quiet = false): string {
 }
 
 /** What the strip and the filters read: the glyphs, plus `open` for a line not yet settled. */
-const keyOf = (glyphs: string[], open: boolean) => [...glyphs, ...(open ? ['open'] : [])].join(' ');
+const keyOf = (glyphs: string[], open: boolean, target = false) => [...glyphs, ...(open ? ['open'] : []), ...(target ? ['🎯'] : [])].join(' ');
 
 function glyphButton(g: string, tip: string): string {
   return `<span class="g-btn${SEVERITY.includes(g) || !ASK.includes(g) ? ' sev' : g === '⁉️' ? ' dis' : ''}" data-tip="${esc(tip)}">${g}</span>`;
@@ -227,7 +232,7 @@ function itemHtml(it: Item): string {
   const closed = CLOSED.includes(status) || answeredAsk;
   const sevText = more.length ? `${more.join(' ')} ` : '';
   const text = `${sevText}${inline(it.head)}`;
-  const key = keyOf(it.glyphs, !closed);
+  const key = keyOf(it.glyphs, !closed, it.target);
   const mark = answeredAsk ? `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>` : null;
   const radio = options.some((o) => o.option === 'radio');
   const name = `o${++uid}`;
@@ -272,14 +277,14 @@ function quoteHtml(lines: string[]): string {
   const split = body.findIndex((l, i) => i > 0 && /^(?:(?:✅|🚫)\s*)?(💬|💡)/u.test(l));
   const q = split < 0 ? body : body.slice(0, split);
   const replies = split < 0 ? [] : parseReplies(body.slice(split));
-  const { glyphs, rest } = leadGlyphs(q[0]!);
+  const { glyphs, rest, target } = leadGlyphs(q[0]!);
   const question = [rest, ...q.slice(1)].join('\n').trim();
   const status = glyphs[0]!;
   const request = glyphs.includes('👉');
   const last = lastTurn(replies);
   const closed = CLOSED.includes(status);
   const answered = closed || (ASK.includes(status) && isAnswered(replies));
-  const key = keyOf(glyphs, !answered);
+  const key = keyOf(glyphs, !answered, target);
 
   if (status === '⏳' || status === '🎫') {
     return `<ul class="items"><li class="item" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Reply')}</span><span>${inline(question)}</span><span class="btn">${status === '🎫' ? 'ticket pending' : 'waiting on agent'}</span></div>`
@@ -311,7 +316,7 @@ export function renderDoc(src: string): string {
   };
   for (let i = 0; i < lines.length; ) {
     const line = lines[i]!;
-    if (/^>\s?(❓|⁉|👉|✅|🚫|⏸|🎫|⏳|⛔|❌|⚠)/u.test(line)) {
+    if (/^>\s?(🎯\s*)?(❓|⁉|👉|✅|🚫|⏸|🎫|⏳|⛔|❌|⚠)/u.test(line)) {
       flush();
       const q: string[] = [];
       while (i < lines.length && lines[i]!.startsWith('>')) q.push(lines[i++]!);
@@ -382,6 +387,10 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
+/* 🎯 selected for the next run: a ring and a 🎯 at the right */
+[data-k~="🎯"] { outline: 2px solid var(--pick); outline-offset: 1px; position: relative; }
+[data-k~="🎯"]::before { content: "🎯"; position: absolute; right: 6px; top: 3px; font-size: 13px; }
+[data-k~="🎯"] > .head, [data-k~="🎯"] > summary { padding-right: 22px; }
 /* 💡 a suggested answer: blue, with accept / edit */
 .reply.proposal { background: var(--pick-bg); border-left-color: var(--pick); }
 .s-act { display: flex; gap: 8px; margin: 0; padding: 8px 0 2px; }

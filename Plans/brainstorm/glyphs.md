@@ -58,6 +58,12 @@ First in a 💬 it is the author.
 | 🏷️ | tag / area | `🏷️ui` | quiet |
 | 📅 | date | `📅2026-10-06` | quiet |
 
+## Selection
+
+| Glyph | Meaning | Use | Renders |
+|---|---|---|---|
+| 🎯 | **new** — selected for the next run: when any item has it, the agent processes those only | first in the line, before the stage: `- 🎯 🔴 …`; double-click an item, or 9 🎯 in its form; the agent removes it once it acted | a ring and 🎯; strip filter `🎯 N` |
+
 ## Options — choosing
 
 | Glyph / markup | Meaning | Use | Renders |

@@ -88,14 +88,14 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 
 ## 3. Findings — stages
 
-- 🔴 `src/cli.ts:536` `--fg` hands its folders over when the port is busy and exits 0, so under
+- 🎯 🔴 `src/cli.ts:536` `--fg` hands its folders over when the port is busy and exits 0, so under
   systemd the unit "succeeds", nothing retries, and a copy started by hand silently becomes the
   live one. Fix: exit 1 under `MDHOUSE_SERVICE=1`.
 - ❓ 🟠 `package.json:46` the `dev` script feeds `.` to the live instance whenever :7777 is up,
   instead of starting anything.
   > 💬👾 pin it to :7790 with its own config, or drop the script — it is advertised in the
   > README, so dropping it needs a README change too.
-- 🟠 `src/server.ts:631` `/api/search` takes `limit=abc` as `NaN`, and `hits.length >= NaN` is never
+- 🎯 🟠 `src/server.ts:631` `/api/search` takes `limit=abc` as `NaN`, and `hits.length >= NaN` is never
   true — the result has no cap at all.
 - ❓ ⚪ `doc/qa.md:155` the glyph table lists ⏳ as "in progress" while the brainstorm uses it for
   "waiting on the agent" — same thing, or two states?
