@@ -4,9 +4,8 @@
  * markdown-it was chosen for one structural reason: every block token carries
  * `token.map = [startLine, endLine]`. A core rule copies that onto the rendered element as
  * `data-line`, so every paragraph, list item and checkbox in the DOM knows which source line
- * it came from. The marked-up diff view stands on it already, and it is what will make checkbox
- * write-back, "push this section to Claude" and editor scroll-sync cheap instead of a
- * reverse-engineering exercise.
+ * it came from. The marked-up diff view and every write from the page — a tick, an answer, a
+ * block added under a heading — address the file by it.
  *
  * There is exactly one anchor scheme, generated server-side and used unchanged by the contents
  * list, so a link to a heading and the contents entry for it can never disagree.
@@ -275,7 +274,8 @@ function qaPlugin(md: MarkdownIt): void {
 const TASK_LINE = /^(\s*(?:>\s*)*(?:[-*+]|\d+[.)])\s+)\[([ xX])\]/;
 
 /**
- * Tick or untick the task on one line of a file — the only edit mdhouse makes to a document.
+ * Tick or untick the task on one line of a file — one of the three edits mdhouse makes to a
+ * document, with answering a Q&A item (qa.ts) and adding a block under a heading (insert.ts).
  *
  * `line` is the 1-based line within the body (what `data-line` says); front matter is counted
  * back in here. `hash` is the fingerprint the page rendered with: if the line no longer matches

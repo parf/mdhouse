@@ -1,7 +1,7 @@
 /**
  * Adding a block to a document under one of its headings — the third edit mdhouse makes, after
- * ticking a checkbox and answering a question. Pure and line-based, like `qa.ts`: the server
- * re-reads the file, checks the heading is still the one the page showed, and inserts.
+ * ticking a checkbox and answering a question. Pure, like `qa.ts`: the server re-reads the file,
+ * checks the heading is still the one the page showed, and inserts.
  */
 import { blockMd, insertLines, lineHash, QUOTE_START, quoteLines } from './qa';
 
@@ -64,7 +64,8 @@ export function formatBlock(text: string, kind: AddKind, who: string): string[] 
 /**
  * Add a block under a heading: right under it, or at the end of its section (after the
  * section's last line, before the blank lines that lead to the next heading). Separated by
- * blank lines; refused if the heading is not the one the page showed. New lines end as their neighbour does.
+ * blank lines; refused if the heading is not the one the page showed. New lines end as their
+ * neighbour does.
  */
 export function insertBlock(
   src: string,

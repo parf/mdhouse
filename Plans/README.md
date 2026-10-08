@@ -78,7 +78,7 @@ the repository's `git config user.name` (else the login), resolved on the server
 
 ### A tick changes one line, or nothing
 
-`toggleTask(src, line, hash)` in `render.ts` is the only edit made to a document. The rendered
+`toggleTask(src, line, hash)` in `render.ts` flips one bracket, nothing else. The rendered
 checkbox carries `data-line` (1-based, within the body) and `data-hash` (FNV-1a of the raw source
 line); the server re-reads the file, counts front matter back in, and flips the bracket only if
 that line still hashes the same and still looks like a task item — else `409`, and the page

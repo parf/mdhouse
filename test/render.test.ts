@@ -165,7 +165,7 @@ describe('paths that are not plain ASCII', () => {
   });
 });
 
-describe('toggleTask — the one edit mdhouse makes to a document', () => {
+describe('toggleTask — ticking a task in the document', () => {
   const tick = (src: string, line: number, text: string) => toggleTask(src, line, lineHash(text));
 
   test('flips one bracket and keeps every other byte', () => {
