@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 — 2026-10-08
+
+Breaking: addresses lose `/d/` — `/d/…` links redirect (301); a folder can no longer be named
+`api`, `ws`, `vendor`, `settings`, `d` … as a root id (it gets `-2`). 1.5.0 was never published: its
+changes are here.
 
 ### Changed
 
@@ -45,6 +49,28 @@
 - Check & Save is gone: closing an item is ✅ in its form; a plain `- [ ]` is ticked, not answered
 - `mdhouse user-add <login>` asks for the password (echo off) or reads it from stdin — not in
   shell history or the process list; `<login:pwd>` still works
+- A folder page and its git view share one header: logo; the folder name (folder page → its
+  git view, git view → the folder page); GIT / Favs / Recent / Mine / Commits / Files and ⚙ on
+  the right, links each — the tab is in the url (`?git=favs|mine|commits|files`)
+- A folder page and its git view honor wide mode
+- A folder page: **ALL | MD** over the size column — every file under the folder, or Markdown only;
+  images and text files open in a tab, the rest are listed
+- Folder page table sized by its content: age and size right after the names
+- Git view: Unpushed commits fold (▸ in its heading), remembered
+- Commits tab: an `unpushed` badge on each commit not on origin; the Unpushed commits block is
+  left out there
+- History: a file changed locally has an **Uncommitted changes** row on top (+x −y), shown
+  even with the panel hidden; a click shows the changes
+- **Reset file** in the head of a document's uncommitted changes (`--rw`): back to the last
+  commit, after a confirm — `POST /api/git/reset`
+- A document's header: a git button before ✎, to the root's git view (inside a repo only)
+- A document's title: the folder page's size and logo, in the same dark green
+- Settings: each folder's name links to its folder page
+- The ❓ / ⁉️ / 💬 / heading-add buttons close their open form when clicked again, as Cancel does
+- List items opening with a severity glyph — `🔴 🟠 ⚪ 🟢` — can be answered too
+- A linked `.html` file opens rendered, sandboxed — its scripts run, but cannot reach mdhouse;
+  `.css`, `.scss`, `.sass`, `.less` open as text
+- The npm package leaves out the README screenshots (833 kB → 184 kB); npmjs shows them from GitHub
 
 ### Fixed
 
@@ -138,36 +164,6 @@
   text column); a tap beside it closes it
 - Every file in the tree, search, Favs / Recent / Mine, the front page, folder pages and the git
   view, and a document's breadcrumb folders, is a real link: middle-click, Ctrl-click and copy link work
-
-## 1.5.0 — 2026-10-07
-
-### Changed
-
-- A folder page and its git view share one header: logo; the folder name (folder page → its
-  git view, git view → the folder page); GIT / Favs / Recent / Mine / Commits / Files and ⚙ on
-  the right, links each — the tab is in the url (`?git=favs|mine|commits|files`)
-- A folder page and its git view honor wide mode
-- A folder page: **ALL | MD** over the size column — every file under the folder, or Markdown only;
-  images and text files open in a tab, the rest are listed
-- Folder page table sized by its content: age and size right after the names
-- Git view: Unpushed commits fold (▸ in its heading), remembered
-- Commits tab: an `unpushed` badge on each commit not on origin; the Unpushed commits block is
-  left out there
-- History: a file changed locally has an **Uncommitted changes** row on top (+x −y), shown
-  even with the panel hidden; a click shows the changes
-- **Reset file** in the head of a document's uncommitted changes (`--rw`): back to the last
-  commit, after a confirm — `POST /api/git/reset`
-- A document's header: a git button before ✎, to the root's git view (inside a repo only)
-- A document's title: the folder page's size and logo, in the same dark green
-- Settings: each folder's name links to its folder page
-- The ❓ / ⁉️ / 💬 / heading-add buttons close their open form when clicked again, as Cancel does
-- List items opening with a severity glyph — `🔴 🟠 ⚪ 🟢` — can be answered too
-- A linked `.html` file opens rendered, sandboxed — its scripts run, but cannot reach mdhouse;
-  `.css`, `.scss`, `.sass`, `.less` open as text
-- The npm package leaves out the README screenshots (833 kB → 184 kB); npmjs shows them from GitHub
-
-### Fixed
-
 - `mdhouse exit` no longer stops the systemd service — it would stay down, and the next
   `mdhouse <dir>` started a copy outside systemd; it names `systemctl --user stop …` instead
 - The service, with its port taken, fails so systemd retries, instead of handing its folders to
