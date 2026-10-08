@@ -58,6 +58,10 @@ since the page was loaded. Elsewhere they are shown, not editable.
 
 `~~no longer true~~` → ~~no longer true~~
 
+## Line breaks
+
+`\` at the end of a line or `\ ` — a line break: `one \ two` → one<br>two
+
 ## Autolinks
 
 A bare address becomes a link: https://bun.sh. Links that leave mdhouse open in a new tab.

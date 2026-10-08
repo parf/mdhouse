@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `\` at the end of a line or `\ ` is a line break — in questions and answers too
+
 ## 2.0.1 — 2026-10-08
 
 ### Added

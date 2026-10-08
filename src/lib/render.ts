@@ -412,6 +412,20 @@ function curlyTextPlugin(md: MarkdownIt): void {
   );
 }
 
+/**
+ * `\ ` — a backslash before a space — is a line break, like `\` at the end of a line. Q&A text
+ * is joined into one line, where that end-of-line `\` becomes `\ `. Code spans are untouched.
+ */
+function backslashBreakPlugin(md: MarkdownIt): void {
+  md.inline.ruler.before('escape', 'mdhouse_backslash_space', (state, silent) => {
+    if (state.src.charCodeAt(state.pos) !== 0x5c || state.src.charCodeAt(state.pos + 1) !== 0x20) return false;
+    if (!silent) state.push('hardbreak', 'br', 0);
+    state.pos += 2;
+    while (state.src.charCodeAt(state.pos) === 0x20) state.pos++;
+    return true;
+  });
+}
+
 /** A root-relative file's page — every kind of file, images too; `dir`: a folder's page. */
 function localHref(ctx: RenderContext, target: string, hash?: string, dir = false): string {
   return `${ctx.docUrl(target)}${dir && target ? '/' : ''}${hash ? `#${hash}` : ''}`;
@@ -613,6 +627,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
     allowedAttributes: ['id', 'class'],
   });
   md.use(curlyTextPlugin);
+  md.use(backslashBreakPlugin);
   md.use(footnote);
   md.use(anchor, {
     slugify,

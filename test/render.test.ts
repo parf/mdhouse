@@ -5,6 +5,14 @@ import { parseQa } from '../src/lib/qa';
 const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/r/${rel}` };
 
 describe('markdown rendering', () => {
+  test('a backslash at the end of a line or before a space is a line break, not in code', async () => {
+    const { html } = await render('one\\\ntwo \\ three `a\\ b`\n\n> ❓ q \\\n> more\n', ctx);
+    expect(html).toContain('one<br>');
+    expect(html).toContain('two <br>\nthree');
+    expect(html).toContain('<code>a\\ b</code>');
+    expect(html).toMatch(/q <br>\s*more/);
+  });
+
   test('every block carries its source line', async () => {
     const { html } = await render('# One\n\nsecond paragraph\n\n- item\n', ctx);
     expect(html).toContain('<h1 data-line="1"');
