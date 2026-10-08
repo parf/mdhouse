@@ -10,6 +10,8 @@ describe('the systemd unit', () => {
     expect(text).toContain('Environment=PATH=/usr/bin:/bin');
     expect(text).toContain('Environment=MDHOUSE_SERVICE=1');
     expect(text).toContain('WantedBy=default.target');
+    // Tagged like the launcher's `logger -t mdhouse`, so `journalctl -t mdhouse` shows the service too (C5).
+    expect(text).toContain('SyslogIdentifier=mdhouse\n');
     expect(text).not.toContain('XDG_CONFIG_HOME');
   });
 

@@ -74,6 +74,8 @@ export function unitText(u: UnitSpec): string {
     'WorkingDirectory=%h',
     `Environment=${q(`PATH=${u.path}`)}`,
     'Environment=MDHOUSE_SERVICE=1',
+    // The journal would tag it `bun`; `mdhouse` matches the launcher's `logger -t mdhouse`.
+    'SyslogIdentifier=mdhouse',
     ...(u.xdgConfigHome ? [`Environment=${q(`XDG_CONFIG_HOME=${u.xdgConfigHome}`)}`] : []),
     'Restart=on-failure',
     'RestartSec=5',

@@ -62,6 +62,9 @@
   they say "not answering" within 2 s and exit 1
 - A `--fg` on another host but the same port no longer takes the running mdhouse's control socket
   (which left that one reachable only by `kill`); it says `mdhouse exit` cannot reach it
+- `journalctl -t mdhouse -f` shows the systemd service too (`SyslogIdentifier=mdhouse`; it was
+  tagged `bun`) — an installed unit: `mdhouse service install`, then
+  `systemctl --user restart mdhouse`
 
 ## 1.5.0 — 2026-10-07
 
