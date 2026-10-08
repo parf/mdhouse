@@ -22,7 +22,7 @@ changes are here.
   the links to GitHub & co. are gone
 - Nothing under `.git` is shown
 - A document's meta line no longer shows `RW` — the sidebar has it
-- **One Q&A markup** (`Plans/brainstorm/2026-10-07/markup.md`): a list item opening with a glyph — `- ❓ …`,
+- **One Q&A markup** (`.claude/skills/markup.md`): a list item opening with a glyph — `- ❓ …`,
   `- 🔴 D1 …`, `- ✅ 🟠 …` — or a `> ❓` quote; its thread quoted under it, one `💬` per turn,
   badges `👤name` `👾`; options `( )` / `[ ]`; `💡` proposals; 🎯 selected
 - Settled items (✅ 🚫 ⏸️, an answered ❓, 🔵 notes) fold, muted; open questions and 🔴 / 🟠 issues
