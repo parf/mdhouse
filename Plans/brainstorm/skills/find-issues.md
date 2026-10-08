@@ -10,7 +10,7 @@ disable-model-invocation: true
 Writes issues for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
-- `scope` — default: **since the last review** — `<sha>..HEAD`, the `<sha>` from the last `# Issues — … · <sha>`
+- `scope` — default: **since the last review** — `<sha>..HEAD`, the `<sha>` after `..` in the last `# Issues — … · <from>..<sha>`
   heading of the newest `Plans/issues/*.md`. The very first run (no issues file yet) reviews the whole
   project at HEAD — once. Or: `release`, `all`, a `<rev>..` range, a path
 - `mine` — only the git user's own commits (a repo others commit to, or with merge traffic)
@@ -76,10 +76,13 @@ the meta-signals deciding where to look hardest — the format below and these r
 ## Format
 
 **One file per day: `Plans/issues/YYYY-MM-DD.md`** (today's date) — create it on the day's first run; a
-later run the same day appends to it. Each run opens with one heading, subsystems under it as `##`:
+later run the same day appends to it. Each run opens with one heading, subsystems under it as `##` —
+`<from>..<sha>` is what was reviewed: the last run's sha, or on the first run the first commit
+(`git rev-list --max-parents=0 HEAD`): `Issues — Oct 7, 2026 · 16c3fb5..b34933b`, then
+`Issues — Oct 8, 2026 · b34933b..7bb6875`:
 
 ```markdown
-# Issues — <scope> · <Mon D, YYYY> · <HEAD short sha>
+# Issues — <Mon D, YYYY> · <from>..<HEAD short sha>
 
 - 🔴 D1 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
   Evidence: corrupted the file, `mdhouse <dir> -p` → the saved folders gone
