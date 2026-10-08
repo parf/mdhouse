@@ -86,7 +86,8 @@ export interface Digest {
 }
 
 interface RootState {
-  rules: IgnoreRules;
+  /** The root's `.mdhouseignore` and the deny list; reloaded with the scans. */
+  rules?: IgnoreRules;
   scans: Map<boolean, ScanResult>;
   status?: Map<string, FileStatus>;
   changes?: GitChange[];
@@ -113,7 +114,7 @@ export class Store {
   private async stateFor(root: Root): Promise<RootState> {
     let s = this.state.get(root.id);
     if (!s) {
-      s = { rules: await loadRootRules(root.path, this.opts.extraDeny), scans: new Map() };
+      s = { scans: new Map() };
       this.state.set(root.id, s);
     }
     return s;
@@ -132,7 +133,10 @@ export class Store {
     delete s.changes;
     delete s.head;
     delete s.authors;
-    if (!gitOnly) s.scans.clear();
+    if (!gitOnly) {
+      s.scans.clear();
+      delete s.rules;
+    }
   }
 
   async scan(root: Root, includeIgnored: boolean): Promise<ScanResult> {
@@ -140,6 +144,7 @@ export class Store {
     const cached = s.scans.get(includeIgnored);
     if (cached) return cached;
 
+    s.rules ??= await loadRootRules(root.path, this.opts.extraDeny);
     const result = await scanRoot(root, s.rules, { includeIgnored, noGit: this.opts.noGit });
     s.scans.set(includeIgnored, result);
     return result;

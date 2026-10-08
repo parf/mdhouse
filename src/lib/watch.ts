@@ -77,7 +77,8 @@ export class Watcher {
         this.schedule();
         return;
       }
-      if (!MD_EXT.test(rel)) return;
+      // The ignore files change what the tree lists: the root's `.mdhouseignore`, any `.gitignore`.
+      if (!MD_EXT.test(rel) && rel !== '.mdhouseignore' && !/(^|\/)\.gitignore$/.test(rel)) return;
 
       let set = this.pending.get(root.id);
       if (!set) this.pending.set(root.id, (set = new Set()));

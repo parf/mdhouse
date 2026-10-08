@@ -48,3 +48,23 @@ test('a commit sets off a git event: in a linked worktree, and in a folder of a 
     rmSync(base, { recursive: true, force: true });
   }
 });
+
+test('an edited .mdhouseignore or .gitignore sets off an fs event', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mdhouse-watch-ign-'));
+  const root: Root = { id: 'r', name: 'r', path: dir, writable: false };
+  const events: WatchEvent[] = [];
+  const watcher = new Watcher((e) => events.push(...e));
+  try {
+    mkdirSync(join(dir, 'sub'));
+    watcher.watchRoot(root);
+    await Bun.sleep(150);
+    writeFileSync(join(dir, '.mdhouseignore'), 'drafts\n');
+    writeFileSync(join(dir, 'sub', '.gitignore'), 'tmp/\n');
+    writeFileSync(join(dir, 'other.txt'), 'x\n');
+    await Bun.sleep(400);
+    expect(events.flatMap((e) => (e.kind === 'fs' ? e.paths : [])).sort()).toEqual(['.mdhouseignore', 'sub/.gitignore']);
+  } finally {
+    watcher.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
