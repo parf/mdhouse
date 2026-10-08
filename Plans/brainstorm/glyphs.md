@@ -62,7 +62,7 @@ First in a 💬 it is the author.
 
 | Glyph | Meaning | Use | Renders |
 |---|---|---|---|
-| 🎯 | **new** — selected for the next run: when any item has it, the agent processes those only | first in the line, before the stage: `- 🎯 🔴 …`; double-click an item, or 9 🎯 in its form; the agent removes it once it acted | a ring and 🎯; strip filter `🎯 N` |
+| 🎯 | **new** — selected for the next run: when any item has it, the agent processes those only | first in the line, before the stage: `- 🎯 🔴 …`; a click on a line's 🎯 (right, on hover) — at once, no form; also a double-click or 9 🎯 in the form; the agent removes it once it acted | bold red bars left and right, 🎯 lit; strip filter `🎯 N` |
 
 ## Options — choosing
 

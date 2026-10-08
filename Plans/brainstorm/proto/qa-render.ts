@@ -247,7 +247,7 @@ function itemHtml(it: Item): string {
     const pick = options.filter((o) => o.picked).map((o) => `${o.option === 'radio' ? '◉' : '☑'} ${labels(inline(o.head))}`).join(' · ');
     const answer = options.length ? (pick ? `<span class="t-a">${pick}</span>` : '') : last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : '';
     return `<details class="settled" data-k="${key}"><summary>${mark ?? `<span class="g">${glyphButton(status, tip)}</span>`}`
-      + `<span class="t"><span class="t-q">${text}</span>${answer}</span></summary>`
+      + `<span class="t"><span class="t-q">${text}</span>${answer}</span><button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button></summary>`
       + `${opts}${threadHtml(it.replies, 'thread', CLOSED.includes(status))}</details>`;
   }
   const sev = it.glyphs.find((g) => SEVERITY.includes(g));
@@ -263,7 +263,7 @@ function itemHtml(it: Item): string {
   const doneBtn = !closed && options.some((o) => o.option === 'check') ? '<button class="c-done" data-tip="Done picking: the question turns ✅">✓ done</button>' : '';
   const chip = status === '🎫' ? '<span class="btn">ticket pending</span>' : status === '⏳' || triaged ? '<span class="btn">waiting on agent</span>' : doneBtn;
   return `<li class="${cls}" data-k="${key}"${sev ? ` data-sev="${sev}"` : ''}><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
-    + `${options.length ? '<button class="c-btn" data-tip="Comment on the question">💬</button>' : ''}</div>`
+    + `${options.length ? '<button class="c-btn" data-tip="Comment on the question">💬</button>' : ''}<button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button></div>`
     + `${opts}${threadHtml(it.replies, 'thread q-thread')}</li>`;
 }
 
@@ -287,7 +287,7 @@ function quoteHtml(lines: string[]): string {
   const key = keyOf(glyphs, !answered, target);
 
   if (status === '⏳' || status === '🎫') {
-    return `<ul class="items"><li class="item" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Reply')}</span><span>${inline(question)}</span><span class="btn">${status === '🎫' ? 'ticket pending' : 'waiting on agent'}</span></div>`
+    return `<ul class="items"><li class="item" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Reply')}</span><span>${inline(question)}</span><span class="btn">${status === '🎫' ? 'ticket pending' : 'waiting on agent'}</span><button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button></div>`
       + `${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</li></ul>`;
   }
   if (answered) {
@@ -295,12 +295,12 @@ function quoteHtml(lines: string[]): string {
     const mark = closed ? `<span class="g">${glyphButton(status, 'Reply')}</span>` : `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>`;
     const lead = request ? '👉 ' : '';
     return `<details class="settled" data-k="${key}"><summary>${mark}`
-      + `<span class="t"><span class="t-q">${lead}${inline(question)}</span>${last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : ''}</span></summary>`
+      + `<span class="t"><span class="t-q">${lead}${inline(question)}</span>${last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : ''}</span><button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button></summary>`
       + `${threadHtml(replies, 'thread', closed)}</details>`;
   }
-  if (request) return `<div class="req" data-k="${key}">${glyphButton('👉', 'Reply, or close the request')} ${inline(question)}${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</div>`;
+  if (request) return `<div class="req" data-k="${key}">${glyphButton('👉', 'Reply, or close the request')} ${inline(question)}<button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button>${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</div>`;
   // the same block a list question gets: one form for every unanswered question
-  return `<ul class="items"><li class="item${ASK.includes(status) ? ' wait-me' : ''}${status === '⁉️' ? ' dis' : ''}" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Answer')}</span><span>${inline(question)}</span></div>`
+  return `<ul class="items"><li class="item${ASK.includes(status) ? ' wait-me' : ''}${status === '⁉️' ? ' dis' : ''}" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Answer')}</span><span>${inline(question)}</span><button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button></div>`
     + `${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</li></ul>`;
 }
 
@@ -387,10 +387,15 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
-/* 🎯 selected for the next run: a ring and a 🎯 at the right */
-[data-k~="🎯"] { outline: 2px solid var(--pick); outline-offset: 1px; position: relative; }
-[data-k~="🎯"]::before { content: "🎯"; position: absolute; right: 6px; top: 3px; font-size: 13px; }
-[data-k~="🎯"] > .head, [data-k~="🎯"] > summary { padding-right: 22px; }
+/* 🎯 selected for the next run: bold red bars left and right, and its 🎯 lit */
+[data-k~="🎯"] { box-shadow: inset 4px 0 0 #e5383b, inset -4px 0 0 #e5383b !important; }
+/* the 🎯 button on every line: a click selects / unselects at once — no form */
+.item, details.settled, .req { position: relative; }
+.item > .head, details.settled > summary, .req { padding-right: 26px; }
+.tgt { position: absolute; right: 6px; top: 3px; border: 0; background: none; padding: 0 2px; font-size: 14px;
+  cursor: pointer; opacity: 0; filter: grayscale(1); }
+.item:hover > .head .tgt, details.settled:hover > summary .tgt, .req:hover .tgt, .tgt:focus { opacity: .55; }
+[data-k~="🎯"] .tgt { opacity: 1 !important; filter: none; }
 /* 💡 a suggested answer: blue, with accept / edit */
 .reply.proposal { background: var(--pick-bg); border-left-color: var(--pick); }
 .s-act { display: flex; gap: 8px; margin: 0; padding: 8px 0 2px; }

@@ -107,6 +107,14 @@
   };
 
   doc.addEventListener('click', (e) => {
+    // ---- 🎯 on a line: select / unselect at once
+    const tg = e.target.closest('.tgt');
+    if (tg) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleTarget(tg.closest('details[data-k], .item[data-k], .req[data-k]'));
+      return;
+    }
     // ---- the first glyph of a line is its button
     const g = e.target.closest('.g-btn, .g-answered');
     if (g) {

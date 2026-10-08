@@ -170,8 +170,8 @@ Search falls back to a JS regex when rg is missing.
 
 ## 🎯 Selecting what to process
 
-After `/findings` I pick the few that matter: **double-click** an item (or **9 🎯** in its form) marks it
-`🎯`, written first in the line:
+After `/findings` I pick the few that matter: a click on the **🎯** at the right of a line (it shows on hover)
+selects it at once — no form; a double-click or **9 🎯** in the form do the same. Written first in the line:
 
 ```markdown
 - 🎯 🔴 `src/cli.ts:536` --fg hands its folders over …
@@ -181,7 +181,7 @@ After `/findings` I pick the few that matter: **double-click** an item (or **9 �
 
 - when any item carries `🎯`, `/fixes` and `/answers` act on those only
 - the agent removes the `🎯` from each item it acted on
-- the strip has a `🎯 N` filter; a selected item has a ring
+- a selected item: bold red bars (4px) left and right, its 🎯 lit; the strip has a `🎯 N` filter
 
 ## Summary strip — filters by level
 
