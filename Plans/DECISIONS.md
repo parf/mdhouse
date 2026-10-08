@@ -80,15 +80,14 @@ with a command the user already knows — not to a file only mdhouse knows about
 
 ## Saved directories live in `prefs.json`
 
-One config file, not two. `-P` and `--rm` go to a running daemon over the control socket, so it
-starts or stops serving the folder at once. `-P` rather than `-p`, because `-p` has always been
-the port.
+One config file, not two. `-p` (`--perm`) and `--rm` go to a running daemon over the control socket, so it
+starts or stops serving the folder at once. `-P` is gone: it names `-p`.
 
 ## Write access belongs to a folder, and is granted only from a terminal
 
 `--rw` used to be one flag for the whole process, so starting one scratch folder with `--rw`
 made every saved folder writable too. Now it covers the folders named on that command; a saved
-folder carries its own flag (`-P --rw`), and `-P` records the folder exactly as asked, so
+folder carries its own flag (`-p --rw`), and `-p` records the folder exactly as asked, so
 re-saving without `--rw` is how write access is taken away. A running daemon can be told to make
 a folder writable (`mdhouse <dir> --rw`, over the user-only socket) but never the reverse, and the
 Settings page shows `RW` without a switch: no browser click can ever enable writing.
@@ -173,7 +172,7 @@ GitHub as the hand-written answers around it. `> A:` answers are read but 💬 i
 
 Replaces "An answer is written in the question's own syntax".
 
-- The markup of `Plans/brainstorm/2026-10-07/markup.md`, states of `skills/qa-states.md`. Items are found on
+- The markup of `.claude/skills/markup.md`, states of `.claude/skills/qa-states.md`. Items are found on
   markdown-it's block parse (`qa.ts` `qaItems`) — the renderer and the server read the same
   parse, so a lazy line, a blank line before a thread, a sub-item's reply never split them.
 - Old forms are rewritten into it on every read (`legacy.ts`); a write writes the converted file.
@@ -181,8 +180,6 @@ Replaces "An answer is written in the question's own syntax".
 - A plain `- [ ]` (not under a ❓) is ticked only, never answered.
 
 ## Access, auto-rw and the git page — 2026-10-07
-
-Planned, not built.
 
 - **For trusted networks and developers, no TLS.** Outside the intranet, forward the port with
   ssh.

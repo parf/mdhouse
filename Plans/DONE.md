@@ -159,6 +159,33 @@ and raw HTML escaped — in a diff, the markup is the content.
   a box and a glyph, a question changed and an answer written on disk under an open editor, and
   each heading action. A modified file opens on its diff, where editing is off.
 
+## 2.0 — every file a page, one Q&A markup, agent skills
+
+- **Addresses without `/d/`:** `/<rootId>/<rel>`, built and parsed by `lib/urls.ts` on server and
+  page alike; a root id never takes a reserved name (`-2`); `/d/…` → 301, query kept.
+- **Every file a page:** `kindOf()` by name, an unknown name by a NUL in its first 8 kB; Shiki line
+  spans `id="L<n>"`, plain over 300 kB, no body over 5 MB. `/api/raw` sandboxes every reply (an SVG
+  opened alone ran its script as mdhouse); HTML `allow-scripts` at an opaque origin; `.git` is 404.
+- **One Q&A markup:** five forms with their own range rules → one item model on markdown-it's block
+  parse (`qaItems`), shared by renderer and server; old forms converted on every read
+  (`legacy.ts`), so a write writes them converted. `applyQa`: say · verdict · pick · tick · done ·
+  target · edit, each against the item's fingerprint → 409.
+- **File mentions:** a code span that is a whole path, a text word with a `/` or a Markdown name;
+  existence asked in one batch, at most 500 per document.
+- **Agent skills** in `.claude/skills/`: `/ask-questions` → `/resolve-questions`, `/find-issues` →
+  `/fix-issues`; one `qa-states.md` so the four skills and the renderer read the same states.
+  `/review` and `/resolve-findings` dropped.
+- **First full `/find-issues` run** (`16c3fb5..b34933b`, subsystems A–I): 82 issues — 78 ✅, 3 🚫;
+  each fix its own commit naming its id.
+- **prefs.json, several writers:** one read (a rename is never seen half), `O_EXCL`
+  `prefs.json.lock` (2 s stale → taken over), 0600 / 0700, symlink target kept, unknown keys kept,
+  a newer `version` never written.
+- **Writes whole or not at all:** temp file beside the document, renamed over it. Line endings
+  from the neighbouring line. ⇊ finds its section on the block parse.
+- **Measured:** the show-ignored scan off when the setting is off (big ignored trees ~240 ms → 0);
+  40 repos asked in parallel (~225 → ~50 ms); the Files tab capped at 5000 (100k files: 2.7 s,
+  1.9 MB → 0.4 s, 94 kB); a fence over 100 KB plain; the npm package without PNGs (833 → 184 kB).
+
 ## Packaging
 
 - **Every npm release before 1.0.0 served `500 Build Failed` at `/`.** Bun bundles the UI at
@@ -174,6 +201,6 @@ and raw HTML escaped — in a diff, the markup is the content.
 - UI changes are checked in headless Chrome against the real trees, including at narrow widths
   and with a root of ~1 800 files.
 - Anything that writes config is tested against a temporary `XDG_CONFIG_HOME` and a spare port,
-  never against the live instance. 182 tests.
+  never against the live instance. 275 tests.
 - Restarting the live instance re-adds folders that were added for the session only — a bare
   restart brings back just the saved ones.

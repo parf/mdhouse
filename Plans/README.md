@@ -6,10 +6,10 @@ for users in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## Purpose
 
-Point mdhouse at a directory and every `.md` file under it becomes a browsable, searchable site
-in the browser, live, with git history and diffs beside each document. In folders served with
-`--rw`, ticking a checkbox saves the file. Next: a changes listing per root, and pushing a
-section to Claude or Codex for feedback.
+A Markdown workspace on your own machine — read every file, answer questions, triage issues and
+commit, together with your AI agents. Point mdhouse at a directory and every file under it opens
+at its own address, live, with git history and diffs. In folders served with `--rw` the page
+writes ticks, answers and added blocks into the file, and commits, pulls, pushes from the git view.
 
 Ticket: PRF-55 — <https://linear.app/realmo-product/issue/PRF-55/md-files-viewereditor-web-mdhouse>
 
@@ -58,8 +58,8 @@ control socket) lives outside every tree.
 
 ### A Q&A change touches its item, or nothing
 
-- `src/lib/qa.ts` — the item model of the markup (`Plans/brainstorm/2026-10-07/markup.md`): `qaItems` on markdown-it's
-  block tokens, shared by the renderer and the server; `stateOf` (qa-states.md); `applyQa` — say ·
+- `src/lib/qa.ts` — the item model of the markup (`.claude/skills/markup.md`): `qaItems` on markdown-it's
+  block tokens, shared by the renderer and the server; `stateOf` (`.claude/skills/qa-states.md`); `applyQa` — say ·
   verdict · pick · tick · done · target · edit
 - `src/lib/qa-html.ts` — an item as HTML: `data-qa`, `data-line`, `data-hash` (`lineHash` of the item's
   lines), `data-k`; every reply / option / 💡 its own `data-line`
@@ -116,8 +116,8 @@ diff passes `--no-ext-diff --no-textconv`.
 
 ### `data-line` on every rendered block
 
-A `markdown-it` core rule copies `token.map[0]` onto each block element. The marked-up diff view
-already uses it; checkbox write-back, section → AI and editor scroll-sync will. Do not remove it.
+A `markdown-it` core rule copies `token.map[0]` onto each block element. The marked-up diff view,
+ticks, Q&A writes and ↓ ⇊ use it; section → AI and editor scroll-sync will. Do not remove it.
 
 ### One anchor scheme
 
@@ -163,6 +163,17 @@ contents list, so a heading link and its contents entry cannot disagree.
 - Rendered links: every file in the root → its page (`localHref`); `<img src>` → `/api/raw`.
 - `/api/git/diff`: Markdown lines rendered (`markupHunks`); any other file's as typed.
 - The CLI goes over the `0600` unix socket instead, which a browser cannot reach at all.
+
+### Agent skills read the page's states
+
+`.claude/skills/` — Claude Code skills, not in the npm package:
+
+- `/ask-questions` → `/resolve-questions` — questions in the markup (default `Plans/questions.md`);
+  answers carried into `DECISIONS.md` / `TODO.md`, then `✅`
+- `/find-issues` → `/fix-issues` — a read-only reviewer per touched subsystem (`Plans/subsystems.md`)
+  writes `Plans/issues/YYYY-MM/YYYY-MM-DD.md`; the triaged and `🎯` ones done, `✅` + the commit
+- shared: `qa-states.md` (states, who acts), `markup.md`, `glyphs.md`, `review-checklist.md`
+- `qa.ts` `stateOf` and `qa-states.md` say the same states — change both together
 
 ## Data sources
 
