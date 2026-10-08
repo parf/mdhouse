@@ -79,7 +79,7 @@ Live, git-aware — GitHub Markdown and more flavors
 ## ✎ Working on docs — with you and your agents
 
 Writes need a folder served with `--rw`: `mdhouse -p --rw folder(s)`. The markup is plain GFM —
-[Questions and answers](doc/qa.md); try every form on the [Q&A playground](doc/qa-playground.md).
+[Questions and answers](doc/qa.md); try every form on the [Q&A playground](doc/qa-playground.md). Every syntax on one page: [Syntax](doc/syntax.md).
 
 **Edit while reading**
 
