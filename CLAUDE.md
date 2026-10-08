@@ -180,7 +180,7 @@ Only on "publish".
 - [ ] Pack, smoke-test and publish from a clean checkout of it — `npm pack` / `npm publish` take the
       working tree, uncommitted edits included: `git worktree add $S/rel-src HEAD && cd $S/rel-src && bun install`
 - [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, no PNGs —
-      ~55 files, ~184 kB (1.4.x); much more means a stray file
+      ~61 files, ~216 kB (2.0); much more means a stray file
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh
       T=$S/rel; mkdir -p $T/prefix $T/cfg $T/notes

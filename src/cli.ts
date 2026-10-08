@@ -18,7 +18,7 @@ import { ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { hashPassword, parseCidr, validLogin } from './lib/access';
 
-const USAGE = `mdhouse — browse every .md file under a directory
+const USAGE = `mdhouse — a Markdown workspace on your own machine
 
   mdhouse [dir ...] [options]     start it (in the background)
   mdhouse exit [options]          stop the one running  (also: stop)
