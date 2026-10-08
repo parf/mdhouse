@@ -1,12 +1,12 @@
 ---
-name: review-questions
-description: Process my answers to questions written in the Q&A markup — carry the settled ones into decisions and actions, answer my "need more" / "elaborate" / "no", and mark each item's new state in place. Pair of /ask.
-trigger: /review-questions
+name: answers
+description: Process my answers to questions written in the Q&A markup — carry the settled ones into decisions and actions, answer my "need more" / "elaborate" / "no", and mark each item's new state in place. Pair of /questions.
+trigger: /answers
 ---
 
-# /review-questions [file]
+# /answers [file]
 
-Reads a questions file (default `Plans/questions.md`, or the file `/ask` last wrote) and acts on
+Reads a questions file (default `Plans/questions.md`, or the file `/questions` last wrote) and acts on
 what I answered on the page. Syntax: [../markup.md](../markup.md).
 
 Chat in Russian; the file in English. My words are carried over verbatim.

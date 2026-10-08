@@ -1,13 +1,13 @@
 ---
-name: ask
-description: Ask me questions in the Q&A markup — plain, with a 💡 suggested answer, or with options to pick — so I can answer them on the page. Pair: /review-questions processes the answers.
-trigger: /ask
+name: questions
+description: Ask me questions in the Q&A markup — plain, with a 💡 suggested answer, or with options to pick — so I can answer them on the page. Pair: /answers processes the answers.
+trigger: /questions
 ---
 
-# /ask [file] [topic]
+# /questions [file] [topic]
 
 Writes questions into a Markdown file for me to answer in mdhouse. Syntax: [../markup.md](../markup.md),
-glyphs: [../README.md](../README.md). `/review-questions` reads the answers back.
+glyphs: [../README.md](../README.md). `/answers` reads the answers back.
 
 - `file` — where the questions go: the document they are about, or `Plans/questions.md` (default)
 - `topic` — what to ask about; else the decisions still open in the current task

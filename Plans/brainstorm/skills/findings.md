@@ -1,12 +1,12 @@
 ---
-name: review
-description: Review code and docs with parallel reviewers and write findings in the Q&A markup — severity first, file:line, verified, a 💡 fix I can say yes or no to. Review only; never edits code. Pair: /resolve.
-trigger: /review
+name: findings
+description: Review code and docs with parallel reviewers and write findings in the Q&A markup — severity first, file:line, verified, a 💡 fix I can say yes or no to. Review only; never edits code. Pair: /fixes.
+trigger: /findings
 ---
 
-# /review [scope] [focus]
+# /findings [scope] [focus]
 
-Writes findings into `Plans/findings.md` for me to triage on the page; `/resolve` acts on my calls.
+Writes findings into `Plans/findings.md` for me to triage on the page; `/fixes` acts on my calls.
 Syntax: [../markup.md](../markup.md), glyphs: [../README.md](../README.md). Never edits code or docs.
 
 - `scope` — `release` (default: commits since the last `vX.Y.Z` tag), `<rev>..`, a path, or `all`

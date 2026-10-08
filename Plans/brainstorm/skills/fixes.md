@@ -1,10 +1,10 @@
 ---
-name: resolve
-description: Act on my triage of findings written in the Q&A markup — do what I approved (✅ 💡, ⏳), answer "need more" / "elaborate", verify every premise by execution, and record the outcome in place. Pair of /review.
-trigger: /resolve
+name: fixes
+description: Act on my triage of findings written in the Q&A markup — do what I approved (✅ 💡, ⏳), answer "need more" / "elaborate", verify every premise by execution, and record the outcome in place. Pair of /findings.
+trigger: /fixes
 ---
 
-# /resolve [file]
+# /fixes [file]
 
 Reads `Plans/findings.md` (or `file`) after I triaged it on the page, and acts. Syntax:
 [../markup.md](../markup.md). A finding is a hypothesis: verify it by execution before touching code.
