@@ -26,9 +26,11 @@ src/
   server.ts      Bun.serve — routes, API, WebSocket, roots added and removed at runtime
   index.html     the bundle entry point
   app.tsx        shell: routing, data loading, keyboard, live channel
-  lib/           server side: roots, ignore, prefs, scan, render, qa, qa-html, legacy, insert, git, search, store, watch,
-                 control (unix socket), service (systemd unit), loghint (where output goes)
-  ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, Settings, AboutModal, QaEditor, QaStrip, qa-page,
+  lib/           server side: roots, access, filetypes, ignore, prefs, scan, render, qa, qa-html, legacy,
+                 insert, git, gitpage, search, store, watch, control (unix socket), service (systemd unit),
+                 loghint (where output goes)
+  ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, GitPanel, PageHead, Settings,
+                 AboutModal, QaEditor, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
                  RootSelect, tree building, icons, formatting
   styles/        one stylesheet, CSS custom properties, light and dark
 ```
@@ -119,6 +121,9 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 ### Who may talk to the server
 
+- Routes: the page — `/`, `/d/*`, `/settings` (the bundle at `/__app/`), `/vendor/mermaid/*`, `/ws`; read —
+  `/api/roots`, `/api/tree`, `/api/doc`, `/api/raw`, `/api/asset`, `/api/files`, `/api/search`, `/api/recents`,
+  `/api/digest`, `/api/git`, `/api/git/commits|files|remote|log|diff`; write — below.
 - **Every route** (and the WebSocket) first passes `trustedHost()`: the `Host` header must be
   `localhost`, an IP literal, or — when bound to the network with `--host` — this machine's own
   name. Anything else is `421`. This is the DNS-rebinding guard: a rebound page looks
@@ -130,7 +135,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   applies to a running server at once. The page routes hand out the HTML bundle's page from a
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
   code with no data, and stay open. [doc/access.md](../doc/access.md).
-- **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa/answer`, `/api/insert`, `/api/roots/remove`, `/api/settings` — and the
+- **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa`, `/api/insert`, `/api/roots/remove`, `/api/settings`,
+  `/api/git/commit|pull|push|reset` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.
@@ -192,7 +198,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - Live updates are WebSocket pushes. **No polling anywhere**, by decision.
 - `git` and `ripgrep` are used when present and degrade gracefully when absent. The sidebar
   footer shows `no git` when the git path was unavailable; the ripgrep fallback is currently
-  silent (TODO M.6).
+  silent (TODO.md).
 - `prefs.json` has several writers (the CLI, a daemon per port, the systemd service). Every
   change is read–apply–write against the file as it is now, one at a time within a process
   (`Prefs.queue`) and across processes (`prefs.json.lock`, `O_EXCL`; unchanged 2 s → stale, taken over), written to a uniquely named temp file (0600, the dir created 0700) and renamed
