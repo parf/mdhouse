@@ -31,6 +31,8 @@
   full, a crash) leaves the document as it was
 - An SVG in a served folder, opened on its own, can no longer run its scripts as mdhouse — every
   `/api/asset` reply is sandboxed
+- A tick, an answer or an add on a document that is gone (renamed, deleted, another branch) says
+  404 "not a document" instead of "internal error"
 - **Reset file** throws away only the changes it showed: a file saved again since is kept, and the
   page says so
 

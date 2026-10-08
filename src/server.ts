@@ -104,6 +104,13 @@ export async function serve(opts: ServeOptions) {
    * (a tick and an answer, or two ticks) each run against the file the previous one left.
    */
   const fileWrites = new Map<string, Promise<unknown>>();
+  /** A Markdown file in a root that is there now — else null: a name that is gone, or a folder named `*.md`. */
+  const docAt = async (p: string) => {
+    const loc = await registry.resolve(p);
+    if (!loc || !/\.mdx?$/i.test(loc.rel)) return null;
+    return (await stat(loc.abs).catch(() => null))?.isFile() ? loc : null;
+  };
+
   /**
    * A document as mdhouse reads it: the old Q&A forms rewritten into the new markup (legacy.ts).
    * Every render and every write reads it so, and a write writes it converted.
@@ -308,8 +315,8 @@ export async function serve(opts: ServeOptions) {
           if (!body?.p || !Number.isInteger(body.line) || typeof body.hash !== 'string') {
             return fail(400, 'expected {p, line, hash}');
           }
-          const loc = await registry.resolve(body.p);
-          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          const loc = await docAt(body.p);
+          if (!loc) return fail(404, 'not a document');
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to tick boxes`);
 
           const result = await queueWrite(loc.abs, async () => {
@@ -337,8 +344,8 @@ export async function serve(opts: ServeOptions) {
       '/api/qa': {
         GET: async (req) => {
           const url = new URL(req.url);
-          const loc = await registry.resolve(url.searchParams.get('p') ?? '');
-          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          const loc = await docAt(url.searchParams.get('p') ?? '');
+          if (!loc) return fail(404, 'not a document');
           const me = await signer(loc);
           const reply = url.searchParams.get('reply');
           if (reply === null) return json({ me });
@@ -355,8 +362,8 @@ export async function serve(opts: ServeOptions) {
           if (!body) return fail(400, 'expected {p, line, hash, op, …}');
           // A reply is a few paragraphs; anything near this is not one.
           if ('text' in body && (body.text?.length ?? 0) > 100_000) return fail(413, 'the text is too long');
-          const loc = await registry.resolve(body.p);
-          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          const loc = await docAt(body.p);
+          if (!loc) return fail(404, 'not a document');
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to answer`);
 
           const me = await signer(loc);
@@ -402,8 +409,8 @@ export async function serve(opts: ServeOptions) {
             return fail(400, 'expected {p, line, hash, where, kind, text}');
           }
           if (body.text.length > 100_000) return fail(413, 'the text is too long');
-          const loc = await registry.resolve(body.p);
-          if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
+          const loc = await docAt(body.p);
+          if (!loc) return fail(404, 'not a document');
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to add to it`);
 
           // Who signs a "my quote": the git identity of the file's repository, else the login.

@@ -581,3 +581,34 @@ test('/api/asset — an image never runs as a page: an SVG\'s script is sandboxe
     await rm(base, { recursive: true, force: true });
   }
 });
+
+test('a document that is gone, or a folder named *.md, is 404 on every document write route (A.5)', async () => {
+  const { mkdtemp, rm, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-gone-'));
+  await mkdir(join(base, 'dir.md'));
+  const port = 61799;
+  const registry = await Registry.create([{ path: base, writable: true }]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
+  const id = registry.list()[0]!.id;
+  const post = (route: string, body: object) =>
+    fetch(`http://127.0.0.1:${port}${route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  try {
+    for (const f of ['nope.md', 'dir.md']) {
+      const p = `${id}/${f}`;
+      expect((await post('/api/task', { p, line: 1, hash: 'x' })).status).toBe(404);
+      expect((await post('/api/qa', { p, line: 1, hash: 'x', op: 'target' })).status).toBe(404);
+      expect((await post('/api/insert', { p, line: 1, hash: 'x', where: 'below', kind: 'text', text: 'x' })).status).toBe(404);
+      expect((await fetch(`http://127.0.0.1:${port}/api/qa?p=${p}&line=1&hash=x&reply=2`)).status).toBe(404);
+    }
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
