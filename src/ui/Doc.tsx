@@ -1123,13 +1123,31 @@ function Authors({ authors }: { authors: DocAuthors | null }) {
   );
 }
 
+/** The History panel shown or hidden: one setting for every document, kept in localStorage like wide mode. */
+const LS_HISTORY = 'mdhouse.history';
+const loadHistoryOpen = (): boolean => {
+  try {
+    return localStorage.getItem(LS_HISTORY) !== '0';
+  } catch {
+    return true;
+  }
+};
+const saveHistoryOpen = (open: boolean) => {
+  try {
+    localStorage.setItem(LS_HISTORY, open ? '1' : '0');
+  } catch {
+    /* a per-viewer convenience; fine without it */
+  }
+};
+
 /**
  * Per-file git history: the last commits to this file, with their line counts. Who created it
  * is in the header, from the same response.
  *
  * The request is `Doc`'s — the header wants the authorship out of the same response — so this
  * only renders what arrived. The panel is open by default: waiting for a click bought nothing
- * but a click, since the document was already on screen by then.
+ * but a click, since the document was already on screen by then. Hidden, it stays hidden for every
+ * document until shown again.
  */
 function History({
   log,
@@ -1150,7 +1168,8 @@ function History({
   activeRev: string | null;
   onPickRev: (hash: string) => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(loadHistoryOpen);
+  useEffect(() => saveHistoryOpen(open), [open]);
 
   return (
     <section class="gitlog">

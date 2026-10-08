@@ -18,6 +18,7 @@
   a form — 💬 save, then ✅ 🚫 ⏸️ ⏳ ⚠️ 🎫 🔍 🎯 (Alt+1…9), ESC, `[ ] 👤` signs the reply; ✓ yes / ✗ no on a
   💡 answer at once (💬 reply opens the form); a click picks `( )` or ticks `[ ]`; ✓ done; 🎯 and a double-click select; a click on a reply edits
   it. Alt+E and ✎ open the file at the item. The signer: `settings.me`, else git, else the login
+- A document's History panel stays hidden (or shown) for every document, kept per browser like wide mode
 - Leaving a document with a form open keeps the draft; back on it, the form opens again with it
 - A tick or an answer always goes to the document on screen, even when the previous one had the
   same HTML
