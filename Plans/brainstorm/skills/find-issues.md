@@ -106,7 +106,7 @@ Checked and sound: <one line per subsystem — what was checked>.
 - **Serious first**: an issue that loses the user's text, writes to :7777 or escapes a root goes right
   under the section heading, above the subsystems.
 - **An item is four lines, each on its own:**
-  1. the severity glyph first (🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information),
+  1. the severity glyph first (🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 informational — treated as done or not relevant),
      the id, `file:line` (each one, for a shared cause), **the claim and its consequence — one line**;
   2. `Evidence:` — what was run or read, and what it gave;
   3. `Impact:` — who hits it, how often, what it costs (qa-states.md); the severity follows it — no

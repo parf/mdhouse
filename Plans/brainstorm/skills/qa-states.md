@@ -64,7 +64,8 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | `❓` `⁉️` (question) | not answered, not asking for more | nobody — waits on the user |
 | | **answered** (below) | the agent: carry it over / do it → `✅` |
 | | **asks for more** (below) | the agent: reply, keep `❓` |
-| `🔴` `🟠` `⚪` `🔵` (issue) | untriaged — nothing from the user | `/fix-issues` AUTO only |
+| `🔵` (issue) | informational — treated as done or not relevant | nobody |
+| `🔴` `🟠` `⚪` (issue) | untriaged — nothing from the user | `/fix-issues` AUTO only |
 | | **answered** | the agent: do it → `✅` |
 | | **asks for more** | the agent: reply, set `❓` first |
 | `⏳` | the user's last `💬` says what | do it → `✅`, or reply → `❓` |

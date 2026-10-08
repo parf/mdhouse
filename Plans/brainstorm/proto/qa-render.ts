@@ -229,7 +229,8 @@ function itemHtml(it: Item): string {
   // a ❓ / ⁉️ item is answered as a quote one is: its last 💬 is whole (not ⚠️) and from a person —
   // an agent's or a source's reply asks me again
   const answeredAsk = ask && isAnswered(it.replies, options);
-  const closed = CLOSED.includes(status) || answeredAsk;
+  // 🔵 an informational note: treated as done or not relevant
+  const closed = CLOSED.includes(status) || answeredAsk || status === '🔵';
   const sevText = more.length ? `${more.join(' ')} ` : '';
   // `Evidence:` / `Impact:` lines under the claim: their own quiet lines
   const [claim, ...meta] = it.head.split(/\n(?=\s*(?:Evidence|Impact):)/);

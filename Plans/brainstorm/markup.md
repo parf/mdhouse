@@ -195,8 +195,8 @@ includes the ones before it.
 | **N** (the total) | everything; resets the filter | all 6 |
 | **🔴** | high only | 🔴 |
 | **🟠** | medium and up, plus ❓ ⁉️ with no severity of their own | 🔴 + 🟠 + ❓ + ⁉️ |
-| **⚪** | every open line, any severity | 🔴 🟠 ⚪ 🔵 ⏳ ❓ ⁉️ |
-| **✅** | every closed line | ✅ 🚫 ⏸️ 🎫 |
+| **⚪** | every open line, any severity | 🔴 🟠 ⚪ ⏳ ❓ ⁉️ |
+| **✅** | every closed line | ✅ 🚫 ⏸️ 🎫 🔵 |
 
 - counts are cumulative: 🔴 ⊂ 🟠 ⊂ ⚪, so the numbers grow left to right
 - ⚪ + ✅ = the total: a line is open or closed
@@ -209,7 +209,7 @@ Edge cases:
 - a ❓ / ⁉️ with a severity goes by it: `❓ 🔴` = high, `❓ ⚪` = low (⚪ only); a bare ❓ / ⁉️ is 🟠
 - ⏳ = unsolved (the agent is on it) — a state, not a priority: a bare ⏳ is not ⚪ low, it is just
   open (in the ⚪ "all open" filter only); with a priority it goes by it — `⏳ 🟠` is 🟠
-- 🔵 is open → ⚪ only
+- 🔵 informational note — treated as done or not relevant → ✅ (closed)
 - ⛔ ❌ ⚠️ are open, by their own severity
 
 ## Visual rules, from the markup alone
