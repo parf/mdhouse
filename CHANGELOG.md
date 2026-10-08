@@ -38,6 +38,9 @@
 - A symlinked `prefs.json` (stow, chezmoi) stays a link; a save writes its target
 - Two mdhouse processes saving `prefs.json` at once (the service and `-p`, `--allow`, `user-add`)
   no longer lose a change: `prefs.json.lock`; one left by a killed process is taken over after 2 s
+- A root inside a repo lists the repos nested below it, and a repo lists its submodules — was an
+  empty tree
+- The ALL view of a folder its repo ignores lists its files, as the tree does
 - A `{word}` at the end of a line stays on the page (`GET /users/{id}`, a `{placeholder}`, a table
   cell); only `{#id .class key=value}` is an attribute list
 - A tick, an answer or an added block is written whole or not at all: a write cut short (disk

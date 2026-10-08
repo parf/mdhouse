@@ -7,6 +7,7 @@
  * configuration at all. Globbing is the fallback for ground that is not in any repo.
  */
 
+import { existsSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
@@ -84,18 +85,61 @@ function passesDeny(rel: string, rules: IgnoreRules): boolean {
 /**
  * `git ls-files` run with cwd inside a repo lists only what is under that directory, which is
  * exactly the scoping we want for a root that is one subtree of a much larger repository.
- * One process, no pathspec arithmetic.
+ * One process, no pathspec arithmetic. `-s` marks submodules: a cached entry carries its mode,
+ * 160000 for a gitlink. An embedded repository comes back as `name/`. Both go to `nested`.
  */
-async function listViaGit(dir: string, includeIgnored: boolean): Promise<string[] | null> {
-  const tracked = await git(dir, ['ls-files', '-co', '--exclude-standard', '-z']);
-  if (tracked === null) return null;
+async function listViaGit(dir: string, includeIgnored: boolean): Promise<{ md: string[]; nested: string[] } | null> {
+  const listed = await git(dir, ['ls-files', '-co', '-s', '--exclude-standard', '-z']);
+  if (listed === null) return null;
 
-  const paths = tracked.split('\0').filter(Boolean);
+  const md: string[] = [];
+  const nested: string[] = [];
+  for (const entry of listed.split('\0')) {
+    if (!entry) continue;
+    const staged = STAGED.exec(entry);
+    const path = staged ? staged[2]! : entry;
+    if (staged?.[1] === '160000') nested.push(path);
+    else if (!staged && path.endsWith('/')) nested.push(path.slice(0, -1));
+    else if (MD_EXT.test(path)) md.push(path);
+  }
   if (includeIgnored) {
     const ignored = await git(dir, ['ls-files', '-o', '-i', '--exclude-standard', '-z']);
-    if (ignored) paths.push(...ignored.split('\0').filter(Boolean));
+    if (ignored) md.push(...ignored.split('\0').filter((p) => MD_EXT.test(p)));
   }
-  return paths.filter((p) => MD_EXT.test(p));
+  return { md, nested };
+}
+
+/** A cached `ls-files -s` entry: mode, object, stage, tab, path. */
+const STAGED = /^(\d{6}) [0-9a-f]+ \d\t([^]*)$/;
+
+/**
+ * Lists the Markdown of the repository `repo` from `dir` into `out` under the root-relative
+ * `prefix`, then every repository nested in it the same way — a checked-out submodule or an
+ * embedded clone — unless it is past `maxDepth` or under a denied directory. False when git
+ * could not list `dir`.
+ */
+async function listRepo(
+  repo: string,
+  dir: string,
+  prefix: string,
+  ctx: { rules: IgnoreRules; includeIgnored: boolean; maxDepth: number; out: Map<string, string | undefined>; repos: string[] },
+): Promise<boolean> {
+  const listed = await listViaGit(dir, ctx.includeIgnored);
+  if (!listed) return false;
+  for (const p of listed.md) ctx.out.set(prefix ? `${prefix}/${p}` : p, repo);
+
+  await Promise.all(
+    listed.nested.map(async (p) => {
+      const rel = prefix ? `${prefix}/${p}` : p;
+      const segs = rel.split('/');
+      if (segs.length > ctx.maxDepth || segs.some((seg) => isDenied(ctx.rules, seg))) return;
+      const abs = join(dir, p);
+      // An uninitialised submodule is an empty directory: nothing to list.
+      if (!existsSync(join(abs, '.git'))) return;
+      if (await listRepo(abs, abs, rel, ctx)) ctx.repos.push(abs);
+    }),
+  );
+  return true;
 }
 
 /**
@@ -149,12 +193,11 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
   // filesystem walk and show what is actually in it.
   const gitBlind = ownRepo !== null && (await isIgnoredByGit(root.path));
 
+  const ctx = { rules, includeIgnored, maxDepth, out: relPaths, repos };
   if (ownRepo && !gitBlind) {
     // The root is inside a repository: one listing covers the whole subtree.
     repos.push(ownRepo);
-    const listed = await listViaGit(root.path, includeIgnored);
-    if (listed) for (const p of listed) relPaths.set(p, ownRepo);
-    else degraded = true;
+    if (!(await listRepo(ownRepo, root.path, '', ctx))) degraded = true;
   } else {
     // Not a repo: walk for loose files and for repositories nested below.
     const found = { files: [] as string[], repos: [] as string[] };
@@ -164,12 +207,9 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
 
     for (const repo of found.repos) {
       repos.push(repo);
-      const listed = noGit ? null : await listViaGit(repo, includeIgnored);
       const prefix = relative(root.path, repo).split(sep).join('/');
 
-      if (listed) {
-        for (const p of listed) relPaths.set(prefix ? `${prefix}/${p}` : p, repo);
-      } else {
+      if (noGit || !(await listRepo(repo, repo, prefix, ctx))) {
         // No git here after all — glob this subtree instead of losing it.
         degraded = true;
         const glob = new Bun.Glob('**/*.{md,mdx,MD}');
@@ -217,11 +257,12 @@ const LIST_CAP = 5000;
 
 /**
  * Every file under `abs` (a folder inside the root at `rootPath`), root-relative: in a repository
- * what git lists (tracked plus untracked-not-ignored, so `.gitignore` holds), elsewhere a walk
- * that skips dot-folders and `node_modules`. `capped` says the list was cut at LIST_CAP.
+ * what git lists (tracked plus untracked-not-ignored, so `.gitignore` holds), elsewhere — and in a
+ * folder its repository ignores, as `scanRoot` does — a walk that skips dot-folders and `node_modules`. `capped` says the list was cut at LIST_CAP.
  */
 export async function listFiles(rootPath: string, abs: string, opts: { noGit?: boolean } = {}): Promise<{ files: AnyFile[]; capped: boolean }> {
-  let paths = opts.noGit || !(await repoToplevel(abs)) ? null : (await git(abs, ['ls-files', '-co', '--exclude-standard', '-z']))?.split('\0').filter(Boolean) ?? null;
+  const viaGit = !opts.noGit && (await repoToplevel(abs)) !== null && !(await isIgnoredByGit(abs));
+  let paths = viaGit ? ((await git(abs, ['ls-files', '-co', '--exclude-standard', '-z']))?.split('\0').filter(Boolean) ?? null) : null;
   if (!paths) {
     paths = [];
     for await (const p of new Bun.Glob('**/*').scan({ cwd: abs, onlyFiles: true, dot: false })) {

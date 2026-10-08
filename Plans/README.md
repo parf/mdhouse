@@ -135,7 +135,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.
 - `/api/files?p=<root>/<dir>` lists every file under a folder (the folder page's ALL view): git's list
-  in a repo (`.gitignore` holds), else a walk without dot-folders and `node_modules`; at most 5000.
+  in a repo (`.gitignore` holds), else (or in a folder its repo ignores) a walk without dot-folders and `node_modules`; at most 5000.
   `lib/scan.ts` `listFiles()`.
 - `/api/doc` renders Markdown only (`MD_EXT`); any other path is 404.
 - `/api/raw` serves a linked non-Markdown file from a short list (`RAW_EXT` in `lib/filetypes.ts`: txt, json, yaml, css,
@@ -148,8 +148,9 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 ## Data sources
 
-- **File list** — `git ls-files -co --exclude-standard` per repository, so `.gitignore` is
-  honoured with no configuration; a directory walk with a deny list covers ground that is not in
+- **File list** — `git ls-files -co -s --exclude-standard` per repository, so `.gitignore` is
+  honoured with no configuration; a nested repo (`name/`) or submodule (mode 160000) is listed
+  the same way; a directory walk with a deny list covers ground that is not in
   any repo, or that its repo ignores. `lib/scan.ts`.
 - **Git history, status, HEAD** — `git log --name-status`, `git status --porcelain`, and
   `rev-parse` plus `FETCH_HEAD`'s mtime for the front page's branch and last pull. `lib/git.ts`.
