@@ -35,9 +35,9 @@ Append — never edit or delete a turn, never touch the user's words.
 the agent sets `✅` once it carried the answer over or did the fix. Who set a `✅` is in the turn that
 closed it:
 
-- `✅` + a last `💬 👾claude → …` / `` `sha` `` record — **processed by the agent**
-- `✅` + a `💬 👤<name> settled …` — **closed by the user** on the page (the page always signs it):
-  nothing to carry
+- `✅` + a `💬 👤<name> settled …` — **closed by the user** on the page (the page always signs a
+  person's ✅): nothing to carry
+- `✅` without it — **processed by the agent**; for the agent the `✅` alone is enough
 
 | First glyph | State | Who acts |
 |---|---|---|
@@ -60,10 +60,13 @@ closed it:
 
 Replace the first glyph; a severity stays after it: `- ❓ …` → `- ✅ …`, `- 🔴 …` → `- ✅ 🔴 …`,
 `> ❓ …` → `> ✅ …`. Never two stage glyphs (`✅ ❓`); never write `✅ 💡` / `🚫 💡` (the user's yes / no);
-never tick `(x)` / `[x]`. With every `✅` add the record:
+never tick `(x)` / `[x]`. The `✅` alone is the mark; a record is optional — add one when it helps
+the user find the result:
 
-- carried over: `> 💬 👾claude → DECISIONS.md: <the decision, short>` (and `· TODO.md: <the action>`)
-- done: `> 💬 👾claude \`<sha>\` — <what, and the proof>`
+```markdown
+  > 💬 👾claude → DECISIONS.md: <the decision, short> · TODO.md: <the action>
+  > 💬 👾claude `<sha>` — <what, and the proof>
+```
 
 ## Committing
 
