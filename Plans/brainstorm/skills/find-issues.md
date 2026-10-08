@@ -1,34 +1,55 @@
 ---
 name: find-issues
-description: Reviews code and docs with three parallel read-only reviewers and writes verified issues to Plans/issues.md in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
-argument-hint: "[scope] [focus]"
+description: Reviews what changed, one read-only reviewer per touched subsystem (a map it keeps in Plans/subsystems.md), and writes verified issues to Plans/issues.md in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
+argument-hint: "[scope] [mine] [focus]"
 disable-model-invocation: true
 ---
 
-# /find-issues [scope] [focus]
+# /find-issues [scope] [mine] [focus]
 
 Writes issues for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
 - `scope` — default: `<sha>..` from the newest `## … · <sha>` heading in `Plans/issues.md` (only what is
   new since the last run), else since the last tag; or `release`, `all`, a `<rev>..` range, a path
-- `focus` — the rest: dimensions to run; default all three
+- `mine` — only the git user's own commits (a repo others commit to, or with merge traffic)
+- `focus` — the rest: subsystems to review; default every touched one
+
+## Subsystems — the skill keeps their map
+
+`Plans/subsystems.md` maps paths to subsystems, first match wins, each with what its reviewer checks:
+
+```markdown
+# Subsystems
+
+| Path prefix | Subsystem | Check |
+|---|---|---|
+| `src/server.ts`, `src/lib/access.ts` | server | the write-route order, guards, error contract (CLAUDE.md "Server invariants") |
+| `src/lib/render.ts`, `src/lib/qa.ts` | render & Q&A | the source model, hashes, what a write touches |
+| `src/ui/` | ui | links, localStorage, live reload, the editors |
+| `src/cli.ts`, `src/lib/service.ts`, `bin/` | cli & service | systemd, the control socket, hand-over |
+| `test/` | tests | they test what they claim; no live config |
+| `package.json`, `CHANGELOG.md` | packaging | what ships, the Deploy checklist |
+| `CLAUDE.md`, `.claude/`, `doc/`, `*.md` | docs & skills | commands that do what they say |
+```
+
+- **Missing** → build it before the first review: from the tree (top-level folders, the second level
+  under `src/`), the README and CLAUDE.md; a handful of rows, not one per file.
+- **Every run**: list the scope's files — `git log --no-merges --name-only --pretty=format: <scope>`
+  (`--author="$(git config user.name)"` with `mine`) — and map each. A file that matches no row →
+  add a row (a new subsystem, or a wider prefix for an existing one) and say so in the report. A
+  subsystem whose paths are all gone → drop its row.
+- Commit `Plans/subsystems.md` with the run's `Plans/issues.md`.
 
 ## Reviewers
 
-Three subagents in parallel, read-only, one dimension each:
-
-1. **Workflow & verification** — CLAUDE.md and skills against reality: commands that do not do what
-   they say, missing recipes, ways to hit the live instance or skip a proof.
-2. **Deploy & service** — CLI, service, packaging, the Deploy checklist, the reload.
-3. **Code & security** — server, lib, ui, tests: CLAUDE.md's invariants against the code, bugs,
-   input handling, stale comments.
-
-Each gets the scope, its dimension, `git log -p <scope> -- <its paths>`, the format below and these rules:
+One subagent per **touched** subsystem, in parallel, read-only — at most 6: merge the smallest into one.
+Each gets its subsystem's row (the paths, what to check), its files, `git log -p <scope> -- <its paths>`,
+the format below and these rules:
 
 - **Never trust a suspicion — verify before reporting**: the problem must exist and matter. Read the
-  line, run the test, grep the symbol, a scratch instance, never
-  :7777. `file:line` as at HEAD; a bug added and fixed inside the range is not an issue.
+  line, run the test, grep the symbol, a scratch instance, never :7777. `file:line` as at HEAD; a bug
+  added and fixed inside the range is not an issue.
 - **Never raise again** what `Plans/issues.md` or `Plans/done/issues*.md` already hold, open or closed.
   A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
   new item starts with what changed and links the old one.
@@ -48,7 +69,7 @@ Each gets the scope, its dimension, `git log -p <scope> -- <its paths>`, the for
   Impact: any start after a crash mid-write — every saved folder gone.
   > 💡👾 Move the broken file aside and refuse the write.
 
-### <Dimension>
+### <Subsystem>
 
 - 🔴 `src/cli.ts:536` --fg hands its folders over when the port is busy and exits 0 — under systemd
   the unit "succeeds" and nothing retries. Measured: exit 0 with :7777 taken. Impact: every reboot
@@ -59,11 +80,11 @@ Each gets the scope, its dimension, `git log -p <scope> -- <its paths>`, the for
   - ( ) reject a non-numeric `limit` with 400
 - ⚪ `README.md:12` "browsable" — "browse" reads better.
 
-Checked and sound: <one line per dimension>.
+Checked and sound: <one line per subsystem>.
 ```
 
 - **Serious first**: an issue that loses the user's text, writes to :7777 or escapes a root goes right
-  under the section heading, above the dimensions.
+  under the section heading, above the subsystems.
 - First symbol: the severity — 🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information.
 - Then `file:line` (each one, for a shared cause), the claim, the consequence; the evidence in a few
   words when not obvious; **`Impact:`** — who hits it, how often, what it costs (qa-states.md). The
@@ -79,8 +100,8 @@ Checked and sound: <one line per dimension>.
 2. Resolve the scope. **Re-check every untriaged issue already in the file against HEAD** — gone, and a
    commit names it → `✅` + `` 💬👾 `<sha>` — gone `` (qa-states.md "Already done?"). An empty scope still
    does this, then stops.
-3. Launch the reviewers.
+3. Map the scope's files to subsystems (keep `Plans/subsystems.md`); launch one reviewer per touched one.
 4. Append the section; drop duplicates across reviewers, keeping the better-evidenced one.
-5. Commit `Plans/issues.md` alone.
+5. Commit `Plans/issues.md` (and `Plans/subsystems.md` if it changed) — nothing else.
 6. Report: the serious ones first, each in one line; counts per severity; tail:
    `🟥🟥🟥 issues in Plans/issues.md — triage on the page`.
