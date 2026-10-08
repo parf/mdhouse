@@ -894,3 +894,55 @@ test('/api/doc links a file named in the text when it is a file in the root', as
     await rm(base, { recursive: true, force: true });
   }
 });
+
+test('POST /api/roots/remove refuses another site, an unknown root and the last root; a missing file or folder is 404 on read routes', async () => {
+  const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const { run } = await import('../src/lib/gitpage');
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-routes-'));
+  const repo = join(base, 'repo');
+  const other = join(base, 'other');
+  await mkdir(join(repo, 'sub'), { recursive: true });
+  await mkdir(other);
+  await writeFile(join(repo, 'a.md'), 'a\n');
+  await writeFile(join(repo, 'sub', 'b.md'), 'b\n');
+  await writeFile(join(other, 'c.md'), 'c\n');
+  const git = (args: string[]) => run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args]);
+  await git(['init', '-q']);
+  await git(['add', '.']);
+  await git(['commit', '-qm', 'first']);
+  const port = 61932;
+  const registry = await Registry.create([repo, other]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
+  const [id, otherId] = registry.list().map((r) => r.id);
+  const get = (path: string) => fetch(`http://127.0.0.1:${port}${path}`);
+  const remove = (body: unknown, headers: Record<string, string> = {}) =>
+    fetch(`http://127.0.0.1:${port}/api/roots/remove`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+  try {
+    for (const q of [`doc?p=${id}/nope.md`, `raw?p=${id}/nope.txt`, `asset?p=${id}/nope.png`]) expect((await get(`/api/${q}`)).status).toBe(404);
+    expect(await (await get(`/api/git/diff?p=${id}/nope.md`)).json()).toMatchObject({ kind: 'none', hunks: [] });
+    expect(await (await get(`/api/git/log?p=${id}/nope.md`)).json()).toMatchObject({ commits: [] });
+    expect(await (await get(`/api/git/files?p=${id}/sub`)).json()).toMatchObject({ files: ['sub/b.md'] });
+    expect((await get(`/api/git/files?p=${id}/nope`)).status).toBe(404);
+    expect((await get(`/api/git/commits?p=${id}/nope`)).status).toBe(404);
+    expect((await get('/api/digest?root=nope')).status).toBe(404);
+
+    expect((await remove({ id: otherId }, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+    expect((await remove({ id: otherId }, { origin: 'https://evil.example' })).status).toBe(403);
+    expect((await remove({ id: 'nope' })).status).toBe(404);
+    expect((await remove({})).status).toBe(404);
+    expect(registry.list()).toHaveLength(2);
+    expect((await (await remove({ id: otherId })).json()).results).toMatchObject([{ removed: true }]);
+    expect((await (await remove({ id })).json()).results).toMatchObject([{ removed: false, kept: true }]);
+    expect(registry.list().map((r) => r.id)).toEqual([id!]);
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
