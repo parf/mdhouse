@@ -18,7 +18,6 @@
   --uncommitted: #c2410c; /* dark orange: work not committed yet */
   --ok: #2f855a;
   --mark-fav: #d99100;
-  --size-tiny: #f0206e;
   --dir: #6b4226;
   --doc-title: #2b6e3f; /* mid-dark green */
   --file-link: #1a7f37; /* a file named in the text: green, apart from written links */
@@ -43,7 +42,6 @@
   --who-team: #075985; --who-team-bg: #e0f2fe; --who-team-line: #7dd3fc;
   --who-source: #155e75; --who-source-bg: #ecfeff; --who-source-line: #67e8f9;
   --who-ticket: #9a3412; --who-ticket-bg: #fff7ed; --who-ticket-line: #fdba74;
-  --size-small: #7b3ff2;
 
   /* Age heat. Five buckets — under ten minutes, this hour, today, this week, older — each with
      its own colour so a column of timestamps reads as a temperature gradient. The ramp cools
@@ -97,7 +95,6 @@
     --uncommitted: #fb923c;
     --ok: #68c496;
     --mark-fav: #e0b341;
-    --size-tiny: #ff3d85;
     --dir: #c9a07a;
     --doc-title: #7cc48d;
     --file-link: #56d364;
@@ -122,7 +119,6 @@
     --who-team: #bae6fd; --who-team-bg: #082f49; --who-team-line: #0369a1;
     --who-source: #a5f3fc; --who-source-bg: #083344; --who-source-line: #0e7490;
     --who-ticket: #fed7aa; --who-ticket-bg: #431407; --who-ticket-line: #c2410c;
-    --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
   --heat-day: #d9a441;
@@ -157,7 +153,6 @@
   --uncommitted: #fb923c;
   --ok: #68c496;
   --mark-fav: #e0b341;
-  --size-tiny: #ff3d85;
   --dir: #c9a07a;
   --doc-title: #7cc48d;
   --file-link: #56d364;
@@ -182,7 +177,6 @@
   --who-team: #bae6fd; --who-team-bg: #082f49; --who-team-line: #0369a1;
   --who-source: #a5f3fc; --who-source-bg: #083344; --who-source-line: #0e7490;
   --who-ticket: #fed7aa; --who-ticket-bg: #431407; --who-ticket-line: #c2410c;
-  --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
   --heat-day: #d9a441;
@@ -468,15 +462,14 @@ main {
 /* Under 101 bytes: struck twice, to match the ∅ — a stub, not just a short file. */
 .row.tiny > .label, .hit.tiny .hit-name { text-decoration-style: double; text-decoration-thickness: 1px; }
 
-/* Tiny files (∅, under 101 B) get a bright pink ∅ at the end of the row; small ones (under 500 B)
-   show their size in violet instead. */
+/* Tiny files (∅, under 101 B) get a ∅ at the end of the row; small ones (under 500 B) show their size —
+   struck through, never in a colour of their own. */
 .size-mark {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
   width: 14px; height: 14px;
   font-size: 14px; font-weight: 700; line-height: 1;
 }
-.size-mark.tiny { color: var(--size-tiny); }
-.badge.size.small, .size-num.small { color: var(--size-small); font-weight: 650; }
+.badge.size:is(.small, .tiny), .size-num.small { text-decoration: line-through; }
 .size-num { flex: none; font-size: 10.5px; font-variant-numeric: tabular-nums; }
 .hit .hit-path > .end:is(.size-mark, .size-num), .hit .meta > :is(.size-mark, .size-num) { align-self: center; }
 .hit .hit-path > .end:is(.size-mark, .size-num) { margin-left: auto; }
@@ -686,7 +679,7 @@ main {
   color: var(--fg-faint); font-variant-numeric: tabular-nums;
   border-left: 1px solid var(--border-strong); padding-left: 7px;
 }
-.dir-table td.size.small { color: var(--size-small); font-weight: 650; }
+.dir-table td.size.small { text-decoration: line-through; }
 .dir-table tr.tiny .link, .dir-table tr.small .link { text-decoration: line-through; }
 .dir-table tr.tiny .link { text-decoration-style: double; text-decoration-thickness: 1px; }
 .dir-table td.name .size-mark { margin-left: 6px; vertical-align: -1px; }
