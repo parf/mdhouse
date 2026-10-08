@@ -201,7 +201,7 @@ Edge cases:
 - [ ] an answered `❓` (a 💬 under it) shows as a green **?** — HTML only, no such glyph: the file keeps `❓`; on hover it is a button [?] — a click edits the answer
 - [ ] `⏳` — normal; `⏸️` — muted
 - [ ] `✅` `🚫` items and their threads — muted, folded: the question, and under it the answer on
-  its own line, each in its own colour (never merged into one line); a click opens them
+  its own line (never merged into one line) — the question a quiet grey, the answer green; a click opens them
 - [ ] folded = up to 3 lines of the question + 3 lines of the answer; anything cut or left out
   (more replies, options) shows a clear **▾ show all** — never hidden silently
 - [ ] unpicked options after a pick — muted

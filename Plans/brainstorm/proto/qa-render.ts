@@ -370,6 +370,8 @@ details.settled[open] .more { display: none; }
 [data-tip] { position: relative; }
 /* near the right edge it opens leftwards */
 .bar .sign[data-tip]:hover::after, .bar > :last-child[data-tip]:hover::after { left: auto; right: 0; }
+/* a settled question reads quiet grey, not red; its answer keeps its green */
+.t-q { color: var(--dim); }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
 /* the action's number — Alt+number presses it */
