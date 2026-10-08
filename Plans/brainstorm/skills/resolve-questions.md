@@ -10,6 +10,8 @@ disable-model-invocation: true
 **Read [qa-states.md](qa-states.md) first** (shipped: `../qa-states.md`) — who is who, the states,
 replying, doing a task, writing a stage, committing, the report. This file says only what `/resolve-questions`
 does with each state.
+**Never trust the task** — a ⏳ or an answer that asks for work is a claim: first check by execution
+that the problem exists and needs doing.
 
 - `file` — default: the file of the newest `docs: questions —` commit, else `Plans/questions.md`
 

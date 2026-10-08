@@ -5,6 +5,13 @@ renders the file — the skills read it the way the page does. Every glyph and b
 `Plans/brainstorm/glyphs.md`. Shipped, this file sits at
 `.claude/skills/qa-states.md`.
 
+## Never trust the task
+
+**Before doing anything, check that there is a problem and that it needs doing** — by execution: run
+it, reproduce it, read the line, grep the symbol. Every task is a claim: a reviewer's issue, the user's
+✓ yes, a ⏳, "do it", your own earlier reply. No problem, or nothing to gain → do not do it; reply with
+the evidence. Doing a task whose premise is false breaks what works.
+
 ## Who is who
 
 - **The user** — a `💬` signed with a person or team badge (`👤parf`, `👥design`), or not signed at all.
@@ -85,8 +92,9 @@ Where a choice is the next step, the `💡` or the options go **under** that rep
 
 ## Doing a task
 
-1. **Premise gate** — reproduce it: run the test, read the line, a scratch instance. Disproved after the
-   user approved → reply with the evidence, set `❓` (the user decides).
+1. **Premise gate — never skipped** (see *Never trust the task*): is there a problem, does it need doing?
+   Reproduce it: run the test, read the line, a scratch instance. Disproved after the user approved →
+   reply with the evidence, set `❓` (the user decides).
 2. **Already done?** — the premise no longer reproduces and a commit names the claim (not only the line)
    → record the commit, `✅`.
 3. **Side-effect gate** — the change removes a deliberate design (a comment says why) → reply, set `❓`.

@@ -9,7 +9,10 @@ disable-model-invocation: true
 
 **Read [qa-states.md](qa-states.md) first** (shipped: `../qa-states.md`) — who is who, the states,
 replying, doing a task (premise and side-effect gates), writing a stage, committing, the report. This
-file says only what `/fix-issues` does with each state. An issue is a hypothesis: verify it by execution.
+file says only what `/fix-issues` does with each state.
+
+**Never trust the task** — an issue, a ✓ yes, a ⏳ are claims: first check by execution that the problem
+exists and needs doing; if not, do not do it — reply with the evidence.
 
 - `file` — default `Plans/issues.md`
 

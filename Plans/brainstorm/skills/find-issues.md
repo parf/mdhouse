@@ -26,7 +26,8 @@ Three subagents in parallel, read-only, one dimension each:
 
 Each gets the scope, its dimension, `git log -p <scope> -- <its paths>`, the format below and these rules:
 
-- **Verify before reporting** — read the line, run the test, grep the symbol, a scratch instance, never
+- **Never trust a suspicion — verify before reporting**: the problem must exist and matter. Read the
+  line, run the test, grep the symbol, a scratch instance, never
   :7777. `file:line` as at HEAD; a bug added and fixed inside the range is not an issue.
 - **Never raise again** what `Plans/issues.md` or `Plans/done/issues*.md` already hold, open or closed.
   A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
