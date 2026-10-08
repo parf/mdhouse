@@ -1157,22 +1157,18 @@ main {
    line, the text stays on the page's own background. */
 .md li.item { --qa-fade-q: linear-gradient(90deg, color-mix(in srgb, var(--qa-question-bg) var(--qa-tint), var(--bg)), transparent 12em);
   --qa-fade-d: linear-gradient(90deg, color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg)), transparent 12em); }
-.md li.item.wait-me { background: var(--qa-fade-q);
-  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent);
-  border-bottom-color: color-mix(in srgb, var(--qa-question) 25%, transparent); }
-.md li.item.wait-me.dis { background: var(--qa-fade-d);
-  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent);
-  border-bottom-color: color-mix(in srgb, var(--qa-disagreement) 25%, transparent); }
+.md li.item.wait-me { background: linear-gradient(90deg, color-mix(in srgb, var(--qa-question) 55%, transparent), transparent 12em) bottom / 100% 1px no-repeat, var(--qa-fade-q);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
+.md li.item.wait-me.dis { background: linear-gradient(90deg, color-mix(in srgb, var(--qa-disagreement) 55%, transparent), transparent 12em) bottom / 100% 1px no-repeat, var(--qa-fade-d);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
 .md.qa-rw li.item.wait-me > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 35%, transparent); }
 .md.qa-rw li.item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 35%, transparent); }
 /* an open 🔴 / 🟠 issue: the question's look, in its colour */
 .md.qa-rw li.item.finding > .head .g-btn { border-color: color-mix(in srgb, var(--fg-muted) 35%, transparent); }
-.md li.item.finding[data-sev="🔴"] { background: var(--qa-fade-q);
-  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent);
-  border-bottom-color: color-mix(in srgb, var(--qa-question) 25%, transparent); }
-.md li.item.finding[data-sev="🟠"] { background: var(--qa-fade-d);
-  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent);
-  border-bottom-color: color-mix(in srgb, var(--qa-disagreement) 25%, transparent); }
+.md li.item.finding[data-sev="🔴"] { background: linear-gradient(90deg, color-mix(in srgb, var(--qa-question) 55%, transparent), transparent 12em) bottom / 100% 1px no-repeat, var(--qa-fade-q);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
+.md li.item.finding[data-sev="🟠"] { background: linear-gradient(90deg, color-mix(in srgb, var(--qa-disagreement) 55%, transparent), transparent 12em) bottom / 100% 1px no-repeat, var(--qa-fade-d);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
 .md.qa-rw li.item.finding[data-sev="🔴"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 40%, transparent); }
 .md.qa-rw li.item.finding[data-sev="🟠"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 40%, transparent); }
 .md.qa-rw li.item:is(.wait-me, .finding) { cursor: pointer; }
@@ -1210,14 +1206,14 @@ main {
 /* a thread: one reply per turn, green; ⚠️ / elaborate yellow; 💡 blue */
 .md .thread { margin: 4px 0 2px calc(1.6em + 4px); display: grid; gap: 4px; }
 .md .thread.loose { margin-left: 0; }
-/* a reply: its tint fades out fast, left to right, as an open question's does */
-.md .reply { background: linear-gradient(90deg, var(--qa-answer-bg), transparent 12em); border-left: 3px solid var(--qa-answer);
-  border-bottom: 1px solid color-mix(in srgb, var(--qa-answer) 30%, transparent); border-radius: 4px; padding: 3px 8px;
+/* a reply: its tint and its bottom line fade out fast, left to right, as an open question's do */
+.md .reply { background: linear-gradient(90deg, color-mix(in srgb, var(--qa-answer) 60%, transparent), transparent 12em) bottom / 100% 1px no-repeat, linear-gradient(90deg, var(--qa-answer-bg), transparent 12em);
+  border-left: 3px solid var(--qa-answer); border-radius: 4px; padding: 3px 8px;
   font-weight: 400; color: var(--fg); }
-.md .reply.partial { background: linear-gradient(90deg, var(--qa-part-bg), transparent 12em); border-left-color: var(--qa-part); border-bottom-color: color-mix(in srgb, var(--qa-part) 30%, transparent); }
-.md .reply.record { background: var(--bg-panel); border-left-color: var(--border-strong); border-bottom: 0; color: var(--fg-muted); }
+.md .reply.partial { background: linear-gradient(90deg, color-mix(in srgb, var(--qa-part) 60%, transparent), transparent 12em) bottom / 100% 1px no-repeat, linear-gradient(90deg, var(--qa-part-bg), transparent 12em); border-left-color: var(--qa-part); }
+.md .reply.record { background: var(--bg-panel); border-left-color: var(--border-strong); color: var(--fg-muted); }
 .md .reply p { margin: 0 0 4px; } .md .reply p:last-child { margin: 0; } .md .reply ul { margin: 2px 0; padding-left: 20px; }
-.md .reply.proposal { background: linear-gradient(90deg, var(--qa-pick-bg), transparent 12em); border-left-color: var(--qa-pick); border-bottom-color: color-mix(in srgb, var(--qa-pick) 30%, transparent); }
+.md .reply.proposal { background: linear-gradient(90deg, color-mix(in srgb, var(--qa-pick) 60%, transparent), transparent 12em) bottom / 100% 1px no-repeat, linear-gradient(90deg, var(--qa-pick-bg), transparent 12em); border-left-color: var(--qa-pick); }
 .md .reply.proposal.decided { opacity: 0.75; }
 .md .reply.proposal.declined .txt { text-decoration: line-through; text-decoration-color: var(--fg-faint); }
 .md .s-act { display: none; gap: 8px; padding: 8px 0 2px; }
