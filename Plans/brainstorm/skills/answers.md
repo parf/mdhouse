@@ -6,42 +6,41 @@ argument-hint: "[file]"
 
 # /answers [file]
 
-Reads a questions file and acts on what the user answered on the page. **Read
-[qa-states.md](qa-states.md) first** — states, who is who, how to write a stage, committing, the report.
+**Read [qa-states.md](qa-states.md) first** (shipped: `../qa-states.md`) — who is who, the states,
+writing a stage, committing, the report. This file only says what `/answers` does with each state.
 
 - `file` — default: the file of the newest `docs: questions —` commit, else `Plans/questions.md`
 
-Chat in Russian; files in English; the user's words carried over verbatim.
-
-## Per item (state as in qa-states.md)
+## Per question
 
 | State | Do |
 |---|---|
-| **answered** | carry it over (below), then `✅` + `> 💬 👾claude → DECISIONS.md: … · TODO.md: …` |
-| **needs a reply** | reply, keep `❓` (below) |
-| `⏳` with a task | do it; it is also an answer — carry it over; `✅` + the done record |
-| `⏳` asking you to find out | reply with what you found, set `❓` |
-| `🎫` | nothing; name the ticket in the report |
-| anything else | nothing |
+| answered | **carry it over** (below) → `✅` |
+| asks for more | **reply** (below), keep `❓` |
+| `⏳` with a task | do it as `/fixes` "Do it" steps 1–4 say; it is also the answer → carry it over → `✅` |
+| `⏳` asking to find out, or bare | find out, reply, `❓` |
+| a `no` with no alternative | not carried yet — reply with the next `💡` or options, keep `❓`; carry once settled (`Not X — Y instead`) |
+| closed, `⛔`, `❌`, or waiting on the user | nothing |
 
 ## Carry over
 
-- **DECISIONS.md** — under the section that matches the topic, else a new `## <topic> — 📅date` at the
-  end: `- **<the answer, the user's words>.** <the why, if the user gave one> — from <file>`.
-  A choice from options: the picked option's text. A `no`: `- **Not <the suggestion>.** <the user's
-  why>`; if the no leaves the question itself open, also write a new question with `/questions`.
-- **TODO.md** — each action the answer implies, at the end: `- [ ] <action>`.
-- Check every answered item landed before you mark it `✅`; nothing is carried twice — a `✅` item is done.
+**Look first**: an entry for this question already in DECISIONS.md (`— from <file>` and the question's
+words) or TODO.md → rewrite it in place (the answer changed); never a second entry for one question.
+
+- **DECISIONS.md** — under the section matching the topic, else a new `## <topic> — 📅date` at the end:
+
+  ```markdown
+  - **<subject, from the question>: <the decision>.** — from <file>
+    > <the user's words, verbatim — a long or multi-paragraph answer quoted here>
+  ```
+
+  The decision: for a `✓ yes`, the `💡` text (+ the user's note); for a pick, the option's text; for a
+  `no` with an alternative, `Not <X> — <Y>`; else the user's answer in brief.
+- **TODO.md** — each action the answer implies, at the end: `- [ ] <action>`; an action the new answer
+  cancels: rewrite or remove the line that came from this question.
+- Check each one landed, then `✅`. Report tail: `🟥🟥🟥 <n> questions wait on you in <file>`.
 
 ## Reply
 
-`> 💬 👾claude <the answer, with the evidence you verified — read the code, run it>` in the thread (a
-blank `>` before it). Where a choice is the honest next step, a `💡` or options instead. The item keeps
-`❓`: it waits on the user again.
-
-## Rules
-
-- Never decide for the user: never write `✅ 💡` / `🚫 💡`, never tick options, never `✅` an item that is
-  not answered.
-- Commit the questions file with DECISIONS.md / TODO.md (`docs: answers carried — <topic>`) — unless
-  they hold the user's uncommitted edits (see qa-states.md).
+`> 💬 👾claude <the answer, with evidence you verified — read the code, run it>` (a blank `>` first);
+where a choice is the honest next step, a `💡` or options instead. Keep `❓`.

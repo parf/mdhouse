@@ -207,6 +207,13 @@
 
   /** A question that got its answer: a green ?, no longer waiting on me. */
   function answered(host) {
+    // a finding I triaged goes to the agent: still open, no longer mine to look at
+    if (host.classList.contains('finding')) {
+      host.classList.remove('finding');
+      host.querySelector(':scope > .head').insertAdjacentHTML('beforeend', '<span class="btn">waiting on agent</span>');
+      counts();
+      return;
+    }
     const g = host.querySelector(':scope > .head > .g .g-btn');
     if (g && ['❓', '⁉️'].includes(g.textContent)) {
       g.className = 'g-answered';

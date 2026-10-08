@@ -125,7 +125,7 @@ On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plai
 - a click on `( )` writes `(x)` and clears the others — my answer: the question shows answered
   (green ?); `✅` is set by the agent once it carried the pick over
 - a click on that answered mark undoes the pick: `(x)` → `( )` — unanswered again
-- a click on `[ ]` writes `[x]`; **✓ done** (on its line) answers `💬 👤me done` — answered, `✅` by the agent
+- a click on `[ ]` writes `[x]`; **✓ done** (on its line) answers `💬 👤parf done` — answered, `✅` by the agent
 - once something is picked, the unpicked options are muted
 - a 💬 under the options still works: "none — do X instead"
 - to comment: hover a line (the question or an option) → 💬 at its right end → editor under that line; a click on a comment edits it

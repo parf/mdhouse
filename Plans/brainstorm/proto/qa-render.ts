@@ -87,9 +87,13 @@ const badges = (html: string) => html.split(/(<code>[\s\S]*?<\/code>)/).map((par
  */
 function isAnswered(replies: Reply[], options: Item[] = []): boolean {
   if (replies.some((r) => r.suggest && !r.verdict)) return false;
-  if (options.some((o) => o.option === 'radio' && o.picked)) return true;
   const last = replies.filter((r) => !r.suggest).at(-1);
-  return !!last && !last.partial && !/^(👾|📡)/u.test(last.who ?? '');
+  // an agent or a source speaking last asks again — even after a pick
+  if (last && /^(👾|📡)/u.test(last.who ?? '')) return false;
+  if (options.some((o) => o.option === 'radio' && o.picked)) return true;
+  // checkboxes: answered by the item's own `done` (a 💬 under an option is a comment on it)
+  if (options.some((o) => o.option === 'check')) return !!last && !last.partial && /^done\b/i.test(last.body);
+  return !!last && !last.partial;
 }
 
 const unquote = (lines: string[]) => lines.map((l) => l.replace(/^>\s?/, ''));
@@ -216,12 +220,14 @@ function itemHtml(it: Item): string {
   }
   const sev = it.glyphs.find((g) => SEVERITY.includes(g));
   // an open finding — a line with a severity — works as an unanswered question does
-  const finding = !!sev && !ask;
+  // a finding the user triaged (a decided 💡, a pick, their whole 💬): over to the agent, still open
+  const triaged = !!sev && !ask && !closed && isAnswered(it.replies, options);
+  const finding = !!sev && !ask && !triaged;
   const cls = ['item', ask ? 'wait-me' : '', finding ? 'finding' : '', status === '⁉️' ? 'dis' : '', status === '🔴' || more[0] === '🔴' ? 'sev-h' : '', status === '🔵' ? 'info' : '']
     .filter(Boolean).join(' ');
   // checkboxes (any of): ticking does not settle the question — ✓ done does
   const doneBtn = !closed && options.some((o) => o.option === 'check') ? '<button class="c-done" data-tip="Done picking: the question turns ✅">✓ done</button>' : '';
-  const chip = status === '⏳' ? '<span class="btn">waiting on agent</span>' : doneBtn;
+  const chip = status === '⏳' || triaged ? '<span class="btn">waiting on agent</span>' : doneBtn;
   return `<li class="${cls}" data-k="${key}"${sev ? ` data-sev="${sev}"` : ''}><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
     + `${options.length ? '<button class="c-btn" data-tip="Comment on the question">💬</button>' : ''}</div>`
     + `${opts}${threadHtml(it.replies, 'thread q-thread')}</li>`;
@@ -241,15 +247,20 @@ function quoteHtml(lines: string[]): string {
   const question = [rest, ...q.slice(1)].join('\n').trim();
   const status = glyphs[0]!;
   const request = glyphs.includes('👉');
-  // a 💡 suggestion is not an answer until it is accepted
   const last = replies.filter((r) => !r.suggest).at(-1);
-  const answered = status === '✅' || (!request && isAnswered(replies));
+  const closed = CLOSED.includes(status);
+  const answered = closed || (ASK.includes(status) && isAnswered(replies));
   const key = keyOf(glyphs, !answered);
 
+  if (status === '⏳') {
+    return `<ul class="items"><li class="item" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Reply')}</span><span>${inline(question)}</span><span class="btn">waiting on agent</span></div>`
+      + `${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</li></ul>`;
+  }
   if (answered) {
-    const mark = request ? glyphButton('✅', 'Reply') : `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>`;
+    // a closed one shows its stage glyph; only an answered ❓ / ⁉️ shows the green ?
+    const mark = closed ? `<span class="g">${glyphButton(status, 'Reply')}</span>` : `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>`;
     const lead = request ? '👉 ' : '';
-    return `<details class="settled" data-k="${key}"><summary>${request ? `<span class="g">${mark}</span>` : mark}`
+    return `<details class="settled" data-k="${key}"><summary>${mark}`
       + `<span class="t"><span class="t-q">${lead}${inline(question)}</span>${last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : ''}</span></summary>`
       + `${threadHtml(replies)}</details>`;
   }
@@ -271,7 +282,7 @@ export function renderDoc(src: string): string {
   };
   for (let i = 0; i < lines.length; ) {
     const line = lines[i]!;
-    if (/^>\s?(❓|⁉|👉|✅\uFE0F?\s)/u.test(line)) {
+    if (/^>\s?(❓|⁉|👉|✅|🚫|⏸|🎫|⏳)/u.test(line)) {
       flush();
       const q: string[] = [];
       while (i < lines.length && lines[i]!.startsWith('>')) q.push(lines[i++]!);

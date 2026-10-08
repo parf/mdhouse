@@ -8,7 +8,7 @@ disable-model-invocation: true
 # /questions [file] [topic]
 
 Writes questions into a Markdown file; the user answers on the page; `/answers` reads them back.
-States, identities, threads, committing: [qa-states.md](qa-states.md). Markup: [../markup.md](../markup.md).
+States, identities, threads, committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`).
 
 - `file` — default `Plans/questions.md`; create it with `# Questions` if missing
 - `topic` — what to ask about; else the decisions still open in the current task
@@ -74,4 +74,4 @@ Always append at the end of the file — never rewrite an existing section:
 - Blocking questions first. Plain GFM — it must read well on GitHub.
 - Commit the file alone: `docs: questions — <topic>`.
 
-Report as [qa-states.md](qa-states.md#report) says: `🟥🟥🟥 <n> questions in <file> — answer on the page`.
+Report per [qa-states.md](qa-states.md#report); tail: `🟥🟥🟥 <n> questions in <file> — answer on the page`.

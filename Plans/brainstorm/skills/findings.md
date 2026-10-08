@@ -8,7 +8,7 @@ disable-model-invocation: true
 # /findings [scope] [focus]
 
 Writes findings for the user to triage on the page; `/fixes` acts on the triage. States, identities,
-committing: [qa-states.md](qa-states.md). Never edits code or docs.
+committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
 - `scope` — `release` (default: commits since `git describe --tags --abbrev=0`), `<rev>..`, a path, or `all`
 - `focus` — dimensions to run; default all three
@@ -56,4 +56,4 @@ first; return Markdown — the main loop writes the file.
 
 1. Resolve the scope. 2. Launch the reviewers. 3. Append the section; drop duplicates across reviewers,
 keeping the better-evidenced one. 4. Commit `Plans/findings.md` alone. 5. Report counts per severity,
-each 🔴 in one line, then `🟥🟥🟥 findings in Plans/findings.md — triage on the page`.
+each 🔴 in one line; tail: `🟥🟥🟥 findings in Plans/findings.md — triage on the page`.
