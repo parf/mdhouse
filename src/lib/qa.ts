@@ -784,6 +784,15 @@ export function qaItems(tokens: Token[], lines: string[]): Array<{ at: number; c
   return found;
 }
 
+/** A quote that is only a thread — `> 💬 …` with no question over it — as its replies; else null. */
+export function looseThread(open: Token, lines: string[]): Reply[] | null {
+  const [start, mapEnd] = open.map!;
+  const body = quoteBodyOf(lines[start] ?? '');
+  const m = REPLY.exec(body);
+  if (!m || (m[1] && m[2] !== '💡')) return null;
+  return parseReplies(lines, start, trimEnd(lines, start, mapEnd)).replies;
+}
+
 /** The parse the renderer runs, with the same block rules: what the server finds items in. */
 const blockMd = new MarkdownIt({ html: true }).use(footnote);
 

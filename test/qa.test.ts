@@ -176,30 +176,6 @@ describe('a page older than the file is refused', () => {
   });
 });
 
-describe('the renderer fingerprints a question with the same function', () => {
-  test('data-hash equals the server’s hash for every form', async () => {
-    const { render } = await import('../src/lib/render');
-    const src = [
-      '> ? Quote?', '', '> [!QUESTION]', '> Alert?', '', '**Q:** Bold?', '', '::: q Container?', ':::', '',
-      '- [ ] Task?', '      continued', '',
-    ].join('\n');
-    const status = await render('- ⚠️ Status *item*?\n- ✅ Done?\n- plain\n', { rootId: 'r', docPath: 'a.md', docUrl: (x: string) => x } as never);
-    expect(status.html).toContain(`class="status-item"`);
-    expect(status.html).toContain('<span class="task-glyph">⚠️</span>Status <em>item</em>?');
-    expect(status.html).toContain(`data-hash="${findQuestion('- ⚠️ Status *item*?', 0, 1, 'task')!.hash}"`);
-    expect(status.html.match(/data-done/g)?.length).toBe(1);
-    expect(status.tasks).toEqual({ done: 0, total: 0 });
-    const { html } = await render(src, { rootId: 'r', docPath: 'a.md', docUrl: (x: string) => x } as never);
-    const tags = [...html.matchAll(/data-line="(\d+)"[^>]*?data-qa-form="(\w+)" data-hash="(\w+)"|data-qa-form="(\w+)" data-hash="(\w+)"[^>]*?/g)];
-    expect(tags.length).toBeGreaterThanOrEqual(5);
-    for (const form of ['quote', 'alert', 'bold', 'container', 'task'] as const) {
-      const line = { quote: 1, alert: 3, bold: 6, container: 8, task: 11 }[form];
-      const found = findQuestion(src, 0, line, form)!;
-      expect(html).toContain(`data-hash="${found.hash}"`);
-    }
-  });
-});
-
 /* ── Q&A items ── */
 
 import { applyQa, badgeName, parseQa, stateOf, type QaChange, type QaRequest } from '../src/lib/qa';

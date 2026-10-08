@@ -20,6 +20,7 @@ import { answerText, findQuestion, QA_FORMS, writeAnswer, type AnswerRequest, ty
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, currentUser, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
+import { convertLegacy } from './lib/legacy';
 import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit } from './lib/service';
@@ -103,6 +104,15 @@ export async function serve(opts: ServeOptions) {
    * (a tick and an answer, or two ticks) each run against the file the previous one left.
    */
   const fileWrites = new Map<string, Promise<unknown>>();
+  /**
+   * A document as mdhouse reads it: the old Q&A forms rewritten into the new markup (legacy.ts).
+   * Every render and every write reads it so, and a write writes it converted.
+   */
+  const readDoc = async (abs: string): Promise<string> => {
+    const raw = await Bun.file(abs).text();
+    return convertLegacy(raw, splitFrontmatter(raw).offset);
+  };
+
   const queueWrite = <T>(abs: string, write: () => Promise<T>): Promise<T> => {
     const run = (fileWrites.get(abs) ?? Promise.resolve()).then(write);
     const tail = run.catch(() => {});
@@ -297,7 +307,7 @@ export async function serve(opts: ServeOptions) {
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to tick boxes`);
 
           const result = await queueWrite(loc.abs, async () => {
-            const result = toggleTask(await Bun.file(loc.abs).text(), body.line!, body.hash!);
+            const result = toggleTask(await readDoc(loc.abs), body.line!, body.hash!);
             if ('error' in result) return result;
             await registry.writeFile(body.p!, result.src);
             return result;
@@ -407,7 +417,7 @@ export async function serve(opts: ServeOptions) {
             who = (where && (await currentUser(where.repo))?.name) || userInfo().username;
           }
           const result = await queueWrite(loc.abs, async () => {
-            const src = await Bun.file(loc.abs).text();
+            const src = await readDoc(loc.abs);
             const result = insertBlock(src, splitFrontmatter(src).offset, body as AddRequest, who);
             if ('error' in result) return result;
             await registry.writeFile(body.p!, result.src);
@@ -573,7 +583,7 @@ export async function serve(opts: ServeOptions) {
         const file = Bun.file(loc.abs);
         if (!(await file.exists())) return fail(404, 'not found');
 
-        const src = await file.text();
+        const src = /\.mdx?$/i.test(loc.rel) ? await readDoc(loc.abs) : await file.text();
         const { frontmatter, body, offset } = splitFrontmatter(src);
         const rendered = await render(body, {
           rootId: loc.root.id,

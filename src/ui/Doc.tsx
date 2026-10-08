@@ -11,6 +11,7 @@ import { markChanges } from './mark-changes';
 import { AnswerEditor } from './AnswerEditor';
 import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
+import { QaStrip } from './QaStrip';
 
 /** The two diff views; either can be the one a toggle turns on. */
 type DiffView = 'patch' | 'marked';
@@ -1065,9 +1066,10 @@ export function Doc({
       {/* Hidden rather than unmounted: the rendered body carries the link handler, the mermaid
           diagrams and the scroll target, and none of that should be rebuilt by a toggle. */}
       {taskNote && <p class="task-note">{taskNote}</p>}
+      {view === 'doc' && <QaStrip body={body} html={doc.html} url={doc.url} />}
       <div
         ref={body}
-        class={`md${overlaid ? ' marked' : ''}`}
+        class={`md${overlaid ? ' marked' : ''}${answerable ? ' qa-rw' : ''}`}
         hidden={view === 'patch' || (view === 'marked' && diff?.current === false)}
         dangerouslySetInnerHTML={{ __html: doc.html }}
       />

@@ -32,6 +32,16 @@
   --qa-answer-bg: #dcfce7;
   --qa-disagreement: #ea580c;
   --qa-disagreement-bg: #ffedd5;
+  --qa-part: #9a6700;
+  --qa-part-bg: #fff8c5;
+  --qa-pick: #0969da;
+  --qa-pick-bg: #ddf4ff;
+  --qa-target: #1971c2;
+  --qa-tint: 55%;
+  --who-agent: #6b21a8; --who-agent-bg: #f3e8ff; --who-agent-line: #c084fc;
+  --who-team: #075985; --who-team-bg: #e0f2fe; --who-team-line: #7dd3fc;
+  --who-source: #155e75; --who-source-bg: #ecfeff; --who-source-line: #67e8f9;
+  --who-ticket: #9a3412; --who-ticket-bg: #fff7ed; --who-ticket-line: #fdba74;
   --size-small: #7b3ff2;
 
   /* Age heat. Five buckets — under ten minutes, this hour, today, this week, older — each with
@@ -100,6 +110,16 @@
     --qa-answer-bg: #14532d;
     --qa-disagreement: #fb923c;
     --qa-disagreement-bg: #7c2d12;
+    --qa-part: #d29922;
+    --qa-part-bg: #33290f;
+    --qa-pick: #58a6ff;
+    --qa-pick-bg: #12263f;
+    --qa-target: #58a6ff;
+    --qa-tint: 30%;
+    --who-agent: #e9d5ff; --who-agent-bg: #2e1065; --who-agent-line: #7e22ce;
+    --who-team: #bae6fd; --who-team-bg: #082f49; --who-team-line: #0369a1;
+    --who-source: #a5f3fc; --who-source-bg: #083344; --who-source-line: #0e7490;
+    --who-ticket: #fed7aa; --who-ticket-bg: #431407; --who-ticket-line: #c2410c;
     --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
@@ -149,6 +169,16 @@
   --qa-answer-bg: #14532d;
   --qa-disagreement: #fb923c;
   --qa-disagreement-bg: #7c2d12;
+  --qa-part: #d29922;
+  --qa-part-bg: #33290f;
+  --qa-pick: #58a6ff;
+  --qa-pick-bg: #12263f;
+  --qa-target: #58a6ff;
+  --qa-tint: 30%;
+  --who-agent: #e9d5ff; --who-agent-bg: #2e1065; --who-agent-line: #7e22ce;
+  --who-team: #bae6fd; --who-team-bg: #082f49; --who-team-line: #0369a1;
+  --who-source: #a5f3fc; --who-source-bg: #083344; --who-source-line: #0e7490;
+  --who-ticket: #fed7aa; --who-ticket-bg: #431407; --who-ticket-line: #c2410c;
   --size-small: #9366ff;
   --heat-now: #ff6b5e;
   --heat-hour: #f0913f;
@@ -1020,15 +1050,6 @@ main {
 .md blockquote > *:first-child { margin-top: 0; }
 .md blockquote > *:last-child { margin-bottom: 0; }
 
-/* ❓ and 💬 standing in for a leading **Q:** / **A:**. */
-.md .qa { margin-right: 0.3em; }
-
-/* ::: q / ::: a blocks: a question, and its answer set in under it. */
-.md .qa-block { margin: 0.9em 0; padding: 8px 16px; }
-.md .qa-body { flex: 1; min-width: 0; }
-.md .qa-body > :first-child { margin-top: 0; }
-.md .qa-body > :last-child { margin-bottom: 0; }
-.md .qa-q .qa-title { font-weight: 600; }
 .md table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
 .md th, .md td { border: 1px solid var(--border); padding: 5px 10px; text-align: left; }
 .md th { background: var(--bg-panel); font-weight: 620; }
@@ -1058,8 +1079,7 @@ main {
 }
 
 /* GitHub alerts: > [!NOTE] and friends, with GitHub's class names, colours and an icon on the
-   title — the same look as the docs viewer at /rd, so a document reads the same in both.
-   QUESTION and ANSWER are mdhouse's own additions, in the same style. */
+   title — the same look as the docs viewer at /rd, so a document reads the same in both. */
 .md .markdown-alert {
   margin: 0 0 14px;
   padding: 8px 16px;
@@ -1076,69 +1096,15 @@ main {
 .md .markdown-alert-important { --alert: var(--alert-important); }
 .md .markdown-alert-warning   { --alert: var(--alert-warning); }
 .md .markdown-alert-caution   { --alert: var(--alert-caution); }
-/* The Q&A palette: one look for a question, a disagreement and an answer, whichever way it was
-   written — `> [!QUESTION]`, `> ?` / `> ?!` / `> 💬`, `**Q:**` lines, `::: q` blocks. Bright,
-   distinct fills, so a Q&A log reads at a glance; later features (filters, counts, a Q&A view)
-   reuse the same --qa-* tokens. */
-.md :is(.markdown-alert-question, .qa-q) { --qa: var(--qa-question); --qa-fill: var(--qa-question-bg); }
-.md .markdown-alert-disagreement { --qa: var(--qa-disagreement); --qa-fill: var(--qa-disagreement-bg); }
-.md :is(.markdown-alert-answer, .qa-a) { --qa: var(--qa-answer); --qa-fill: var(--qa-answer-bg); }
-.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) {
-  border-left: 4px solid var(--qa);
-  border-radius: 0 6px 6px 0;
-  background: var(--qa-fill);
-}
-/* An answer sits in a little, under the question or disagreement it settles. */
-.md :is(.markdown-alert-answer, .qa-a) { margin-left: 1.4em; }
 .md .markdown-alert-important .markdown-alert-title::before { content: '📣'; }
 .md .markdown-alert-warning   .markdown-alert-title::before { content: '⚠️'; }
 .md .markdown-alert-caution   .markdown-alert-title::before { content: '🛑'; }
-/* One-line alerts — a note, a tip, a question, an answer: the icon in front of the text, no
+/* One-line alerts — a note, a tip: the icon in front of the text, no
    title row. IMPORTANT, WARNING and CAUTION keep theirs: they are meant to stop the reader. */
 .md .markdown-alert-note > :first-child::before { content: 'ℹ️'; margin-right: 8px; }
 .md .markdown-alert-tip > :first-child::before { content: '💡'; margin-right: 8px; }
 .md :is(.markdown-alert-note, .markdown-alert-tip) > :first-child { margin-top: 0; }
 
-/* Question / disagreement / answer blocks carry their icon as an element (it is the answer
-   button in a writable folder), set in a gutter of its own so a body of several lines or
-   paragraphs lines up beside it. */
-.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) {
-  position: relative;
-  padding-left: 42px;
-}
-.md .qa-icon { position: absolute; left: 14px; top: 8px; line-height: 1.6; }
-.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :nth-child(2) { margin-top: 0; }
-.md :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer, .qa-block) > :last-child { margin-bottom: 0; }
-/* In a writable folder a question's icon is the button that opens the answer editor: a raised
-   chip in the block's colour, so it reads as clickable at rest, and stronger on hover / focus.
-   The negative margin keeps the glyph where the plain icon stood. */
-.md .qa-btn {
-  cursor: pointer; border-radius: 6px;
-  padding: 1px 3px; margin: -2.5px -4.5px;
-  background: var(--bg);
-  border: 1.5px solid color-mix(in srgb, var(--qa, var(--qa-question)) 70%, transparent);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--qa, var(--qa-question)) 45%, transparent);
-  transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
-}
-.md .qa-btn.qa-has-answer { --qa: var(--qa-answer); }
-.md .qa-btn:hover, .md .qa-btn:focus-visible {
-  background: color-mix(in srgb, var(--qa, var(--qa-question)) 22%, var(--bg));
-  border-color: var(--qa, var(--qa-question));
-  outline: 2px solid var(--qa, var(--qa-question)); outline-offset: 1px;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--qa, var(--qa-question)) 60%, transparent);
-  transform: scale(1.15);
-}
-/* A checkbox question gets its button after the box, in the line of text — not in a gutter. */
-.md .task-qa { position: static; margin: 0 6px 0 2px; }
-.md .qa-icon.qa-btn:not(.task-qa) { left: 12px; }
-.md .task-qa.qa-btn { margin: -2.5px 8px -2.5px 2px; }
-.md .task-glyph.qa-btn { margin: -2.5px 8px -2.5px -3px; }
-.md .task-glyph { margin-right: 0.35em; }
-.md .task-glyph + .task-qa { margin-left: -0.1em; }
-.md .task-qa.qa-btn { --qa: var(--fg-faint); font-size: 0.75em; vertical-align: 0.1em; box-shadow: none; }
-.md .task-qa.qa-btn:not(.qa-has-answer) { filter: grayscale(1); opacity: 0.6; }
-.md .task-qa.qa-btn:not(.qa-has-answer):is(:hover, :focus-visible) { filter: none; opacity: 1; }
-.md .task-qa.qa-btn.qa-has-answer { --qa: var(--qa-answer); }
 /* The editor: the answer block it will become, being written. */
 .md .answer-editor {
   position: relative; margin: 6px 0 14px 1.4em; padding: 8px 16px 10px 42px;
@@ -1168,9 +1134,145 @@ main {
 .md .form-opened button { font: inherit; font-size: 13px; padding: 3px 10px; border-radius: var(--radius); cursor: pointer; }
 .md li > .answer-host .answer-editor { margin-left: 0; }
 
-/* A list item that is a question or an answer is the block: no bullet beside it. */
-/* A `- **Q:**` / `- **A:**` item is laid out exactly like the block it would be outside a list. */
-.md li:has(> :is(.markdown-alert-question, .markdown-alert-disagreement, .markdown-alert-answer)):not(.task-item, .status-item) { list-style: none; margin-left: -1.5em; }
+/* ── Q&A items (doc/qa.md) ─────────────────────────────────────────────────
+   An item is a list item that opens with a glyph: the glyph hangs in a column of its own, its
+   thread is a column of replies under it. Open questions and 🔴 / 🟠 issues are tinted; settled
+   ones are muted and folded; 🎯 selected ones are framed in blue. */
+.md li.item { list-style: none; margin: 0 0 6px -1.5em; padding: 3px 8px; border-radius: var(--radius);
+  position: relative; border-top: 1px solid transparent; border-bottom: 1px solid transparent; }
+.md ul.items { padding-left: 1.5em; margin: 0.4em 0; }
+.md li.item > .head { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto auto; column-gap: 4px; align-items: start; padding-right: 22px; }
+.md li.item .g { text-align: center; white-space: nowrap; }
+.md li.item.sev-h > .head .h-t { font-weight: 600; }
+.md li.item .btn { font-size: 11px; border: 1px solid var(--border); border-radius: 10px; padding: 0 7px; color: var(--fg-muted);
+  background: var(--bg-raised); white-space: nowrap; align-self: center; }
+/* the first glyph is the item's button: framed on hover */
+.md .g-btn { border: 1px solid transparent; border-radius: 4px; padding: 0 1px; }
+.md.qa-rw .g-btn { cursor: pointer; }
+.md.qa-rw .g-btn:hover { border-color: var(--qa-question); background: var(--bg-raised); box-shadow: 0 1px 0 var(--border); }
+.md.qa-rw .g-btn.dis:hover { border-color: var(--qa-disagreement); }
+.md.qa-rw .g-btn.sev:hover { border-color: var(--fg-muted); }
+/* an unanswered question: a light tint and a 1px line on the left, its ❓ always framed lightly */
+.md li.item.wait-me { background: color-mix(in srgb, var(--qa-question-bg) var(--qa-tint), var(--bg));
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
+.md li.item.wait-me.dis { background: color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg));
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
+.md li.item.wait-me > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 35%, transparent); }
+.md li.item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 35%, transparent); }
+/* an open 🔴 / 🟠 issue: the question's look, in its colour */
+.md li.item.finding > .head .g-btn { border-color: color-mix(in srgb, var(--fg-muted) 35%, transparent); }
+.md li.item.finding[data-sev="🔴"] { background: color-mix(in srgb, var(--qa-question-bg) var(--qa-tint), var(--bg));
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
+.md li.item.finding[data-sev="🟠"] { background: color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg));
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
+.md li.item.finding[data-sev="🔴"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 40%, transparent); }
+.md li.item.finding[data-sev="🟠"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 40%, transparent); }
+.md.qa-rw li.item:is(.wait-me, .finding) { cursor: pointer; }
+.md.qa-rw li.item:is(.wait-me, .finding) :is(.reply, .opts, textarea, .qa-edit) { cursor: auto; }
+/* settled: muted, folded — the question a quiet grey, the answer green, on lines of their own */
+.md li.item.settled { padding: 0; color: var(--fg-faint); }
+.md details.settled { padding: 3px 8px; border-radius: var(--radius); }
+.md details.settled[open] { background: var(--bg-panel); }
+.md details.settled > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto;
+  column-gap: 4px; align-items: start; padding-right: 22px; }
+.md details.settled > summary::-webkit-details-marker { display: none; }
+.md details.settled > summary .t { display: grid; min-width: 0; }
+.md .t-q { color: var(--fg-muted); overflow-wrap: anywhere; }
+.md .t-a { margin-top: 3px; color: color-mix(in srgb, var(--qa-answer) 60%, var(--fg-faint)); overflow-wrap: anywhere; }
+.md details.settled:not([open]) :is(.t-q, .t-a) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.md details.settled[open] > summary .t-a { display: none; }
+.md li.item.info { opacity: 0.85; }
+.md .more { justify-self: start; margin-top: 2px; font-size: 12px; color: var(--qa-pick); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0 8px; background: var(--bg-raised); grid-column: 2; }
+.md details.settled[open] .more { display: none; }
+/* an answered ❓ — a green ? in its place; the file keeps ❓ */
+.md .g-answered { color: var(--qa-answer); font-weight: 800; font-size: 1.15em; line-height: 1.3; width: 1.1em; display: inline-block;
+  text-align: center; border: 1px solid transparent; border-radius: 4px; }
+.md.qa-rw .g-answered { cursor: pointer; }
+.md.qa-rw .g-answered:hover { border-color: var(--qa-answer); background: var(--qa-answer-bg); }
+/* the claim's Evidence / Impact lines, its cases, an issue id */
+.md li.item .meta { display: block; font-size: 0.87em; font-weight: 400; color: var(--fg-muted); margin-top: 2px; }
+.md li.item .cases { margin: 2px 0; padding-left: 18px; font-size: 0.93em; font-weight: 400; }
+.md li.item .cases > li { list-style: disc; margin: 0; }
+.md li.item blockquote.context { margin: 4px 0; }
+.md .iid { font-weight: 600; color: inherit; text-decoration: none; margin-right: 0.3em; }
+.md .iid:hover { text-decoration: underline; }
+.md :is(li.item)[id] { scroll-margin-top: 4em; }
+.md li.item[id]:target { outline: 2px solid var(--qa-question); outline-offset: 2px; }
+/* a thread: one reply per turn, green; ⚠️ / elaborate yellow; 💡 blue */
+.md .thread { margin: 4px 0 2px calc(1.6em + 4px); display: grid; gap: 4px; }
+.md .thread.loose { margin-left: 0; }
+.md .reply { background: var(--qa-answer-bg); border-left: 3px solid var(--qa-answer); border-radius: 4px; padding: 3px 8px;
+  font-weight: 400; color: var(--fg); }
+.md .reply.partial { background: var(--qa-part-bg); border-left-color: var(--qa-part); }
+.md .reply.record { background: var(--bg-panel); border-left-color: var(--border-strong); color: var(--fg-muted); }
+.md .reply p { margin: 0 0 4px; } .md .reply p:last-child { margin: 0; } .md .reply ul { margin: 2px 0; padding-left: 20px; }
+.md .reply.proposal { background: var(--qa-pick-bg); border-left-color: var(--qa-pick); }
+.md .reply.proposal.decided { opacity: 0.75; }
+.md .reply.proposal.declined .txt { text-decoration: line-through; text-decoration-color: var(--fg-faint); }
+.md .s-act { display: none; gap: 8px; padding: 8px 0 2px; }
+.md.qa-rw .s-act { display: flex; }
+.md .s-act button { font: inherit; font-size: 13px; padding: 2px 12px; border-radius: 10px; border: 1px solid var(--qa-pick);
+  background: var(--bg-raised); color: var(--qa-pick); cursor: pointer; position: relative; }
+.md .s-act button.accept { background: var(--qa-answer); border-color: var(--qa-answer); color: #fff; }
+.md .s-act button.reject { border-color: var(--qa-question); color: var(--qa-question); }
+.md.qa-rw .reply:not(.proposal):not(.record) { cursor: text; }
+/* badges: one chip shape, a tint per kind */
+.md .who { display: inline-block; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 8px; line-height: 1.6;
+  background: var(--bg-raised); border: 1px solid var(--border); margin-right: 6px; }
+.md .who[data-kind="agent"] { background: var(--who-agent-bg); border-color: var(--who-agent-line); color: var(--who-agent); }
+.md .who[data-kind="team"] { background: var(--who-team-bg); border-color: var(--who-team-line); color: var(--who-team); }
+.md .who[data-kind="source"] { background: var(--who-source-bg); border-color: var(--who-source-line); color: var(--who-source); }
+.md .who[data-kind="ticket"] { background: var(--who-ticket-bg); border-color: var(--who-ticket-line); color: var(--who-ticket); }
+.md .who:is([data-kind="tag"], [data-kind="date"]) { font-weight: 400; color: var(--fg-muted); }
+/* options: one of ( ) / any of [ ] */
+.md .opts { margin: 4px 0 2px calc(1.6em + 4px); display: grid; gap: 3px; font-weight: 400; }
+.md .opt { display: flex; gap: 8px; align-items: baseline; padding: 3px 8px; border-radius: 5px; border: 1px solid transparent; flex: 1; }
+.md.qa-rw .opt { cursor: pointer; }
+.md.qa-rw .opt:hover { border-color: var(--border); }
+.md .opt input { margin: 0; accent-color: var(--qa-pick); }
+.md .opt.picked { background: var(--qa-pick-bg); border-color: var(--qa-pick); font-weight: 600; }
+.md .opts.done .opt:not(.picked) { color: var(--fg-faint); text-decoration: line-through; text-decoration-color: var(--border); }
+.md .suggest { font-size: 12px; }
+.md .c-row { display: flex; align-items: center; gap: 6px; }
+.md .opt-thread { margin-left: 34px; }
+.md .c-btn, .md .c-done, .md .tgt { display: none; }
+.md.qa-rw .c-btn { display: inline-block; visibility: hidden; flex: none; border: 1px solid var(--border); background: var(--bg-raised);
+  border-radius: 10px; font-size: 12px; padding: 0 6px; cursor: pointer; position: relative; }
+.md.qa-rw .c-row:hover > .c-btn, .md.qa-rw .c-btn:focus { visibility: visible; }
+.md.qa-rw .c-done { display: inline-block; font-size: 12px; padding: 1px 10px; border-radius: 10px; border: 1px solid var(--qa-answer);
+  background: var(--bg-raised); color: var(--qa-answer); cursor: pointer; align-self: center; position: relative; }
+.md.qa-rw .c-done:hover { background: var(--qa-answer); color: #fff; }
+/* 🎯 on every line: a click selects it at once */
+.md.qa-rw .tgt { display: block; position: absolute; right: 6px; top: 3px; border: 0; background: none; padding: 0 2px; font-size: 14px;
+  cursor: pointer; opacity: 0; filter: grayscale(1); }
+.md.qa-rw li.item:hover > :is(.head, details > summary) .tgt, .md.qa-rw .tgt:focus { opacity: 0.55; }
+.md li.item[data-k~="🎯"] .tgt { display: block; position: absolute; right: 6px; top: 3px; border: 0; background: none; opacity: 1; filter: none; }
+/* 🎯 selected for the next run: blue bars left and right, dashed top and bottom, an arrow in the margin */
+.md li.item[data-k~="🎯"] { box-shadow: inset 6px 0 0 var(--qa-target), inset -6px 0 0 var(--qa-target);
+  border-top: 1px dashed var(--qa-target); border-bottom: 1px dashed var(--qa-target); }
+.md li.item[data-k~="🎯"]::before { content: "➤"; position: absolute; left: -26px; top: 50%; transform: translateY(-50%);
+  font-size: 22px; line-height: 1; color: var(--qa-target); pointer-events: none; }
+/* instant tooltips: data-tip, shown on hover / focus */
+.md :is(.g-btn, .g-answered, .c-btn, .c-done, .tgt, .s-act button) { position: relative; }
+.md.qa-rw [data-tip]:hover::after, .qa-strip [data-tip]:hover::after, .qa-edit [data-tip]:hover::after {
+  content: attr(data-tip); position: absolute; left: 0; top: calc(100% + 4px); z-index: 10; white-space: nowrap;
+  font: 12px/1.4 var(--sans); font-weight: 400; color: var(--bg); background: var(--fg); padding: 2px 7px; border-radius: 4px; pointer-events: none; }
+.md.qa-rw .tgt[data-tip]:hover::after { left: auto; right: 0; }
+/* the strip: the total, then thresholds 🔴 ⊂ 🟠 ⊂ ⚪ (open), ✅ (closed), 🎯 */
+.qa-strip { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  background: var(--bg); padding: 6px 0; margin: 0 0 6px; border-bottom: 1px solid var(--border); }
+.qa-strip .chip { font: inherit; font-size: 13px; border: 1px solid var(--border); background: var(--bg-raised); color: var(--fg);
+  border-radius: 12px; padding: 1px 9px; cursor: pointer; position: relative; }
+.qa-strip .chip[aria-pressed="true"] { border-color: var(--qa-pick); background: var(--qa-pick-bg); }
+.qa-strip .chip.zero { color: var(--fg-faint); }
+.qa-strip .sep { color: var(--border-strong); font-size: 18px; line-height: 1; margin: 0 2px; }
+.md.qa-filtered li.item.qa-hide { display: none; }
+@media (max-width: 720px) {
+  .md li.item[data-k~="🎯"]::before { display: none; }
+  .md li.item > .head { grid-template-columns: 1.6em minmax(0, 1fr) auto; }
+  .md :is(.thread, .opts) { margin-left: 0.6em; }
+}
 
 .md .footnotes { border-top: 1px solid var(--border); margin-top: 2.5em; font-size: 0.92em; color: var(--fg-muted); }
 

@@ -162,6 +162,17 @@ GitHub as the hand-written answers around it. `> A:` answers are read but 💬 i
   then line). A changed question or a meanwhile answer is said in the editor before Save, and a
   stale POST is refused — the draft is kept in every case.
 
+## One Q&A markup; the old forms converted on load — 2026-10-07
+
+Replaces "An answer is written in the question's own syntax".
+
+- The markup of `Plans/brainstorm/markup.md`, states of `skills/qa-states.md`. Items are found on
+  markdown-it's block parse (`qa.ts` `qaItems`) — the renderer and the server read the same
+  parse, so a lazy line, a blank line before a thread, a sub-item's reply never split them.
+- Old forms are rewritten into it on every read (`legacy.ts`); a write writes the converted file.
+- 🔵 an informational note — treated as done or not relevant.
+- A plain `- [ ]` (not under a ❓) is ticked only, never answered.
+
 ## Access, auto-rw and the git page — 2026-10-07
 
 Planned, not built.

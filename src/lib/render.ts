@@ -13,13 +13,13 @@
  */
 
 import MarkdownIt from 'markdown-it';
-import type { PluginWithOptions, PluginWithParams } from 'markdown-it';
+import type { PluginWithOptions } from 'markdown-it';
 import type Token from 'markdown-it/lib/token.mjs';
 import anchor from 'markdown-it-anchor';
 import footnote from 'markdown-it-footnote';
 import attrs from 'markdown-it-attrs';
-import container from 'markdown-it-container';
-import { isDone, lineHash, QA_LINE, qaQuestionRange, QUOTE_MARK, quoteKind, STATUS_GLYPH, type QaForm, type QaKind } from './qa';
+import { lineHash, looseThread, qaItems, type QaItem } from './qa';
+import { qaHtml } from './qa-html';
 
 export { lineHash };
 import type { DiffHunk } from './git';
@@ -50,10 +50,10 @@ export interface Rendered {
   tasks: { done: number; total: number };
 }
 
-/** GitHub's five alerts, plus QUESTION and ANSWER — mdhouse's own, for Q&A logs in plan folders. */
-const ALERTS = ['note', 'tip', 'important', 'warning', 'caution', 'question', 'answer'] as const;
+/** GitHub's five alerts. */
+const ALERTS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
 /** Alerts shown as one line — icon, then text — rather than under a title row. */
-const ONE_LINE_ALERTS = new Set<string>(['note', 'tip', 'question', 'answer']);
+const ONE_LINE_ALERTS = new Set<string>(['note', 'tip']);
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
 const MD_EXT = /\.mdx?$/i;
 const PRELOAD_LANGS = ['bash', 'json', 'ts', 'js', 'tsx', 'php', 'sql', 'yaml', 'go', 'python', 'diff', 'html', 'css', 'md'];
@@ -159,7 +159,7 @@ function lineMapPlugin(md: MarkdownIt): void {
 }
 
 /**
- * GitHub alerts: `> [!NOTE]` and the quoted lines under it — plus `[!QUESTION]` and `[!ANSWER]`.
+ * GitHub alerts: `> [!NOTE]` and the quoted lines under it.
  *
  * The class names follow GitHub's (`markdown-alert-note`), so the styling reads as theirs.
  */
@@ -190,23 +190,9 @@ function alertPlugin(md: MarkdownIt): void {
       }
 
       const title = `${kind[0]!.toUpperCase()}${kind.slice(1)}`;
-      // A note, a tip, a question or an answer is one line: the icon sits in front of the text
-      // (CSS), with no title row above it — the name is still there for a screen reader.
+      // A note or a tip is one line: the icon sits in front of the text (CSS), with no title row
+      // above it — the name is still there for a screen reader.
       if (ONE_LINE_ALERTS.has(kind)) {
-        if (kind === 'question' || kind === 'answer') {
-          // The same block as every other Q&A form: an icon element, and for a question its form
-          // and fingerprint. The opening tag replaces the quote's.
-          const tag = new state.Token('html_block', '', 0);
-          tag.content = qaOpenTag(kind, open.map![0], 'alert', bodyLines(state.src));
-          tokens[i] = tag;
-          if (close !== -1) {
-            const end = new state.Token('html_block', '', 0);
-            end.content = '</div>\n';
-            tokens[close] = end;
-          }
-          i += 1;
-          continue;
-        }
         open.attrSet('role', 'note');
         open.attrSet('aria-label', title);
         i += 1;
@@ -224,9 +210,6 @@ function alertPlugin(md: MarkdownIt): void {
   });
 }
 
-const QA_TITLE: Record<QaKind, string> = { question: 'Question', answer: 'Answer', disagreement: 'Disagreement' };
-const QA_ICON: Record<QaKind, string> = { question: '❓', answer: '💬', disagreement: '⁉️' };
-
 /** The document body as lines, `\r` removed — what qa.ts measures questions in. */
 const bodyLines = (src: string) => src.split('\n').map((l) => l.replace(/\r$/, ''));
 /** The same, split once per document however many task items ask for it. */
@@ -242,131 +225,45 @@ function bodyLinesOf(src: string): string[] {
 
 
 /**
- * The data a question needs to be answered from the page: its form and the fingerprint of its
- * source lines, by `qaQuestionRange` from qa.ts — the very function the server checks with.
+ * Q&A items (doc/qa.md): a list item or a quote that opens with a glyph, and its thread, options
+ * and sub-items, become one `qa_item` token rendered by qa-html.ts — its children are never parsed
+ * inline here. A quote that is only a thread (`> 💬 …`) becomes replies with nothing to answer.
+ * The items are qa.ts's `qaItems`, the very parse the server writes with.
  */
-function qaMeta(srcLines: string[], line: number, form: QaForm): string {
-  const range = qaQuestionRange(srcLines, line, form);
-  return range ? ` data-qa-form="${form}" data-hash="${lineHash(srcLines.slice(range.start, range.end).join('\n'))}"` : '';
-}
-
-/**
- * The opening tag of a question / disagreement / answer block, with its icon as a real element —
- * in a writable folder the client makes a question's icon the button that opens the answer editor.
- */
-function qaOpenTag(kind: QaKind, line: number, form: QaForm, srcLines: string[]): string {
-  return (
-    `<div class="markdown-alert markdown-alert-${kind}" role="note" aria-label="${QA_TITLE[kind]}" ` +
-    `data-line="${line + 1}"${kind === 'answer' ? '' : qaMeta(srcLines, line, form)}>` +
-    `<span class="qa-icon" aria-hidden="true">${QA_ICON[kind]}</span>\n`
-  );
-}
-
-/**
- * Split a paragraph into one-line question / answer / disagreement blocks — the same blocks as
- * `> [!QUESTION]` / `> [!ANSWER]`. Each line `marker` recognises starts a block; an unmarked line
- * stays with the block above it. Returns null when the paragraph does not start with a marker.
- *
- * Built from block tokens, before inline parsing: the new paragraphs carry plain `inline`
- * content, so their bold and links render as usual, and each keeps its own source line.
- */
-function qaBlocks(
-  state: { Token: typeof Token; src: string },
-  open: Token,
-  inline: Token,
-  marker: RegExp,
-  kindOf: (mark: string) => QaKind,
-  form: QaForm,
-): Token[] | null {
-  if (!open.map || !marker.test(inline.content)) return null;
-  const groups: Array<{ kind: QaKind; line: number; text: string[] }> = [];
-  inline.content.split('\n').forEach((text, n) => {
-    const m = marker.exec(text);
-    if (m) groups.push({ kind: kindOf(m[1]!), line: open.map![0] + n, text: [text.slice(m[0].length)] });
-    else groups[groups.length - 1]!.text.push(text);
-  });
-
-  const srcLines = bodyLines(state.src);
-  const out: Token[] = [];
-  for (const g of groups) {
-    const start = new state.Token('html_block', '', 0);
-    start.content = qaOpenTag(g.kind, g.line, form, srcLines);
-    const pOpen = new state.Token('paragraph_open', 'p', 1);
-    pOpen.map = [g.line, g.line + g.text.length];
-    const body = new state.Token('inline', '', 0);
-    body.content = g.text.join('\n');
-    body.map = pOpen.map;
-    body.children = [];
-    const pClose = new state.Token('paragraph_close', 'p', -1);
-    const end = new state.Token('html_block', '', 0);
-    end.content = '</div>\n';
-    out.push(start, pOpen, body, pClose, end);
-  }
-  return out;
-}
-
-/**
- * Two places a Q&A log becomes question / answer / disagreement blocks:
- * - a paragraph whose lines open with `**Q:**` / `**A:**`;
- * - a quote whose first line opens with a glyph (`> ?`, `> ?!`, `> 💬`, `> Q:` …) — the whole
- *   quote then turns into blocks, and loses its quote frame.
- * Inside a tight list a `**Q:**` stays a small inline icon (`questionsAndAnswers`); a block
- * inside a list item would not read as one line of the list.
- */
-function qaLinesPlugin(md: MarkdownIt): void {
-  md.core.ruler.after('block', 'mdhouse_qa_lines', (state) => {
-    const tokens = state.tokens;
-    for (let i = 0; i < tokens.length - 2; i++) {
-      const open = tokens[i]!;
-
-      if (open.type === 'blockquote_open' && tokens[i + 1]?.type === 'paragraph_open') {
-        const first = tokens[i + 2]!;
-        if (first.type !== 'inline' || !QUOTE_MARK.test(first.content)) continue;
-        let close = i + 1;
-        while (close < tokens.length && !(tokens[close]!.type === 'blockquote_close' && tokens[close]!.level === open.level)) close++;
-        const inner: Token[] = [];
-        // Where the last block's closing `</div>` sits: whatever follows a block in the quote —
-        // a list, another paragraph — is part of it, so it goes in before that close.
-        let lastClose = -1;
-        for (let k = i + 1; k < close; k++) {
-          const t = tokens[k]!;
-          const blocks =
-            t.type === 'paragraph_open' && t.level === open.level + 1 && tokens[k + 1]?.type === 'inline'
-              ? qaBlocks(state, t, tokens[k + 1]!, QUOTE_MARK, quoteKind, 'quote')
-              : null;
-          if (blocks) {
-            inner.push(...blocks);
-            lastClose = inner.length - 1;
-            k += 2;
-          } else if (lastClose >= 0) {
-            inner.splice(lastClose, 0, t);
-            lastClose++;
-          } else inner.push(t);
-        }
-        tokens.splice(i, close - i + 1, ...inner);
-        i += inner.length - 1;
-        continue;
-      }
-
-      // Also inside list items (where a tight list hides the paragraph): `- **Q:** …` is a
-      // question like any other.
-      const inline = tokens[i + 1]!;
-      if (open.type !== 'paragraph_open' || inline.type !== 'inline') continue;
-      const blocks = qaBlocks(state, open, inline, QA_LINE, (m) => (m === 'Q' ? 'question' : 'answer'), 'bold');
-      if (!blocks) continue;
-      // A list straight after the last line (no blank line between) belongs to that block:
-      // `**A:** Yes:` followed by `- a` is one answer with bullets.
-      const after = tokens[i + 3];
-      if (after && /^(bullet|ordered)_list_open$/.test(after.type) && after.map?.[0] === open.map?.[1]) {
-        let end = i + 4;
-        while (end < tokens.length && !(tokens[end]!.type === after.type.replace('_open', '_close') && tokens[end]!.level === after.level)) end++;
-        const list = tokens.slice(i + 3, end + 1);
-        blocks.splice(blocks.length - 1, 0, ...list);
-        tokens.splice(i, 3 + list.length, ...blocks);
-      } else tokens.splice(i, 3, ...blocks);
-      i += blocks.length - 1;
+function qaPlugin(md: MarkdownIt): void {
+  md.core.ruler.after('block', 'mdhouse_qa', (state) => {
+    const lines = bodyLinesOf(state.src);
+    const found = qaItems(state.tokens, lines).filter((f) => f.at >= 0);
+    for (const f of found.reverse()) {
+      const t = new state.Token('qa_item', '', 0);
+      t.block = true;
+      t.meta = f.item;
+      t.map = [f.item.start, f.item.end];
+      state.tokens.splice(f.at, f.close - f.at + 1, t);
+    }
+    for (let i = state.tokens.length - 1; i >= 0; i--) {
+      const t = state.tokens[i]!;
+      if (t.type !== 'blockquote_open' || !t.map) continue;
+      const replies = looseThread(t, lines);
+      if (!replies?.length) continue;
+      let close = i + 1;
+      while (!(state.tokens[close]!.type === 'blockquote_close' && state.tokens[close]!.level === t.level)) close++;
+      const th = new state.Token('qa_thread', '', 0);
+      th.block = true;
+      th.meta = { replies, line: t.map[0] + 1 };
+      state.tokens.splice(i, close - i + 1, th);
     }
   });
+  let html: ReturnType<typeof qaHtml> | null = null;
+  const view = () => (html ??= qaHtml({ inline: (s) => md.renderInline(s), block: (s) => md.render(s) }));
+  md.renderer.rules.qa_item = (tokens, idx) => {
+    const item = tokens[idx]!.meta as QaItem;
+    return `${item.kind === 'quote' ? `<ul class="items qa-quote">${view().itemHtml(item)}</ul>` : view().itemHtml(item)}\n`;
+  };
+  md.renderer.rules.qa_thread = (tokens, idx) => {
+    const { replies, line } = tokens[idx]!.meta;
+    return `${view().looseThread(replies, line)}\n`;
+  };
 }
 
 
@@ -404,16 +301,11 @@ export function toggleTask(
   return { src: lines.join('\n'), checked };
 }
 
-/** A list item's own text opening with a status glyph — `✅ done`, `⚠️ partly` — then a space. */
-const STATUS_ITEM = new RegExp(String.raw`^(${STATUS_GLYPH.source})\s+`, 'u');
-
 /**
  * Task list items become real checkboxes carrying their source line and a fingerprint of it
  * (`data-hash`), which is what lets a click be checked against the file before it is written.
- * They are rendered disabled here; the client enables them only for a writable root.
- *
- * A list item opening with a status glyph (`- ✅ …`, `- 🚫 …`) is a task item too, for
- * answering: the glyph stays as written, in a `.task-glyph`, and is not counted as a checkbox.
+ * They are rendered disabled here; the client enables them only for a writable root. A checkbox
+ * under a Q&A item is an option, rendered with the item — not counted here.
  */
 function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number }): void {
   md.core.ruler.after('mdhouse_alerts', 'mdhouse_tasks', (state) => {
@@ -425,33 +317,9 @@ function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number })
       if (tokens[i + 1]?.type !== 'paragraph_open' || inline?.type !== 'inline') continue;
 
       const line = tokens[i]!.map ? tokens[i]!.map![0] + 1 : 0;
-      const status = STATUS_ITEM.exec(inline.content);
-      const match = status ? null : /^\[([ xX])\]\s+/.exec(inline.content);
-      if (!match && !status) continue;
-
-      const done = isDone((match ?? status)![0]);
-      // Every task item can be answered (open-question lists keep their questions as checkboxes): the
-      // item carries the same form and fingerprint a question block does.
-      const range = line ? qaQuestionRange(bodyLinesOf(state.src), line - 1, 'task') : null;
-      if (range) {
-        tokens[i]!.attrSet('data-qa-form', 'task');
-        tokens[i]!.attrSet('data-hash', lineHash(bodyLinesOf(state.src).slice(range.start, range.end).join('\n')));
-        if (done) tokens[i]!.attrSet('data-done', '');
-      }
-
-      if (status) {
-        if (!range) continue;
-        tokens[i]!.attrJoin('class', 'status-item');
-        // Inline parsing has not run yet: the glyph comes off the text it will parse, and goes in
-        // front of it as markup, as the checkbox does.
-        const glyph = status[1]!;
-        inline.content = inline.content.slice(status[0].length);
-        const span = new state.Token('html_inline', '', 0);
-        span.content = `<span class="task-glyph">${glyph}</span>`;
-        inline.children!.unshift(span);
-        i += 2;
-        continue;
-      }
+      const match = /^\[([ xX])\]\s+/.exec(inline.content);
+      if (!match) continue;
+      const done = match[1] !== ' ';
 
       counts.total++;
       if (done) counts.done++;
@@ -536,78 +404,6 @@ function rewriteHtmlImages(html: string, ctx: RenderContext): string {
   });
 }
 
-/**
- * `**Q:**` and `**A:**` leading a paragraph, a list item or a line become ❓ and 💬 — a
- * question-and-answer log reads as a conversation instead of a column of bold letters. Only
- * where they lead: a bold `Q:` mid-sentence is left as written.
- */
-const QA_EMOJI: Record<string, string> = { Q: '❓', A: '💬' };
-
-/**
- * `::: q` / `::: question` and `::: a` / `::: answer` — the container syntax VuePress and
- * VitePress use — as real question and answer blocks. Unlike a leading `**Q:**`, a block holds
- * any Markdown (lists, code, several paragraphs) and carries `data-line` like every other block,
- * so the marked-up diff and, later, section → AI can address one exchange. Text after the name
- * on the opening line (`::: q Do we keep it?`) becomes the block's first line.
- */
-const QA_CONTAINERS: Record<string, 'q' | 'a'> = { q: 'q', question: 'q', a: 'a', answer: 'a' };
-
-function qaContainerPlugin(md: MarkdownIt): void {
-  // A question container carries its form and fingerprint like every other question block; the
-  // container's own render function below only sees tokens, so the data is put on them here.
-  md.core.ruler.after('block', 'mdhouse_qa_container_meta', (state) => {
-    let srcLines: string[] | null = null;
-    for (const t of state.tokens) {
-      if (!/^container_(q|question)_open$/.test(t.type) || !t.map) continue;
-      srcLines ??= bodyLines(state.src);
-      const range = qaQuestionRange(srcLines, t.map[0], 'container');
-      if (!range) continue;
-      t.attrSet('data-qa-form', 'container');
-      t.attrSet('data-hash', lineHash(srcLines.slice(range.start, range.end).join('\n')));
-    }
-  });
-  for (const [name, kind] of Object.entries(QA_CONTAINERS)) {
-    // Typed against an older @types/markdown-it, like markdown-it-attrs below; the runtime
-    // contract is a plain plugin.
-    md.use(container as unknown as PluginWithParams, name, {
-      render(tokens: Token[], idx: number, _opts: unknown, _env: unknown, self: { renderAttrs: (t: Token) => string }) {
-        const token = tokens[idx]!;
-        if (token.nesting !== 1) return '</div></div>\n';
-        token.attrJoin('class', `qa-block qa-${kind}`);
-        token.attrSet('role', 'note');
-        token.attrSet('aria-label', kind === 'q' ? 'Question' : 'Answer');
-        const title = token.info.trim().slice(name.length).trim();
-        return (
-          `<div${self.renderAttrs(token)}>` +
-          `<span class="qa-icon" aria-hidden="true">${QA_EMOJI[kind.toUpperCase()]}</span>` +
-          `<div class="qa-body">\n${title ? `<p class="qa-title">${md.renderInline(title)}</p>\n` : ''}`
-        );
-      },
-    });
-  }
-}
-
-export function questionsAndAnswers(html: string): string {
-  // `<pre>` is left exactly as written — raw HTML is allowed, and a preformatted block is the
-  // one place a stray line break would show.
-  return html
-    .split(/(<pre\b[\s\S]*?<\/pre>)/i)
-    .map((part) =>
-      part.startsWith('<pre') || part.startsWith('<PRE')
-        ? part
-        : part.replace(
-            // A bare newline counts only after text, i.e. a soft break inside a paragraph — not
-            // the newline that follows an opening tag like `<details>`.
-            /(<p\b[^>]*>|<li\b[^>]*>|<br\s*\/?>|(?<=[^>\n])\n)(\s*)<strong>([QA]):<\/strong>/g,
-            // A Q: or A: on a line of its own is a new turn, so it keeps its line: Markdown
-            // would otherwise run a question and the answer below it together into one.
-            (_, lead: string, space: string, which: string) =>
-              `${lead === '\n' ? '<br>\n' : lead}${space}<span class="qa" role="img" aria-label="${which}:">${QA_EMOJI[which]}</span>`,
-          ),
-    )
-    .join('');
-}
-
 export async function render(src: string, ctx: RenderContext): Promise<Rendered> {
   await preloadLanguages(src);
   const hl = await highlighter();
@@ -645,16 +441,15 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   });
 
   md.use(lineMapPlugin);
-  md.use(qaLinesPlugin);
   md.use(alertPlugin);
   md.use(taskListPlugin, tasks);
+  md.use(qaPlugin);
   // markdown-it-attrs ships its own (older) @types/markdown-it, so its declared plugin type
   // does not line up with ours. The runtime contract is a plain markdown-it plugin.
   md.use(attrs as unknown as PluginWithOptions<{ allowedAttributes: string[] }>, {
     allowedAttributes: ['id', 'class'],
   });
   md.use(footnote);
-  md.use(qaContainerPlugin);
   md.use(anchor, {
     slugify,
     permalink: anchor.permalink.linkInsideHeader({ symbol: '#', placement: 'after', class: 'header-anchor' }),
@@ -669,7 +464,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   });
   md.use(linkPlugin, ctx);
 
-  const html = questionsAndAnswers(rewriteHtmlImages(md.render(src), ctx));
+  const html = rewriteHtmlImages(md.render(src), ctx);
   return { html, headings, hasMermaid, tasks };
 }
 

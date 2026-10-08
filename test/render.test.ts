@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { lineHash, questionsAndAnswers, render, splitFrontmatter, toggleTask } from '../src/lib/render';
+import { lineHash, render, splitFrontmatter, toggleTask } from '../src/lib/render';
+import { parseQa } from '../src/lib/qa';
 
 const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/d/${rel}` };
 
@@ -140,58 +141,6 @@ describe('paths that are not plain ASCII', () => {
   });
 });
 
-describe('Q: and A:', () => {
-  const qa = (html: string) => questionsAndAnswers(html).replace(/<span class="qa"[^>]*>(.)<\/span>/gu, '[$1]');
-
-  test('leading a paragraph, a list item or a line, they become emoji', () => {
-    expect(qa('<p data-line="1"><strong>Q:</strong> one?\n<strong>A:</strong> two.</p>')).toBe(
-      '<p data-line="1">[❓] one?<br>\n[💬] two.</p>',
-    );
-    expect(qa('<li><strong>Q:</strong> x</li>')).toBe('<li>[❓] x</li>');
-    // An explicit break is kept as it is, not doubled.
-    expect(qa('<p>a<br>\n<strong>A:</strong> b</p>')).toBe('<p>a<br>\n[💬] b</p>');
-  });
-
-  test('raw HTML: a <pre> is left as written, and no break is added after an opening tag', () => {
-    const pre = '<pre>\n<strong>Q:</strong> x</pre>';
-    expect(qa(pre)).toBe(pre);
-    expect(qa('<details>\n<strong>Q:</strong> x</details>')).toBe('<details>\n<strong>Q:</strong> x</details>');
-  });
-
-  test('applying it twice changes nothing more', () => {
-    const once = questionsAndAnswers('<p><strong>Q:</strong> a\n<strong>A:</strong> b</p>');
-    expect(questionsAndAnswers(once)).toBe(once);
-  });
-
-  test('mid-sentence, or any other bold word, is left alone', () => {
-    expect(qa('<p>Text with <strong>Q:</strong> mid.</p>')).toBe('<p>Text with <strong>Q:</strong> mid.</p>');
-    expect(qa('<p><strong>Note:</strong> x</p>')).toBe('<p><strong>Note:</strong> x</p>');
-  });
-});
-
-describe('::: q / ::: a containers', () => {
-  test('both spellings make blocks that carry data-line and hold any Markdown', async () => {
-    const { html } = await render('::: question\nWhy?\n:::\n\n::: a\n- one\n- two\n:::\n', ctx);
-    const open = /<div ([^>]*class="qa-block qa-q"[^>]*)>/.exec(html)?.[1] ?? '';
-    for (const attr of [/data-line="1"/, /data-qa-form="container"/, /data-hash="[0-9a-f]{8}"/, /role="note"/, /aria-label="Question"/]) {
-      expect(open).toMatch(attr);
-    }
-    expect(html).toContain('<span class="qa-icon" aria-hidden="true">❓</span>');
-    expect(html).toContain('<div data-line="5" class="qa-block qa-a" role="note" aria-label="Answer">');
-    expect(html.match(/<li/g)?.length).toBe(2);
-  });
-
-  test('text on the opening line is the first line, rendered inline', async () => {
-    const { html } = await render('::: q Keep **5y**?\n:::\n', ctx);
-    expect(html).toContain('<p class="qa-title">Keep <strong>5y</strong>?</p>');
-  });
-
-  test('an unknown container name is left as text', async () => {
-    const { html } = await render('::: warning\nx\n:::\n', ctx);
-    expect(html).not.toContain('qa-block');
-  });
-});
-
 describe('toggleTask — the one edit mdhouse makes to a document', () => {
   const tick = (src: string, line: number, text: string) => toggleTask(src, line, lineHash(text));
 
@@ -251,57 +200,55 @@ describe('alerts', () => {
     expect(html).not.toContain('markdown-alert-title');
   });
 
-  test('QUESTION and ANSWER are one line: no title row, the name kept for screen readers', async () => {
-    const { html } = await render('> [!QUESTION]\n> Keep it?\n\n> [!answer] Yes.\n', ctx);
-    expect(html).toContain('class="markdown-alert markdown-alert-question" role="note" aria-label="Question"');
-    expect(html).toContain('class="markdown-alert markdown-alert-answer" role="note" aria-label="Answer"');
-    expect(html).not.toContain('markdown-alert-title');
-    expect(html).toContain('>Yes.</p>');
-  });
-
   test('an unknown marker stays a plain quote', async () => {
     expect((await render('> [!BOGUS]\n> x\n', ctx)).html).toContain('<blockquote');
   });
 });
 
-describe('**Q:** / **A:** paragraphs', () => {
-  test('become one-line question and answer blocks, like [!QUESTION] / [!ANSWER]', async () => {
-    const { html } = await render('**Q:** Is it **warm**?\n**A:** After the first request.\nIt stays warm.\n', ctx);
-    expect(html).toContain('<div class="markdown-alert markdown-alert-question" role="note" aria-label="Question" data-line="1" data-qa-form="bold"');
-    expect(html).toContain('<p data-line="1">Is it <strong>warm</strong>?</p>');
-    expect(html).toContain('<div class="markdown-alert markdown-alert-answer" role="note" aria-label="Answer" data-line="2">');
-    expect(html).toContain('<span class="qa-icon" aria-hidden="true">❓</span>');
-    expect(html).toContain('After the first request.\nIt stays warm.</p>'); // an unmarked line stays with its block
+describe('Q&A items', () => {
+  test('the old forms are plain Markdown now (convertLegacy rewrites them on load)', async () => {
+    const { html } = await render('**Q:** bold\n\n> [!QUESTION]\n> q\n\n::: q\nx\n:::\n\n> ? q\n', ctx);
+    expect(html).toContain('<strong>Q:</strong> bold');
+    expect(html).toContain('<blockquote');
+    expect(html).toContain('::: q');
+    expect(html).not.toContain('data-qa');
   });
 
-  test('a list item is a question too; mid-sentence stays bold', async () => {
-    const { html } = await render('- **Q:** in a list?\n- **A:** yes\n', ctx);
-    expect(html).toContain('markdown-alert-question" role="note" aria-label="Question" data-line="1" data-qa-form="bold"');
-    expect(html).toContain('markdown-alert-answer');
-    expect((await render('Text with **Q:** mid.\n', ctx)).html).toContain('<strong>Q:</strong>');
-  });
-});
-
-describe('Q&A glyphs in a quote', () => {
-  const kinds = async (src: string) =>
-    [...(await render(src, ctx)).html.matchAll(/markdown-alert-(question|answer|disagreement)"/g)].map((m) => m[1]);
-
-  test('? ❓ Q: and Q ask; ?! !? ⁉️ disagree; 💬 and A: answer', async () => {
-    expect(await kinds('> ? a\n> 💬 b\n')).toEqual(['question', 'answer']);
-    expect(await kinds('> ❓ a\n> A: b\n')).toEqual(['question', 'answer']);
-    expect(await kinds('> Q: a\n> Q b\n')).toEqual(['question', 'question']);
-    expect(await kinds('> ?! a\n> !? b\n> ⁉️ c\n> 💬 d\n')).toEqual(['disagreement', 'disagreement', 'disagreement', 'answer']);
+  test('an item carries its line, the fingerprint the server checks, and what the strip filters on', async () => {
+    const src = '# T\n\n- ❓ Keep it?\n  > 💬👾 maybe\n- 🎯 🔴 D.1 `a.ts:1` lost\n  Evidence: ran it\n';
+    const { html } = await render(src, ctx);
+    const items = parseQa(src, 0).items;
+    expect(html).toContain(`<li class="item wait-me" data-qa="item" data-line="3" data-hash="${items[0]!.hash}" data-k="❓ open">`);
+    expect(html).toContain(`data-line="5" data-hash="${items[1]!.hash}" data-k="🔴 open 🎯" data-sev="🔴" id="D.1"`);
+    expect(html).toContain('<a class="iid" href="#D.1">D.1</a>');
+    expect(html).toContain('<span class="meta">Evidence: ran it</span>');
+    expect(html).toContain('<div class="reply" data-line="4"><span class="who" data-kind="agent">👾</span>');
   });
 
-  test('the quote frame goes, and the marker with it', async () => {
-    const { html } = await render('> ? Is it **warm**?\n', ctx);
-    expect(html).not.toContain('<blockquote');
-    expect(html).toContain('Is it <strong>warm</strong>?</p>');
+  test('settled and answered items fold; 🔵 a note is closed', async () => {
+    const { html } = await render('- ✅ done\n  > 💬 👤parf yes\n\n- ❓ q\n  > 💬 👤parf a\n\n- 🔵 not reviewed\n', ctx);
+    expect(html.match(/<details class="settled">/g)).toHaveLength(3);
+    expect(html).toContain('g-answered');
+    expect(html).toContain('class="item settled info"');
   });
 
-  test('ordinary quotes stay quotes — a bare A is English, and Q must stand alone', async () => {
-    for (const src of ['> A quick note\n', '> Quite so\n', '> Q4 revenue\n', '> Plain\n> ? not first\n']) {
-      expect((await render(src, ctx)).html).toContain('<blockquote');
-    }
+  test('options are radios / checkboxes with their lines, not counted as tasks; a plain [ ] still is', async () => {
+    const { html, tasks } = await render('- ❓ Port:\n  - ( ) 7790 🌟\n  - [x] more\n- [ ] plain\n', ctx);
+    expect(html).toContain('<div class="c-wrap" data-line="2"><div class="c-row"><label class="opt"><input type="radio"');
+    expect(html).toContain('🌟 suggested');
+    expect(tasks).toEqual({ done: 0, total: 1 });
+  });
+
+  test('a quote item, and a thread with no question over it', async () => {
+    const { html } = await render('> ❓ quote q\n> 💬 a\n\n> 💬 loose\n', ctx);
+    expect(html).toContain('<ul class="items qa-quote"><li class="item settled" data-qa="quote" data-line="1"');
+    expect(html).toContain('<div class="thread loose" data-line="4">');
+  });
+
+  test('badges in text, never in code; links in replies render as links', async () => {
+    const { html } = await render('- ❓ ask 👥backend `👤x`\n  > 💬 see [a](a.md)\n', ctx);
+    expect(html).toContain('<span class="who" data-kind="team">👥backend</span>');
+    expect(html).toContain('<code>👤x</code>');
+    expect(html).toContain('href="/d/docs/a.md"');
   });
 });
