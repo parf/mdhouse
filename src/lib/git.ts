@@ -378,11 +378,58 @@ export async function workingDiff(repo: string, repoRelPath: string): Promise<Fi
   return { kind: 'working', ...parsePatch(patch) };
 }
 
-/** What one commit did to one file. `rev` describes it, so the page can say what it is showing. */
+/**
+ * What one commit did to one file. `rev` describes it, so the page can say what it is showing.
+ * Diffs the file under its name at that commit, and both names of a rename, with `-M`.
+ */
 export async function commitDiff(repo: string, repoRelPath: string, rev: Commit): Promise<FileDiff | null> {
-  const patch = await git(repo, ['show', ...PLAIN_DIFF, '--format=', rev.hash, '--', repoRelPath]);
+  const paths = (await pathsAt(repo, repoRelPath, rev.hash)) ?? [repoRelPath];
+  const patch = await git(repo, ['show', ...PLAIN_DIFF, '-M', '--format=', rev.hash, '--', ...paths]);
   if (patch === null) return null;
   return { kind: 'commit', rev, ...parsePatch(patch) };
+}
+
+/**
+ * The file's path(s) in commit `hash`, as `git log --follow` names them: one, or old and new
+ * for a rename. Null when that commit is not in the file's history. Stops git once found.
+ */
+async function pathsAt(repo: string, repoRelPath: string, hash: string): Promise<string[] | null> {
+  let proc;
+  try {
+    proc = Bun.spawn(
+      ['git', '-c', 'core.quotepath=false', 'log', '--follow', '-M', '--name-status', `--format=${FMT_REC}%H`, '--', repoRelPath],
+      { cwd: repo, stdout: 'pipe', stderr: 'ignore', env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' } },
+    );
+  } catch {
+    return null;
+  }
+  const timer = setTimeout(() => proc.kill(), 15_000);
+  let buffer = '';
+  let found: string[] | null = null;
+  const decoder = new TextDecoder();
+  for await (const chunk of proc.stdout) {
+    buffer += decoder.decode(chunk, { stream: true });
+    // A record is complete once the next one starts.
+    const records = buffer.split(REC);
+    buffer = records.pop() ?? '';
+    for (const record of records) {
+      const [head = '', ...lines] = record.split('\n');
+      if (head !== hash) continue;
+      const row = lines.find((l) => l.trim());
+      found = row ? row.split('\t').slice(1) : null;
+      break;
+    }
+    if (found) break;
+  }
+  if (!found && buffer) {
+    const [head = '', ...lines] = buffer.split('\n');
+    const row = head === hash ? lines.find((l) => l.trim()) : undefined;
+    if (row) found = row.split('\t').slice(1);
+  }
+  proc.kill();
+  clearTimeout(timer);
+  await proc.exited;
+  return found?.length ? found : null;
 }
 
 /**

@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { newFileDiff, parsePatch } from '../src/lib/git';
+import { commitDiff, fileHistory, newFileDiff, parsePatch } from '../src/lib/git';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { changesOf } from '../src/ui/mark-changes';
 import { markupHunks, markupLine } from '../src/lib/render';
 
@@ -238,4 +241,28 @@ describe('a hunk that is nothing but deletions', () => {
       { at: 5, text: 'line 5\nline 6' },
     ]);
   });
+});
+
+test('commitDiff: a commit older than a rename diffs the old name; the rename commit, the rename', async () => {
+  const repo = mkdtempSync(join(tmpdir(), 'mdhouse-rename-'));
+  const env = { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' };
+  const git = (...args: string[]) => Bun.spawnSync(['git', ...args], { cwd: repo, env, stdout: 'ignore', stderr: 'ignore' });
+  try {
+    git('init', '-q');
+    writeFileSync(join(repo, 'old.md'), 'a\n');
+    git('add', '.');
+    git('commit', '-qm', 'create');
+    writeFileSync(join(repo, 'old.md'), 'a\nb\n');
+    git('commit', '-qam', 'edit');
+    git('mv', 'old.md', 'new.md');
+    git('commit', '-qm', 'rename');
+
+    const { commits } = await fileHistory(repo, 'new.md', 5);
+    expect(commits.map((c) => c.subject)).toEqual(['rename', 'edit', 'create']);
+    const [rename, edit] = await Promise.all(commits.slice(0, 2).map((c) => commitDiff(repo, 'new.md', c)));
+    expect([edit!.added, edit!.removed, edit!.hunks.length]).toEqual([1, 0, 1]);
+    expect([rename!.added, rename!.removed, rename!.hunks.length]).toEqual([0, 0, 0]);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
 });
