@@ -69,6 +69,7 @@
   the unit: it listens where install stops and pings, not on the saved port
 - `service install` stops a hand-started mdhouse only after `systemctl daemon-reload` succeeded:
   a failing systemctl leaves it running
+- `--git-log` takes a positive whole number, else exits 2 — `abc` silently turned git recents off
 
 ## 1.5.0 — 2026-10-07
 

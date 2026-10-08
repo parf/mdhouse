@@ -180,3 +180,13 @@ describe('service install', () => {
     expect(s.run(['exit', '--port', '61923']).code).toBe(0); // still running
   });
 });
+
+test('--git-log takes a positive whole number, like --port (C9)', () => {
+  const s = scratch();
+  const a = s.folder('a');
+  for (const bad of ['abc', '0', '-5', '2.5', '']) {
+    const r = s.run([a, '--git-log', bad, '--port', '61924']);
+    expect(r.code).toBe(2);
+    expect(r.err).toContain(`mdhouse: --git-log: not a count: ${bad}`);
+  }
+});

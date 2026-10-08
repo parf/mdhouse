@@ -104,7 +104,16 @@ function parse(argv: string[]): Options {
       case '-o': case '--open': o.open = true; break;
       case '-a': case '--all': o.all = true; o.startOnly.add('-a'); break;
       case '--fg': case '--foreground': o.fg = true; break;
-      case '--git-log': o.gitLog = Number(next()); o.startOnly.add('--git-log'); break;
+      case '--git-log': {
+        const n = next();
+        o.gitLog = Number(n);
+        if (!/^\d+$/.test(n) || o.gitLog <= 0) {
+          console.error(`mdhouse: --git-log: not a count: ${n}`);
+          process.exit(2);
+        }
+        o.startOnly.add('--git-log');
+        break;
+      }
       case '--no-git': o.noGit = true; o.startOnly.add('--no-git'); break;
       case '--rw': o.rw = true; break;
       case '-p': case '--perm': o.perm = true; break;
