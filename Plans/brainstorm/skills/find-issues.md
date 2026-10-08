@@ -1,6 +1,6 @@
 ---
 name: find-issues
-description: Reviews what changed, one read-only reviewer per touched subsystem (a map it keeps in Plans/subsystems.md), and writes verified issues to the day's file, Plans/issues/YYYY-MM-DD.md, in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
+description: Reviews what changed, one read-only reviewer per touched subsystem (a map it keeps in Plans/subsystems.md), and writes verified issues to the day's file, Plans/issues/YYYY-MM/YYYY-MM-DD.md, in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
 argument-hint: "[scope] [mine] [focus]"
 disable-model-invocation: true
 ---
@@ -11,7 +11,7 @@ Writes issues for the user to triage on the page; `/fix-issues` acts on the tria
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
 - `scope` — default: **since the last review** — `<sha>..HEAD`, the `<sha>` after `..` in the last `# Issues — … · <from>..<sha>`
-  heading of the newest `Plans/issues/*.md`. The very first run (no issues file yet) reviews the whole
+  heading of the newest `Plans/issues/*/*.md`. The very first run (no issues file yet) reviews the whole
   project at HEAD — once. Or: `release`, `all`, a `<rev>..` range, a path
 - `mine` — only the git user's own commits (a repo others commit to, or with merge traffic)
 - `focus` — the rest: subsystems to review; default every touched one
@@ -67,7 +67,7 @@ the meta-signals deciding where to look hardest — the format below and these r
 - **Never raise again** what the last 5 days' files in `Plans/issues/` and `Plans/done/issues/` already
   hold, open or closed.
   A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
-  new item starts with what changed and links the old one (`issues/2026-10-07.md#B44`).
+  new item starts with what changed and links the old one (`issues/2026-10/2026-10-07.md#B44`).
 - **One cause, one item**: issues that share a root cause (one stale doc, one missing helper) are one
   item listing every `file:line`.
 - `Plans/done/` and `Plans/brainstorm/` drafts raise nothing — unless a live doc describes them wrongly.
@@ -75,7 +75,7 @@ the meta-signals deciding where to look hardest — the format below and these r
 
 ## Format
 
-**One file per day: `Plans/issues/YYYY-MM-DD.md`** (today's date) — create it on the day's first run; a
+**One file per day: `Plans/issues/YYYY-MM/YYYY-MM-DD.md`** (today's date) — create it on the day's first run; a
 later run the same day appends to it. Each run opens with one heading, subsystems under it as `##` —
 `<from>..<sha>` is what was reviewed: the last run's sha, or on the first run the first commit
 (`git rev-list --max-parents=0 HEAD`): `Issues — Oct 7, 2026 · 16c3fb5..b34933b`, then
@@ -105,7 +105,7 @@ Checked and sound: <one line per subsystem — what was checked>.
 ```
 
 - **Every issue has a unique id** `<letter><n>` (`A14`) — the subsystem's letter; ids reset for every file
-  (file-per-day). Writing externally — `date#id`: `issues/2026-10-07.md#B44`.
+  (file-per-day). Writing externally — `date#id`: `issues/2026-10/2026-10-07.md#B44`.
 - **Serious first**: an issue that loses the user's text, writes to :7777 or escapes a root goes right
   under the section heading, above the subsystems.
 - **An item is four lines, each on its own:**
@@ -135,4 +135,4 @@ Checked and sound: <one line per subsystem — what was checked>.
 4. Append the section; drop duplicates across reviewers, keeping the better-evidenced one.
 5. Commit the day's issues file (and `Plans/subsystems.md` if it changed) — nothing else.
 6. Report: the serious ones first, each in one line; counts per severity; tail:
-   `🟥🟥🟥 issues in Plans/issues/YYYY-MM-DD.md — triage on the page`.
+   `🟥🟥🟥 issues in Plans/issues/YYYY-MM/YYYY-MM-DD.md — triage on the page`.

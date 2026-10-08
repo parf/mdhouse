@@ -142,7 +142,7 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
 - **Update the Q&A file every time you deal with a task** — done, replied, refused, failed: its stage
   and record (`` 💬👾 `<sha>` — … ``, 🎯 off) written right after it, and that file committed alone
   (`docs: issues — <ids>`) before the next task.
-- The commit body names every issue it closes: `Fixes issues/2026-10-07.md#B2, #B3`.
+- The commit body names every issue it closes: `Fixes issues/2026-10/2026-10-07.md#B2, #B3`.
 - A file with the user's uncommitted or staged edits (`git diff --quiet HEAD -- <file>` fails, or it is
   untracked): add your lines, do not commit it, say so in the report. Leftovers that are clearly yours
   (your records, `— from <file>` entries) — commit them.

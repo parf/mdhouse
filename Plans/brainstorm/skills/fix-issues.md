@@ -1,6 +1,6 @@
 ---
 name: fix-issues
-description: Acts on the user's triage of issues in the Q&A markup — does what the user approved, answers requests for more, verifies every premise by execution, and records each outcome in place with ✅ and the commit. Use after the user triaged a day's issues file (Plans/issues/YYYY-MM-DD.md) written by /find-issues.
+description: Acts on the user's triage of issues in the Q&A markup — does what the user approved, answers requests for more, verifies every premise by execution, and records each outcome in place with ✅ and the commit. Use after the user triaged a day's issues file (Plans/issues/YYYY-MM/YYYY-MM-DD.md) written by /find-issues.
 argument-hint: "[file]"
 disable-model-invocation: true
 ---
@@ -14,7 +14,7 @@ file says only what `/fix-issues` does with each state.
 **Never trust the task** — an issue, a ✓ yes, a ⏳ are claims: first check by execution that the problem
 exists and needs doing; if not, do not do it — reply with the evidence.
 
-- `file` — default: the newest `Plans/issues/*.md`; a day's file, or `all` — every file in `Plans/issues/`
+- `file` — default: the newest `Plans/issues/*/*.md`; a day's file, or `all` — every file in `Plans/issues/*/`
   with something open
 
 **Before the first change** — read the whole file, then one line: `n to do (🎯 k) in c groups by cause ·
