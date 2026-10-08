@@ -2,9 +2,9 @@
  * `mdhouse service install | uninstall | status` — mdhouse as a systemd user service.
  *
  * The unit runs `mdhouse --fg`, which serves the saved directories (`mdhouse <dir> -p`). With
- * nothing saved it would fall back to the current directory, which under systemd is $HOME —
- * so `install` refuses until something is saved, and the service itself exits cleanly if the
- * list has been emptied since (MDHOUSE_SERVICE tells it where it is running).
+ * nothing saved there is nothing to serve: `install` refuses until something is saved, and the
+ * service itself exits 0 if the list has been emptied since (MDHOUSE_SERVICE tells it where it
+ * is running), so `Restart=on-failure` does not loop.
  *
  * Its output goes to the journal: `journalctl --user -u mdhouse -f`. `mdhouse exit` does not stop
  * it — a stop with status 0 is one `Restart=on-failure` leaves alone, and the next `mdhouse <dir>`

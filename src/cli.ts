@@ -373,8 +373,8 @@ if (opts.autoRw) {
 
 if (opts.rm) {
   const asked = (opts.dirs.length ? opts.dirs : [process.cwd()]).map(canonical);
-  // A running daemon holds the prefs in memory and rewrites the whole file on its next change,
-  // so it has to be the one to forget them — editing the file under it would be undone.
+  // A running daemon serves them: it forgets them and stops serving them in one step, and its
+  // open tabs hear about it.
   if (await running()) {
     const reply = await askRemove(opts.port, { dirs: asked });
     if (!reply || 'error' in reply) {
