@@ -43,6 +43,8 @@
 - `--host ::1` prints and opens `http://[::1]:<port>`, a valid URL
 - ⇊ (add at the end of a section) finds the section as the page shows it: a `#` in an HTML comment
   or a fence is no heading, a setext heading ends a section, a two-line setext heading takes a block
+- A document that opens with a `---` rule shows its text: front matter is a `---` line, a YAML key
+  right after it, through `---` or `...`
 
 ## 1.5.0 — 2026-10-07
 

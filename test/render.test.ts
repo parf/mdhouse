@@ -104,6 +104,17 @@ describe('frontmatter', () => {
     expect(body).toBe('# Head\n');
     expect(offset).toBe(0);
   });
+
+  test('YAML only: a key right after `---`, closed by `---` or `...`; a rule that opens a doc stays a rule', () => {
+    const none = (src: string) => expect(splitFrontmatter(src)).toEqual({ frontmatter: null, body: src, offset: 0 });
+    none('---\n\nIntro paragraph.\n\n---\n# Title\n');
+    none('---\nJust text\n---\n');
+    none('----\nfoo: 1\n---\nbody');
+    none('---\nfoo: 1\n---x\nbody');
+    expect(splitFrontmatter('---\ntitle: x\ntags: [a]\n...\n# T\n')).toEqual({ frontmatter: 'title: x\ntags: [a]', body: '# T\n', offset: 4 });
+    expect(splitFrontmatter('---\r\ntitle: x\r\n---\r\n# T\r\n')).toEqual({ frontmatter: 'title: x\r', body: '# T\r\n', offset: 3 });
+    expect(splitFrontmatter('---\ntitle: x\n---')).toEqual({ frontmatter: 'title: x', body: '', offset: 3 });
+  });
 });
 
 describe('paths that are not plain ASCII', () => {

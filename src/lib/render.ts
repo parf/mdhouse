@@ -497,16 +497,20 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   return { html, headings, hasMermaid, tasks };
 }
 
-/** Front matter is not parsed as Markdown; strip it and report it separately. */
-export function splitFrontmatter(src: string): { frontmatter: string | null; body: string; offset: number } {
-  if (!src.startsWith('---')) return { frontmatter: null, body: src, offset: 0 };
-  const end = src.indexOf('\n---', 3);
-  if (end === -1) return { frontmatter: null, body: src, offset: 0 };
+/** A YAML key, the line right after the opening `---`: `title:`, `"a b":`, `tags:`. */
+const YAML_KEY = /^["']?[\w-][^:]*:(?:[ \t]|$)/;
 
-  const stop = src.indexOf('\n', end + 1);
-  const head = src.slice(src.indexOf('\n') + 1, end);
-  const body = stop === -1 ? '' : src.slice(stop + 1);
-  return { frontmatter: head, body, offset: src.slice(0, stop + 1).split('\n').length - 1 };
+/**
+ * Front matter is not parsed as Markdown; strip it and report it separately. It is a first line
+ * `---`, a YAML key right after it, through a line `---` or `...` — a doc that opens with a rule
+ * and a paragraph has none.
+ */
+export function splitFrontmatter(src: string): { frontmatter: string | null; body: string; offset: number } {
+  const lines = src.split('\n');
+  const bare = (i: number) => (lines[i] ?? '').replace(/[ \t\r]+$/, '');
+  const close = bare(0) === '---' && YAML_KEY.test(bare(1)) ? lines.findIndex((_, i) => i > 1 && /^(?:---|\.\.\.)$/.test(bare(i))) : -1;
+  if (close === -1) return { frontmatter: null, body: src, offset: 0 };
+  return { frontmatter: lines.slice(1, close).join('\n'), body: lines.slice(close + 1).join('\n'), offset: close + 1 };
 }
 
 /* ── patch lines, with their markdown applied ────────────────────────────── */
