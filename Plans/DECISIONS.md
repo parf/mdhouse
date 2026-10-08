@@ -17,8 +17,9 @@ earlier one, the earlier one is rewritten to say what holds now.
   faster; the deny list only covers ground outside any repo. `src/lib/scan.ts`.
 - **Git is batched:** one `git log` and one `git status` per repo, never a call per displayed
   row. Committer filtering is client-side. `src/lib/git.ts`.
-- **URL shape `/d/<path>/<file>.md`.** Root-relative with one root; a `/<rootId>/` segment only
-  when there is more than one. `Registry.docUrl()` / `fromDocUrl()`.
+- **URL shape `/<rootId>/<rel>`.** No `/d/`; the root id always leads. Root ids never take a
+  reserved name (`api`, `settings`, `d` …): the first segment alone tells a page from a server
+  route. `/d/…` → 301. `lib/urls.ts`, `Registry.docUrl()` / `fromDocUrl()`.
 - **Config lives in `~/.config/mdhouse/`,** never as a dotfile in a browsed tree — that is what
   makes marks work on a read-only root. `src/lib/prefs.ts`.
 - **One anchor scheme,** generated server-side and used unchanged by the contents list.

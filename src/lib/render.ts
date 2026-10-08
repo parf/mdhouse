@@ -30,7 +30,7 @@ export interface RenderContext {
   rootId: string;
   /** Root-relative path of the document being rendered. */
   docPath: string;
-  /** Root-relative path -> browser URL (`/d/<path>/<file>.md`). Supplied by the registry. */
+  /** Root-relative path -> its page (`/<rootId>/<rel>`). Supplied by the registry. */
   docUrl: (rel: string) => string;
   /** Which of these root-relative paths are files: a file named in the text becomes a link to it. */
   exists?: (rels: string[]) => Promise<Set<string>>;
@@ -506,7 +506,7 @@ function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
  *
  * A README that centres its logo with `<p align="center"><img src="doc/logo.png"></p>` is
  * ordinary on GitHub, and without this the picture is a broken icon here: the browser resolves
- * that path against `/d/…`, which is a document route, not the asset proxy. The Markdown image
+ * that path against the page's address, which is a page, not the file's bytes. The Markdown image
  * syntax is handled by the renderer rule above; this is the same rewrite for the tags written
  * by hand.
  */

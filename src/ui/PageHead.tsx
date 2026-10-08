@@ -48,7 +48,7 @@ interface Props {
   /** The folder's root name, and its path in the root ('' for the root itself). */
   rootName: string;
   dir: string;
-  /** The folder's page url, `/d/…/`; its git view is the same plus `?git`. */
+  /** The folder's page url, `/<rootId>/…/`; its git view is the same plus `?git`. */
   dirUrl: string;
   /** A parent folder's url, for the breadcrumbs — the same kind of page as this one. */
   crumbUrl: (dir: string) => string;

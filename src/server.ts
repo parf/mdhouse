@@ -11,6 +11,7 @@ import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
+import { dirUrl } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { ASSET_EXT, HTML_EXT, MD_EXT, RAW_EXT } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
@@ -43,6 +44,8 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
 const fail = (status: number, message: string) => json({ error: message }, status);
+
+const moved = (location: string) => new Response(null, { status: 301, headers: { location } });
 
 /**
  * Is this request addressed to mdhouse by a name a browser can be trusted with?
@@ -241,6 +244,38 @@ export async function serve(opts: ServeOptions) {
       return fail(500, (err as Error).message);
     }
   };
+  /** The old `/d/…` address — 301 to the page's own, the query kept. */
+  const legacyPage: Handler = async (req) => {
+    const url = new URL(req.url);
+    const rest = url.pathname.replace(/^\/d\/?/, '');
+    const loc = rest ? await registry.fromDocUrl(`/d/${rest}`) : null;
+    if (rest && !loc) return fail(404, 'not found');
+    const root = loc?.root ?? registry.defaultRoot();
+    const target = !rest || rest.endsWith('/') ? dirUrl(root.id, loc?.rel ?? '') : registry.docUrl(root, loc!.rel);
+    return moved(target + url.search);
+  };
+
+  /**
+   * A page under a root: `/<rootId>`, `/<rootId>/<rel>`, `/<rootId>/<dir>/`. A folder named
+   * without its trailing slash moves to its page. Anything else is 404.
+   */
+  const rootPage: Handler = async (req) => {
+    const url = new URL(req.url);
+    const segs = url.pathname.split('/');
+    let first = segs[1] ?? '';
+    try {
+      first = decodeURIComponent(first);
+    } catch {
+      /* matched as written */
+    }
+    if (!registry.get(first)) return fail(404, 'not found');
+    if (segs.length > 2 && !url.pathname.endsWith('/')) {
+      const loc = await registry.fromDocUrl(url.pathname);
+      if (loc && (await stat(loc.abs).catch(() => null))?.isDirectory()) return moved(dirUrl(loc.root.id, loc.rel) + url.search);
+    }
+    return page(req);
+  };
+
   function guard<R extends string>(routes: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
     const out: Record<string, unknown> = {};
     for (const [path, route] of Object.entries(routes)) {
@@ -270,8 +305,9 @@ export async function serve(opts: ServeOptions) {
     routes: guard({
       '/__app/': index,
       '/': page,
-      // Every document URL is `/d/<path>/<file>.md`; the SPA takes it from here.
-      '/d/*': page,
+      // Pages under a root are served by `fetch` (rootPage); `/d/…` is the old address.
+      '/d': legacyPage,
+      '/d/*': legacyPage,
       '/settings': page,
 
       /**
@@ -848,7 +884,7 @@ export async function serve(opts: ServeOptions) {
         if (srv.upgrade(req)) return undefined as unknown as Response;
         return fail(400, 'websocket upgrade failed');
       }
-      return fail(404, 'not found');
+      return rootPage(req);
     },
 
     websocket: {

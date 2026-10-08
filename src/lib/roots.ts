@@ -8,6 +8,7 @@
 
 import { chmod, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
+import { fileUrl, RESERVED } from './urls';
 
 export interface Root {
   /** Short slug used in URLs. Never contains a slash. */
@@ -132,8 +133,9 @@ export class Registry {
     if (existing) return existing;
 
     const name = abs.split(sep).filter(Boolean).pop() ?? abs;
+    // A root id leads the page address, so it never takes a server route's name (urls.ts).
     let id = slugify(name);
-    for (let n = 2; this.byId.has(id); n++) id = `${slugify(name)}-${n}`;
+    for (let n = 2; this.byId.has(id) || RESERVED.has(id); n++) id = `${slugify(name)}-${n}`;
 
     const registry = this;
     const root: Root = {
@@ -176,25 +178,18 @@ export class Registry {
     return `${root.id}/${rel.split(sep).join('/')}`;
   }
 
-  /**
-   * The browser URL for a document: `/d/<path>/<file>.md`.
-   *
-   * With one root the path is simply root-relative, which is what anyone typing a URL by hand
-   * expects. Extra roots earn a leading `/<rootId>/` segment to tell them apart.
-   */
+  /** A file's page: `/<rootId>/<rel>` (urls.ts). */
   docUrl(root: Root, rel: string): string {
-    const path = rel.split(sep).join('/');
-    const withRoot = this.single ? path : `${root.id}/${path}`;
-    return '/d/' + withRoot.split('/').map(encodeURIComponent).join('/');
+    return fileUrl(root.id, rel.split(sep).join('/'));
   }
 
   /**
-   * Inverse of docUrl: the part after `/d/` back to a wire path.
-   *
-   * A leading segment naming a root wins, but only when it actually leads somewhere — so a
-   * single root that happens to contain a directory sharing its own name still resolves.
+   * Inverse of docUrl: a page path back to a location. Reads `/<rootId>/<rel>`, and the old
+   * `/d/<rootId>/<rel>` and single-root `/d/<rel>`: there a leading segment naming a root wins
+   * only when it leads somewhere, else the path is under the first root.
    */
   async fromDocUrl(urlPath: string): Promise<Resolved | null> {
+    const legacy = /^\/?d\//.test(urlPath);
     const path = urlPath.replace(/^\/?d\//, '').replace(/^\/+/, '');
     if (!path) return null;
 
@@ -212,9 +207,9 @@ export class Registry {
     const first = decoded.split('/')[0]!;
     if (this.byId.has(first)) {
       const asRoot = await this.resolve(decoded);
-      if (asRoot && (await Bun.file(asRoot.abs).exists())) return asRoot;
+      if (asRoot && (!legacy || (await stat(asRoot.abs).catch(() => null)))) return asRoot;
     }
-    return this.resolve(`${this.defaultRoot().id}/${decoded}`);
+    return legacy ? this.resolve(`${this.defaultRoot().id}/${decoded}`) : null;
   }
 
   /**

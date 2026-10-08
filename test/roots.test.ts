@@ -46,24 +46,30 @@ describe('path jail', () => {
 });
 
 describe('document URLs', () => {
-  test('a single root needs no prefix', async () => {
+  test('the root id always leads, also with one root', async () => {
     const registry = await Registry.create([HERE]);
     const root = registry.list()[0]!;
 
-    expect(registry.docUrl(root, 'Plans/PRF-55-md-viewer-web/TODO.md')).toBe('/d/Plans/PRF-55-md-viewer-web/TODO.md');
-    expect((await registry.fromDocUrl('/d/README.md'))?.rel).toBe('README.md');
+    expect(registry.docUrl(root, 'Plans/TODO.md')).toBe(`/${root.id}/Plans/TODO.md`);
+    expect((await registry.fromDocUrl(`/${root.id}/README.md`))?.rel).toBe('README.md');
+    expect((await registry.fromDocUrl(`${root.id}/README.md`))?.rel).toBe('README.md');
+    // Without a root id it is no page.
+    expect(await registry.fromDocUrl('/README.md')).toBeNull();
+    expect(await registry.fromDocUrl('/nosuchroot/README.md')).toBeNull();
   });
 
-  test('several roots are told apart by a leading segment', async () => {
+  test('the old /d/ forms still read: single-root /d/<rel>, and /d/<rootId>/<rel>', async () => {
     const registry = await Registry.create([HERE, `${HERE}/src`]);
     const [mine, nested] = registry.list();
 
-    expect(registry.docUrl(mine!, 'README.md')).toBe(`/d/${mine!.id}/README.md`);
-    expect(registry.docUrl(nested!, 'lib/roots.ts')).toBe('/d/src/lib/roots.ts');
-
+    expect(registry.docUrl(mine!, 'README.md')).toBe(`/${mine!.id}/README.md`);
+    expect(registry.docUrl(nested!, 'lib/roots.ts')).toBe('/src/lib/roots.ts');
+    expect((await registry.fromDocUrl('/d/README.md'))?.root.id).toBe(mine!.id);
     const resolved = await registry.fromDocUrl('/d/src/lib/roots.ts');
     expect(resolved?.root.id).toBe('src');
     expect(resolved?.rel).toBe('lib/roots.ts');
+    // A leading root id that leads nowhere is a folder of the first root.
+    expect((await registry.fromDocUrl('/d/src/nope.ts'))?.root.id).toBe(mine!.id);
   });
 
   test('URL-encoded segments survive the round trip', async () => {
@@ -71,8 +77,23 @@ describe('document URLs', () => {
     const root = registry.list()[0]!;
     const url = registry.docUrl(root, 'a b/c#d.md');
 
-    expect(url).toBe('/d/a%20b/c%23d.md');
+    expect(url).toBe(`/${root.id}/a%20b/c%23d.md`);
     expect((await registry.fromDocUrl(url))?.rel).toBe('a b/c#d.md');
+  });
+
+  test('a root id never takes a reserved name — suffixed as a clash is', async () => {
+    const { mkdtemp, mkdir, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-reserved-'));
+    try {
+      for (const name of ['api', 'settings', 'd', 'ws', 'vendor']) await mkdir(join(base, name));
+      const registry = await Registry.create(['api', 'settings', 'd', 'ws', 'vendor'].map((n) => join(base, n)));
+      expect(registry.list().map((r) => r.id)).toEqual(['api-2', 'settings-2', 'd-2', 'ws-2', 'vendor-2']);
+      expect(registry.list().map((r) => r.name)).toEqual(['api', 'settings', 'd', 'ws', 'vendor']);
+    } finally {
+      await rm(base, { recursive: true, force: true });
+    }
   });
 });
 

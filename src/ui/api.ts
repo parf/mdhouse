@@ -142,7 +142,7 @@ export const api = {
   /** Every file under a folder (`p` = `<root>/<dir>`), not only Markdown. */
   files: (p: string) => get<{ files: AnyFile[]; capped: boolean }>('/api/files', { p }),
 
-  /** `d` is the part of the URL after `/d/` — the server maps it back to a root and path. */
+  /** `d` is the page's pathname, `/<rootId>/<rel>` — the server maps it back to a root and path. */
   doc: (docPath: string) => get<DocPayload>('/api/doc', { d: docPath }),
 
   search: (root: string, q: string, ignored: boolean, regex = false) =>

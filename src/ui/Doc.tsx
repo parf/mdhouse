@@ -16,6 +16,7 @@ import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
 import { MD_EXT } from '../lib/filetypes';
 import { follow } from './PageHead';
+import { isPageHref } from '../lib/urls';
 
 /** The two diff views; either can be the one a toggle turns on. */
 type DiffView = 'patch' | 'marked';
@@ -247,7 +248,7 @@ export function Doc({
     return markChanges(body.current, diff, doc?.lineOffset ?? 0);
   }, [overlaid, diff, doc?.url, doc?.html]);
 
-  // In-app navigation: a local .md link should not reload the page.
+  // In-app navigation: a link to a page in a root does not reload the page.
   useEffect(() => {
     const el = body.current;
     if (!el) return;
@@ -258,7 +259,7 @@ export function Doc({
       if (!link) return;
 
       const href = link.getAttribute('href') ?? '';
-      if (href.startsWith('/d/')) {
+      if (isPageHref(href)) {
         e.preventDefault();
         // `#L557`: a line of the file — the body's line once front matter is counted out
         const at = /#L(\d+)$/.exec(href);

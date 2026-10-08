@@ -4,6 +4,9 @@
 
 ### Changed
 
+- **Breaking — addresses without `/d/`:** `/<root>/<path>` — `/mdhouse/doc/access.md`,
+  `/mdhouse/doc/`; the root's id always leads. Old `/d/…` links → 301 to the new address. A folder
+  named `api`, `settings`, `d` … gets a suffixed id (`api-2`)
 - **One Q&A markup** (`Plans/brainstorm/2026-10-07/markup.md`): a list item opening with a glyph — `- ❓ …`,
   `- 🔴 D1 …`, `- ✅ 🟠 …` — or a `> ❓` quote; its thread quoted under it, one `💬` per turn,
   badges `👤name` `👾`; options `( )` / `[ ]`; `💡` proposals; 🎯 selected

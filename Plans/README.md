@@ -26,7 +26,7 @@ src/
   server.ts      Bun.serve — routes, API, WebSocket, roots added and removed at runtime
   index.html     the bundle entry point
   app.tsx        shell: routing, data loading, keyboard, live channel
-  lib/           server side: roots, access, filetypes, ignore, prefs, scan, render, qa, qa-html, legacy,
+  lib/           server side: roots, urls, access, filetypes, ignore, prefs, scan, render, qa, qa-html, legacy,
                  insert, git, gitpage, search, store, watch, control (unix socket), service (systemd unit),
                  loghint (where output goes)
   ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, GitPanel, PageHead, Settings,
@@ -35,8 +35,8 @@ src/
   styles/        one stylesheet, CSS custom properties, light and dark
 ```
 
-`lib/` is imported by the client for its **types only** — those imports erase at build time.
-No server code ships to the browser.
+`lib/` is imported by the client for its **types only** — those imports erase at build time —
+except `filetypes` and `urls`, plain code shared by both. No server code ships to the browser.
 
 ## Contracts and invariants
 
@@ -96,10 +96,14 @@ string onto a root path.
 
 ### URL shape
 
-- `/d/<path>/<file>.md` — a document. With a single root the path is root-relative; extra roots
-  earn a leading `/<rootId>/` segment. `Registry.docUrl()` / `fromDocUrl()` on the server.
-- `/d/<path>/` — a folder's page; the trailing slash is what makes it one. A single root's own
-  page is `/d/`. Parsed client-side in `app.tsx` (`dirTarget`), by the same root-segment rule.
+- `/<rootId>/<rel>` — a file's page; the root id always leads, also with one root.
+- `/<rootId>/<dir>/` — a folder's page (trailing slash); `/<rootId>/`, `/<rootId>` — the root's.
+  A folder without its slash → 301 to its page.
+- Built and parsed by `lib/urls.ts` (`fileUrl`, `dirUrl`, `routeOf`, `isPageHref`) — server
+  (`Registry.docUrl()` / `fromDocUrl()`) and page alike.
+- A root id never takes a reserved name (`RESERVED`: `api ws vendor __app _bun settings d
+  favicon.ico`) — suffixed `-2` as a clash is.
+- `/d/…` (the old shape) → 301 to the new address, query kept.
 - `/` — the front page; `/settings` — settings.
 
 ### Git is batched
@@ -121,7 +125,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 ### Who may talk to the server
 
-- Routes: the page — `/`, `/d/*`, `/settings` (the bundle at `/__app/`), `/vendor/mermaid/*`, `/ws`; read —
+- Routes: the page — `/`, `/<rootId>/…` (`fetch` → `rootPage`, unknown → 404), `/settings` (the bundle at `/__app/`), `/d/*` → 301, `/vendor/mermaid/*`, `/ws`; read —
   `/api/roots`, `/api/tree`, `/api/doc`, `/api/raw`, `/api/asset`, `/api/files`, `/api/search`, `/api/recents`,
   `/api/digest`, `/api/git`, `/api/git/commits|files|remote|log|diff`; write — below.
 - **Every route** (and the WebSocket) first passes `trustedHost()`: the `Host` header must be
@@ -176,7 +180,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
   comes up where a start by hand does; a port from `service --port` or `MDHOUSE_PORT` is pinned into it. Beside it, `control-<port>.sock`. Never a dotfile inside a
   browsed tree.
-- **Git view** — `/d/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
+- **Git view** — `/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
   plus `GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
   `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote` (files: the first 5000, `capped`), POST
   `/api/git/commit|pull|push|reset` (reset: one `.md` file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409) — writable folder, same origin, one at a time per repo; commit refuses (409) a file outside the root or in a read-only root, pull a repo holding a read-only root or files outside the root; network

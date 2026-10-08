@@ -13,6 +13,7 @@ import { AboutModal } from './ui/AboutModal';
 import { Settings } from './ui/Settings';
 import { DirPage } from './ui/DirPage';
 import { ancestors } from './ui/tree-model';
+import { dirUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
 import { IconGear, IconPanel, IconSearch } from './ui/icons';
 
 const STATES: SidebarState[] = ['off', 'compact', 'open'];
@@ -79,11 +80,9 @@ function App() {
   const [full, setPath] = useState(() => location.pathname + location.search);
   const path = full.split('?')[0] ?? '';
   const gitView = /[?&]git(?:[=&]|$)/.test(full);
-  const docPath = path.startsWith('/d/') ? path.slice(3) : '';
-  const onSettings = path === '/settings';
-  // `/d/<root>/<dir>/` — a trailing slash is a folder's page, not a document. With a single
-  // root its own page is plain `/d/`.
-  const dirPage = path.startsWith('/d/') && (docPath === '' || docPath.endsWith('/')) ? docPath : null;
+  const route = useMemo(() => routeOf(path), [path]);
+  const docPath = route.kind === 'file' ? route.path : '';
+  const onSettings = route.kind === 'settings';
 
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
@@ -103,11 +102,10 @@ function App() {
 
   useEffect(() => save(LS_STATE, sidebar), [sidebar]);
 
-  // `/` is the root's git view: `/d/<root>/?git`.
+  // `/` is the root's git view: `/<root>/?git`.
   useEffect(() => {
     if (path !== '/' || !rootId || !roots.length) return;
-    const root = roots.find((r) => r.id === rootId);
-    const url = `/d/${roots.length > 1 && root ? `${encodeURIComponent(root.id)}/` : ''}?git`;
+    const url = `${dirUrl(rootId, '')}?git`;
     history.replaceState(null, '', url);
     setPath(url);
   }, [path, rootId, roots]);
@@ -170,7 +168,7 @@ function App() {
   // Document load, keyed on the URL.
   const loadSeq = useRef(0);
   useEffect(() => {
-    if (!docPath || docPath.endsWith('/')) {
+    if (!docPath) {
       setDoc(null);
       setDocError(null);
       return;
@@ -314,26 +312,12 @@ function App() {
 
   // ── actions ─────────────────────────────────────────────────────────────
 
-  /** A document's URL; the root's id leads it only when more than one root is served. */
-  const fileUrl = useCallback(
-    (rel: string, inRoot = rootId) => {
-      const root = roots.find((r) => r.id === inRoot);
-      const prefix = roots.length > 1 && root ? `${root.id}/` : '';
-      return `/d/${(prefix + rel).split('/').map(encodeURIComponent).join('/')}`;
-    },
-    [roots, rootId],
-  );
+  /** A file's page, in the dropdown's root unless named. */
+  const fileUrl = useCallback((rel: string, inRoot = rootId) => pageUrl(inRoot, rel), [rootId]);
   const openFile = useCallback((rel: string, line?: number) => go(fileUrl(rel), line), [go, fileUrl]);
 
-  /** A folder page's URL, built the way document URLs are; `''` is the root's own page. */
-  const dirPageUrl = useCallback(
-    (dir: string, inRoot = rootId) => {
-      const root = roots.find((r) => r.id === inRoot);
-      const segs = [...(roots.length > 1 && root ? [root.id] : []), ...dir.split('/')].filter(Boolean);
-      return `/d/${segs.map((s) => `${encodeURIComponent(s)}/`).join('')}`;
-    },
-    [roots, rootId],
-  );
+  /** A folder's page; `''` is the root's own. */
+  const dirPageUrl = useCallback((dir: string, inRoot = rootId) => dirUrl(inRoot, dir), [rootId]);
   const openDirPage = useCallback((dir: string, inRoot?: string) => go(dirPageUrl(dir, inRoot)), [go, dirPageUrl]);
 
   /**
@@ -344,30 +328,13 @@ function App() {
   const pickRoot = useCallback(
     (id: string) => {
       setRootId(id);
-      if (dirPage !== null) go(dirPageUrl('', id));
+      if (route.kind === 'dir') go(dirPageUrl('', id));
     },
-    [dirPage, go, dirPageUrl],
+    [route.kind, go, dirPageUrl],
   );
 
-  /**
-   * Which root and folder a folder URL names. The first segment is a root id only when more
-   * than one root is served — the same rule document URLs follow.
-   */
-  const dirTarget = useMemo(() => {
-    if (dirPage === null) return null;
-    const segs = dirPage
-      .split('/')
-      .filter(Boolean)
-      .map((s) => {
-        try {
-          return decodeURIComponent(s);
-        } catch {
-          return s;
-        }
-      });
-    const named = roots.length > 1 ? roots.find((r) => r.id === segs[0]) : undefined;
-    return { rootId: named?.id ?? rootId, dir: (named ? segs.slice(1) : segs).join('/') };
-  }, [dirPage, roots, rootId]);
+  /** Which root and folder a folder page names. */
+  const dirTarget = route.kind === 'dir' ? route : null;
 
   // Opening a folder page switches to its root, and opens the folder in the tree.
   useEffect(() => {

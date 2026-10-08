@@ -102,7 +102,9 @@ describe('access — allow list and users', () => {
     await writeFile(join(dir, 'a.md'), '# a\n');
     const prefs = await Prefs.load(join(dir, 'prefs.json'));
     const port = 61794;
-    const { server, watcher, control } = await serve({ registry: await Registry.create([dir]), prefs, port, hostname: '127.0.0.1', noGit: true });
+    const registry = await Registry.create([dir]);
+    const id = registry.list()[0]!.id;
+    const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
     const get = (path: string, auth?: string) =>
       fetch(`http://127.0.0.1:${port}${path}`, auth ? { headers: { authorization: `Basic ${btoa(auth)}` } } : {});
 
@@ -112,14 +114,14 @@ describe('access — allow list and users', () => {
       const cli = await Prefs.load(join(dir, 'prefs.json'));
       await Bun.sleep(5); // a different mtime
       await cli.setUser('ann', await hashPassword('s3cret'));
-      for (const path of ['/api/roots', '/', '/d/a.md', '/settings', '/ws', '/nope']) {
+      for (const path of ['/api/roots', '/', '/d/a.md', `/${id}/a.md`, '/settings', '/ws', '/nope']) {
         const r = await get(path);
         expect(r.status).toBe(401);
         expect(r.headers.get('www-authenticate')).toContain('Basic');
       }
       expect((await get('/api/roots', 'ann:wrong')).status).toBe(401);
       expect((await get('/api/roots', 'ann:s3cret')).status).toBe(200);
-      const page = await get('/d/a.md', 'ann:s3cret');
+      const page = await get(`/${id}/a.md`, 'ann:s3cret');
       expect(page.status).toBe(200);
       expect(await page.text()).toContain('<!doctype html>');
       expect((await get('/nope', 'ann:s3cret')).status).toBe(404);
@@ -133,6 +135,53 @@ describe('access — allow list and users', () => {
       watcher.close();
       control?.stop();
       await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('page addresses — /<rootId>/<rel>', () => {
+  test('the page under a root; /d/… moves there (301, query kept); a folder without its slash moves to its page; else 404', async () => {
+    const { mkdtemp, rm, mkdir, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-pages-'));
+    await mkdir(join(base, 'notes', 'sub'), { recursive: true });
+    await mkdir(join(base, 'api'));
+    await writeFile(join(base, 'notes', 'a.md'), '# a\n');
+    await writeFile(join(base, 'api', 'x.md'), '# x\n');
+    const port = 61803;
+    const registry = await Registry.create([join(base, 'notes'), join(base, 'api')]);
+    const [notes, api] = registry.list();
+    expect(api!.id).toBe('api-2');
+    const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
+    const get = (path: string) => fetch(`http://127.0.0.1:${port}${path}`, { redirect: 'manual' });
+    const to = async (path: string) => {
+      const r = await get(path);
+      expect(r.status).toBe(301);
+      return r.headers.get('location');
+    };
+    try {
+      for (const path of [`/${notes!.id}/a.md`, `/${notes!.id}/`, `/${notes!.id}`, `/${notes!.id}/sub/?git`, `/${api!.id}/x.md`, `/${notes!.id}/gone.md`]) {
+        const r = await get(path);
+        expect(r.status).toBe(200);
+        expect(await r.text()).toContain('<!doctype html>');
+      }
+      expect(await to('/d/a.md')).toBe(`/${notes!.id}/a.md`);
+      expect(await to(`/d/${api!.id}/x.md`)).toBe(`/${api!.id}/x.md`);
+      expect(await to('/d/')).toBe(`/${notes!.id}/`);
+      expect(await to('/d')).toBe(`/${notes!.id}/`);
+      expect(await to(`/d/${notes!.id}/sub/?git=commits`)).toBe(`/${notes!.id}/sub/?git=commits`);
+      expect(await to('/d/sub/?git')).toBe(`/${notes!.id}/sub/?git`);
+      expect(await to(`/${notes!.id}/sub`)).toBe(`/${notes!.id}/sub/`);
+      for (const path of ['/nope/a.md', '/nope', '/api/nope', '/api', '/README.md']) expect((await get(path)).status).toBe(404);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
     }
   });
 });
