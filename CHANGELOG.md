@@ -109,6 +109,7 @@
 - A commit from a terminal or an agent updates the open document: its "Uncommitted changes" row
   goes, its History shows the commit
 - A document's ★ / mute marks the document's own folder, not the one picked in the switcher
+- The front page keeps its scroll when a file changes — was thrown to the top on each write
 
 ## 1.5.0 — 2026-10-07
 

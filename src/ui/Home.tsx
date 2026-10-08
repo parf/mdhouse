@@ -42,9 +42,11 @@ interface Props {
 export function Home(props: Props) {
   const [digest, setDigest] = useState<Digest | null>(null);
 
+  // Cleared only for another root or filter: a live revision keeps the page, and its scroll,
+  // until the new digest arrives.
+  useEffect(() => setDigest(null), [props.rootId, props.showIgnored]);
   useEffect(() => {
     let live = true;
-    setDigest(null);
     api
       .digest(props.rootId, props.showIgnored)
       .then((d) => live && setDigest(d))
