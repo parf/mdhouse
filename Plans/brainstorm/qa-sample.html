@@ -221,6 +221,9 @@ details.settled[open] .more { display: none; }
 /* ✓ done on an any-of question */
 .c-done { flex: none; font-size: 12px; padding: 1px 10px; border-radius: 10px; border: 1px solid var(--a); background: var(--panel); color: var(--a); cursor: pointer; }
 .c-done:hover { background: var(--a); color: #fff; }
+/* blocks: tighter inside, a gap between them */
+.item, details.settled { padding: 3px 8px; margin: 0 0 6px; }
+.thread:empty { display: none; }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
 /* the action's number — Alt+number presses it */
