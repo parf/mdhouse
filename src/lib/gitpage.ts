@@ -9,6 +9,7 @@
 
 import { existsSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
+import { MD_EXT } from './filetypes';
 
 export interface RunResult {
   code: number;
@@ -124,7 +125,7 @@ export interface DirtyFile {
   md: boolean;
 }
 
-export const isMd = (path: string): boolean => /\.mdx?$/i.test(path);
+export const isMd = (path: string): boolean => MD_EXT.test(path);
 
 /** Uncommitted changes in the whole repo — what `commit -a` takes, plus untracked files. */
 export async function dirtyFiles(repo: string): Promise<DirtyFile[]> {

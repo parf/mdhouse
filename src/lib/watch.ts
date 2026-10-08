@@ -10,6 +10,7 @@
 import { watch, type FSWatcher } from 'node:fs';
 import { relative, sep } from 'node:path';
 import type { Root } from './roots';
+import { MD_EXT } from './filetypes';
 
 export type ChangeKind = 'fs' | 'git';
 
@@ -20,7 +21,6 @@ export interface WatchEvent {
 }
 
 const DEBOUNCE_MS = 120;
-const MD = /\.mdx?$/i;
 
 export class Watcher {
   /** Per root, so a root removed at runtime can stop being watched without the others. */
@@ -78,7 +78,7 @@ export class Watcher {
         this.schedule();
         return;
       }
-      if (!MD.test(rel)) return;
+      if (!MD_EXT.test(rel)) return;
 
       let set = this.pending.get(root.id);
       if (!set) this.pending.set(root.id, (set = new Set()));

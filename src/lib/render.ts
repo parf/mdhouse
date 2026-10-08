@@ -24,6 +24,7 @@ import { qaHtml } from './qa-html';
 export { lineHash };
 import type { DiffHunk } from './git';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
+import { MD_EXT } from './filetypes';
 
 export interface RenderContext {
   /** Root id the document lives in, for building asset and raw-file URLs. */
@@ -55,7 +56,6 @@ const ALERTS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
 /** Alerts shown as one line — icon, then text — rather than under a title row. */
 const ONE_LINE_ALERTS = new Set<string>(['note', 'tip']);
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
-const MD_EXT = /\.mdx?$/i;
 const PRELOAD_LANGS = ['bash', 'json', 'ts', 'js', 'tsx', 'php', 'sql', 'yaml', 'go', 'python', 'diff', 'html', 'css', 'md'];
 
 let highlighterPromise: Promise<Highlighter> | null = null;

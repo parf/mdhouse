@@ -14,6 +14,7 @@ import type { QaAction, QaChange } from '../lib/qa';
 import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
+import { MD_EXT } from '../lib/filetypes';
 
 /** The two diff views; either can be the one a toggle turns on. */
 type DiffView = 'patch' | 'marked';
@@ -841,7 +842,7 @@ export function Doc({
   const isFav = doc.marks.includes('favorite');
   const isMuted = doc.marks.includes('muted');
   const dirs = doc.rel.split('/').slice(0, -1);
-  const title = doc.rel.split('/').pop()!.replace(/\.mdx?$/i, '');
+  const title = doc.rel.split('/').pop()!.replace(MD_EXT, '');
   const listed = doc.headings.filter((h) => h.level <= tocDepth);
   const hasSubs = doc.headings.some((h) => h.level === 3);
 

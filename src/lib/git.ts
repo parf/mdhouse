@@ -9,6 +9,7 @@
 
 import { stat } from 'node:fs/promises';
 import { join, relative, resolve, sep } from 'node:path';
+import { MD_EXT } from './filetypes';
 
 export interface Commit {
   hash: string;
@@ -111,7 +112,7 @@ export async function recentChanges(repo: string, rootPath: string, limit = 200)
       const status = parts[0]!;
       // Renames report old and new path; the new one is what exists now.
       const path = parts.length > 2 ? parts[parts.length - 1]! : parts[1];
-      if (!path || !/\.mdx?$/i.test(path)) continue;
+      if (!path || !MD_EXT.test(path)) continue;
       if (prefix && !path.startsWith(prefix)) continue;
 
       changes.push({
@@ -144,7 +145,7 @@ export async function workingStatus(repo: string, rootPath: string): Promise<Map
     let path = entry.slice(3);
     // A rename record is followed by its original path in the next NUL field.
     if (code[0] === 'R') i++;
-    if (!/\.mdx?$/i.test(path)) continue;
+    if (!MD_EXT.test(path)) continue;
     if (prefix && !path.startsWith(prefix)) continue;
     path = path.slice(prefix.length);
 

@@ -111,7 +111,7 @@ export async function serve(opts: ServeOptions) {
   /** A Markdown file in a root that is there now — else null: a name that is gone, or a folder named `*.md`. */
   const docAt = async (p: string) => {
     const loc = await registry.resolve(p);
-    if (!loc || !/\.mdx?$/i.test(loc.rel)) return null;
+    if (!loc || !MD_EXT.test(loc.rel)) return null;
     return (await stat(loc.abs).catch(() => null))?.isFile() ? loc : null;
   };
 
@@ -643,7 +643,7 @@ export async function serve(opts: ServeOptions) {
         const url = new URL(req.url);
         const loc = await registry.resolve(url.searchParams.get('p') ?? '');
         if (!loc) return fail(403, 'path outside any root');
-        if (!RAW_EXT.test(loc.rel) && !/\.mdx?$/i.test(loc.rel)) return fail(415, 'not a viewable text file');
+        if (!RAW_EXT.test(loc.rel) && !MD_EXT.test(loc.rel)) return fail(415, 'not a viewable text file');
 
         const file = Bun.file(loc.abs);
         if (!(await file.exists())) return fail(404, 'not found');

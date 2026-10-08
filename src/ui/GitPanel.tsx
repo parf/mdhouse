@@ -5,6 +5,7 @@ import { Dir } from './Home';
 import { sizeClass, SizeMark } from './Tree';
 import { docName, fileSize } from './format';
 import { IconChevron } from './icons';
+import { MD_EXT } from '../lib/filetypes';
 
 const LS_UNPUSHED = 'mdhouse.unpushedOpen';
 
@@ -13,7 +14,7 @@ type Target = { rel: string } | { href: string } | null;
 
 export function targetOf(info: GitInfo, path: string, sha: string | undefined): Target {
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
-  if (/\.mdx?$/i.test(path) && path.startsWith(prefix)) return { rel: path.slice(prefix.length) };
+  if (MD_EXT.test(path) && path.startsWith(prefix)) return { rel: path.slice(prefix.length) };
   if (!info.origin || !sha) return null;
   return { href: info.origin.blob.replace('{sha}', sha).replace('{path}', path.split('/').map(encodeURIComponent).join('/')) };
 }

@@ -12,6 +12,7 @@ import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import type { Root } from './roots';
 import { isDenied, type IgnoreRules } from './ignore';
+import { MD_EXT } from './filetypes';
 
 export interface MdFile {
   /** Root-relative path, forward slashes. */
@@ -44,8 +45,6 @@ export interface ScanOptions {
   /** Directory depth searched for nested repos when the root is not itself in one. */
   maxDepth?: number;
 }
-
-const MD = /\.mdx?$/i;
 
 async function git(cwd: string, args: string[]): Promise<string | null> {
   try {
@@ -96,7 +95,7 @@ async function listViaGit(dir: string, includeIgnored: boolean): Promise<string[
     const ignored = await git(dir, ['ls-files', '-o', '-i', '--exclude-standard', '-z']);
     if (ignored) paths.push(...ignored.split('\0').filter(Boolean));
   }
-  return paths.filter((p) => MD.test(p));
+  return paths.filter((p) => MD_EXT.test(p));
 }
 
 /**
@@ -126,7 +125,7 @@ async function walk(
   for (const entry of entries) {
     if (entry.isDirectory()) {
       if (!isDenied(rules, entry.name) && !entry.name.startsWith('.')) subdirs.push(join(dir, entry.name));
-    } else if (entry.isFile() && MD.test(entry.name)) {
+    } else if (entry.isFile() && MD_EXT.test(entry.name)) {
       found.files.push(join(dir, entry.name));
     }
   }
