@@ -134,9 +134,20 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   if (users && typeof users === 'object') {
     for (const [login, hash] of Object.entries(users)) if (typeof hash === 'string') access.users[login] = hash;
   }
+  const roots: Record<string, RootPrefs> = {};
+  if (parsed.roots && typeof parsed.roots === 'object') {
+    for (const [path, entry] of Object.entries(parsed.roots)) {
+      const marks = empty();
+      for (const m of MARKS) {
+        const list: unknown = (entry as Partial<RootPrefs> | null)?.[m];
+        if (Array.isArray(list)) marks[m] = list.filter((e) => typeof e === 'string');
+      }
+      roots[path] = marks;
+    }
+  }
   return {
     version: 1,
-    roots: parsed.roots && typeof parsed.roots === 'object' ? parsed.roots : {},
+    roots,
     saved,
     writable,
     settings,
@@ -399,7 +410,6 @@ export class Prefs {
     const rel = normalize(entry);
     await this.mutate((data) => {
       const prefs = (data.roots[rootPath] ??= empty());
-      for (const m of MARKS) prefs[m] ??= [];
       prefs[mark] = prefs[mark].filter((e) => e !== rel);
       if (on) {
         prefs[mark].push(rel);

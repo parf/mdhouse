@@ -29,6 +29,8 @@
 
 - A read of `prefs.json` while another mdhouse process saves it no longer sees half a file and
   moves the config aside (saved folders, users and the allow list kept)
+- A hand-edited `prefs.json` root entry without all three mark lists no longer makes that folder
+  fail to open (500)
 - A `{word}` at the end of a line stays on the page (`GET /users/{id}`, a `{placeholder}`, a table
   cell); only `{#id .class key=value}` is an attribute list
 - A tick, an answer or an added block is written whole or not at all: a write cut short (disk

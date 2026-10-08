@@ -245,3 +245,14 @@ test('a read while another process saves never sees a half file (D1)', async () 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('a hand-written root entry missing a mark array loads with it empty (D2)', async () => {
+  const f = join(dir, 'partial-root.json');
+  await writeFile(f, JSON.stringify({ roots: { '/r': { favorite: ['a.md', 7] }, '/bad': 'x' } }));
+  const prefs = await Prefs.load(f);
+  expect(prefs.marksFor('/r', 'a.md')).toEqual(['favorite']);
+  expect(prefs.hasMark('/r', 'a.md', 'muted')).toBe(false);
+  expect(prefs.get('/r')).toEqual({ favorite: ['a.md'], muted: [], ignored: [] });
+  expect(prefs.marksFor('/bad', 'a.md')).toEqual([]);
+  expect((await prefs.set('/r', 'b.md', 'muted', true)).muted).toEqual(['b.md']);
+});
