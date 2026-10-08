@@ -390,6 +390,9 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 /* 🎯 selected for the next run: bold red bars left and right, and its 🎯 lit */
 [data-k~="🎯"] { box-shadow: inset 4px 0 0 #e5383b, inset -4px 0 0 #e5383b !important;
   background: color-mix(in srgb, #fd7e14 14%, var(--bg)) !important; }
+/* …and 1px dashed red top and bottom; every line keeps a transparent one, so selecting moves nothing */
+.item, details.settled, .req { border-top: 1px solid transparent; border-bottom: 1px solid transparent; }
+[data-k~="🎯"] { border-top: 1px dashed #e5383b !important; border-bottom: 1px dashed #e5383b !important; }
 /* the 🎯 button on every line: a click selects / unselects at once — no form */
 .item, details.settled, .req { position: relative; }
 .item > .head, details.settled > summary, .req { padding-right: 26px; }
