@@ -71,8 +71,9 @@ control socket) lives outside every tree.
 
 `src/lib/insert.ts`: top-level headings render with `data-hash` (`lineHash` of the heading line);
 `insertBlock` re-checks it, then inserts right under the heading or at the end of its section —
-the next ATX heading of its level or higher, `#` lines in code fences skipped, trailing blank lines
-kept after the block — separated by blank lines, in the chosen kind's syntax. A signed quote takes
+the next top-level heading of its level or higher, from the renderer's block parse (`sectionOf`),
+trailing blank lines kept after the block — separated by blank lines, in the chosen kind's syntax;
+new lines end as the line before them (`insertLines`, shared with `applyQa`). A signed quote takes
 the repository's `git config user.name` (else the login), resolved on the server.
 
 ### A tick changes one line, or nothing
