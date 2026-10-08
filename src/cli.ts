@@ -8,7 +8,7 @@
  * `mdhouse exit` rather than Ctrl+C. `--fg` keeps everything in one process instead.
  */
 
-import { existsSync, realpathSync, statSync } from 'node:fs';
+import { accessSync, constants, existsSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
@@ -167,7 +167,19 @@ const opts = parse(
         : argv.slice(1),
 );
 
-const LOG = logHints({ platform: process.platform, which: (c) => !!Bun.which(c), exists: existsSync });
+const LOG = logHints({
+  platform: process.platform,
+  which: (c) => !!Bun.which(c),
+  exists: existsSync,
+  readable: (f) => {
+    try {
+      accessSync(f, constants.R_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+});
 /** For when there is no log to point at: the same command, in the foreground, shows it all. */
 const FG_HINT = 'run it in the foreground to see its output:  mdhouse … --fg';
 

@@ -11,6 +11,8 @@ export interface Host {
   /** Is this command on the PATH? */
   which: (cmd: string) => boolean;
   exists: (path: string) => boolean;
+  /** Can this user read the file? A syslog file is often root's alone. */
+  readable: (path: string) => boolean;
 }
 
 export function logHints(h: Host): { recent: string; follow: string } | null {
@@ -24,6 +26,6 @@ export function logHints(h: Host): { recent: string; follow: string } | null {
   if (h.which('journalctl') && h.exists('/run/systemd/journal')) {
     return { recent: 'journalctl -t mdhouse -n 20', follow: 'journalctl -t mdhouse -f' };
   }
-  const file = ['/var/log/syslog', '/var/log/messages'].find((f) => h.exists(f));
+  const file = ['/var/log/syslog', '/var/log/messages'].find((f) => h.readable(f));
   return file ? { recent: `grep mdhouse ${file} | tail -20`, follow: `tail -f ${file} | grep mdhouse` } : null;
 }

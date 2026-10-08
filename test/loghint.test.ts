@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { logHints } from '../src/lib/loghint';
 
-const host = (platform: string, cmds: string[], files: string[] = []) => ({
+const host = (platform: string, cmds: string[], files: string[] = [], unreadable: string[] = []) => ({
   platform,
   which: (c: string) => cmds.includes(c),
   exists: (f: string) => files.includes(f),
+  readable: (f: string) => files.includes(f) && !unreadable.includes(f),
 });
 
 describe('where a detached daemon’s output can be read', () => {
@@ -19,6 +20,13 @@ describe('where a detached daemon’s output can be read', () => {
     expect(logHints(host('linux', ['logger', 'journalctl'], ['/var/log/messages']))?.recent).toBe(
       'grep mdhouse /var/log/messages | tail -20',
     );
+  });
+
+  test('a syslog file only root can read is not offered (C13)', () => {
+    expect(logHints(host('linux', ['logger'], ['/var/log/messages'], ['/var/log/messages']))).toBeNull();
+    expect(
+      logHints(host('linux', ['logger'], ['/var/log/syslog', '/var/log/messages'], ['/var/log/syslog']))?.recent,
+    ).toBe('grep mdhouse /var/log/messages | tail -20');
   });
 
   test('macOS reads and follows the unified log', () => {

@@ -74,6 +74,8 @@
 - `--git-log` takes a positive whole number, else exits 2 — `abc` silently turned git recents off
 - Under systemd the start banner says `systemctl --user stop <unit>`, not `mdhouse exit` (which
   refuses the unit)
+- Without journald, a syslog file this user cannot read (`/var/log/messages` on Fedora) is no longer
+  offered as the log; the hint says to run it with `--fg`
 
 ## 1.5.0 — 2026-10-07
 
