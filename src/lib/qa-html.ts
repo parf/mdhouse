@@ -5,7 +5,7 @@
  * is about. Buttons are always written; the client enables them in a writable folder.
  */
 
-import { ASK, CLOSED, isRecord, lastTurn, stateOf, type QaItem, type QaNode, type Reply } from './qa';
+import { ASK, CLOSED, isIssue, isRecord, lastTurn, stateOf, type QaItem, type QaNode, type Reply } from './qa';
 
 /** How the document renders a span of Markdown (inline) and a block — with its own links and code. */
 export interface QaRender {
@@ -50,7 +50,8 @@ export function qaHtml(r: QaRender) {
   /** The whole reply as one run of text — a folded item shows its first lines. */
   const firstLine = (rep: Reply) => `${rep.who ? whoChip(rep.who) : ''}${inline(rep.body.replace(/^\s*[-*+]\s+/gm, '• '))}`;
 
-  function replyHtml(rep: Reply, quiet: boolean): string {
+  /** `issue`: the 💡 of an issue is accepted or ignored; a question's is answered yes or no. */
+  function replyHtml(rep: Reply, quiet: boolean, issue = false): string {
     const line = ` data-line="${rep.start + 1}"`;
     const who = rep.who ? whoChip(rep.who) : '';
     if (rep.suggest && rep.verdict) {
@@ -59,9 +60,12 @@ export function qaHtml(r: QaRender) {
     if (rep.suggest && quiet) return `<div class="reply proposal decided"${line}>💡 ${who}<span class="txt">${inline(rep.body)}</span></div>`;
     if (rep.suggest) {
       const acts =
-        '<span class="s-act"><button class="accept" type="button" data-tip="Yes — it is the answer">✓ yes</button>' +
-        '<button class="reject" type="button" data-tip="No — it goes back to the agent">✗ no</button>' +
-        '<button class="s-reply" type="button" data-tip="Reply — a form: neither yes nor no, or yes / no with a note">💬 reply</button></span>';
+        (issue
+          ? '<span class="s-act"><button class="accept" type="button" data-tip="Accept the solution — the agent does it">✓ accept</button>' +
+            '<button class="reject" type="button" data-tip="Ignore — the issue is closed 🚫">✗ ignore</button>'
+          : '<span class="s-act"><button class="accept" type="button" data-tip="Yes — it is the answer">✓ yes</button>' +
+            '<button class="reject" type="button" data-tip="No — it goes back to the agent">✗ no</button>') +
+        `<button class="s-reply" type="button" data-tip="Reply — a form: a reply, or ${issue ? 'accept / ignore' : 'yes / no'} with a note">💬 reply</button></span>`;
       return `<div class="reply proposal"${line}>💡 ${who}<span class="txt">${inline(rep.body)}</span>${acts}</div>`;
     }
     const cls = `reply${rep.partial ? ' partial' : ''}${isRecord(rep) ? ' record' : ''}`;
@@ -72,10 +76,10 @@ export function qaHtml(r: QaRender) {
   }
 
   /** `quiet`: a closed item — no 💡 buttons; an older 💡, superseded by a newer one, is always quiet. */
-  function threadHtml(rs: Reply[], cls: string, quiet = false): string {
+  function threadHtml(rs: Reply[], cls: string, quiet = false, issue = false): string {
     if (!rs.length) return '';
     const newest = rs.filter((x) => x.suggest).at(-1);
-    return `<div class="${cls}">${rs.map((x) => replyHtml(x, quiet || (x.suggest && x !== newest))).join('')}</div>`;
+    return `<div class="${cls}">${rs.map((x) => replyHtml(x, quiet || (x.suggest && x !== newest), issue)).join('')}</div>`;
   }
 
   function optionHtml(o: QaNode, name: string): string {
@@ -154,7 +158,7 @@ export function qaHtml(r: QaRender) {
     return (
       `<li class="${cls}"${attrs}><div class="head c-row"><span class="g">${glyphButton(status || '🎯', tip)}</span><span class="h-t">${html}</span>${chip}` +
       `${options.length ? '<button class="c-btn" type="button" data-tip="Comment on the question">💬</button>' : ''}${TGT}</div>` +
-      `${opts}${threadHtml(item.replies, 'thread q-thread')}${nestedHtml}</li>`
+      `${opts}${threadHtml(item.replies, 'thread q-thread', false, isIssue(item))}${nestedHtml}</li>`
     );
   }
 

@@ -48,6 +48,9 @@ turns so GitHub keeps them apart:
 
 ## Findings — stages
 
+An issue's 💡: **✓ accept** (accept solution) → `✅ 💡` + `💬 👤parf accept`; **✗ ignore** — it
+auto-ignores the issue: `🚫 💡` + `💬 👤parf ignore`, the issue `🚫`.
+
 ```markdown
 - 🔴 `src/cli.ts:536` --fg hands over on a busy port — the unit "succeeds", nothing retries. Fix: exit 1
 - ❓ 🟠 `package.json:46` dev script feeds `.` to the live instance

@@ -187,6 +187,9 @@ export function isAnswered(node: Pick<QaNode, 'replies' | 'children'>): boolean 
   return !!last && !last.partial;
 }
 
+/** An issue: a severity, and not a question — its 💡 is accepted or ignored, a question's answered yes or no. */
+export const isIssue = (node: Pick<QaNode, 'glyphs'>) => node.glyphs.some((g) => SEVERITY.includes(g)) && !ASK.includes(node.glyphs[0] ?? '');
+
 export interface QaState {
   /** ✅ 🚫 ⏸️, an answered ❓ / ⁉️, or a 🔵 note — folded. */
   closed: boolean;
@@ -567,7 +570,10 @@ export function applyQa(src: string, offset: number, req: QaRequest, me: string)
       if (!newest || newest.verdict || newest.start !== req.sug - 1) return { error: 'no-target' };
       const line = e.get(newest.start);
       e.set(newest.start, `${line.slice(0, newest.markCol)}${req.yes ? '✅' : '🚫'} ${line.slice(newest.markCol)}`);
-      append(e, item, signed(req.yes ? 'yes' : 'no', req.text));
+      // an issue's 💡 is accepted — the agent does it — or ignored, which closes the issue
+      const issue = isIssue(item);
+      if (issue && !req.yes) setGlyphs(e, item, withStage(item.glyphs, '🚫'), item.target);
+      append(e, item, signed(issue ? (req.yes ? 'accept' : 'ignore') : req.yes ? 'yes' : 'no', req.text));
       return { src: e.src };
     }
     case 'pick':

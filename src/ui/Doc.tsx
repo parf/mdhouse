@@ -570,6 +570,7 @@ export function Doc({
         key={editing.id}
         kind={editing.kind}
         first={editing.first}
+        issue={editing.issue}
         initial={draft.current}
         me={me}
         onText={(text) => (draft.current = text)}

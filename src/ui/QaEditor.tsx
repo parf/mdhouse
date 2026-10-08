@@ -38,6 +38,11 @@ const ACTIONS: Record<QaKind, Action[]> = {
   comment: [],
   edit: [],
 };
+/** An issue's 💡: accepted — the agent does it — or ignored, which closes the issue. */
+const ISSUE_PROPOSAL: Action[] = [
+  ['yes', '✓ accept', 'Accept the solution — the agent does it'],
+  ['no', '✗ ignore', 'Ignore — the issue is closed 🚫'],
+];
 const ELABORATE: Action = ['elaborate', '🔍 more', "Ask for more: a reply 'elaborate — …'; the item stays open"];
 /** One number per action, the same in every form — Alt+number presses it. */
 const NUM: Record<string, number> = { '✅': 1, yes: 1, '🚫': 2, no: 2, '⏸️': 3, '⏳': 4, partial: 5, '⚠️': 5, '🎫': 6, elaborate: 7, pick: 8, '🎯': 9 };
@@ -63,6 +68,8 @@ interface Props {
   kind: QaKind;
   /** A 💡's form: the button it was opened from — what Ctrl+Enter does. */
   first?: 'yes' | 'no' | 'reply';
+  /** A 💡 on an issue: ✓ accept / ✗ ignore (closes it) rather than yes / no. */
+  issue?: boolean;
   /** The draft to start from; from then on the editor keeps the text itself. */
   initial: string;
   /** Who a signed reply is from. */
@@ -84,7 +91,7 @@ interface Props {
  * that fit, ESC and `[ ] 👤` (sign as me). Ctrl/⌘+Enter saves, with Shift it also opens the next
  * open question; Alt+1…9 press an action; Alt+E opens the file at the item instead; Esc cancels.
  */
-export function QaEditor({ kind, first, initial, me, onText, onAct, onCancel, saving, note, editHref }: Props) {
+export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCancel, saving, note, editHref }: Props) {
   const area = useRef<HTMLTextAreaElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const [text, setText] = useState(initial);
@@ -104,7 +111,7 @@ export function QaEditor({ kind, first, initial, me, onText, onAct, onCancel, sa
     el.style.height = `${el.scrollHeight + 2}px`;
   }, [text]);
 
-  const actions = kind === 'edit' ? [] : [...ACTIONS[kind], ELABORATE].sort((a, b) => NUM[a[0]]! - NUM[b[0]]!);
+  const actions = (kind === 'edit' ? [] : [...(kind === 'proposal' && issue ? ISSUE_PROPOSAL : ACTIONS[kind]), ELABORATE]).sort((a, b) => NUM[a[0]]! - NUM[b[0]]!);
   const act = (action: string | null, next = false) => {
     if (saving) return;
     // 🎫 asks the agent to file a ticket: it needs at least who takes it

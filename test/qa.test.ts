@@ -109,6 +109,13 @@ describe('items: writing', () => {
     expect(act(src, 1, { op: 'verdict', sug: 2, yes: false })).toBe('- ❓ q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf no\n');
   });
 
+  test('an issue\'s 💡: accept — the agent does it; ignore — the issue closes 🚫', () => {
+    const src = '- 🟠 A1 x\n  > 💡👾 do it\n';
+    expect(act(src, 1, { op: 'verdict', sug: 2, yes: true })).toBe('- 🟠 A1 x\n  > ✅ 💡👾 do it\n  >\n  > 💬 👤parf accept\n');
+    expect(act(src, 1, { op: 'verdict', sug: 2, yes: false, text: 'not worth it' })).toBe('- 🚫 🟠 A1 x\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf ignore — not worth it\n');
+    expect(act('- ❓ 🟠 q\n  > 💡👾 do it\n', 1, { op: 'verdict', sug: 2, yes: false })).toBe('- ❓ 🟠 q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf no\n');
+  });
+
   test('pick clears the other radios; tick toggles a checkbox; done; a comment under an option', () => {
     expect(act('- ❓ q\n  - (x) a\n  - ( ) b\n', 1, { op: 'pick', opt: 3, on: true })).toBe('- ❓ q\n  - ( ) a\n  - (x) b\n');
     expect(act('- ❓ q\n  - (x) a\n', 1, { op: 'pick', opt: 2, on: false })).toBe('- ❓ q\n  - ( ) a\n');

@@ -16,6 +16,8 @@ export interface QaTarget {
   at?: number;
   /** A 💡's form: the button it was opened from. */
   first?: 'yes' | 'no' | 'reply';
+  /** A 💡 on an issue: accept / ignore rather than yes / no. */
+  issue?: boolean;
 }
 
 export interface QaHandlers {
@@ -65,7 +67,7 @@ export function wireQa(el: HTMLElement, h: QaHandlers): () => void {
       e.preventDefault();
       const sug = lineOf(sAct.closest('.reply'));
       if (sAct.matches('.accept, .reject')) return h.act(line, hash, { op: 'verdict', sug, yes: sAct.matches('.accept') });
-      return h.open({ line, hash, kind: 'proposal', at: sug, first: 'reply' });
+      return h.open({ line, hash, kind: 'proposal', at: sug, first: 'reply', issue: formFor(item).kind === 'finding' });
     }
     // 💬 at the end of a line: a comment on an option, or on the question
     const cBtn = t.closest('.c-btn');
