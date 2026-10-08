@@ -9,7 +9,9 @@
   badges `👤name` `👾`; options `( )` / `[ ]`; `💡` proposals; 🎯 selected
 - Settled items (✅ 🚫 ⏸️, an answered ❓, 🔵 notes) fold, muted; open questions and 🔴 / 🟠 issues
   are tinted; an issue id (`B44`) is the item's anchor
-- A strip over a page with items: the total, 🔴 🟠 ⚪ ✅ 🎯 — counts and a filter
+- A strip over a page with items: the total, 🔴 🟠 ⚪ ✅ 🚫 🎯 — counts and a filter; ✅ done, 🚫 closed
+  not as ✅ (🚫 ⏸️ 🔵); a level with 0 is not shown
+- An issue's 💡: ✓ accept (the agent does it) / ✗ ignore (the issue closes 🚫); a question's: ✓ yes / ✗ no
 - The old forms — `> ?`, `> [!QUESTION]` / `[!ANSWER]`, `**Q:**` / `**A:**`, `::: q` / `::: a`,
   ☐ ☑ ☒ — are read as the new markup; the next write to the file writes it converted
 - Answering on the page (`--rw`): an item's first glyph, its 💬 / 💡 buttons and its replies open
