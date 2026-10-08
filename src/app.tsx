@@ -6,7 +6,6 @@ import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
 import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
-import { RootSelect } from './ui/RootSelect';
 import { Home } from './ui/Home';
 import { viewOf } from './ui/PageHead';
 import { AboutModal } from './ui/AboutModal';
@@ -38,7 +37,6 @@ const save = (key: string, value: unknown) => {
 
 function App() {
   const [roots, setRoots] = useState<RootInfo[]>([]);
-  const [home, setHome] = useState<string | undefined>(undefined);
   const [options, setOptions] = useState<Options>({ editLink: true, autoRw: true, me: '' });
   // Until the saved settings arrive, nothing that depends on them is drawn — otherwise a ✎
   // turned off in Settings flashed on every load.
@@ -114,9 +112,8 @@ function App() {
   // ── data ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    void api.roots().then(({ roots, home }) => {
+    void api.roots().then(({ roots }) => {
       setRoots(roots);
-      setHome(home);
       // `?root=<id>` picks which tree to land on — what a second `mdhouse <dir>` prints when
       // the daemon it handed the directory to was already serving something else.
       const asked = new URLSearchParams(location.search).get('root');
@@ -431,7 +428,6 @@ function App() {
             <button class="mark brand-mark" onClick={() => setAboutOpen(true)} title="About mdhouse" aria-label="About mdhouse" />
             {crumb || tree?.root.name || 'mdhouse'}
           </span>
-          <RootSelect roots={roots} rootId={rootId} onPick={pickRoot} above="all" max={80} home={home} />
           <button
             class="icon-btn"
             title="Search (/)"
