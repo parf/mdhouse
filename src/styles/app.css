@@ -1155,18 +1155,21 @@ main {
 .md.qa-rw .g-btn:hover { border-color: var(--qa-question); background: var(--bg-raised); box-shadow: 0 1px 0 var(--border); }
 .md.qa-rw .g-btn.dis:hover { border-color: var(--qa-disagreement); }
 .md.qa-rw .g-btn.sev:hover { border-color: var(--fg-muted); }
-/* an unanswered question: a light tint and a 1px line on the left, its ❓ always framed lightly */
-.md li.item.wait-me { background: color-mix(in srgb, var(--qa-question-bg) var(--qa-tint), var(--bg));
+/* An open question or a 🔴 / 🟠 issue: a tint that fades out fast, left to right — the eye finds the
+   line, the text stays on the page's own background. */
+.md li.item { --qa-fade-q: linear-gradient(90deg, color-mix(in srgb, var(--qa-question-bg) var(--qa-tint), var(--bg)), transparent 12em);
+  --qa-fade-d: linear-gradient(90deg, color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg)), transparent 12em); }
+.md li.item.wait-me { background: var(--qa-fade-q);
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
-.md li.item.wait-me.dis { background: color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg));
+.md li.item.wait-me.dis { background: var(--qa-fade-d);
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
 .md.qa-rw li.item.wait-me > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 35%, transparent); }
 .md.qa-rw li.item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 35%, transparent); }
 /* an open 🔴 / 🟠 issue: the question's look, in its colour */
 .md.qa-rw li.item.finding > .head .g-btn { border-color: color-mix(in srgb, var(--fg-muted) 35%, transparent); }
-.md li.item.finding[data-sev="🔴"] { background: color-mix(in srgb, var(--qa-question-bg) var(--qa-tint), var(--bg));
+.md li.item.finding[data-sev="🔴"] { background: var(--qa-fade-q);
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
-.md li.item.finding[data-sev="🟠"] { background: color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg));
+.md li.item.finding[data-sev="🟠"] { background: var(--qa-fade-d);
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
 .md.qa-rw li.item.finding[data-sev="🔴"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 40%, transparent); }
 .md.qa-rw li.item.finding[data-sev="🟠"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 40%, transparent); }
