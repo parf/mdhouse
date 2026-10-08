@@ -106,7 +106,8 @@ Checked and sound: <one line per subsystem — what was checked>.
      line starts `❓` before the severity.
 - **Each line one short sentence, ~120 characters at most.** `Evidence:` — the strongest proof only,
   not the whole session. Several cases of one issue → short sub-items after the `Impact:` line and
-  before the fix (`- setext: …`, `- HTML comment: …`), one per line.
+  before the fix (`- setext: …`, `- HTML comment: …`), one per line. A case never opens with a glyph
+  (`- ❓ icon: …` is a question of its own, open forever) — name it in words: `- the question icon: …`.
 - No "as its doc says", no restating the code — the reader opens the line.
 - `Checked and sound:` — one line per subsystem, names only (functions, edge cases), no prose.
 - No `✅`, no `💬` in a new item — triage is the user's.
