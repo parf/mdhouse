@@ -388,7 +388,7 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
 /* 🎯 selected for the next run: bold red bars left and right, and its 🎯 lit */
-[data-k~="🎯"] { box-shadow: inset 4px 0 0 #1971c2, inset -4px 0 0 #1971c2 !important; }
+[data-k~="🎯"] { box-shadow: inset 6px 0 0 #1971c2, inset -6px 0 0 #1971c2 !important; }
 /* …and 1px dashed red top and bottom; every line keeps a transparent one, so selecting moves nothing */
 .item, details.settled, .req { border-top: 1px solid transparent; border-bottom: 1px solid transparent; }
 [data-k~="🎯"] { border-top: 1px dashed #e5383b !important; border-bottom: 1px dashed #e5383b !important; }
