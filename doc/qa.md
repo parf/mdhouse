@@ -1,6 +1,6 @@
 # Questions and answers in mdhouse
 
-Plain GFM that reads well on GitHub and in an editor; mdhouse adds the behaviour (buttons,
+Plain GFM that reads well on GitHub and in an editor; mdhouse adds the behavior (buttons,
 muting, folding) on render — never markup that only mdhouse understands. Glyph first in the line
 (status, then severity).
 

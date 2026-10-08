@@ -44,7 +44,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 
 ## ❖ What you get
 
-Live, git-aware — GitHub Markdown and more flavours
+Live, git-aware — GitHub Markdown and more flavors
 
 - 📁 **Browse** — a sidebar tree of `.md` / `.mdx` files, in three widths (`Ctrl+B`), with
   age, size, git status (`M` `U` `S` `D`), and stubs marked **∅**
@@ -52,7 +52,7 @@ Live, git-aware — GitHub Markdown and more flavours
 - 🕐 **Recent** and 👤 **Mine** — what changed here, and your own work, uncommitted first; plus
   📄 **Files** and ★ **Favs**
 
-![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and the age coloured by how fresh it is](doc/recent.png)
+![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and the age colored by how fresh it is](doc/recent.png)
 
 - 🗎 **Every file at its own address** — `/<folder>/<path>`: Markdown rendered; code highlighted
   with line numbers (`#L557`); images, PDFs, video, audio; HTML sandboxed (⟨/⟩ source); anything
@@ -66,11 +66,11 @@ Live, git-aware — GitHub Markdown and more flavours
 - 🌿 **Git view** — `/<folder>/?git`, also the front page: branch, last pull and commit, what
   changed grouped by commit; Favs, Mine, Commits, Files
 - ⊟ **Diffs** — what changed, as a patch or ▤ laid over the whole document, rendered
-- ↔ full width · ★ favourite · 🔇 mute · 🔗 copy link · ✎ open in your editor
+- ↔ full width · ★ favorite · 🔇 mute · 🔗 copy link · ✎ open in your editor
 - 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week
 - 🖋 **Renders properly** — GFM, alerts, footnotes, shiki highlighting, mermaid, front matter,
   [and more](doc/markdown.md)
-- 🗂 **Finds your repos** — point it at a folder of repositories; `.gitignore` is honoured
+- 🗂 **Finds your repos** — point it at a folder of repositories; `.gitignore` is honored
 - ⚡ **Live** — edit in your editor, or let an agent edit, and the page follows, over a WebSocket
 - ☀️ / 🌙 light and dark follow your system; `?` shows the shortcuts
 

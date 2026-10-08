@@ -76,7 +76,7 @@ A claim that needs a source.[^src]
 
 ## Alerts
 
-GitHub's five, with GitHub's colours. NOTE and TIP are one line — the icon in front of the text,
+GitHub's five, with GitHub's colors. NOTE and TIP are one line — the icon in front of the text,
 no "Note" / "Tip" title — while IMPORTANT, WARNING and CAUTION keep a title row, since they are
 meant to stop the reader:
 
