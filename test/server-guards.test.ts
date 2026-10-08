@@ -198,12 +198,14 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
   await mkdir(ro, { recursive: true });
   await writeFile(join(repo, 'a.md'), 'a\n');
   await writeFile(join(ro, 'b.md'), 'b\n');
+  await writeFile(join(repo, 'code.ts'), 'const a = 1;\n');
   await run(repo, ['init', '-q']);
   await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '.']);
   await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'first']);
   await writeFile(join(repo, 'a.md'), 'a changed\n');
   await writeFile(join(repo, 'new.md'), 'n\n');
   await writeFile(join(ro, 'b.md'), 'b changed\n');
+  await writeFile(join(repo, 'code.ts'), 'const a = 2;\n');
 
   const port = 61797;
   const registry = await Registry.create([
@@ -227,6 +229,10 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
     expect(await readFile(join(ro, 'b.md'), 'utf8')).toBe('b changed\n');
     expect((await post(`${rwId}/new.md`)).status).toBe(409);
     expect((await post(`${rwId}/nope.md`)).status).toBe(404);
+    // not a document: never reset (A7)
+    const { lineHash } = await import('../src/lib/qa');
+    expect((await post(`${rwId}/code.ts`, {}, lineHash('const a = 2;\n'))).status).toBe(404);
+    expect(await readFile(join(repo, 'code.ts'), 'utf8')).toBe('const a = 2;\n');
     // saved again after the diff was shown: refused, the later edit kept (A2)
     const old = await shown(`${rwId}/a.md`);
     expect(old).toMatch(/^[0-9a-f]{8}$/);

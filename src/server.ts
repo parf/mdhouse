@@ -566,15 +566,14 @@ export async function serve(opts: ServeOptions) {
       /** One document back to its last commit — its uncommitted changes thrown away. */
       '/api/git/reset': {
         POST: async (req) => {
-          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
-          if (opts.noGit) return fail(404, 'git is off');
           const body = (await req.json().catch(() => null)) as { p?: string; hash?: string } | null;
+          // The document's folder: same origin, git on, in a repo, writable.
+          const at = await gitWrite(req, body?.p?.replace(/\/[^/]*$/, ''));
+          if ('error' in at) return at.error;
           if (!body?.p || typeof body.hash !== 'string') return fail(400, 'expected {p, hash}');
-          const loc = await registry.resolve(body.p);
-          if (!loc || !(await stat(loc.abs).catch(() => null))?.isFile()) return fail(404, 'no such file');
-          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only`);
-          const repo = await repoToplevel(loc.abs.replace(/\/[^/]*$/, ''));
-          if (!repo) return fail(404, 'not in a git repository');
+          const loc = await docAt(body.p);
+          if (!loc) return fail(404, 'not a document');
+          const { repo } = at;
           const rel = repoRel(repo, loc.abs);
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
           return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
