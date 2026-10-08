@@ -14,7 +14,7 @@ import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { pageUrl, serve } from './server';
 import { answered, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
-import { runService } from './lib/service';
+import { ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { hashPassword, parseCidr, validLogin } from './lib/access';
 
@@ -615,13 +615,16 @@ printRoots(
   !registry.single,
 );
 console.log(writeNote(registry.list()));
+const unit = ownUnit();
 console.log(
-  !control
-    ? `\n  ${stopHint} cannot reach it: another mdhouse on port ${opts.port} holds the control socket.` +
+  unit
+    ? `\n  Running as ${unit} — stop it with:  systemctl --user stop ${unit}`
+    : !control
+      ? `\n  ${stopHint} cannot reach it: another mdhouse on port ${opts.port} holds the control socket.` +
         `\n  ${process.env.MDHOUSE_DAEMON === '1' ? `kill ${process.pid}` : 'Ctrl+C'} stops it.`
-    : process.env.MDHOUSE_DAEMON === '1'
-      ? `\n  Started in the background — stop it with ${stopHint}.`
-      : `\n  In the foreground — Ctrl+C stops it, and so does ${stopHint}.`,
+      : process.env.MDHOUSE_DAEMON === '1'
+        ? `\n  Started in the background — stop it with ${stopHint}.`
+        : `\n  In the foreground — Ctrl+C stops it, and so does ${stopHint}.`,
 );
 
 if (opts.open) openBrowser(url);

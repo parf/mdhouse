@@ -190,3 +190,23 @@ test('--git-log takes a positive whole number, like --port (C9)', () => {
     expect(r.err).toContain(`mdhouse: --git-log: not a count: ${bad}`);
   }
 });
+
+test('under systemd the banner names systemctl, not `mdhouse exit` (C10)', async () => {
+  const s = scratch();
+  const a = s.folder('a');
+  expect(s.run([a, '-p', '--port', '61925']).code).toBe(0);
+  s.run(['exit', '--port', '61925']);
+  const svc = Bun.spawn([process.execPath, CLI, '--fg', '--port', '61925'], {
+    env: { ...process.env, XDG_CONFIG_HOME: s.cfg, MDHOUSE_PORT: '', MDHOUSE_HOST: '', MDHOUSE_SERVICE: '1', MDHOUSE_DAEMON: '' },
+    stdout: 'pipe',
+  });
+  try {
+    const reader = svc.stdout.getReader();
+    let out = '';
+    while (!out.includes('stop')) out += new TextDecoder().decode((await reader.read()).value);
+    expect(out).toMatch(/stop it with: {2}systemctl --user stop \S+\.service/);
+    expect(out).not.toContain('mdhouse exit');
+  } finally {
+    svc.kill();
+  }
+}, 20000);
