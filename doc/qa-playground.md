@@ -6,113 +6,85 @@ A page to try answering in the browser. Serve it writable and open it:
 mdhouse doc -p --rw        # from the repository root — or any folder holding a copy of this file
 ```
 
-In a `--rw` folder the ❓ and ⁉️ icons are buttons: click one, write the answer, **Save** (or
-Ctrl+Enter). An unanswered question gets a 💬 under it; an answered one opens its answer for
-editing. The answer is written into this file, in the same syntax as the question.
+In a `--rw` folder an item's first glyph is a button: click it, write, **💬** (or Ctrl+Enter) — or
+one of the actions after it (Alt+1…9). The reply is written into this file, quoted under the item.
 
 This page is meant to be written to. `git checkout doc/qa-playground.md` puts it back.
 What each form means is in [Questions and answers in mdhouse](qa.md).
 
 ---
 
-## Glyphs in a quote
+## Questions → answers, with a thread
 
-> ? Who keeps eating the yoghurt labelled "DO NOT TOUCH"?
+- ❓ Who keeps eating the yoghurt labelled "DO NOT TOUCH"?
+- ❓ Is it a bug or a feature if nobody filed a ticket?
+  > 💬 A feature, until a customer finds it.
+- ⁉️ The README says the build takes two minutes; the build disagrees by forty.
+- ❓ What is the plan for Friday deploys?
+  > 💬👾 There is a plan:
+  > - don't
+  > - if you must, bring snacks for the on-call
+  >
+  > 💬 ⚠️ 👤parf need more — and who brings the snacks?
+- ❓ Can the rubber duck be promoted to senior engineer?
+  > 💬👾 It reviews every line and never interrupts.
 
-> ? Is it a bug or a feature if nobody filed a ticket?
-> 💬 A feature, until a customer finds it.
+> ❓ Does "works on my machine" count as a test environment?
+> 💬 Only if your machine is shipped to the customer.
 
-> ?! The README says the build takes two minutes; the build disagrees by forty.
+## A question with a suggested answer
 
-> !? The style guide says tabs; the cat walked over the keyboard and chose spaces.
-> 💬 The cat outranks the style guide.
+- ❓ Should the meeting about fewer meetings be a meeting?
+  > 💡👾 An email. A short one.
 
-> ⁉️ Two clocks on the office wall disagree, and both claim to be on NTP.
+## Findings — stages
 
-> ❓ What is the plan for Friday deploys?
-> 💬 There is a plan:
-> - don't
-> - if you must, bring snacks for the on-call
+- 🔴 `printer.c:1987` the printer only jams before a deadline
+  Evidence: three deadlines, three jams
+  Impact: everyone, every Friday
+  > 💡👾 Print the night before.
+- 🟠 `coffee.yml:3` the coffee machine makes only decaf
+- ⚪ `fridge.md` the shelves have no team labels
+- ⏸️ ⚪ rewrite everything in a language invented last Tuesday
+  > 💬👾 later — we still have scars from the last one
+- 🔵 the office plant was watered
 
-> Q: Can the rubber duck be promoted to senior engineer?
+## Pick one, or several
 
-> Q Does "works on my machine" count as a test environment?
-> A: Only if your machine is shipped to the customer.
+- ❓ Who gets the coffee machine's on-call rotation?
+  - ( ) the coffee machine itself 🌟
+  - ( ) whoever drinks the most
+  - ( ) the intern
+- ❓ What goes into the release party?
+  - [ ] cake
+  - [ ] a demo that works
+  - [ ] a demo that almost works
 
-## Alerts
+## Old forms — read as the ones above
 
-> [!QUESTION]
-> Should the meeting about fewer meetings be a meeting?
+Written as mdhouse used to read them; the page shows them in the new markup, and the first answer
+on this page writes them converted.
+
+> ? Is a semicolon a lifestyle choice?
+> A: In JavaScript, yes. In Python, a cry for help.
 
 > [!QUESTION]
 > Why does the printer only jam before a deadline?
 
-> [!ANSWER]
-> It can sense fear. Printers have done so since 1987.
->
-> Printing the night before has not been tried yet.
-
-## Bold lines
-
 **Q:** How many standups can one person attend before they sit down?
 
-**Q:** Is a semicolon a lifestyle choice?
-**A:** In JavaScript, yes. In Python, a cry for help.
-
-As list items too:
-
 - **Q:** Who named the server `prod-final-v2-really-final`?
-- **Q:** Can we schedule the outage for when nobody is looking?
-- **A:** Yes — 3 a.m. on a Sunday, as tradition demands.
+- **A:** The same person who named `prod-final-v3`.
 
-## Containers
-
-::: q Should the coffee machine get its own on-call rotation?
+::: q Will the legacy code ever be rewritten?
 :::
 
-::: question
-Will the legacy code ever be rewritten?
+- ☐ Should we label the fridge shelves by team?
 
-It was "temporary" in 2009.
-:::
-
-::: answer
-Eventually, once three things are true:
-
-- someone understands it
-- that person is still here
-- the person who wrote it has forgiven us
-:::
-
----
-
-## Checkbox questions
-
-Every task item is a question. In a writable folder a 💬 after the
-checkbox opens the editor; the answer is written as an indented `> 💬` inside the item, and
-**Check & Save** also ticks the box.
+## Checkboxes — ticked, not answered
 
 - [ ] Is it a meeting if everyone is on mute?
-- [ ] Who approved the requirement that the logo be bigger and also smaller,
-      and has anyone told the designer?
 - [x] Did turning it off and on again work?
-  > 💬 Yes. Nobody knows why. Nobody will ever know why.
-
-## Status glyph items
-
-A list item that opens with a status glyph is a question with a status. The 💬 after the glyph
-opens the editor; on a ❓ or ⁉️ item the glyph itself is the button. **Check & Save** turns the
-glyph into ✅.
-
-- ❓ Where do the missing socks go — same place as the missing semicolons?
-- ⁉️ Marketing says the feature ships Monday; engineering says "which feature?"
-- ⚠️ Is the coffee machine fixed? It makes coffee, but only decaf.
-- ⏳ Has the build finished yet?
-- ☐ Should we label the fridge shelves by team?
-- 🚫 Rewrite everything in a language invented last Tuesday?
-  > 💬 No. We still have scars from the last one.
-- ✅ Is lunch at noon?
-  > 💬 Yes, and it is not up for discussion.
 
 ## Not questions — these must stay as they are
 

@@ -62,7 +62,7 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 - ↔ full width · ★ favourite · 🔇 mute · 🔗 copy link · ✎ open in your editor
 - 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week
 - 🖋 **Renders properly** — GFM, alerts, footnotes, shiki highlighting, mermaid, front matter,
-  [and more](doc/markdown.md); [questions and answers](doc/qa.md) in several forms
+  [and more](doc/markdown.md); [questions and answers](doc/qa.md)
 - 🗂 **Finds your repos** — point it at a folder of repositories; `.gitignore` is honoured
 - ⚡ **Live** — edit in your editor and the page follows, over a WebSocket
 - ☀️ / 🌙 light and dark follow your system; `?` shows the shortcuts
@@ -73,8 +73,8 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 
 - allow edits: `mdhouse -p --rw folder(s)`
 - ☑️ **Tick a checkbox** — that one line is saved
-- ❓⁉️ **Answer a question** — **Save** (Ctrl+Enter)
-- ✅, ⚠️, … - Click & Answer (many options) - [Details](doc/qa.md#checkbox-and-status-items)
+- ❓⁉️ **Answer a question** — click its glyph, **💬** (Ctrl+Enter)
+- 🔴 🟠 ⚪ findings, 💡 ✓ yes / ✗ no, ( ) [ ] picks, 🎯 select — [Details](doc/qa.md#answering-in-the-browser)
 
 <img src="doc/rw-answer.png" alt="An answered question with bullets, and a checkbox question with the answer editor open under it: Save, Check &amp; Save and Cancel" width="560">
 
@@ -110,7 +110,8 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 | `Esc` | clear the search query, or close the dialog |
 | `e` | open the document in your editor |
 | `Ctrl+Enter` | in a form: save |
-| `Ctrl+Shift+Enter` | in an answer form: save, open the next unanswered question |
+| `Ctrl+Shift+Enter` | in an answer form: save, open the next open question |
+| `Alt+1`…`Alt+9` | in an answer form: the action with that number |
 | `Alt+E` | in a form: open the file at that line in your editor |
 
 ## ▸ Running it

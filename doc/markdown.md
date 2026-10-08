@@ -12,11 +12,8 @@ mdhouse and every example below renders live.
 | [Autolinks](#autolinks) | a bare `https://…` | GFM |
 | [Footnotes](#footnotes) | `text[^1]` … `[^1]: note` | GFM |
 | [Alerts](#alerts) | `> [!NOTE]` `[!TIP]` `[!IMPORTANT]` `[!WARNING]` `[!CAUTION]` | GitHub |
-| [Question / Answer alerts](qa.md#question-and-answer-alerts) | `> [!QUESTION]` `> [!ANSWER]` | **mdhouse** |
-| [Q&A container blocks](qa.md#container-blocks) | `::: q` / `::: question`, `::: a` / `::: answer` | VuePress / VitePress |
-| [Bold `Q:` / `A:` lines](qa.md#bold-lines) | a leading `**Q:**` / `**A:**` | **mdhouse** |
-| [Q&A glyphs in a quote](qa.md#glyphs-in-a-quote) | `> ?` `> ?!` `> 💬` `> Q:` `> A:` | **mdhouse** |
-| [Checkbox and status items](qa.md#checkbox-and-status-items) | `- [ ]` `- ✅` `- ⚠️` `- 🚫` … as questions | **mdhouse** |
+| [Questions and answers](qa.md) | `- ❓ …` / `> ❓ …`, a `> 💬` thread, `- 🔴 …` findings, `( )` / `[ ]` options | **mdhouse** |
+| [The old Q&A forms](qa.md#the-old-forms) | `> [!QUESTION]`, `::: q`, `**Q:**`, `> ?` — read as the above | **mdhouse** |
 | [Heading anchors](#heading-anchors) | every heading gets an `id` and a `#` link | markdown-it-anchor |
 | [Attributes](#attributes) | `{#id .class}` after a heading or paragraph | markdown-it-attrs |
 | [Code highlighting](#code) | ` ```ts ` fences | shiki |
@@ -107,8 +104,8 @@ body, and may hold any Markdown.
 
 ## Questions and answers
 
-Question, answer and disagreement blocks — `> [!QUESTION]`, `::: q`, `**Q:**` lines, `> ?` /
-`> ?!` / `> 💬` — have their own page: [**Questions and answers in mdhouse**](qa.md).
+Questions, threads, findings and options — `- ❓ …`, `> 💬`, `- 🔴 …`, `( )` / `[ ]` — have their own
+page: [**Questions and answers in mdhouse**](qa.md).
 
 ## Heading anchors
 

@@ -45,7 +45,7 @@ describe('old Q&A forms → the new markup', () => {
       const once = convertLegacy(s);
       expect(convertLegacy(once)).toBe(once);
       // every question of the playground is an item afterwards
-      expect(parseQa(once, 0).items.filter((i) => i.glyphs[0] === '❓').length).toBeGreaterThanOrEqual(15);
+      expect(parseQa(once, 0).items.filter((i) => i.glyphs[0] === '❓').length).toBeGreaterThanOrEqual(12);
     });
   });
 });

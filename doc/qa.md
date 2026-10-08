@@ -1,214 +1,204 @@
 # Questions and answers in mdhouse
 
-Plan folders collect question-and-answer logs — open-question lists, review threads, FAQs. mdhouse
-renders every common way of writing one as the same one-line blocks: an icon in front of the
-text, and a bright fill that says what the line is.
+Plain GFM that reads well on GitHub and in an editor; mdhouse adds the behaviour (buttons,
+muting, folding) on render — never markup that only mdhouse understands. Glyph first in the line
+(status, then severity).
 
-| | Means | Edge / fill |
-| --- | --- | --- |
-| ❓ question | open — it needs an answer and has none yet | red |
-| ⁉️ disagreement | open — two sources contradict, and the conflict is not settled | orange |
-| 💬 answer | settles the question or disagreement above it; indented under it | green |
-
-The meanings follow the glyph conventions in `/rd/.claude/Glyphs.md`: a ❓ or ⁉️ with a 💬 under it
-is settled; with nothing under it, it is still open. The colours are the `--qa-*` tokens, the
-same in every form below.
-
-Four ways to write blocks — pick whichever reads best in the file; they render alike — and list
-items, which are questions with a status:
-
-| Form | Question | Disagreement | Answer | From |
-| --- | --- | --- | --- | --- |
-| [Alerts](#question-and-answer-alerts) | `> [!QUESTION]` | | `> [!ANSWER]` | mdhouse |
-| [Containers](#container-blocks) | `::: q` / `::: question` | | `::: a` / `::: answer` | VuePress / VitePress |
-| [Bold lines](#bold-lines) | `**Q:**` | | `**A:**` | mdhouse |
-| [Glyphs in a quote](#glyphs-in-a-quote) | `> ?` `> ❓` `> Q:` `> Q` | `> ?!` `> !?` `> ⁉️` | `> 💬` `> A:` | mdhouse |
-| [Checkbox and status items](#checkbox-and-status-items) | `- [ ]` `- [x]` `- ✅` `- ⚠️` … | `- ⁉️` | indented `> 💬` | mdhouse |
-
-In a folder served with `--rw` they can be [answered in the browser](#answering-in-the-browser).
-To try every form, open the [Q&A playground](qa-playground.md).
-
-Everything else mdhouse renders beyond CommonMark is in [Markdown in mdhouse](markdown.md).
+To try every form, open the [Q&A playground](qa-playground.md). Everything else mdhouse renders
+beyond CommonMark is in [Markdown in mdhouse](markdown.md).
 
 ---
 
-## Question and answer alerts
-
-mdhouse's own two, for the question-and-answer logs plan folders collect. Unlike GitHub's five
-they have no title row: each is one line, the icon in front of the text. The text may also follow
-the marker on the same line — `> [!ANSWER] Yes.`
+## Questions → answers, with a thread
 
 ```markdown
-> [!QUESTION]
-> Do we keep the 5y signal?
-
-> [!ANSWER]
-> Yes — it carries most of the lift.
+> ❓ Do we keep the old URLs?
+> 💬 Yes, redirect for a year.
 ```
 
-> [!QUESTION]
-> Do we keep the 5y signal?
-
-> [!ANSWER]
-> Yes — it carries most of the lift.
-
-GitHub does not know these two, and shows them there as plain quotes with the marker visible.
-
-## Container blocks
-
-The container syntax VuePress and VitePress use. A block holds any Markdown — lists, code,
-several paragraphs — and text on the opening line becomes its first line (bold, for a question):
+A thread — one 💬 per turn, the author as a badge (`👤parf`, `👾`, `📡slack`), a blank `>` between
+turns so GitHub keeps them apart:
 
 ```markdown
-::: q Who owns the import?
-The ATTOM feed lands monthly.
-:::
-
-::: answer
-The data team, from October.
-
-- schedule: first Monday
-- alerts: #data-import
-:::
+- ❓ Do we keep the old URLs?
+  > 💬👾 Redirect `/d/<root>/x.md` → `/d/x.md` for a year?
+  >
+  > 💬 ⚠️ 👤parf need more — which links are out there?
+  >
+  > 💬👾 14 in README files, 2 in issues.
 ```
 
-::: q Who owns the import?
-The ATTOM feed lands monthly.
-:::
+- the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
+- a `❓` / `⁉️` item is answered when its last 💬 is whole (not ⚠️) and from a person — a reply
+  from 👾 / 📡 asks me again
+- "need more" = my `💬 ⚠️` while the glyph stays `❓`
+- GitHub: a list item with a quote under it — readable as a chat
 
-::: answer
-The data team, from October.
-
-- schedule: first Monday
-- alerts: #data-import
-:::
-
-`q` and `question`, `a` and `answer` are the same thing. Close each block with `:::`.
-
-## Bold lines
-
-The shortest form. Lines starting with a bold `Q:` or `A:` render exactly like `[!QUESTION]` /
-`[!ANSWER]` — one block per line, the icon in front; a line without a marker stays with the block
-above it. As list items — `- **Q:**` and `- **A:**` — they are the same blocks; a bold `Q:` in
-the middle of a sentence is left as written.
+## A question with a suggested answer
 
 ```markdown
-**Q:** Is the cache warm?
-**A:** After the first request.
+> ❓ Should the summary strip stay visible while scrolling a long findings file?
+> 💡👾 Keep it sticky: the counts are what you come back to.
 ```
 
-**Q:** Is the cache warm?
-**A:** After the first request.
+- 💡 is a proposed answer — the question still waits on me
+- **✓ yes** (+ optional text): `💡` → `✅ 💡`, and an answer `💬 👤parf yes — …` — signed, always
+- **✗ no** (+ optional text): `💡` → `🚫 💡`, and an answer `💬 👤parf no — …`
+- **💬 reply**: neither — a reply; the question stays open
 
-## Glyphs in a quote
-
-The glyphs of a Q&A log, opening a line of a quote, make the same one-line blocks:
-
-| Line opens with | Block |
-| --- | --- |
-| `?` `❓` `Q:` `Q` | ❓ question — open, nobody has the answer yet |
-| `?!` `!?` `⁉️` | ⁉️ disagreement — two sources contradict, still open |
-| `💬` `A:` | 💬 answer — settles the question or disagreement above it |
+## Findings — stages
 
 ```markdown
-> ?! The spec says 5 years; the code uses 7.
-> 💬 The code is right — the spec was never updated.
+- 🔴 `src/cli.ts:536` --fg hands over on a busy port — the unit "succeeds", nothing retries. Fix: exit 1
+- ❓ 🟠 `package.json:46` dev script feeds `.` to the live instance
+  > 💬👾 pin `:7790` + own config, or drop it?
+- ⏸️ ⚪ `src/lib/search.ts:174` ReDoS without rg
+  > 💬👾 needs a design — later
+- ✅ 🟠 `test/control.test.ts:8` sockets in the real config dir
+  > 💬👾 `112b307` — temp config via preload
 ```
 
-> ?! The spec says 5 years; the code uses 7.
-> 💬 The code is right — the spec was never updated.
+| Line starts with | Stage | Looks |
+|---|---|---|
+| `🔴` `🟠` `⚪` | open, not processed | loud by severity |
+| `❓` + severity | waiting on **me** | loudest |
+| `⏳` + severity | waiting on the agent | normal |
+| `⏸️` + severity | deferred | muted |
+| `🎫` + severity | a ticket requested (who: `👤name` / `👥team`, required) — the agent files it, then `✅` + `🎫<ID>` | open, "ticket pending" |
+| `✅` `🚫` + severity | settled | muted, folded |
+| `🔵` | informational — treated as done or not relevant | muted, folded |
 
-> ? Who owns the import?
-> 💬 The data team.
+An issue id first in the claim (`- 🔴 D.1 …`) is the item's anchor: `issues/2026-10-07.md#D.1`.
 
-The quote must open with one of them; then the whole quote becomes blocks. A bare `A` is never a
-marker — `> A quick note` is English — so an answer needs `A:` or 💬.
+## Pick one, or several
 
-## Checkbox and status items
-
-Every list item that opens with a checkbox or a status glyph is a question, and the checkbox or
-glyph is its status. Its answer is an indented quote inside the item:
+The markup decides: `( )` / `(x)` — one of (radio), `[ ]` / `[x]` — any of (checkboxes, GFM).
 
 ```markdown
-- [ ] Which hosts take the new adapter?
-- [x] Does the provider accept duplicates?
-  > 💬 No — those calls carry a request key.
-- ⚠️ Is the migration done?
-  > 💬 For two tables of three.
+- ❓ Dev server port:
+  - ( ) `7790`, own config 🌟
+  - ( ) `port: 0`, printed at start
+  - ( ) keep `7777`
 ```
 
-- [ ] Which hosts take the new adapter?
-- [x] Does the provider accept duplicates?
-  > 💬 No — those calls carry a request key.
-- ⚠️ Is the migration done?
-  > 💬 For two tables of three.
+- 🌟 = the suggested one (the agent's pick); ⭐ = runner-up, optional
+- a click on `( )` writes `(x)` and clears the others — my answer: the question shows answered
+  (green ?); `✅` is set by the agent once it carried the pick over
+- a click on that answered mark undoes the pick: `(x)` → `( )` — unanswered again
+- a click on `[ ]` writes `[x]`; **✓ done** (on its line) answers `💬 👤parf done`
+- a comment on one option goes indented under it, as under any item
 
-The status glyphs, with the meanings `/rd/.claude/Glyphs.md` gives them; the variation selector
-(`✅` vs `✔`, `⚠️` vs `⚠`) is optional:
+## 🎯 Selecting what to process
 
-| Opens with | Status |
-| --- | --- |
-| `[ ]` `☐` | open |
-| `[x]` `✅` `✔️` `☑️` | done |
-| `⚠️` | partial — follow-up needed |
-| `⏳` | in progress |
-| `🎫` | handed off — ticketed |
-| `❌` | failed — it ran and did not pass |
-| `🚫` | dropped — rejected by decision |
-| `⛔` | blocked — cannot be done |
-| `☒` | crossed out |
-| `❓` | open question |
-| `⁉️` | disagreement — two sources contradict |
-| `🔴` `🟠` `⚪` | severity — high, medium, low |
-| `🟢` | OK |
+A click on the **🎯** at the right of a line (it shows on hover) selects it at once — no form; a
+double-click or **9 🎯** in the form do the same. Written first in the line:
 
-The glyph must be followed by a space; any other emoji (`- 🎉 …`) leaves the item a plain list
-item. Only `[ ]` / `[x]` are checkboxes — counted in the page header and tickable in a `--rw`
-folder; a glyph stays the text it is. An existing `> A:` answer is read too, but an answer saved
-from the browser is always written as `> 💬`.
+```markdown
+- 🎯 🔴 `src/cli.ts:536` --fg hands its folders over …
+- 🎯 ❓ 🟠 `package.json:46` the dev script …
+```
+
+- when any item carries `🎯`, `/fix-issues` and `/resolve-questions` act on those only
+- the agent removes the `🎯` from each item it acted on
+
+## Summary strip — filters by level
+
+At the top of a page with items: `6` │ `🔴 2` `🟠 3` `⚪ 4` `✅ 2` │ `🎯 1`. The first button is just
+the total (a click shows all); after the `│`, the filters on it — thresholds, not glyphs: each
+level includes the ones before it.
+
+| Button | Shows |
+|---|---|
+| **N** (the total) | everything; resets the filter |
+| **🔴** | high only |
+| **🟠** | medium and up, plus ❓ ⁉️ with no severity of their own |
+| **⚪** | every open line, any severity |
+| **✅** | every closed line: ✅ 🚫 ⏸️ 🔵, an answered ❓ |
+| **🎯** | selected for the next run |
+
+## Glyphs
+
+| Glyph | Meaning |
+|---|---|
+| 🔴 | high — wrong, unsafe, breaks something now |
+| 🟠 | medium — attention, not now |
+| ⚪ | low |
+| 🔵 | informational — treated as done or not relevant |
+| ❓ | open question — needs an answer and has none; **waiting on me** |
+| ⁉️ | disagreement — two sources contradict |
+| ⏳ | in progress: the agent is on it, waiting on the agent |
+| ✅ | done / fixed / decided |
+| 🚫 | cancelled / rejected — by decision, nothing failed |
+| ⏸️ | deferred / on hold |
+| 🎫 | a ticket requested — the agent files it |
+| ⛔ | cannot be done — blocked, nothing ran |
+| ❌ | failed — it ran and did not pass. Nothing else |
+| ⚠️ | partial — follow-up required |
+| 💬 | answer / reply — and nothing else |
+| 💡 | a suggested answer — proposed, not yet the answer |
+| 🎯 | selected for the next run |
+
+A badge glyph with the name right after it, **no space**, becomes a chip: `👤parf` person,
+`👥platform` team, `👾` AI agent (bare), `📡slack` source, `🎫RLM-412` ticket, `🏷️ui` tag,
+`📅2026-10-06` date. First in a 💬 it is the author.
 
 ## Answering in the browser
 
-In a folder served with `--rw`, in the plain document view (not a diff), each ❓ and ⁉️ is a
-button; checkbox and status items get a small grey 💬 after the box or glyph — green once they have an answer —
-and an item marked ❓ or ⁉️ uses its own glyph. Click it (or Enter on it) and an editor opens
-under the question, loaded with the existing answer if there is one.
+In a folder served with `--rw`, in the plain document view (not a diff): a click on an item's
+first glyph — or anywhere on an unanswered question or an open finding — opens its form; 💬 at
+the right of a line comments on it; a click on a reply edits it.
 
-Write the answer — plain Markdown; lines starting with `-` are bullets — and **Save** or
-Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next unanswered question; Esc, **Cancel** or its icon again
-closes it without saving. On a checkbox or status item **Check & Save** also ticks `[ ]` to
-`[x]`, or turns the glyph into ✅. The form's ✎ (or Alt+E) opens the file at the question in
-your editor instead.
+Every form: 💬 (save — Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next open question), the
+actions that fit, ESC, and `[ ] 👤` at the far right (sign as me — the name in its tooltip). The
+name: `"me"` in prefs.json settings overrides; default from git — the local part of `user.email`,
+else `user.name` without spaces. The form's ✎ (or Alt+E) opens the file at the item in your editor.
 
-The answer is written in the question's own syntax:
+Each action has one number, the same in every form; **Alt+number** presses it.
 
-| Question | Answer written as |
+| # | Action | Question | Finding | 💡 suggestion | Option comment |
+|---|---|---|---|---|---|
+| 1 | ✅ | settled | done | ✓ yes | |
+| 2 | 🚫 | drop | reject | ✗ no | |
+| 3 | ⏸️ | defer | defer | | |
+| 4 | ⏳ | agent | agent | | |
+| 5 | ⚠️ | need more | partial | | |
+| 6 | 🎫 | ticket | ticket | | |
+| 7 | 🔍 | more | more | more | more |
+| 8 | | | | | pick it |
+| 9 | 🎯 | target | target | | |
+
+Each change touches only its item's lines. If the file changed since the page was loaded, the
+save is refused or the form says so, and the text you typed is kept; leaving the page keeps it
+too. A file with uncommitted changes opens on its diff; switch back to the document to answer.
+
+A plain `- [ ]` checkbox (not under a ❓) is ticked with a click, not answered.
+
+## The old forms
+
+mdhouse used to read these too. They are now read as the markup above — the page shows them
+converted, and the next write to the file writes them converted:
+
+| Written as | Read as |
 | --- | --- |
-| `> ?` `> ❓` `> ?!` … in a quote | `> 💬 …` lines in the same quote |
-| `> [!QUESTION]` | a `> [!ANSWER]` block after a blank line |
-| `**Q:**` (or `- **Q:**`) | an `**A:**` line under it (or the next list item) |
-| `::: q` | a `::: a` … `:::` block after a blank line |
-| `- [ ]` / `- ⚠️` … item | an indented `> 💬` quote inside the item |
+| `> ? q` · `> Q: q` · `> Q q` | `> ❓ q` |
+| `> ?! …` · `> !? …` | `> ⁉️ …` |
+| `> A: a` | `> 💬 a` |
+| `> [!QUESTION]` + `> q` · `> [!ANSWER]` + `> a` | `> ❓ q` · `> 💬 a` |
+| `**Q:** q` · `**A:** a` | `> ❓ q` · `> 💬 a` |
+| `- **Q:** q` · `- **A:** a` | `- ❓ q` · `  > 💬 a` under it |
+| `::: q` … `:::` · `::: a` … `:::` | `> ❓ …` · `> 💬 …` |
+| `- ☐` · `- ☑` `- ✔️` · `- ☒` | `- ❓` · `- ✅` · `- 🚫` |
 
-An existing answer is replaced in place; nothing else in the file changes. Only answers are
-written, never the question. If the file changed since the page was loaded — the question was
-edited, or someone answered it meanwhile — the save is refused or the editor says so, and the
-text you typed is kept. A file with uncommitted changes opens on its diff; switch back to the
-document to answer.
+An answer block after its question (blank lines between) joins the question's quote.
 
 ## A typical Q&A session
 
 How a plan gets worked through with an agent (Claude Code or alike), in a folder served `--rw`:
 
-1. **Ask** — the agent writes its open questions into a plan file, one `> ❓` block each,
-   with what it proposes beside them
+1. **Ask** — the agent writes its open questions into a plan file, one `- ❓` item each, with a
+   `💡` or `( )` options for what it proposes
 2. **Answer** — you open the file in mdhouse, click each ❓ and answer; Ctrl+Shift+Enter saves
-   and opens the next unanswered one
-3. **Decide** — the agent reads the answers and writes them up as decisions above the
-   questions; the questions and answers stay below, as the record
-4. **Track** — the work goes into `TODO.md` as checkboxes, one per decision, ticked as each
-   lands; 💬 on any item asks or notes something about it
-
-![Decisions above, answered questions below](qa-session-decided.png)
-
-![TODO.md — the decisions as checkboxes, ticked as the work lands](qa-session-todo.png)
+   and opens the next open one
+3. **Decide** — the agent reads the answers and writes them up as decisions; the questions and
+   answers stay, as the record
+4. **Track** — the work goes into `TODO.md` as checkboxes, one per decision, ticked as each lands
