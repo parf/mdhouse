@@ -16,6 +16,8 @@ describe('old Q&A forms → the new markup', () => {
     expect(convertLegacy('> ![logo](x.png)\n> !important\n')).toBe('> ![logo](x.png)\n> !important\n');
     expect(convertLegacy('> q: Which?\n> t: use rg\n> a: ok\n')).toBe('> ❓ Which?\n> 💡 use rg\n> 💬 ok\n');
     expect(convertLegacy('> T: cache it\n')).toBe('> 💡 cache it\n');
+    expect(convertLegacy('> ❓ Which?\n> [!tip] use rg\n')).toBe('> ❓ Which?\n> 💡 use rg\n');
+    expect(convertLegacy('> [!TIP]\n> an alert\n')).toBe('> [!TIP]\n> an alert\n');
     const it = parseQa(convertLegacy('> ! slow query\n'), 0).items[0]!;
     expect(it.kind).toBe('quote');
     expect(it.glyphs).toEqual(['🟠']);

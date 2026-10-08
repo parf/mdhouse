@@ -4,7 +4,7 @@
 
 ### Added
 
-- `> q:` / `> a:` read as `> Q:` / `> A:`; `> T:` / `> t:` → `> 💡` (a tip); `> ! x` → `> 🟠 x`, `> !! x` → `> 🔴 x`
+- `> q:` / `> a:` read as `> Q:` / `> A:`; `> T:` / `> t:` / `> [!TIP] t` (text on the line; a bare `[!TIP]` stays an alert) → `> 💡` (a tip); `> ! x` → `> 🟠 x`, `> !! x` → `> 🔴 x`
 - A quote opening with a severity — `> 🟠 …` — is an issue, as a list item is
 
 ### Fixed

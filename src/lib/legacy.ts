@@ -4,7 +4,7 @@
  * file writes it converted.
  *
  * - `> ? q` / `> Q: q` / `> q: q` / `> Q q` → `> ❓ q`; `> ?! …` / `> !? …` → `> ⁉️ …`;
- *   `> A: a` / `> a: a` → `> 💬 a`; `> T: t` / `> t: t` → `> 💡 t`; `> ! x` → `> 🟠 x`; `> !! x` → `> 🔴 x`
+ *   `> A: a` / `> a: a` → `> 💬 a`; `> T: t` / `> t: t` / `> [!TIP] t` → `> 💡 t`; `> ! x` → `> 🟠 x`; `> !! x` → `> 🔴 x`
  * - `> [!QUESTION]` + `> q` → `> ❓ q`; `> [!ANSWER]` + `> a` → `> 💬 a`
  * - a `**Q:** q` paragraph → `> ❓ q`, its `**A:** a` lines → `> 💬 a`
  * - `- **Q:** q` → `- ❓ q`; a `- **A:** a` item after it → `  > 💬 a` under it
@@ -15,7 +15,7 @@
  * second question inside one quote starts a quote of its own. Fenced code is left alone.
  */
 
-const OLD_MARK = /^(\?!|!\?|!!?(?=[ \t])|⁉️?|\?|❓|\u{1F4AC}|[Qq]:|[Aa]:|[Tt]:|Q(?=\s))[ \t]*/u;
+const OLD_MARK = /^(\?!|!\?|!!?(?=[ \t])|⁉️?|\?|❓|\u{1F4AC}|[Qq]:|[Aa]:|[Tt]:|\[![Tt][Ii][Pp]\](?=[ \t]+\S)|Q(?=\s))[ \t]*/u;
 const QUOTE = /^([ \t]*>[ \t]?)(.*)$/;
 const LIST_BOLD = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+)\*\*([QA]):\*\*[ \t]*(.*)$/;
 const BOLD = /^\*\*([QA]):\*\*[ \t]*(.*)$/;
@@ -32,7 +32,7 @@ const kindOf = (mark: string): Kind =>
     ? 'd'
     : mark === '\u{1F4AC}' || mark.toUpperCase() === 'A:'
       ? 'a'
-      : mark.toUpperCase() === 'T:'
+      : mark.toUpperCase() === 'T:' || mark.toUpperCase() === '[!TIP]'
         ? 'tip'
         : mark === '!!'
         ? 'high'

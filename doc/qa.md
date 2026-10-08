@@ -189,7 +189,7 @@ converted, and the next write to the file writes them converted:
 | `> ? q` · `> Q: q` · `> q: q` · `> Q q` | `> ❓ q` |
 | `> ?! …` · `> !? …` | `> ⁉️ …` |
 | `> A: a` · `> a: a` | `> 💬 a` |
-| `> T: t` · `> t: t` | `> 💡 t` |
+| `> T: t` · `> t: t` · `> [!TIP] t` | `> 💡 t` |
 | `> ! x` · `> !! x` | `> 🟠 x` · `> 🔴 x` |
 | `> [!QUESTION]` + `> q` · `> [!ANSWER]` + `> a` | `> ❓ q` · `> 💬 a` |
 | `**Q:** q` · `**A:** a` | `> ❓ q` · `> 💬 a` |
