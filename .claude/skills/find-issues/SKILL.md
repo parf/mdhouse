@@ -18,21 +18,9 @@ committing: [qa-states.md](../qa-states.md) (shipped: `../qa-states.md`). Never 
 
 ## Subsystems — the skill keeps their map
 
-`Plans/subsystems.md` maps paths to subsystems, first match wins, each with what its reviewer checks:
-
-```markdown
-# Subsystems
-
-| Letter | Path prefix | Subsystem | Check |
-|---|---|---|---|
-| A | `src/server.ts`, `src/lib/access.ts` | server ⚠️ | the write-route order, guards, error contract (CLAUDE.md "Server invariants") |
-| B | `src/lib/render.ts`, `src/lib/qa.ts` | render & Q&A ⚠️ | the source model, hashes, what a write touches |
-| C | `src/ui/` | ui | links, localStorage, live reload, the editors |
-| D | `src/cli.ts`, `src/lib/service.ts`, `bin/` | cli & service ⚠️ | systemd, the control socket, hand-over |
-| E | `test/` | tests | they test what they claim; no live config |
-| F | `package.json`, `CHANGELOG.md` | packaging | what ships, the Deploy checklist |
-| G | `CLAUDE.md`, `.claude/`, `doc/`, `*.md` | docs & skills | commands that do what they say |
-```
+`Plans/subsystems.md` maps paths to subsystems, first match wins, each with what its reviewer checks —
+a table `| Letter | Path prefix | Subsystem | Check |`, one row per subsystem; this repo's
+[`Plans/subsystems.md`](../../../Plans/subsystems.md) is a live example.
 
 - **Missing** → build it before the first review: from the tree (top-level folders, the second level
   under `src/`), the README and CLAUDE.md; a handful of rows, not one per file.
