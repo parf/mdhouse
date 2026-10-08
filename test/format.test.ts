@@ -59,6 +59,12 @@ describe('rootLabel', () => {
     expect(rootLabel('/rd/tmp', { above: 'all', home })).toBe('/rd/tmp');
   });
 
+  test('a home with a trailing slash is still ~', () => {
+    const home = '/home/parf/';
+    expect(rootLabel('/home/parf/x', { above: 'all', home })).toBe('~/x');
+    expect(rootLabel('/home/parf', { above: 'all', home })).toBe('~');
+  });
+
   test('too long: the left end goes, the folder name stays', () => {
     const label = rootLabel('/x/some-rather-long-parent-name/RLM-1842-final-folder', { max: 28 });
     expect(label).toHaveLength(28);
@@ -93,6 +99,7 @@ describe('likeMatcher', () => {
     expect(likeMatcher('a.b')('axb')).toBe(false);
     expect(likeMatcher('a.b')('a.b')).toBe(true);
     expect(likeMatcher('(x')('a(x')).toBe(true);
+    expect(likeMatcher('a_b')('a😀b')).toBe(true);
   });
 
   test('empty matches everything', () => {

@@ -77,7 +77,8 @@ export function fileSize(bytes: number): string {
  * that must stay readable, and a `<select>` can only cut text off on the right.
  */
 export function rootLabel(path: string, opts: { above?: number | 'all'; max?: number; home?: string } = {}): string {
-  const { above = 1, max = 28, home } = opts;
+  const { above = 1, max = 28 } = opts;
+  const home = opts.home?.replace(/\/+$/, '');
   let label: string;
   if (above === 'all') {
     label = home && (path === home || path.startsWith(`${home}/`)) ? `~${path.slice(home.length)}` || '~' : path;
@@ -104,7 +105,7 @@ export function likeMatcher(text: string): (value: string) => boolean {
   const body = [...t]
     .map((ch) => (ch === '%' ? '.*' : ch === '_' ? '.' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
     .join('');
-  const re = new RegExp(`${start ? '^' : ''}${body}${end ? '$' : ''}`, 'i');
+  const re = new RegExp(`${start ? '^' : ''}${body}${end ? '$' : ''}`, 'iu');
   return (value) => re.test(value);
 }
 

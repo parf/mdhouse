@@ -110,6 +110,8 @@
   goes, its History shows the commit
 - A document's ★ / mute marks the document's own folder, not the one picked in the switcher
 - The front page keeps its scroll when a file changes — was thrown to the top on each write
+- A folder page filter's `_` matches an emoji too
+- The folder switcher writes `~` for the home folder when `$HOME` ends in `/`
 
 ## 1.5.0 — 2026-10-07
 
