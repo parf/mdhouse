@@ -18,7 +18,7 @@ import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
 import { applyQa, badgeName, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
 import { searchContent } from './lib/search';
-import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, newFileDiff, workingDiff, type FileDiff } from './lib/git';
+import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
 import { Watcher } from './lib/watch';
@@ -581,12 +581,12 @@ export async function serve(opts: ServeOptions) {
           const rel = repoRel(repo, loc.abs);
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
           return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
-            if ((await run(repo, ['ls-files', '--error-unmatch', '--', rel])).code !== 0) return fail(409, 'git has never seen this file');
+            if ((await run(repo, ['ls-files', '--error-unmatch', '--', literal(rel)])).code !== 0) return fail(409, 'git has never seen this file');
             // Only the changes the page showed: saved again since, the file is kept.
             if (lineHash(await Bun.file(loc.abs).text()) !== body.hash) {
               return json({ error: 'the file changed since its changes were shown', reason: 'stale' }, 409);
             }
-            const r = await run(repo, ['checkout', 'HEAD', '--', rel]);
+            const r = await run(repo, ['checkout', 'HEAD', '--', literal(rel)]);
             return r.code === 0 ? json({ ok: true }) : fail(500, (r.err || r.out).trim());
           }));
         },

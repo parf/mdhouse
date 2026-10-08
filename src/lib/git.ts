@@ -66,10 +66,17 @@ async function git(cwd: string, args: string[], timeoutMs = 15_000): Promise<str
   }
 }
 
-/** Root-relative pathspecs restricting a query to the Markdown under one root. */
+/**
+ * Pathspecs restricting a query to the Markdown under one root, repo-relative. The folder's
+ * glob characters are escaped and `./` keeps a leading `:` from reading as pathspec magic.
+ */
 function pathspec(subdir: string): string[] {
-  return subdir ? [`${subdir}/*.md`, `${subdir}/*.MD`] : ['*.md', '*.MD'];
+  const dir = subdir ? `./${subdir.replace(/[*?[\]\\]/g, '\\$&')}/` : '';
+  return [`${dir}*.md`, `${dir}*.MD`];
 }
+
+/** A path git takes as itself — no glob, no `:` magic. */
+export const literal = (path: string): string => `:(literal)${path}`;
 
 /** How far the root sits inside its repo; '' when the root is the repo. */
 export function subdirOf(repo: string, rootPath: string): string {
@@ -197,7 +204,7 @@ async function oneCommit(repo: string, repoRelPath: string, extra: string[]): Pr
     `--format=%H${FMT_SEP}%an${FMT_SEP}%ae${FMT_SEP}%aI${FMT_SEP}%s`,
     ...extra,
     '--',
-    repoRelPath,
+    literal(repoRelPath),
   ]);
   const line = out?.split('\n').find((l) => l.trim());
   if (!line) return null;
@@ -217,7 +224,7 @@ async function logNumstat(repo: string, repoRelPath: string, extra: string[]): P
     `--format=${FMT_REC}%H${FMT_SEP}%an${FMT_SEP}%ae${FMT_SEP}%aI${FMT_SEP}%s`,
     ...extra,
     '--',
-    repoRelPath,
+    literal(repoRelPath),
   ]);
   if (out === null) return [];
 
@@ -373,7 +380,7 @@ const PLAIN_DIFF = ['--no-ext-diff', '--no-textconv', '--no-color', '-U3'];
 
 /** Uncommitted changes to one file: the working tree, staged or not, against HEAD. */
 export async function workingDiff(repo: string, repoRelPath: string): Promise<FileDiff | null> {
-  const patch = await git(repo, ['diff', ...PLAIN_DIFF, 'HEAD', '--', repoRelPath]);
+  const patch = await git(repo, ['diff', ...PLAIN_DIFF, 'HEAD', '--', literal(repoRelPath)]);
   if (patch === null) return null;
   return { kind: 'working', ...parsePatch(patch) };
 }
@@ -384,7 +391,7 @@ export async function workingDiff(repo: string, repoRelPath: string): Promise<Fi
  */
 export async function commitDiff(repo: string, repoRelPath: string, rev: Commit): Promise<FileDiff | null> {
   const paths = (await pathsAt(repo, repoRelPath, rev.hash)) ?? [repoRelPath];
-  const patch = await git(repo, ['show', ...PLAIN_DIFF, '-M', '--format=', rev.hash, '--', ...paths]);
+  const patch = await git(repo, ['show', ...PLAIN_DIFF, '-M', '--format=', rev.hash, '--', ...paths.map(literal)]);
   if (patch === null) return null;
   return { kind: 'commit', rev, ...parsePatch(patch) };
 }
@@ -397,7 +404,7 @@ async function pathsAt(repo: string, repoRelPath: string, hash: string): Promise
   let proc;
   try {
     proc = Bun.spawn(
-      ['git', '-c', 'core.quotepath=false', 'log', '--follow', '-M', '--name-status', `--format=${FMT_REC}%H`, '--', repoRelPath],
+      ['git', '-c', 'core.quotepath=false', 'log', '--follow', '-M', '--name-status', `--format=${FMT_REC}%H`, '--', literal(repoRelPath)],
       { cwd: repo, stdout: 'pipe', stderr: 'ignore', env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' } },
     );
   } catch {

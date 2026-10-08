@@ -257,6 +257,49 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
   }
 });
 
+test('POST /api/git/reset resets that file only — a name git would read as a glob or as magic', async () => {
+  const { mkdtemp, rm, writeFile, readFile, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const { run } = await import('../src/lib/gitpage');
+
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-reset-names-'));
+  const repo = join(base, 'repo');
+  const files = ['notes[1]/b.md', 'notes1/b.md', ':memo/a.md', 'memo/a.md'];
+  for (const f of files) {
+    await mkdir(join(repo, f, '..'), { recursive: true });
+    await writeFile(join(repo, f), 'v1\n');
+  }
+  await run(repo, ['init', '-q']);
+  await run(repo, ['add', '.']);
+  await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'first']);
+  for (const f of files) await writeFile(join(repo, f), 'edited\n');
+
+  const port = 61901;
+  const registry = await Registry.create([{ path: repo, writable: true }]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
+  const id = registry.list()[0]!.id;
+  const reset = async (rel: string) => {
+    const p = `${id}/${rel}`;
+    const { hash } = (await (await fetch(`http://127.0.0.1:${port}/api/git/diff?p=${encodeURIComponent(p)}`)).json()) as { hash?: string };
+    return (await fetch(`http://127.0.0.1:${port}/api/git/reset`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ p, hash }) })).status;
+  };
+  const text = (f: string) => readFile(join(repo, f), 'utf8');
+  try {
+    expect(await reset('notes[1]/b.md')).toBe(200);
+    expect(await reset(':memo/a.md')).toBe(200);
+    expect(await Promise.all(files.map(text))).toEqual(['v1\n', 'edited\n', 'v1\n', 'edited\n']);
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
 describe('POST /api/task — ticking a box', () => {
   test('writes one line on a writable folder; refuses read-only, stale pages and other sites', async () => {
     const { mkdtemp, rm, writeFile, readFile } = await import('node:fs/promises');

@@ -53,6 +53,8 @@
   ~240 ms → 0); a root of many repos asks them in parallel (40 repos: ~225 → ~50 ms)
 - The git view's Files tab lists the first 5000 files and says so — 100k tracked files froze it
   (2.7 s, 1.9 MB → 0.4 s, 94 kB)
+- A folder or file named `:memo` or `notes[1]` shows in every git view; Reset of `notes[1]/b.md`
+  no longer also resets `notes1/b.md` (nor `:memo/a.md` → `memo/a.md`)
 - A `{word}` at the end of a line stays on the page (`GET /users/{id}`, a `{placeholder}`, a table
   cell); only `{#id .class key=value}` is an attribute list
 - A tick, an answer or an added block is written whole or not at all: a write cut short (disk

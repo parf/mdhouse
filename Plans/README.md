@@ -154,6 +154,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   any repo, or that its repo ignores. `lib/scan.ts`.
 - **Git history, status, HEAD** — `git log --name-status`, `git status --porcelain`, and
   `rev-parse` plus `FETCH_HEAD`'s mtime for the front page's branch and last pull. `lib/git.ts`.
+  A path goes to git as `:(literal)<path>` (`literal()`); a folder's Markdown as `./<dir, glob
+  chars escaped>/*.md`.
 - **Content search** — `rg --json --hidden` when ripgrep is installed, an in-process scan when it
   is not; hits only in the scanned tree.
   `lib/search.ts`.

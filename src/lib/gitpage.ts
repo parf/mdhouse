@@ -11,6 +11,7 @@ import { existsSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
 import { MD_EXT } from './filetypes';
 import { LIST_CAP } from './scan';
+import { literal } from './git';
 
 export interface RunResult {
   code: number;
@@ -91,7 +92,7 @@ export async function folderLog(repo: string, dir: string, skip = 0, limit = 50)
     '--name-status',
     '--format=%x00%H%x1f%an%x1f%ae%x1f%aI%x1f%s',
     '--',
-    dir || '.',
+    dir ? literal(dir) : '.',
   ]);
   if (r.code !== 0) return [];
   const commits: LogCommit[] = [];
@@ -114,7 +115,7 @@ export async function folderLog(repo: string, dir: string, skip = 0, limit = 50)
 
 /** The files git tracks under `dir`, repo-relative, sorted — the first `cap`; `capped` says there were more. */
 export async function trackedFiles(repo: string, dir: string, cap = LIST_CAP): Promise<{ files: string[]; capped: boolean }> {
-  const r = await run(repo, ['ls-files', '-z', '--', dir || '.']);
+  const r = await run(repo, ['ls-files', '-z', '--', dir ? literal(dir) : '.']);
   const files = r.code === 0 ? r.out.split(REC).filter(Boolean).sort() : [];
   return { files: files.slice(0, cap), capped: files.length > cap };
 }
