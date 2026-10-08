@@ -23,15 +23,15 @@ committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edi
 ```markdown
 # Subsystems
 
-| Path prefix | Subsystem | Check |
-|---|---|---|
-| `src/server.ts`, `src/lib/access.ts` | server ⚠️ | the write-route order, guards, error contract (CLAUDE.md "Server invariants") |
-| `src/lib/render.ts`, `src/lib/qa.ts` | render & Q&A ⚠️ | the source model, hashes, what a write touches |
-| `src/ui/` | ui | links, localStorage, live reload, the editors |
-| `src/cli.ts`, `src/lib/service.ts`, `bin/` | cli & service ⚠️ | systemd, the control socket, hand-over |
-| `test/` | tests | they test what they claim; no live config |
-| `package.json`, `CHANGELOG.md` | packaging | what ships, the Deploy checklist |
-| `CLAUDE.md`, `.claude/`, `doc/`, `*.md` | docs & skills | commands that do what they say |
+| Letter | Path prefix | Subsystem | Check |
+|---|---|---|---|
+| A | `src/server.ts`, `src/lib/access.ts` | server ⚠️ | the write-route order, guards, error contract (CLAUDE.md "Server invariants") |
+| B | `src/lib/render.ts`, `src/lib/qa.ts` | render & Q&A ⚠️ | the source model, hashes, what a write touches |
+| C | `src/ui/` | ui | links, localStorage, live reload, the editors |
+| D | `src/cli.ts`, `src/lib/service.ts`, `bin/` | cli & service ⚠️ | systemd, the control socket, hand-over |
+| E | `test/` | tests | they test what they claim; no live config |
+| F | `package.json`, `CHANGELOG.md` | packaging | what ships, the Deploy checklist |
+| G | `CLAUDE.md`, `.claude/`, `doc/`, `*.md` | docs & skills | commands that do what they say |
 ```
 
 - **Missing** → build it before the first review: from the tree (top-level folders, the second level
@@ -40,6 +40,7 @@ committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edi
   (`--author="$(git config user.name)"` with `mine`) — and map each. A file that matches no row →
   add a row (a new subsystem, or a wider prefix for an existing one) and say so in the report. A
   subsystem whose paths are all gone → drop its row.
+- Every subsystem has its own letter; a letter is never changed or reused.
 - ⚠️ marks a **scary** subsystem: auth, writes to the user's files, migrations, parsers, the service.
 - Commit `Plans/subsystems.md` with the run's issues file.
 
@@ -66,7 +67,7 @@ the meta-signals deciding where to look hardest — the format below and these r
 - **Never raise again** what the last 5 days' files in `Plans/issues/` and `Plans/done/issues/` already
   hold, open or closed.
   A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
-  new item starts with what changed and links the old one.
+  new item starts with what changed and links the old one (`issues/2026-10-07.md#B.44`).
 - **One cause, one item**: issues that share a root cause (one stale doc, one missing helper) are one
   item listing every `file:line`.
 - `Plans/done/` and `Plans/brainstorm/` drafts raise nothing — unless a live doc describes them wrongly.
@@ -80,18 +81,18 @@ create it on the day's first run; a later run the same day appends to it:
 ```markdown
 ## <scope> — 📅YYYY-MM-DD · <HEAD short sha>
 
-- 🔴 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
+- 🔴 D.1 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
   Evidence: corrupted the file, `mdhouse <dir> -p` → the saved folders gone
   Impact: any start after a crash mid-write — every saved folder lost
   > 💡👾 Move the broken file aside and refuse the write.
 
 ### <Subsystem>
 
-- 🟠 `src/cli.ts:536` `--fg` hands its folders over on a busy port and exits 0 — systemd never retries
+- 🟠 D.2 `src/cli.ts:536` `--fg` hands its folders over on a busy port and exits 0 — systemd never retries
   Evidence: :7777 taken → exit 0
   Impact: every boot where a hand-started copy holds the port — the service stays down
   > 💡👾 Exit 1 under `MDHOUSE_SERVICE=1`.
-- ❓ 🟠 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits
+- ❓ 🟠 A.1 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits
   Evidence: `/api/search?q=x&limit=abc` → 600 hits
   Impact: any client that sends a bad limit — one slow response
   - ( ) clamp every `limit` through one helper 🌟
@@ -100,11 +101,13 @@ create it on the day's first run; a later run the same day appends to it:
 Checked and sound: <one line per subsystem — what was checked>.
 ```
 
+- **Every issue has a unique id** `<letter>.<n>` — the subsystem's letter; ids reset for every file
+  (file-per-day). Writing externally — `date#id`: `issues/2026-10-07.md#B.44`.
 - **Serious first**: an issue that loses the user's text, writes to :7777 or escapes a root goes right
   under the section heading, above the subsystems.
 - **An item is four lines, each on its own:**
   1. the severity glyph first (🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information),
-     `file:line` (each one, for a shared cause), **the claim and its consequence — one line**;
+     the id, `file:line` (each one, for a shared cause), **the claim and its consequence — one line**;
   2. `Evidence:` — what was run or read, and what it gave;
   3. `Impact:` — who hits it, how often, what it costs (qa-states.md); the severity follows it — no
      one hits it → ⚪ or not raised;
