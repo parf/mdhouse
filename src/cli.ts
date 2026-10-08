@@ -337,15 +337,19 @@ if (opts.rm) {
 
 // ---------------------------------------------------------------- mdhouse [dir ...]
 
-// `-p` saves where to listen as well as what to serve: `mdhouse ~/notes -p --port 8080` makes
-// 8080 the port every later start — and the service — comes up on.
-if (opts.perm && (opts.portGiven || opts.hostGiven)) {
+/**
+ * `-p` saves where to listen as well as what to serve: `mdhouse ~/notes -p --port 8080` makes
+ * 8080 the port every later start — and the service — comes up on. Called only once the port is
+ * known to hold this server or a running mdhouse, never a port something else has.
+ */
+const saveServer = async (): Promise<void> => {
+  if (!opts.perm || !(opts.portGiven || opts.hostGiven)) return;
   const server = await prefs.setServer({
     ...(opts.portGiven ? { port: opts.port } : {}),
     ...(opts.hostGiven ? { host: opts.host } : {}),
   });
   console.log(`mdhouse  saved: listen on ${server.host ?? '127.0.0.1'}:${server.port ?? 7777}`);
-}
+};
 
 /** Is this a directory we can serve? Saved ones may have been deleted since. */
 const isDir = (abs: string): boolean => existsSync(abs) && statSync(abs).isDirectory();
@@ -404,6 +408,7 @@ async function handOver(reply: AddReply | { error: string } | null): Promise<nev
     console.error(`mdhouse: the mdhouse on ${opts.port} refused: ${reply.error}`);
     process.exit(1);
   }
+  await saveServer();
 
   const grew = reply.roots.some((r) => r.added);
   console.log(`mdhouse  ${reply.url}  (already running — ${grew ? 'added to it' : 'already serving that'})`);
@@ -429,10 +434,6 @@ if (!opts.fg) {
   // Already running? Hand it the directories without starting anything.
   if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, request));
 
-  // Nothing running, so nothing holds the prefs in memory: save here, and the daemon about to
-  // start reads them back.
-  if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw);
-
   // Nobody answered on the control socket, so if the port is taken it is taken by something
   // else. Finding that out here, rather than in a detached child whose output has gone to the
   // system log, is the difference between an answer and a hunt.
@@ -451,6 +452,10 @@ if (!opts.fg) {
     console.error('         Stop it, or pass --port <n>.');
     process.exit(1);
   }
+
+  // The port is free and nothing is running: save here, and the daemon about to start reads them.
+  await saveServer();
+  if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw);
 
   /**
    * Start the server detached and wait for it to answer.
@@ -517,16 +522,15 @@ if (!opts.fg) {
   process.exit(0);
 }
 
-// The daemon itself: what it was asked for, plus everything saved — `-p` is a promise that a
-// directory comes back on every start, however the start was asked for.
-if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw);
+// The daemon itself: what it was asked for, plus everything saved.
 // Writability per folder: `--rw` covers the folders named on this command, and a saved folder is
-// writable only if it was saved with `-p --rw`. One `--rw` never spreads to the others.
+// writable only if it was saved with `-p --rw`. One `--rw` never spreads to the others. A folder
+// named with `-p` is saved as asked once the port is bound, so its saved mark does not count.
 const named = new Set(dirs.map(canonical));
 const registry = await Registry.create(
   [...new Set([...named, ...saved.map(canonical)])].map((path) => ({
     path,
-    writable: (named.has(path) && opts.rw) || prefs.isWritableSaved(path),
+    writable: named.has(path) && opts.perm ? opts.rw : (named.has(path) && opts.rw) || prefs.isWritableSaved(path),
   })),
 );
 
@@ -561,6 +565,9 @@ try {
   throw err; // unreachable: handOver never returns
 }
 const { server, shutdown } = started;
+// `-p` is a promise that a directory comes back on every start, however the start was asked for.
+await saveServer();
+if (opts.perm) for (const dir of named) await prefs.addSaved(dir, opts.rw);
 
 const url = pageUrl(opts.host, server.port);
 console.log(`mdhouse  ${url}`);

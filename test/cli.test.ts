@@ -24,7 +24,13 @@ const scratch = () => {
     });
     return { code: p.exitCode, out: p.stdout.toString(), err: p.stderr.toString() };
   };
-  const prefs = () => JSON.parse(readFileSync(join(cfg, 'mdhouse/prefs.json'), 'utf8'));
+  const prefs = () => {
+    try {
+      return JSON.parse(readFileSync(join(cfg, 'mdhouse/prefs.json'), 'utf8'));
+    } catch {
+      return { saved: [], writable: [], server: {} }; // nothing saved yet
+    }
+  };
   return { dir, cfg, folder, run, prefs };
 };
 
@@ -57,5 +63,36 @@ describe('--rw and -p apply to the folders named only', () => {
     expect(out).toContain(`${a}  [RW]`);
     expect(out).not.toContain(`${b}  [RW]`);
     s.run(['exit', '--port', '61913']);
+  });
+});
+
+describe('-p saves only once the port is known to be free', () => {
+  test('a port held by something else: nothing saved, launcher or --fg (C6)', () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const other = Bun.serve({ port: 61914, hostname: '127.0.0.1', fetch: () => new Response('not mdhouse') });
+    try {
+      const bg = s.run([a, '-p', '--port', '61914']);
+      expect(bg.code).toBe(1);
+      expect(bg.err).toContain('not mdhouse');
+      const fg = s.run([a, '-p', '--port', '61914', '--fg']);
+      expect(fg.code).toBe(1);
+      expect(fg.err).toContain('not mdhouse');
+      expect(s.prefs().saved).toEqual([]);
+      expect(s.prefs().server).toEqual({});
+    } finally {
+      other.stop(true);
+    }
+  }, 20000);
+
+  test('a free port, or a running mdhouse on it: saved', () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const b = s.folder('b');
+    expect(s.run([a, '-p', '--rw', '--port', '61915']).code).toBe(0);
+    expect(s.prefs()).toMatchObject({ saved: [a], writable: [a], server: { port: 61915 } });
+    expect(s.run([b, '-p', '--port', '61915', '--host', '127.0.0.1', '--fg']).code).toBe(0); // handed over
+    expect(s.prefs()).toMatchObject({ saved: [a, b], writable: [a], server: { port: 61915, host: '127.0.0.1' } });
+    s.run(['exit', '--port', '61915']);
   });
 });

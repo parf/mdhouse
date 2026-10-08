@@ -55,6 +55,7 @@
 - A link with an encoded slash (`a%2Fb.md`) is left as written, not turned into a path
 - `--rw` and `-p` apply to the folders named only: `mdhouse -p --port <n>` keeps each saved
   folder writable or read-only as it was saved
+- `-p` on a port held by something else saves nothing — neither the folders nor the port
 
 ## 1.5.0 — 2026-10-07
 
