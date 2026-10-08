@@ -13,6 +13,12 @@ describe('markdown rendering', () => {
     expect(html).toMatch(/q <br>\s*more/);
   });
 
+  test('a finding\'s Evidence / Impact lines ending in \\ show no backslash', async () => {
+    const { html } = await render('> ⚪ A17 claim \\\n> Evidence: e \\\n> Impact: i \\\n> 💡 fix\n', ctx);
+    expect(html).not.toContain('\\');
+    expect(html).toContain('<span class="meta">Evidence: e</span><span class="meta">Impact: i</span>');
+  });
+
   test('every block carries its source line', async () => {
     const { html } = await render('# One\n\nsecond paragraph\n\n- item\n', ctx);
     expect(html).toContain('<h1 data-line="1"');

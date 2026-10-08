@@ -11,9 +11,12 @@
  * - `::: q|question` … `:::` → `> ❓ …`; `::: a|answer` → `> 💬 …`
  * - status items `☐` → `❓`, `☑` `✔️` → `✅`, `☒` → `🚫`
  *
+ * A quote opening with a Q&A glyph (`> ⚪ …`, `> ❓ …`) has its old marks inside rewritten too.
  * An answer block after a question block (blank lines between) joins the question's quote. A
  * second question inside one quote starts a quote of its own. Fenced code is left alone.
  */
+
+import { leadGlyphs } from './qa';
 
 const OLD_MARK = /^(\?!|!\?|!!?(?=[ \t])|⁉️?|\?|❓|\u{1F4AC}|[Qq]:|[Aa]:|[Tt]:|\[![Tt][Ii][Pp]\](?=[ \t]+\S)|Q(?=\s))[ \t]*/u;
 const QUOTE = /^([ \t]*>[ \t]?)(.*)$/;
@@ -105,9 +108,9 @@ export function convertLegacy(src: string, offset = 0): string {
         out.push(`${prefix}${GLYPH[kind]} ${first}`.trimEnd(), ...rest);
         lastQ = kind === 'q' ? prefix : null;
         changed = true;
-      } else if (mark && block.some((l) => isOld(OLD_MARK.exec(bodyOf(l))?.[1]))) {
+      } else if ((mark || leadGlyphs(q[2]!).glyphs.length) && block.some((l) => isOld(OLD_MARK.exec(bodyOf(l))?.[1]))) {
         // a quote with an old mark in it; one in the new markup only (❓ ⁉️ 💬) is left as written
-        if (isTurn(kindOf(mark[1]!)) && lastQ === prefix) join();
+        if (mark && isTurn(kindOf(mark[1]!)) && lastQ === prefix) join();
         block.forEach((l, n) => {
           const m = OLD_MARK.exec(bodyOf(l));
           if (!m) return out.push(l);

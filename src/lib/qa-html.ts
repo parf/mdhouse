@@ -46,7 +46,8 @@ function glyphButton(g: string, tip: string): string {
 }
 
 export function qaHtml(r: QaRender) {
-  const inline = (s: string) => badges(r.inline(s.replace(/\s*\n\s*/g, ' ')));
+  /** One run of text; a `\` that ends it is a line break at a line that ends anyway — dropped. */
+  const inline = (s: string) => badges(r.inline(s.replace(/\s*\n\s*/g, ' ').replace(/[ \t]*\\$/, '')));
   /** The whole reply as one run of text — a folded item shows its first lines. */
   const firstLine = (rep: Reply) => `${rep.who ? whoChip(rep.who) : ''}${inline(rep.body.replace(/^\s*[-*+]\s+/gm, '• '))}`;
 

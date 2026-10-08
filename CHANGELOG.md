@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A finding's line ending in `\` showed the `\` (`… terminal \` before `Evidence:`)
+- `> t:` / `> a:` … inside a quote opening with a glyph (`> ⚪ A17 …`) are read too
+
 ## 2.0.2 — 2026-10-08
 
 ### Added
