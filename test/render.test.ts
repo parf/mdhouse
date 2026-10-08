@@ -151,6 +151,13 @@ describe('paths that are not plain ASCII', () => {
     expect(html).toContain(`src="/api/asset?p=${encodeURIComponent('r/My Pics/shot.png')}"`);
   });
 
+  test('an encoded slash names no file: the link is left as written', async () => {
+    const { html } = await render('[x](..%2F..%2Fetc%2Fpasswd) [y](a%2Fb.md) [z](%2E%2E/up.md)', encCtx);
+    expect(html).toContain('<a href="..%2F..%2Fetc%2Fpasswd">x</a>');
+    expect(html).toContain('<a href="a%2Fb.md">y</a>');
+    expect(html).toContain('<a href="%2E%2E/up.md">z</a>');
+  });
+
   test('a lone percent is a filename character, not a broken escape', async () => {
     // decodeURIComponent throws on this; the segment has to survive as written.
     const { html } = await render('<p><img src="100% done.png"></p>', encCtx);

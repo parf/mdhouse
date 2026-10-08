@@ -103,13 +103,10 @@ function slugify(text: string): string {
   );
 }
 
-/** Resolve a link relative to the document, keeping the result inside the root. */
 /**
  * A href is URL text; a path on disk is not. markdown-it hands back `My%20Notes/doc.md` even
  * when the source said `My Notes/doc.md`, and every caller here re-encodes what it gets — so
- * without decoding first, a space round-trips to `%2520` and the file is never found. Decoding
- * per segment, after the split, keeps an encoded `%2F` a character in a name rather than
- * promoting it to a separator.
+ * without decoding first, a space round-trips to `%2520` and the file is never found.
  */
 const decodeSegment = (seg: string): string => {
   try {
@@ -119,6 +116,10 @@ const decodeSegment = (seg: string): string => {
   }
 };
 
+/**
+ * Resolves a link relative to the document, inside the root. Decodes per segment, after the split;
+ * null — the link left as written — when it climbs out of the root or a segment decodes to a `/`.
+ */
 function resolveRelative(docPath: string, href: string): string | null {
   const docDir = docPath.includes('/') ? docPath.slice(0, docPath.lastIndexOf('/')) : '';
   const stack = docDir ? docDir.split('/') : [];
@@ -126,6 +127,7 @@ function resolveRelative(docPath: string, href: string): string | null {
   for (const raw of href.split('/')) {
     const seg = decodeSegment(raw);
     if (seg === '' || seg === '.') continue;
+    if (seg.includes('/')) return null; // an encoded `/` names no file — leave the link alone
     if (seg === '..') {
       if (!stack.length) return null; // escapes the root — leave the link alone
       stack.pop();

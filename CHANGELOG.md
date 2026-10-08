@@ -52,6 +52,7 @@
 - A file with mixed line endings: an answer or an added block takes the ending of the line next
   to it and changes no other line; answering at the end of a CRLF file without a final newline
   writes CRLF
+- A link with an encoded slash (`a%2Fb.md`) is left as written, not turned into a path
 
 ## 1.5.0 — 2026-10-07
 
