@@ -628,6 +628,8 @@ main {
 .home-table tr.file:hover > td.dir { background: none; }
 .home-table td:first-child { border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); }
 .home-table td:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
+/* A new folder group starts with a line over its row — not under the head row or a commit line. */
+.home-table tr:has(> td.name) + tr:has(> td.dir) > td { border-top: 1px solid var(--border-strong); }
 
 .home-table tr.head > td { padding: 22px 8px 4px; }
 .home-table tr.head:first-child > td { padding-top: 0; }
