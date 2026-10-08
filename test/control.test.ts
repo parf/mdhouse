@@ -119,6 +119,16 @@ describe('the control socket', () => {
     }
   });
 
+  test('a second server on the port (another host) never takes a live socket over (C3)', async () => {
+    const first = await serveControl(PORT, handlers());
+    try {
+      expect(await serveControl(PORT, handlers({ ping: () => ({ pid: 1, url: 'http://127.0.0.2:61771', roots: [] }) }))).toBeNull();
+      expect(await askPing(PORT)).toEqual({ pid: process.pid, url: URL, roots: [] });
+    } finally {
+      first!.stop();
+    }
+  });
+
   test('a failure in the handler reaches the caller as a message', async () => {
     const control = await serveControl(
       PORT,

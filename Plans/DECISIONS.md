@@ -66,6 +66,10 @@ When it gets there it **adds** the directory and never swaps trees: replacing wo
 someone is reading into a different tree with no explanation, and means rebuilding every cache
 keyed by root id.
 
+Keyed by port only, not host: `mdhouse exit` / `mdhouse <dir>` without `--host` must find a daemon
+started with `--host 0.0.0.0`, and an older daemon's socket keeps its name. A second server on the
+port (another host) never takes a live socket over — it runs without one; Ctrl+C stops it.
+
 ## Background by default, logging to syslog
 
 A viewer is left running for days, so the default detaches; `mdhouse exit` stops it and is

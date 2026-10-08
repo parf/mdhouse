@@ -593,7 +593,7 @@ try {
   await handOver(await askDaemon(opts.port, request));
   throw err; // unreachable: handOver never returns
 }
-const { server, shutdown } = started;
+const { server, shutdown, control } = started;
 // `-p` is a promise that a directory comes back on every start, however the start was asked for.
 await saveServer();
 if (opts.perm) for (const dir of named) await prefs.addSaved(dir, opts.rw);
@@ -606,9 +606,12 @@ printRoots(
 );
 console.log(writeNote(registry.list()));
 console.log(
-  process.env.MDHOUSE_DAEMON === '1'
-    ? `\n  Started in the background — stop it with ${stopHint}.`
-    : `\n  In the foreground — Ctrl+C stops it, and so does ${stopHint}.`,
+  !control
+    ? `\n  ${stopHint} cannot reach it: another mdhouse on port ${opts.port} holds the control socket.` +
+        `\n  ${process.env.MDHOUSE_DAEMON === '1' ? `kill ${process.pid}` : 'Ctrl+C'} stops it.`
+    : process.env.MDHOUSE_DAEMON === '1'
+      ? `\n  Started in the background — stop it with ${stopHint}.`
+      : `\n  In the foreground — Ctrl+C stops it, and so does ${stopHint}.`,
 );
 
 if (opts.open) openBrowser(url);

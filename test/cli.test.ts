@@ -136,3 +136,27 @@ describe('a daemon that does not answer', () => {
     expect(s.run(['exit', '--port', '61920']).code).toBe(0);
   }, 30000);
 });
+
+describe('two servers on one port, bound to different hosts', () => {
+  test('the second never takes the first one’s control socket (C3)', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const b = s.folder('b');
+    expect(s.run([a, '--port', '61922']).code).toBe(0);
+    const fg = Bun.spawn([process.execPath, CLI, b, '--port', '61922', '--host', '127.0.0.2', '--fg'], {
+      env: { ...process.env, XDG_CONFIG_HOME: s.cfg, MDHOUSE_PORT: '', MDHOUSE_HOST: '', MDHOUSE_SERVICE: '', MDHOUSE_DAEMON: '' },
+      stdout: 'pipe',
+    });
+    try {
+      const reader = fg.stdout.getReader();
+      let out = '';
+      while (!out.includes('stops it')) out += new TextDecoder().decode((await reader.read()).value);
+      expect(out).toContain('mdhouse exit --port 61922 cannot reach it');
+      const r = s.run(['exit', '--all']);
+      expect(r.out).toContain('stopped http://127.0.0.1:61922');
+      expect(fg.exitCode).toBeNull(); // the --fg one is still up, for its own Ctrl+C
+    } finally {
+      fg.kill();
+    }
+  }, 20000);
+});

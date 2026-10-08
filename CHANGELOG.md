@@ -60,6 +60,8 @@
   `--git-log`, `-a`): they take effect after `mdhouse exit` and a fresh start
 - A stopped (Ctrl+Z) or hung mdhouse no longer hangs `mdhouse exit`, `exit --all` or a start:
   they say "not answering" within 2 s and exit 1
+- A `--fg` on another host but the same port no longer takes the running mdhouse's control socket
+  (which left that one reachable only by `kill`); it says `mdhouse exit` cannot reach it
 
 ## 1.5.0 — 2026-10-07
 

@@ -184,22 +184,19 @@ export async function askExit(port: number): Promise<PingReply | { error: string
 /**
  * Listen for control calls. `handlers` does the work.
  *
- * Returns null if the socket cannot be bound — the viewer still works, it simply cannot be
- * handed new directories, which is not worth failing startup over.
+ * Returns null if the socket cannot be bound, or belongs to another live mdhouse on this port
+ * (bound to another host) — the viewer still works, it simply cannot be handed new directories
+ * or stopped by `mdhouse exit`, which is not worth failing startup over. A live socket is never
+ * taken over: its daemon would be left with no way to reach it.
  */
 export async function serveControl(port: number, handlers: Handlers): Promise<{ stop: () => void } | null> {
   await mkdir(CONFIG_DIR, { recursive: true, mode: 0o700 });
   const path = controlPath(port);
 
-  // A socket file with nobody behind it is left by a killed process. The ping clears it.
+  // A socket file with nobody behind it is left by a killed process. The ping clears it; one
+  // still there after it is a live daemon's.
   if (existsSync(path)) await askPing(port);
-  if (existsSync(path)) {
-    try {
-      unlinkSync(path);
-    } catch {
-      /* fall through to the bind, which will report the real problem */
-    }
-  }
+  if (existsSync(path)) return null;
 
   try {
     const server = Bun.serve({
