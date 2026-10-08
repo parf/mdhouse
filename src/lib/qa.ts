@@ -380,7 +380,7 @@ export function looseThread(open: Token, lines: string[]): Reply[] | null {
 }
 
 /** The parse the renderer runs, with the same block rules: what the server finds items in. */
-const blockMd = new MarkdownIt({ html: true }).use(footnote);
+export const blockMd = new MarkdownIt({ html: true }).use(footnote);
 
 /** The document's items, in body lines (`\r` off); `offset` is where the body starts in the file. */
 export function parseQa(src: string, offset: number): { lines: string[]; items: QaItem[] } {

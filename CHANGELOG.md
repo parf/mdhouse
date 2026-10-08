@@ -41,6 +41,8 @@
 - `mdhouse <dir> --rw` for a folder already writable by auto-rw keeps it writable when auto-rw is
   turned off
 - `--host ::1` prints and opens `http://[::1]:<port>`, a valid URL
+- ⇊ (add at the end of a section) finds the section as the page shows it: a `#` in an HTML comment
+  or a fence is no heading, a setext heading ends a section, a two-line setext heading takes a block
 
 ## 1.5.0 — 2026-10-07
 

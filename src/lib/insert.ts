@@ -3,7 +3,7 @@
  * ticking a checkbox and answering a question. Pure and line-based, like `qa.ts`: the server
  * re-reads the file, checks the heading is still the one the page showed, and inserts.
  */
-import { lineHash, QUOTE_START, quoteLines } from './qa';
+import { blockMd, lineHash, QUOTE_START, quoteLines } from './qa';
 
 /** What a block is added as — the buttons under the textarea. */
 export type AddKind = 'text' | 'quote' | 'my-quote' | 'tip' | 'question' | 'disagreement' | 'answer';
@@ -22,40 +22,20 @@ export interface AddRequest {
   text: string;
 }
 
-const ATX = /^ {0,3}(#{1,6})(?:[ \t]|$)/;
-const SETEXT = /^ {0,3}(=+|-+)[ \t]*$/;
-const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const blank = (line: string) => line.trim() === '';
 
-/** The heading on line `at`: its level and how many lines it takes (two for a setext one). */
-function headingAt(lines: string[], at: number): { level: number; span: number } | null {
-  const line = lines[at];
-  if (line === undefined || blank(line)) return null;
-  const atx = ATX.exec(line);
-  if (atx) return { level: atx[1]!.length, span: 1 };
-  const under = lines[at + 1];
-  const setext = under !== undefined ? SETEXT.exec(under) : null;
-  return setext ? { level: setext[1]!.startsWith('=') ? 1 : 2, span: 2 } : null;
-}
-
-/** Where the section under the heading on line `at` ends: the next heading of its level or higher, outside code. */
-export function sectionEnd(lines: string[], at: number, level: number, span: number): number {
-  let fence: string | null = null;
-  for (let i = at + span; i < lines.length; i++) {
-    const line = lines[i]!;
-    const f = FENCE.exec(line);
-    if (fence) {
-      if (f && f[1]![0] === fence[0] && f[1]!.length >= fence.length) fence = null;
-      continue;
-    }
-    if (f) {
-      fence = f[1]!;
-      continue;
-    }
-    const atx = ATX.exec(line);
-    if (atx && atx[1]!.length <= level) return i;
-  }
-  return lines.length;
+/**
+ * The heading on body line `at` and where its section ends, from the parse the page renders: a
+ * heading of the document itself (`data-hash`), the lines it takes, and the next such heading of
+ * its level or higher — or the end of the body.
+ */
+export function sectionOf(lines: string[], at: number): { span: number; end: number } | null {
+  const heads = blockMd.parse(lines.join('\n'), {}).filter((t) => t.type === 'heading_open' && t.level === 0 && t.map);
+  const i = heads.findIndex((t) => t.map![0] === at);
+  if (i === -1) return null;
+  const level = (t: (typeof heads)[number]) => Number(t.tag.slice(1));
+  const next = heads.slice(i + 1).find((t) => level(t) <= level(heads[i]!));
+  return { span: heads[i]!.map![1] - at, end: next ? next.map![0] : lines.length };
 }
 
 /** The block as Markdown. A signed quote carries `who`; quote lines that would read as Q&A are escaped. */
@@ -98,13 +78,13 @@ export function insertBlock(
   const at = offset + req.line - 1;
   if (req.line < 1 || at >= lines.length) return { error: 'stale' };
   if (lineHash(lines[at]!) !== req.hash) return { error: 'stale' };
-  const heading = headingAt(lines, at);
-  if (!heading) return { error: 'not-a-heading' };
+  const section = sectionOf(lines.slice(offset), req.line - 1);
+  if (!section) return { error: 'not-a-heading' };
 
-  let pos = at + heading.span;
+  let pos = at + section.span;
   if (req.where === 'end') {
-    pos = sectionEnd(lines, at, heading.level, heading.span);
-    while (pos > at + heading.span && blank(lines[pos - 1]!)) pos--;
+    pos = offset + section.end;
+    while (pos > at + section.span && blank(lines[pos - 1]!)) pos--;
   }
   const block = formatBlock(req.text, req.kind, who);
   const after = lines[pos] !== undefined && !blank(lines[pos]!) ? [''] : [];

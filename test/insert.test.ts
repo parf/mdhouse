@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { insertBlock, sectionEnd, type AddKind, type AddWhere } from '../src/lib/insert';
+import { insertBlock, type AddKind, type AddWhere } from '../src/lib/insert';
 import { lineHash } from '../src/lib/qa';
 
 const add = (src: string, line: number, where: AddWhere, kind: AddKind, text: string, offset = 0) => {
@@ -23,9 +23,15 @@ describe('adding a block under a heading', () => {
     expect(add('## H\n## next', 1, 'end', 'text', 'x')).toBe('## H\n\nx\n\n## next');
   });
 
-  test('a # inside a code fence is not a heading', () => {
-    const src = '## A\n\n```sh\n# comment\n## not a heading\n```\n\n## B\n';
-    expect(sectionEnd(src.split('\n'), 0, 2, 1)).toBe(7);
+  test('headings and sections as the page renders them — a # in code or a comment is none, a setext one is', () => {
+    expect(add('## A\n\n```sh\n# comment\n## not a heading\n```\n\n## B\n', 1, 'end', 'text', 'x')).toBe(
+      '## A\n\n```sh\n# comment\n## not a heading\n```\n\nx\n\n## B\n',
+    );
+    expect(add('## A\n\n```\nx\n```js\n# y\n```\n\n## B\n', 1, 'end', 'text', 'n')).toBe('## A\n\n```\nx\n```js\n# y\n```\n\nn\n\n## B\n');
+    expect(add('## A\n\na\n\n<!--\n# x\n-->\n', 1, 'end', 'text', 'n')).toBe('## A\n\na\n\n<!--\n# x\n-->\n\nn\n');
+    expect(add('## A\n\na\n\nB\n---\n\nb\n', 1, 'end', 'text', 'n')).toBe('## A\n\na\n\nn\n\nB\n---\n\nb\n');
+    expect(add('Two\nlines\n---\n\nx\n', 1, 'below', 'text', 'n')).toBe('Two\nlines\n---\n\nn\n\nx\n');
+    expect(add('> # quoted\n\n# H\n', 3, 'below', 'text', 'n')).toBe('> # quoted\n\n# H\n\nn\n');
   });
 
   test('each kind, in Markdown', () => {
