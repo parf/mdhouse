@@ -26,3 +26,7 @@ on 127.0.0.1 and forward its port:
 ```sh
 ssh -N -L 7777:127.0.0.1:7777 you@server     # then open http://127.0.0.1:7777 here
 ```
+
+- A reverse proxy under a name (nginx → `notes.example`) is unsupported: that name is refused
+  (421); with `Host` rewritten to 127.0.0.1 reads work, but every write and live reload is refused
+  as cross-site (403). Forward the port over ssh instead
