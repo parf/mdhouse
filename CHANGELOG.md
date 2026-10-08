@@ -46,6 +46,8 @@
 - A document that opens with a `---` rule shows its text: front matter is a `---` line, a YAML key
   right after it, through `---` or `...`
 - An alert that quotes something keeps the rest of its text inside the box
+- A code block over 100 KB is shown plain, not highlighted: a pasted log or dump no longer takes
+  seconds and tens of MB per view
 
 ## 1.5.0 — 2026-10-07
 

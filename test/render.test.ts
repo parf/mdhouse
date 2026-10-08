@@ -12,6 +12,12 @@ describe('markdown rendering', () => {
     expect(html).toContain('<li data-line="5"');
   });
 
+  test('a fence is highlighted up to a size; a bigger one is plain', async () => {
+    expect((await render('```json\n{"a": 1}\n```\n', ctx)).html).toContain('class="shiki shiki-themes');
+    const big = `{"a": "${'x'.repeat(100_001)}"}`;
+    expect((await render(`\`\`\`json\n${big}\n\`\`\`\n`, ctx)).html.startsWith('<pre class="shiki plain"><code>{&quot;a&quot;')).toBe(true);
+  });
+
   test('GitHub alerts become markdown-alert blocks', async () => {
     const { html } = await render('> [!WARNING]\n> Do not merge.\n', ctx);
     expect(html).toContain('markdown-alert markdown-alert-warning');

@@ -56,6 +56,8 @@ const ALERTS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
 /** Alerts shown as one line — icon, then text — rather than under a title row. */
 const ONE_LINE_ALERTS = new Set<string>(['note', 'tip']);
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
+/** A fence longer than this is shown plain: highlighted, it grows ~15× into HTML and takes seconds. */
+const HIGHLIGHT_MAX = 100_000;
 const PRELOAD_LANGS = ['bash', 'json', 'ts', 'js', 'tsx', 'php', 'sql', 'yaml', 'go', 'python', 'diff', 'html', 'css', 'md'];
 
 let highlighterPromise: Promise<Highlighter> | null = null;
@@ -453,7 +455,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
         return `<pre class="mermaid">${md.utils.escapeHtml(code)}</pre>`;
       }
 
-      if (language && loadedLangs.has(language)) {
+      if (language && loadedLangs.has(language) && code.length <= HIGHLIGHT_MAX) {
         try {
           return hl.codeToHtml(code, {
             lang: language,
