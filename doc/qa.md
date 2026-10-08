@@ -119,6 +119,8 @@ level includes the ones before it.
 | **✅** | every closed line: ✅ 🚫 ⏸️ 🔵, an answered ❓ |
 | **🎯** | selected for the next run |
 
+A level with 0 is not shown.
+
 ## Glyphs
 
 | Glyph | Meaning |
