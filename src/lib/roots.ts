@@ -6,8 +6,8 @@
  * `resolve()` is the only door, and `writeFile()` is the only write.
  */
 
-import { realpath } from 'node:fs/promises';
-import { sep, resolve as resolvePath, relative, dirname } from 'node:path';
+import { chmod, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
 
 export interface Root {
   /** Short slug used in URLs. Never contains a slash. */
@@ -250,7 +250,20 @@ export class Registry {
     const loc = await this.resolve(p);
     if (!loc) throw new Error(`path outside any root: ${p}`);
     if (!loc.root.writable) throw new ReadOnlyError(loc.abs);
-    await Bun.write(loc.abs, data);
+    // Whole or not at all: a temp file beside the document, renamed over it — a write cut short
+    // (disk full, a crash) leaves the document as it was. Through a symlink to its target; the
+    // file keeps its mode.
+    const target = await realpath(loc.abs).catch(() => loc.abs);
+    const tmp = `${dirname(target)}/.${basename(target)}.${process.pid}.${Date.now().toString(36)}.mdhouse-tmp`;
+    const mode = (await stat(target).catch(() => null))?.mode;
+    try {
+      await writeFile(tmp, data, mode === undefined ? undefined : { mode: mode & 0o7777 });
+      if (mode !== undefined) await chmod(tmp, mode & 0o7777);
+      await rename(tmp, target);
+    } catch (err) {
+      await unlink(tmp).catch(() => {});
+      throw err;
+    }
     return loc;
   }
 }

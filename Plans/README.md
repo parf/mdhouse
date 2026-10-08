@@ -47,7 +47,8 @@ that command's `--rw`; a saved folder is writable only if it was saved with `-p 
 page can turn it on.
 
 Every disk write to a served tree goes through the one chokepoint `Registry.writeFile()`, which
-refuses a read-only root. Its callers are `POST /api/task` (a checkbox tick),
+refuses a read-only root and writes whole or not at all — a temp file beside the document, renamed
+over it (through a symlink to its target, the mode kept). Its callers are `POST /api/task` (a checkbox tick),
 `POST /api/qa` (a change to one Q&A item) and `POST /api/insert` (a block added
 under a heading). mdhouse's own config (`prefs.json`, the
 control socket) lives outside every tree.

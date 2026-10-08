@@ -190,3 +190,49 @@ describe('writability per folder', () => {
     expect(registry.setWritable('nope', true)).toBe(false);
   });
 });
+
+describe('writeFile (A.3)', () => {
+  test('a write cut short leaves the document as it was, not half old and half new', async () => {
+    const { mkdtemp, rm, readdir } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-write-'));
+    const before = 'old line\n'.repeat(2500);
+    await Bun.write(join(dir, 'doc.md'), before);
+    try {
+      // a process that may write no file over 12 kB: the 22 kB rewrite fails part way
+      const script = `const { Registry } = await import(${JSON.stringify(`${import.meta.dir}/../src/lib/roots.ts`)});
+        const r = await Registry.create([{ path: ${JSON.stringify(dir)}, writable: true }]);
+        await r.writeFile(r.list()[0].id + '/doc.md', 'new line\\n'.repeat(2500)).catch((e) => console.log('refused', e.code));`;
+      const p = Bun.spawn(['bash', '-c', 'ulimit -f 12; exec bun -e "$0"', script], { stdout: 'pipe', stderr: 'pipe' });
+      await p.exited;
+      expect(await Bun.file(join(dir, 'doc.md')).text()).toBe(before);
+      expect((await readdir(dir)).filter((f) => f !== 'doc.md')).toEqual([]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('the file keeps its mode; a symlinked document is written through its link', async () => {
+    const { mkdtemp, rm, chmod, stat, symlink, lstat } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-write-'));
+    await Bun.write(join(dir, 'a.md'), 'a\n');
+    await chmod(join(dir, 'a.md'), 0o640);
+    await Bun.write(join(dir, 'real.md'), 'r\n');
+    await symlink(join(dir, 'real.md'), join(dir, 'link.md'));
+    try {
+      const r = await Registry.create([{ path: dir, writable: true }]);
+      const id = r.list()[0]!.id;
+      await r.writeFile(`${id}/a.md`, 'b\n');
+      expect(await Bun.file(join(dir, 'a.md')).text()).toBe('b\n');
+      expect((await stat(join(dir, 'a.md'))).mode & 0o777).toBe(0o640);
+      await r.writeFile(`${id}/link.md`, 'r2\n');
+      expect((await lstat(join(dir, 'link.md'))).isSymbolicLink()).toBe(true);
+      expect(await Bun.file(join(dir, 'real.md')).text()).toBe('r2\n');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
