@@ -10,8 +10,9 @@ disable-model-invocation: true
 Writes issues for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
-- `scope` — default: `<sha>..` from the last `## … · <sha>` heading of the newest `Plans/issues/*.md` (only what is
-  new since the last run), else since the last tag; or `release`, `all`, a `<rev>..` range, a path
+- `scope` — default: **since the last review** — `<sha>..HEAD`, the `<sha>` from the last `## … · <sha>`
+  heading of the newest `Plans/issues/*.md`. The very first run (no issues file yet) reviews the whole
+  project at HEAD — once. Or: `release`, `all`, a `<rev>..` range, a path
 - `mine` — only the git user's own commits (a repo others commit to, or with merge traffic)
 - `focus` — the rest: subsystems to review; default every touched one
 
@@ -111,9 +112,10 @@ Checked and sound: <one line per subsystem>.
 
 1. `git status -s` not empty → list it and ask to commit first; going on anyway, add
    `- 🔵 not reviewed — uncommitted: <files>` to the section.
-2. Resolve the scope. **Re-check every open issue in `Plans/issues/` — untriaged, ❓, ⏳, ⚠️, 🎫 — against HEAD** — gone, and a
-   commit names it → `✅` + `` 💬👾 `<sha>` — gone `` (qa-states.md "Already done?"). An empty scope still
-   does this, then stops.
+2. Resolve the scope. **Re-check the open issues — untriaged, ❓, ⏳, ⚠️, 🎫 — whose files changed since the
+   last review** (`git diff --name-only <sha>..HEAD`): gone, and a commit names it → `✅` +
+   `` 💬👾 `<sha>` — gone `` (qa-states.md "Already done?"). An issue whose files did not change is not
+   re-checked. An empty scope does only this, then stops.
 3. Map the scope's files to subsystems (keep `Plans/subsystems.md`); launch one reviewer per touched one.
 4. Append the section; drop duplicates across reviewers, keeping the better-evidenced one.
 5. Commit the day's issues file (and `Plans/subsystems.md` if it changed) — nothing else.
