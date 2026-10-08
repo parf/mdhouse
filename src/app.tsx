@@ -390,17 +390,18 @@ function App() {
     });
   }, []);
 
+  /** Marks `rel` in `root` — the dropdown's root unless named. */
   const setMark = useCallback(
-    async (rel: string, mark: Mark, on: boolean) => {
-      await api.setMark(rootId, rel, mark, on);
+    async (rel: string, mark: Mark, on: boolean, root = rootId) => {
+      await api.setMark(root, rel, mark, on);
       await reloadTree();
-      if (doc?.rel === rel) {
+      if (doc?.root === root && doc.rel === rel) {
         setDoc((d) =>
           d ? { ...d, marks: on ? [...new Set([...d.marks, mark])] : d.marks.filter((m) => m !== mark) } : d,
         );
       }
     },
-    [rootId, reloadTree, doc?.rel],
+    [rootId, reloadTree, doc?.root, doc?.rel],
   );
 
   const crumb = useMemo(() => doc?.rel ?? '', [doc?.rel]);
@@ -558,7 +559,8 @@ function App() {
           error={docError}
           jumpLine={jumpLine}
           onNavigate={go}
-          onMark={setMark}
+          // The document's root, whatever the dropdown says.
+          onMark={(rel, mark, on) => void setMark(rel, mark, on, doc?.root)}
           // A breadcrumb folder opens its own page, and shows itself in the tree.
           // The breadcrumb belongs to the document's root, whatever the dropdown says.
           onOpenDir={(dir) => {

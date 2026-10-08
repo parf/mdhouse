@@ -108,6 +108,7 @@
   answer no longer replaces the one for the query in the box
 - A commit from a terminal or an agent updates the open document: its "Uncommitted changes" row
   goes, its History shows the commit
+- A document's ★ / mute marks the document's own folder, not the one picked in the switcher
 
 ## 1.5.0 — 2026-10-07
 

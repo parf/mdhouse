@@ -161,11 +161,12 @@ export const api = {
   diff: (p: string, rev?: string) => get<FileDiff>('/api/git/diff', { p, rev }),
 
   async setMark(root: string, path: string, mark: Mark, on: boolean): Promise<void> {
-    await fetch('/api/marks', {
+    const res = await fetch('/api/marks', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ root, path, mark, on }),
     });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   },
 
   settings: () => get<Settings>('/api/settings'),
