@@ -182,7 +182,7 @@ selects it at once — no form; a double-click or **9 🎯** in the form do the 
 - when any item carries `🎯`, `/fixes` and `/answers` act on those only
 - the agent removes the `🎯` from each item it acted on
 - a selected item: an orange background, bold red bars (4px) left and right, 1px dashed red top and
-  bottom, its 🎯 lit; the strip has a `🎯 N` filter
+  bottom, a big blue ➤ in the left margin, its 🎯 lit; the strip has a `🎯 N` filter
 
 ## Summary strip — filters by level
 

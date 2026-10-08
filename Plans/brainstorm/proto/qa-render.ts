@@ -393,6 +393,9 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 /* …and 1px dashed red top and bottom; every line keeps a transparent one, so selecting moves nothing */
 .item, details.settled, .req { border-top: 1px solid transparent; border-bottom: 1px solid transparent; }
 [data-k~="🎯"] { border-top: 1px dashed #e5383b !important; border-bottom: 1px dashed #e5383b !important; }
+/* …and a big blue arrow in the left margin, pointing at it */
+[data-k~="🎯"]::before { content: "➤"; position: absolute; left: -30px; top: 50%; transform: translateY(-50%);
+  font-size: 26px; line-height: 1; color: #1971c2; pointer-events: none; }
 /* the 🎯 button on every line: a click selects / unselects at once — no form */
 .item, details.settled, .req { position: relative; }
 .item > .head, details.settled > summary, .req { padding-right: 26px; }
