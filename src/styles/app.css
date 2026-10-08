@@ -1231,6 +1231,8 @@ main {
 .md .who[data-kind="source"] { background: var(--who-source-bg); border-color: var(--who-source-line); color: var(--who-source); }
 .md .who[data-kind="ticket"] { background: var(--who-ticket-bg); border-color: var(--who-ticket-line); color: var(--who-ticket); }
 .md .who:is([data-kind="tag"], [data-kind="date"]) { font-weight: 400; color: var(--fg-muted); }
+.md a.who[data-kind="ref"] { margin-right: 0; color: inherit; text-decoration: none; }
+.md a.who[data-kind="ref"]:hover { border-color: var(--fg-muted); }
 /* options: one of ( ) / any of [ ] */
 .md .opts { margin: 4px 0 2px calc(1.6em + 4px); display: grid; gap: 3px; font-weight: 400; }
 .md .opt { display: flex; gap: 8px; align-items: baseline; padding: 3px 8px; border-radius: 5px; border: 1px solid transparent; flex: 1; }

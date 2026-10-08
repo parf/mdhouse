@@ -510,6 +510,37 @@ function fileLinkPlugin(md: MarkdownIt, opts: { ctx: RenderContext; files: Map<s
   });
 }
 
+/** An issue reference in the text: `№A2`, `№D1`, `№H`. */
+const REF = /№(\p{L}[\p{L}\d]*(?:[.-][\p{L}\d]+)*)/gu;
+
+/** `№A2` in the text becomes a badge linking to `#A2` — never inside a link, never in code. */
+function refPlugin(md: MarkdownIt): void {
+  md.core.ruler.push('mdhouse_refs', (state) => {
+    for (const t of state.tokens) {
+      if (t.type !== 'inline' || !t.children) continue;
+      const out: Token[] = [];
+      let depth = 0;
+      for (const c of t.children) {
+        if (c.type === 'link_open') depth++;
+        if (c.type === 'link_close') depth--;
+        if (depth > 0 || c.type !== 'text' || !c.content.includes('№')) {
+          out.push(c);
+          continue;
+        }
+        let at = 0;
+        for (const m of c.content.matchAll(REF)) {
+          if (m.index! > at) out.push(Object.assign(new state.Token('text', '', 0), { content: c.content.slice(at, m.index) }));
+          const id = md.utils.escapeHtml(m[1]!);
+          out.push(Object.assign(new state.Token('html_inline', '', 0), { content: `<a class="who" data-kind="ref" href="#${id}">№${id}</a>` }));
+          at = m.index! + m[0].length;
+        }
+        if (at < c.content.length) out.push(Object.assign(new state.Token('text', '', 0), { content: c.content.slice(at) }));
+      }
+      t.children = out;
+    }
+  });
+}
+
 function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
   const defaultLink =
     md.renderer.rules.link_open ??
@@ -642,6 +673,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
     },
   });
   md.use(fileLinkPlugin, { ctx, files });
+  md.use(refPlugin);
   md.use(linkPlugin, ctx);
 
   const html = rewriteHtmlImages(md.render(src), ctx);

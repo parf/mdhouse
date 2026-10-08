@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- `№A2`, `№D1`, `№H` in the text — a badge linking to `#A2`
+
 ### Fixed
 
 - A glyph needs no space after it: `- 🔴+ RW.2 …` reads as `- 🔴 + RW.2 …`

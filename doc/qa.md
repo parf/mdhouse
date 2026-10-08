@@ -72,6 +72,7 @@ auto-ignores the issue: `🚫 💡` + `💬 👤parf ignore`, the issue `🚫`.
 | `🔵` | informational — treated as done or not relevant | muted, folded |
 
 An issue id first in the claim (`- 🔴 D1 …`) is the item's anchor: `issues/2026-10/2026-10-07.md#D1`.
+`№D1` in the text — a badge linking to it.
 
 ## Pick one, or several
 

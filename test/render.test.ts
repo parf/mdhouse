@@ -5,6 +5,13 @@ import { parseQa } from '../src/lib/qa';
 const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/r/${rel}` };
 
 describe('markdown rendering', () => {
+  test('№A2 in the text is a badge linking to #A2 — not in code, not inside a link', async () => {
+    const { html } = await render('See №A2, №H. `№X1` [№Y](#y)\n\n- 🔴 D1 see №RW.2\n', ctx);
+    expect(html).toContain('See <a class="who" data-kind="ref" href="#A2">№A2</a>, <a class="who" data-kind="ref" href="#H">№H</a>.');
+    expect(html).toContain('<code>№X1</code> <a href="#y">№Y</a>');
+    expect(html).toContain('<a class="who" data-kind="ref" href="#RW.2">№RW.2</a>');
+  });
+
   test('a backslash at the end of a line or before a space is a line break, not in code', async () => {
     const { html } = await render('one\\\ntwo \\ three `a\\ b`\n\n> ❓ q \\\n> more\n', ctx);
     expect(html).toContain('one<br>');
