@@ -12,6 +12,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const md = new MarkdownIt({ html: false, linkify: true });
+// `DECISIONS.md`, `README.md:41` are file names, not hosts
+md.linkify.set({ fuzzyLink: false });
 
 // ---------------------------------------------------------------- model
 
@@ -63,7 +65,11 @@ function parseReplies(lines: string[]): Reply[] {
       const who = /^(👤|👥|👾|📡)\s*(?:\*\*([^*]+?):\*\*|([^\s:*]+):?)\s*/u.exec(rest);
       // "elaborate" asks for more: never an answer, like 💬 ⚠️
       if (/^(?:(?:👤|👥|👾|📡)\S+\s+)?elaborate\b/iu.test(rest)) partial = true;
-      replies.push({ partial, suggest: m[2] === '💡', verdict: (m[1] as Reply['verdict']) ?? null, who: who ? `${who[1]}${who[2] ?? who[3]}` : null, body: who ? rest.slice(who[0].length) : rest });
+      // a ⚠️ may follow the badge too: `💬 👤parf ⚠️ …`
+      if (who && /^⚠\uFE0F?\s*/u.test(rest.slice(who[0].length))) { partial = true; rest = rest.slice(0, who[0].length) + rest.slice(who[0].length).replace(/^⚠\uFE0F?\s*/u, ''); }
+      // a 💡 signed by a person or a team is their answer, not a proposal
+      const personal = !!who && /^(👤|👥)/u.test(who[1]!);
+      replies.push({ partial, suggest: m[2] === '💡' && !personal, verdict: (m[1] as Reply['verdict']) ?? null, who: who ? `${who[1]}${who[2] ?? who[3]}` : null, body: who ? rest.slice(who[0].length) : rest });
     } else if (replies.length) replies.at(-1)!.body += `\n${line}`;
   }
   for (const r of replies) r.body = r.body.replace(/\n+$/, '');
@@ -86,9 +92,18 @@ const badges = (html: string) => html.split(/(<code>[\s\S]*?<\/code>)/).map((par
  * and no 💡 under it is still undecided (a plain reply under a 💡 keeps the question open). A picked
  * option `(x)` answers a one-of question; checkboxes are answered by a reply (`done`).
  */
+/** The agent's record after acting — `→ DECISIONS.md …`, `` `sha` — … ``, `🎫ID → …` — is not a turn. */
+const isRecord = (r: Reply) => /^👾/u.test(r.who ?? '') && /^(→|`[0-9a-f]{7,}`|🎫\S+\s*→)/u.test(r.body.trim());
+/** The last turn that counts: not a 💡, not a record. */
+const lastTurn = (replies: Reply[]) => replies.filter((r) => !r.suggest && !isRecord(r)).at(-1);
+
 function isAnswered(replies: Reply[], options: Item[] = []): boolean {
-  if (replies.some((r) => r.suggest && !r.verdict)) return false;
-  const last = replies.filter((r) => !r.suggest).at(-1);
+  // only the newest 💡 can be undecided — an older one is superseded
+  const sug = replies.filter((r) => r.suggest).at(-1);
+  if (sug && !sug.verdict) return false;
+  const last = lastTurn(replies);
+  // a bare `no` decides nothing — it asks for something else
+  if (last && /^no\s*$/i.test(last.body.trim())) return false;
   // an agent or a source speaking last asks again — even after a pick
   if (last && /^(👾|📡)/u.test(last.who ?? '')) return false;
   if (options.some((o) => o.option === 'radio' && o.picked)) return true;
@@ -154,11 +169,15 @@ const firstLine = (r: Reply) => `${r.who ? `${badges(esc(r.who))}` : ''}${inline
 /** A body with paragraphs or a list is rendered as blocks; a run of lines is one inline paragraph. */
 const blocky = (body: string) => /\n\s*\n|\n\s*[-*+]\s|\n\s*\d+[.)]\s/.test(body);
 
-function replyHtml(r: Reply): string {
+function replyHtml(r: Reply, quiet = false): string {
   if (r.suggest && r.verdict) {
     // decided: ✅ 💡 taken, 🚫 💡 turned down — kept, quiet, no buttons
     const who = r.who ? badges(esc(r.who)) : '';
     return `<div class="reply proposal decided ${r.verdict === '✅' ? 'taken' : 'declined'}">${r.verdict} 💡 ${who}<span class="txt">${inline(r.body)}</span></div>`;
+  }
+  if (r.suggest && quiet) {
+    const who = r.who ? badges(esc(r.who)) : '';
+    return `<div class="reply proposal decided">💡 ${who}<span class="txt">${inline(r.body)}</span></div>`;
   }
   if (r.suggest) {
     const acts = '<span class="s-act"><button class="accept" data-tip="Yes — it is the answer (💡 becomes 💬), with a note if you like">✓ yes</button>'
@@ -172,7 +191,11 @@ function replyHtml(r: Reply): string {
   if (blocky(r.body)) return `<div class="reply${r.partial ? ' partial' : ''}">${badges(md.render(r.body)).replace(/^<p>/, `<p>${lead}`)}</div>`;
   return `<div class="reply${r.partial ? ' partial' : ''}">${lead}<span class="txt">${inline(r.body)}</span></div>`;
 }
-const threadHtml = (rs: Reply[], cls = 'thread') => `<div class="${cls}">${rs.map(replyHtml).join('')}</div>`;
+/** `quiet`: a closed item — no 💡 buttons; an older 💡, superseded by a newer one, is always quiet. */
+function threadHtml(rs: Reply[], cls = 'thread', quiet = false): string {
+  const newest = rs.filter((r) => r.suggest).at(-1);
+  return `<div class="${cls}">${rs.map((r) => replyHtml(r, quiet || (r.suggest && r !== newest))).join('')}</div>`;
+}
 
 /** What the strip and the filters read: the glyphs, plus `open` for a line not yet settled. */
 const keyOf = (glyphs: string[], open: boolean) => [...glyphs, ...(open ? ['open'] : [])].join(' ');
@@ -211,18 +234,20 @@ function itemHtml(it: Item): string {
   const tip = ask ? 'Answer' : 'Reply, or set its stage';
 
   if (closed) {
-    const last = it.replies.at(-1);
+    const last = lastTurn(it.replies) ?? it.replies.at(-1);
     // folded: the answer line is the pick when there are options, else the last reply
     const pick = options.filter((o) => o.picked).map((o) => `${o.option === 'radio' ? '◉' : '☑'} ${labels(inline(o.head))}`).join(' · ');
     const answer = options.length ? (pick ? `<span class="t-a">${pick}</span>` : '') : last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : '';
     return `<details class="settled" data-k="${key}"><summary>${mark ?? `<span class="g">${glyphButton(status, tip)}</span>`}`
       + `<span class="t"><span class="t-q">${text}</span>${answer}</span></summary>`
-      + `${opts}${threadHtml(it.replies)}</details>`;
+      + `${opts}${threadHtml(it.replies, 'thread', CLOSED.includes(status))}</details>`;
   }
   const sev = it.glyphs.find((g) => SEVERITY.includes(g));
   // an open finding — a line with a severity — works as an unanswered question does
   // a finding the user triaged (a decided 💡, a pick, their whole 💬): over to the agent, still open
-  const triaged = !!sev && !ask && !closed && isAnswered(it.replies, options);
+  const touched = ['⏳', '⚠️', '🎫'].includes(status) || options.some((o) => o.picked)
+    || it.replies.some((r) => r.verdict || (!r.suggest && !/^(👾|📡)/u.test(r.who ?? '')));
+  const triaged = !!sev && !ask && !closed && touched;
   const finding = !!sev && !ask && !triaged;
   const cls = ['item', ask ? 'wait-me' : '', finding ? 'finding' : '', status === '⁉️' ? 'dis' : '', status === '🔴' || more[0] === '🔴' ? 'sev-h' : '', status === '🔵' ? 'info' : '']
     .filter(Boolean).join(' ');
@@ -248,7 +273,7 @@ function quoteHtml(lines: string[]): string {
   const question = [rest, ...q.slice(1)].join('\n').trim();
   const status = glyphs[0]!;
   const request = glyphs.includes('👉');
-  const last = replies.filter((r) => !r.suggest).at(-1);
+  const last = lastTurn(replies);
   const closed = CLOSED.includes(status);
   const answered = closed || (ASK.includes(status) && isAnswered(replies));
   const key = keyOf(glyphs, !answered);
@@ -263,11 +288,11 @@ function quoteHtml(lines: string[]): string {
     const lead = request ? '👉 ' : '';
     return `<details class="settled" data-k="${key}"><summary>${mark}`
       + `<span class="t"><span class="t-q">${lead}${inline(question)}</span>${last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : ''}</span></summary>`
-      + `${threadHtml(replies)}</details>`;
+      + `${threadHtml(replies, 'thread', closed)}</details>`;
   }
   if (request) return `<div class="req" data-k="${key}">${glyphButton('👉', 'Reply, or close the request')} ${inline(question)}${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</div>`;
   // the same block a list question gets: one form for every unanswered question
-  return `<ul class="items"><li class="item wait-me${status === '⁉️' ? ' dis' : ''}" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Answer')}</span><span>${inline(question)}</span></div>`
+  return `<ul class="items"><li class="item${ASK.includes(status) ? ' wait-me' : ''}${status === '⁉️' ? ' dis' : ''}" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Answer')}</span><span>${inline(question)}</span></div>`
     + `${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</li></ul>`;
 }
 
@@ -283,7 +308,7 @@ export function renderDoc(src: string): string {
   };
   for (let i = 0; i < lines.length; ) {
     const line = lines[i]!;
-    if (/^>\s?(❓|⁉|👉|✅|🚫|⏸|🎫|⏳)/u.test(line)) {
+    if (/^>\s?(❓|⁉|👉|✅|🚫|⏸|🎫|⏳|⛔|❌|⚠)/u.test(line)) {
       flush();
       const q: string[] = [];
       while (i < lines.length && lines[i]!.startsWith('>')) q.push(lines[i++]!);

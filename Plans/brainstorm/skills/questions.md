@@ -10,8 +10,8 @@ disable-model-invocation: true
 Writes questions into a Markdown file; the user answers on the page; `/answers` reads them back.
 States, identities, threads, committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`).
 
-- `file` — default `Plans/questions.md`; create it with `# Questions` if missing
-- `topic` — what to ask about; else the decisions still open in the current task
+- `file` — an argument ending in `.md`; default `Plans/questions.md`, created with `# Questions` if missing
+- `topic` — the rest; else the decisions still open in the current task
 
 ## Where
 
@@ -66,9 +66,10 @@ Always append at the end of the file — never rewrite an existing section:
 
 - One question per item, `- ❓` / `- ⁉️` first. Never answer it with 💬 — a proposed answer is a `💡`.
 - Self-contained: the context goes into the question — long is fine; the reader has no chat.
+- Plain text only in the question: no `💬`, no `done` / `no` at the start — they are answers.
 - Say what would settle it when that is not obvious (the measurement, the person, the file).
-- Options: `( )` or `[ ]`, never both under one question; at most one 🌟 (recommended) and one ⭐
-  (runner-up); never pre-tick.
+- Options: `( )` or `[ ]`, never both under one question; never pre-tick. One of: at most one 🌟
+  (recommended) and one ⭐ (runner-up). Any of: 🌟 on each option you recommend, no ⭐.
 - A question that blocks work may carry a severity after the glyph: `- ❓ 🔴 …`.
 - References as badges, glued: `🎫RLM-412`, `👥platform`, `📡slack`, `📅2026-10-07`.
 - Blocking questions first. Plain GFM — it must read well on GitHub.

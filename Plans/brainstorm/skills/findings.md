@@ -10,8 +10,9 @@ disable-model-invocation: true
 Writes findings for the user to triage on the page; `/fixes` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
-- `scope` — `release` (default: commits since `git describe --tags --abbrev=0`), `<rev>..`, a path, or `all`
-- `focus` — dimensions to run; default all three
+- `scope` — `release` (default: commits since `git describe --tags --abbrev=0`), `all`, a `<rev>..` range,
+  or an existing path
+- `focus` — the rest: dimensions to run; default all three
 
 ## Reviewers
 
