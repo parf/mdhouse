@@ -112,6 +112,8 @@
 - The front page keeps its scroll when a file changes — was thrown to the top on each write
 - A folder page filter's `_` matches an emoji too
 - The folder switcher writes `~` for the home folder when `$HOME` ends in `/`
+- At ≤720px the sidebar lies over the page, which keeps the whole width (a 400px phone had an 80px
+  text column); a tap beside it closes it
 
 ## 1.5.0 — 2026-10-07
 

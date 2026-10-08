@@ -1311,8 +1311,18 @@ main {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* The strip beside the narrow-screen sidebar; a tap on it closes the sidebar. */
+.scrim { display: none; }
+
 @media (max-width: 720px) {
   .app[data-sidebar="compact"], .app[data-sidebar="open"] { --sidebar-w: min(78vw, 320px); }
+  /* The sidebar lies over the page, which keeps the whole width. */
+  .app { grid-template-columns: 0 1fr; }
+  .app:not([data-sidebar="off"]) .sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; width: var(--sidebar-w); z-index: 30;
+    box-shadow: 0 0 18px rgb(0 0 0 / 0.25);
+  }
+  .app:not([data-sidebar="off"]) .scrim { display: block; position: fixed; inset: 0; z-index: 29; background: rgb(0 0 0 / 0.3); }
   .doc-wrap { padding: 16px 16px 90px; }
 }
 

@@ -497,6 +497,8 @@ function App() {
         />
       )}
 
+      {sidebar !== 'off' && <div class="scrim" onClick={() => setSidebar('off')} />}
+
       <main>
         {/* The ⚙ sits in each page's own header row; with the sidebar off the top bar has it. */}
         {onSettings ? (
