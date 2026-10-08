@@ -340,6 +340,34 @@ function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number })
   });
 }
 
+/**
+ * `{…}` is an attribute list for markdown-it-attrs only when every part of it is one — `#id`,
+ * `.class`, `key=value`; any other `{word}` (`GET /users/{id}`, a `{placeholder}`) is text. Its
+ * braces are hidden from markdown-it-attrs and put back after it.
+ */
+const ATTR_PART = /^(?:[#.][^\s{}#.=]+|[^\s{}="']+=(?:"[^"]*"|'[^']*'|[^\s{}"']*))$/;
+const OPEN = '\u{E000}';
+const CLOSE = '\u{E001}';
+function curlyTextPlugin(md: MarkdownIt): void {
+  const texts = (tokens: Token[], f: (t: Token) => void) => {
+    for (const t of tokens) if (t.type === 'inline') for (const c of t.children ?? []) if (c.type === 'text') f(c);
+  };
+  md.core.ruler.before('curly_attributes', 'mdhouse_curly_text', (state) =>
+    texts(state.tokens, (c) => {
+      if (!c.content.includes('{')) return;
+      c.content = c.content.replace(/\{([^{}]*)\}/g, (whole, inner: string) => {
+        const parts = inner.trim().split(/\s+/).filter(Boolean);
+        return parts.length && parts.every((p) => ATTR_PART.test(p)) ? whole : `${OPEN}${inner}${CLOSE}`;
+      });
+    }),
+  );
+  md.core.ruler.after('curly_attributes', 'mdhouse_curly_back', (state) =>
+    texts(state.tokens, (c) => {
+      if (c.content.includes(OPEN)) c.content = c.content.replaceAll(OPEN, '{').replaceAll(CLOSE, '}');
+    }),
+  );
+}
+
 /** Rewrite relative links and images to in-app routes and the asset proxy. */
 function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
   const defaultLink =
@@ -449,6 +477,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   md.use(attrs as unknown as PluginWithOptions<{ allowedAttributes: string[] }>, {
     allowedAttributes: ['id', 'class'],
   });
+  md.use(curlyTextPlugin);
   md.use(footnote);
   md.use(anchor, {
     slugify,

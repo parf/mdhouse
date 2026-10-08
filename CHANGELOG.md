@@ -25,6 +25,8 @@
 
 - A read of `prefs.json` while another mdhouse process saves it no longer sees half a file and
   moves the config aside (saved folders, users and the allow list kept)
+- A `{word}` at the end of a line stays on the page (`GET /users/{id}`, a `{placeholder}`, a table
+  cell); only `{#id .class key=value}` is an attribute list
 
 ## 1.5.0 — 2026-10-07
 

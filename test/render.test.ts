@@ -252,3 +252,15 @@ describe('Q&A items', () => {
     expect(html).toContain('href="/d/docs/a.md"');
   });
 });
+
+describe('curly braces (B.3)', () => {
+  test('a {word} is text; {#id .class key=value} after a block are its attributes', async () => {
+    const html = async (s: string) => (await render(s, ctx)).html;
+    expect(await html('GET /users/{id}\n')).toContain('>GET /users/{id}</p>');
+    expect(await html('- Template: {placeholder}\n')).toContain('Template: {placeholder}');
+    expect(await html('| a |\n|---|\n| {x} |\n')).toContain('<td>{x}</td>');
+    expect(await html('a {b} c {d}\n')).toContain('a {b} c {d}');
+    expect(await html('# Title {#custom .big}\n')).toContain('<h1 id="custom" class="big"');
+    expect(await html('para {.note}\n')).toContain('<p class="note"');
+  });
+});
