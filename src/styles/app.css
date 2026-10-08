@@ -1217,7 +1217,7 @@ main {
 .md .reply.partial { background: linear-gradient(90deg, var(--qa-part-bg), transparent 12em); border-left-color: var(--qa-part); border-bottom-color: var(--qa-part); }
 .md .reply.record { background: var(--bg-panel); border-left-color: var(--border-strong); border-bottom: 0; color: var(--fg-muted); }
 .md .reply p { margin: 0 0 4px; } .md .reply p:last-child { margin: 0; } .md .reply ul { margin: 2px 0; padding-left: 20px; }
-.md .reply.proposal { background: var(--qa-pick-bg); border-left-color: var(--qa-pick); border-bottom: 0; }
+.md .reply.proposal { background: linear-gradient(90deg, var(--qa-pick-bg), transparent 12em); border-left-color: var(--qa-pick); border-bottom-color: var(--qa-pick); }
 .md .reply.proposal.decided { opacity: 0.75; }
 .md .reply.proposal.declined .txt { text-decoration: line-through; text-decoration-color: var(--fg-faint); }
 .md .s-act { display: none; gap: 8px; padding: 8px 0 2px; }
