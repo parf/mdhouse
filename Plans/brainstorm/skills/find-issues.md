@@ -111,8 +111,8 @@ Checked and sound: <one line per subsystem — what was checked>.
   4. the fix: a `> 💡👾` line (✓ yes / ✗ no on the page) — or, for two real ways, `( )` options and the
      line starts `❓` before the severity.
 - **Each line one short sentence, ~120 characters at most.** `Evidence:` — the strongest proof only,
-  not the whole session. Several cases of one issue → short sub-items under it (`- setext: …`,
-  `- HTML comment: …`), one per line.
+  not the whole session. Several cases of one issue → short sub-items after the `Impact:` line and
+  before the fix (`- setext: …`, `- HTML comment: …`), one per line.
 - No "as its doc says", no restating the code — the reader opens the line.
 - `Checked and sound:` — one line per subsystem, names only (functions, edge cases), no prose.
 - No `✅`, no `💬` in a new item — triage is the user's.
