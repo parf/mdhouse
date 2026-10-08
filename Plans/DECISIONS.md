@@ -198,12 +198,21 @@ Planned, not built.
   and shows "opened in external editor" instead of the form;
   Ctrl+Shift+Enter in the answer form saves and opens the next unanswered question.
 - **Git page at `/<root>/?git`** — `/<root>/` is the dir view. All commits, even ones with no
-  `.md`; it lists all files of the repo, each linked to the repo's web view (GitHub, GitLab,
-  the popular ones, or a built URL) — viewers for other file types are not the goal.
+  `.md`; it lists all files of the repo, each linking its page here — no host links (they were
+  wrong as often as not) — 2026-10-08.
   The remote check is read-only, `git ls-remote`, no fetch. In `--rw`: commit, pull
   (`--ff-only`), push.
   Commit and pull stay inside the root: 409 while the repo holds a read-only served root or
   files outside the root (pull), or a change there (commit) — 2026-10-08.
+
+## Every file has a page; `.git` never — 2026-10-08
+
+- Replaces "`/api/doc` renders Markdown only" (A6): every file in a root opens at its own address
+  — code highlighted with line numbers, images, PDFs, media, HTML sandboxed with its source a
+  toggle away, anything else a download. Writes stay Markdown-only.
+- A path with a `.git` segment is 404 on `/api/doc` and `/api/raw`: remote URLs and credentials
+  live there.
+- Bytes are sandboxed (`CSP: sandbox`) except a PDF — the browser's viewer needs it.
 
 ## A review is a list of claims, not a list of changes
 

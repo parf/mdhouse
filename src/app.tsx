@@ -190,6 +190,8 @@ function App() {
         if (seq !== loadSeq.current) return;
         setDoc(null);
         setDocError(err.message);
+        // The tree of the root the address names — its marks may hold the file that is gone.
+        if (missing) setRootId(missing.root);
       })
       .finally(() => seq === loadSeq.current && setLoadingDoc(false));
   }, [docPath]);
@@ -228,6 +230,27 @@ function App() {
       clearTimeout(timer);
     };
   }, [query, rootId, showIgnored, searchIn.text]);
+
+  /** The root and file a file address names — what a dead mark points at when it fails to open. */
+  const missing = useMemo(() => {
+    if (route.kind !== 'file') return null;
+    const [root = '', ...rel] = route.path
+      .slice(1)
+      .split('/')
+      .map((s) => {
+        try {
+          return decodeURIComponent(s);
+        } catch {
+          return s;
+        }
+      });
+    return { root, rel: rel.join('/') };
+  }, [route]);
+  /** A file that failed to open but is still favorited or muted: the marks to take off. */
+  const deadMarks: Mark[] =
+    docError && missing && tree?.root.id === missing.root
+      ? (['favorite', 'muted'] as const).filter((m) => tree.marks[m].includes(missing.rel))
+      : [];
 
   // ── live updates ────────────────────────────────────────────────────────
 
@@ -547,6 +570,8 @@ function App() {
           rootName={docRoot?.name}
           editHref={editHref}
           onReload={refreshDoc}
+          deadMarks={deadMarks}
+          onUnmark={(mark) => missing && void setMark(missing.rel, mark, false, missing.root)}
           dirUrl={(dir) => dirPageUrl(dir, doc?.root)}
           rootDirUrl={dirPageUrl('', doc?.root)}
           onOpenRootDir={() => openDirPage('', doc?.root)}

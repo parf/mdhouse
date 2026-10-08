@@ -36,7 +36,8 @@ src/
 ```
 
 `lib/` is imported by the client for its **types only** — those imports erase at build time —
-except `filetypes` and `urls`, plain code shared by both. No server code ships to the browser.
+except `filetypes` and `urls`, shared by both (`filetypes`' shiki import is tree-shaken out of the
+page — shiki has `sideEffects: false`). No server code ships to the browser.
 
 ## Contracts and invariants
 
@@ -126,7 +127,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 ### Who may talk to the server
 
 - Routes: the page — `/`, `/<rootId>/…` (`fetch` → `rootPage`, unknown → 404), `/settings` (the bundle at `/__app/`), `/d/*` → 301, `/vendor/mermaid/*`, `/ws`; read —
-  `/api/roots`, `/api/tree`, `/api/doc`, `/api/raw`, `/api/asset`, `/api/files`, `/api/search`, `/api/recents`,
+  `/api/roots`, `/api/tree`, `/api/doc`, `/api/raw` (`/api/asset` its old name), `/api/files`, `/api/search`, `/api/recents`,
   `/api/digest`, `/api/git`, `/api/git/commits|files|remote|log|diff`; write — below.
 - **Every route** (and the WebSocket) first passes `trustedHost()`: the `Host` header must be
   `localhost`, an IP literal, or — when bound to the network with `--host` — this machine's own
@@ -147,13 +148,20 @@ contents list, so a heading link and its contents entry cannot disagree.
 - `/api/files?p=<root>/<dir>` lists every file under a folder (the folder page's ALL view): git's list
   in a repo (`.gitignore` holds), else (or in a folder its repo ignores) a walk without dot-folders and `node_modules`; at most 5000.
   `lib/scan.ts` `listFiles()`.
-- `/api/doc` renders Markdown only (`MD_EXT`); any other path is 404.
-- `/api/raw` serves a linked non-Markdown file from a short list (`RAW_EXT` in `lib/filetypes.ts`: txt, json, yaml, css,
-  scss, …) as `text/plain`; `.html` is rendered, under `Content-Security-Policy: sandbox
-  allow-scripts` — an opaque origin, so its requests back are cross-site: writes refused,
-  reads unreadable.
-- `/api/asset` serves an image (`ASSET_EXT`) under `Content-Security-Policy: sandbox` — an SVG opened
-  on its own runs no script.
+- Every file has a page. `lib/filetypes.ts` `kindOf()`: `md | code | text | image | pdf | html |
+  video | audio | binary` — by name; `langOf()` (Shiki ids + aliases + `Dockerfile`, `.h`, `.conf` …)
+  → `code`; an unknown name: no NUL in its first 8 kB → `text`, else `binary`.
+- `/api/doc` answers every kind: `{kind, raw, …}`; Markdown rendered; `code` / `text` / `html` →
+  `html` by `render.ts` `highlightFile()` — one `<span class="line" id="L<n>">` per line, plain `<pre>`
+  over 1 MB, no body over 5 MB (`tooBig`). Write routes stay Markdown-only (`docAt`).
+- **`.git` never:** a path with a `.git` segment is 404 on `/api/doc` and `/api/raw` (remote URLs,
+  credentials).
+- `/api/raw` — any file, its type: `Content-Security-Policy: sandbox` on everything (an SVG or text
+  opened on its own runs no script); HTML `sandbox allow-scripts` — an opaque origin, its requests
+  back cross-site: writes refused, reads unreadable; PDF none (the browser's viewer); unknown binary
+  `attachment`. `nosniff` on all.
+- Rendered links: every file in the root → its page (`localHref`); `<img src>` → `/api/raw`.
+- `/api/git/diff`: Markdown lines rendered (`markupHunks`); any other file's as typed.
 - The CLI goes over the `0600` unix socket instead, which a browser cannot reach at all.
 
 ## Data sources
@@ -184,7 +192,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   plus `GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
   `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote` (files: the first 5000, `capped`), POST
   `/api/git/commit|pull|push|reset` (reset: one `.md` file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409) — writable folder, same origin, one at a time per repo; commit refuses (409) a file outside the root or in a read-only root, pull a repo holding a read-only root or files outside the root; network
-  git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Host links from `origin`.
+  git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Files link to their pages (under the root;
+  else plain text) — no host links.
   Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.
 - **One header** (`PageHead.tsx`) for a folder page and its git view: logo; folder name —
   on the folder page a link to its git view, everywhere else to the folder page; on the right

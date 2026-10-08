@@ -7,6 +7,7 @@ import type { Heading } from '../lib/render';
 import type { Mark } from '../lib/prefs';
 import type { FileDiff, FileHistory, FileStatus } from '../lib/git';
 import type { QaChange } from '../lib/qa';
+import type { Kind } from '../lib/filetypes';
 
 export interface Settings {
   editLink: boolean;
@@ -38,9 +39,15 @@ export interface HistoryPayload extends FileHistory {
 }
 
 export interface DocPayload {
+  /** How the page shows the file; every field below but `html` applies to every kind. */
+  kind: Kind;
   root: string;
   rel: string;
   url: string;
+  /** The file's bytes, `/api/raw`. */
+  raw: string;
+  /** Code or text over 5 MB: no body, a download. */
+  tooBig?: boolean;
   writable: boolean;
   frontmatter: string | null;
   lineOffset: number;
@@ -76,7 +83,6 @@ export interface GitInfo {
   /** The root, repo-relative: a repo path under it is a root path after this prefix. */
   rootRel: string;
   head: { branch: string; commit: { hash: string; author: string; email: string; date: number; subject: string } | null; pulledAt: number | null } | null;
-  origin: { web: string; commit: string; blob: string; kind: string } | null;
   dirty: Array<{ path: string; code: string; md: boolean; mtime?: number; size?: number }>;
   commitMessage: string;
   sync: {

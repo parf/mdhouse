@@ -58,6 +58,8 @@ Live, git-aware Markdown viewer — GithubMarkdown and more flavours
 - 📂 **Folder pages** — every `.md` under a folder in one table, newest first or A–Z, with filters
 - 📄 **Document page** — breadcrumb, age, author, `N/M done` for checkboxes, a table of contents
   and the file's last five commits
+- 🗎 **Every file at its own address** — `/<folder>/<path>`: code highlighted with line numbers
+  (`#L557`), images, PDFs, video, HTML sandboxed (⟨/⟩ source), anything else a download
 - ⊟ **Diffs** — what changed, as a patch or ▤ laid over the whole document, rendered
 - ↔ full width · ★ favourite · 🔇 mute · 🔗 copy link · ✎ open in your editor
 - 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week

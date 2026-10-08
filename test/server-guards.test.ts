@@ -648,8 +648,8 @@ describe('request limits', () => {
 });
 
 describe('/api/raw', () => {
-  test('text files as text; HTML rendered, sandboxed; anything else refused', async () => {
-    const { mkdtemp, rm, writeFile } = await import('node:fs/promises');
+  test('every file with its type: sandboxed except a PDF; HTML runs scripts in an opaque origin; an unknown binary a download; .git never', async () => {
+    const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
     const { tmpdir } = await import('node:os');
     const { join } = await import('node:path');
     const { Registry } = await import('../src/lib/roots');
@@ -657,7 +657,11 @@ describe('/api/raw', () => {
     const { serve } = await import('../src/server');
 
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-raw-'));
-    for (const f of ['a.html', 'a.css', 'a.scss', 'a.txt', 'a.exe']) await writeFile(join(dir, f), 'x');
+    for (const f of ['a.html', 'a.css', 'a.txt', 'a.ts', 'a.md', 'a.png', 'a.pdf', 'a.mp4']) await writeFile(join(dir, f), 'x');
+    await writeFile(join(dir, 'a.exe'), new Uint8Array([77, 90, 0, 1]));
+    await writeFile(join(dir, 'notes'), 'plain words\n');
+    await mkdir(join(dir, '.git'));
+    await writeFile(join(dir, '.git', 'config'), '[remote "origin"]\n');
     const port = 61799;
     const { server, watcher, control } = await serve({
       registry: await Registry.create([dir]),
@@ -668,18 +672,34 @@ describe('/api/raw', () => {
     });
     try {
       const root = (await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()).roots[0].id;
-      const raw = (f: string) => fetch(`http://127.0.0.1:${port}/api/raw?p=${root}/${f}`);
+      const raw = (f: string, route = 'raw') => fetch(`http://127.0.0.1:${port}/api/${route}?p=${root}/${f}`);
       const html = await raw('a.html');
       expect(html.status).toBe(200);
       expect(html.headers.get('content-type')).toStartWith('text/html');
       expect(html.headers.get('content-security-policy')).toBe('sandbox allow-scripts');
-      for (const f of ['a.css', 'a.scss', 'a.txt']) {
+      for (const f of ['a.css', 'a.txt', 'a.ts', 'a.md', 'notes']) {
         const r = await raw(f);
         expect(r.status).toBe(200);
         expect(r.headers.get('content-type')).toStartWith('text/plain');
-        expect(r.headers.get('content-security-policy')).toBeNull();
+        expect(r.headers.get('content-security-policy')).toBe('sandbox');
       }
-      expect((await raw('a.exe')).status).toBe(415);
+      for (const [f, type] of [['a.png', 'image/png'], ['a.mp4', 'video/mp4']] as const) {
+        const r = await raw(f);
+        expect(r.headers.get('content-type')).toStartWith(type);
+        expect(r.headers.get('content-security-policy')).toBe('sandbox');
+      }
+      const pdf = await raw('a.pdf');
+      expect(pdf.headers.get('content-type')).toBe('application/pdf');
+      expect(pdf.headers.get('content-security-policy')).toBeNull();
+      const exe = await raw('a.exe');
+      expect(exe.headers.get('content-type')).toBe('application/octet-stream');
+      expect(exe.headers.get('content-disposition')).toStartWith('attachment');
+      expect(exe.headers.get('content-security-policy')).toBe('sandbox');
+      // `/api/asset` is the old name, for pages rendered before.
+      expect((await raw('a.png', 'asset')).headers.get('content-type')).toStartWith('image/png');
+      expect((await raw('.git/config')).status).toBe(404);
+      expect((await raw('gone.txt')).status).toBe(404);
+      expect((await raw('')).status).toBe(404);
     } finally {
       server.stop(true);
       watcher.close();
@@ -847,7 +867,7 @@ test('pull and commit refuse a repo that holds a read-only root or files outside
   }
 });
 
-test('/api/doc renders Markdown only — any other file is 404 (A6)', async () => {
+test('/api/doc answers every kind; code and text by numbered lines; nothing under .git', async () => {
   const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
@@ -857,20 +877,40 @@ test('/api/doc renders Markdown only — any other file is 404 (A6)', async () =
   const dir = await mkdtemp(join(tmpdir(), 'mdhouse-docext-'));
   await mkdir(join(dir, '.git'));
   await writeFile(join(dir, '.git', 'config'), '[remote "origin"]\n  url = https://token@example.com/r\n');
-  await writeFile(join(dir, 'creds'), 'secret\n');
   await writeFile(join(dir, 'a.md'), '# a\n');
+  await writeFile(join(dir, 'x.ts'), 'const a = 1;\nconst b = 2;\n');
+  await writeFile(join(dir, 'creds'), 'secret\n');
+  await writeFile(join(dir, 'blob'), new Uint8Array([1, 0, 2]));
+  await writeFile(join(dir, 'p.html'), '<p>hi</p>\n');
+  for (const f of ['i.png', 'd.pdf', 'v.webm', 's.mp3']) await writeFile(join(dir, f), 'x');
+  await writeFile(join(dir, 'big.txt'), 'x'.repeat(5_000_001));
   const port = 61782;
   const registry = await Registry.create([dir]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(dir, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
   const id = registry.list()[0]!.id;
   const doc = (q: string) => fetch(`http://127.0.0.1:${port}/api/doc?${q}`);
+  const body = async (f: string) => (await (await doc(`p=${id}/${f}`)).json()) as { kind: string; html: string; raw: string; tooBig?: boolean; url: string };
   try {
-    expect((await doc(`p=${id}/a.md`)).status).toBe(200);
-    expect((await doc(`d=${id}/a.md`)).status).toBe(200);
-    for (const f of ['.git/config', 'creds']) {
-      expect((await doc(`p=${id}/${f}`)).status).toBe(404);
-      expect((await doc(`d=${id}/${f}`)).status).toBe(404);
+    expect((await body('a.md')).kind).toBe('md');
+    expect((await doc(`d=/${id}/a.md`)).status).toBe(200);
+    const ts = await body('x.ts');
+    expect(ts.kind).toBe('code');
+    expect(ts.url).toBe(`/${id}/x.ts`);
+    expect(ts.raw).toBe(`/api/raw?p=${encodeURIComponent(`${id}/x.ts`)}`);
+    expect(ts.html).toContain('id="L2" data-line="2"');
+    expect(ts.html).not.toContain('id="L3"');
+    expect(ts.html).toContain('--shiki-dark');
+    const text = await body('creds');
+    expect(text.kind).toBe('text');
+    expect(text.html).toContain('<span class="line" id="L1" data-line="1">secret</span>');
+    expect((await body('p.html')).html).toContain('id="L1"');
+    for (const [f, kind] of [['blob', 'binary'], ['i.png', 'image'], ['d.pdf', 'pdf'], ['v.webm', 'video'], ['s.mp3', 'audio'], ['p.html', 'html']]) {
+      expect((await body(f!)).kind).toBe(kind!);
     }
+    const big = await body('big.txt');
+    expect(big.tooBig).toBe(true);
+    expect(big.html).toBe('');
+    for (const q of [`p=${id}/.git/config`, `d=/${id}/.git/config`, `p=${id}/gone.md`, `p=${id}/`]) expect((await doc(q)).status).toBe(404);
   } finally {
     server.stop(true);
     watcher.close();
@@ -933,7 +973,7 @@ test('/api/doc links a file named in the text when it is a file in the root', as
     expect(res.status).toBe(200);
     const { html } = (await res.json()) as { html: string };
     expect(html).toContain('class="md-local-link md-file-link"><code>notes/b.md</code>');
-    expect(html).toContain('#L3" class="md-local-link md-file-link"><code>src/x.ts:3</code>');
+    expect(html).toContain(`href="/${id}/src/x.ts#L3" class="md-local-link md-file-link"><code>src/x.ts:3</code>`);
     expect(html).toContain('missing.md');
     expect(html).not.toContain('missing.md</a>');
   } finally {

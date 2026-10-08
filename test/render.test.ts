@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { lineHash, render, splitFrontmatter, toggleTask } from '../src/lib/render';
 import { parseQa } from '../src/lib/qa';
 
-const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/d/${rel}` };
+const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/r/${rel}` };
 
 describe('markdown rendering', () => {
   test('every block carries its source line', async () => {
@@ -44,17 +44,20 @@ describe('markdown rendering', () => {
     expect(html).toContain('line two');
   });
 
-  test('relative .md links become in-app routes, assets go through the proxy', async () => {
-    const { html } = await render('[x](../other/spec.md) ![i](img/pic.png)', ctx);
-    expect(html).toContain('href="/d/other/spec.md"');
-    expect(html).toContain('src="/api/asset?p=r%2Fdocs%2Fimg%2Fpic.png"');
+  test('a relative link opens the file page — any file, an image too; an image shows its bytes', async () => {
+    const { html } = await render('[x](../other/spec.md) ![i](img/pic.png) [c](../src/cli.ts#L5) [l](img/pic.png) [d](sub/)', ctx);
+    expect(html).toContain('href="/r/src/cli.ts#L5"');
+    expect(html).toContain('href="/r/docs/img/pic.png"');
+    expect(html).toContain('href="/r/docs/sub/"');
+    expect(html).toContain('href="/r/other/spec.md"');
+    expect(html).toContain('src="/api/raw?p=r%2Fdocs%2Fimg%2Fpic.png"');
   });
 
   test('an <img> written as HTML gets the same asset URL', async () => {
     // A README that centres its logo with raw HTML is ordinary; the browser would otherwise
-    // resolve that path against /d/…, which serves documents, not images.
+    // resolve that path against the page's address, which is a page, not the bytes.
     const { html } = await render('<p align="center"><img src="../logo.png" width="200"></p>\n', ctx);
-    expect(html).toContain('src="/api/asset?p=r%2Flogo.png"');
+    expect(html).toContain('src="/api/raw?p=r%2Flogo.png"');
     expect(html).toContain('width="200"');
   });
 
@@ -72,7 +75,7 @@ describe('markdown rendering', () => {
 
   test('a link that escapes the root is left alone', async () => {
     const { html } = await render('[up](../../../etc/passwd.md)', { ...ctx, docPath: 'a.md' });
-    expect(html).not.toContain('/d/');
+    expect(html).not.toContain('/r/');
   });
 
   test('mermaid is detected and passed through for the client', async () => {
@@ -131,24 +134,24 @@ describe('paths that are not plain ASCII', () => {
 
   test('a link written with %20 resolves to the file with the space', async () => {
     const { html } = await render('[spaced](My%20Notes/doc.md)', encCtx);
-    expect(html).toContain('href="/d/My Notes/doc.md"');
+    expect(html).toContain('href="/r/My Notes/doc.md"');
     expect(html).not.toContain('%2520');
   });
 
   test('a link written with a literal space comes out the same way', async () => {
     const { html } = await render('[spaced](<My Notes/doc.md>)', encCtx);
-    expect(html).toContain('href="/d/My Notes/doc.md"');
+    expect(html).toContain('href="/r/My Notes/doc.md"');
   });
 
   test('an image path is decoded once, then encoded once for the asset route', async () => {
     const { html } = await render('![x](My%20Pics/shot.png)', encCtx);
-    expect(html).toContain(`src="/api/asset?p=${encodeURIComponent('r/My Pics/shot.png')}"`);
+    expect(html).toContain(`src="/api/raw?p=${encodeURIComponent('r/My Pics/shot.png')}"`);
     expect(html).not.toContain('%2520');
   });
 
   test('a raw-HTML img with a space is rewritten too', async () => {
     const { html } = await render('<p><img src="My Pics/shot.png"></p>', encCtx);
-    expect(html).toContain(`src="/api/asset?p=${encodeURIComponent('r/My Pics/shot.png')}"`);
+    expect(html).toContain(`src="/api/raw?p=${encodeURIComponent('r/My Pics/shot.png')}"`);
   });
 
   test('an encoded slash names no file: the link is left as written', async () => {
@@ -278,7 +281,7 @@ describe('Q&A items', () => {
     const { html } = await render('- ❓ ask 👥backend `👤x`\n  > 💬 see [a](a.md)\n', ctx);
     expect(html).toContain('<span class="who" data-kind="team">👥backend</span>');
     expect(html).toContain('<code>👤x</code>');
-    expect(html).toContain('href="/d/docs/a.md"');
+    expect(html).toContain('href="/r/docs/a.md"');
   });
 });
 
@@ -301,11 +304,11 @@ describe('file names in the text are links to the files', () => {
 
   test('a code span that is a path, a word with a / or a .md name — when the file exists', async () => {
     const out = await html('See CHANGELOG.md, `Plans/README.md`, `src/server.ts:557`, other.md and doc/logo.png.\n');
-    expect(out).toContain('<a href="/d/CHANGELOG.md" class="md-local-link md-file-link">CHANGELOG.md</a>');
-    expect(out).toContain('<a href="/d/Plans/README.md" class="md-local-link md-file-link"><code>Plans/README.md</code></a>');
-    expect(out).toContain('href="/api/raw?p=r%2Fsrc%2Fserver.ts#L557"');
-    expect(out).toContain('<a href="/d/docs/other.md" class="md-local-link md-file-link">other.md</a>');
-    expect(out).toContain('href="/api/asset?p=r%2Fdoc%2Flogo.png"');
+    expect(out).toContain('<a href="/r/CHANGELOG.md" class="md-local-link md-file-link">CHANGELOG.md</a>');
+    expect(out).toContain('<a href="/r/Plans/README.md" class="md-local-link md-file-link"><code>Plans/README.md</code></a>');
+    expect(out).toContain('<a href="/r/src/server.ts#L557" class="md-local-link md-file-link"><code>src/server.ts:557</code></a>');
+    expect(out).toContain('<a href="/r/docs/other.md" class="md-local-link md-file-link">other.md</a>');
+    expect(out).toContain('<a href="/r/doc/logo.png" class="md-local-link md-file-link">doc/logo.png</a>');
   });
 
   test('not a file, inside a link, in a code block: left as written', async () => {

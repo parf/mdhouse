@@ -56,7 +56,6 @@ export interface Rendered {
 const ALERTS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
 /** Alerts shown as one line — icon, then text — rather than under a title row. */
 const ONE_LINE_ALERTS = new Set<string>(['note', 'tip']);
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
 /** A fence longer than this is shown plain: highlighted, it grows ~15× into HTML and takes seconds. */
 const HIGHLIGHT_MAX = 100_000;
 const PRELOAD_LANGS = ['bash', 'json', 'ts', 'js', 'tsx', 'php', 'sql', 'yaml', 'go', 'python', 'diff', 'html', 'css', 'md'];
@@ -70,6 +69,44 @@ function highlighter(): Promise<Highlighter> {
     langs: PRELOAD_LANGS,
   });
   return highlighterPromise;
+}
+
+/** Past this a file's page is a plain `<pre>`: highlighting grows it ~15× and takes seconds. */
+const HIGHLIGHT_FILE_MAX = 1_000_000;
+
+/**
+ * A whole file as its page shows it: Shiki-highlighted in `lang` (else plain), one
+ * `<span class="line" id="L<n>" data-line="<n>">` per line — the target of `#L<n>`.
+ */
+export async function highlightFile(file: string, lang: string | null): Promise<string> {
+  // The newline that ends the last line starts no line of its own.
+  const text = file.endsWith('\n') ? file.slice(0, -1) : file;
+  const hl = await highlighter();
+  if (lang && !loadedLangs.has(lang) && lang in bundledLanguages) {
+    await hl.loadLanguage(lang as keyof typeof bundledLanguages).catch(() => {});
+    loadedLangs.add(lang);
+  }
+  if (lang && loadedLangs.has(lang) && text.length <= HIGHLIGHT_FILE_MAX) {
+    try {
+      return hl.codeToHtml(text, {
+        lang,
+        themes: { light: 'github-light', dark: 'github-dark' },
+        defaultColor: false,
+        transformers: [
+          {
+            line(node, line) {
+              node.properties.id = `L${line}`;
+              node.properties['data-line'] = line;
+            },
+          },
+        ],
+      });
+    } catch {
+      /* fall through to plain */
+    }
+  }
+  const body = text.split('\n').map((l, i) => `<span class="line" id="L${i + 1}" data-line="${i + 1}">${escapeHtml(l)}</span>`).join('\n');
+  return `<pre class="shiki plain"><code>${body}</code></pre>`;
 }
 
 /**
@@ -374,14 +411,13 @@ function curlyTextPlugin(md: MarkdownIt): void {
   );
 }
 
-/** Rewrite relative links and images to in-app routes and the asset proxy. */
-/** Where a root-relative file is shown: a document's page, an image, or the raw file. */
-function localHref(ctx: RenderContext, target: string, hash?: string): string {
-  const p = `${ctx.rootId}/${target}`;
-  if (MD_EXT.test(target)) return `${ctx.docUrl(target)}${hash ? `#${hash}` : ''}`;
-  if (IMAGE_EXT.test(target)) return `/api/asset?p=${encodeURIComponent(p)}`;
-  return `/api/raw?p=${encodeURIComponent(p)}`;
+/** A root-relative file's page — every kind of file, images too; `dir`: a folder's page. */
+function localHref(ctx: RenderContext, target: string, hash?: string, dir = false): string {
+  return `${ctx.docUrl(target)}${dir && target ? '/' : ''}${hash ? `#${hash}` : ''}`;
 }
+
+/** A root-relative file's bytes — what `<img src>` loads. */
+const rawSrc = (ctx: RenderContext, target: string): string => `/api/raw?p=${encodeURIComponent(`${ctx.rootId}/${target}`)}`;
 
 /**
  * Files named in the text become links to them: a code span that is a whole path
@@ -473,7 +509,7 @@ function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
       const target = pathPart ? resolveRelative(ctx.docPath, pathPart) : null;
 
       if (target) {
-        token.attrSet('href', localHref(ctx, target, hash));
+        token.attrSet('href', localHref(ctx, target, hash, pathPart!.endsWith('/')));
         token.attrJoin('class', 'md-local-link');
       }
     } else if (href && isExternal(href)) {
@@ -494,7 +530,7 @@ function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
     const src = token.attrGet('src');
     if (src && !isExternal(src) && !src.startsWith('/')) {
       const target = resolveRelative(ctx.docPath, src);
-      if (target) token.attrSet('src', `/api/asset?p=${encodeURIComponent(`${ctx.rootId}/${target}`)}`);
+      if (target) token.attrSet('src', rawSrc(ctx, target));
     }
     token.attrSet('loading', 'lazy');
     return defaultImage(tokens, idx, options, env, self);
@@ -515,7 +551,7 @@ function rewriteHtmlImages(html: string, ctx: RenderContext): string {
     if (isExternal(src) || src.startsWith('/') || src.startsWith('data:')) return whole;
     const target = resolveRelative(ctx.docPath, src);
     if (!target) return whole;
-    return `${head}${quote}/api/asset?p=${encodeURIComponent(`${ctx.rootId}/${target}`)}${quote}`;
+    return `${head}${quote}${rawSrc(ctx, target)}${quote}`;
   });
 }
 

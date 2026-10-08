@@ -5,34 +5,23 @@ import { Dir } from './Home';
 import { sizeClass, SizeMark } from './Tree';
 import { docName, fileSize } from './format';
 import { IconChevron } from './icons';
-import { MD_EXT } from '../lib/filetypes';
 import { follow, inLink } from './PageHead';
 
 const LS_UNPUSHED = 'mdhouse.unpushedOpen';
 
-/** Where a repo file opens: here when it is Markdown under the root, else on its host, else nowhere. */
-type Target = { rel: string } | { href: string } | null;
-
-export function targetOf(info: GitInfo, path: string, sha: string | undefined): Target {
+/** A repo path's root-relative path — null outside the root. */
+function targetOf(info: GitInfo, path: string): string | null {
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
-  if (MD_EXT.test(path) && path.startsWith(prefix)) return { rel: path.slice(prefix.length) };
-  if (!info.origin || !sha) return null;
-  return { href: info.origin.blob.replace('{sha}', sha).replace('{path}', path.split('/').map(encodeURIComponent).join('/')) };
+  return path.startsWith(prefix) ? path.slice(prefix.length) : null;
 }
 
-function FileLink({ info, path, sha, onOpen, fileUrl, label }: { info: GitInfo; path: string; sha?: string; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; label?: string }) {
-  const t = targetOf(info, path, sha);
+/** A repo file: its page when it is under the root, else plain text. */
+function FileLink({ info, path, onOpen, fileUrl, label }: { info: GitInfo; path: string; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; label?: string }) {
+  const rel = targetOf(info, path);
   const text = label ?? path;
-  if (!t) return <span class="git-file plain">{text}</span>;
-  if ('href' in t) {
-    return (
-      <a class="git-file ext" href={t.href} target="_blank" rel="noopener noreferrer" title={`On ${info.origin?.kind === 'guess' ? 'its host (a possible url)' : info.origin?.kind}`}>
-        {text}
-      </a>
-    );
-  }
+  if (rel === null) return <span class="git-file plain">{text}</span>;
   return (
-    <a class="git-file" href={fileUrl(t.rel)} onClick={(e) => follow(e, () => onOpen(t.rel))}>
+    <a class="git-file" href={fileUrl(rel)} onClick={(e) => follow(e, () => onOpen(rel))}>
       {text}
     </a>
   );
@@ -71,11 +60,6 @@ export function RemoteBar({ p, info, onState }: { p: string; info: GitInfo; onSt
   }, [p, head, moved]);
   return (
     <div class="git-remote">
-      {info.origin && (
-        <a href={info.origin.web} target="_blank" rel="noopener noreferrer" class="git-origin">
-          {info.origin.web.replace(/^https:\/\//, '')} ↗
-        </a>
-      )}
       <button
         class="git-btn"
         disabled={remote === 'checking'}
@@ -239,8 +223,7 @@ export function CommitsView({ p, info, onOpen, fileUrl, revision }: { p: string;
   const [commits, setCommits] = useState<GitCommit[] | null>(null);
   const [more, setMore] = useState(true);
   const [open, setOpen] = useState<Set<string>>(new Set());
-  // A commit origin does not have yet has no page there, and neither do its files at that
-  // commit: its files link by branch, its hash links nowhere.
+  // Commits origin does not have yet, tagged unpushed.
   const notOnOrigin = new Set(info.sync?.unpushed.map((c) => c.hash));
 
   useEffect(() => {
@@ -283,15 +266,7 @@ export function CommitsView({ p, info, onOpen, fileUrl, revision }: { p: string;
               </span>
               <span class="who">{c.author}</span>
             </button>
-            {info.origin && !notOnOrigin.has(c.hash) ? (
-              <a class="sha" href={info.origin.commit.replace('{sha}', c.hash)} target="_blank" rel="noopener noreferrer" title="On its host">
-                {c.hash.slice(0, 8)}
-              </a>
-            ) : (
-              <span class="sha" title={info.origin ? 'Not on origin yet' : undefined}>
-                {c.hash.slice(0, 8)}
-              </span>
-            )}
+            <span class="sha">{c.hash.slice(0, 8)}</span>
             {shown && (
               <ul class="git-commit-files">
                 {c.files.map((f) => (
@@ -300,7 +275,7 @@ export function CommitsView({ p, info, onOpen, fileUrl, revision }: { p: string;
                     {f.status === 'D' ? (
                       <span class="git-file plain">{f.path.slice(prefix.length) || f.path}</span>
                     ) : (
-                      <FileLink info={info} path={f.path} sha={notOnOrigin.has(c.hash) ? info.head?.branch : c.hash} onOpen={onOpen} fileUrl={fileUrl} label={f.path.startsWith(prefix) ? f.path.slice(prefix.length) : f.path} />
+                      <FileLink info={info} path={f.path} onOpen={onOpen} fileUrl={fileUrl} label={f.path.startsWith(prefix) ? f.path.slice(prefix.length) : f.path} />
                     )}
                   </li>
                 ))}
@@ -325,7 +300,7 @@ export function CommitsView({ p, info, onOpen, fileUrl, revision }: { p: string;
   );
 }
 
-/** Every file git tracks under the folder: Markdown opens here, the rest on its host. */
+/** Every file git tracks under the folder, each opening its page. */
 export function FilesView({ p, info, onOpen, fileUrl, revision }: { p: string; info: GitInfo; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; revision: number }) {
   const [files, setFiles] = useState<string[] | null>(null);
   const [capped, setCapped] = useState(false);
@@ -343,8 +318,6 @@ export function FilesView({ p, info, onOpen, fileUrl, revision }: { p: string; i
   if (!files) return <div class="spinner" />;
   if (!files.length) return <p class="empty">git tracks no files here.</p>;
   const prefix = info.dir ? `${info.dir}/` : '';
-  // By branch, as the host's own file pages are linked: `…/blob/main/src/cli.ts`.
-  const sha = info.head?.branch;
   let lastDir = '\0';
   return (
     <>
@@ -358,7 +331,7 @@ export function FilesView({ p, info, onOpen, fileUrl, revision }: { p: string; i
           return (
             <li key={path} class={head ? 'first' : ''}>
               <span class="git-dir">{head ? (dir ? `${dir}/` : '') : ''}</span>
-              <FileLink info={info} path={path} sha={sha} onOpen={onOpen} fileUrl={fileUrl} label={rel.slice(cut + 1)} />
+              <FileLink info={info} path={path} onOpen={onOpen} fileUrl={fileUrl} label={rel.slice(cut + 1)} />
             </li>
           );
         })}
@@ -445,7 +418,7 @@ export function SyncLists({ info, onOpen, fileUrl, commits }: { info: GitInfo; o
 
 /**
  * The changed and added files, laid out as a folder page lays out its files: folder (named once
- * for a run), file, age, size — newest first. Markdown under the root opens here.
+ * for a run), file, age, size — newest first. A file under the root opens its page.
  */
 function ChangedFiles({ info, onOpen, fileUrl }: { info: GitInfo; onOpen: (rel: string) => void; fileUrl: (rel: string) => string }) {
   const prefix = info.rootRel ? `${info.rootRel}/` : '';
@@ -468,7 +441,7 @@ function ChangedFiles({ info, onOpen, fileUrl }: { info: GitInfo; onOpen: (rel: 
               span = 1;
               while (i + span < files.length && files[i + span]!.dir === f.dir) span++;
             }
-            const opens = f.md && f.path.startsWith(prefix) && f.size !== undefined;
+            const opens = f.path.startsWith(prefix) && f.size !== undefined;
             const small = f.size !== undefined ? sizeClass(f.size) : '';
             const change = changeOf(f.code);
             return (
@@ -486,13 +459,10 @@ function ChangedFiles({ info, onOpen, fileUrl }: { info: GitInfo; onOpen: (rel: 
                 <td class="name">
                   {opens ? (
                     <a class="link" href={fileUrl(f.path.slice(prefix.length))} onClick={(e) => follow(e, () => onOpen(f.path.slice(prefix.length)))}>
-                      {docName(f.name)}
+                      {f.md ? docName(f.name) : f.name}
                     </a>
-                  ) : f.size === undefined || !info.origin ? (
-                    <span class="plain">{f.md ? docName(f.name) : f.name}</span>
                   ) : (
-                    // Not opened here: the file on its host, on this branch — as it was last pushed.
-                    <FileLink info={info} path={f.path} sha={info.head?.branch} onOpen={onOpen} fileUrl={fileUrl} label={f.name} />
+                    <span class="plain">{f.md ? docName(f.name) : f.name}</span>
                   )}
                   {/* The same tags the front page's Uncommitted rows carry. */}
                   <span class={`tag ch-${change.replace(' ', '-')}`}>{change}</span>

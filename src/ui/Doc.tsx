@@ -4,7 +4,7 @@ import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
 import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff } from './icons';
-import { timeAgo } from './format';
+import { fileSize, timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
 import { markChanges } from './mark-changes';
@@ -14,7 +14,6 @@ import type { QaAction, QaChange } from '../lib/qa';
 import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
-import { MD_EXT } from '../lib/filetypes';
 import { follow } from './PageHead';
 import { isPageHref } from '../lib/urls';
 
@@ -57,6 +56,9 @@ interface Props {
   editHref?: string | null;
   /** Fetch this document again — after a checkbox write, so the page matches the file. */
   onReload?: () => void;
+  /** The file failed to open but is still favorited / muted: the marks the error page offers to take off. */
+  deadMarks?: Mark[];
+  onUnmark?: (mark: Mark) => void;
 }
 
 /**
@@ -107,8 +109,15 @@ export function Doc({
   onOpenRootDir,
   editHref,
   onReload,
+  deadMarks = [],
+  onUnmark,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
+  /** The file line the page landed on (`#L<n>`) — the ✎ link opens the file there. */
+  const [atLine, setAtLine] = useState<number | null>(null);
+  /** An HTML file: its source instead of the page it renders. */
+  const [source, setSource] = useState(false);
+  useEffect(() => setSource(false), [doc?.url]);
   const [tocOpen, setTocOpen] = useState(true);
   /** Deepest heading level the contents list shows. H1–H2 by default; the H3 chip widens it. */
   const [tocDepth, setTocDepth] = useState(2);
@@ -190,7 +199,8 @@ export function Doc({
     if (!doc || viewDecidedFor.current === doc.url) return;
     viewDecidedFor.current = doc.url;
     setDiffRev(null);
-    setView(dirty ? diffView : 'doc');
+    // The marked view is Markdown's: any other file opens on the patch.
+    setView(dirty ? (doc.kind === 'md' ? diffView : 'patch') : 'doc');
     // diffView is deliberately not a dependency: changing the preferred view is already a
     // change of view, and re-running here would fight the toggle that set it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,9 +271,11 @@ export function Doc({
       const href = link.getAttribute('href') ?? '';
       if (isPageHref(href)) {
         e.preventDefault();
-        // `#L557`: a line of the file — the body's line once front matter is counted out
+        // `#L557` here: a line of this file — the body's line once front matter is counted out.
+        // In another file, its page reads the hash with its own front matter.
         const at = /#L(\d+)$/.exec(href);
-        onNavigate(href, at ? Number(at[1]) - (doc?.lineOffset ?? 0) : undefined);
+        const here = href.split('#')[0] === doc?.url;
+        onNavigate(href, at && here ? Number(at[1]) - (doc?.lineOffset ?? 0) : undefined);
       } else if (href.startsWith('#')) {
         e.preventDefault();
         const target = el.querySelector(`[id="${CSS.escape(href.slice(1))}"]`);
@@ -291,7 +303,7 @@ export function Doc({
   useEffect(() => {
     const el = body.current;
     if (!el || !doc) return;
-    const editable = doc.writable && view === 'doc';
+    const editable = doc.writable && view === 'doc' && doc.kind === 'md';
     for (const box of el.querySelectorAll<HTMLInputElement>('.task-checkbox')) box.disabled = !editable;
     if (!editable) return;
 
@@ -338,7 +350,7 @@ export function Doc({
   // The text being written, as the editor reports it: what Save sends.
   const draft = useRef('');
   const opened = useRef(0);
-  const answerable = !!doc?.writable && view === 'doc';
+  const answerable = !!doc?.writable && view === 'doc' && doc.kind === 'md';
 
   // Who a signed reply is from, for the 👤 tooltip.
   const [me, setMe] = useState('');
@@ -414,19 +426,22 @@ export function Doc({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.url, doc?.html, answerable]);
 
+  /** The ✎ link: at the line the page landed on, if any. */
+  const editAt = editHref && atLine !== null ? `${editHref}:${atLine}` : editHref;
+
   /** `e` opens the file in the editor, as the ✎ beside the title does — not while typing. */
   useEffect(() => {
-    if (!editHref) return;
+    if (!editAt) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'e' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
       const t = e.target as HTMLElement;
       if (t.closest('input, textarea, select, [contenteditable]')) return;
       e.preventDefault();
-      location.href = editHref;
+      location.href = editAt;
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [editHref]);
+  }, [editAt]);
 
   // The editor's element: made once per opened form, and moved — never rebuilt — when the page
   // is re-rendered from a changed file, so the text, the cursor and undo survive another
@@ -808,9 +823,24 @@ export function Doc({
   // Land on the right place: an explicit line from a search hit wins over the URL hash.
   useEffect(() => {
     const el = body.current;
+    setAtLine(null);
     if (!el || !doc) return;
 
     const fileLine = /^#L(\d+)$/.exec(location.hash);
+    if (doc.kind !== 'md') {
+      // A file shown by lines: the line stays marked until another is asked for.
+      for (const old of el.querySelectorAll('.line.hl')) old.classList.remove('hl');
+      const n = jumpLine ?? (fileLine ? Number(fileLine[1]) : null);
+      const line = n === null ? null : el.querySelector<HTMLElement>(`[id="L${n}"]`);
+      if (line) {
+        line.classList.add('hl');
+        line.scrollIntoView({ block: 'center' });
+        setAtLine(n);
+      } else el.closest('main')?.scrollTo({ top: 0 });
+      return;
+    }
+    if (fileLine) setAtLine(Number(fileLine[1]));
+    else if (jumpLine !== null) setAtLine(jumpLine + (doc.lineOffset ?? 0));
     const target =
       jumpLine !== null
         ? nearestByLine(el, jumpLine)
@@ -835,6 +865,20 @@ export function Doc({
         {gear && <div class="notice-gear">{gear}</div>}
         <h2>Can’t open that</h2>
         <p>{error}</p>
+        {deadMarks.length > 0 && (
+          <p class="dead-marks">
+            {deadMarks.includes('favorite') && (
+              <button class="git-btn" onClick={() => onUnmark?.('favorite')}>
+                ★ Remove from favorites
+              </button>
+            )}
+            {deadMarks.includes('muted') && (
+              <button class="git-btn" onClick={() => onUnmark?.('muted')}>
+                Unmute
+              </button>
+            )}
+          </p>
+        )}
       </div>
     );
   }
@@ -857,7 +901,12 @@ export function Doc({
   const isFav = doc.marks.includes('favorite');
   const isMuted = doc.marks.includes('muted');
   const dirs = doc.rel.split('/').slice(0, -1);
-  const title = doc.rel.split('/').pop()!.replace(MD_EXT, '');
+  const name = doc.rel.split('/').pop()!;
+  const md = doc.kind === 'md';
+  // A Markdown file is titled by its name; any other by its name with the extension.
+  const title = md ? name.replace(/\.mdx?$/i, '') : name;
+  /** Shown by lines, in the body: code, text, an HTML file's source. */
+  const byLines = doc.kind === 'code' || doc.kind === 'text' || (doc.kind === 'html' && source);
   const listed = doc.headings.filter((h) => h.level <= tocDepth);
   const hasSubs = doc.headings.some((h) => h.level === 3);
 
@@ -950,8 +999,8 @@ export function Doc({
               <IconGitMark />
             </a>
           )}
-          {editHref && (
-            <a class="icon-btn edit-link" href={editHref} title={`Edit ${editHref.slice(5)} (e)`} aria-label="Edit">
+          {editAt && (
+            <a class="icon-btn edit-link" href={editAt} title={`Edit ${editAt.slice(5)} (e)`} aria-label="Edit">
               <IconEdit />
             </a>
           )}
@@ -966,11 +1015,6 @@ export function Doc({
           {doc.tasks.total > 0 && (
             <span>
               {doc.tasks.done}/{doc.tasks.total} done
-            </span>
-          )}
-          {doc.writable && (
-            <span class="rw" title="mdhouse may write to this tree">
-              RW
             </span>
           )}
 
@@ -993,14 +1037,26 @@ export function Doc({
             >
               <IconDiff size={15} />
             </button>
-            <button
-              class="icon-btn"
-              aria-pressed={view === 'marked'}
-              title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
-              onClick={() => pick('marked')}
-            >
-              <IconDiffDoc size={15} />
-            </button>
+            {md && (
+              <button
+                class="icon-btn"
+                aria-pressed={view === 'marked'}
+                title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
+                onClick={() => pick('marked')}
+              >
+                <IconDiffDoc size={15} />
+              </button>
+            )}
+            {doc.kind === 'html' && (
+              <button
+                class="icon-btn src-toggle"
+                aria-pressed={source}
+                title={source ? 'Show the page' : 'Show the source'}
+                onClick={() => setSource((v) => !v)}
+              >
+                &lt;/&gt;
+              </button>
+            )}
             <button
               class="icon-btn"
               title={isFav ? 'Unfavorite' : 'Favorite'}
@@ -1067,13 +1123,13 @@ export function Doc({
           onPickLocal={() => {
             const showing = diffOn && diffRev === null;
             setDiffRev(null);
-            setView(showing ? 'doc' : diffView);
+            setView(showing ? 'doc' : doc.kind === 'md' ? diffView : 'patch');
           }}
           onPickRev={(hash) => {
             // Clicking the revision already on screen puts the document back.
             const showing = diffOn && diffRev === hash;
             setDiffRev(showing ? null : hash);
-            setView(showing ? 'doc' : diffView);
+            setView(showing ? 'doc' : doc.kind === 'md' ? diffView : 'patch');
           }}
         />
       </div>
@@ -1094,15 +1150,50 @@ export function Doc({
       {/* Hidden rather than unmounted: the rendered body carries the link handler, the mermaid
           diagrams and the scroll target, and none of that should be rebuilt by a toggle. */}
       {taskNote && <p class="task-note">{taskNote}</p>}
-      {view === 'doc' && <QaStrip body={body} html={doc.html} url={doc.url} />}
+      {view === 'doc' && md && <QaStrip body={body} html={doc.html} url={doc.url} />}
+      {view === 'doc' && !md && !byLines && <FileView doc={doc} />}
+      {view === 'doc' && doc.tooBig && byLines && <FileView doc={doc} />}
       <div
         ref={body}
-        class={`md${overlaid ? ' marked' : ''}${answerable ? ' qa-rw' : ''}`}
-        hidden={view === 'patch' || (view === 'marked' && diff?.current === false)}
+        class={md ? `md${overlaid ? ' marked' : ''}${answerable ? ' qa-rw' : ''}` : 'code-file'}
+        hidden={view === 'patch' || (view === 'marked' && diff?.current === false) || (!md && (!byLines || !!doc.tooBig))}
         dangerouslySetInnerHTML={{ __html: doc.html }}
       />
     </article>
   );
+}
+
+/** A file the page does not show by lines: an image, a PDF, a page, a player — or a download. */
+function FileView({ doc }: { doc: DocPayload }) {
+  const name = doc.rel.split('/').pop()!;
+  const download = (why: string) => (
+    <p class="file-download">
+      {why} · {fileSize(doc.size)} ·{' '}
+      <a href={doc.raw} download={name}>
+        Download
+      </a>
+    </p>
+  );
+  if (doc.tooBig) return download('Too big to show');
+  switch (doc.kind) {
+    case 'image':
+      return (
+        <div class="file-view">
+          <img class="file-image" src={doc.raw} alt={name} />
+        </div>
+      );
+    case 'pdf':
+      return <iframe class="file-frame" src={doc.raw} title={name} />;
+    case 'html':
+      // Sandboxed twice: here, and by the server's CSP — its scripts run in an opaque origin.
+      return <iframe class="file-frame" src={doc.raw} title={name} sandbox="allow-scripts" />;
+    case 'video':
+      return <video class="file-media" src={doc.raw} controls preload="metadata" />;
+    case 'audio':
+      return <audio class="file-media" src={doc.raw} controls preload="metadata" />;
+    default:
+      return download('A binary file');
+  }
 }
 
 /**

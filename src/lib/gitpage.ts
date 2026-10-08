@@ -1,7 +1,6 @@
 /**
  * The git view of a folder: every commit that touched it (any file type), the files git tracks
- * there, links to the repository's web pages, a read-only check of the remote, and — in a
- * writable folder — commit, pull and push.
+ * there, a read-only check of the remote, and — in a writable folder — commit, pull and push.
  *
  * Only `origin` is used. Network calls never prompt: a remote that wants a password fails with
  * git's message instead of hanging the request.
@@ -150,54 +149,6 @@ export async function dirtyFiles(repo: string): Promise<DirtyFile[]> {
 
 /** The files `git commit -a` would take: tracked and changed, or staged — not untracked ones. */
 export const commitable = (dirty: DirtyFile[]): DirtyFile[] => dirty.filter((f) => f.code !== '??' && f.code !== '!!');
-
-/** Where the repository lives on the web, and how its commit and file pages are addressed. */
-export interface Host {
-  /** The repository's page. */
-  web: string;
-  /** `{sha}` replaced. */
-  commit: string;
-  /** `{sha}` and `{path}` replaced. */
-  blob: string;
-  /** github, gitlab, gitea, bitbucket — or "guess": the GitHub shape, a possible url. */
-  kind: string;
-}
-
-/** The web address of a remote url: `git@host:o/r.git`, `ssh://git@host/o/r`, `https://host/o/r.git`. */
-export function hostOf(url: string): Host | null {
-  let host = '';
-  let path = '';
-  const scp = /^(?:[\w.-]+@)?([\w.-]+):(?!\/)(.+)$/.exec(url);
-  if (scp && !/^[a-z]+:\/\//i.test(url)) {
-    host = scp[1] ?? '';
-    path = scp[2] ?? '';
-  } else {
-    try {
-      const u = new URL(url);
-      if (!/^(https?|ssh|git):$/.test(u.protocol)) return null;
-      host = u.hostname;
-      path = u.pathname;
-    } catch {
-      return null;
-    }
-  }
-  path = path.replace(/^\/+|\/+$/g, '').replace(/\.git$/, '');
-  if (!host || !path) return null;
-  const web = `https://${host}/${path}`;
-  const h = host.toLowerCase();
-  if (h === 'github.com' || h.startsWith('github.')) return { web, kind: 'github', commit: `${web}/commit/{sha}`, blob: `${web}/blob/{sha}/{path}` };
-  if (h.includes('gitlab')) return { web, kind: 'gitlab', commit: `${web}/-/commit/{sha}`, blob: `${web}/-/blob/{sha}/{path}` };
-  if (h.includes('bitbucket')) return { web, kind: 'bitbucket', commit: `${web}/commits/{sha}`, blob: `${web}/src/{sha}/{path}` };
-  if (h.includes('gitea') || h.includes('forgejo') || h === 'codeberg.org') {
-    return { web, kind: 'gitea', commit: `${web}/commit/{sha}`, blob: `${web}/src/commit/{sha}/{path}` };
-  }
-  return { web, kind: 'guess', commit: `${web}/commit/{sha}`, blob: `${web}/blob/{sha}/{path}` };
-}
-
-export async function origin(repo: string): Promise<Host | null> {
-  const r = await run(repo, ['remote', 'get-url', 'origin']);
-  return r.code === 0 ? hostOf(r.out.trim()) : null;
-}
 
 export interface RemoteState {
   /** same, ahead (unpushed), behind, new (the remote has commits not fetched), diverged, none. */

@@ -159,10 +159,9 @@ Markdown inside **still works**.
 
 ## Links and images
 
-- A relative link to another `.md` file opens it inside mdhouse, keeping any `#section`.
+- A relative link to any file opens its page in mdhouse, keeping any `#section` — `.md` rendered,
+  code highlighted (`#L557` — that line), an image, a PDF, a sandboxed HTML page, a download.
 - A relative image is served from the folder it lives in.
-- A relative link to a text file opens it as plain text — `.txt`, `.log`, `.sql`, `.json`,
-  `.yaml`, `.csv`, `.toml`, `.ini`, `.conf`, `.sh`, `.env`, `.mmd` and a few more.
 - Links outside mdhouse open in a new tab.
 
 `.mdx` files are listed and rendered as Markdown; their JSX is not executed.

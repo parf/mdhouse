@@ -2,34 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { commitable, dirtyFiles, folderLog, hostOf, remoteState, run, suggestMessage, trackedFiles } from '../src/lib/gitpage';
-
-describe('hostOf — the web address of a remote', () => {
-  test('ssh and https, each host', () => {
-    expect(hostOf('git@github.com:parf/mdhouse.git')).toMatchObject({ web: 'https://github.com/parf/mdhouse', kind: 'github' });
-    expect(hostOf('https://github.com/parf/mdhouse')?.blob).toBe('https://github.com/parf/mdhouse/blob/{sha}/{path}');
-    expect(hostOf('ssh://git@gitlab.example.com:2222/team/sub/repo.git')).toMatchObject({
-      web: 'https://gitlab.example.com/team/sub/repo',
-      commit: 'https://gitlab.example.com/team/sub/repo/-/commit/{sha}',
-    });
-    expect(hostOf('git@bitbucket.org:o/r.git')?.blob).toBe('https://bitbucket.org/o/r/src/{sha}/{path}');
-    expect(hostOf('https://codeberg.org/o/r.git')?.blob).toBe('https://codeberg.org/o/r/src/commit/{sha}/{path}');
-    expect(hostOf('https://git.example.com/o/r')).toMatchObject({ kind: 'guess', commit: 'https://git.example.com/o/r/commit/{sha}' });
-  });
-  test('not a web remote', () => {
-    expect(hostOf('/srv/git/repo.git')).toBeNull();
-    expect(hostOf('file:///srv/git/repo.git')).toBeNull();
-    expect(hostOf('')).toBeNull();
-  });
-});
-
-test('suggestMessage', () => {
-  const f = (path: string) => ({ path, code: ' M', md: true });
-  expect(suggestMessage([f('Plans/TODO.md')])).toBe('Update TODO.md');
-  expect(suggestMessage([f('a.md'), f('b/a.md')])).toBe('Update a.md');
-  expect(suggestMessage([f('a.md'), f('b.md')])).toBe('Update a.md, b.md');
-  expect(suggestMessage([f('a'), f('b'), f('c'), f('d')])).toBe('');
-});
+import { commitable, dirtyFiles, folderLog, remoteState, run, suggestMessage, trackedFiles } from '../src/lib/gitpage';
 
 describe('a real repo', () => {
   let base = '';

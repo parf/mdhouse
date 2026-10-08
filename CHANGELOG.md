@@ -7,6 +7,16 @@
 - **Breaking — addresses without `/d/`:** `/<root>/<path>` — `/mdhouse/doc/access.md`,
   `/mdhouse/doc/`; the root's id always leads. Old `/d/…` links → 301 to the new address. A folder
   named `api`, `settings`, `d` … gets a suffixed id (`api-2`)
+- **Every file opens at its own address** — `/mdhouse/src/cli.ts` highlighted with line numbers
+  (`#L557` lands on and marks the line), `/mdhouse/doc/logo.png`, PDFs, video, audio; HTML
+  rendered sandboxed, ⟨/⟩ shows its source; anything else: type, size, Download. Header, ★ / mute,
+  copy link, ✎ (at the line), History and the patch work for every file
+- Links in a document to any file — `cli.ts`, `logo.png` — open its page; a mention `src/x.ts:3`
+  opens it at line 3
+- Folder page ALL and the git view (Files, commit files, changed files) open every file's page;
+  the links to GitHub & co. are gone
+- Nothing under `.git` is shown
+- A document's meta line no longer shows `RW` — the sidebar has it
 - **One Q&A markup** (`Plans/brainstorm/2026-10-07/markup.md`): a list item opening with a glyph — `- ❓ …`,
   `- 🔴 D1 …`, `- ✅ 🟠 …` — or a `> ❓` quote; its thread quoted under it, one `💬` per turn,
   badges `👤name` `👾`; options `( )` / `[ ]`; `💡` proposals; 🎯 selected
@@ -35,6 +45,8 @@
 
 ### Fixed
 
+- A favorite or muted file that no longer exists: its "Can’t open that" page offers ★ Remove from
+  favorites / Unmute
 - A read of `prefs.json` while another mdhouse process saves it no longer sees half a file and
   moves the config aside (saved folders, users and the allow list kept)
 - A hand-edited `prefs.json` root entry without all three mark lists no longer makes that folder

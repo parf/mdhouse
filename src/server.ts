@@ -13,10 +13,10 @@ import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { dirUrl } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
-import { ASSET_EXT, HTML_EXT, MD_EXT, RAW_EXT } from './lib/filetypes';
+import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
-import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
+import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
 import { applyQa, badgeName, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, newFileDiff, workingDiff, type FileDiff } from './lib/git';
@@ -26,7 +26,7 @@ import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit } from './lib/service';
 import { allowedAddress, Users } from './lib/access';
-import { commitable, dirtyFiles, folderLog, origin, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
+import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
 import { stat } from 'node:fs/promises';
 
@@ -93,6 +93,31 @@ export function sameOrigin(req: Request): boolean {
  * request it makes back here is cross-site, so the write routes refuse it and reads stay unreadable.
  */
 const SANDBOXED_HTML = { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': 'sandbox allow-scripts' };
+
+/** A file's page: highlighted up to here; past it, no body — "too big, download". */
+const SHOW_MAX = 5_000_000;
+
+/**
+ * The headers `/api/raw` serves a file with, by kind. Everything is sandboxed — opened on its
+ * own, an SVG's or a text file's scripts never run in mdhouse's origin — except a PDF, which the
+ * browser's own viewer needs to show; HTML runs its scripts in an opaque origin; an unknown
+ * binary is a download.
+ */
+function rawHeaders(kind: Kind, rel: string, type: string): Record<string, string> {
+  const common = { 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff' };
+  if (kind === 'html') return { ...common, ...SANDBOXED_HTML };
+  if (kind === 'pdf') return { ...common, 'content-type': 'application/pdf' };
+  const sandbox = { ...common, 'content-security-policy': 'sandbox' };
+  if (kind === 'image' || kind === 'video' || kind === 'audio') return { ...sandbox, 'content-type': type };
+  if (kind === 'binary') {
+    const name = encodeURIComponent(rel.split('/').pop() ?? 'file');
+    return { ...sandbox, 'content-type': 'application/octet-stream', 'content-disposition': `attachment; filename*=UTF-8''${name}` };
+  }
+  return { ...sandbox, 'content-type': 'text/plain; charset=utf-8' };
+}
+
+/** A file's first 8 kB — enough to tell text from binary. */
+const headOf = async (abs: string): Promise<Uint8Array> => new Uint8Array(await Bun.file(abs).slice(0, 8192).arrayBuffer());
 
 /** Resolved once at startup; mermaid is a direct dependency so this always exists. */
 const MERMAID_DIST = new URL('../node_modules/mermaid/dist', import.meta.url).pathname;
@@ -244,6 +269,16 @@ export async function serve(opts: ServeOptions) {
       return fail(500, (err as Error).message);
     }
   };
+  const raw: Handler = async (req) => {
+    const url = new URL(req.url);
+    const loc = await registry.resolve(url.searchParams.get('p') ?? '');
+    if (!loc) return fail(403, 'path outside any root');
+    if (inGitDir(loc.rel)) return fail(404, 'not found');
+    if (!(await stat(loc.abs).catch(() => null))?.isFile()) return fail(404, 'not found');
+    const file = Bun.file(loc.abs);
+    return new Response(file, { headers: rawHeaders(kindOf(loc.rel, await headOf(loc.abs)), loc.rel, file.type) });
+  };
+
   /** The old `/d/…` address — 301 to the page's own, the query kept. */
   const legacyPage: Handler = async (req) => {
     const url = new URL(req.url);
@@ -522,7 +557,7 @@ export async function serve(opts: ServeOptions) {
       '/api/git': async (req) => {
         const at = await gitAt(new URL(req.url));
         if ('error' in at) return at.error;
-        const [head, host, dirty] = await Promise.all([repoHead(at.repo), origin(at.repo), dirtyFiles(at.repo)]);
+        const [head, dirty] = await Promise.all([repoHead(at.repo), dirtyFiles(at.repo)]);
         const sync = head ? await syncState(at.repo, head.branch) : null;
         // Age and size, for the changed-files table — a deleted file has neither.
         const changed = await Promise.all(
@@ -536,7 +571,6 @@ export async function serve(opts: ServeOptions) {
           dir: at.dir,
           rootRel: repoRel(at.repo, at.root.path),
           head,
-          origin: host,
           dirty: changed,
           commitMessage: suggestMessage(commitable(dirty)),
           sync,
@@ -637,15 +671,43 @@ export async function serve(opts: ServeOptions) {
         return json(await store.tree(root, flag(url, 'ignored', opts.includeIgnoredDefault)));
       },
 
+      /**
+       * A file's page: every kind (`kindOf`) — Markdown rendered, code and text highlighted with
+       * line numbers (`#L<n>`), the rest described for the page to show from `/api/raw`. Nothing
+       * under a `.git` folder.
+       */
       '/api/doc': async (req) => {
         const url = new URL(req.url);
         const p = url.searchParams.get('p');
         const loc = p ? await registry.resolve(p) : await registry.fromDocUrl(url.searchParams.get('d') ?? '');
         if (!loc) return fail(403, 'path outside any root');
-        if (!MD_EXT.test(loc.rel)) return fail(404, 'not a document');
+        if (inGitDir(loc.rel)) return fail(404, 'not found');
 
-        const file = Bun.file(loc.abs);
-        if (!(await file.exists())) return fail(404, 'not found');
+        const info = await stat(loc.abs).catch(() => null);
+        if (!info?.isFile()) return fail(404, 'not found');
+        const kind = kindOf(loc.rel, await headOf(loc.abs));
+        // Cheap — the status map is built once per root and invalidated by the watcher. It is
+        // here because it decides whether the page opens on the diff or on the document.
+        const status = await store.statusOf(loc.root, loc.rel).catch(() => undefined);
+        const common = {
+          kind,
+          root: loc.root.id,
+          rel: loc.rel,
+          url: registry.docUrl(loc.root, loc.rel),
+          raw: `/api/raw?p=${encodeURIComponent(registry.encode(loc.root, loc.rel))}`,
+          writable: loc.root.writable,
+          mtime: info.mtimeMs,
+          size: info.size,
+          marks: prefs.marksFor(loc.root.path, loc.rel),
+          ...(status ? { status } : {}),
+        };
+
+        if (kind !== 'md') {
+          const shown = kind === 'code' || kind === 'text' || kind === 'html';
+          const tooBig = shown && info.size > SHOW_MAX;
+          const html = shown && !tooBig ? await highlightFile(await Bun.file(loc.abs).text(), kind === 'text' ? null : (langOf(loc.rel) ?? 'html')) : '';
+          return json({ ...common, frontmatter: null, lineOffset: 0, html, headings: [], hasMermaid: false, tasks: { done: 0, total: 0 }, ...(tooBig ? { tooBig } : {}) });
+        }
 
         const src = await readDoc(loc.abs);
         const { frontmatter, body, offset } = splitFrontmatter(src);
@@ -665,38 +727,12 @@ export async function serve(opts: ServeOptions) {
           },
         });
 
-        const info = await file.stat();
-        // Cheap — the status map is built once per root and invalidated by the watcher. It is
-        // here because it decides whether the page opens on the diff or on the document.
-        const status = await store.statusOf(loc.root, loc.rel).catch(() => undefined);
-
-        return json({
-          root: loc.root.id,
-          rel: loc.rel,
-          url: registry.docUrl(loc.root, loc.rel),
-          writable: loc.root.writable,
-          frontmatter,
-          lineOffset: offset,
-          mtime: info.mtimeMs,
-          size: info.size,
-          marks: prefs.marksFor(loc.root.path, loc.rel),
-          ...(status ? { status } : {}),
-          ...rendered,
-        });
+        return json({ ...common, frontmatter, lineOffset: offset, ...rendered });
       },
 
-      '/api/raw': async (req) => {
-        const url = new URL(req.url);
-        const loc = await registry.resolve(url.searchParams.get('p') ?? '');
-        if (!loc) return fail(403, 'path outside any root');
-        if (!RAW_EXT.test(loc.rel) && !MD_EXT.test(loc.rel)) return fail(415, 'not a viewable text file');
-
-        const file = Bun.file(loc.abs);
-        if (!(await file.exists())) return fail(404, 'not found');
-        return new Response(file, {
-          headers: HTML_EXT.test(loc.rel) ? SANDBOXED_HTML : { 'content-type': 'text/plain; charset=utf-8' },
-        });
-      },
+      /** A file's bytes, with its type — `rawHeaders`. `/api/asset` is the old name. */
+      '/api/raw': (req) => raw(req),
+      '/api/asset': (req) => raw(req),
 
       /** Every file under a folder, not only Markdown — the folder page's ALL view. */
       '/api/files': async (req) => {
@@ -705,18 +741,6 @@ export async function serve(opts: ServeOptions) {
         if (!loc) return fail(403, 'path outside any root');
         if (!(await stat(loc.abs).catch(() => null))?.isDirectory()) return fail(404, 'no such folder');
         return json(await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit }));
-      },
-
-      '/api/asset': async (req) => {
-        const url = new URL(req.url);
-        const loc = await registry.resolve(url.searchParams.get('p') ?? '');
-        if (!loc) return fail(403, 'path outside any root');
-        if (!ASSET_EXT.test(loc.rel)) return fail(415, 'not an image');
-
-        const file = Bun.file(loc.abs);
-        if (!(await file.exists())) return fail(404, 'not found');
-        // An image, never a page: opened on its own, an SVG's scripts would run in mdhouse's origin.
-        return new Response(file, { headers: { 'cache-control': 'no-cache', 'content-security-policy': 'sandbox' } });
       },
 
       '/api/search': async (req) => {
@@ -799,9 +823,9 @@ export async function serve(opts: ServeOptions) {
         const none: FileDiff = { kind: 'none', added: 0, removed: 0, hunks: [], truncated: false };
         if (opts.noGit) return json(none);
 
-        /** A patch of a Markdown file is Markdown: every line goes out rendered. */
+        /** A patch of a Markdown file is Markdown: every line goes out rendered. Any other file's, as typed. */
         const served = (d: FileDiff, current: boolean) =>
-          json({ ...d, hunks: markupHunks(d.hunks), current });
+          json({ ...d, hunks: MD_EXT.test(loc.rel) ? markupHunks(d.hunks) : d.hunks, current });
 
         const asked = url.searchParams.get('rev') ?? '';
         // Only a hash, never a ref expression: this string reaches a git command line.
@@ -812,6 +836,9 @@ export async function serve(opts: ServeOptions) {
 
         // Not in a repository, or in one that has never seen this file: the whole file is new.
         if (!where || (status === 'untracked' && !rev)) {
+          // A new image or binary has no lines to show.
+          const kind = kindOf(loc.rel, await headOf(loc.abs).catch(() => undefined));
+          if (kind !== 'md' && kind !== 'code' && kind !== 'text' && kind !== 'html') return json(none);
           const text = await Bun.file(loc.abs).text().catch(() => null);
           return text === null ? json(none) : served(newFileDiff(text), true);
         }

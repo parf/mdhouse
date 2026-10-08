@@ -695,8 +695,6 @@ main {
 .dir-table .kind-flip { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
 .dir-table .kind-flip button { font: inherit; font-size: 11px; padding: 1px 6px; border: 0; background: none; color: var(--fg-muted); cursor: pointer; }
 .dir-table .kind-flip button[aria-pressed="true"] { background: var(--accent); color: #fff; }
-.dir-table tr.inert { cursor: default; }
-.dir-table tr.inert .link { color: var(--fg-muted); text-decoration: none; }
 .dir-table .col-filter {
   width: 100%; font: inherit; font-size: 12px; padding: 3px 7px;
   color: var(--fg); background: var(--bg-raised);
@@ -1282,13 +1280,47 @@ main {
 .md .footnotes { border-top: 1px solid var(--border); margin-top: 2.5em; font-size: 0.92em; color: var(--fg-muted); }
 
 /* shiki emits both palettes; pick one per theme */
-.md .shiki, .md .shiki span { color: var(--shiki-light); background: transparent; }
+:is(.md, .code-file) .shiki, :is(.md, .code-file) .shiki span { color: var(--shiki-light); background: transparent; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .md .shiki,
-  :root:not([data-theme="light"]) .md .shiki span { color: var(--shiki-dark); }
+  :root:not([data-theme="light"]) :is(.md, .code-file) .shiki,
+  :root:not([data-theme="light"]) :is(.md, .code-file) .shiki span { color: var(--shiki-dark); }
 }
-:root[data-theme="dark"] .md .shiki,
-:root[data-theme="dark"] .md .shiki span { color: var(--shiki-dark); }
+:root[data-theme="dark"] :is(.md, .code-file) .shiki,
+:root[data-theme="dark"] :is(.md, .code-file) .shiki span { color: var(--shiki-dark); }
+
+/* A file shown by lines: numbered, `#L<n>` marked until another line is asked for. */
+.code-file pre {
+  margin: 0;
+  padding: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  overflow-x: auto;
+  font: 12.5px/1.5 var(--mono);
+}
+.code-file pre code { display: block; min-width: max-content; counter-reset: none; }
+.code-file .line { display: inline-block; width: 100%; padding-right: 13px; scroll-margin: 40vh 0; }
+.code-file .line::before {
+  content: attr(data-line);
+  display: inline-block;
+  width: 5ch;
+  margin-right: 12px;
+  padding-right: 8px;
+  text-align: right;
+  color: var(--fg-faint);
+  border-right: 1px solid var(--border);
+  user-select: none;
+}
+.code-file .line.hl { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.code-file .line.hl::before { color: var(--accent); }
+
+/* A file the page shows whole: an image, a PDF, a page, a player, a download. */
+.file-view { text-align: center; }
+.file-image { max-width: 100%; max-height: 80vh; height: auto; border: 1px solid var(--border); border-radius: var(--radius); background: repeating-conic-gradient(var(--bg-hover) 0 25%, transparent 0 50%) 0 0 / 16px 16px; }
+.file-frame { display: block; width: 100%; height: 80vh; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+.file-media { display: block; width: 100%; max-height: 80vh; }
+.file-download { color: var(--fg-muted); }
+.src-toggle { font: 600 11px var(--mono); }
 
 .md pre.mermaid { background: var(--bg-raised); text-align: center; }
 
@@ -1302,6 +1334,7 @@ main {
 
 .notice { padding: 40px 30px; color: var(--fg-muted); }
 .notice h2 { font-size: 17px; margin: 0 0 6px; color: var(--fg); }
+.dead-marks { display: flex; gap: 8px; }
 .notice code { font: 12.5px var(--mono); background: var(--bg-hover); padding: 1px 5px; border-radius: 4px; }
 
 .spinner {
@@ -1636,7 +1669,6 @@ kbd {
 
 /* ---------------------------------------------------------------- the git view of a folder */
 .git-remote { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: -8px 7px 14px; font-size: 12px; color: var(--fg-muted); }
-.git-origin { color: var(--fg-muted); }
 .git-remote-state { font-size: 12px; }
 .git-remote-state.same { color: var(--ok); }
 .git-remote-state:is(.new, .behind, .diverged) { color: var(--warn); font-weight: 600; }
@@ -1682,7 +1714,6 @@ kbd {
 .git-commit-files .st { display: inline-block; width: 1.2em; color: var(--fg-muted); }
 .git-commit-files .st-A { color: var(--ok); }
 .git-commit-files .st-D { color: var(--danger); }
-.git-file.ext::after { content: ' ↗'; color: var(--fg-faint); font-size: 0.85em; }
 .git-file.plain { color: var(--fg-muted); }
 .git-commits .more { margin-top: 10px; }
 .git-files { list-style: none; margin: 0 8px; padding: 0; font-size: 13px; }
