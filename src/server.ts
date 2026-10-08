@@ -156,11 +156,21 @@ export async function serve(opts: ServeOptions) {
     if (!at.root.writable) return { error: fail(403, `${at.root.name} is read-only`) };
     return at;
   };
-  /** Pull or push: uncommitted files only when all Markdown, and confirmed. */
+  /** A path is the folder or inside it. */
+  const within = (path: string, dir: string): boolean => path === dir || path.startsWith(`${dir}/`);
+  /** A read-only root that shares files with the repo — a write to the repo may land in it. */
+  const readOnlyIn = (repo: string): Root | undefined =>
+    registry.list().find((r) => !r.writable && (within(r.path, repo) || within(repo, r.path)));
+  /** Pull or push: uncommitted files only when all Markdown, and confirmed. Pull only when the whole repo is the root's to write. */
   const syncRepo = async (req: Request, args: string[]): Promise<Response> => {
     const body = (await req.json().catch(() => null)) as { p?: string; confirmed?: boolean } | null;
     const at = await gitWrite(req, body?.p);
     if ('error' in at) return at.error;
+    if (args[0] === 'pull') {
+      const ro = readOnlyIn(at.repo);
+      if (ro) return fail(409, `${ro.name} is read-only and in the same repository — pull in a terminal`);
+      if (!within(at.repo, at.root.path)) return fail(409, `the repository holds files outside ${at.root.name} — pull in a terminal`);
+    }
     return queueWrite(`git:${at.repo}`, async () => {
       const dirty = (await dirtyFiles(at.repo)).filter((f) => f.code !== '??' || f.md);
       if (dirty.some((f) => !f.md)) {
@@ -525,8 +535,9 @@ export async function serve(opts: ServeOptions) {
       /**
        * Commit, pull, push — a writable folder only, same origin, one at a time per repo.
        * `git commit -a`: the page shows the files it takes, and a non-Markdown one has to be
-       * confirmed. Pull and push with uncommitted files: confirmed, and only when they are all
-       * Markdown.
+       * confirmed; a file outside the root or in a read-only root refuses it. Pull and push with
+       * uncommitted files: confirmed, and only when they are all Markdown. Pull is refused while
+       * the repo holds a read-only root or files outside the root.
        */
       '/api/git/commit': {
         POST: async (req) => {
@@ -539,6 +550,11 @@ export async function serve(opts: ServeOptions) {
           return queueWrite(`git:${at.repo}`, async () => {
             const files = commitable(await dirtyFiles(at.repo));
             if (!files.length) return fail(409, 'nothing to commit');
+            const foreign = files.filter((f) => {
+              const abs = `${at.repo}/${f.path}`;
+              return !within(abs, at.root.path) || registry.list().some((r) => !r.writable && within(abs, r.path));
+            });
+            if (foreign.length) return json({ error: `changes outside ${at.root.name} or in a read-only folder — commit in a terminal`, files: foreign }, 409);
             const listed = [...(body?.files ?? [])].sort().join('\n');
             if (listed !== files.map((f) => f.path).sort().join('\n')) return json({ error: 'the files changed meanwhile — have a look', files }, 409);
             if (files.some((f) => !f.md) && !body?.nonMd) return json({ error: 'confirm the files that are not Markdown', files }, 409);

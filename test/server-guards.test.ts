@@ -612,3 +612,61 @@ test('a document that is gone, or a folder named *.md, is 404 on every document 
     await rm(base, { recursive: true, force: true });
   }
 });
+
+test('pull and commit refuse a repo that holds a read-only root or files outside the root (A1)', async () => {
+  const { mkdtemp, rm, writeFile, readFile, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const { run } = await import('../src/lib/gitpage');
+
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-scope-'));
+  const origin = join(base, 'origin');
+  const repo = join(base, 'repo');
+  const git = (cwd: string, args: string[]) => run(cwd, ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args]);
+  await mkdir(join(origin, 'docs'), { recursive: true });
+  await mkdir(join(origin, 'notes'));
+  await writeFile(join(origin, 'docs', 'd.md'), 'd\n');
+  await writeFile(join(origin, 'notes', 'n.md'), 'n\n');
+  await git(origin, ['init', '-q', '-b', 'main']);
+  await git(origin, ['add', '.']);
+  await git(origin, ['commit', '-qm', 'first']);
+  await git(base, ['clone', '-q', origin, repo]);
+  await writeFile(join(origin, 'notes', 'n.md'), 'n upstream\n');
+  await git(origin, ['commit', '-qam', 'upstream']);
+
+  const port = 61781;
+  const registry = await Registry.create([
+    { path: join(repo, 'docs'), writable: true },
+    { path: join(repo, 'notes'), writable: false },
+  ]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
+  const [docs, notes] = registry.list().map((r) => r.id);
+  const post = (path: string, body: unknown) =>
+    fetch(`http://127.0.0.1:${port}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  try {
+    // A read-only root in the repo: pull would rewrite it.
+    expect((await post('/api/git/pull', { p: `${docs}/` })).status).toBe(409);
+    expect(await readFile(join(repo, 'notes', 'n.md'), 'utf8')).toBe('n\n');
+    // A change outside the root (here in the read-only one) is not this root's to commit.
+    await writeFile(join(repo, 'notes', 'n.md'), 'n local\n');
+    expect((await post('/api/git/commit', { p: `${docs}/`, message: 'm', files: ['notes/n.md'] })).status).toBe(409);
+    expect((await git(repo, ['status', '--porcelain'])).out.trim()).toBe('M notes/n.md');
+    // Only the root's own files: committed.
+    await git(repo, ['checkout', '--', 'notes/n.md']);
+    await writeFile(join(repo, 'docs', 'd.md'), 'd local\n');
+    expect((await post('/api/git/commit', { p: `${docs}/`, message: 'm', files: ['docs/d.md'] })).status).toBe(200);
+
+    // The read-only root gone, the repo still holds files outside `docs`: pull is refused.
+    await post('/api/roots/remove', { id: notes });
+    expect((await post('/api/git/pull', { p: `${docs}/` })).status).toBe(409);
+    expect(await readFile(join(repo, 'notes', 'n.md'), 'utf8')).toBe('n\n');
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});

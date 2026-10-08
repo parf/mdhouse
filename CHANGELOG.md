@@ -35,6 +35,8 @@
   404 "not a document" instead of "internal error"
 - **Reset file** throws away only the changes it showed: a file saved again since is kept, and the
   page says so
+- Commit and pull no longer write past a `--rw` folder: commit refuses a change outside it or in a
+  read-only folder, pull a repo that holds a read-only folder or files outside it (409)
 
 ## 1.5.0 — 2026-10-07
 

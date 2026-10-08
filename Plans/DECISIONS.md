@@ -195,6 +195,8 @@ Planned, not built.
   the popular ones, or a built URL) — viewers for other file types are not the goal.
   The remote check is read-only, `git ls-remote`, no fetch. In `--rw`: commit, pull
   (`--ff-only`), push.
+  Commit and pull stay inside the root: 409 while the repo holds a read-only served root or
+  files outside the root (pull), or a change there (commit) — 2026-10-08.
 
 ## A review is a list of claims, not a list of changes
 
