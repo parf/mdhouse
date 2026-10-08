@@ -62,7 +62,8 @@ the meta-signals deciding where to look hardest — the format below and these r
 - **Never trust a suspicion — verify before reporting**: the problem must exist and matter. Read the
   line, run the test, grep the symbol, a scratch instance, never :7777. `file:line` as at HEAD; a bug
   added and fixed inside the range is not an issue.
-- **Never raise again** what any file in `Plans/issues/` or `Plans/done/issues/` already holds, open or closed.
+- **Never raise again** what the last 5 days' files in `Plans/issues/` and `Plans/done/issues/` already
+  hold, open or closed.
   A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
   new item starts with what changed and links the old one.
 - **One cause, one item**: issues that share a root cause (one stale doc, one missing helper) are one
