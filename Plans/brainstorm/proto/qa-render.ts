@@ -237,7 +237,7 @@ function itemHtml(it: Item): string {
   // plain sub-items (cases of one issue) — a list under the claim; options are rendered apart
   const cases = it.items.filter((s) => !s.option && !s.glyphs.length);
   const casesHtml = cases.length ? `<ul class="cases">${cases.map((c) => `<li>${inline(c.head)}</li>`).join('')}</ul>` : '';
-  const text = `${sevText}${inline(claim!)}${casesHtml}${metaHtml}`;
+  const text = `${sevText}${inline(claim!)}${metaHtml}${casesHtml}`;
   const key = keyOf(it.glyphs, !closed, it.target);
   const mark = answeredAsk ? `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>` : null;
   const radio = options.some((o) => o.option === 'radio');
