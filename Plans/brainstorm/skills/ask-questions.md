@@ -40,7 +40,7 @@ Always append at the end of the file — never rewrite an existing section:
 **With a suggested answer** — you have a likely answer; the user says yes / no / reply:
 
 ```markdown
-- ❓ Should the summary strip stay visible while scrolling a long findings file?
+- ❓ Should the summary strip stay visible while scrolling a long issues file?
   > 💡👾 Keep it sticky: the counts are what you come back to; one 30-pixel bar costs little.
 ```
 

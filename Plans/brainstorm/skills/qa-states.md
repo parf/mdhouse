@@ -48,12 +48,12 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | `❓` `⁉️` (question) | not answered, not asking for more | nobody — waits on the user |
 | | **answered** (below) | the agent: carry it over / do it → `✅` |
 | | **asks for more** (below) | the agent: reply, keep `❓` |
-| `🔴` `🟠` `⚪` `🔵` (finding) | untriaged — nothing from the user | `/fix-issues` AUTO only |
+| `🔴` `🟠` `⚪` `🔵` (issue) | untriaged — nothing from the user | `/fix-issues` AUTO only |
 | | **answered** | the agent: do it → `✅` |
 | | **asks for more** | the agent: reply, set `❓` first |
 | `⏳` | the user's last `💬` says what | do it → `✅`, or reply → `❓` |
 | | the agent's own `💬` is last (it proposed something) | the user said yes: do what you proposed → `✅` |
-| | no `💬` — a question / a finding with one `💡` / with options | find out, reply, `❓` / do the `💡` → `✅` / reply "which one?", `❓` |
+| | no `💬` — a question / an issue with one `💡` / with options | find out, reply, `❓` / do the `💡` → `✅` / reply "which one?", `❓` |
 | `⚠️` | the user's `💬` (else the item text) says what is missing | finish → `✅`; unclear → reply "what is missing?", `❓` |
 | `🎫` | a ticket requested; the user's `💬` names who (`👤name` / `👥team`) | file the ticket (the 🎫 is the go-ahead) → `✅` + `💬👾 🎫<ID> → 👤name` |
 | `⛔` `❌` | blocked / failed | nobody — list them in the report |

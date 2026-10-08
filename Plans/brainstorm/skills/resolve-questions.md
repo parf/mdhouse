@@ -1,6 +1,6 @@
 ---
 name: resolve-questions
-description: Processes the user's answers to questions in the Q&A markup — carries each decided one into Plans/DECISIONS.md and Plans/TODO.md and marks it ✅, replies where the user asked for more. Use after the user answered questions written by /questions.
+description: Processes the user's answers to questions in the Q&A markup — carries each decided one into Plans/DECISIONS.md and Plans/TODO.md and marks it ✅, replies where the user asked for more. Use after the user answered questions written by /ask-questions.
 argument-hint: "[file]"
 disable-model-invocation: true
 ---

@@ -1,13 +1,13 @@
 ---
 name: find-issues
-description: Reviews code and docs with three parallel read-only reviewers and writes verified findings to Plans/findings.md in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
+description: Reviews code and docs with three parallel read-only reviewers and writes verified issues to Plans/issues.md in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
 argument-hint: "[scope] [focus]"
 disable-model-invocation: true
 ---
 
 # /find-issues [scope] [focus]
 
-Writes findings for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
+Writes issues for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
 - `scope` — `release` (default: commits since `git describe --tags --abbrev=0`), `all`, a `<rev>..` range,
@@ -25,13 +25,13 @@ Three subagents in parallel, read-only, one dimension each:
    input handling, stale comments.
 
 Each gets the scope, its dimension, the format below and these rules: **verify before reporting** (read
-the line, run the test, grep the symbol, a scratch instance — never :7777); read `Plans/findings.md`
+the line, run the test, grep the symbol, a scratch instance — never :7777); read `Plans/issues.md`
 first and do not raise again what is there, open or closed, unless the code changed; at most 10, worst
 first; return Markdown — the main loop writes the file.
 
 ## Format
 
-`Plans/findings.md` has one `# Findings` at the top (create it so if missing); each run appends:
+`Plans/issues.md` has one `# Issues` at the top (create it so if missing); each run appends:
 
 ```markdown
 ## <scope> — 📅YYYY-MM-DD
@@ -56,5 +56,5 @@ first; return Markdown — the main loop writes the file.
 ## Steps
 
 1. Resolve the scope. 2. Launch the reviewers. 3. Append the section; drop duplicates across reviewers,
-keeping the better-evidenced one. 4. Commit `Plans/findings.md` alone. 5. Report counts per severity,
-each 🔴 in one line; tail: `🟥🟥🟥 findings in Plans/findings.md — triage on the page`.
+keeping the better-evidenced one. 4. Commit `Plans/issues.md` alone. 5. Report counts per severity,
+each 🔴 in one line; tail: `🟥🟥🟥 issues in Plans/issues.md — triage on the page`.
