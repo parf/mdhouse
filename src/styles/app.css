@@ -1105,25 +1105,28 @@ main {
 .md .markdown-alert-tip > :first-child::before { content: '💡'; margin-right: 8px; }
 .md :is(.markdown-alert-note, .markdown-alert-tip) > :first-child { margin-top: 0; }
 
-/* The editor: the answer block it will become, being written. */
-.md .answer-editor {
-  position: relative; margin: 6px 0 14px 1.4em; padding: 8px 16px 10px 42px;
-  border-left: 4px solid var(--qa-answer); border-radius: 0 6px 6px 0; background: var(--qa-answer-bg);
-}
-.md .answer-editor textarea {
+/* The Q&A form: a reply being written, under its item — 💬, the actions that fit, ESC, 👤. */
+.md .qa-edit { display: grid; gap: 4px; margin: 6px 0 4px calc(1.6em + 4px); font-weight: 400; color: var(--fg); }
+.md .c-wrap > .answer-host .qa-edit { margin-left: 34px; }
+.md .qa-edit textarea {
   display: block; width: 100%; min-height: 3.2em; resize: vertical; box-sizing: border-box;
-  font: inherit; line-height: 1.5; padding: 6px 8px; color: var(--fg); background: var(--bg);
-  border: 1px solid color-mix(in srgb, var(--qa-answer) 45%, transparent); border-radius: var(--radius);
+  font: inherit; line-height: 1.5; padding: 6px 8px; color: var(--fg); background: var(--bg-raised);
+  border: 1px solid var(--qa-answer); border-radius: var(--radius);
 }
-.md .answer-editor textarea:focus { outline: none; border-color: var(--qa-answer); }
-.md .answer-buttons { display: flex; gap: 8px; margin-top: 8px; }
-.md .answer-buttons button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: var(--radius); cursor: pointer; }
-.md .answer-save { color: #fff; background: var(--qa-answer); border: 1px solid var(--qa-answer); font-weight: 600; }
-.md .answer-save:disabled { opacity: 0.45; cursor: default; }
+.md .qa-edit textarea:focus { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--qa-answer) 25%, transparent); }
+.md .qa-edit.need textarea { border-color: var(--qa-question); box-shadow: 0 0 0 2px color-mix(in srgb, var(--qa-question) 25%, transparent); }
+.md .qa-edit .bar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.md .qa-edit .bar button { font: inherit; font-size: 12px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border);
+  background: var(--bg-raised); color: var(--fg); cursor: pointer; position: relative; }
+.md .qa-edit .bar button.default { background: var(--qa-answer); color: #fff; border-color: var(--qa-answer); }
+.md .qa-edit .bar button:disabled { opacity: 0.45; cursor: default; }
+.md .qa-edit .bar .n { font: 600 10px/1 var(--mono); color: var(--fg-muted); border: 1px solid var(--border); border-radius: 3px; padding: 1px 3px; margin-right: 1px; }
+.md .qa-edit .bar .default .n { color: inherit; border-color: currentColor; }
+.md .qa-edit .bar .sign { margin-left: auto; font-size: 12px; color: var(--fg-muted); display: inline-flex; gap: 4px; align-items: center; cursor: pointer; position: relative; }
+.md .qa-edit .bar .sign[data-tip]:hover::after { left: auto; right: 0; }
 .md .answer-cancel { color: var(--fg-muted); background: transparent; border: 1px solid var(--border-strong); }
 .md .answer-note { margin: 6px 0 0; font-size: 12.5px; color: var(--warn); }
 .md .form-edit { display: inline-flex; align-items: center; padding: 0 4px; color: var(--fg-muted); }
-.md .answer-buttons .form-edit { margin-left: auto; }
 /* The add form's row of kinds is full: its ✎ sits in the textarea's corner. */
 .md .add-editor { position: relative; }
 .md .add-editor > .form-edit { position: absolute; top: 14px; right: 22px; }
@@ -1132,7 +1135,6 @@ main {
 .md .form-opened { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 8px 12px; font-size: 13px; color: var(--fg-muted); background: var(--bg-panel); border: 1px dashed var(--border-strong); border-radius: var(--radius); }
 .md .form-opened span { margin-right: auto; }
 .md .form-opened button { font: inherit; font-size: 13px; padding: 3px 10px; border-radius: var(--radius); cursor: pointer; }
-.md li > .answer-host .answer-editor { margin-left: 0; }
 
 /* ── Q&A items (doc/qa.md) ─────────────────────────────────────────────────
    An item is a list item that opens with a glyph: the glyph hangs in a column of its own, its
@@ -1157,16 +1159,16 @@ main {
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
 .md li.item.wait-me.dis { background: color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg));
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
-.md li.item.wait-me > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 35%, transparent); }
-.md li.item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 35%, transparent); }
+.md.qa-rw li.item.wait-me > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 35%, transparent); }
+.md.qa-rw li.item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 35%, transparent); }
 /* an open 🔴 / 🟠 issue: the question's look, in its colour */
-.md li.item.finding > .head .g-btn { border-color: color-mix(in srgb, var(--fg-muted) 35%, transparent); }
+.md.qa-rw li.item.finding > .head .g-btn { border-color: color-mix(in srgb, var(--fg-muted) 35%, transparent); }
 .md li.item.finding[data-sev="🔴"] { background: color-mix(in srgb, var(--qa-question-bg) var(--qa-tint), var(--bg));
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-question) 45%, transparent); }
 .md li.item.finding[data-sev="🟠"] { background: color-mix(in srgb, var(--qa-disagreement-bg) var(--qa-tint), var(--bg));
   box-shadow: inset 1px 0 0 color-mix(in srgb, var(--qa-disagreement) 45%, transparent); }
-.md li.item.finding[data-sev="🔴"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 40%, transparent); }
-.md li.item.finding[data-sev="🟠"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 40%, transparent); }
+.md.qa-rw li.item.finding[data-sev="🔴"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-question) 40%, transparent); }
+.md.qa-rw li.item.finding[data-sev="🟠"] > .head .g-btn { border-color: color-mix(in srgb, var(--qa-disagreement) 40%, transparent); }
 .md.qa-rw li.item:is(.wait-me, .finding) { cursor: pointer; }
 .md.qa-rw li.item:is(.wait-me, .finding) :is(.reply, .opts, textarea, .qa-edit) { cursor: auto; }
 /* settled: muted, folded — the question a quiet grey, the answer green, on lines of their own */

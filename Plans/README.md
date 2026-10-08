@@ -26,9 +26,9 @@ src/
   server.ts      Bun.serve — routes, API, WebSocket, roots added and removed at runtime
   index.html     the bundle entry point
   app.tsx        shell: routing, data loading, keyboard, live channel
-  lib/           server side: roots, ignore, prefs, scan, render, git, search, store, watch,
+  lib/           server side: roots, ignore, prefs, scan, render, qa, qa-html, legacy, insert, git, search, store, watch,
                  control (unix socket), service (systemd unit), loghint (where output goes)
-  ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, Settings, AboutModal,
+  ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, Settings, AboutModal, QaEditor, QaStrip, qa-page,
                  RootSelect, tree building, icons, formatting
   styles/        one stylesheet, CSS custom properties, light and dark
 ```
@@ -48,21 +48,23 @@ page can turn it on.
 
 Every disk write to a served tree goes through the one chokepoint `Registry.writeFile()`, which
 refuses a read-only root. Its callers are `POST /api/task` (a checkbox tick),
-`POST /api/qa/answer` (an answer saved from the page) and `POST /api/insert` (a block added
+`POST /api/qa` (a change to one Q&A item) and `POST /api/insert` (a block added
 under a heading). mdhouse's own config (`prefs.json`, the
 control socket) lives outside every tree.
 
-### An answer changes the answer, or nothing
+### A Q&A change touches its item, or nothing
 
-`src/lib/qa.ts` is the source model of a Q&A log, shared by the renderer and the server:
-`qaQuestionRange` / `qaAnswerRange` find a question's lines and its answer's for each form
-(`quote`, `alert`, `bold`, `container`, `task` — checkbox and status-glyph items), and
-`writeAnswer` replaces or inserts the answer in the question's own syntax. Question blocks are
-rendered with `data-qa-form`, `data-line` and `data-hash` (`lineHash` of the question's lines);
-`GET /api/qa/answer` returns the answer as editable text with its own fingerprint, and the
-POST writes only if both fingerprints still match — else `409`. Only answers are written, never
-the question; writes share the per-file queue with ticks. The draft lives in `Doc`, not the DOM,
-so a re-render re-attaches the editor with the text kept.
+- `src/lib/qa.ts` — the item model of the markup (`Plans/brainstorm/markup.md`): `qaItems` on markdown-it's
+  block tokens, shared by the renderer and the server; `stateOf` (qa-states.md); `applyQa` — say ·
+  verdict · pick · tick · done · target · edit
+- `src/lib/qa-html.ts` — an item as HTML: `data-qa`, `data-line`, `data-hash` (`lineHash` of the item's
+  lines), `data-k`; every reply / option / 💡 its own `data-line`
+- `src/lib/legacy.ts` — `convertLegacy`: the old forms rewritten into the markup; every read of a doc goes
+  through it (`readDoc` in server.ts), so a write writes it converted
+- `GET /api/qa` → `{me, text?}` (a reply's text to edit); `POST /api/qa` writes only if the item's
+  fingerprint still matches — else `409`; shares the per-file queue with ticks
+- client: `ui/qa-page.ts` (delegated buttons), `ui/QaEditor.tsx` (the form, Alt+1…9, Alt+E), `ui/QaStrip.tsx`
+  (counts, filter); drafts live in `Doc`, kept per document when the reader leaves
 
 ### An added block goes where the heading says, or nowhere
 

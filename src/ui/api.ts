@@ -6,6 +6,7 @@ import type { SearchResult } from '../lib/search';
 import type { Heading } from '../lib/render';
 import type { Mark } from '../lib/prefs';
 import type { FileDiff, FileHistory, FileStatus } from '../lib/git';
+import type { QaChange } from '../lib/qa';
 
 export interface Settings {
   editLink: boolean;
@@ -168,24 +169,18 @@ export const api = {
 
   settings: () => get<Settings>('/api/settings'),
 
-  /** The answer under a question, as editable text, with the fingerprint it was read at. */
-  qaAnswer: (p: string, line: number, form: string, hash: string) =>
-    get<{ text: string; answerHash: string }>('/api/qa/answer', { p, line, form, hash }),
+  /** Who a signed reply on document `p` is from. */
+  qaMe: (p: string) => get<{ me: string }>('/api/qa', { p }),
+
+  /** A reply's text, to edit; refused (409) when the item changed since the page was rendered. */
+  qaReply: (p: string, line: number, hash: string, reply: number) => get<{ me: string; text: string }>('/api/qa', { p, line, hash, reply }),
 
   /**
-   * Write the answer to a question. Throws with `status` 409 when the page is older than the
-   * file (the question or its answer changed since it was rendered).
+   * One change to the Q&A item on `line` of document `p`, if it still has the fingerprint
+   * `hash` the page was rendered with. Throws with `status` 409 when the page is older than the file.
    */
-  async saveAnswer(req: {
-    p: string;
-    line: number;
-    form: string;
-    hash: string;
-    answerHash: string;
-    text: string;
-    check?: boolean;
-  }): Promise<void> {
-    const res = await fetch('/api/qa/answer', {
+  async qa(req: { p: string; line: number; hash: string } & QaChange): Promise<void> {
+    const res = await fetch('/api/qa', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(req),

@@ -8,7 +8,9 @@ import { timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
 import { markChanges } from './mark-changes';
-import { AnswerEditor } from './AnswerEditor';
+import { QaEditor } from './QaEditor';
+import { formFor, markFolded, openTarget, wireQa, type QaTarget } from './qa-page';
+import type { QaAction, QaChange } from '../lib/qa';
 import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
@@ -19,13 +21,8 @@ type DiffView = 'patch' | 'marked';
 type DocView = 'doc' | DiffView;
 
 /** The tooltip for a diff button, which depends on what there is to compare. */
-/** A question with its answer already under it — for a checkbox item, inside it. */
-const isAnswered = (block: HTMLElement) =>
-  block.dataset.qaForm === 'task'
-    ? [...block.querySelectorAll('.markdown-alert-answer')].some((a) => a.closest('[data-qa-form]') === block)
-    : !!block.nextElementSibling?.matches('.markdown-alert-answer, .qa-a');
-
-/** Wide mode, kept for this browser. */
+/** Drafts of documents left with a form open, by document url: back on it, the form opens again with the text. */
+const keptDrafts = new Map<string, { qa?: { editing: object; text: string }; add?: { editing: object; text: string } }>();
 
 const whatDiff = (dirty: boolean, how: string) =>
   `${dirty ? 'Show your uncommitted changes' : 'Compare with the previous revision'} — ${how}`;
@@ -291,7 +288,8 @@ export function Doc({
       if (!box.classList?.contains('task-checkbox')) return;
       box.disabled = true;
       try {
-        await api.toggleTask(`${doc.root}/${doc.rel}`, Number(box.dataset.line), box.dataset.hash ?? '');
+        const d = docNow.current ?? doc;
+        await api.toggleTask(`${d.root}/${d.rel}`, Number(box.dataset.line), box.dataset.hash ?? '');
         setTaskNote(null);
       } catch (err) {
         // Put the box back as it was. The reload below may bring identical HTML (nothing was
@@ -309,123 +307,100 @@ export function Doc({
     };
     el.addEventListener('change', onChange);
     return () => el.removeEventListener('change', onChange);
-  }, [doc?.html, doc?.writable, view]);
+  }, [doc?.url, doc?.html, doc?.writable, view]);
 
   /**
-   * Answering a question in place. In a writable folder and the plain document view, a
-   * question's ❓ / ⁉️ is a button — and a checkbox item gets one after its box — that opens an
-   * editor under it, loaded with the existing answer if there is one. The draft lives here, not
-   * in the DOM: the HTML is replaced whenever the file changes (after a save, or another tab's),
-   * and the editor is mounted again under the same question with the text the reader typed.
+   * Q&A in place (qa-page.ts, QaEditor). In a writable folder and the plain document view, an
+   * item's first glyph, its 💬 / 💡 buttons and its replies open a form under it; 🎯, a pick, a
+   * tick and ✓ done write at once. The draft lives here, not in the DOM: the HTML is replaced
+   * whenever the file changes, and the form is mounted again under the same item with the text
+   * the reader typed. Leaving the document keeps the draft for when the reader comes back.
    */
-  type Editing = {
-    /** One per opened editor: the editor keeps its element, and its text, for as long as it is open. */
-    id: number;
-    line: number;
-    form: string;
-    hash: string;
-    answerHash: string;
-    note: string | null;
-    saving: boolean;
-    canCheck: boolean;
-  };
+  type Editing = QaTarget & { id: number; note: string | null; saving: boolean };
   const [editing, setEditing] = useState<Editing | null>(null);
-  // For the icons' click handler, which is set up once per render of the document.
+  // For the handlers, which read the page as it is at the click.
   const editingNow = useRef(editing);
   editingNow.current = editing;
+  const docNow = useRef(doc);
+  docNow.current = doc;
   // The text being written, as the editor reports it: what Save sends.
   const draft = useRef('');
   const opened = useRef(0);
-  const docUrl = useRef<string | undefined>(undefined);
-  docUrl.current = doc?.url;
-  useEffect(() => setEditing(null), [doc?.url]);
   const answerable = !!doc?.writable && view === 'doc';
 
-  const openEditor = async (block: HTMLElement) => {
-    if (!doc) return;
-    const line = Number(block.dataset.line);
-    const form = block.dataset.qaForm ?? '';
-    const hash = block.dataset.hash ?? '';
-    // Its icon again, while it is open: closes it, as Cancel does.
-    const editing = editingNow.current;
-    if (editing && editing.form === form && editing.line === line) {
+  // Who a signed reply is from, for the 👤 tooltip.
+  const [me, setMe] = useState('');
+  useEffect(() => {
+    if (!doc || !answerable) return;
+    let live = true;
+    api.qaMe(`${doc.root}/${doc.rel}`).then((r) => live && setMe(r.me), () => {});
+    return () => {
+      live = false;
+    };
+  }, [doc?.url, answerable]);
+
+  const openForm = async (t: QaTarget) => {
+    const d = docNow.current;
+    if (!d) return;
+    // The same button again, while its form is open: closes it, as Cancel does.
+    const cur = editingNow.current;
+    if (cur && cur.line === t.line && cur.kind === t.kind && cur.at === t.at && cur.first === t.first) {
       setEditing(null);
       return;
     }
-    const canCheck = form === 'task' && !('done' in block.dataset);
-    const url = doc.url;
+    let text = '';
+    if (t.kind === 'edit') {
+      try {
+        text = (await api.qaReply(`${d.root}/${d.rel}`, t.line, t.hash, t.at ?? 0)).text;
+      } catch (err) {
+        setTaskNote(`Could not open the reply: ${(err as Error).message}`);
+        onReload?.();
+        return;
+      }
+      if (docNow.current?.url !== d.url) return; // the reader has moved on to another document
+    }
+    draft.current = text;
+    setEditing({ ...t, id: ++opened.current, note: null, saving: false });
+  };
+
+  /** One change at once — 🎯, a pick, a tick, ✓ done — then the page as the file now is. */
+  const acting = useRef(false);
+  const act = async (line: number, hash: string, change: QaChange) => {
+    const d = docNow.current;
+    if (!d || acting.current) return;
+    acting.current = true;
     try {
-      const { text, answerHash } = await api.qaAnswer(`${doc.root}/${doc.rel}`, line, form, hash);
-      if (docUrl.current !== url) return; // the reader has moved on to another document
-      draft.current = text;
-      setEditing({ id: ++opened.current, line, form, hash, answerHash, note: null, saving: false, canCheck });
+      await api.qa({ p: `${d.root}/${d.rel}`, line, hash, ...change });
+      setTaskNote(null);
     } catch (err) {
-      setTaskNote(`Could not open the answer: ${(err as Error).message}`);
+      setTaskNote(
+        (err as { status?: number }).status === 409
+          ? 'The file changed since this page was loaded — it has been reloaded; try again.'
+          : (err as Error).message,
+      );
+    } finally {
+      acting.current = false;
       onReload?.();
     }
   };
 
-  // The icons that are buttons — or plain icons again, outside a writable plain view.
   useEffect(() => {
     const el = body.current;
-    if (!el) return;
-    for (const extra of el.querySelectorAll('.task-qa')) extra.remove();
-    for (const glyph of el.querySelectorAll<HTMLElement>('.task-glyph.qa-btn')) {
-      glyph.classList.remove('qa-btn');
-      glyph.removeAttribute('role');
-      glyph.removeAttribute('tabindex');
-      glyph.removeAttribute('title');
-    }
-    for (const block of el.querySelectorAll<HTMLElement>('[data-qa-form]')) {
-      let icon: HTMLElement | null;
-      if (block.dataset.qaForm === 'task') {
-        if (!answerable) continue;
-        // This item's own box or glyph and answer — not those of an item nested in it.
-        const own = (sel: string) => [...block.querySelectorAll<HTMLElement>(sel)].find((x) => x.closest('[data-qa-form]') === block);
-        const mark = own('.task-checkbox, .task-glyph');
-        if (mark?.matches('.task-glyph') && /^[❓⁉]/u.test(mark.textContent ?? '')) {
-          // An item marked ❓ or ⁉️ is already a question: its glyph is the button.
-          icon = mark;
-        } else {
-          // Otherwise a 💬 is added after the box or glyph — small and grey until the item has
-          // an answer: an item is not a question, so it must not look like one.
-          icon = document.createElement('span');
-          icon.className = 'qa-icon task-qa';
-          icon.textContent = '💬';
-          if (own('.markdown-alert-answer')) icon.classList.add('qa-has-answer');
-          mark ? mark.after(icon) : block.prepend(icon);
-        }
-      } else icon = block.querySelector<HTMLElement>(':scope > .qa-icon');
-      if (!icon) continue;
-      if (answerable) {
-        icon.classList.add('qa-btn');
-        icon.setAttribute('role', 'button');
-        icon.tabIndex = 0;
-        icon.title = icon.matches('.task-qa') ? 'Answer or note on this item' : 'Answer this question';
-      } else {
-        icon.classList.remove('qa-btn');
-        icon.removeAttribute('role');
-        icon.removeAttribute('tabindex');
-        icon.removeAttribute('title');
-      }
-    }
-    if (!answerable) return;
-
-    const activate = (e: Event) => {
-      const icon = (e.target as HTMLElement).closest<HTMLElement>('.qa-btn');
-      if (!icon) return;
-      if (e instanceof KeyboardEvent && e.key !== 'Enter' && e.key !== ' ') return;
-      e.preventDefault();
-      const block = icon.closest<HTMLElement>('[data-qa-form]');
-      if (block) void openEditor(block);
-    };
-    el.addEventListener('click', activate);
-    el.addEventListener('keydown', activate);
+    if (!el || !doc) return;
+    const unfold = markFolded(el);
+    openTarget(el, decodeURIComponent(location.hash.slice(1)));
+    if (!answerable) return unfold;
+    const unwire = wireQa(el, {
+      open: (t) => void openForm(t),
+      act: (line, hash, change) => void act(line, hash, change),
+      close: () => setEditing(null),
+    });
     return () => {
-      el.removeEventListener('click', activate);
-      el.removeEventListener('keydown', activate);
+      unfold();
+      unwire();
     };
-  }, [doc?.html, answerable]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.url, doc?.html, answerable]);
 
   /** `e` opens the file in the editor, as the ✎ beside the title does — not while typing. */
   useEffect(() => {
@@ -441,7 +416,7 @@ export function Doc({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [editHref]);
 
-  // The editor's element: made once per opened editor, and moved — never rebuilt — when the page
+  // The editor's element: made once per opened form, and moved — never rebuilt — when the page
   // is re-rendered from a changed file, so the text, the cursor and undo survive another
   // program writing to the file. Focus is given back if the move took it away.
   const host = useRef<HTMLElement | null>(null);
@@ -465,16 +440,16 @@ export function Doc({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing?.id]);
 
-  // Where the editor stands: under its question, placed again whenever the HTML changes.
+  // Where the form stands: in its item, placed again whenever the HTML changes.
   useEffect(() => {
     const el = body.current;
     const spot = host.current;
     if (!el || !spot || !editing || !doc || !answerable) return;
-    // The question by its fingerprint and line; else the same fingerprint nearest its old line —
-    // lines added above move it, and two questions may read alike; else whatever is on its line.
-    const all = [...el.querySelectorAll<HTMLElement>(`[data-qa-form="${editing.form}"]`)];
+    // The item by its fingerprint and line; else the same fingerprint nearest its old line —
+    // lines added above move it, and two items may read alike; else whatever is on its line.
+    const all = [...el.querySelectorAll<HTMLElement>('[data-qa][data-hash]')];
     const alike = all.filter((b) => b.dataset.hash === editing.hash);
-    const block =
+    const item =
       alike.find((b) => Number(b.dataset.line) === editing.line) ??
       alike.sort((a, b) => Math.abs(Number(a.dataset.line) - editing.line) - Math.abs(Number(b.dataset.line) - editing.line))[0] ??
       all.find((b) => Number(b.dataset.line) === editing.line);
@@ -486,91 +461,90 @@ export function Doc({
         placedFor.current = editing.id;
         area.focus();
         area.selectionStart = area.selectionEnd = area.value.length;
+        area.scrollIntoView({ block: 'nearest' });
       } else if (hadFocus.current && !spot.contains(document.activeElement)) area.focus();
     };
-    if (!block) {
-      // Gone from the file: the editor stays — at the top of the page — with the text and a note.
+    if (!item) {
+      // Gone from the file: the form stays — at the top of the page — with the text and a note.
       el.prepend(spot);
       refocus();
-      setEditing((e) => (e && !e.note ? { ...e, note: 'That question is no longer in the file — your text is kept.' } : e));
+      setEditing((e) => (e && !e.note ? { ...e, note: 'That item is no longer in the file — your text is kept.' } : e));
       return;
     }
-    // Follow the question to its new line; if the question itself or its answer changed, take
-    // them as they now are but say so before the reader saves over them.
-    const line = Number(block.dataset.line);
-    const hash = block.dataset.hash ?? '';
-    const id = editing.id;
-    void api
-      .qaAnswer(`${doc.root}/${doc.rel}`, line, editing.form, hash)
-      .then(({ answerHash }) =>
-        setEditing((e) => {
-          if (!e || e.id !== id) return e;
-          if (line === e.line && hash === e.hash && answerHash === e.answerHash) return e;
-          const note =
-            hash !== e.hash
-              ? 'The question was changed in the file meanwhile — have a look; your text is kept.'
-              : answerHash !== e.answerHash
-                ? 'Someone else answered this meanwhile — Save replaces their answer; your text is kept.'
-                : e.note;
-          return { ...e, line, hash, answerHash, note };
-        }),
-      )
-      .catch(() => {});
-
-    // Hide the answer being replaced; the editor stands where it was.
-    const existing =
-      editing.form === 'task'
-        ? block.querySelector<HTMLElement>(':scope > .markdown-alert-answer')
-        : (() => {
-            const next = block.nextElementSibling as HTMLElement | null;
-            return next?.matches('.markdown-alert-answer, .qa-a') ? next : null;
-          })();
-    if (existing) existing.hidden = true;
-    if (editing.form === 'task') block.append(spot);
-    else (existing ?? block).after(spot);
+    // Follow the item to its new line; if it changed, take it as it now is but say so.
+    const line = Number(item.dataset.line);
+    const hash = item.dataset.hash ?? '';
+    if (line !== editing.line || hash !== editing.hash) {
+      const id = editing.id;
+      setEditing((e) =>
+        e && e.id === id
+          ? {
+              ...e,
+              line,
+              hash,
+              at: e.at === undefined ? undefined : e.at + line - e.line,
+              note: hash !== e.hash ? 'The item was changed in the file meanwhile — have a look; your text is kept.' : e.note,
+            }
+          : e,
+      );
+    }
+    const box = item.querySelector<HTMLElement>(':scope > details') ?? item;
+    if (box instanceof HTMLDetailsElement) box.open = true;
+    const sub = editing.at ? item.querySelector<HTMLElement>(`.c-wrap[data-line="${editing.at}"], .reply[data-line="${editing.at}"]`) : null;
+    let hidden: HTMLElement | null = null;
+    if (editing.kind === 'option' && sub) sub.append(spot);
+    else if (editing.kind === 'edit' && sub) {
+      hidden = sub;
+      sub.hidden = true;
+      sub.after(spot);
+    } else if (editing.kind === 'proposal' && sub) sub.after(spot);
+    else {
+      const nested = box.querySelector(':scope > ul.items');
+      nested ? nested.before(spot) : box.append(spot);
+    }
     refocus();
     return () => {
-      if (existing) existing.hidden = false;
+      if (hidden) hidden.hidden = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing?.id, editing?.line, editing?.hash, doc?.html, answerable, hostTick]);
 
-  // The editor, rendered into its place on every change; Preact updates it in place.
+  // The form, rendered into its place on every change; Preact updates it in place.
   const saving = useRef(false);
-  /** Saved with Ctrl+Shift+Enter: once the page is back, open the next unanswered question. */
+  /** Saved with Ctrl+Shift+Enter: once the page is back, open the next open question. */
   const nextAfter = useRef<{ url: string; line: number } | null>(null);
   useEffect(() => {
     const el = body.current;
     const after = nextAfter.current;
     if (!el || !after || !doc || !answerable || after.url !== doc.url) return;
     nextAfter.current = null;
-    const block = [...el.querySelectorAll<HTMLElement>('[data-qa-form]')].find(
-      (b) => Number(b.dataset.line) > after.line && !('done' in b.dataset) && !isAnswered(b),
-    );
-    if (block) {
-      block.scrollIntoView({ block: 'center' });
-      void openEditor(block);
-    } else setTaskNote('No unanswered question below.');
+    const item = [...el.querySelectorAll<HTMLElement>('li.item:is(.wait-me, .finding)')].find((b) => Number(b.dataset.line) > after.line);
+    if (item) {
+      item.scrollIntoView({ block: 'center' });
+      void openForm(formFor(item));
+    } else setTaskNote('No open question below.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.html, answerable]);
   useEffect(() => {
     const spot = host.current;
     if (!spot || !editing || !doc) return;
-    const save = async (check: boolean, next: boolean) => {
+    const save = async (action: string | null, sign: boolean, next: boolean) => {
       if (saving.current) return; // a repeated Ctrl+Enter before the first save is back
       saving.current = true;
       setEditing((e) => (e ? { ...e, saving: true, note: null } : e));
+      const text = draft.current;
+      const change: QaChange =
+        editing.kind === 'edit'
+          ? { op: 'edit', reply: editing.at ?? 0, text }
+          : editing.kind === 'proposal' && (action === 'yes' || action === 'no')
+            ? { op: 'verdict', sug: editing.at ?? 0, yes: action === 'yes', text }
+            : editing.kind === 'option' && action !== 'elaborate'
+              ? { op: 'say', text, sign, under: editing.at ?? 0, ...(action === 'pick' ? { action: 'pick' as const } : {}) }
+              : { op: 'say', text, sign, ...(action ? { action: action as QaAction } : {}) };
       try {
-        await api.saveAnswer({
-          p: `${doc.root}/${doc.rel}`,
-          line: editing.line,
-          form: editing.form,
-          hash: editing.hash,
-          answerHash: editing.answerHash,
-          text: draft.current,
-          check,
-        });
+        await api.qa({ p: `${doc.root}/${doc.rel}`, line: editing.line, hash: editing.hash, ...change });
         if (next) nextAfter.current = { url: doc.url, line: editing.line };
+        draft.current = '';
         setEditing(null);
       } catch (err) {
         setEditing((e) =>
@@ -591,19 +565,22 @@ export function Doc({
       }
     };
     mount(
-      <AnswerEditor
+      <QaEditor
+        key={editing.id}
+        kind={editing.kind}
+        first={editing.first}
         initial={draft.current}
+        me={me}
         onText={(text) => (draft.current = text)}
-        onSave={(check, next) => void save(check, next)}
+        onAct={(action, sign, next) => void save(action, sign, next)}
         onCancel={() => setEditing(null)}
         saving={editing.saving}
         note={editing.note}
-        canCheck={editing.canCheck}
-        editHref={editHref ? `${editHref}:${editing.line + (doc.lineOffset ?? 0)}` : null}
+        editHref={editHref ? `${editHref}:${(editing.at ?? editing.line) + (doc.lineOffset ?? 0)}` : null}
       />,
       spot,
     );
-  }, [editing, hostTick]);
+  }, [editing, hostTick, me]);
 
   /**
    * Adding under a heading. In a writable folder and the plain document view, hovering a heading
@@ -616,7 +593,37 @@ export function Doc({
   const addingNow = useRef(adding);
   addingNow.current = adding;
   const addDraft = useRef('');
-  useEffect(() => setAdding(null), [doc?.url]);
+
+  // Leaving a document with a form open keeps its draft; coming back opens the form again with it.
+  useEffect(() => {
+    const url = doc?.url;
+    const kept = url ? keptDrafts.get(url) : undefined;
+    if (url) keptDrafts.delete(url);
+    if (kept?.qa) {
+      draft.current = kept.qa.text;
+      setEditing({ ...(kept.qa.editing as Editing), id: ++opened.current, saving: false, note: 'Your draft from before you left this page.' });
+    } else setEditing(null);
+    if (kept?.add) {
+      addDraft.current = kept.add.text;
+      setAdding({ ...(kept.add.editing as Adding), id: ++opened.current, saving: false, note: 'Your draft from before you left this page.' });
+    } else setAdding(null);
+    return () => {
+      if (!url) return;
+      const qa = editingNow.current && draft.current.trim() ? { editing: editingNow.current, text: draft.current } : undefined;
+      const add = addingNow.current && addDraft.current.trim() ? { editing: addingNow.current, text: addDraft.current } : undefined;
+      if (qa || add) keptDrafts.set(url, { qa, add });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.url]);
+
+  // Closing the tab or reloading with a draft open asks first.
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if ((editingNow.current && draft.current.trim()) || (addingNow.current && addDraft.current.trim())) e.preventDefault();
+    };
+    addEventListener('beforeunload', warn);
+    return () => removeEventListener('beforeunload', warn);
+  }, []);
 
   useEffect(() => {
     const el = body.current;
@@ -747,6 +754,7 @@ export function Doc({
           kind,
           text: addDraft.current,
         });
+        addDraft.current = '';
         setAdding(null);
       } catch (err) {
         setAdding((a) =>
@@ -768,6 +776,8 @@ export function Doc({
     };
     mount(
       <AddEditor
+        key={adding.id}
+        initial={addDraft.current}
         onText={(text) => (addDraft.current = text)}
         onAdd={(kind) => void add(kind)}
         onCancel={() => setAdding(null)}

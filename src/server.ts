@@ -16,7 +16,7 @@ import { ASSET_EXT, HTML_EXT, RAW_EXT } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
-import { answerText, findQuestion, QA_FORMS, writeAnswer, type AnswerRequest, type QaForm } from './lib/qa';
+import { applyQa, badgeName, qaRequestOf, replyText, type QaError } from './lib/qa';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, currentUser, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
@@ -111,6 +111,12 @@ export async function serve(opts: ServeOptions) {
   const readDoc = async (abs: string): Promise<string> => {
     const raw = await Bun.file(abs).text();
     return convertLegacy(raw, splitFrontmatter(raw).offset);
+  };
+
+  /** Who a signed reply is from: prefs `me`, else the git identity of the file's repository, else the login. */
+  const signer = async (loc: { root: Root; rel: string }): Promise<string> => {
+    const where = opts.noGit ? null : await store.repoFor(loc.root, loc.rel);
+    return badgeName(prefs.settings.me, where ? await currentUser(where.repo) : null, userInfo().username);
   };
 
   const queueWrite = <T>(abs: string, write: () => Promise<T>): Promise<T> => {
@@ -323,63 +329,53 @@ export async function serve(opts: ServeOptions) {
       },
 
       /**
-       * Answering a question from the page — the second write mdhouse makes to a document.
-       *
-       * GET loads the answer under a question as editable text, with its fingerprint; POST writes
-       * it, in the question's own syntax (qa.ts). Both are refused when the question's lines no
-       * longer match what the page rendered, and POST the same way when the answer changed
-       * under it, so a stale page never overwrites anything. Same rules as `/api/task`.
+       * Q&A from the page (qa.ts): a reply, a stage, yes / no on a 💡, a pick, a tick, done, 🎯, an
+       * edited reply — one change to one item. Refused when the item's lines no longer match what
+       * the page rendered, so a stale page never writes over anything. GET says who a signed reply
+       * is from, and gives a reply's text to edit.
        */
-      '/api/qa/answer': {
+      '/api/qa': {
         GET: async (req) => {
           const url = new URL(req.url);
           const loc = await registry.resolve(url.searchParams.get('p') ?? '');
-          const form = url.searchParams.get('form') as QaForm;
-          const line = Number(url.searchParams.get('line'));
           if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
-          if (!QA_FORMS.includes(form) || !Number.isInteger(line)) return fail(400, 'expected p, line, form, hash');
-          const src = await Bun.file(loc.abs).text();
-          const found = findQuestion(src, splitFrontmatter(src).offset, line, form);
-          if (!found || found.hash !== url.searchParams.get('hash')) {
-            return json({ error: 'the file changed since this page was loaded', reason: 'stale' }, 409);
-          }
-          const text = found.answer ? answerText(found.lines.slice(found.answer.start, found.answer.end), form) : '';
-          return json({ text, answerHash: found.answerHash });
+          const me = await signer(loc);
+          const reply = url.searchParams.get('reply');
+          if (reply === null) return json({ me });
+          const line = Number(url.searchParams.get('line'));
+          if (!Number.isInteger(line) || !Number.isInteger(Number(reply))) return fail(400, 'expected p, line, hash, reply');
+          const src = await readDoc(loc.abs);
+          const text = replyText(src, splitFrontmatter(src).offset, line, url.searchParams.get('hash') ?? '', Number(reply));
+          if (text === null) return json({ error: 'the file changed since this page was loaded', reason: 'stale' }, 409);
+          return json({ me, text });
         },
         POST: async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
-          const body = (await req.json().catch(() => null)) as (Partial<AnswerRequest> & { p?: string }) | null;
-          if (
-            !body?.p ||
-            !Number.isInteger(body.line) ||
-            !QA_FORMS.includes(body.form as QaForm) ||
-            typeof body.hash !== 'string' ||
-            typeof body.answerHash !== 'string' ||
-            typeof body.text !== 'string' ||
-            (body.check !== undefined && typeof body.check !== 'boolean')
-          ) {
-            return fail(400, 'expected {p, line, form, hash, answerHash, text, check?}');
-          }
-          // An answer is a few paragraphs; anything near this is not one.
-          if (body.text.length > 100_000) return fail(413, 'the answer is too long');
+          const body = qaRequestOf(await req.json().catch(() => null));
+          if (!body) return fail(400, 'expected {p, line, hash, op, …}');
+          // A reply is a few paragraphs; anything near this is not one.
+          if ('text' in body && (body.text?.length ?? 0) > 100_000) return fail(413, 'the text is too long');
           const loc = await registry.resolve(body.p);
           if (!loc || !/\.mdx?$/i.test(loc.rel)) return fail(404, 'not a document');
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to answer`);
 
+          const me = await signer(loc);
           const result = await queueWrite(loc.abs, async () => {
-            const src = await Bun.file(loc.abs).text();
-            const result = writeAnswer(src, splitFrontmatter(src).offset, body as AnswerRequest);
+            const src = await readDoc(loc.abs);
+            const result = applyQa(src, splitFrontmatter(src).offset, body, me);
             if ('error' in result) return result;
-            await registry.writeFile(body.p!, result.src);
+            await registry.writeFile(body.p, result.src);
             return result;
           });
           if ('error' in result) {
-            const message = {
+            const message: Record<QaError, string> = {
               stale: 'the file changed since this page was loaded',
-              'not-a-question': 'that is no longer a question',
-              empty: 'the answer is empty',
-            }[result.error];
-            return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
+              'not-an-item': 'that is no longer a question',
+              'no-target': 'that option or reply is no longer there',
+              empty: 'the text is empty',
+              'needs-who': '🎫 needs who takes it: 👤name or 👥team',
+            };
+            return json({ error: message[result.error], reason: result.error }, result.error === 'empty' || result.error === 'needs-who' ? 400 : 409);
           }
           return json({ ok: true });
         },

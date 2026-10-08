@@ -24,6 +24,8 @@ const STATUS = /^([ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+)(☐|☑|✔️?|☒)(?=[ \t
 const STATUS_TO: Record<string, string> = { '☐': '❓', '☑': '✅', '✔': '✅', '✔️': '✅', '☒': '🚫' };
 
 type Kind = 'q' | 'd' | 'a';
+/** A mark only the old forms use — `?`, `?!`, `Q:`, `A:` …; ❓ ⁉️ 💬 are the new markup's own. */
+const isOld = (mark: string | undefined) => !!mark && !/^(❓|⁉|\u{1F4AC})/u.test(mark);
 const kindOf = (mark: string): Kind =>
   mark === '?!' || mark === '!?' || mark.startsWith('⁉') ? 'd' : mark === '\u{1F4AC}' || mark === 'A:' ? 'a' : 'q';
 const GLYPH: Record<Kind, string> = { q: '❓', d: '⁉️', a: '💬' };
@@ -90,21 +92,22 @@ export function convertLegacy(src: string, offset = 0): string {
         out.push(`${prefix}${GLYPH[kind]} ${first}`.trimEnd(), ...rest);
         lastQ = kind === 'q' ? prefix : null;
         changed = true;
-      } else if (mark) {
-        const firstKind = kindOf(mark[1]!);
-        if (firstKind === 'a' && lastQ === prefix) join();
+      } else if (mark && block.some((l) => isOld(OLD_MARK.exec(bodyOf(l))?.[1]))) {
+        // a quote with an old mark in it; one in the new markup only (❓ ⁉️ 💬) is left as written
+        if (kindOf(mark[1]!) === 'a' && lastQ === prefix) join();
         block.forEach((l, n) => {
           const m = OLD_MARK.exec(bodyOf(l));
           if (!m) return out.push(l);
           const kind = kindOf(m[1]!);
           // a second question in one quote: a quote of its own
           if (n > 0 && kind !== 'a') out.push('');
-          const next = `${prefix}${GLYPH[kind]} ${bodyOf(l).slice(m[0].length)}`.trimEnd();
-          if (next !== l || (n > 0 && kind !== 'a')) changed = true;
-          out.push(next);
+          if (!isOld(m[1])) return out.push(l);
+          const own = QUOTE.exec(l)![1]!.replace(/>[ \t]?$/, '> ');
+          out.push(`${own}${GLYPH[kind]} ${bodyOf(l).slice(m[0].length)}`.trimEnd());
         });
         const lastMark = [...block].reverse().map((l) => OLD_MARK.exec(bodyOf(l))).find(Boolean);
-        lastQ = lastMark && kindOf(lastMark[1]!) !== 'a' ? prefix : firstKind === 'a' ? null : prefix;
+        lastQ = lastMark && kindOf(lastMark[1]!) !== 'a' ? prefix : null;
+        changed = true;
       } else {
         out.push(...block);
         lastQ = null;

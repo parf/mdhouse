@@ -13,6 +13,8 @@ export const ADD_AS: readonly { kind: string; glyph: string; label: string; titl
 ];
 
 interface Props {
+  /** The draft to start from — a form reopened with what was typed before. */
+  initial?: string;
   onText: (text: string) => void;
   /** Add the text as this kind of block. */
   onAdd: (kind: string) => void;
@@ -27,11 +29,11 @@ interface Props {
  * A block being added under a heading: a textarea that grows with the text, and one button per
  * kind of block below it. Ctrl/⌘+Enter adds it as the kind last used (text at first); Esc
  * cancels; Alt+E opens the file at the heading instead. The editor keeps its own text — see
- * AnswerEditor.
+ * QaEditor.
  */
-export function AddEditor({ onText, onAdd, onCancel, saving, note, editHref }: Props) {
+export function AddEditor({ initial = '', onText, onAdd, onCancel, saving, note, editHref }: Props) {
   const area = useRef<HTMLTextAreaElement>(null);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initial);
   const [last, setLast] = useState('text');
   const [opened, setOpened] = useState(false);
 
