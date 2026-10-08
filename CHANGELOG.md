@@ -37,6 +37,7 @@
 - `CHANGELOG.md`, `setup.py`, `run.sh` are no longer linked as web addresses (.md is a country zone);
   `github.com/…` still is
 - With the sidebar closed, the top strip has no folder dropdown (it did not work there)
+- A link to a folder without its trailing slash (`[x](sub)`) opens the folder page, not "not found"
 - A document's History panel stays hidden (or shown) for every document, kept per browser like wide mode
 - Leaving a document with a form open keeps the draft; back on it, the form opens again with it
 - A tick or an answer always goes to the document on screen, even when the previous one had the

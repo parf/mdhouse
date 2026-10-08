@@ -149,7 +149,8 @@ export const api = {
   files: (p: string) => get<{ files: AnyFile[]; capped: boolean }>('/api/files', { p }),
 
   /** `d` is the page's pathname, `/<rootId>/<rel>` — the server maps it back to a root and path. */
-  doc: (docPath: string) => get<DocPayload>('/api/doc', { d: docPath }),
+  /** A file's payload — or, for a folder named without its slash, the folder page's address. */
+  doc: (docPath: string) => get<DocPayload | { folder: string }>('/api/doc', { d: docPath }),
 
   search: (root: string, q: string, ignored: boolean, regex = false) =>
     get<SearchResult>('/api/search', { root, q, ignored: ignored ? 1 : 0, regex: regex ? 1 : 0 }),

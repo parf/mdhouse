@@ -910,7 +910,9 @@ test('/api/doc answers every kind; code and text by numbered lines; nothing unde
     const big = await body('big.txt');
     expect(big.tooBig).toBe(true);
     expect(big.html).toBe('');
-    for (const q of [`p=${id}/.git/config`, `d=/${id}/.git/config`, `p=${id}/gone.md`, `p=${id}/`]) expect((await doc(q)).status).toBe(404);
+    for (const q of [`p=${id}/.git/config`, `d=/${id}/.git/config`, `p=${id}/gone.md`]) expect((await doc(q)).status).toBe(404);
+    // a folder is no document: the answer names its page
+    expect(await (await doc(`p=${id}/`)).json()).toEqual({ folder: `/${id}/` });
   } finally {
     server.stop(true);
     watcher.close();
@@ -1028,6 +1030,32 @@ test('POST /api/roots/remove refuses another site, an unknown root and the last 
     expect((await (await remove({ id: otherId })).json()).results).toMatchObject([{ removed: true }]);
     expect((await (await remove({ id })).json()).results).toMatchObject([{ removed: false, kept: true }]);
     expect(registry.list().map((r) => r.id)).toEqual([id!]);
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
+test('/api/doc on a folder named without its slash gives the folder page\'s address', async () => {
+  const { mkdtemp, rm, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-folder-'));
+  await mkdir(join(base, 'sub'));
+  await Bun.write(join(base, 'sub/a.md'), 'a\n');
+  const port = 61803;
+  const registry = await Registry.create([{ path: base, writable: false }]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
+  const id = registry.list()[0]!.id;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/doc?p=${id}/sub`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ folder: `/${id}/sub/` });
   } finally {
     server.stop(true);
     watcher.close();

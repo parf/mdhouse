@@ -684,6 +684,8 @@ export async function serve(opts: ServeOptions) {
         if (inGitDir(loc.rel)) return fail(404, 'not found');
 
         const info = await stat(loc.abs).catch(() => null);
+        // a folder named without its trailing slash: the page goes to the folder's own address
+        if (info?.isDirectory()) return json({ folder: dirUrl(loc.root.id, loc.rel) });
         if (!info?.isFile()) return fail(404, 'not found');
         const kind = kindOf(loc.rel, await headOf(loc.abs));
         // Cheap — the status map is built once per root and invalidated by the watcher. It is

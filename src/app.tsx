@@ -177,6 +177,12 @@ function App() {
       .doc(docPath)
       .then((payload) => {
         if (seq !== loadSeq.current) return;
+        if ('folder' in payload) {
+          // `/root/sub` names a folder: its page, in place of this address
+          history.replaceState(null, '', payload.folder + location.search);
+          setPath(location.pathname + location.search);
+          return;
+        }
         setDoc(payload);
         setDocError(null);
         setRootId(payload.root);
@@ -199,7 +205,7 @@ function App() {
     const seq = ++loadSeq.current;
     void api
       .doc(docPath)
-      .then((payload) => seq === loadSeq.current && setDoc(payload))
+      .then((payload) => seq === loadSeq.current && !('folder' in payload) && setDoc(payload))
       .catch(() => {});
   };
 
