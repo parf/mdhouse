@@ -67,7 +67,7 @@ describe('settings', () => {
   test('unknown keys and wrong types are ignored', async () => {
     const prefs = await Prefs.load(join(dir, 'settings2.json'));
     const after = await prefs.updateSettings({ editLink: 'no', nonsense: 1 });
-    expect(after).toEqual({ editLink: true, autoRw: true });
+    expect(after).toEqual({ editLink: true, autoRw: true, me: '' });
   });
 });
 

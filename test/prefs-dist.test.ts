@@ -15,7 +15,7 @@ test('doc/prefs.json.dist, comments and all, loads as a config', async () => {
     expect(prefs.server).toEqual({ port: 7777, host: '127.0.0.1' });
     expect(prefs.access.allow).toEqual(['192.168.1.0/24']);
     expect(Object.keys(prefs.access.users)).toEqual(['ann']);
-    expect(prefs.settings).toEqual({ editLink: true, autoRw: true });
+    expect(prefs.settings).toEqual({ editLink: true, autoRw: true, me: '' });
     expect(prefs.autoRw).toEqual(['/home/you/src']);
     expect(prefs.get('/home/you/notes').favorite).toEqual(['inbox.md', 'plans/']);
   } finally {

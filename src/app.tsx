@@ -38,7 +38,7 @@ const save = (key: string, value: unknown) => {
 function App() {
   const [roots, setRoots] = useState<RootInfo[]>([]);
   const [home, setHome] = useState<string | undefined>(undefined);
-  const [options, setOptions] = useState<Options>({ editLink: true, autoRw: true });
+  const [options, setOptions] = useState<Options>({ editLink: true, autoRw: true, me: '' });
   // Until the saved settings arrive, nothing that depends on them is drawn — otherwise a ✎
   // turned off in Settings flashed on every load.
   const [optionsLoaded, setOptionsLoaded] = useState(false);

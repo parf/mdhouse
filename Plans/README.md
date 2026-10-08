@@ -151,7 +151,8 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
-  argon2id hash), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them). A root's
+  argon2id hash), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and
+  `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
   `writable` is a getter — `--rw` asked, or under an auto-rw path with the switch on — so the
   switch and the CLI apply to a running server at once (`Prefs.refresh()` re-reads the file
   when it changed). Read as JSON with comments; every key is in `doc/prefs.json.dist`. Port and host resolve as flag → env → config →

@@ -31,7 +31,9 @@
     // ✎ beside each title, opening edit:/full/path (and `e`)
     "editLink": true,
     // Folders under the autoRw paths are writable
-    "autoRw": true
+    "autoRw": true,
+    // The name a signed Q&A reply carries (💬 👤me …); "" — from git, else the login
+    "me": ""
   },
 
   // Marks per served folder, by absolute path: ★ favorite, muted, ignored (hidden)

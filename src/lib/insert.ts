@@ -3,7 +3,7 @@
  * ticking a checkbox and answering a question. Pure and line-based, like `qa.ts`: the server
  * re-reads the file, checks the heading is still the one the page showed, and inserts.
  */
-import { escapeLine, lineHash } from './qa';
+import { lineHash, QUOTE_START, quoteLines } from './qa';
 
 /** What a block is added as — the buttons under the textarea. */
 export type AddKind = 'text' | 'quote' | 'my-quote' | 'tip' | 'question' | 'disagreement' | 'answer';
@@ -58,34 +58,26 @@ export function sectionEnd(lines: string[], at: number, level: number, span: num
   return lines.length;
 }
 
-/** The block as Markdown. A signed quote carries `who`; quote lines that would read as a Q&A mark are escaped. */
+/** The block as Markdown. A signed quote carries `who`; quote lines that would read as Q&A are escaped. */
 export function formatBlock(text: string, kind: AddKind, who: string): string[] {
-  const body = text.replace(/\r/g, '').replace(/\s+$/, '').split('\n');
-  const quoted = (first: string, from: number) =>
-    body.map((line, n) => {
-      if (n === 0) return `> ${first}${line}`;
-      const safe = n >= from ? escapeLine(line, 'quote') : line;
-      return safe ? `> ${safe}` : '>';
-    });
+  const [first = '', ...rest] = text.replace(/\r/g, '').replace(/\s+$/, '').split('\n');
+  const quoted = (mark: string) => [`> ${mark}${first}`, ...quoteLines(rest, '> ')];
   switch (kind) {
     case 'text':
-      return body;
+      return [first, ...rest];
     case 'quote':
       // Every line — the first too — must stay a plain quote line.
-      return body.map((line) => {
-        const safe = escapeLine(line, 'quote');
-        return safe ? `> ${safe}` : '>';
-      });
+      return [...quoteLines([first], '> ', QUOTE_START), ...quoteLines(rest, '> ')];
     case 'my-quote':
-      return quoted(`**${who}:** `, 1);
+      return quoted(`**${who}:** `);
     case 'tip':
-      return ['> [!TIP]', ...body.map((line) => (line ? `> ${escapeLine(line, 'quote')}` : '>'))];
+      return ['> [!TIP]', ...quoteLines([first, ...rest], '> ')];
     case 'question':
-      return quoted('❓ ', 1);
+      return quoted('❓ ');
     case 'disagreement':
-      return quoted('⁉️ ', 1);
+      return quoted('⁉️ ');
     case 'answer':
-      return quoted('\u{1F4AC} ', 1);
+      return quoted('\u{1F4AC} ');
   }
 }
 

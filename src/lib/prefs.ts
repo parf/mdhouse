@@ -78,9 +78,11 @@ export interface Settings {
   editLink: boolean;
   /** Folders under the auto-rw paths are writable. */
   autoRw: boolean;
+  /** The name a signed Q&A reply carries (`💬 👤me …`); empty: from git, else the login. */
+  me: string;
 }
 
-const DEFAULT_SETTINGS: Settings = { editLink: true, autoRw: true };
+const DEFAULT_SETTINGS: Settings = { editLink: true, autoRw: true, me: '' };
 
 export const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
 const PREFS_PATH = `${CONFIG_DIR}/prefs.json`;

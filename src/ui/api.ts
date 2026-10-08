@@ -11,6 +11,8 @@ export interface Settings {
   editLink: boolean;
   /** Folders under the auto-rw paths are writable. */
   autoRw: boolean;
+  /** The name a signed Q&A reply carries; empty: from git. */
+  me: string;
   /** Set from the CLI, `mdhouse --auto-rw`; shown, not edited, here. */
   autoRwPaths?: string[];
 }
