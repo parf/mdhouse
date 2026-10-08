@@ -231,7 +231,10 @@ function itemHtml(it: Item): string {
   const answeredAsk = ask && isAnswered(it.replies, options);
   const closed = CLOSED.includes(status) || answeredAsk;
   const sevText = more.length ? `${more.join(' ')} ` : '';
-  const text = `${sevText}${inline(it.head)}`;
+  // `Evidence:` / `Impact:` lines under the claim: their own quiet lines
+  const [claim, ...meta] = it.head.split(/\n(?=\s*(?:Evidence|Impact):)/);
+  const metaHtml = meta.map((m) => `<span class="meta">${inline(m.trim())}</span>`).join('');
+  const text = `${sevText}${inline(claim!)}${metaHtml}`;
   const key = keyOf(it.glyphs, !closed, it.target);
   const mark = answeredAsk ? `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>` : null;
   const radio = options.some((o) => o.option === 'radio');
@@ -387,6 +390,9 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
+/* an issue's Evidence / Impact: own lines, quiet */
+.meta { display: block; font-size: 13px; color: var(--dim); margin-top: 2px; }
+.meta code { font-size: 12px; }
 /* 🎯 selected for the next run: bold red bars left and right, and its 🎯 lit */
 [data-k~="🎯"] { box-shadow: inset 6px 0 0 #1971c2, inset -6px 0 0 #1971c2 !important; }
 /* …and 1px dashed red top and bottom; every line keeps a transparent one, so selecting moves nothing */

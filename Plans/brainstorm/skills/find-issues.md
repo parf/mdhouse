@@ -80,32 +80,37 @@ create it on the day's first run; a later run the same day appends to it:
 ```markdown
 ## <scope> — 📅YYYY-MM-DD · <HEAD short sha>
 
-- 🔴 `src/prefs.ts:212` a save drops the user's folders when prefs.json is unreadable — data loss.
-  Impact: any start after a crash mid-write — every saved folder gone.
+- 🔴 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
+  Evidence: corrupted the file, `mdhouse <dir> -p` → the saved folders gone
+  Impact: any start after a crash mid-write — every saved folder lost
   > 💡👾 Move the broken file aside and refuse the write.
 
 ### <Subsystem>
 
-- 🔴 `src/cli.ts:536` --fg hands its folders over when the port is busy and exits 0 — under systemd
-  the unit "succeeds" and nothing retries. Measured: exit 0 with :7777 taken. Impact: every reboot
-  where a hand-started copy holds the port — the service stays down.
-  > 💡👾 Exit 1 under `MDHOUSE_SERVICE=1`, so systemd retries.
-- ❓ 🟠 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits. Two ways:
+- 🟠 `src/cli.ts:536` `--fg` hands its folders over on a busy port and exits 0 — systemd never retries
+  Evidence: :7777 taken → exit 0
+  Impact: every boot where a hand-started copy holds the port — the service stays down
+  > 💡👾 Exit 1 under `MDHOUSE_SERVICE=1`.
+- ❓ 🟠 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits
+  Evidence: `/api/search?q=x&limit=abc` → 600 hits
+  Impact: any client that sends a bad limit — one slow response
   - ( ) clamp every `limit` through one helper 🌟
   - ( ) reject a non-numeric `limit` with 400
-- ⚪ `README.md:12` "browsable" — "browse" reads better.
 
-Checked and sound: <one line per subsystem>.
+Checked and sound: <one line per subsystem — what was checked>.
 ```
 
 - **Serious first**: an issue that loses the user's text, writes to :7777 or escapes a root goes right
   under the section heading, above the subsystems.
-- First symbol: the severity — 🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information.
-- Then `file:line` (each one, for a shared cause), the claim, the consequence; the evidence in a few
-  words when not obvious; **`Impact:`** — who hits it, how often, what it costs (qa-states.md). The
-  severity follows the impact, not the feeling: no one hits it → ⚪ or not raised at all.
-- One fix → a `💡👾` line under it (✓ yes / ✗ no on the page). Two real ways → options, and the line
-  starts `❓` before the severity (a choice is a question).
+- **An item is four lines, each on its own:**
+  1. the severity glyph first (🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information),
+     `file:line` (each one, for a shared cause), **the claim and its consequence — one line**;
+  2. `Evidence:` — what was run or read, and what it gave;
+  3. `Impact:` — who hits it, how often, what it costs (qa-states.md); the severity follows it — no
+     one hits it → ⚪ or not raised;
+  4. the fix: a `> 💡👾` line (✓ yes / ✗ no on the page) — or, for two real ways, `( )` options and the
+     line starts `❓` before the severity.
+- Short: no "as its doc says", no restating the code — the reader opens the line.
 - No `✅`, no `💬` in a new item — triage is the user's.
 
 ## Steps
