@@ -51,7 +51,7 @@ describe('old Q&A forms → the new markup', () => {
 });
 
 test('a file in the new markup is never rewritten: agent badges, quotes at several indents, a loose thread', async () => {
-  for (const f of ['Plans/brainstorm/qa-sample.md', 'Plans/issues/2026-10-07.md', 'Plans/brainstorm/markup.md']) {
+  for (const f of ['Plans/brainstorm/qa-sample.md', 'Plans/issues/2026-10/2026-10-07.md', 'Plans/brainstorm/markup.md']) {
     const s = await Bun.file(`${import.meta.dir}/../${f}`).text();
     expect(convertLegacy(s)).toBe(s);
   }
