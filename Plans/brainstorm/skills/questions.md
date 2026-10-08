@@ -1,54 +1,50 @@
 ---
 name: questions
-description: Ask me questions in the Q&A markup — plain, with a 💡 suggested answer, or with options to pick — so I can answer them on the page. Pair: /answers processes the answers.
-trigger: /questions
+description: Writes questions for the user in the Q&A markup — plain, with a 💡 suggested answer, or with options to pick — so the user answers them on the page in mdhouse. Use when a decision is the user's and several are open. Pair: /answers processes the answers.
+argument-hint: "[file] [topic]"
+disable-model-invocation: true
 ---
 
 # /questions [file] [topic]
 
-Writes questions into a Markdown file for me to answer in mdhouse. Syntax: [../markup.md](../markup.md),
-glyphs: [../README.md](../README.md). `/answers` reads the answers back.
+Writes questions into a Markdown file; the user answers on the page; `/answers` reads them back.
+States, identities, threads, committing: [qa-states.md](qa-states.md). Markup: [../markup.md](../markup.md).
 
-- `file` — where the questions go: the document they are about, or `Plans/questions.md` (default)
+- `file` — default `Plans/questions.md`; create it with `# Questions` if missing
 - `topic` — what to ask about; else the decisions still open in the current task
-
-Chat in Russian; the questions in English.
 
 ## Where
 
-Append a section — never rewrite an existing one:
+Always append at the end of the file — never rewrite an existing section:
 
 ```markdown
-## Questions — <topic> (📅YYYY-MM-DD)
+## <topic> — 📅YYYY-MM-DD
 ```
-
-Under the document's last heading when the questions are about that document; otherwise at the end
-of the file.
 
 ## Pick a form per question
 
-**Plain** — I have to think, there is no obvious answer:
+**Plain** — no obvious answer:
 
 ```markdown
-- ❓ Which port should the dev server use when the live instance holds 7777 and a second
-  developer runs their own copy on the same machine?
+- ❓ Which port should the dev server use when the live instance holds 7777 and a second developer
+  runs their own copy on the same machine?
 ```
 
 **Disagreement** — two sources contradict; name both:
 
 ```markdown
-- ⁉️ The README says the service listens on 7777; the unit file from `service install --port 8080`
-  pins 8080 — which one is the documented default?
+- ⁉️ The README says the service listens on 7777; the unit from `service install --port 8080` pins
+  8080 — which one is the documented default?
 ```
 
-**With a suggested answer (suggest)** — you have a likely answer; I say yes / no / reply:
+**With a suggested answer** — you have a likely answer; the user says yes / no / reply:
 
 ```markdown
 - ❓ Should the summary strip stay visible while scrolling a long findings file?
   > 💡 👾claude Keep it sticky: the counts are what you come back to; one 30-pixel bar costs little.
 ```
 
-**One of** — the answer is a choice; radios:
+**One of** — radios:
 
 ```markdown
 - ❓ Which port should `bun run dev` use by default?
@@ -57,7 +53,7 @@ of the file.
   - ( ) `7778`, next to the live one ⭐
 ```
 
-**Any of** — several may apply; checkboxes (GFM):
+**Any of** — checkboxes (GFM); the user ticks, then **✓ done**:
 
 ```markdown
 - ❓ What should ship in the npm package besides the code?
@@ -68,19 +64,14 @@ of the file.
 
 ## Rules
 
-- One question per item, `- ❓` or `- ⁉️` first in the line. Never answer it yourself with 💬 — a
-  proposed answer is 💡, signed `👾claude`.
-- Self-contained: the context goes into the question — long is fine, a reader must not need the chat.
-- Say what would settle it when it is not obvious (the measurement, the person, the file).
-- Options: `( )` for one of, `[ ]` for any of — never both under one question; at most one 🌟
-  (the recommended one) and one ⭐ (runner-up); never pre-tick `(x)` / `[x]`.
-- A question that blocks work may carry a severity after the glyph: `- ❓ 🔴 …`; most carry none.
-- Badges for references: `🎫RLM-412`, `👥platform`, `📡slack`, `📅2026-10-07` — glued, no space.
-- Blocking questions first; group by theme with a blank line between groups, not sub-headings.
-- Plain GFM only: it must read well on GitHub. No HTML, no yellow, no bare `?`.
-- Commit the file alone (`docs: questions — <topic>`); never push.
+- One question per item, `- ❓` / `- ⁉️` first. Never answer it with 💬 — a proposed answer is a `💡`.
+- Self-contained: the context goes into the question — long is fine; the reader has no chat.
+- Say what would settle it when that is not obvious (the measurement, the person, the file).
+- Options: `( )` or `[ ]`, never both under one question; at most one 🌟 (recommended) and one ⭐
+  (runner-up); never pre-tick.
+- A question that blocks work may carry a severity after the glyph: `- ❓ 🔴 …`.
+- References as badges, glued: `🎫RLM-412`, `👥platform`, `📡slack`, `📅2026-10-07`.
+- Blocking questions first. Plain GFM — it must read well on GitHub.
+- Commit the file alone: `docs: questions — <topic>`.
 
-## Report
-
-How many questions, in which forms, the file and the heading; then the stop marker
-`🟥🟥🟥 questions in <file> — answer on the page`.
+Report as [qa-states.md](qa-states.md#report) says: `🟥🟥🟥 <n> questions in <file> — answer on the page`.

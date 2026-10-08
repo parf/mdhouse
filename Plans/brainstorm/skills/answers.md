@@ -1,58 +1,47 @@
 ---
 name: answers
-description: Process my answers to questions written in the Q&A markup — carry the settled ones into decisions and actions, answer my "need more" / "elaborate" / "no", and mark each item's new state in place. Pair of /questions.
-trigger: /answers
+description: Processes the user's answers to questions in the Q&A markup — carries each decided one into Plans/DECISIONS.md and Plans/TODO.md and marks it ✅, replies where the user asked for more. Use after the user answered questions written by /questions.
+argument-hint: "[file]"
 ---
 
 # /answers [file]
 
-Reads a questions file (default `Plans/questions.md`, or the file `/questions` last wrote) and acts on
-what I answered on the page. Syntax: [../markup.md](../markup.md).
+Reads a questions file and acts on what the user answered on the page. **Read
+[qa-states.md](qa-states.md) first** — states, who is who, how to write a stage, committing, the report.
 
-Chat in Russian; the file in English. My words are carried over verbatim.
+- `file` — default: the file of the newest `docs: questions —` commit, else `Plans/questions.md`
 
-## Read each item's state
+Chat in Russian; files in English; the user's words carried over verbatim.
 
-The first glyph and the thread under it decide — exactly as mdhouse renders it:
+## Per item (state as in qa-states.md)
 
-| What is there | State | What you do |
-|---|---|---|
-| `❓` / `⁉️` with no 💬, or `💡` not yet decided | waiting on me | nothing |
-| last 💬 is mine and whole (not `⚠️`, not `elaborate`) | **answered** | carry it over (below) |
-| `✅ 💡` + `💬 👤me yes — …` | **answered** — the suggestion stands, with my note | carry it over |
-| `🚫 💡` + `💬 👤me no — …` | answered **no** | carry the no over; if the no leaves the question open, ask a new one |
-| `(x)` picked under a `( )` question, or `✅` on a `[ ]` question | **answered** — the pick | carry it over |
-| `💬 ⚠️ …` or `💬 👤me elaborate — …` | I need more | reply (below); keep `❓` |
-| `⏳` first | waiting on you | do it, reply, set `❓` back |
-| `🎫` first | the answer will come from a ticket | nothing; note the ticket |
-| `⏸️` / `🚫` first | deferred / dropped by me | nothing |
-| `✅` first | already settled | nothing |
+| State | Do |
+|---|---|
+| **answered** | carry it over (below), then `✅` + `> 💬 👾claude → DECISIONS.md: … · TODO.md: …` |
+| **needs a reply** | reply, keep `❓` (below) |
+| `⏳` with a task | do it; it is also an answer — carry it over; `✅` + the done record |
+| `⏳` asking you to find out | reply with what you found, set `❓` |
+| `🎫` | nothing; name the ticket in the report |
+| anything else | nothing |
 
-A reply from `👾` / `📡` as the last 💬 means the question waits on me again.
+## Carry over
 
-## Carry over an answered one
+- **DECISIONS.md** — under the section that matches the topic, else a new `## <topic> — 📅date` at the
+  end: `- **<the answer, the user's words>.** <the why, if the user gave one> — from <file>`.
+  A choice from options: the picked option's text. A `no`: `- **Not <the suggestion>.** <the user's
+  why>`; if the no leaves the question itself open, also write a new question with `/questions`.
+- **TODO.md** — each action the answer implies, at the end: `- [ ] <action>`.
+- Check every answered item landed before you mark it `✅`; nothing is carried twice — a `✅` item is done.
 
-1. Write the decision into `Plans/DECISIONS.md` and the work it implies into `Plans/TODO.md`, in my
-   words; a choice from options is quoted as picked.
-2. Then mark the item settled: put `✅` in front of its glyph (`- ✅ ❓ …`, `> ✅ ❓ …`) — it folds on the
-   page. Never delete it, never edit my text or my answer.
-3. Every answer must land somewhere: check each one before marking it.
+## Reply
 
-## Answer "need more" / "elaborate" / ⏳
-
-- Reply in its thread, signed: `  > 💬 👾claude <the answer, with the evidence>`. Verify what you
-  claim (read the code, run it) — the reply is what I decide on.
-- Where a choice is the honest next step, reply with a 💡 instead, or add options.
-- Set the first glyph back to `❓` (it waits on me), and leave everything else as it is.
+`> 💬 👾claude <the answer, with the evidence you verified — read the code, run it>` in the thread (a
+blank `>` before it). Where a choice is the honest next step, a `💡` or options instead. The item keeps
+`❓`: it waits on the user again.
 
 ## Rules
 
-- Never answer a question for me; never tick `(x)` / `[x]`; never turn 💡 into ✅ 💡 yourself.
-- Edit only the items you act on; append, do not rewrite.
-- Commit the questions file, DECISIONS.md and TODO.md together (`docs: questions answered — <topic>`);
-  never push.
-
-## Report
-
-Counts: carried over (with where each went), replied, still waiting on me. Each question that needs me
-again on its own line with ❓, then `🟥🟥🟥 <n> questions wait on you in <file>`.
+- Never decide for the user: never write `✅ 💡` / `🚫 💡`, never tick options, never `✅` an item that is
+  not answered.
+- Commit the questions file with DECISIONS.md / TODO.md (`docs: answers carried — <topic>`) — unless
+  they hold the user's uncommitted edits (see qa-states.md).

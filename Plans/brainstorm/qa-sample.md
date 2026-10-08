@@ -137,6 +137,8 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
   - ( ) at the bottom of the page
     > 💬 👤parf no — nobody scrolls to the bottom to find out what is open.
   > 💬 👤parf revisit once we have pages with more than a hundred items.
+  >
+  > 💬 👾claude → DECISIONS.md: the strip goes right under the title, sticky · TODO.md: make the strip sticky
 - ❓ What should ship in the npm package besides the code?
   - [x] `doc/*.md` — the docs linked from the README 🌟
   - [x] `CHANGELOG.md`

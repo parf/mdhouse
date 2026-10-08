@@ -4,6 +4,10 @@ Rules: plain GFM that reads well on GitHub and in an editor; mdhouse adds the be
 (buttons, muting, folding) on render — never markup that only mdhouse understands.
 Glyph first in the line (status, then severity).
 
+**✅ is the agent's.** On the page I answer (💬, a pick, yes / no) — the item shows answered (green ?),
+the file keeps `❓`. The agent, once it carried the answer over or did the fix, sets `✅` and says where it
+went. The ✅ action in the form stays for the rare "close it, nothing to carry".
+
 ## 1. Questions → answers, with a thread
 
 Today:
@@ -18,11 +22,11 @@ turns so GitHub keeps them apart:
 
 ```markdown
 - ❓ Do we keep the old URLs?
-  > 💬 👤agent Redirect `/d/<root>/x.md` → `/d/x.md` for a year?
+  > 💬 👾claude Redirect `/d/<root>/x.md` → `/d/x.md` for a year?
   >
   > 💬 ⚠️ 👤parf need more — which links are out there?
   >
-  > 💬 👤agent 14 in README files, 2 in issues.
+  > 💬 👾claude 14 in README files, 2 in issues.
 ```
 
 - the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
@@ -80,13 +84,13 @@ turns so GitHub keeps them apart:
 ```markdown
 - 🔴 `src/cli.ts:536` --fg hands over on a busy port — the unit "succeeds", nothing retries. Fix: exit 1
 - ❓ 🟠 `package.json:46` dev script feeds `.` to the live instance
-  > 💬 👤agent pin `:7790` + own config, or drop it?
+  > 💬 👾claude pin `:7790` + own config, or drop it?
 - ⏸️ ⚪ `src/lib/search.ts:174` ReDoS without rg
-  > 💬 👤agent needs a design — later
+  > 💬 👾claude needs a design — later
 - ✅ 🟠 `test/control.test.ts:8` sockets in the real config dir
-  > 💬 👤agent `112b307` — temp config via preload
+  > 💬 👾claude `112b307` — temp config via preload
 - 🚫 ⚪ `CLAUDE.md:119` socket wait
-  > 💬 👤agent moot — the reload polls HTTP now
+  > 💬 👾claude moot — the reload polls HTTP now
 ```
 
 | Line starts with | Stage | Looks |
@@ -117,9 +121,10 @@ On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plai
 ```
 
 - 🌟 = the suggested one (the agent's pick); ⭐ = runner-up, optional
-- a click on `( )` writes `(x)` and clears the others; the question turns `✅`
-- a click on that `✅` undoes the pick: `(x)` → `( )`, `✅` → `❓` — unanswered again
-- a click on `[ ]` writes `[x]`; the question stays `❓` until **✓ done** (on its line) turns it `✅`
+- a click on `( )` writes `(x)` and clears the others — my answer: the question shows answered
+  (green ?); `✅` is set by the agent once it carried the pick over
+- a click on that answered mark undoes the pick: `(x)` → `( )` — unanswered again
+- a click on `[ ]` writes `[x]`; **✓ done** (on its line) answers `💬 👤me done` — answered, `✅` by the agent
 - once something is picked, the unpicked options are muted
 - a 💬 under the options still works: "none — do X instead"
 - to comment: hover a line (the question or an option) → 💬 at its right end → editor under that line; a click on a comment edits it
@@ -157,7 +162,7 @@ Search falls back to a JS regex when rg is missing.
 
 - verbs: `ask` · `why` · `elaborate` · `rewrite` · `remove` — adding to a section is ↓ ⇊ on its heading already
 - a sentence inside a block: quote it in the request (`"falls back"`)
-- the agent answers under it (`> 💬 👤agent done — …`) or just does it and turns 👉 into ✅:
+- the agent answers under it (`> 💬 👾claude done — …`) or just does it and turns 👉 into ✅:
   `> ✅ 👉 **rewrite:** one pass …`
 - in mdhouse: select text → a 👉 button writes the request after its block, the quote prefilled
 

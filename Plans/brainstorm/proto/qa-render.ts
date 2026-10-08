@@ -80,6 +80,18 @@ const badge = (g: string, name: string) => `<span class="who" data-kind="${BADGE
 /** Badges in rendered HTML, outside code. */
 const badges = (html: string) => html.split(/(<code>[\s\S]*?<\/code>)/).map((part, i) => (i % 2 ? part : part.replace(BADGE, (_, g, n) => badge(g, n)))).join('');
 
+/**
+ * A ❓ / ⁉️ is answered when its last 💬 is whole (not ⚠️ / elaborate), not from an agent or a source,
+ * and no 💡 under it is still undecided (a plain reply under a 💡 keeps the question open). A picked
+ * option `(x)` answers a one-of question; checkboxes are answered by a reply (`done`).
+ */
+function isAnswered(replies: Reply[], options: Item[] = []): boolean {
+  if (replies.some((r) => r.suggest && !r.verdict)) return false;
+  if (options.some((o) => o.option === 'radio' && o.picked)) return true;
+  const last = replies.filter((r) => !r.suggest).at(-1);
+  return !!last && !last.partial && !/^(👾|📡)/u.test(last.who ?? '');
+}
+
 const unquote = (lines: string[]) => lines.map((l) => l.replace(/^>\s?/, ''));
 const indentOf = (l: string) => /^ */.exec(l)![0].length;
 
@@ -180,8 +192,7 @@ function itemHtml(it: Item): string {
   const ask = ASK.includes(status);
   // a ❓ / ⁉️ item is answered as a quote one is: its last 💬 is whole (not ⚠️) and from a person —
   // an agent's or a source's reply asks me again
-  const answer = it.replies.filter((r) => !r.suggest).at(-1);
-  const answeredAsk = ask && !options.length && !!answer && !answer.partial && !/^(👾|📡)/u.test(answer.who ?? '');
+  const answeredAsk = ask && isAnswered(it.replies, options);
   const closed = CLOSED.includes(status) || answeredAsk;
   const sevText = more.length ? `${more.join(' ')} ` : '';
   const text = `${sevText}${inline(it.head)}`;
@@ -232,7 +243,7 @@ function quoteHtml(lines: string[]): string {
   const request = glyphs.includes('👉');
   // a 💡 suggestion is not an answer until it is accepted
   const last = replies.filter((r) => !r.suggest).at(-1);
-  const answered = status === '✅' || (!request && !!last && !last.partial);
+  const answered = status === '✅' || (!request && isAnswered(replies));
   const key = keyOf(glyphs, !answered);
 
   if (answered) {
@@ -255,12 +266,12 @@ export function renderDoc(src: string): string {
   const out: string[] = [];
   let plain: string[] = [];
   const flush = () => {
-    if (plain.join('').trim()) out.push(md.render(plain.join('\n')));
+    if (plain.join('').trim()) out.push(badges(md.render(plain.join('\n'))));
     plain = [];
   };
   for (let i = 0; i < lines.length; ) {
     const line = lines[i]!;
-    if (/^>\s?(❓|⁉|👉|✅️?\s+👉)/u.test(line)) {
+    if (/^>\s?(❓|⁉|👉|✅\uFE0F?\s)/u.test(line)) {
       flush();
       const q: string[] = [];
       while (i < lines.length && lines[i]!.startsWith('>')) q.push(lines[i++]!);

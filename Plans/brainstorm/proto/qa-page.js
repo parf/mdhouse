@@ -97,11 +97,13 @@
       e.preventDefault();
       const host = g.closest('details, .item, .qwrap, .req');
       if (host.tagName === 'DETAILS') host.open = true;
-      // a ✅ on a radio question undoes the pick
+      // the answered mark on a radio question undoes the pick
       const radios = host.querySelector(':scope > .opts.radio');
-      if (radios && g.textContent === '✅') {
+      if (radios && radios.classList.contains('done') && (g.classList.contains('g-answered') || g.textContent === '✅')) {
         radios.querySelectorAll('.opt').forEach((o) => { o.classList.remove('picked'); o.querySelector('input').checked = false; });
         radios.classList.remove('done');
+        if (g.classList.contains('g-answered')) { g.className = 'g-btn'; g.textContent = '❓'; }
+        host.classList.add('wait-me');
         return setStage(host, '❓');
       }
       // stage buttons for a finding only — a line with a severity; every question gets the same plain form
@@ -127,8 +129,9 @@
       const host = dn.closest('.item');
       host.querySelector(':scope > .opts')?.classList.add('done');
       dn.remove();
-      setStage(host, '✅');
-      host.classList.remove('wait-me');
+      // done picking: an answer `done` — the agent carries the ticks over and sets ✅
+      threadOf(host, 'thread q-thread').append(reply('done', true));
+      answered(host);
       return;
     }
     // ---- 💬 on a question / option line: a comment under it
@@ -236,7 +239,8 @@
     if (input.type === 'radio') {
       opts.querySelectorAll(':scope > .c-wrap > .c-row > .opt').forEach((o) => o.classList.toggle('picked', o.contains(input)));
       opts.classList.add('done');
-      setStage(host, '✅');
+      // a pick is my answer — the question shows answered; ✅ is the agent's, once it carried it over
+      answered(host);
     } else input.closest('.opt').classList.toggle('picked', input.checked);
   });
 

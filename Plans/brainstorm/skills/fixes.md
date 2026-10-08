@@ -1,57 +1,51 @@
 ---
 name: fixes
-description: Act on my triage of findings written in the Q&A markup — do what I approved (✅ 💡, ⏳), answer "need more" / "elaborate", verify every premise by execution, and record the outcome in place. Pair of /findings.
-trigger: /fixes
+description: Acts on the user's triage of findings in the Q&A markup — does what the user approved, answers requests for more, verifies every premise by execution, and records each outcome in place with ✅ and the commit. Use after the user triaged Plans/findings.md written by /findings.
+argument-hint: "[file]"
 ---
 
 # /fixes [file]
 
-Reads `Plans/findings.md` (or `file`) after I triaged it on the page, and acts. Syntax:
-[../markup.md](../markup.md). A finding is a hypothesis: verify it by execution before touching code.
+Reads `Plans/findings.md` (or `file`) after the user triaged it on the page, and acts. **Read
+[qa-states.md](qa-states.md) first** — states, who is who, writing a stage, committing, the report. A
+finding is a hypothesis: verify it by execution before touching code.
 
 Chat in Russian; the file, code and commits in English.
 
-## Read each finding's state
+## Per finding
 
-| What is there | Means | What you do |
-|---|---|---|
-| severity only (`- 🔴 …`), 💡 undecided | not triaged | AUTO only (below); else nothing |
-| `✅ 💡` under it (+ `💬 👤me yes — …`) | fix approved, with my note | **do it** |
-| `⏳` first | to you — my 💬 says what | **do it** |
-| `🚫 💡` + `💬 👤me no — …` | that fix turned down | if my no names another way, do that; else leave it |
-| `💬 ⚠️ …` / `💬 👤me elaborate — …` | I need more | **reply** |
-| `⚠️` first | partly done | finish what my 💬 says is missing |
-| `( )` / `[ ]` with my pick | the approach chosen | **do it** |
-| `✅` `🚫` `⏸️` `🎫` first, no new 💬 | settled by me | nothing |
+| State | Do |
+|---|---|
+| **answered** — `✅ 💡` (+ the user's note), a `( )` option picked, or the user's whole `💬` (also under `❓`) | **do it** — the fix the answer names |
+| `⏳` — the user's `💬` says what | **do it** |
+| `⚠️` — the user's `💬` says what is missing | **finish it** |
+| `🚫 💡` + `no` | the user's no names another way → do that; else reply "no fix left — 🚫 reject or ⏸️ defer?", set `❓` |
+| **needs a reply** — `💬 ⚠️`, `elaborate`, a plain reply under an undecided `💡` | **reply**, set `❓` |
+| closed (`✅` `🚫` `⏸️` `🎫`) + something new from the user | treat it as `⏳` |
+| severity first, untriaged | **AUTO** only (below) |
+| anything else | nothing |
 
-**AUTO** — untriaged, but confirmed by execution, mechanical, local and side-effect-free (a stale
-comment, a doc that contradicts the code, a missing clamp): fix it as if approved.
+**AUTO** — untriaged but confirmed by execution, mechanical, local, side-effect-free (a stale comment, a
+doc that contradicts the code, a missing clamp): fix it as if approved; say `AUTO` in the record. A
+disproved untriaged one: reply with the evidence and set `🚫` — the one stage you may set without the
+user, because nothing was decided.
 
 ## Do it
 
-1. **Premise gate** — reproduce it: run the test, read the line, hit a scratch instance. False →
-   don't fix; reply with the evidence and set `🚫` first.
-2. **Side-effect gate** — a fix that removes a deliberate design (a comment says why it is so) → don't;
-   reply and set `❓` first: it is my call.
-3. Fix minimally; one fix per shared root cause. Prove it: `bun test`, `npx tsc --noEmit -p .`, the
+1. **Premise gate** — reproduce it: run the test, read the line, hit a scratch instance. Disproved after
+   the user approved → do not fix; reply with the evidence and set `❓` (the user decides).
+2. **Side-effect gate** — the fix would remove a deliberate design (a comment says why) → reply, set `❓`.
+3. Fix minimally, one fix per shared root cause. Prove it: `bun test`, `npx tsc --noEmit -p .`, the
    browser on a scratch instance for UI. Update the docs it touches (CHANGELOG, Plans README, TODO).
-4. Commit the touched paths only. Never push, never publish, never touch :7777.
-5. Record it: the status glyph `✅` first, the severity stays (`- ✅ 🔴 …`), and a reply
-   `  > 💬 👾claude \`<sha>\` — <what, and the proof>`.
+4. Commit the touched paths only.
+5. Record: `✅` first, the severity stays (`- ✅ 🔴 …`), and `> 💬 👾claude \`<sha>\` — <what, the proof>`.
 
 ## Reply
 
-`  > 💬 👾claude <the answer, with evidence you verified>`; a choice → a 💡 or options; then set
-`❓` first — it waits on me. Never mark ✅ on a reply.
+`> 💬 👾claude <the answer, with evidence you verified>` (a blank `>` before it); a choice → a `💡` or
+options. Set `❓` first — it waits on the user. Never `✅` on a reply.
 
 ## Rules
 
-- Never decide for me: never write ✅ 💡 / 🚫 💡, never tick options, never settle what I left open
-  (except AUTO, which carries its proof).
-- Never delete a finding or edit my words; append to threads.
-- Effort follows irreversibility × blast radius: the live instance, a release, `prefs.json` most.
-
-## Report
-
-Counts: fixed (commits), replied, rejected with evidence, untouched. Each item that waits on me on its
-own line with ❓, then `🟥🟥🟥 <n> findings wait on you in <file>`.
+- Never decide for the user: never write `✅ 💡` / `🚫 💡`, never tick options.
+- Effort follows irreversibility × blast radius — the live instance, a release, `prefs.json` most.
