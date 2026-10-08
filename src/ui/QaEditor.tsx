@@ -32,8 +32,8 @@ const ACTIONS: Record<QaKind, Action[]> = {
   ],
   option: [['pick', 'pick it', 'Save and pick this option']],
   proposal: [
-    ['yes', '✓ yes', 'It is the answer: 💡 becomes ✅ 💡'],
-    ['no', '✗ no', 'No — it goes back to the agent'],
+    ['yes', '✓ agree', 'It is the answer: 💡 becomes ✅ 💡'],
+    ['no', '✗ cancel', 'Cancel — the question is closed 🚫'],
   ],
   comment: [],
   edit: [],

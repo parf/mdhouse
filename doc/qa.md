@@ -42,9 +42,9 @@ turns so GitHub keeps them apart:
 ```
 
 - 💡 is a proposed answer — the question still waits on me
-- **✓ yes** — at once: `💡` → `✅ 💡`, and an answer `💬 👤parf yes` — signed, always
-- **✗ no** — at once: `💡` → `🚫 💡`, and an answer `💬 👤parf no`
-- **💬 reply** — the form: a reply, the question stays open; or ✓ yes / ✗ no with a note
+- **✓ agree** — at once: `💡` → `✅ 💡`, and an answer `💬 👤parf agree` — signed, always
+- **✗ cancel** — at once: `💡` → `🚫 💡`, an answer `💬 👤parf cancel`, and the question `🚫`
+- **💬 reply** — the form: a reply, the question stays open; or ✓ agree / ✗ cancel with a note
 
 ## Findings — stages
 
@@ -163,8 +163,8 @@ Each action has one number, the same in every form; **Alt+number** presses it.
 
 | # | Action | Question | Finding | 💡 suggestion | Option comment |
 |---|---|---|---|---|---|
-| 1 | ✅ | settled | done | ✓ yes | |
-| 2 | 🚫 | drop | reject | ✗ no | |
+| 1 | ✅ | settled | done | ✓ agree / accept | |
+| 2 | 🚫 | drop | reject | ✗ cancel / ignore | |
 | 3 | ⏸️ | defer | defer | | |
 | 4 | ⏳ | agent | agent | | |
 | 5 | ⚠️ | need more | partial | | |

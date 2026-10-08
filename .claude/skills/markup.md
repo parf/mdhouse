@@ -45,8 +45,8 @@ turns so GitHub keeps them apart:
 
   | # | Action | Question | Finding | 💡 suggestion | 👉 request | Option comment |
   |---|---|---|---|---|---|---|
-  | 1 | ✅ | settled | done | ✓ yes | done | |
-  | 2 | 🚫 | drop | reject | ✗ no | drop | |
+  | 1 | ✅ | settled | done | ✓ agree / accept | done | |
+  | 2 | 🚫 | drop | reject | ✗ cancel / ignore | drop | |
   | 3 | ⏸️ | defer | defer | | defer | |
   | 4 | ⏳ | agent | agent | | | |
   | 5 | ⚠️ | need more | partial | | | |
@@ -68,8 +68,8 @@ turns so GitHub keeps them apart:
 ```
 
 - 💡 is a proposed answer — the question still waits on me
-- **✓ yes** (+ optional text): `💡` → `✅ 💡`, and an answer `💬 👤parf yes — …` — signed, always
-- **✗ no** (+ optional text): `💡` → `🚫 💡`, and an answer `💬 👤parf no — …`
+- **✓ agree** (+ optional text): `💡` → `✅ 💡`, and an answer `💬 👤parf agree — …` — signed, always
+- **✗ cancel** (+ optional text): `💡` → `🚫 💡`, an answer `💬 👤parf cancel — …`, and the question `🚫`
 - **💬 reply**: neither — a reply; the question stays open
 - click on yes — auto-answer yes; same for no; show form only when reply chosen
 - after yes / no the question is answered; the answer is editable later, like any other

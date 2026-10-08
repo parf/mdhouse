@@ -61,7 +61,7 @@ export function wireQa(el: HTMLElement, h: QaHandlers): () => void {
       e.preventDefault();
       return h.act(line, hash, { op: 'done' });
     }
-    // 💡: ✓ yes / ✗ no answer at once; 💬 reply opens the form
+    // 💡: ✓ agree / accept and ✗ cancel / ignore answer at once; 💬 reply opens the form
     const sAct = t.closest<HTMLElement>('.s-act button');
     if (sAct) {
       e.preventDefault();

@@ -78,7 +78,8 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 **Answered** — only the newest `💡` counts (an older one is superseded); when it is still undecided,
 nothing is answered. Otherwise any of:
 
-- that `💡` decided — `✅ 💡` + `💬 … yes …` / `accept`, or `🚫 💡` + `💬 … no — <their alternative>`
+- that `💡` decided — `✅ 💡` + `💬 … agree …` / `accept`, or `🚫 💡` + `💬 … cancel` / `ignore` (the item is `🚫`;
+  an older `no — <their alternative>`: do that way)
   (an issue's `ignore` closes it: `🚫`);
 - a one-of option picked `(x)`;
 - any-of: the item's own `💬 … done` (zero ticks = "none of these"; a `💬` under an option is a comment
@@ -123,7 +124,7 @@ Where a choice is the next step, the `💡` or the options go **under** that rep
 ## Writing a stage
 
 Replace the first glyph; a severity stays after it: `- ❓ …` → `- ✅ …`, `- 🔴 …` → `- ✅ 🔴 …`,
-`> ❓ …` → `> ✅ …`. Never two stage glyphs (`✅ ❓`); never write `✅ 💡` / `🚫 💡` (the user's yes / no, accept / ignore);
+`> ❓ …` → `> ✅ …`. Never two stage glyphs (`✅ ❓`); never write `✅ 💡` / `🚫 💡` (the user's agree / cancel, accept / ignore);
 never tick `(x)` / `[x]`. A record is optional — add one when it helps the user find the result:
 
 ```markdown

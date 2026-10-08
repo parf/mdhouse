@@ -25,11 +25,11 @@
   are tinted; an issue id (`B44`) is the item's anchor
 - A strip over a page with items: the total, 🔴 🟠 ⚪ ✅ 🚫 🎯 — counts and a filter; ✅ done, 🚫 closed
   not as ✅ (🚫 ⏸️ 🔵); a level with 0 is not shown
-- An issue's 💡: ✓ accept (the agent does it) / ✗ ignore (the issue closes 🚫); a question's: ✓ yes / ✗ no
+- An issue's 💡: ✓ accept (the agent does it) / ✗ ignore (the issue closes 🚫); a question's: ✓ agree / ✗ cancel (the question closes 🚫)
 - The old forms — `> ?`, `> [!QUESTION]` / `[!ANSWER]`, `**Q:**` / `**A:**`, `::: q` / `::: a`,
   ☐ ☑ ☒ — are read as the new markup; the next write to the file writes it converted
 - Answering on the page (`--rw`): an item's first glyph, its 💬 / 💡 buttons and its replies open
-  a form — 💬 save, then ✅ 🚫 ⏸️ ⏳ ⚠️ 🎫 🔍 🎯 (Alt+1…9), ESC, `[ ] 👤` signs the reply; ✓ yes / ✗ no on a
+  a form — 💬 save, then ✅ 🚫 ⏸️ ⏳ ⚠️ 🎫 🔍 🎯 (Alt+1…9), ESC, `[ ] 👤` signs the reply; ✓ agree / ✗ cancel on a
   💡 answer at once (💬 reply opens the form); a click picks `( )` or ticks `[ ]`; ✓ done; 🎯 and a double-click select; a click on a reply edits
   it. Alt+E and ✎ open the file at the item. The signer: `settings.me`, else git, else the login
 - A file named in a document — `Plans/README.md`, `src/server.ts:557`, `CHANGELOG.md` — is a green link to it

@@ -102,7 +102,7 @@ Checked and sound: <one line per subsystem — what was checked>.
   2. `Evidence:` — what was run or read, and what it gave;
   3. `Impact:` — who hits it, how often, what it costs (qa-states.md); the severity follows it — no
      one hits it → ⚪ or not raised;
-  4. the fix: a `> 💡👾` line (✓ yes / ✗ no on the page) — or, for two real ways, `( )` options and the
+  4. the fix: a `> 💡👾` line (✓ accept / ✗ ignore on the page) — or, for two real ways, `( )` options and the
      line starts `❓` before the severity.
 - **Each line one short sentence, ~120 characters at most.** `Evidence:` — the strongest proof only,
   not the whole session. Several cases of one issue → short sub-items after the `Impact:` line and

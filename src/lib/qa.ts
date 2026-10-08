@@ -210,8 +210,12 @@ export function stateOf(node: QaNode): QaState {
   const status = node.glyphs[0] ?? '';
   const ask = ASK.includes(status);
   const answered = ask && isAnswered(node);
+  // a 💡 turned down with a bare `no` (written before cancel was): closed, as 🚫 is
+  const sug = node.replies.filter((r) => r.suggest).at(-1);
+  const last = lastTurn(node.replies);
+  const ignored = sug?.verdict === '🚫' && !!last && /^no\s*$/i.test(last.body.trim()) && !/^(👾|📡)/u.test(last.who ?? '');
   // 🔵 an informational note: treated as done or not relevant
-  const closed = CLOSED.includes(status) || answered || status === '🔵';
+  const closed = CLOSED.includes(status) || answered || ignored || status === '🔵';
   const severity = node.glyphs.find((g) => SEVERITY.includes(g)) ?? null;
   const touched =
     ['⏳', '⚠️', '🎫'].includes(status) ||
@@ -570,10 +574,11 @@ export function applyQa(src: string, offset: number, req: QaRequest, me: string)
       if (!newest || newest.verdict || newest.start !== req.sug - 1) return { error: 'no-target' };
       const line = e.get(newest.start);
       e.set(newest.start, `${line.slice(0, newest.markCol)}${req.yes ? '✅' : '🚫'} ${line.slice(newest.markCol)}`);
-      // an issue's 💡 is accepted — the agent does it — or ignored, which closes the issue
+      // a 💡 taken — accept (an issue: the agent does it) / agree (a question: its answer) — or turned
+      // down — ignore / cancel — which closes the item 🚫
       const issue = isIssue(item);
-      if (issue && !req.yes) setGlyphs(e, item, withStage(item.glyphs, '🚫'), item.target);
-      append(e, item, signed(issue ? (req.yes ? 'accept' : 'ignore') : req.yes ? 'yes' : 'no', req.text));
+      if (!req.yes) setGlyphs(e, item, withStage(item.glyphs, '🚫'), item.target);
+      append(e, item, signed(issue ? (req.yes ? 'accept' : 'ignore') : req.yes ? 'agree' : 'cancel', req.text));
       return { src: e.src };
     }
     case 'pick':

@@ -34,7 +34,7 @@ words) or TODO.md → rewrite it in place (the answer changed); never a second e
     > <the user's words, verbatim — a long or multi-paragraph answer quoted here>
   ```
 
-  The decision: for a `✓ yes`, the `💡` text (+ the user's note); for a pick, the option's text; for a
+  The decision: for a `✓ agree`, the `💡` text (+ the user's note); for a pick, the option's text; for a
   `no` with an alternative, `Not <X> — <Y>`; else the user's answer in brief.
 - **TODO.md** — each action the answer implies, at the end: `- [ ] <action>`; an action the new answer
   cancels: rewrite or remove the line that came from this question.

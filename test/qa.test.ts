@@ -105,15 +105,20 @@ describe('items: writing', () => {
 
   test('verdict on the newest 💡: ✅ 💡 / 🚫 💡 and a signed yes / no', () => {
     const src = '- ❓ q\n  > 💡👾 do it\n';
-    expect(act(src, 1, { op: 'verdict', sug: 2, yes: true, text: 'now' })).toBe('- ❓ q\n  > ✅ 💡👾 do it\n  >\n  > 💬 👤parf yes — now\n');
-    expect(act(src, 1, { op: 'verdict', sug: 2, yes: false })).toBe('- ❓ q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf no\n');
+    expect(act(src, 1, { op: 'verdict', sug: 2, yes: true, text: 'now' })).toBe('- ❓ q\n  > ✅ 💡👾 do it\n  >\n  > 💬 👤parf agree — now\n');
+    expect(act(src, 1, { op: 'verdict', sug: 2, yes: false })).toBe('- 🚫 q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf cancel\n');
   });
 
   test('an issue\'s 💡: accept — the agent does it; ignore — the issue closes 🚫', () => {
     const src = '- 🟠 A1 x\n  > 💡👾 do it\n';
     expect(act(src, 1, { op: 'verdict', sug: 2, yes: true })).toBe('- 🟠 A1 x\n  > ✅ 💡👾 do it\n  >\n  > 💬 👤parf accept\n');
     expect(act(src, 1, { op: 'verdict', sug: 2, yes: false, text: 'not worth it' })).toBe('- 🚫 🟠 A1 x\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf ignore — not worth it\n');
-    expect(act('- ❓ 🟠 q\n  > 💡👾 do it\n', 1, { op: 'verdict', sug: 2, yes: false })).toBe('- ❓ 🟠 q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf no\n');
+    // a question's 💡: agree answers it; cancel closes it 🚫
+    expect(act('- ❓ 🟠 q\n  > 💡👾 do it\n', 1, { op: 'verdict', sug: 2, yes: false })).toBe('- 🚫 🟠 q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf cancel\n');
+    expect(act('- ❓ q\n  > 💡👾 do it\n', 1, { op: 'verdict', sug: 2, yes: false, text: 'later' })).toBe('- 🚫 q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf cancel — later\n');
+    // written before: a declined 💡 and a bare no read as closed
+    expect(stateOf(itemAt('- ❓ q\n  > 🚫 💡👾 x\n  >\n  > 💬 👤parf no\n', 1)).closed).toBe(true);
+    expect(stateOf(itemAt('- ❓ q\n  > 🚫 💡👾 x\n  >\n  > 💬 👤parf no — do Y\n', 1))).toMatchObject({ closed: true, answered: true });
   });
 
   test('pick clears the other radios; tick toggles a checkbox; done; a comment under an option', () => {

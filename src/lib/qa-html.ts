@@ -63,9 +63,9 @@ export function qaHtml(r: QaRender) {
         (issue
           ? '<span class="s-act"><button class="accept" type="button" data-tip="Accept the solution — the agent does it">✓ accept</button>' +
             '<button class="reject" type="button" data-tip="Ignore — the issue is closed 🚫">✗ ignore</button>'
-          : '<span class="s-act"><button class="accept" type="button" data-tip="Yes — it is the answer">✓ yes</button>' +
-            '<button class="reject" type="button" data-tip="No — it goes back to the agent">✗ no</button>') +
-        `<button class="s-reply" type="button" data-tip="Reply — a form: a reply, or ${issue ? 'accept / ignore' : 'yes / no'} with a note">💬 reply</button></span>`;
+          : '<span class="s-act"><button class="accept" type="button" data-tip="Agree — it is the answer">✓ agree</button>' +
+            '<button class="reject" type="button" data-tip="Cancel — the question is closed 🚫">✗ cancel</button>') +
+        `<button class="s-reply" type="button" data-tip="Reply — a form: a reply, or ${issue ? 'accept / ignore' : 'agree / cancel'} with a note">💬 reply</button></span>`;
       return `<div class="reply proposal"${line}>💡 ${who}<span class="txt">${inline(rep.body)}</span>${acts}</div>`;
     }
     const cls = `reply${rep.partial ? ' partial' : ''}${isRecord(rep) ? ' record' : ''}`;
