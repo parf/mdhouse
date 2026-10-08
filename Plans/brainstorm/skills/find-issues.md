@@ -79,7 +79,7 @@ the meta-signals deciding where to look hardest — the format below and these r
 later run the same day appends to it. Each run opens with one heading, subsystems under it as `##`:
 
 ```markdown
-# Issues — <scope> · 📅YYYY-MM-DD · <HEAD short sha>
+# Issues — <scope> · <Mon D, YYYY> · <HEAD short sha>
 
 - 🔴 D1 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
   Evidence: corrupted the file, `mdhouse <dir> -p` → the saved folders gone
