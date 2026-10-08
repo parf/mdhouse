@@ -59,9 +59,9 @@ export function qaHtml(r: QaRender) {
     if (rep.suggest && quiet) return `<div class="reply proposal decided"${line}>💡 ${who}<span class="txt">${inline(rep.body)}</span></div>`;
     if (rep.suggest) {
       const acts =
-        '<span class="s-act"><button class="accept" type="button" data-tip="Yes — it is the answer, with a note if you like">✓ yes</button>' +
-        '<button class="reject" type="button" data-tip="No — say why; it goes back to the agent">✗ no</button>' +
-        '<button class="s-reply" type="button" data-tip="Reply — neither yes nor no">💬 reply</button></span>';
+        '<span class="s-act"><button class="accept" type="button" data-tip="Yes — it is the answer">✓ yes</button>' +
+        '<button class="reject" type="button" data-tip="No — it goes back to the agent">✗ no</button>' +
+        '<button class="s-reply" type="button" data-tip="Reply — a form: neither yes nor no, or yes / no with a note">💬 reply</button></span>';
       return `<div class="reply proposal"${line}>💡 ${who}<span class="txt">${inline(rep.body)}</span>${acts}</div>`;
     }
     const cls = `reply${rep.partial ? ' partial' : ''}${isRecord(rep) ? ' record' : ''}`;

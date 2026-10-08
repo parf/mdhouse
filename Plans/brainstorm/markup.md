@@ -71,7 +71,7 @@ turns so GitHub keeps them apart:
 - **✓ yes** (+ optional text): `💡` → `✅ 💡`, and an answer `💬 👤parf yes — …` — signed, always
 - **✗ no** (+ optional text): `💡` → `🚫 💡`, and an answer `💬 👤parf no — …`
 - **💬 reply**: neither — a reply; the question stays open
-- each opens the same form with the three saves — ✓ yes · ✗ no · 💬 reply — the text optional
+- click on yes — auto-answer yes; same for no; show form only when reply chosen
 - after yes / no the question is answered; the answer is editable later, like any other
 
 ```markdown

@@ -59,12 +59,13 @@ export function wireQa(el: HTMLElement, h: QaHandlers): () => void {
       e.preventDefault();
       return h.act(line, hash, { op: 'done' });
     }
-    // 💡: one form, three ways to save it — yes / no / reply
+    // 💡: ✓ yes / ✗ no answer at once; 💬 reply opens the form
     const sAct = t.closest<HTMLElement>('.s-act button');
     if (sAct) {
       e.preventDefault();
-      const first = sAct.classList.contains('accept') ? 'yes' : sAct.classList.contains('reject') ? 'no' : 'reply';
-      return h.open({ line, hash, kind: 'proposal', at: lineOf(sAct.closest('.reply')), first });
+      const sug = lineOf(sAct.closest('.reply'));
+      if (sAct.matches('.accept, .reject')) return h.act(line, hash, { op: 'verdict', sug, yes: sAct.matches('.accept') });
+      return h.open({ line, hash, kind: 'proposal', at: sug, first: 'reply' });
     }
     // 💬 at the end of a line: a comment on an option, or on the question
     const cBtn = t.closest('.c-btn');

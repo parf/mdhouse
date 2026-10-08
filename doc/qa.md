@@ -42,9 +42,9 @@ turns so GitHub keeps them apart:
 ```
 
 - 💡 is a proposed answer — the question still waits on me
-- **✓ yes** (+ optional text): `💡` → `✅ 💡`, and an answer `💬 👤parf yes — …` — signed, always
-- **✗ no** (+ optional text): `💡` → `🚫 💡`, and an answer `💬 👤parf no — …`
-- **💬 reply**: neither — a reply; the question stays open
+- **✓ yes** — at once: `💡` → `✅ 💡`, and an answer `💬 👤parf yes` — signed, always
+- **✗ no** — at once: `💡` → `🚫 💡`, and an answer `💬 👤parf no`
+- **💬 reply** — the form: a reply, the question stays open; or ✓ yes / ✗ no with a note
 
 ## Findings — stages
 

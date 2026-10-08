@@ -14,7 +14,7 @@
   ☐ ☑ ☒ — are read as the new markup; the next write to the file writes it converted
 - Answering on the page (`--rw`): an item's first glyph, its 💬 / 💡 buttons and its replies open
   a form — 💬 save, then ✅ 🚫 ⏸️ ⏳ ⚠️ 🎫 🔍 🎯 (Alt+1…9), ESC, `[ ] 👤` signs the reply; ✓ yes / ✗ no on a
-  💡; a click picks `( )` or ticks `[ ]`; ✓ done; 🎯 and a double-click select; a click on a reply edits
+  💡 answer at once (💬 reply opens the form); a click picks `( )` or ticks `[ ]`; ✓ done; 🎯 and a double-click select; a click on a reply edits
   it. Alt+E and ✎ open the file at the item. The signer: `settings.me`, else git, else the login
 - Leaving a document with a form open keeps the draft; back on it, the form opens again with it
 - A tick or an answer always goes to the document on screen, even when the previous one had the
