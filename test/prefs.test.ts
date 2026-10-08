@@ -256,3 +256,26 @@ test('a hand-written root entry missing a mark array loads with it empty (D2)', 
   expect(prefs.marksFor('/bad', 'a.md')).toEqual([]);
   expect((await prefs.set('/r', 'b.md', 'muted', true)).muted).toEqual(['b.md']);
 });
+
+describe('a file from a newer mdhouse (D5)', () => {
+  test('unknown top-level keys survive a save', async () => {
+    const { readFile: read } = await import('node:fs/promises');
+    const f = join(dir, 'unknown-keys.json');
+    await writeFile(f, JSON.stringify({ version: 1, theme: 'dark', newThing: { a: [1] } }));
+    await (await Prefs.load(f)).addSaved('/x');
+    const saved = JSON.parse(await read(f, 'utf8'));
+    expect(saved).toMatchObject({ version: 1, theme: 'dark', newThing: { a: [1] }, saved: ['/x'] });
+  });
+
+  test('a file with a newer version is read, never written', async () => {
+    const { readFile: read } = await import('node:fs/promises');
+    const f = join(dir, 'version2.json');
+    const original = JSON.stringify({ version: 2, saved: ['/keep'], theme: 'dark' });
+    await writeFile(f, original);
+    const prefs = await Prefs.load(f);
+    expect(prefs.savedDirs()).toEqual(['/keep']);
+    await expect(prefs.addSaved('/x')).rejects.toThrow(/version 2/);
+    expect(await read(f, 'utf8')).toBe(original);
+    expect(prefs.savedDirs()).toEqual(['/keep']);
+  });
+});

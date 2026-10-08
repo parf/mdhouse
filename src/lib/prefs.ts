@@ -33,7 +33,8 @@ interface RootPrefs {
 }
 
 interface PrefsFile {
-  version: 1;
+  /** Above 1: written by a newer mdhouse — read, never written. */
+  version: number;
   /** absolute root path -> marks */
   roots: Record<string, RootPrefs>;
   /** Absolute, symlink-resolved directories served on every start. */
@@ -113,7 +114,10 @@ const fresh = (): PrefsFile => ({
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
 
-/** A parsed file, filled out and type-checked, so an older or hand-edited one loads cleanly. */
+/**
+ * A parsed file, filled out and type-checked, so an older or hand-edited one loads cleanly.
+ * Unknown top-level keys are kept, so a save never drops what a newer mdhouse wrote.
+ */
 function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   const saved = Array.isArray(parsed.saved) ? parsed.saved.filter((d) => typeof d === 'string') : [];
   // Only a saved directory can be saved writable.
@@ -146,7 +150,8 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     }
   }
   return {
-    version: 1,
+    ...parsed,
+    version: typeof parsed.version === 'number' && parsed.version > 1 ? parsed.version : 1,
     roots,
     saved,
     writable,
@@ -228,6 +233,7 @@ export class Prefs {
     const found = await readFile(this.path);
     if (found === 'broken') await setAside(this.path);
     const data = typeof found === 'object' ? found : found === 'missing' ? fresh() : this.data;
+    if (data.version > 1) throw new Error(`${this.path} is version ${data.version}, from a newer mdhouse — not changed`);
     const result = change(data);
     this.data = data;
     await this.write();
