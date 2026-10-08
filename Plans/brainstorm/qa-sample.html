@@ -185,6 +185,9 @@ details.settled[open] .more { display: none; }
 /* the editor bar: actions on the left, "👤me" at the far right */
 .c-edit .bar, .f-edit .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .bar .sign { margin-left: auto; font-size: 12px; color: var(--dim); display: inline-flex; gap: 4px; align-items: center; cursor: pointer; position: relative; }
+/* an unanswered question: a lighter red, and a 1px reddish line on the left (inset — nothing moves) */
+.item.wait-me { background: color-mix(in srgb, var(--q-bg) 55%, var(--bg)); box-shadow: inset 1px 0 0 color-mix(in srgb, var(--q) 45%, transparent); }
+.item.wait-me.dis { background: color-mix(in srgb, var(--dis-bg) 55%, var(--bg)); box-shadow: inset 1px 0 0 color-mix(in srgb, var(--dis) 45%, transparent); }
 /* an unanswered question: its ❓ / ⁉️ always looks like a button — a light frame; hover makes it full */
 .item.wait-me > .head .g-btn { border-color: color-mix(in srgb, var(--q) 35%, transparent); background: color-mix(in srgb, var(--panel) 60%, transparent); }
 .item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--dis) 35%, transparent); }
