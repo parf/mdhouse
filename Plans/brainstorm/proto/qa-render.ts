@@ -372,6 +372,8 @@ details.settled[open] .more { display: none; }
 .bar .sign[data-tip]:hover::after, .bar > :last-child[data-tip]:hover::after { left: auto; right: 0; }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
+/* the action's number — Alt+number presses it */
+.bar .n { font: 600 10px/1 ui-monospace, monospace; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 3px; margin-right: 1px; }
 /* a compact bar: less side padding, smaller gaps */
 .c-edit .bar, .f-edit .bar { gap: 4px; }
 .c-edit button, .f-edit button { padding: 1px 5px; }

@@ -35,12 +35,21 @@ turns so GitHub keeps them apart:
   without spaces
 - "need more" = my `💬 ⚠️` while the glyph stays `❓`
 
-  | Editing | Actions between 💬 and ESC |
-  |---|---|
-  | a question ❓ ⁉️ (answered or not) | ⚠️ need more · ✅ settled · ⏳ agent · ⏸️ defer · 🚫 drop |
-  | a finding (a line with a severity) | ✅ done · 🚫 reject · ⏸️ defer · 🎫 ticket · ⏳ agent · ❓ me · ⚠️ partial |
-  | a comment on an option | pick it |
-  | a request 👉 | ✅ done · ⏸️ defer · 🚫 drop |
+  Each action has one number, the same in every form; **Alt+number** presses it. A form without the
+  action skips its number — the others never move.
+
+  | # | Action | Question | Finding | 💡 suggestion | 👉 request | Option comment |
+  |---|---|---|---|---|---|---|
+  | 1 | ✅ | settled | done | ✓ yes | done | |
+  | 2 | 🚫 | drop | reject | ✗ no | drop | |
+  | 3 | ⏸️ | defer | defer | | defer | |
+  | 4 | ⏳ | agent | agent | | | |
+  | 5 | ⚠️ | need more | partial | | | |
+  | 6 | 🎫 | ticket — the answer will be there | ticket | | | |
+  | 7 | 🔍 | more | more | more | more | more |
+  | 8 | | | | | | pick it |
+
+  A question and a finding carry the same glyphs; only the words differ.
 
   Every form also has **🔍 more** (elaborate): a signed reply `💬 👤parf elaborate — …` (text optional). It is
   never an answer and never closes the item — like `💬 ⚠️`, it asks for more. (the agent flips it to `⏳` when it starts)

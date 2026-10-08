@@ -25,21 +25,25 @@
    * 💬 ⚠️ (need more); `pick` saves and picks the option the comment is on.
    */
   const ACTIONS = {
-    question: [['partial', '⚠️ need more', 'A partial answer: it stays open'], ['✅', '✅ settled'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
-    finding: [['✅', '✅ done', 'Fixed / done'], ['🚫', '🚫 reject', 'Rejected — say why'], ['⏸️', '⏸️ defer', 'Deferred — later'], ['🎫', '🎫 ticket', 'Handed off to a ticket'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['❓', '❓ me', 'My call — waiting on me'], ['⚠️', '⚠️ partial', 'Partly done — follow-up needed']],
+    question: [['✅', '✅ settled'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['partial', '⚠️ need more', 'A partial answer: it stays open'], ['🎫', '🎫 ticket', 'The answer will be in a ticket — wait for it']],
+    finding: [['✅', '✅ done', 'Fixed / done'], ['🚫', '🚫 reject', 'Rejected — say why'], ['⏸️', '⏸️ defer', 'Deferred — later'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⚠️', '⚠️ partial', 'Partly done — follow-up needed'], ['🎫', '🎫 ticket', 'Handed off to a ticket']],
     option: [['pick', 'pick it', 'Save and pick this option']],
-    request: [['✅', '✅ done'], ['⏸️', '⏸️ defer'], ['🚫', '🚫 drop']],
+    request: [['✅', '✅ done'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer']],
     proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
     comment: [],
   };
+  /** One number per action, the same in every form — Alt+number presses it. */
+  const NUM = { '✅': 1, yes: 1, '🚫': 2, no: 2, '⏸️': 3, '⏳': 4, partial: 5, '⚠️': 5, '🎫': 6, elaborate: 7, pick: 8 };
   function editor(host, { kind = 'comment', prefill = '', placeholder = 'Reply…', save = '💬', onSave }) {
     closeEditors();
     const ed = document.createElement('div');
     ed.className = kind === 'finding' ? 'f-edit' : 'c-edit';
-    const extra = (ACTIONS[kind] || [])
-      .map(([a, label, tip]) => `<button data-a="${a}"${tip ? ` data-tip="${tip}"` : ''}>${label}</button>`).join('');
+    const actions = [...(ACTIONS[kind] || []), ['elaborate', '🔍 more', "Ask for more: a reply 'elaborate — …'; the item stays open"]]
+      .sort((x, y) => NUM[x[0]] - NUM[y[0]]);
+    const extra = actions
+      .map(([a, label, tip]) => `<button data-a="${a}" data-n="${NUM[a]}" data-tip="${tip ? `${tip} — ` : ''}Alt+${NUM[a]}"><span class="n">${NUM[a]}</span> ${label}</button>`).join('');
     ed.innerHTML = `<textarea placeholder="${placeholder}"></textarea><div class="bar"><button class="save" data-tip="Save — Ctrl+Enter">${save}</button>`
-      + extra + '<button data-a="elaborate" data-tip="Ask for more: a reply \'elaborate — …\'; the item stays open">🔍 more</button>'
+      + extra
       + '<button class="cancel" data-tip="Cancel">ESC</button>'
       + `<label class="sign" data-tip="Sign the reply: it starts with 👤${ME}"><input type="checkbox"> 👤</label></div>`;
     // a suggestion's form reads YES / NO / REPLY
@@ -69,9 +73,15 @@
       if (b.classList.contains('cancel')) return ed.remove();
       done(b.dataset.a ?? null);
     });
-    ta.addEventListener('keydown', (e) => {
+    ed.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') ed.remove();
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) done(null);
+      // Alt+1…8: the action with that number, if this form has it (the key's code, so any layout works)
+      const n = e.altKey && !e.ctrlKey && !e.metaKey && /^Digit([1-9])$/.exec(e.code);
+      if (n) {
+        e.preventDefault();
+        ed.querySelector(`.bar [data-n="${n[1]}"]`)?.click();
+      }
     });
   }
   const threadOf = (host, cls = 'thread') => {
