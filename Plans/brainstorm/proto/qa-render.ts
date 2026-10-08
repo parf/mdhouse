@@ -389,7 +389,7 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 .item.info { color: var(--dim); }
 /* 🎯 selected for the next run: bold red bars left and right, and its 🎯 lit */
 [data-k~="🎯"] { box-shadow: inset 4px 0 0 #e5383b, inset -4px 0 0 #e5383b !important;
-  background: color-mix(in srgb, #e5383b 7%, var(--bg)) !important; }
+  background: color-mix(in srgb, #fd7e14 14%, var(--bg)) !important; }
 /* the 🎯 button on every line: a click selects / unselects at once — no form */
 .item, details.settled, .req { position: relative; }
 .item > .head, details.settled > summary, .req { padding-right: 26px; }
