@@ -2,8 +2,7 @@
 
 One reference, so the four skills never drift: every rule below is stated here only. It is how mdhouse
 renders the file — the skills read it the way the page does. Every glyph and badge:
-`Plans/brainstorm/2026-10-07/glyphs.md`. Shipped, this file sits at
-`.claude/skills/qa-states.md`.
+[glyphs.md](glyphs.md); the markup with examples: [markup.md](markup.md) — both beside this file.
 
 ## Never trust the task
 
