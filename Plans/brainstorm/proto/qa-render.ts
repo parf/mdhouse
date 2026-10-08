@@ -208,7 +208,9 @@ function itemHtml(it: Item): string {
   const finding = !!sev && !ask;
   const cls = ['item', ask ? 'wait-me' : '', finding ? 'finding' : '', status === '⁉️' ? 'dis' : '', status === '🔴' || more[0] === '🔴' ? 'sev-h' : '', status === '🔵' ? 'info' : '']
     .filter(Boolean).join(' ');
-  const chip = status === '⏳' ? '<span class="btn">waiting on agent</span>' : '';
+  // checkboxes (any of): ticking does not settle the question — ✓ done does
+  const doneBtn = !closed && options.some((o) => o.option === 'check') ? '<button class="c-done" data-tip="Done picking: the question turns ✅">✓ done</button>' : '';
+  const chip = status === '⏳' ? '<span class="btn">waiting on agent</span>' : doneBtn;
   return `<li class="${cls}" data-k="${key}"${sev ? ` data-sev="${sev}"` : ''}><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
     + `${options.length ? '<button class="c-btn" data-tip="Comment on the question">💬</button>' : ''}</div>`
     + `${opts}${threadHtml(it.replies, 'thread q-thread')}</li>`;
@@ -381,6 +383,9 @@ details.settled[open] .more { display: none; }
 /* a settled question reads quiet grey, not red; its answer keeps its green */
 .t-q { color: var(--dim); }
 .t-a { margin-top: 3px; }
+/* ✓ done on an any-of question */
+.c-done { flex: none; font-size: 12px; padding: 1px 10px; border-radius: 10px; border: 1px solid var(--a); background: var(--panel); color: var(--a); cursor: pointer; }
+.c-done:hover { background: var(--a); color: #fff; }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
 /* the action's number — Alt+number presses it */

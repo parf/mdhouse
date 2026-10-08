@@ -119,7 +119,7 @@ On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plai
 - 🌟 = the suggested one (the agent's pick); ⭐ = runner-up, optional
 - a click on `( )` writes `(x)` and clears the others; the question turns `✅`
 - a click on that `✅` undoes the pick: `(x)` → `( )`, `✅` → `❓` — unanswered again
-- a click on `[ ]` writes `[x]`; the question stays `❓` until I say done
+- a click on `[ ]` writes `[x]`; the question stays `❓` until **✓ done** (on its line) turns it `✅`
 - once something is picked, the unpicked options are muted
 - a 💬 under the options still works: "none — do X instead"
 - to comment: hover a line (the question or an option) → 💬 at its right end → editor under that line; a click on a comment edits it

@@ -120,6 +120,17 @@
       });
       return;
     }
+    // ---- ✓ done on an any-of question: settled, the unticked muted
+    const dn = e.target.closest('.c-done');
+    if (dn) {
+      e.preventDefault();
+      const host = dn.closest('.item');
+      host.querySelector(':scope > .opts')?.classList.add('done');
+      dn.remove();
+      setStage(host, '✅');
+      host.classList.remove('wait-me');
+      return;
+    }
     // ---- 💬 on a question / option line: a comment under it
     const c = e.target.closest('.c-btn');
     if (c) {
