@@ -132,6 +132,8 @@ could otherwise send to a local server.
 Several processes write it. Each change re-reads the file, applies itself, and replaces the file
 atomically (temp file + rename). A file that does not parse is moved aside, not overwritten: it
 holds every mark and saved folder, and an empty file saved over a typo would destroy them.
+Across processes a change holds `prefs.json.lock` (`O_EXCL`, not `flock` — no FFI); a lock
+unchanged for 2 s is a killed process's and is taken over — 2026-10-08.
 
 ## One palette for questions, disagreements and answers
 

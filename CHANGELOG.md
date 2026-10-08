@@ -36,6 +36,8 @@
 - `prefs.json` is written 0600 (its folder created 0700): other local users can no longer read the
   password hashes
 - A symlinked `prefs.json` (stow, chezmoi) stays a link; a save writes its target
+- Two mdhouse processes saving `prefs.json` at once (the service and `-p`, `--allow`, `user-add`)
+  no longer lose a change: `prefs.json.lock`; one left by a killed process is taken over after 2 s
 - A `{word}` at the end of a line stays on the page (`GET /users/{id}`, a `{placeholder}`, a table
   cell); only `{#id .class key=value}` is an attribute list
 - A tick, an answer or an added block is written whole or not at all: a write cut short (disk

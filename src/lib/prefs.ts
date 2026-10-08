@@ -18,7 +18,7 @@
  */
 
 import { homedir } from 'node:os';
-import { mkdir, realpath, rename, writeFile } from 'node:fs/promises';
+import { mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -195,6 +195,53 @@ async function setAside(path: string): Promise<void> {
   console.error(`mdhouse: ${path} could not be read; moved it to ${backup} and started a new one.`);
 }
 
+/** A save holds the lock for milliseconds; a lock that stays the same file this long is a killed process's. */
+const LOCK_STALE_MS = 2000;
+
+/**
+ * Runs `fn` holding `<path>.lock`, created exclusively, so one process at a time changes the file.
+ * Waits while the lock is held; one unchanged for `LOCK_STALE_MS` is removed and taken. Throws when
+ * a stale lock cannot be removed.
+ */
+async function withLock<T>(path: string, fn: () => Promise<T>): Promise<T> {
+  const lock = `${path}.lock`;
+  await mkdir(dirname(lock), { recursive: true, mode: 0o700 });
+  let seen = '';
+  let since = Date.now();
+  for (;;) {
+    const fh = await open(lock, 'wx', 0o600).catch((err: NodeJS.ErrnoException) => {
+      if (err.code === 'EEXIST') return null;
+      throw err;
+    });
+    if (fh) {
+      let ino: number;
+      try {
+        await fh.writeFile(`${process.pid}\n`);
+        ino = (await fh.stat()).ino;
+      } finally {
+        await fh.close();
+      }
+      try {
+        return await fn();
+      } finally {
+        // Not a lock another process took over after this one went stale.
+        if ((await stat(lock).catch(() => null))?.ino === ino) await unlink(lock).catch(() => {});
+      }
+    }
+    const st = await stat(lock).catch(() => null);
+    const id = st ? `${st.ino}:${st.mtimeMs}` : '';
+    if (id !== seen) {
+      seen = id;
+      since = Date.now();
+    } else if (st && Date.now() - since >= LOCK_STALE_MS) {
+      await unlink(lock).catch((err: NodeJS.ErrnoException) => {
+        if (err.code !== 'ENOENT') throw err;
+      });
+    }
+    await Bun.sleep(5 + Math.random() * 10);
+  }
+}
+
 /** Distinguishes this process's temporary files from one another. */
 let tmpSeq = 0;
 
@@ -221,10 +268,11 @@ export class Prefs {
   /**
    * Every change is read, apply, write — against the file as it is *now*, not the copy this
    * process loaded. More than one process writes it (the CLI, a daemon per port, the systemd
-   * service), and each holding its own copy meant each save undid the others' changes.
+   * service), and each holding its own copy meant each save undid the others' changes. Each
+   * change runs under `withLock`, so two processes never interleave.
    */
   private mutate<T>(change: (data: PrefsFile) => T): Promise<T> {
-    const run = this.queue.then(() => this.mutateNow(change));
+    const run = this.queue.then(() => withLock(this.path, () => this.mutateNow(change)));
     this.queue = run.catch(() => {});
     return run;
   }

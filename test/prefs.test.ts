@@ -306,3 +306,37 @@ test('a symlinked prefs.json stays a link; the save goes to its target (D6)', as
   expect((await lstat(link)).isSymbolicLink()).toBe(true);
   expect(JSON.parse(await read(real, 'utf8')).saved).toEqual(['/x']);
 });
+
+describe('processes saving at once (D4)', () => {
+  test('no change is lost — one process at a time holds prefs.json.lock', async () => {
+    const f = join(dir, 'many.json');
+    const procs = Array.from({ length: 6 }, (_, i) =>
+      Bun.spawn(['bun', '-e', `
+        const { Prefs } = await import(${JSON.stringify(join(import.meta.dir, '../src/lib/prefs'))});
+        const p = await Prefs.load(process.argv[1]);
+        for (let j = 0; j < 5; j++) await p.addSaved('/p${i}-' + j);
+      `, f]),
+    );
+    expect(await Promise.all(procs.map((p) => p.exited))).toEqual([0, 0, 0, 0, 0, 0]);
+    expect((await Prefs.load(f)).savedDirs()).toHaveLength(30);
+    expect(await Bun.file(`${f}.lock`).exists()).toBe(false);
+  }, 30000);
+
+  test("a lock left by a killed process is taken over, not waited on forever", async () => {
+    const f = join(dir, 'stale-lock.json');
+    await writeFile(`${f}.lock`, '999999\n');
+    const t0 = Date.now();
+    await (await Prefs.load(f)).addSaved('/x');
+    expect(Date.now() - t0).toBeLessThan(5000);
+    expect((await Prefs.load(f)).savedDirs()).toEqual(['/x']);
+    expect(await Bun.file(`${f}.lock`).exists()).toBe(false);
+  }, 10000);
+
+  test('a lock that cannot be removed fails the change instead of hanging', async () => {
+    const { mkdir } = await import('node:fs/promises');
+    const f = join(dir, 'stuck-lock.json');
+    await mkdir(`${f}.lock`);
+    await expect((await Prefs.load(f)).addSaved('/x')).rejects.toThrow();
+    expect(await Bun.file(f).exists()).toBe(false);
+  }, 10000);
+});
