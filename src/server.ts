@@ -629,7 +629,7 @@ export async function serve(opts: ServeOptions) {
           },
         });
 
-        const stat = await file.stat();
+        const info = await file.stat();
         // Cheap — the status map is built once per root and invalidated by the watcher. It is
         // here because it decides whether the page opens on the diff or on the document.
         const status = await store.statusOf(loc.root, loc.rel).catch(() => undefined);
@@ -641,8 +641,8 @@ export async function serve(opts: ServeOptions) {
           writable: loc.root.writable,
           frontmatter,
           lineOffset: offset,
-          mtime: stat.mtimeMs,
-          size: stat.size,
+          mtime: info.mtimeMs,
+          size: info.size,
           marks: prefs.marksFor(loc.root.path, loc.rel),
           ...(status ? { status } : {}),
           ...rendered,

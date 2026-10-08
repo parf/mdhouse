@@ -791,3 +791,34 @@ test('--rw for a folder writable only by auto-rw sticks when auto-rw goes off (A
     await rm(base, { recursive: true, force: true });
   }
 });
+
+test('/api/doc links a file named in the text when it is a file in the root', async () => {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-mention-'));
+  await Bun.write(join(base, 'a.md'), 'See `notes/b.md`, missing.md and `src/x.ts:3`.\n');
+  await Bun.write(join(base, 'notes/b.md'), 'b\n');
+  await Bun.write(join(base, 'src/x.ts'), 'x\n');
+  const port = 61802;
+  const registry = await Registry.create([{ path: base, writable: false }]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
+  const id = registry.list()[0]!.id;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/doc?p=${id}/a.md`);
+    expect(res.status).toBe(200);
+    const { html } = (await res.json()) as { html: string };
+    expect(html).toContain('class="md-local-link md-file-link"><code>notes/b.md</code>');
+    expect(html).toContain('#L3" class="md-local-link md-file-link"><code>src/x.ts:3</code>');
+    expect(html).toContain('missing.md');
+    expect(html).not.toContain('missing.md</a>');
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
