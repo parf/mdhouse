@@ -708,3 +708,37 @@ test('/api/doc renders Markdown only — any other file is 404 (A6)', async () =
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('--rw for a folder writable only by auto-rw sticks when auto-rw goes off (A8)', async () => {
+  const { mkdtemp, rm, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const { askDaemon } = await import('../src/lib/control');
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-rwasked-'));
+  const notes = join(base, 'auto', 'notes');
+  await mkdir(notes, { recursive: true });
+  const prefs = await Prefs.load(join(base, 'prefs.json'));
+  await prefs.setAutoRw([join(base, 'auto')]);
+  const port = 61783;
+  const { server, watcher, control } = await serve({ registry: await Registry.create([base]), prefs, port, hostname: '127.0.0.1', noGit: true });
+  const writable = async () =>
+    ((await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()).roots as { path: string; writable: boolean }[]).find((r) => r.path === notes)?.writable;
+  const settings = (autoRw: boolean) =>
+    fetch(`http://127.0.0.1:${port}/api/settings`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ autoRw }) });
+  try {
+    await askDaemon(port, { dirs: [notes] });
+    expect(await writable()).toBe(true); // by auto-rw
+    const reply = await askDaemon(port, { dirs: [notes], rw: true });
+    expect(reply && 'roots' in reply && reply.roots.find((r) => r.path === notes)?.upgraded).toBeFalsy(); // it was writable already
+    await settings(false);
+    expect(await writable()).toBe(true); // by --rw
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});

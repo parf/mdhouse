@@ -892,9 +892,10 @@ export async function serve(opts: ServeOptions) {
       const root = await registry.add(dir, writable);
       // `--rw` for a folder already served read-only upgrades it in place. Never the other way:
       // taking write access away is `-p` without `--rw` and a restart, or `--rm`.
-      if (writable && !root.writable) {
+      // A folder writable only by auto-rw is asked for too: `--rw` outlives auto-rw going off.
+      if (writable && !root.rwAsked) {
+        if (!root.writable) upgraded.add(root.id);
         registry.setWritable(root.id, true);
-        upgraded.add(root.id);
       }
       // Asking for a directory already served is a request for its URL, not a second copy of
       // it — only a genuinely new root needs a watcher.

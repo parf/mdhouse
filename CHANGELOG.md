@@ -38,6 +38,8 @@
 - Commit and pull no longer write past a `--rw` folder: commit refuses a change outside it or in a
   read-only folder, pull a repo that holds a read-only folder or files outside it (409)
 - A document URL renders Markdown only: `/d/<root>/.git/config` and other non-Markdown files are 404
+- `mdhouse <dir> --rw` for a folder already writable by auto-rw keeps it writable when auto-rw is
+  turned off
 
 ## 1.5.0 — 2026-10-07
 
