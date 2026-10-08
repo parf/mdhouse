@@ -334,9 +334,14 @@ export function CommitsView({ p, info, onOpen, revision }: { p: string; info: Gi
 /** Every file git tracks under the folder: Markdown opens here, the rest on its host. */
 export function FilesView({ p, info, onOpen, revision }: { p: string; info: GitInfo; onOpen: (rel: string) => void; revision: number }) {
   const [files, setFiles] = useState<string[] | null>(null);
+  const [capped, setCapped] = useState(false);
   useEffect(() => {
     let live = true;
-    void api.gitFiles(p).then((r) => live && setFiles(r.files));
+    void api.gitFiles(p).then((r) => {
+      if (!live) return;
+      setFiles(r.files);
+      setCapped(r.capped);
+    });
     return () => {
       live = false;
     };
@@ -348,21 +353,24 @@ export function FilesView({ p, info, onOpen, revision }: { p: string; info: GitI
   const sha = info.head?.branch;
   let lastDir = '\0';
   return (
-    <ul class="git-files">
-      {files.map((path) => {
-        const rel = path.slice(prefix.length);
-        const cut = rel.lastIndexOf('/');
-        const dir = cut < 0 ? '' : rel.slice(0, cut);
-        const head = dir !== lastDir;
-        lastDir = dir;
-        return (
-          <li key={path} class={head ? 'first' : ''}>
-            <span class="git-dir">{head ? (dir ? `${dir}/` : '') : ''}</span>
-            <FileLink info={info} path={path} sha={sha} onOpen={onOpen} label={rel.slice(cut + 1)} />
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      <ul class="git-files">
+        {files.map((path) => {
+          const rel = path.slice(prefix.length);
+          const cut = rel.lastIndexOf('/');
+          const dir = cut < 0 ? '' : rel.slice(0, cut);
+          const head = dir !== lastDir;
+          lastDir = dir;
+          return (
+            <li key={path} class={head ? 'first' : ''}>
+              <span class="git-dir">{head ? (dir ? `${dir}/` : '') : ''}</span>
+              <FileLink info={info} path={path} sha={sha} onOpen={onOpen} label={rel.slice(cut + 1)} />
+            </li>
+          );
+        })}
+      </ul>
+      {capped && <p class="empty">The first {files.length} only.</p>}
+    </>
   );
 }
 

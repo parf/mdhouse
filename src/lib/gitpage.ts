@@ -10,6 +10,7 @@
 import { existsSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
 import { MD_EXT } from './filetypes';
+import { LIST_CAP } from './scan';
 
 export interface RunResult {
   code: number;
@@ -111,10 +112,11 @@ export async function folderLog(repo: string, dir: string, skip = 0, limit = 50)
   return commits;
 }
 
-/** Every file git tracks under `dir`, repo-relative, sorted. */
-export async function trackedFiles(repo: string, dir: string): Promise<string[]> {
+/** The files git tracks under `dir`, repo-relative, sorted — the first `cap`; `capped` says there were more. */
+export async function trackedFiles(repo: string, dir: string, cap = LIST_CAP): Promise<{ files: string[]; capped: boolean }> {
   const r = await run(repo, ['ls-files', '-z', '--', dir || '.']);
-  return r.code === 0 ? r.out.split(REC).filter(Boolean).sort() : [];
+  const files = r.code === 0 ? r.out.split(REC).filter(Boolean).sort() : [];
+  return { files: files.slice(0, cap), capped: files.length > cap };
 }
 
 export interface DirtyFile {

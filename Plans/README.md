@@ -170,7 +170,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   browsed tree.
 - **Git view** — `/d/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
   plus `GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
-  `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote`, POST
+  `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote` (files: the first 5000, `capped`), POST
   `/api/git/commit|pull|push|reset` (reset: one `.md` file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409) — writable folder, same origin, one at a time per repo; commit refuses (409) a file outside the root or in a read-only root, pull a repo holding a read-only root or files outside the root; network
   git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Host links from `origin`.
   Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.

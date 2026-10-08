@@ -62,8 +62,9 @@ describe('a real repo', () => {
   });
 
   test('trackedFiles', async () => {
-    expect(await trackedFiles(repo, '')).toEqual(['docs/a.md', 'main.ts']);
-    expect(await trackedFiles(repo, 'docs')).toEqual(['docs/a.md']);
+    expect(await trackedFiles(repo, '')).toEqual({ files: ['docs/a.md', 'main.ts'], capped: false });
+    expect(await trackedFiles(repo, 'docs')).toEqual({ files: ['docs/a.md'], capped: false });
+    expect(await trackedFiles(repo, '', 1)).toEqual({ files: ['docs/a.md'], capped: true });
   });
 
   test('dirtyFiles and what commit -a takes', async () => {

@@ -253,7 +253,7 @@ export interface AnyFile {
 }
 
 /** At most this many files: a folder page is not a file manager. */
-const LIST_CAP = 5000;
+export const LIST_CAP = 5000;
 
 /**
  * Every file under `abs` (a folder inside the root at `rootPath`), root-relative: in a repository

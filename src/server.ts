@@ -519,7 +519,7 @@ export async function serve(opts: ServeOptions) {
       '/api/git/files': async (req) => {
         const at = await gitAt(new URL(req.url));
         if ('error' in at) return at.error;
-        return json({ files: await trackedFiles(at.repo, at.dir) });
+        return json(await trackedFiles(at.repo, at.dir));
       },
       '/api/git/remote': async (req) => {
         const url = new URL(req.url);
