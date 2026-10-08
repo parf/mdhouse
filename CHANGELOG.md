@@ -56,6 +56,8 @@
 - `--rw` and `-p` apply to the folders named only: `mdhouse -p --port <n>` keeps each saved
   folder writable or read-only as it was saved
 - `-p` on a port held by something else saves nothing — neither the folders nor the port
+- Handing folders to a running mdhouse names the flags it did not apply (`--host`, `--no-git`,
+  `--git-log`, `-a`): they take effect after `mdhouse exit` and a fresh start
 
 ## 1.5.0 — 2026-10-07
 

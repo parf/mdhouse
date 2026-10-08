@@ -96,3 +96,20 @@ describe('-p saves only once the port is known to be free', () => {
     s.run(['exit', '--port', '61915']);
   });
 });
+
+describe('handing over to a running mdhouse', () => {
+  test('names the flags only a fresh start applies (C2)', () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const b = s.folder('b');
+    expect(s.run([a, '--port', '61917']).code).toBe(0);
+    const r = s.run([b, '--port', '61917', '--host', '127.0.0.2', '--no-git', '--git-log', '5', '-a']);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('already running');
+    expect(r.err).toContain('not applied: --host --no-git --git-log -a');
+    expect(r.err).toContain('mdhouse exit --port 61917');
+    // The same host, or none of them: nothing to say.
+    expect(s.run([b, '--port', '61917', '--host', '127.0.0.1']).err).toBe('');
+    s.run(['exit', '--port', '61917']);
+  });
+});

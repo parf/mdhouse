@@ -69,6 +69,8 @@ interface Options {
   allow: string[] | null;
   /** `--auto-rw`: the paths to save, or null when not given. */
   autoRw: string[] | null;
+  /** Given flags that only a fresh start applies — a running mdhouse keeps its own. */
+  startOnly: Set<string>;
 }
 
 function parse(argv: string[]): Options {
@@ -89,6 +91,7 @@ function parse(argv: string[]): Options {
     rm: false,
     allow: null,
     autoRw: null,
+    startOnly: new Set(),
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -99,10 +102,10 @@ function parse(argv: string[]): Options {
       case '--port': o.port = Number(next()); o.portGiven = true; break;
       case '--host': o.host = next(); o.hostGiven = true; break;
       case '-o': case '--open': o.open = true; break;
-      case '-a': case '--all': o.all = true; break;
+      case '-a': case '--all': o.all = true; o.startOnly.add('-a'); break;
       case '--fg': case '--foreground': o.fg = true; break;
-      case '--git-log': o.gitLog = Number(next()); break;
-      case '--no-git': o.noGit = true; break;
+      case '--git-log': o.gitLog = Number(next()); o.startOnly.add('--git-log'); break;
+      case '--no-git': o.noGit = true; o.startOnly.add('--no-git'); break;
       case '--rw': o.rw = true; break;
       case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
@@ -413,6 +416,12 @@ async function handOver(reply: AddReply | { error: string } | null): Promise<nev
   const grew = reply.roots.some((r) => r.added);
   console.log(`mdhouse  ${reply.url}  (already running — ${grew ? 'added to it' : 'already serving that'})`);
   printRoots(reply.roots, reply.roots.length > 1);
+
+  const ignored = [...(opts.hostGiven && reply.url !== pageUrl(opts.host, opts.port) ? ['--host'] : []), ...opts.startOnly];
+  if (ignored.length) {
+    console.error(`\nmdhouse: already running, so not applied: ${ignored.join(' ')}`);
+    console.error(`         They take effect after  mdhouse exit${portHint}  and a fresh start.`);
+  }
 
   // `--rw` for a folder that was already served read-only switched it over in place.
   for (const root of reply.roots) {
