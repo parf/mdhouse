@@ -9,6 +9,16 @@ describe('old Q&A forms → the new markup', () => {
     expect(convertLegacy('> !? a\n> Q: b\n')).toBe('> ⁉️ a\n\n> ❓ b\n');
   });
 
+  test('lower-case q: / a:, and ! / !! for 🟠 / 🔴 — not an image', () => {
+    expect(convertLegacy('> q: Who?\n> a: nobody\n')).toBe('> ❓ Who?\n> 💬 nobody\n');
+    expect(convertLegacy('> ! slow query\n')).toBe('> 🟠 slow query\n');
+    expect(convertLegacy('> !! data loss\n> a: fixed\n')).toBe('> 🔴 data loss\n> 💬 fixed\n');
+    expect(convertLegacy('> ![logo](x.png)\n> !important\n')).toBe('> ![logo](x.png)\n> !important\n');
+    const it = parseQa(convertLegacy('> ! slow query\n'), 0).items[0]!;
+    expect(it.kind).toBe('quote');
+    expect(it.glyphs).toEqual(['🟠']);
+  });
+
   test('alerts; an answer after a blank line joins its question', () => {
     expect(convertLegacy('> [!QUESTION]\n> Why?\n\n> [!ANSWER]\n> Because.\n>\n> Two.\n\nnext\n')).toBe(
       '> ❓ Why?\n> 💬 Because.\n>\n> Two.\n\nnext\n',

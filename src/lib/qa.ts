@@ -311,14 +311,14 @@ function listNode(tokens: Token[], i: number, lines: string[]): QaNode | null {
   return node;
 }
 
-/** A quote that opens with a stage glyph — `> ❓ …` — its head, then its turns. */
+/** A quote that opens with a stage or severity glyph — `> ❓ …`, `> 🟠 …` — its head, then its turns. */
 function quoteNode(open: Token, lines: string[]): QaNode | null {
   const [start, mapEnd] = open.map!;
   const first = lines[start]!;
   const q = QUOTE_LEAD.exec(first);
   if (!q) return null;
   const lead = leadGlyphs(first.slice(q[0].length));
-  if (!lead.glyphs.length || !STAGES.includes(lead.glyphs[0]!)) return null;
+  if (!lead.glyphs.length || !(STAGES.includes(lead.glyphs[0]!) || SEVERITY.includes(lead.glyphs[0]!))) return null;
   const end = trimEnd(lines, start, mapEnd);
   const { replies, context } = parseReplies(lines, start + 1, end);
   const glyphCol = q[0].length;
@@ -473,9 +473,9 @@ const textLines = (text: string) => text.replace(/\r/g, '').replace(/\s+$/, '').
 
 /**
  * A line a quote must not start with: a new turn (💬, 💡, ✅ 💡), a question, or a mark the old
- * Q&A forms read (`?`, `?!`, `Q:`, `A:`, `[!QUESTION]` — convertLegacy would turn them into one).
+ * Q&A forms read (`?`, `?!`, `Q:`, `A:`, `!`, `!!`, `[!QUESTION]` — convertLegacy would turn them into one).
  */
-const TURN_START = /^(?:(?:(?:✅|🚫)[ \t]*)?(?:💬|💡)|❓|⁉|\?|!\?|Q:|A:|Q(?=\s)|\[!(?:QUESTION|ANSWER)\])/iu;
+const TURN_START = /^(?:(?:(?:✅|🚫)[ \t]*)?(?:💬|💡)|❓|⁉|\?|!\?|!!?(?=[ \t])|Q:|A:|Q(?=\s)|\[!(?:QUESTION|ANSWER)\])/iu;
 /** …and the first line of a plain quote: any glyph that opens a quote item too. */
 export const QUOTE_START = (rest: string) => TURN_START.test(rest) || leadGlyphs(rest).glyphs.length > 0;
 

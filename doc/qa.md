@@ -186,9 +186,10 @@ converted, and the next write to the file writes them converted:
 
 | Written as | Read as |
 | --- | --- |
-| `> ? q` · `> Q: q` · `> Q q` | `> ❓ q` |
+| `> ? q` · `> Q: q` · `> q: q` · `> Q q` | `> ❓ q` |
 | `> ?! …` · `> !? …` | `> ⁉️ …` |
-| `> A: a` | `> 💬 a` |
+| `> A: a` · `> a: a` | `> 💬 a` |
+| `> ! x` · `> !! x` | `> 🟠 x` · `> 🔴 x` |
 | `> [!QUESTION]` + `> q` · `> [!ANSWER]` + `> a` | `> ❓ q` · `> 💬 a` |
 | `**Q:** q` · `**A:** a` | `> ❓ q` · `> 💬 a` |
 | `- **Q:** q` · `- **A:** a` | `- ❓ q` · `  > 💬 a` under it |

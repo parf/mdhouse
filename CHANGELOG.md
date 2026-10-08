@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- `> q:` / `> a:` read as `> Q:` / `> A:`; `> ! x` → `> 🟠 x`, `> !! x` → `> 🔴 x`
+- A quote opening with a severity — `> 🟠 …` — is an issue, as a list item is
+
 ### Fixed
 
 - `\` at the end of a line or `\ ` is a line break — in questions and answers too

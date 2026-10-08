@@ -3,7 +3,8 @@
  * through `convertLegacy` on every load, so the page shows the new markup and every write to the
  * file writes it converted.
  *
- * - `> ? q` / `> Q: q` / `> Q q` → `> ❓ q`; `> ?! …` / `> !? …` → `> ⁉️ …`; `> A: a` → `> 💬 a`
+ * - `> ? q` / `> Q: q` / `> q: q` / `> Q q` → `> ❓ q`; `> ?! …` / `> !? …` → `> ⁉️ …`;
+ *   `> A: a` / `> a: a` → `> 💬 a`; `> ! x` → `> 🟠 x`; `> !! x` → `> 🔴 x`
  * - `> [!QUESTION]` + `> q` → `> ❓ q`; `> [!ANSWER]` + `> a` → `> 💬 a`
  * - a `**Q:** q` paragraph → `> ❓ q`, its `**A:** a` lines → `> 💬 a`
  * - `- **Q:** q` → `- ❓ q`; a `- **A:** a` item after it → `  > 💬 a` under it
@@ -14,7 +15,7 @@
  * second question inside one quote starts a quote of its own. Fenced code is left alone.
  */
 
-const OLD_MARK = /^(\?!|!\?|⁉️?|\?|❓|\u{1F4AC}|Q:|A:|Q(?=\s))[ \t]*/u;
+const OLD_MARK = /^(\?!|!\?|!!?(?=[ \t])|⁉️?|\?|❓|\u{1F4AC}|[Qq]:|[Aa]:|Q(?=\s))[ \t]*/u;
 const QUOTE = /^([ \t]*>[ \t]?)(.*)$/;
 const LIST_BOLD = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+)\*\*([QA]):\*\*[ \t]*(.*)$/;
 const BOLD = /^\*\*([QA]):\*\*[ \t]*(.*)$/;
@@ -23,12 +24,20 @@ const CLOSE = /^:::[ \t]*$/;
 const STATUS = /^([ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+)(☐|☑|✔️?|☒)(?=[ \t])/u;
 const STATUS_TO: Record<string, string> = { '☐': '❓', '☑': '✅', '✔': '✅', '✔️': '✅', '☒': '🚫' };
 
-type Kind = 'q' | 'd' | 'a';
-/** A mark only the old forms use — `?`, `?!`, `Q:`, `A:` …; ❓ ⁉️ 💬 are the new markup's own. */
+type Kind = 'q' | 'd' | 'a' | 'high' | 'medium';
+/** A mark only the old forms use — `?`, `?!`, `Q:`, `A:`, `!` …; ❓ ⁉️ 💬 are the new markup's own. */
 const isOld = (mark: string | undefined) => !!mark && !/^(❓|⁉|\u{1F4AC})/u.test(mark);
 const kindOf = (mark: string): Kind =>
-  mark === '?!' || mark === '!?' || mark.startsWith('⁉') ? 'd' : mark === '\u{1F4AC}' || mark === 'A:' ? 'a' : 'q';
-const GLYPH: Record<Kind, string> = { q: '❓', d: '⁉️', a: '💬' };
+  mark === '?!' || mark === '!?' || mark.startsWith('⁉')
+    ? 'd'
+    : mark === '\u{1F4AC}' || mark.toUpperCase() === 'A:'
+      ? 'a'
+      : mark === '!!'
+        ? 'high'
+        : mark === '!'
+          ? 'medium'
+          : 'q';
+const GLYPH: Record<Kind, string> = { q: '❓', d: '⁉️', a: '💬', high: '🔴', medium: '🟠' };
 const blank = (l: string) => l.trim() === '';
 
 /** `src` with every old Q&A form in its body rewritten; the very same string when there is none. */
