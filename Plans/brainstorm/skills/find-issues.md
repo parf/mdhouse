@@ -1,6 +1,6 @@
 ---
 name: find-issues
-description: Reviews what changed, one read-only reviewer per touched subsystem (a map it keeps in Plans/subsystems.md), and writes verified issues to Plans/issues.md in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
+description: Reviews what changed, one read-only reviewer per touched subsystem (a map it keeps in Plans/subsystems.md), and writes verified issues to the day's file, Plans/issues/YYYY-MM-DD.md, in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
 argument-hint: "[scope] [mine] [focus]"
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 Writes issues for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
-- `scope` — default: `<sha>..` from the newest `## … · <sha>` heading in `Plans/issues.md` (only what is
+- `scope` — default: `<sha>..` from the last `## … · <sha>` heading of the newest `Plans/issues/*.md` (only what is
   new since the last run), else since the last tag; or `release`, `all`, a `<rev>..` range, a path
 - `mine` — only the git user's own commits (a repo others commit to, or with merge traffic)
 - `focus` — the rest: subsystems to review; default every touched one
@@ -40,7 +40,7 @@ committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edi
   add a row (a new subsystem, or a wider prefix for an existing one) and say so in the report. A
   subsystem whose paths are all gone → drop its row.
 - ⚠️ marks a **scary** subsystem: auth, writes to the user's files, migrations, parsers, the service.
-- Commit `Plans/subsystems.md` with the run's `Plans/issues.md`.
+- Commit `Plans/subsystems.md` with the run's issues file.
 
 ## Reviewers
 
@@ -62,7 +62,7 @@ the meta-signals deciding where to look hardest — the format below and these r
 - **Never trust a suspicion — verify before reporting**: the problem must exist and matter. Read the
   line, run the test, grep the symbol, a scratch instance, never :7777. `file:line` as at HEAD; a bug
   added and fixed inside the range is not an issue.
-- **Never raise again** what `Plans/issues.md` or `Plans/done/issues*.md` already hold, open or closed.
+- **Never raise again** what any file in `Plans/issues/` or `Plans/done/issues/` already holds, open or closed.
   A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
   new item starts with what changed and links the old one.
 - **One cause, one item**: issues that share a root cause (one stale doc, one missing helper) are one
@@ -72,7 +72,8 @@ the meta-signals deciding where to look hardest — the format below and these r
 
 ## Format
 
-`Plans/issues.md` has one `# Issues` at the top (create it so if missing); each run appends:
+**One file per day: `Plans/issues/YYYY-MM-DD.md`** (today's date), `# Issues — YYYY-MM-DD` at the top —
+create it on the day's first run; a later run the same day appends to it:
 
 ```markdown
 ## <scope> — 📅YYYY-MM-DD · <HEAD short sha>
@@ -109,11 +110,11 @@ Checked and sound: <one line per subsystem>.
 
 1. `git status -s` not empty → list it and ask to commit first; going on anyway, add
    `- 🔵 not reviewed — uncommitted: <files>` to the section.
-2. Resolve the scope. **Re-check every open issue already in the file — untriaged, ❓, ⏳, ⚠️, 🎫 — against HEAD** — gone, and a
+2. Resolve the scope. **Re-check every open issue in `Plans/issues/` — untriaged, ❓, ⏳, ⚠️, 🎫 — against HEAD** — gone, and a
    commit names it → `✅` + `` 💬👾 `<sha>` — gone `` (qa-states.md "Already done?"). An empty scope still
    does this, then stops.
 3. Map the scope's files to subsystems (keep `Plans/subsystems.md`); launch one reviewer per touched one.
 4. Append the section; drop duplicates across reviewers, keeping the better-evidenced one.
-5. Commit `Plans/issues.md` (and `Plans/subsystems.md` if it changed) — nothing else.
+5. Commit the day's issues file (and `Plans/subsystems.md` if it changed) — nothing else.
 6. Report: the serious ones first, each in one line; counts per severity; tail:
-   `🟥🟥🟥 issues in Plans/issues.md — triage on the page`.
+   `🟥🟥🟥 issues in Plans/issues/YYYY-MM-DD.md — triage on the page`.
