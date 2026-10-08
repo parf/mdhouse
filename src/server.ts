@@ -307,20 +307,12 @@ export async function serve(opts: ServeOptions) {
         }),
 
       /**
-       * The settings page's delete button: forget a directory and stop serving it.
-       *
-       * The only request a page can make that changes what mdhouse serves, so it has to come
-       * from mdhouse's own page. A browser sends `Origin` on a cross-site POST, and
-       * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
-       * non-browser caller sends neither and is let through — it could edit prefs.json itself.
-       */
-      /**
-       * Tick or untick one task checkbox — the only write mdhouse makes to a document.
+       * Tick or untick one task checkbox.
        *
        * Refused on a read-only folder before the file is even read; refused with 409 when the
        * page was rendered from an older file (the line's fingerprint no longer matches), so a
        * stale tab cannot flip whatever now sits on that line. The write goes through
-       * `Registry.writeFile()`, the one chokepoint, and the watcher then tells every open tab.
+       * `Registry.writeFile()`, and the watcher then tells every open tab.
        */
       '/api/task': {
         POST: async (req) => {
@@ -469,6 +461,14 @@ export async function serve(opts: ServeOptions) {
         },
       },
 
+      /**
+       * The settings page's delete button: forget a directory and stop serving it.
+       *
+       * The only request a page can make that changes what mdhouse serves, so it has to come
+       * from mdhouse's own page. A browser sends `Origin` on a cross-site POST, and
+       * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
+       * non-browser caller sends neither and is let through — it could edit prefs.json itself.
+       */
       '/api/roots/remove': {
         POST: async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
