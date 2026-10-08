@@ -128,6 +128,9 @@ describe('items: writing', () => {
     expect(act('1. ❓ q\n', 1, { op: 'say', text: 'a' })).toBe('1. ❓ q\n   > 💬 a\n');
     expect(act('- ❓ q\r\nnext\r\n', 1, { op: 'say', text: 'a' })).toBe('- ❓ q\r\nnext\r\n  > 💬 a\r\n');
     expect(act('- ❓ q', 1, { op: 'say', text: 'a' })).toBe('- ❓ q\n  > 💬 a');
+    // line endings from the neighbour: a CRLF file without a final newline, an LF line in a mixed file
+    expect(act('# H\r\n- ❓ q', 2, { op: 'say', text: 'a' })).toBe('# H\r\n- ❓ q\r\n  > 💬 a');
+    expect(act('- ❓ q\n\nx\r\n', 1, { op: 'say', text: 'a\nb' })).toBe('- ❓ q\n  > 💬 a\n  > b\n\nx\r\n');
     expect(act('---\nt: 1\n---\n- ❓ q\n', 1, { op: 'say', text: 'a' }, 3)).toBe('---\nt: 1\n---\n- ❓ q\n  > 💬 a\n');
   });
 

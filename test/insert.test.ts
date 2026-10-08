@@ -57,6 +57,9 @@ describe('adding a block under a heading', () => {
     expect(add('---\nt: 1\n---\n# H\n', 1, 'below', 'text', 'x', 3)).toBe('---\nt: 1\n---\n# H\n\nx\n');
     expect(add('# H\r\n\r\ntext\r\n', 1, 'end', 'quote', 'q')).toBe('# H\r\n\r\ntext\r\n\r\n> q\r\n');
     expect(add('# H\r\ntext', 1, 'end', 'text', 'x')).toBe('# H\r\ntext\r\n\r\nx');
+    // line endings from the neighbour: lines above the insert keep theirs, one CRLF line does not spread
+    expect(add('# H\r\nkeep\nlf\r\ntail', 1, 'end', 'text', 'x')).toBe('# H\r\nkeep\nlf\r\ntail\r\n\r\nx');
+    expect(add('# H\nkeep\n\n# B\r\nx\n', 1, 'end', 'text', 'n')).toBe('# H\nkeep\n\nn\n\n# B\r\nx\n');
   });
 
   test('refused: the heading changed, is gone, or the text is empty', () => {

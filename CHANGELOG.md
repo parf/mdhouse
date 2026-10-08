@@ -49,6 +49,9 @@
 - A code block over 100 KB is shown plain, not highlighted: a pasted log or dump no longer takes
   seconds and tens of MB per view
 - An added block that starts with Enter no longer opens with an empty line
+- A file with mixed line endings: an answer or an added block takes the ending of the line next
+  to it and changes no other line; answering at the end of a CRLF file without a final newline
+  writes CRLF
 
 ## 1.5.0 — 2026-10-07
 

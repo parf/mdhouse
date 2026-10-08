@@ -3,7 +3,7 @@
  * ticking a checkbox and answering a question. Pure and line-based, like `qa.ts`: the server
  * re-reads the file, checks the heading is still the one the page showed, and inserts.
  */
-import { blockMd, lineHash, QUOTE_START, quoteLines } from './qa';
+import { blockMd, insertLines, lineHash, QUOTE_START, quoteLines } from './qa';
 
 /** What a block is added as — the buttons under the textarea. */
 export type AddKind = 'text' | 'quote' | 'my-quote' | 'tip' | 'question' | 'disagreement' | 'answer';
@@ -64,7 +64,7 @@ export function formatBlock(text: string, kind: AddKind, who: string): string[] 
 /**
  * Add a block under a heading: right under it, or at the end of its section (after the
  * section's last line, before the blank lines that lead to the next heading). Separated by
- * blank lines; refused if the heading is not the one the page showed. CRLF is kept.
+ * blank lines; refused if the heading is not the one the page showed. New lines end as their neighbour does.
  */
 export function insertBlock(
   src: string,
@@ -88,13 +88,6 @@ export function insertBlock(
   }
   const block = formatBlock(req.text, req.kind, who);
   const after = lines[pos] !== undefined && !blank(lines[pos]!) ? [''] : [];
-  const crlf = src.includes('\r\n');
-  const eol = (l: string) => l + (crlf ? '\r' : '');
-  raw.splice(pos, 0, ...['', ...block, ...after].map(eol));
-  // Inserted at the very end of a file without a final newline: the last line keeps having none.
-  if (crlf && !src.endsWith('\n')) {
-    for (let i = at; i < raw.length - 1; i++) if (!raw[i]!.endsWith('\r')) raw[i] += '\r';
-    raw[raw.length - 1] = raw[raw.length - 1]!.replace(/\r$/, '');
-  }
+  insertLines(raw, pos, ['', ...block, ...after]);
   return { src: raw.join('\n'), line: pos + 2 - offset };
 }

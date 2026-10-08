@@ -419,6 +419,20 @@ export type QaOp = QaChange['op'];
 export const QA_OPS: readonly QaOp[] = ['say', 'verdict', 'pick', 'tick', 'done', 'target', 'edit'];
 export type QaError = 'stale' | 'not-an-item' | 'no-target' | 'empty' | 'needs-who';
 
+/**
+ * Insert `texts` into a file's lines (`src.split('\n')`) before index `at`. New lines end as the
+ * line before them does; past the last line of a file without a final newline, that line gains the
+ * ending of the one above it and the new last line has none. No other line changes.
+ */
+export function insertLines(raw: string[], at: number, texts: string[]): void {
+  const past = at >= raw.length;
+  const cr = (raw[past ? raw.length - 2 : at - 1] ?? raw[at] ?? '').endsWith('\r') ? '\r' : '';
+  if (past) {
+    raw[raw.length - 1] += cr;
+    raw.push(...texts.map((t, n) => (n === texts.length - 1 ? t : t + cr)));
+  } else raw.splice(at, 0, ...texts.map((t) => t + cr));
+}
+
 /** Lines of a file, edited in place: each keeps its own line ending; new ones take their neighbour's. */
 class Edit {
   raw: string[];
@@ -437,17 +451,7 @@ class Edit {
   }
   /** Insert before body line `i`. */
   insert(i: number, texts: string[]): void {
-    const at = this.offset + i;
-    const near = this.raw[at - 1] ?? this.raw[at] ?? '';
-    const cr = near.endsWith('\r') || (near === '' && this.raw.some((l) => l.endsWith('\r'))) ? '\r' : '';
-    if (at >= this.raw.length) {
-      // past the last line of a file with no final newline: that line now ends like the others,
-      // and the new last line has none
-      this.raw[this.raw.length - 1] += cr;
-      this.raw.push(...texts.map((t, n) => (n === texts.length - 1 ? t : t + cr)));
-      return;
-    }
-    this.raw.splice(at, 0, ...texts.map((t) => t + cr));
+    insertLines(this.raw, this.offset + i, texts);
   }
   get src(): string {
     return this.raw.join('\n');
