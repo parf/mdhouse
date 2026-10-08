@@ -58,7 +58,7 @@ describe('document URLs', () => {
     const registry = await Registry.create([HERE, `${HERE}/src`]);
     const [mine, nested] = registry.list();
 
-    expect(registry.docUrl(mine!, 'README.md')).toBe('/d/mdhouse/README.md');
+    expect(registry.docUrl(mine!, 'README.md')).toBe(`/d/${mine!.id}/README.md`);
     expect(registry.docUrl(nested!, 'lib/roots.ts')).toBe('/d/src/lib/roots.ts');
 
     const resolved = await registry.fromDocUrl('/d/src/lib/roots.ts');
