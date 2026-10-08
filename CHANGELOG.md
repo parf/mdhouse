@@ -29,6 +29,8 @@
   cell); only `{#id .class key=value}` is an attribute list
 - A tick, an answer or an added block is written whole or not at all: a write cut short (disk
   full, a crash) leaves the document as it was
+- An SVG in a served folder, opened on its own, can no longer run its scripts as mdhouse — every
+  `/api/asset` reply is sandboxed
 - **Reset file** throws away only the changes it showed: a file saved again since is kept, and the
   page says so
 

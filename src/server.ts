@@ -642,7 +642,8 @@ export async function serve(opts: ServeOptions) {
 
         const file = Bun.file(loc.abs);
         if (!(await file.exists())) return fail(404, 'not found');
-        return new Response(file, { headers: { 'cache-control': 'no-cache' } });
+        // An image, never a page: opened on its own, an SVG's scripts would run in mdhouse's origin.
+        return new Response(file, { headers: { 'cache-control': 'no-cache', 'content-security-policy': 'sandbox' } });
       },
 
       '/api/search': async (req) => {

@@ -140,6 +140,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   scss, …) as `text/plain`; `.html` is rendered, under `Content-Security-Policy: sandbox
   allow-scripts` — an opaque origin, so its requests back are cross-site: writes refused,
   reads unreadable.
+- `/api/asset` serves an image (`ASSET_EXT`) under `Content-Security-Policy: sandbox` — an SVG opened
+  on its own runs no script.
 - The CLI goes over the `0600` unix socket instead, which a browser cannot reach at all.
 
 ## Data sources

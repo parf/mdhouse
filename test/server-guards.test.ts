@@ -553,3 +553,31 @@ describe('/api/files', () => {
     }
   });
 });
+
+test('/api/asset — an image never runs as a page: an SVG\'s script is sandboxed away (A.4)', async () => {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-asset-'));
+  await Bun.write(join(base, 'x.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><script>fetch("/api/marks")</script></svg>');
+  await Bun.write(join(base, 'p.png'), 'png');
+  const port = 61798;
+  const registry = await Registry.create([{ path: base, writable: true }]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
+  const id = registry.list()[0]!.id;
+  try {
+    for (const f of ['x.svg', 'p.png']) {
+      const res = await fetch(`http://127.0.0.1:${port}/api/asset?p=${id}/${f}`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-security-policy')).toBe('sandbox');
+    }
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
