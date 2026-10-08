@@ -38,12 +38,12 @@ Options
       --host <addr>    address to bind              (default 127.0.0.1)
       --port <n>       port to listen on            (default 7777)
       --allow <cidr,…> only these networks (and this machine) get in; saved
-                       --allow none: every address again
+                       --allow reset: every address again
       --host-name <n,…> only these Host names get in (a reverse proxy's);
                        localhost and IP addresses are refused; saved
-                       --host-name none: localhost and IP addresses again
+                       --host-name reset: localhost and IP addresses again
       --auto-rw <p,…>  folders under these are writable (switch in settings); saved
-                       --auto-rw none: no such paths
+                       --auto-rw reset: no such paths
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
@@ -369,8 +369,11 @@ if (command === 'access') {
   process.exit(0);
 }
 
+/** `--allow reset` and the like: clear the saved list (`none` is its old name). */
+const isReset = (list: string[]): boolean => list.length === 1 && (list[0] === 'reset' || list[0] === 'none');
+
 if (opts.allow) {
-  const allow = opts.allow.length === 1 && opts.allow[0] === 'none' ? [] : opts.allow;
+  const allow = isReset(opts.allow) ? [] : opts.allow;
   const bad = allow.filter((c) => !parseCidr(c));
   if (bad.length) {
     console.error(`mdhouse: not a network: ${bad.join(', ')}  (like 192.168.1.0/24, 10.0.0.5, fd00::/8)`);
@@ -382,7 +385,7 @@ if (opts.allow) {
 }
 
 if (opts.hostNames) {
-  const names = opts.hostNames.length === 1 && opts.hostNames[0] === 'none' ? [] : opts.hostNames;
+  const names = isReset(opts.hostNames) ? [] : opts.hostNames;
   const bad = names.filter((n) => !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/.test(n) || /^[\d.]+$/.test(n));
   if (bad.length) {
     console.error(`mdhouse: not a host name: ${bad.join(', ')}  (like notes.example, box; not an IP address)`);
@@ -394,7 +397,7 @@ if (opts.hostNames) {
 }
 
 if (opts.autoRw) {
-  const paths = opts.autoRw.length === 1 && opts.autoRw[0] === 'none' ? [] : opts.autoRw.map(canonical);
+  const paths = isReset(opts.autoRw) ? [] : opts.autoRw.map(canonical);
   const saved = await prefs.setAutoRw(paths);
   const on = prefs.settings.autoRw ? '' : '  (switched off in settings)';
   console.log(`mdhouse  auto-rw:  ${saved.length ? saved.join(', ') : 'none'}${saved.length ? on : ''}`);

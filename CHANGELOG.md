@@ -5,7 +5,11 @@
 ### Added
 
 - `--host-name <name,…>` — behind a reverse proxy (nginx → `notes.example`): only these names get
-  in, localhost and IP addresses are refused; saved. `--host-name none` undoes it
+  in, localhost and IP addresses are refused; saved. `--host-name reset` undoes it
+
+### Changed
+
+- `--allow reset`, `--auto-rw reset` clear the saved list (`none` still works)
 
 ## 2.0.0 — 2026-10-08
 

@@ -8,7 +8,7 @@ mdhouse user-add ann              # asks the password (or reads stdin); any user
 mdhouse user-rm ann
 mdhouse users                     # users and allowed networks
 mdhouse --allow 192.168.1.0/24,10.0.0.5   # only these networks (and this machine)
-mdhouse --allow none              # every address again
+mdhouse --allow reset             # every address again
 ```
 
 - Passwords are kept as an argon2id hash in `~/.config/mdhouse/prefs.json`, never as text
@@ -31,7 +31,7 @@ ssh -N -L 7777:127.0.0.1:7777 you@server     # then open http://127.0.0.1:7777 h
 
 ```sh
 mdhouse --host-name notes.example,box   # only these Host names get in; saved
-mdhouse --host-name none                # localhost and IP addresses again
+mdhouse --host-name reset               # localhost and IP addresses again
 ```
 
 - nginx passes the name as is: `proxy_set_header Host $host;` (+ `Upgrade` / `Connection` for live reload)
