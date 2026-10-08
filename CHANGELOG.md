@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased
+## 2.0.2 — 2026-10-08
 
 ### Added
 
 - `> q:` / `> a:` read as `> Q:` / `> A:`; `> T:` / `> t:` / `> [!TIP] t` (text on the line; a bare `[!TIP]` stays an alert) → `> 💡` (a tip); `> ! x` → `> 🟠 x`, `> !! x` → `> 🔴 x`
 - A quote opening with a severity — `> 🟠 …` — is an issue, as a list item is
+- [Syntax](doc/syntax.md) — every syntax mdhouse reads, on one page
 
 ### Fixed
 
