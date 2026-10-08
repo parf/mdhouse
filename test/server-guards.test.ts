@@ -187,6 +187,78 @@ describe('the git view — /api/git', () => {
       await rm(base, { recursive: true, force: true });
     }
   });
+
+  test('a writable repo: commit, pull and push refuse another site, changed files, unconfirmed non-Markdown and a read-only root inside', async () => {
+    const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { run } = await import('../src/lib/gitpage');
+
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-gitrw-'));
+    const repo = join(base, 'repo');
+    await mkdir(repo);
+    const git = (args: string[]) => run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args]);
+    await writeFile(join(repo, 'a.md'), 'a\n');
+    await writeFile(join(repo, 'b.txt'), 'b\n');
+    await git(['init', '-q']);
+    await git(['add', '.']);
+    await git(['commit', '-qm', 'first']);
+    await git(['config', 'user.name', 't']);
+    await git(['config', 'user.email', 't@t']);
+
+    const port = 61930;
+    const registry = await Registry.create([{ path: repo, writable: true }]);
+    const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
+    const p = `${registry.list()[0]!.id}/`;
+    const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+      fetch(`http://127.0.0.1:${port}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+    const crossSite = { 'sec-fetch-site': 'cross-site' };
+    const head = async () => (await git(['rev-parse', 'HEAD'])).out.trim();
+    try {
+      await writeFile(join(repo, 'a.md'), 'a2\n');
+      const first = await head();
+      for (const route of ['/api/git/commit', '/api/git/pull', '/api/git/push']) {
+        expect((await post(route, { p, message: 'm', files: ['a.md'] }, crossSite)).status).toBe(403);
+      }
+      // Markdown changed, not confirmed: pull and push ask first.
+      const ask = await post('/api/git/pull', { p });
+      expect(ask.status).toBe(409);
+      expect(await ask.json()).toMatchObject({ confirm: true });
+      expect((await post('/api/git/push', { p })).status).toBe(409);
+      // The page showed other files than git has now.
+      expect((await post('/api/git/commit', { p, message: 'm', files: [] })).status).toBe(409);
+      await writeFile(join(repo, 'b.txt'), 'b2\n');
+      expect((await post('/api/git/commit', { p, message: 'm', files: ['a.md'] })).status).toBe(409);
+      // A file that is not Markdown: commit needs it confirmed, pull and push refuse it.
+      expect((await post('/api/git/commit', { p, message: 'm', files: ['a.md', 'b.txt'] })).status).toBe(409);
+      const pull = await post('/api/git/pull', { p, confirmed: true });
+      expect(pull.status).toBe(409);
+      expect(await pull.json()).not.toHaveProperty('confirm');
+      expect((await post('/api/git/push', { p, confirmed: true })).status).toBe(409);
+      expect(await head()).toBe(first);
+      expect((await post('/api/git/commit', { p, message: 'm', files: ['a.md', 'b.txt'], nonMd: true })).status).toBe(200);
+      expect(await head()).not.toBe(first);
+      expect((await git(['status', '--porcelain'])).out.trim()).toBe('');
+      // A read-only root inside the repo (A1): pull would rewrite it, a change in it is not this root's to commit.
+      await mkdir(join(repo, 'ro'));
+      await writeFile(join(repo, 'ro', 'r.md'), 'r\n');
+      await git(['add', '.']);
+      await git(['commit', '-qm', 'ro']);
+      await registry.add(join(repo, 'ro'));
+      expect((await post('/api/git/pull', { p })).status).toBe(409);
+      await writeFile(join(repo, 'ro', 'r.md'), 'r2\n');
+      expect((await post('/api/git/commit', { p, message: 'm', files: ['ro/r.md'] })).status).toBe(409);
+      expect((await git(['status', '--porcelain'])).out.trim()).toBe('M ro/r.md');
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
+    }
+  });
 });
 
 test('POST /api/git/reset — a file back to its last commit; refuses read-only, untracked, other sites, and a file changed since its diff was shown', async () => {
