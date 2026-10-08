@@ -67,6 +67,8 @@
   `systemctl --user restart mdhouse`
 - `service install` with `MDHOUSE_PORT` set, or `--port 7777` over a saved port, pins that port into
   the unit: it listens where install stops and pings, not on the saved port
+- `service install` stops a hand-started mdhouse only after `systemctl daemon-reload` succeeded:
+  a failing systemctl leaves it running
 
 ## 1.5.0 — 2026-10-07
 

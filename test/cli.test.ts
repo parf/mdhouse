@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from 'bun:test';
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -159,4 +159,24 @@ describe('two servers on one port, bound to different hosts', () => {
       fg.kill();
     }
   }, 20000);
+});
+
+describe('service install', () => {
+  test('a systemctl that fails leaves the hand-started mdhouse running (C8)', () => {
+    const s = scratch();
+    const a = s.folder('a');
+    // A fake systemctl first on PATH and a temp HOME: the real one and ~/.config/systemd stay untouched.
+    const bin = join(s.dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(bin, 'systemctl'), `#!/bin/sh\necho "$*" >> ${join(s.dir, 'systemctl.log')}\nexit 1\n`);
+    chmodSync(join(bin, 'systemctl'), 0o755);
+    const env = { HOME: s.dir, PATH: `${bin}:${process.env.PATH}` };
+
+    expect(s.run([a, '-p', '--port', '61923']).code).toBe(0);
+    const r = s.run(['service', 'install', '--port', '61923'], env);
+    expect(r.code).toBe(1);
+    expect(readFileSync(join(s.dir, 'systemctl.log'), 'utf8')).toBe('--user daemon-reload\n');
+    expect(existsSync(join(s.dir, '.config/systemd/user/mdhouse-61923.service'))).toBe(true);
+    expect(s.run(['exit', '--port', '61923']).code).toBe(0); // still running
+  });
 });

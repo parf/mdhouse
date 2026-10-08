@@ -150,7 +150,14 @@ export async function runService(action: string, opts: { port: number; from: 'fl
   );
   console.log(`mdhouse  wrote ${file}`);
 
+  const failed = () => {
+    console.error(`mdhouse: systemctl could not start ${name}.  journalctl --user -u ${name} -n 20`);
+    return 1;
+  };
+  if (systemctl('daemon-reload') !== 0) return failed();
+
   // One daemon per port: a hand-started one would hold the port and the service would fail.
+  // Stopped only once systemd has the unit, right before it starts.
   const running = await askExit(opts.port);
   if (running && 'error' in running) {
     console.error(`mdhouse: ${running.error} — stop it, then install again`);
@@ -158,10 +165,7 @@ export async function runService(action: string, opts: { port: number; from: 'fl
   }
   if (running) console.log(`mdhouse  stopped the mdhouse already on ${opts.port} (pid ${running.pid}) — the service replaces it`);
 
-  if (systemctl('daemon-reload') !== 0 || systemctl('enable', '--now', name) !== 0) {
-    console.error(`mdhouse: systemctl could not start ${name}.  journalctl --user -u ${name} -n 20`);
-    return 1;
-  }
+  if (systemctl('enable', '--now', name) !== 0) return failed();
 
   let live = null;
   for (let i = 0; i < 100 && !live; i++) {
