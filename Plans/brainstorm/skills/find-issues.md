@@ -43,9 +43,10 @@ committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edi
 
 ## Reviewers
 
-One subagent per **touched** subsystem, in parallel, read-only — at most 6: merge the smallest into one.
-Each gets its subsystem's row (the paths, what to check), its files, `git log -p <scope> -- <its paths>`,
-the format below and these rules:
+One subagent per **touched** subsystem, in parallel, read-only — as many as there are. Each gets its
+subsystem's row (the paths, what to check), its files, `git log -p <scope> -- <its paths>`,
+**[review-checklist.md](review-checklist.md)** (shipped: `../review-checklist.md`) — every section of it,
+the meta-signals deciding where to look hardest — the format below and these rules:
 
 - **Never trust a suspicion — verify before reporting**: the problem must exist and matter. Read the
   line, run the test, grep the symbol, a scratch instance, never :7777. `file:line` as at HEAD; a bug
