@@ -13,7 +13,7 @@ import { resolve } from 'node:path';
 import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { pageUrl, serve } from './server';
-import { askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply } from './lib/control';
+import { answered, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
 import { runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { hashPassword, parseCidr, validLogin } from './lib/access';
@@ -214,34 +214,54 @@ const prefs = await Prefs.load();
 /** `--port` for a hint, only when this command needed one to find the daemon. */
 const portHint = opts.portGiven ? ` --port ${opts.port}` : '';
 
+/** Said after "not answering": the usual reason, and the way out. */
+const FROZEN = '  (stopped with Ctrl+Z? resume it with fg, or kill it)';
+
+/** The mdhouse on the port when one answers; one that is there but does not answer ends the command. */
+const running = async (): Promise<PingReply | null> => {
+  const reply = await askPing(opts.port);
+  if (reply && 'error' in reply) {
+    console.error(`mdhouse: ${reply.error}${FROZEN}`);
+    process.exit(1);
+  }
+  return reply;
+};
+
 // ---------------------------------------------------------------- mdhouse exit
 
 if (command === 'exit') {
   const ports = opts.all ? knownPorts() : [opts.port];
   let stopped = 0;
   let units = 0;
+  let frozen = 0;
 
   for (const port of ports) {
-    const unit = (await askPing(port))?.service;
+    const ping = await askPing(port);
+    const who = ping && !('error' in ping) && !ping.service ? await askExit(port) : ping;
+    if (who && 'error' in who) {
+      frozen++;
+      console.error(`mdhouse: ${who.error}${FROZEN}`);
+      continue;
+    }
+    const unit = who?.service;
     if (unit) {
       units++;
       console.error(`mdhouse: port ${port} is the systemd unit ${unit} — stop it with:  systemctl --user stop ${unit}`);
       continue;
     }
-    const who = await askExit(port);
     if (!who) continue;
     stopped++;
     console.log(`mdhouse  stopped ${who.url}  (pid ${who.pid})`);
     for (const root of who.roots) console.log(`  ${root.path}${root.writable ? '  [RW]' : ''}`);
   }
 
-  if (units) process.exit(1);
+  if (units || frozen) process.exit(1);
   if (!stopped) {
     console.error(
       opts.all ? 'mdhouse: nothing running.' : `mdhouse: nothing running on port ${opts.port}.`,
     );
     // A daemon on another port is the likely reason someone is here; naming it saves a hunt.
-    const live = (await Promise.all(knownPorts().map(async (p) => ((await askPing(p)) ? p : null))))
+    const live = (await Promise.all(knownPorts().map(async (p) => ((await answered(p)) ? p : null))))
       .filter((p): p is number => p !== null);
     if (live.length) console.error(`         Running on: ${live.join(', ')}  (mdhouse exit --port <n>)`);
     process.exit(1);
@@ -314,7 +334,7 @@ if (opts.rm) {
   const asked = (opts.dirs.length ? opts.dirs : [process.cwd()]).map(canonical);
   // A running daemon holds the prefs in memory and rewrites the whole file on its next change,
   // so it has to be the one to forget them — editing the file under it would be undone.
-  if (await askPing(opts.port)) {
+  if (await running()) {
     const reply = await askRemove(opts.port, { dirs: asked });
     if (!reply || 'error' in reply) {
       console.error(`mdhouse: the mdhouse on ${opts.port} refused: ${reply ? reply.error : 'no answer'}`);
@@ -378,7 +398,7 @@ if (!dirs.length && !saved.length) {
     // Nothing to serve. Exit cleanly rather than fail, so the unit is not restarted in a loop.
     console.error('mdhouse: no saved directories — nothing to serve. Save one with:  mdhouse <dir> -p');
     process.exit(0);
-  } else if (!opts.fg && (await askPing(opts.port))) {
+  } else if (!opts.fg && (await running())) {
     // One is running already (with folders added for the session): say what it serves.
     await handOver(await askDaemon(opts.port, { dirs: [], rw: false, save: false }));
   } else {
@@ -441,7 +461,7 @@ const stopHint = `mdhouse exit${portHint}`;
 
 if (!opts.fg) {
   // Already running? Hand it the directories without starting anything.
-  if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, request));
+  if (await running()) await handOver(await askDaemon(opts.port, request));
 
   // Nobody answered on the control socket, so if the port is taken it is taken by something
   // else. Finding that out here, rather than in a detached child whose output has gone to the
@@ -455,7 +475,7 @@ if (!opts.fg) {
     // it something else.
     for (let i = 0; i < 50; i++) {
       await Bun.sleep(100);
-      if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, request));
+      if (await running()) await handOver(await askDaemon(opts.port, request));
     }
     console.error(`mdhouse: port ${opts.port} is in use by something that is not mdhouse.`);
     console.error('         Stop it, or pass --port <n>.');
@@ -500,7 +520,7 @@ if (!opts.fg) {
 
   let live = null;
   for (let i = 0; i < 300 && !live; i++) {
-    live = await askPing(opts.port);
+    live = await answered(opts.port);
     if (live) break;
     if (child.exitCode !== null) break;
     await Bun.sleep(100);

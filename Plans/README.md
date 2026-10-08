@@ -195,4 +195,6 @@ contents list, so a heading link and its contents entry cannot disagree.
 - The systemd unit (`MDHOUSE_SERVICE=1`) is stopped by `systemctl` only: `mdhouse exit` sees
   `service` in the ping and names the command instead (exit 1); its `--fg` with the port taken
   exits 1 instead of handing over, so `Restart=on-failure` retries.
+- A control call times out — ping / exit 2 s, add / remove 60 s: a daemon that does not answer
+  (Ctrl+Z) is `{error}` "not answering", its socket kept; every command says so and exits 1.
 - Tests: `bun test`, against a temp config dir (`test/preload.ts`); types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.

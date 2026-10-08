@@ -105,6 +105,20 @@ describe('the control socket', () => {
     expect(existsSync(SOCK)).toBe(false);
   });
 
+  test('a daemon that never answers (stopped with Ctrl+Z) is reported, not waited on (C4)', async () => {
+    const frozen = Bun.serve({ unix: SOCK, fetch: () => new Promise<Response>(() => {}) });
+    try {
+      const t0 = Date.now();
+      expect(await askPing(PORT)).toEqual({ error: `the mdhouse on port ${PORT} is not answering` });
+      expect(await askExit(PORT)).toEqual({ error: `the mdhouse on port ${PORT} is not answering` });
+      expect(Date.now() - t0).toBeLessThan(4500);
+      expect(existsSync(SOCK)).toBe(true); // its socket is kept: it is still running
+    } finally {
+      frozen.stop(true);
+      if (existsSync(SOCK)) unlinkSync(SOCK);
+    }
+  });
+
   test('a failure in the handler reaches the caller as a message', async () => {
     const control = await serveControl(
       PORT,

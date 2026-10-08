@@ -113,3 +113,26 @@ describe('handing over to a running mdhouse', () => {
     s.run(['exit', '--port', '61917']);
   });
 });
+
+describe('a daemon that does not answer', () => {
+  test('exit, exit --all and a start say so instead of hanging (C4)', () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const started = s.run([a, '--port', '61920']);
+    const pid = Number(/pid (\d+)/.exec(started.out)?.[1]);
+    expect(pid).toBeGreaterThan(0);
+    process.kill(pid, 'SIGSTOP');
+    try {
+      for (const args of [['exit', '--port', '61920'], ['exit', '--all'], [a, '--port', '61920']]) {
+        const t0 = Date.now();
+        const r = s.run(args);
+        expect(r.code).toBe(1);
+        expect(r.err).toContain('the mdhouse on port 61920 is not answering');
+        expect(Date.now() - t0).toBeLessThan(5000);
+      }
+    } finally {
+      process.kill(pid, 'SIGCONT');
+    }
+    expect(s.run(['exit', '--port', '61920']).code).toBe(0);
+  }, 30000);
+});

@@ -95,14 +95,19 @@ export function knownPorts(): number[] {
   }
 }
 
+/** How long a ping or an exit waits for an answer; an add or a remove may scan a large tree. */
+const QUICK_MS = 2000;
+const SLOW_MS = 60_000;
+
 /**
  * One call to the daemon on `port`.
  *
  * Returns null when nobody is listening — no socket, or a stale file left by a process that
  * was killed rather than stopped. A stale file is removed on the way past: the next daemon to
- * start on this port would otherwise fail to bind it.
+ * start on this port would otherwise fail to bind it. A daemon that takes longer than `ms`
+ * (stopped with Ctrl+Z, hung) is `{error}`, and its socket is kept.
  */
-async function call<T>(port: number, path: string, body: unknown = {}): Promise<T | { error: string } | null> {
+async function call<T>(port: number, path: string, body: unknown = {}, ms = QUICK_MS): Promise<T | { error: string } | null> {
   const sock = controlPath(port);
   if (!existsSync(sock)) return null;
 
@@ -112,6 +117,7 @@ async function call<T>(port: number, path: string, body: unknown = {}): Promise<
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(ms),
     });
     const parsed = (await res.json().catch(() => null)) as T | { error: string } | null;
     if (!parsed) return { error: `the daemon on ${port} answered ${res.status}` };
@@ -123,6 +129,7 @@ async function call<T>(port: number, path: string, body: unknown = {}): Promise<
     //
     // Bun reports both "no such file" and "nothing is listening" as FailedToOpenSocket; the
     // POSIX codes are listed too, for a runtime that uses them instead.
+    if ((err as Error | null)?.name === 'TimeoutError') return { error: `the mdhouse on port ${port} is not answering` };
     const code = (err as { code?: string } | null)?.code;
     if (code === 'FailedToOpenSocket' || code === 'ECONNREFUSED' || code === 'ENOENT') {
       try {
@@ -135,31 +142,39 @@ async function call<T>(port: number, path: string, body: unknown = {}): Promise<
   }
 }
 
-/** Is an mdhouse listening on this port, and what is it serving? Null if nothing answers. */
-export async function askPing(port: number): Promise<PingReply | null> {
-  const reply = await call<PingReply>(port, '/ping');
+/**
+ * Is an mdhouse listening on this port, and what is it serving? Null if nothing is there;
+ * `{error}` if one is there but does not answer.
+ */
+export async function askPing(port: number): Promise<PingReply | { error: string } | null> {
+  return call<PingReply>(port, '/ping');
+}
+
+/** The daemon on `port` when it answered, else null — for a caller that only waits for one. */
+export async function answered(port: number): Promise<PingReply | null> {
+  const reply = await askPing(port);
   return reply && !('error' in reply) ? reply : null;
 }
 
 /** Ask the daemon on `port` to serve these directories too. */
 export async function askDaemon(port: number, req: AddRequest): Promise<AddReply | { error: string } | null> {
-  return call<AddReply>(port, '/add', req);
+  return call<AddReply>(port, '/add', req, SLOW_MS);
 }
 
 /** Ask the daemon on `port` to forget these directories, and stop serving them. */
 export async function askRemove(port: number, req: RemoveRequest): Promise<RemoveReply | { error: string } | null> {
-  return call<RemoveReply>(port, '/remove', req);
+  return call<RemoveReply>(port, '/remove', req, SLOW_MS);
 }
 
 /**
  * Ask the daemon on `port` to stop, and wait for its socket to go.
  *
- * Returns what it was serving, so the caller can say what it stopped, or null if there was
- * nothing there to stop.
+ * Returns what it was serving, so the caller can say what it stopped, null if there was
+ * nothing there to stop, or `{error}` if the one there does not answer.
  */
-export async function askExit(port: number): Promise<PingReply | null> {
+export async function askExit(port: number): Promise<PingReply | { error: string } | null> {
   const who = await askPing(port);
-  if (!who) return null;
+  if (!who || 'error' in who) return who;
 
   await call(port, '/exit');
   for (let i = 0; i < 100 && existsSync(controlPath(port)); i++) await Bun.sleep(20);

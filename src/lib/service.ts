@@ -15,7 +15,7 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from '
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { Prefs } from './prefs';
-import { askExit, askPing } from './control';
+import { answered, askExit } from './control';
 
 const DEFAULT_PORT = 7777;
 
@@ -140,6 +140,10 @@ export async function runService(action: string, opts: { port: number; explicit?
 
   // One daemon per port: a hand-started one would hold the port and the service would fail.
   const running = await askExit(opts.port);
+  if (running && 'error' in running) {
+    console.error(`mdhouse: ${running.error} — stop it, then install again`);
+    return 1;
+  }
   if (running) console.log(`mdhouse  stopped the mdhouse already on ${opts.port} (pid ${running.pid}) — the service replaces it`);
 
   if (systemctl('daemon-reload') !== 0 || systemctl('enable', '--now', name) !== 0) {
@@ -149,7 +153,7 @@ export async function runService(action: string, opts: { port: number; explicit?
 
   let live = null;
   for (let i = 0; i < 100 && !live; i++) {
-    live = await askPing(opts.port);
+    live = await answered(opts.port);
     if (!live) await Bun.sleep(100);
   }
   if (!live) {
