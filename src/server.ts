@@ -12,7 +12,7 @@ import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Root } from './lib/roots';
 import { listFiles, repoToplevel } from './lib/scan';
-import { ASSET_EXT, HTML_EXT, RAW_EXT } from './lib/filetypes';
+import { ASSET_EXT, HTML_EXT, MD_EXT, RAW_EXT } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
@@ -603,11 +603,12 @@ export async function serve(opts: ServeOptions) {
         const p = url.searchParams.get('p');
         const loc = p ? await registry.resolve(p) : await registry.fromDocUrl(url.searchParams.get('d') ?? '');
         if (!loc) return fail(403, 'path outside any root');
+        if (!MD_EXT.test(loc.rel)) return fail(404, 'not a document');
 
         const file = Bun.file(loc.abs);
         if (!(await file.exists())) return fail(404, 'not found');
 
-        const src = /\.mdx?$/i.test(loc.rel) ? await readDoc(loc.abs) : await file.text();
+        const src = await readDoc(loc.abs);
         const { frontmatter, body, offset } = splitFrontmatter(src);
         const rendered = await render(body, {
           rootId: loc.root.id,

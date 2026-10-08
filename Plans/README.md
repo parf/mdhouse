@@ -136,6 +136,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - `/api/files?p=<root>/<dir>` lists every file under a folder (the folder page's ALL view): git's list
   in a repo (`.gitignore` holds), else a walk without dot-folders and `node_modules`; at most 5000.
   `lib/scan.ts` `listFiles()`.
+- `/api/doc` renders Markdown only (`MD_EXT`); any other path is 404.
 - `/api/raw` serves a linked non-Markdown file from a short list (`RAW_EXT` in `lib/filetypes.ts`: txt, json, yaml, css,
   scss, …) as `text/plain`; `.html` is rendered, under `Content-Security-Policy: sandbox
   allow-scripts` — an opaque origin, so its requests back are cross-site: writes refused,

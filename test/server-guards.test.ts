@@ -670,3 +670,35 @@ test('pull and commit refuse a repo that holds a read-only root or files outside
     await rm(base, { recursive: true, force: true });
   }
 });
+
+test('/api/doc renders Markdown only — any other file is 404 (A6)', async () => {
+  const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const dir = await mkdtemp(join(tmpdir(), 'mdhouse-docext-'));
+  await mkdir(join(dir, '.git'));
+  await writeFile(join(dir, '.git', 'config'), '[remote "origin"]\n  url = https://token@example.com/r\n');
+  await writeFile(join(dir, 'creds'), 'secret\n');
+  await writeFile(join(dir, 'a.md'), '# a\n');
+  const port = 61782;
+  const registry = await Registry.create([dir]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(dir, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
+  const id = registry.list()[0]!.id;
+  const doc = (q: string) => fetch(`http://127.0.0.1:${port}/api/doc?${q}`);
+  try {
+    expect((await doc(`p=${id}/a.md`)).status).toBe(200);
+    expect((await doc(`d=${id}/a.md`)).status).toBe(200);
+    for (const f of ['.git/config', 'creds']) {
+      expect((await doc(`p=${id}/${f}`)).status).toBe(404);
+      expect((await doc(`d=${id}/${f}`)).status).toBe(404);
+    }
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
