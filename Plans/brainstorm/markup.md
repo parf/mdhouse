@@ -18,16 +18,16 @@ Today:
 > 💬 Yes, redirect for a year.
 ```
 
-A thread — one 💬 per turn, the author as a badge (`👤parf`, `👾claude`, `📡slack` — [glyphs](glyphs.md#badges--a-glyph-glued-to-a-name)), a blank `>` between
+A thread — one 💬 per turn, the author as a badge (`👤parf`, `👾`, `📡slack` — [glyphs](glyphs.md#badges--a-glyph-glued-to-a-name)), a blank `>` between
 turns so GitHub keeps them apart:
 
 ```markdown
 - ❓ Do we keep the old URLs?
-  > 💬 👾claude Redirect `/d/<root>/x.md` → `/d/x.md` for a year?
+  > 💬👾 Redirect `/d/<root>/x.md` → `/d/x.md` for a year?
   >
   > 💬 ⚠️ 👤parf need more — which links are out there?
   >
-  > 💬 👾claude 14 in README files, 2 in issues.
+  > 💬👾 14 in README files, 2 in issues.
 ```
 
 - the item glyph is the state: `❓` waiting on me · `⏳` waiting on the agent · `✅` settled
@@ -64,7 +64,7 @@ turns so GitHub keeps them apart:
 
 ```markdown
 > ❓ Should the summary strip stay visible while scrolling a long findings file?
-> 💡 👾claude Keep it sticky: the counts are what you come back to.
+> 💡👾 Keep it sticky: the counts are what you come back to.
 ```
 
 - 💡 is a proposed answer — the question still waits on me
@@ -76,7 +76,7 @@ turns so GitHub keeps them apart:
 
 ```markdown
 - ❓ Should a folded answer show the author's badge?
-  > ✅ 💡 👾claude Show it — who answered matters as much as what.
+  > ✅ 💡👾 Show it — who answered matters as much as what.
   > 💬 👤parf yes — and keep it first, before the text.
 ```
 
@@ -85,13 +85,13 @@ turns so GitHub keeps them apart:
 ```markdown
 - 🔴 `src/cli.ts:536` --fg hands over on a busy port — the unit "succeeds", nothing retries. Fix: exit 1
 - ❓ 🟠 `package.json:46` dev script feeds `.` to the live instance
-  > 💬 👾claude pin `:7790` + own config, or drop it?
+  > 💬👾 pin `:7790` + own config, or drop it?
 - ⏸️ ⚪ `src/lib/search.ts:174` ReDoS without rg
-  > 💬 👾claude needs a design — later
+  > 💬👾 needs a design — later
 - ✅ 🟠 `test/control.test.ts:8` sockets in the real config dir
-  > 💬 👾claude `112b307` — temp config via preload
+  > 💬👾 `112b307` — temp config via preload
 - 🚫 ⚪ `CLAUDE.md:119` socket wait
-  > 💬 👾claude moot — the reload polls HTTP now
+  > 💬👾 moot — the reload polls HTTP now
 ```
 
 | Line starts with | Stage | Looks |
@@ -164,7 +164,7 @@ Search falls back to a JS regex when rg is missing.
 
 - verbs: `ask` · `why` · `elaborate` · `rewrite` · `remove` — adding to a section is ↓ ⇊ on its heading already
 - a sentence inside a block: quote it in the request (`"falls back"`)
-- the agent answers under it (`> 💬 👾claude done — …`) or just does it and turns 👉 into ✅:
+- the agent answers under it (`> 💬👾 done — …`) or just does it and turns 👉 into ✅:
   `> ✅ 👉 **rewrite:** one pass …`
 - in mdhouse: select text → a 👉 button writes the request after its block, the quote prefilled
 

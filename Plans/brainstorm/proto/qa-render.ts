@@ -26,7 +26,7 @@ const GLYPHS = ['❓', '⁉️', '⏳', '✅', '🚫', '⏸️', '🎫', '⛔', 
 const norm = (g: string) => g.replace(/️/g, '');
 const known = new Map(GLYPHS.map((g) => [norm(g), g]));
 
-/** `who` is the author badge as written: `👤parf`, `👾claude`. */
+/** `who` is the author badge as written: `👤parf`, `👾`. */
 /** `suggest`: a 💡 line — a proposed answer; `verdict` ✅ / 🚫 once it is accepted or rejected. */
 interface Reply { partial: boolean; suggest: boolean; verdict: '✅' | '🚫' | null; who: string | null; body: string }
 interface Item {
@@ -61,15 +61,16 @@ function parseReplies(lines: string[]): Reply[] {
       let rest = m[3]!;
       let partial = /^⚠️?\s*/u.test(rest);
       rest = rest.replace(/^⚠️?\s*/u, '');
-      // the author: a badge first — `👤parf`, `👾claude`, `📡slack`, …; the older `👤 **name:**` is read too
-      const who = /^(👤|👥|👾|📡)\s*(?:\*\*([^*]+?):\*\*|([^\s:*]+):?)\s*/u.exec(rest);
+      // the author: a badge first — `👤parf`, `👾`, `📡slack`, …; the older `👤 **name:**` is read too
+      // a name only when glued to the badge (`👤parf`); a bare `👾` is the agent — no name needed
+      const who = /^(👤|👥|👾|📡)(?:\s*\*\*([^*]+?):\*\*|([^\s:*]+):?)?\s*/u.exec(rest);
       // "elaborate" asks for more: never an answer, like 💬 ⚠️
-      if (/^(?:(?:👤|👥|👾|📡)\S+\s+)?elaborate\b/iu.test(rest)) partial = true;
+      if (/^(?:(?:👤|👥|👾|📡)\S*\s+)?elaborate\b/iu.test(rest)) partial = true;
       // a ⚠️ may follow the badge too: `💬 👤parf ⚠️ …`
       if (who && /^⚠\uFE0F?\s*/u.test(rest.slice(who[0].length))) { partial = true; rest = rest.slice(0, who[0].length) + rest.slice(who[0].length).replace(/^⚠\uFE0F?\s*/u, ''); }
       // a 💡 signed by a person or a team is their answer, not a proposal
       const personal = !!who && /^(👤|👥)/u.test(who[1]!);
-      replies.push({ partial, suggest: m[2] === '💡' && !personal, verdict: (m[1] as Reply['verdict']) ?? null, who: who ? `${who[1]}${who[2] ?? who[3]}` : null, body: who ? rest.slice(who[0].length) : rest });
+      replies.push({ partial, suggest: m[2] === '💡' && !personal, verdict: (m[1] as Reply['verdict']) ?? null, who: who ? `${who[1]}${who[2] ?? who[3] ?? ''}` : null, body: who ? rest.slice(who[0].length) : rest });
     } else if (replies.length) replies.at(-1)!.body += `\n${line}`;
   }
   for (const r of replies) r.body = r.body.replace(/\n+$/, '');
@@ -77,13 +78,15 @@ function parseReplies(lines: string[]): Reply[] {
 }
 
 /**
- * Badges: a badge glyph glued to a name — `👤parf`, `👥backend`, `👾claude`, `📡slack`, `🏷️ui`,
+ * Badges: a badge glyph glued to a name — `👤parf`, `👥backend`, `👾`, `📡slack`, `🏷️ui`,
  * `📅2026-10-07`, `🎫RLM-412`. With a space after it the glyph is just a glyph (`🎫 …` is a status).
  */
 const BADGES: Record<string, string> = { '👤': 'person', '👥': 'team', '👾': 'agent', '📡': 'source', '🏷️': 'tag', '🏷': 'tag', '📅': 'date', '🎫': 'ticket' };
 // the name may hold inner dots and dashes (`v1.4.0`, `2026-10-06`), never a trailing `.` `,` `!` …
 const BADGE = /(👤|👥|👾|📡|🏷️?|📅|🎫)([^\s<>:,;.!?)&]+(?:[.\-/][^\s<>:,;.!?)&]+)*)/gu;
 const badge = (g: string, name: string) => `<span class="who" data-kind="${BADGES[g]}">${g.replace(/^🏷$/, '🏷️')}${name}</span>`;
+/** The author chip: a named badge, or a bare one (`👾` — the agent). */
+const whoChip = (who: string) => (/^(👤|👥|👾|📡)$/u.test(who) ? `<span class="who" data-kind="${BADGES[who]}">${who}</span>` : badges(esc(who)));
 /** Badges in rendered HTML, outside code. */
 const badges = (html: string) => html.split(/(<code>[\s\S]*?<\/code>)/).map((part, i) => (i % 2 ? part : part.replace(BADGE, (_, g, n) => badge(g, n)))).join('');
 
@@ -165,28 +168,28 @@ const inline = (s: string) => badges(md.renderInline(s.replace(/\s*\n\s*/g, ' ')
 const labels = (html: string) =>
   html.replace(/\s*🌟/gu, ' <span class="suggest">🌟 suggested</span>').replace(/\s*⭐/gu, ' <span class="suggest">⭐ runner-up</span>');
 /** The whole reply as one run of text — a folded item shows its first three lines. */
-const firstLine = (r: Reply) => `${r.who ? `${badges(esc(r.who))}` : ''}${inline(r.body.replace(/^\s*[-*+]\s+/gm, '• '))}`;
+const firstLine = (r: Reply) => `${r.who ? `${whoChip(r.who)}` : ''}${inline(r.body.replace(/^\s*[-*+]\s+/gm, '• '))}`;
 /** A body with paragraphs or a list is rendered as blocks; a run of lines is one inline paragraph. */
 const blocky = (body: string) => /\n\s*\n|\n\s*[-*+]\s|\n\s*\d+[.)]\s/.test(body);
 
 function replyHtml(r: Reply, quiet = false): string {
   if (r.suggest && r.verdict) {
     // decided: ✅ 💡 taken, 🚫 💡 turned down — kept, quiet, no buttons
-    const who = r.who ? badges(esc(r.who)) : '';
+    const who = r.who ? whoChip(r.who) : '';
     return `<div class="reply proposal decided ${r.verdict === '✅' ? 'taken' : 'declined'}">${r.verdict} 💡 ${who}<span class="txt">${inline(r.body)}</span></div>`;
   }
   if (r.suggest && quiet) {
-    const who = r.who ? badges(esc(r.who)) : '';
+    const who = r.who ? whoChip(r.who) : '';
     return `<div class="reply proposal decided">💡 ${who}<span class="txt">${inline(r.body)}</span></div>`;
   }
   if (r.suggest) {
     const acts = '<span class="s-act"><button class="accept" data-tip="Yes — it is the answer (💡 becomes 💬), with a note if you like">✓ yes</button>'
       + '<button class="reject" data-tip="No — say why; it goes back to the agent">✗ no</button>'
       + '<button class="s-reply" data-tip="Reply — neither yes nor no">💬 reply</button></span>';
-    const who = r.who ? badges(esc(r.who)) : '';
+    const who = r.who ? whoChip(r.who) : '';
     return `<div class="reply proposal">💡 ${who}<span class="txt">${inline(r.body)}</span>${acts}</div>`;
   }
-  const lead = `${r.partial ? '⚠️ ' : ''}${r.who ? badges(esc(r.who)) : ''}`;
+  const lead = `${r.partial ? '⚠️ ' : ''}${r.who ? whoChip(r.who) : ''}`;
   // a long reply: the author opens its first paragraph rather than standing on a line of its own
   if (blocky(r.body)) return `<div class="reply${r.partial ? ' partial' : ''}">${badges(md.render(r.body)).replace(/^<p>/, `<p>${lead}`)}</div>`;
   return `<div class="reply${r.partial ? ' partial' : ''}">${lead}<span class="txt">${inline(r.body)}</span></div>`;

@@ -41,7 +41,7 @@ Always append at the end of the file — never rewrite an existing section:
 
 ```markdown
 - ❓ Should the summary strip stay visible while scrolling a long findings file?
-  > 💡 👾claude Keep it sticky: the counts are what you come back to; one 30-pixel bar costs little.
+  > 💡👾 Keep it sticky: the counts are what you come back to; one 30-pixel bar costs little.
 ```
 
 **One of** — radios:

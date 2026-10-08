@@ -10,9 +10,9 @@ renders the file — the skills read it the way the page does. Every glyph and b
 - **The user** — a `💬` signed with a person or team badge (`👤parf`, `👥design`), or not signed at all.
   The page signs with the user's name (prefs `"me"`, else git); it always signs `settled`, `yes`, `no`,
   `done` and `elaborate`. A `💡` signed by a person or team is their answer, not a proposal.
-- **The agent** — always signs `👾claude`.
+- **The agent** — always signs a bare `👾`, glued: `💬👾 …`, `💡👾 …` — no name, whichever agent it is.
 - **A source** — `📡slack`, `📡mail`: relayed, not a decision. If you relay one, add your own
-  `💬 👾claude …` after it.
+  `💬👾 …` after it.
 
 ## A thread
 
@@ -21,13 +21,13 @@ One `💬` per turn, indented into its item, a blank `>` between turns. A partia
 
 ```markdown
 - ❓ Do we keep the old URLs?
-  > 💬 👾claude Redirect for a year?
+  > 💬👾 Redirect for a year?
   >
   > 💬 👤parf elaborate — which links are out there?
 ```
 
 Append; never edit or delete a turn, never touch the user's words. The agent's **records** —
-`💬 👾claude → …`, `` 💬 👾claude `<sha>` — … ``, `💬 👾claude 🎫<ID> → …` — are not turns: they never
+`💬👾 → …`, `` 💬👾 `<sha>` — … ``, `💬👾 🎫<ID> → …` — are not turns: they never
 reopen an item and never count as its last word.
 
 ## The state of an item
@@ -48,7 +48,7 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | | the agent's own `💬` is last (it proposed something) | the user said yes: do what you proposed → `✅` |
 | | no `💬` — a question / a finding with one `💡` / with options | find out, reply, `❓` / do the `💡` → `✅` / reply "which one?", `❓` |
 | `⚠️` | the user's `💬` (else the item text) says what is missing | finish → `✅`; unclear → reply "what is missing?", `❓` |
-| `🎫` | a ticket requested; the user's `💬` names who (`👤name` / `👥team`) | file the ticket (the 🎫 is the go-ahead) → `✅` + `💬 👾claude 🎫<ID> → 👤name` |
+| `🎫` | a ticket requested; the user's `💬` names who (`👤name` / `👥team`) | file the ticket (the 🎫 is the go-ahead) → `✅` + `💬👾 🎫<ID> → 👤name` |
 | `⛔` `❌` | blocked / failed | nobody — list them in the report |
 | `✅` `🚫` `⏸️` | closed | nobody |
 
@@ -68,12 +68,12 @@ after a pick.
 plain reply under an undecided `💡`.
 
 A user's answer that is **only** a stage word — "leave it", "drop it" → `🚫`; "later" → `⏸️` — is that
-stage: set it with `> 💬 👾claude 🚫 — per your "leave it"`. A sentence that contains the word is an
+stage: set it with `> 💬👾 🚫 — per your "leave it"`. A sentence that contains the word is an
 answer, not a stage. Ask once, never twice.
 
 ## Replying
 
-`> 💬 👾claude <the answer, with evidence you verified — read the code, run it>`, a blank `>` before it.
+`> 💬👾 <the answer, with evidence you verified — read the code, run it>`, a blank `>` before it.
 Where a choice is the next step, the `💡` or the options go **under** that reply, never instead of it.
 
 ## Doing a task
@@ -93,8 +93,8 @@ Replace the first glyph; a severity stays after it: `- ❓ …` → `- ✅ …`,
 never tick `(x)` / `[x]`. A record is optional — add one when it helps the user find the result:
 
 ```markdown
-  > 💬 👾claude → `DECISIONS.md`: <the decision, short> · `TODO.md`: <the action>
-  > 💬 👾claude `<sha>` — <what, and the proof>
+  > 💬👾 → `DECISIONS.md`: <the decision, short> · `TODO.md`: <the action>
+  > 💬👾 `<sha>` — <what, and the proof>
 ```
 
 ## Committing

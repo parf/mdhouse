@@ -40,7 +40,7 @@ first; return Markdown — the main loop writes the file.
 
 - 🔴 `src/cli.ts:536` --fg hands its folders over when the port is busy and exits 0 — under systemd
   the unit "succeeds" and nothing retries. Measured: exit 0 with :7777 taken.
-  > 💡 👾claude Exit 1 under `MDHOUSE_SERVICE=1`, so systemd retries.
+  > 💡👾 Exit 1 under `MDHOUSE_SERVICE=1`, so systemd retries.
 - ❓ 🟠 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits. Two ways:
   - ( ) clamp every `limit` through one helper 🌟
   - ( ) reject a non-numeric `limit` with 400
@@ -49,7 +49,7 @@ first; return Markdown — the main loop writes the file.
 
 - First symbol: the severity — 🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information.
 - Then `file:line`, the claim, the consequence; the evidence in a few words when not obvious.
-- One fix → a `💡 👾claude` line under it (✓ yes / ✗ no on the page). Two real ways → options, and the
+- One fix → a `💡👾` line under it (✓ yes / ✗ no on the page). Two real ways → options, and the
   line starts `❓` before the severity (a choice is a question).
 - No `✅`, no `💬` — triage is the user's. No preamble or summary in the file.
 

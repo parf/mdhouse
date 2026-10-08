@@ -38,7 +38,7 @@ The glyph is the **first symbol of the line** — status first, then severity
 | Glyph | Meaning | Use | Renders |
 |---|---|---|---|
 | 💬 | answer / reply — and nothing else | one 💬 per turn, under the ❓ / ⁉️ / item | green block |
-| 💡 | a suggested answer — proposed, not yet the answer | `💡 👾claude …` under a ❓; **✓ yes** → `✅ 💡` + `💬 👤parf yes — …`; **✗ no** → `🚫 💡` + `💬 👤parf no — …`; **💬 reply** just replies — the text optional | blue block, yes / no / reply; decided: muted |
+| 💡 | a suggested answer — proposed, not yet the answer | `💡👾 …` under a ❓; **✓ yes** → `✅ 💡` + `💬 👤parf yes — …`; **✗ no** → `🚫 💡` + `💬 👤parf no — …`; **💬 reply** just replies — the text optional | blue block, yes / no / reply; decided: muted |
 | 💬 ⚠️ | partial answer — "need more" | the line after it says what is missing; the item stays ❓ | amber block |
 
 ## Badges — a glyph glued to a name
@@ -52,7 +52,7 @@ First in a 💬 it is the author.
 |---|---|---|---|
 | 👤 | person | `💬 👤parf …` | neutral |
 | 👥 | team / group | `👥platform` | blue |
-| 👾 | AI agent | `💬 👾claude …` | purple |
+| 👾 | AI agent — bare, no name: any agent (Claude, Codex) signs the same | `💬👾 …`, `💡👾 …` | purple |
 | 📡 | source — where it came from: a channel, a ticket system, mail | `📡slack` | teal |
 | 🎫 | ticket | `🎫RLM-412` | orange |
 | 🏷️ | tag / area | `🏷️ui` | quiet |
