@@ -127,6 +127,10 @@ On top of that, `POST /api/marks`, `/api/roots/remove`, `/api/settings` and the 
 a request whose `Origin` or `Sec-Fetch-Site` names another site — the requests a stray web page
 could otherwise send to a local server.
 
+`--host-name` (2026-10-08): behind a reverse proxy the names it serves are the only ones let in —
+localhost and IPs refused, so the proxy is the one way in. The proxy passes `Host` as is, so the
+`Origin` check holds for its pages.
+
 ## `prefs.json` is changed by read–apply–write, never by rewriting a held copy
 
 Several processes write it. Each change re-reads the file, applies itself, and replaces the file

@@ -66,6 +66,8 @@ export interface AccessConfig {
   allow: string[];
   /** login -> password hash; none means no login is asked. */
   users: Record<string, string>;
+  /** `--host-name`: the only `Host` names let in (a reverse proxy's); empty = localhost and IPs. */
+  hostNames: string[];
 }
 
 export interface ServerConfig {
@@ -108,7 +110,7 @@ const fresh = (): PrefsFile => ({
   writable: [],
   settings: { ...DEFAULT_SETTINGS },
   server: {},
-  access: { allow: [], users: {} },
+  access: { allow: [], users: {}, hostNames: [] },
   autoRw: [],
 });
 
@@ -132,8 +134,9 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   const server: ServerConfig = {};
   if (validPort(parsed.server?.port)) server.port = parsed.server.port;
   if (typeof parsed.server?.host === 'string' && parsed.server.host) server.host = parsed.server.host;
-  const access: AccessConfig = { allow: [], users: {} };
+  const access: AccessConfig = { allow: [], users: {}, hostNames: [] };
   if (Array.isArray(parsed.access?.allow)) access.allow = parsed.access.allow.filter((c) => typeof c === 'string');
+  if (Array.isArray(parsed.access?.hostNames)) access.hostNames = parsed.access.hostNames.filter((n) => typeof n === 'string');
   const users = parsed.access?.users;
   if (users && typeof users === 'object') {
     for (const [login, hash] of Object.entries(users)) if (typeof hash === 'string') access.users[login] = hash;
@@ -331,7 +334,7 @@ export class Prefs {
   }
 
   get access(): AccessConfig {
-    return { allow: [...this.data.access.allow], users: { ...this.data.access.users } };
+    return { allow: [...this.data.access.allow], users: { ...this.data.access.users }, hostNames: [...this.data.access.hostNames] };
   }
 
   /**
@@ -384,6 +387,20 @@ export class Prefs {
       data.access.allow = [...allow];
     });
     return this.access;
+  }
+
+  /** Replace the host names. */
+  async setHostNames(names: string[]): Promise<AccessConfig> {
+    await this.mutate((data) => {
+      data.access.hostNames = [...names];
+    });
+    return this.access;
+  }
+
+  /** The host names as the file holds them now. */
+  currentHostNames(): string[] {
+    this.refresh();
+    return [...this.data.access.hostNames];
   }
 
   /** Add or replace a user; true when the login is new. */

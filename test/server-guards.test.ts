@@ -15,6 +15,15 @@ describe('trustedHost — the DNS-rebinding guard', () => {
     expect(trustedHost('evil.com:x', '127.0.0.1')).toBe(false); // a colon alone is not IPv6
   });
 
+  test('with --host-name saved, only those names pass — no localhost, no IP', () => {
+    const names = ['rdvp', 'parf-dvp4'];
+    expect(trustedHost('rdvp', '127.0.0.1', names)).toBe(true);
+    expect(trustedHost('PARF-DVP4:80', '127.0.0.1', names)).toBe(true);
+    for (const host of ['localhost:7777', '127.0.0.1:7777', '[::1]:7777', 'evil.example', 'rdvp.evil.example']) {
+      expect(trustedHost(host, '127.0.0.1', names)).toBe(false);
+    }
+  });
+
   test('IPv6 in every form a browser sends, and a trailing dot', () => {
     for (const host of ['[::1]:7777', '::1', '[::ffff:127.0.0.1]:7777', 'localhost.:7777']) {
       expect(trustedHost(host, '127.0.0.1')).toBe(true);
@@ -22,11 +31,11 @@ describe('trustedHost — the DNS-rebinding guard', () => {
   });
 
   test('bound to the network, this machine’s own name is accepted too, and nothing near it', () => {
-    expect(trustedHost('box:7777', '0.0.0.0', 'box')).toBe(true);
-    expect(trustedHost('box.local:7777', '0.0.0.0', 'box')).toBe(true);
-    expect(trustedHost('192.168.1.5:7777', '0.0.0.0', 'box')).toBe(true);
-    expect(trustedHost('box.evil.example', '0.0.0.0', 'box')).toBe(false);
-    expect(trustedHost('box:7777', '127.0.0.1', 'box')).toBe(false);
+    expect(trustedHost('box:7777', '0.0.0.0', [], 'box')).toBe(true);
+    expect(trustedHost('box.local:7777', '0.0.0.0', [], 'box')).toBe(true);
+    expect(trustedHost('192.168.1.5:7777', '0.0.0.0', [], 'box')).toBe(true);
+    expect(trustedHost('box.evil.example', '0.0.0.0', [], 'box')).toBe(false);
+    expect(trustedHost('box:7777', '127.0.0.1', [], 'box')).toBe(false);
   });
 });
 

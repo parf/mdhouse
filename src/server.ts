@@ -55,13 +55,15 @@ const moved = (location: string) => new Response(null, { status: 301, headers: {
  * `Sec-Fetch-Site` all say "same origin", so no origin check can tell. What it cannot fake is
  * the name: the `Host` header carries the attacker's domain. So only names that cannot be
  * rebound are accepted: `localhost` and IP literals, plus, when mdhouse is bound to the network
- * on purpose (`--host`), this machine's own hostname.
+ * on purpose (`--host`), this machine's own hostname. With `--host-name` saved, only those
+ * names pass — a reverse proxy's; localhost and IP literals are refused.
  */
-export function trustedHost(host: string | null, bound: string, machine = machineName()): boolean {
+export function trustedHost(host: string | null, bound: string, names: string[] = [], machine = machineName()): boolean {
   if (!host) return false;
   const name = (host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.replace(/:\d+$/, ''))
     .toLowerCase()
     .replace(/\.$/, ''); // `localhost.` is still localhost
+  if (names.length) return names.includes(name);
   const ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(name);
   const ipv6 = /^[0-9a-f:.]+$/.test(name) && name.includes(':');
   if (name === 'localhost' || ipv4 || ipv6) return true;
@@ -251,7 +253,7 @@ export async function serve(opts: ServeOptions) {
   /** Every handler behind the host check, then the access check. */
   type Handler = (req: Request) => Response | Promise<Response>;
   const check = (h: Handler): Handler => async (req) =>
-    !trustedHost(req.headers.get('host'), hostname) ? fail(421, 'unrecognised host name') : ((await admit(req)) ?? h(req));
+    !trustedHost(req.headers.get('host'), hostname, prefs.currentHostNames()) ? fail(421, 'unrecognised host name') : ((await admit(req)) ?? h(req));
 
   /**
    * The app's page. Bun serves the HTML bundle only as a route of its own, which no check can
@@ -902,7 +904,7 @@ export async function serve(opts: ServeOptions) {
     }),
 
     async fetch(req, srv) {
-      if (!trustedHost(req.headers.get('host'), hostname)) return fail(421, 'unrecognised host name');
+      if (!trustedHost(req.headers.get('host'), hostname, prefs.currentHostNames())) return fail(421, 'unrecognised host name');
       const denied = await admit(req);
       if (denied) return denied;
       const url = new URL(req.url);

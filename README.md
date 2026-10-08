@@ -178,6 +178,7 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 | `--rw <folder(s)>` | allow editing |
 | `--rm <folder(s)>` | forget the folders and stop serving them |
 | `--auto-rw <path,…>` | every folder served from under these is writable |
+| `--host-name <name,…>` | behind a reverse proxy: only these names get in, not localhost or IPs — [access](doc/access.md#behind-a-reverse-proxy) |
 | `--host <addr>` | address to bind — default `127.0.0.1`; `0.0.0.0` to share on your LAN |
 | `--port <n>` | default 7777 |
 | `--fg` | stay in the foreground |

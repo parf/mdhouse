@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `--host-name <name,…>` — behind a reverse proxy (nginx → `notes.example`): only these names get
+  in, localhost and IP addresses are refused; saved. `--host-name none` undoes it
+
 ## 2.0.0 — 2026-10-08
 
 Breaking: addresses lose `/d/` — `/d/…` links redirect (301); a folder can no longer be named

@@ -131,7 +131,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   `/api/digest`, `/api/git`, `/api/git/commits|files|remote|log|diff`; write — below.
 - **Every route** (and the WebSocket) first passes `trustedHost()`: the `Host` header must be
   `localhost`, an IP literal, or — when bound to the network with `--host` — this machine's own
-  name. Anything else is `421`. This is the DNS-rebinding guard: a rebound page looks
+  name. Anything else is `421`. With `access.hostNames` (`--host-name`) set, only those names
+  pass — localhost and IPs are `421` too; read per request like `access`. This is the DNS-rebinding guard: a rebound page looks
   same-origin in every header except the name it was addressed to. `guard()` in `server.ts` wraps
   every route.
 - **Then access** — `admit()`, `lib/access.ts`, off until set from the CLI: an address outside
@@ -191,7 +192,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
-  argon2id hash), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and
+  argon2id hash, `hostNames`), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and
   `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
   `writable` is a getter — `--rw` asked, or under an auto-rw path with the switch on — so the
   switch and the CLI apply to a running server at once (`Prefs.refresh()` re-reads the file

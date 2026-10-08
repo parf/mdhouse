@@ -27,6 +27,12 @@ on 127.0.0.1 and forward its port:
 ssh -N -L 7777:127.0.0.1:7777 you@server     # then open http://127.0.0.1:7777 here
 ```
 
-- A reverse proxy under a name (nginx → `notes.example`) is unsupported: that name is refused
-  (421); with `Host` rewritten to 127.0.0.1 reads work, but every write and live reload is refused
-  as cross-site (403). Forward the port over ssh instead
+## Behind a reverse proxy
+
+```sh
+mdhouse --host-name notes.example,box   # only these Host names get in; saved
+mdhouse --host-name none                # localhost and IP addresses again
+```
+
+- nginx passes the name as is: `proxy_set_header Host $host;` (+ `Upgrade` / `Connection` for live reload)
+- With names set, `localhost` and IP addresses are refused (421) — open it by the name only

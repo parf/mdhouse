@@ -39,6 +39,9 @@ Options
       --port <n>       port to listen on            (default 7777)
       --allow <cidr,…> only these networks (and this machine) get in; saved
                        --allow none: every address again
+      --host-name <n,…> only these Host names get in (a reverse proxy's);
+                       localhost and IP addresses are refused; saved
+                       --host-name none: localhost and IP addresses again
       --auto-rw <p,…>  folders under these are writable (switch in settings); saved
                        --auto-rw none: no such paths
   -o, --open           open a browser on start
@@ -69,6 +72,8 @@ interface Options {
   rm: boolean;
   /** `--allow`: the networks to save, or null when not given. */
   allow: string[] | null;
+  /** `--host-name`: the names to save, or null when not given. */
+  hostNames: string[] | null;
   /** `--auto-rw`: the paths to save, or null when not given. */
   autoRw: string[] | null;
   /** Given flags that only a fresh start applies — a running mdhouse keeps its own. */
@@ -92,6 +97,7 @@ function parse(argv: string[]): Options {
     perm: false,
     rm: false,
     allow: null,
+    hostNames: null,
     autoRw: null,
     startOnly: new Set(),
   };
@@ -121,6 +127,7 @@ function parse(argv: string[]): Options {
       case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
+      case '--host-name': o.hostNames = [...(o.hostNames ?? []), ...next().split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)]; break;
       case '--allow': o.allow = [...(o.allow ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--help': console.log(USAGE); process.exit(0);
       // Retired short forms: say what replaced them rather than just "unknown".
@@ -303,10 +310,11 @@ if (command === 'service') {
 
 /** The access settings, as `mdhouse users` and every change print them. */
 const printAccess = (): void => {
-  const { allow, users } = prefs.access;
+  const { allow, users, hostNames } = prefs.access;
   const logins = Object.keys(users).sort();
   console.log(`mdhouse  users:  ${logins.length ? logins.join(', ') : 'none — no login asked'}`);
   console.log(`mdhouse  allow:  ${allow.length ? `${allow.join(', ')} + this machine` : 'every address'}`);
+  console.log(`mdhouse  names:  ${hostNames.length ? `${hostNames.join(', ')} only` : 'localhost and IP addresses'}`);
 };
 
 /**
@@ -369,6 +377,18 @@ if (opts.allow) {
     process.exit(2);
   }
   await prefs.setAllow(allow);
+  printAccess();
+  if (!opts.dirs.length) process.exit(0);
+}
+
+if (opts.hostNames) {
+  const names = opts.hostNames.length === 1 && opts.hostNames[0] === 'none' ? [] : opts.hostNames;
+  const bad = names.filter((n) => !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/.test(n) || /^[\d.]+$/.test(n));
+  if (bad.length) {
+    console.error(`mdhouse: not a host name: ${bad.join(', ')}  (like notes.example, box; not an IP address)`);
+    process.exit(2);
+  }
+  await prefs.setHostNames(names);
   printAccess();
   if (!opts.dirs.length) process.exit(0);
 }
