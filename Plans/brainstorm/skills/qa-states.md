@@ -12,6 +12,11 @@ it, reproduce it, read the line, grep the symbol. Every task is a claim: a revie
 ✓ yes, a ⏳, "do it", your own earlier reply. No problem, or nothing to gain → do not do it; reply with
 the evidence. Doing a task whose premise is false breaks what works.
 
+**Then weigh how real it is — the impact**: who hits it (the user every day, a fresh npm install, nobody
+but a crafted request), how often, and what it costs when it does (lost text, a broken release, a wrong
+colour). Say it in a few words: `Impact: every save on a read-only root — the answer is lost`. Little
+impact and a costly or risky change → propose not doing it.
+
 ## Who is who
 
 - **The user** — a `💬` signed with a person or team badge (`👤parf`, `👥design`), or not signed at all.

@@ -45,12 +45,14 @@ Each gets the scope, its dimension, `git log -p <scope> -- <its paths>`, the for
 ## <scope> — 📅YYYY-MM-DD · <HEAD short sha>
 
 - 🔴 `src/prefs.ts:212` a save drops the user's folders when prefs.json is unreadable — data loss.
+  Impact: any start after a crash mid-write — every saved folder gone.
   > 💡👾 Move the broken file aside and refuse the write.
 
 ### <Dimension>
 
 - 🔴 `src/cli.ts:536` --fg hands its folders over when the port is busy and exits 0 — under systemd
-  the unit "succeeds" and nothing retries. Measured: exit 0 with :7777 taken.
+  the unit "succeeds" and nothing retries. Measured: exit 0 with :7777 taken. Impact: every reboot
+  where a hand-started copy holds the port — the service stays down.
   > 💡👾 Exit 1 under `MDHOUSE_SERVICE=1`, so systemd retries.
 - ❓ 🟠 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits. Two ways:
   - ( ) clamp every `limit` through one helper 🌟
@@ -64,7 +66,8 @@ Checked and sound: <one line per dimension>.
   under the section heading, above the dimensions.
 - First symbol: the severity — 🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information.
 - Then `file:line` (each one, for a shared cause), the claim, the consequence; the evidence in a few
-  words when not obvious.
+  words when not obvious; **`Impact:`** — who hits it, how often, what it costs (qa-states.md). The
+  severity follows the impact, not the feeling: no one hits it → ⚪ or not raised at all.
 - One fix → a `💡👾` line under it (✓ yes / ✗ no on the page). Two real ways → options, and the line
   starts `❓` before the severity (a choice is a question).
 - No `✅`, no `💬` — triage is the user's.
