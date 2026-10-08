@@ -114,7 +114,12 @@ Plain Markdown around the items stays as it is: headings, paragraphs, `code`, li
 - ⏸️ ⚪ `src/lib/search.ts:174` the no-ripgrep fallback compiles the user's regex — `(a+)+$` on a big
   file blocks the single thread.
   > 💬 👾claude needs a design (a worker with a timeout, or no regex in the fallback) — later.
-- 🎫 ⚪ `bin/mdhouse` Windows paths with spaces — 🎫RLM-412, 👥platform
+- ✅ ⚪ `bin/mdhouse` Windows paths with spaces.
+  > 💬 👤parf 👥platform — they own the Windows build
+  >
+  > 💬 👾claude 🎫RLM-412 → 👥platform
+- 🎫 🟠 `src/lib/watch.ts:88` the watcher misses renames on network mounts.
+  > 💬 👤parf 👤dima — he knows the NFS setup
 - ✅ 🟠 `test/control.test.ts:8` the tests created control sockets in the real config dir, beside the
   live instance's own.
   > 💬 👾claude `112b307` — a temp config via `test/preload.ts`; checked by watching the real dir

@@ -42,7 +42,7 @@ The glyph is the **first symbol of the line** — status first, then severity
 | ✅ | done / fixed / decided | proof or the commit in the 💬 under it | muted, folded |
 | 🚫 | cancelled / rejected — by decision, nothing failed | the deciding evidence in the 💬 | muted, folded |
 | ⏸️ | deferred / on hold | why it waits | muted |
-| 🎫 | handed off — ticketed | the ticket | muted |
+| 🎫 | a ticket requested — the agent files it | the user's 💬 names who: `👤name` / `👥team` (required); the agent then sets ✅ + `🎫<ID> → 👤name` | open, "ticket pending" |
 | ⛔ | cannot be done — blocked, nothing ran | name the obstacle | strong |
 | ❌ | failed — it ran and did not pass. Nothing else | the output | loud |
 | ⚠️ | partial — follow-up required | what is missing | strong |

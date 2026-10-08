@@ -16,7 +16,8 @@ const md = new MarkdownIt({ html: false, linkify: true });
 // ---------------------------------------------------------------- model
 
 const SEVERITY = ['🔴', '🟠', '⚪', '🔵'];
-const CLOSED = ['✅', '🚫', '⏸️', '🎫'];
+/** 🎫 is not closed: a ticket requested — the agent files it, then sets ✅ with the ticket's id. */
+const CLOSED = ['✅', '🚫', '⏸️'];
 const ASK = ['❓', '⁉️'];
 const GLYPHS = ['❓', '⁉️', '⏳', '✅', '🚫', '⏸️', '🎫', '⛔', '❌', '⚠️', '👉', ...SEVERITY];
 /** A glyph as written, with or without its variation selector. */
@@ -227,7 +228,7 @@ function itemHtml(it: Item): string {
     .filter(Boolean).join(' ');
   // checkboxes (any of): ticking does not settle the question — ✓ done does
   const doneBtn = !closed && options.some((o) => o.option === 'check') ? '<button class="c-done" data-tip="Done picking: the question turns ✅">✓ done</button>' : '';
-  const chip = status === '⏳' || triaged ? '<span class="btn">waiting on agent</span>' : doneBtn;
+  const chip = status === '🎫' ? '<span class="btn">ticket pending</span>' : status === '⏳' || triaged ? '<span class="btn">waiting on agent</span>' : doneBtn;
   return `<li class="${cls}" data-k="${key}"${sev ? ` data-sev="${sev}"` : ''}><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
     + `${options.length ? '<button class="c-btn" data-tip="Comment on the question">💬</button>' : ''}</div>`
     + `${opts}${threadHtml(it.replies, 'thread q-thread')}</li>`;
@@ -252,8 +253,8 @@ function quoteHtml(lines: string[]): string {
   const answered = closed || (ASK.includes(status) && isAnswered(replies));
   const key = keyOf(glyphs, !answered);
 
-  if (status === '⏳') {
-    return `<ul class="items"><li class="item" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Reply')}</span><span>${inline(question)}</span><span class="btn">waiting on agent</span></div>`
+  if (status === '⏳' || status === '🎫') {
+    return `<ul class="items"><li class="item" data-k="${key}"><div class="head c-row"><span class="g">${glyphButton(status, 'Reply')}</span><span>${inline(question)}</span><span class="btn">${status === '🎫' ? 'ticket pending' : 'waiting on agent'}</span></div>`
       + `${replies.length ? threadHtml(replies, 'thread q-thread') : ''}</li></ul>`;
   }
   if (answered) {
@@ -413,6 +414,8 @@ details.settled[open] .more { display: none; }
 /* blocks: tighter inside, a gap between them */
 .item, details.settled { padding: 3px 8px; margin: 0 0 6px; }
 .thread:empty { display: none; }
+/* 🎫 without a name: the textarea says what is missing */
+.c-edit.need textarea, .f-edit.need textarea { border-color: var(--q); box-shadow: 0 0 0 2px color-mix(in srgb, var(--q) 25%, transparent); }
 /* an editor never inherits a bold line */
 .c-edit, .f-edit { font-weight: 400; }
 /* the action's number — Alt+number presses it */

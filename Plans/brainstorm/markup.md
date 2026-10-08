@@ -100,6 +100,7 @@ turns so GitHub keeps them apart:
 | `❓` + severity | waiting on **me** | loudest |
 | `⏳` + severity | waiting on the agent | normal |
 | `⏸️` + severity | deferred | muted |
+| `🎫` + severity | a ticket requested (who: `👤name` / `👥team`, required) — the agent files it, then `✅` + `🎫<ID>` | open, "ticket pending" |
 | `✅` `🚫` + severity | settled | muted, folded |
 
 ## 3. Suggestions — pick one, or several

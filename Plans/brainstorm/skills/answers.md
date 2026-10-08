@@ -20,6 +20,7 @@ writing a stage, committing, the report. This file only says what `/answers` doe
 | `⏳` with a task | do it as `/fixes` "Do it" steps 1–4 say; it is also the answer → carry it over → `✅` |
 | `⏳` asking to find out, or bare | find out, reply, `❓` |
 | a `no` with no alternative | not carried yet — reply with the next `💡` or options, keep `❓`; carry once settled (`Not X — Y instead`) |
+| `🎫` | as qa-states.md says: file the ticket → `✅` + its id |
 | closed, `⛔`, `❌`, or waiting on the user | nothing |
 
 ## Carry over

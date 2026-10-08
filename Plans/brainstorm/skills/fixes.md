@@ -20,6 +20,7 @@ writing a stage, committing, the report. A finding is a hypothesis: verify it by
 | `⏳` / `⚠️` | as qa-states.md says: **do it** / **finish it**, or reply |
 | asks for more — incl. a bare `no` | **reply**: the next `💡` or options; a no with nothing left: "🚫 reject or ⏸️ defer?"; set `❓` |
 | untriaged | **AUTO** only (below) |
+| `🎫` | as qa-states.md says: file the ticket → `✅` + its id |
 | closed, `⛔`, `❌`, waiting on the user | nothing |
 
 **AUTO** — untriaged, 🟠 or ⚪, confirmed by execution, mechanical, local: a stale comment, a doc that

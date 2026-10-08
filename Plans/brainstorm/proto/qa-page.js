@@ -25,8 +25,8 @@
    * 💬 ⚠️ (need more); `pick` saves and picks the option the comment is on.
    */
   const ACTIONS = {
-    question: [['✅', '✅ settled'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['partial', '⚠️ need more', 'A partial answer: it stays open'], ['🎫', '🎫 ticket', 'The answer will be in a ticket — wait for it']],
-    finding: [['✅', '✅ done', 'Fixed / done'], ['🚫', '🚫 reject', 'Rejected — say why'], ['⏸️', '⏸️ defer', 'Deferred — later'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⚠️', '⚠️ partial', 'Partly done — follow-up needed'], ['🎫', '🎫 ticket', 'Handed off to a ticket']],
+    question: [['✅', '✅ settled'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['partial', '⚠️ need more', 'A partial answer: it stays open'], ['🎫', '🎫 ticket', 'File a ticket — name who takes it: 👤name or 👥team']],
+    finding: [['✅', '✅ done', 'Fixed / done'], ['🚫', '🚫 reject', 'Rejected — say why'], ['⏸️', '⏸️ defer', 'Deferred — later'], ['⏳', '⏳ agent', 'Waiting on the agent'], ['⚠️', '⚠️ partial', 'Partly done — follow-up needed'], ['🎫', '🎫 ticket', 'File a ticket — name who takes it: 👤name or 👥team']],
     option: [['pick', 'pick it', 'Save and pick this option']],
     request: [['✅', '✅ done'], ['🚫', '🚫 drop'], ['⏸️', '⏸️ defer']],
     proposal: [['yes', '✓ yes', 'It is the answer: 💡 becomes 💬'], ['no', '✗ no', 'Reply no; it goes back to the agent']],
@@ -56,6 +56,14 @@
     sign.checked = signed();
     sign.addEventListener('change', () => setSigned(sign.checked));
     const done = (action) => {
+      // 🎫 asks the agent to file a ticket: it needs at least who takes it
+      if (action === '🎫' && !/(👤|👥)\S+/u.test(ta.value)) {
+        ta.placeholder = '🎫 needs who takes it: 👤name or 👥team (and what, if not obvious)';
+        ta.value = ta.value || '👤';
+        ta.focus();
+        ed.classList.add('need');
+        return;
+      }
       if (action === 'elaborate') {
         // every form: a signed reply that asks for more; the item never closes
         const text = ta.value.trim();
@@ -233,9 +241,12 @@
       g.textContent = stage;
     }
     const keys = (host.dataset.k || '').split(' ').filter((k) => k !== 'open' && !['✅', '🚫', '⏸️', '🎫', '❓', '⁉️', '⏳'].includes(k));
-    const closed = ['✅', '🚫', '⏸️', '🎫'].includes(stage);
+    const closed = ['✅', '🚫', '⏸️'].includes(stage);
     host.dataset.k = [stage, ...keys, ...(closed ? [] : ['open'])].join(' ');
     host.style.opacity = closed ? '.55' : '';
+    const head = host.querySelector(':scope > .head');
+    head?.querySelector(':scope > .btn')?.remove();
+    if (stage === '🎫' || stage === '⏳') head?.insertAdjacentHTML('beforeend', `<span class="btn">${stage === '🎫' ? 'ticket pending' : 'waiting on agent'}</span>`);
     host.classList.toggle('wait-me', stage === '❓');
     counts();
   }

@@ -28,7 +28,7 @@ Append; never edit or delete a turn, never touch the user's words.
 
 ## The state of an item
 
-`✅` `🚫` `⏸️` `🎫` are **closed** — the agent never acts on them. To reopen, the user sets `⏳` or `❓`.
+`✅` `🚫` `⏸️` are **closed** — the agent never acts on them. To reopen, the user sets `⏳` or `❓`.
 A closed item's closing turn says who closed it: `✅` + `💬 👤<name> settled …` — the user, nothing to
 carry; `✅` without it — the agent, and for the agent the `✅` alone is enough.
 
@@ -44,8 +44,9 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | | no `💬` — a question | find out, reply, `❓` |
 | | no `💬` — a finding with one `💡` / with options | do the `💡` → `✅` / reply "which one?", `❓` |
 | `⚠️` | the user's `💬` (else the item text) says what is missing | finish → `✅`; unclear → reply "what is missing?", `❓` |
+| `🎫` | a ticket requested; the user's `💬` names who takes it (`👤name` / `👥team`) | the agent: file the ticket (the user's 🎫 is the go-ahead), then `✅` + `💬 👾claude 🎫<ID> → 👤name` |
 | `⛔` `❌` | blocked / failed | nobody — list them in the report |
-| `✅` `🚫` `⏸️` `🎫` | closed | nobody |
+| `✅` `🚫` `⏸️` | closed | nobody |
 
 **Answered** — in every case only when no `💡` under the item is still undecided; then any of:
 
