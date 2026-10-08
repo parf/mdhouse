@@ -10,7 +10,7 @@ disable-model-invocation: true
 Writes issues for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
-- `scope` — default: **since the last review** — `<sha>..HEAD`, the `<sha>` from the last `## … · <sha>`
+- `scope` — default: **since the last review** — `<sha>..HEAD`, the `<sha>` from the last `# Issues — … · <sha>`
   heading of the newest `Plans/issues/*.md`. The very first run (no issues file yet) reviews the whole
   project at HEAD — once. Or: `release`, `all`, a `<rev>..` range, a path
 - `mine` — only the git user's own commits (a repo others commit to, or with merge traffic)
@@ -75,18 +75,18 @@ the meta-signals deciding where to look hardest — the format below and these r
 
 ## Format
 
-**One file per day: `Plans/issues/YYYY-MM-DD.md`** (today's date), `# Issues — YYYY-MM-DD` at the top —
-create it on the day's first run; a later run the same day appends to it:
+**One file per day: `Plans/issues/YYYY-MM-DD.md`** (today's date) — create it on the day's first run; a
+later run the same day appends to it. Each run opens with one heading, subsystems under it as `##`:
 
 ```markdown
-## <scope> — 📅YYYY-MM-DD · <HEAD short sha>
+# Issues — <scope> · 📅YYYY-MM-DD · <HEAD short sha>
 
 - 🔴 D1 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
   Evidence: corrupted the file, `mdhouse <dir> -p` → the saved folders gone
   Impact: any start after a crash mid-write — every saved folder lost
   > 💡👾 Move the broken file aside and refuse the write.
 
-### <Subsystem>
+## <Subsystem>
 
 - 🟠 D2 `src/cli.ts:536` `--fg` hands its folders over on a busy port and exits 0 — systemd never retries
   Evidence: :7777 taken → exit 0
