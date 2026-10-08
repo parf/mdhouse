@@ -53,6 +53,8 @@
   to it and changes no other line; answering at the end of a CRLF file without a final newline
   writes CRLF
 - A link with an encoded slash (`a%2Fb.md`) is left as written, not turned into a path
+- `--rw` and `-p` apply to the folders named only: `mdhouse -p --port <n>` keeps each saved
+  folder writable or read-only as it was saved
 
 ## 1.5.0 — 2026-10-07
 

@@ -366,9 +366,8 @@ const saved = prefs.savedDirs().filter((dir) => {
   return false;
 });
 
-if (!dirs.length) {
-  if (saved.length) dirs.push(...saved);
-  else if (process.env.MDHOUSE_SERVICE === '1') {
+if (!dirs.length && !saved.length) {
+  if (process.env.MDHOUSE_SERVICE === '1') {
     // Nothing to serve. Exit cleanly rather than fail, so the unit is not restarted in a loop.
     console.error('mdhouse: no saved directories — nothing to serve. Save one with:  mdhouse <dir> -p');
     process.exit(0);
@@ -382,6 +381,12 @@ if (!dirs.length) {
     process.exit(1);
   }
 }
+
+/**
+ * What a running mdhouse is asked for: the folders named, with `--rw` and `-p`; with none named,
+ * the saved ones as they are — `--rw` and `-p` never apply to the saved list.
+ */
+const request = dirs.length ? { dirs, rw: opts.rw, save: opts.perm } : { dirs: saved, rw: false, save: false };
 
 /**
  * Hand these directories to the mdhouse already on the port and print what it now serves.
@@ -422,7 +427,7 @@ const stopHint = `mdhouse exit${portHint}`;
 
 if (!opts.fg) {
   // Already running? Hand it the directories without starting anything.
-  if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw, save: opts.perm }));
+  if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, request));
 
   // Nothing running, so nothing holds the prefs in memory: save here, and the daemon about to
   // start reads them back.
@@ -440,7 +445,7 @@ if (!opts.fg) {
     // it something else.
     for (let i = 0; i < 50; i++) {
       await Bun.sleep(100);
-      if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw, save: opts.perm }));
+      if (await askPing(opts.port)) await handOver(await askDaemon(opts.port, request));
     }
     console.error(`mdhouse: port ${opts.port} is in use by something that is not mdhouse.`);
     console.error('         Stop it, or pass --port <n>.');
@@ -552,7 +557,7 @@ try {
    * port. The daemon adds them to what it already serves — it never swaps its trees out from
    * under a tab someone is reading.
    */
-  await handOver(await askDaemon(opts.port, { dirs, rw: opts.rw, save: opts.perm }));
+  await handOver(await askDaemon(opts.port, request));
   throw err; // unreachable: handOver never returns
 }
 const { server, shutdown } = started;
