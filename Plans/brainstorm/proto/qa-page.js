@@ -106,7 +106,19 @@
     return th;
   };
 
+  // ---- an issue id in the address (#B.44): open its folded item and bring it into view
+  const showHash = () => {
+    const el = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (!el) return;
+    if (el.tagName === 'DETAILS') el.open = true;
+    el.scrollIntoView();
+  };
+  addEventListener('hashchange', showHash);
+  showHash();
+
   doc.addEventListener('click', (e) => {
+    // ---- an issue id is a plain link to itself
+    if (e.target.closest('.iid')) return;
     // ---- 🎯 on a line: select / unselect at once
     const tg = e.target.closest('.tgt');
     if (tg) {

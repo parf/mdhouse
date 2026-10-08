@@ -237,7 +237,11 @@ function itemHtml(it: Item): string {
   // plain sub-items (cases of one issue) — a list under the claim; options are rendered apart
   const cases = it.items.filter((s) => !s.option && !s.glyphs.length);
   const casesHtml = cases.length ? `<ul class="cases">${cases.map((c) => `<li>${inline(c.head)}</li>`).join('')}</ul>` : '';
-  const text = `${sevText}${inline(claim!)}${metaHtml}${casesHtml}`;
+  // an issue id (`B.44`) first in the claim: the item's anchor, shown as a link to itself
+  const id = claim!.match(/^([A-Z]\.\d+)\s/)?.[1];
+  const idAttr = id ? ` id="${id}"` : '';
+  const claimHtml = id ? `<a class="iid" href="#${id}">${id}</a>${inline(claim!.slice(id.length))}` : inline(claim!);
+  const text = `${sevText}${claimHtml}${metaHtml}${casesHtml}`;
   const key = keyOf(it.glyphs, !closed, it.target);
   const mark = answeredAsk ? `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>` : null;
   const radio = options.some((o) => o.option === 'radio');
@@ -252,7 +256,7 @@ function itemHtml(it: Item): string {
     // folded: the answer line is the pick when there are options, else the last reply
     const pick = options.filter((o) => o.picked).map((o) => `${o.option === 'radio' ? '◉' : '☑'} ${labels(inline(o.head))}`).join(' · ');
     const answer = options.length ? (pick ? `<span class="t-a">${pick}</span>` : '') : last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : '';
-    return `<details class="settled" data-k="${key}"><summary>${mark ?? `<span class="g">${glyphButton(status, tip)}</span>`}`
+    return `<details class="settled"${idAttr} data-k="${key}"><summary>${mark ?? `<span class="g">${glyphButton(status, tip)}</span>`}`
       + `<span class="t"><span class="t-q">${text}</span>${answer}</span><button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button></summary>`
       + `${opts}${threadHtml(it.replies, 'thread', CLOSED.includes(status))}</details>`;
   }
@@ -268,7 +272,7 @@ function itemHtml(it: Item): string {
   // checkboxes (any of): ticking does not settle the question — ✓ done does
   const doneBtn = !closed && options.some((o) => o.option === 'check') ? '<button class="c-done" data-tip="Done picking: the question turns ✅">✓ done</button>' : '';
   const chip = status === '🎫' ? '<span class="btn">ticket pending</span>' : status === '⏳' || triaged ? '<span class="btn">waiting on agent</span>' : doneBtn;
-  return `<li class="${cls}" data-k="${key}"${sev ? ` data-sev="${sev}"` : ''}><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
+  return `<li class="${cls}"${idAttr} data-k="${key}"${sev ? ` data-sev="${sev}"` : ''}><div class="head c-row"><span class="g">${glyphButton(status, tip)}</span><span>${text}</span>${chip}`
     + `${options.length ? '<button class="c-btn" data-tip="Comment on the question">💬</button>' : ''}<button class="tgt" data-tip="Select for the next run (double-click works too)">🎯</button></div>`
     + `${opts}${threadHtml(it.replies, 'thread q-thread')}</li>`;
 }
@@ -441,6 +445,10 @@ details.settled[open] .more { display: none; }
 .item.wait-me.dis > .head .g-btn { border-color: color-mix(in srgb, var(--dis) 35%, transparent); }
 .item.wait-me > .head .g-btn:hover { border-color: var(--q); background: var(--panel); }
 .item.wait-me.dis > .head .g-btn:hover { border-color: var(--dis); }
+.iid { font-weight: 600; color: inherit; text-decoration: none; }
+.iid:hover { text-decoration: underline; }
+[id]:target { outline: 2px solid var(--q); outline-offset: 2px; }
+.item[id], details[id] { scroll-margin-top: 4em; }
 /* an open finding: its first glyph always framed, in its severity's colour; a click anywhere opens the form */
 .item.finding { cursor: pointer; }
 .item.finding .reply, .item.finding .opts, .item.finding textarea { cursor: auto; }

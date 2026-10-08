@@ -138,6 +138,7 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
 - **Group by root cause first**: items with one cause get one change and **one commit per group** —
   the change, every item's `✅` (each with the same `` 💬👾 `<sha>` ``), the docs it touched —
   `git commit <those paths>`. A crash between groups leaves nothing half.
+- The commit body names every issue it closes: `Fixes issues/2026-10-07.md#B.2, #B.3`.
 - A file with the user's uncommitted or staged edits (`git diff --quiet HEAD -- <file>` fails, or it is
   untracked): add your lines, do not commit it, say so in the report. Leftovers that are clearly yours
   (your records, `— from <file>` entries) — commit them.
