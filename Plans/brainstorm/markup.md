@@ -199,12 +199,13 @@ includes the ones before it.
 | **🔴** | high only | 🔴 |
 | **🟠** | medium and up, plus ❓ ⁉️ with no severity of their own | 🔴 + 🟠 + ❓ + ⁉️ |
 | **⚪** | every open line, any severity | 🔴 🟠 ⚪ ⏳ ❓ ⁉️ |
-| **✅** | every closed line | ✅ 🚫 ⏸️ 🎫 🔵 |
+| **✅** | solved as ✅ | ✅, an answered ❓ |
+| **🚫** | all solved NOT as ✅ | 🚫 ⏸️ 🔵 |
 
 - counts are cumulative: 🔴 ⊂ 🟠 ⊂ ⚪, so the numbers grow left to right
 - do not show elements with 0
-- ⚪ + ✅ = the total: a line is open or closed
-- ⏸️ counts as closed — ✅ means "nothing to look at now"
+- ⚪ + ✅ + 🚫 = the total: a line is open, solved as ✅, or solved NOT as ✅
+- ⏸️ counts as closed — under 🚫
 - one button at a time; a second click, or the total, brings everything back
 - every button has an instant tooltip (no browser delay): `Show all 9`, `High — 1`, `All open — 6`, …
 

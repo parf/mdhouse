@@ -5,7 +5,10 @@ import { useEffect, useState } from 'preact/hooks';
 const has = (k: string[], ...g: string[]) => k.some((x) => g.includes(x));
 const open = (k: string[]) => has(k, 'open');
 
-/** The total, then thresholds — 🔴 ⊂ 🟠 ⊂ ⚪ (every open line) — then ✅ (every closed one) and 🎯. */
+/** Settled, but not as ✅: rejected, deferred, a 🔵 note. */
+const notDone = (k: string[]) => !open(k) && ['🚫', '⏸️', '🔵'].includes(k[0] ?? '');
+
+/** The total, then thresholds — 🔴 ⊂ 🟠 ⊂ ⚪ (every open line) — then ✅ and 🚫 (the closed ones) and 🎯. */
 const LEVELS: Array<{ key: string; test: (k: string[]) => boolean; tip: (n: number) => string }> = [
   { key: 'all', test: () => true, tip: (n) => `Show all ${n}` },
   { key: '🔴', test: (k) => open(k) && has(k, '🔴'), tip: (n) => `High — ${n}` },
@@ -15,7 +18,8 @@ const LEVELS: Array<{ key: string; test: (k: string[]) => boolean; tip: (n: numb
     tip: (n) => `Medium and up, and ❓ ⁉️ without a severity — ${n}`,
   },
   { key: '⚪', test: open, tip: (n) => `All open — ${n}` },
-  { key: '✅', test: (k) => !open(k), tip: (n) => `All closed: ✅ 🚫 ⏸️ 🔵 — ${n}` },
+  { key: '✅', test: (k) => !open(k) && !notDone(k), tip: (n) => `Done: ✅, an answered ❓ — ${n}` },
+  { key: '🚫', test: notDone, tip: (n) => `Closed, not as ✅: 🚫 ⏸️ 🔵 — ${n}` },
   { key: '🎯', test: (k) => has(k, '🎯'), tip: (n) => `Selected for the next run — ${n}` },
 ];
 

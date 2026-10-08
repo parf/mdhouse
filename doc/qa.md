@@ -116,7 +116,8 @@ level includes the ones before it.
 | **🔴** | high only |
 | **🟠** | medium and up, plus ❓ ⁉️ with no severity of their own |
 | **⚪** | every open line, any severity |
-| **✅** | every closed line: ✅ 🚫 ⏸️ 🔵, an answered ❓ |
+| **✅** | done: ✅, an answered ❓ |
+| **🚫** | closed, not as ✅: 🚫 ⏸️ 🔵 |
 | **🎯** | selected for the next run |
 
 A level with 0 is not shown.
