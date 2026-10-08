@@ -151,12 +151,19 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
  * Writes are atomic (see `write`), so a parse failure is a real problem — a typo from a hand
  * edit — never a half-written file caught mid-save.
  */
-async function readFile(path: string): Promise<PrefsFile | 'missing' | 'broken'> {
-  const file = Bun.file(path);
-  if (!(await file.exists())) return 'missing';
+export async function readFile(path: string): Promise<PrefsFile | 'missing' | 'broken'> {
+  // One read of whatever the path names now: a file renamed over it by another process's save is
+  // read whole, never at the size an earlier look at the path saw.
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return 'missing';
+    throw err;
+  }
   try {
     // Comments are read (doc/prefs.json.dist has them), though a save writes plain JSON.
-    return normalizeFile(Bun.JSONC.parse(await file.text()) as Partial<PrefsFile>);
+    return normalizeFile(Bun.JSONC.parse(text) as Partial<PrefsFile>);
   } catch {
     return 'broken';
   }

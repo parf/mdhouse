@@ -219,3 +219,29 @@ describe('auto-rw', () => {
     }
   });
 });
+
+test('a read while another process saves never sees a half file (D.1)', async () => {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { readFile } = await import('../src/lib/prefs');
+  const dir = await mkdtemp(join(tmpdir(), 'mdhouse-prefs-race-'));
+  const path = join(dir, 'prefs.json');
+  await Bun.write(path, '{"saved":[]}');
+  // another process saving as Prefs does: a temp file renamed over, the size changing each time
+  const writer = Bun.spawn(['bun', '-e', `
+    const { writeFileSync, renameSync } = require('node:fs');
+    for (let i = 0; i < 3000; i++) { writeFileSync(process.argv[1] + '.tmp', JSON.stringify({ saved: Array(i % 7).fill('/x') })); renameSync(process.argv[1] + '.tmp', process.argv[1]); }
+  `, path]);
+  try {
+    let broken = 0;
+    while (writer.exitCode === null) {
+      if ((await readFile(path)) === 'broken') broken++;
+      await Bun.sleep(0);
+    }
+    expect(broken).toBe(0);
+  } finally {
+    writer.kill();
+    await rm(dir, { recursive: true, force: true });
+  }
+});

@@ -21,6 +21,11 @@
   same HTML
 - Check & Save is gone: closing an item is ✅ in its form; a plain `- [ ]` is ticked, not answered
 
+### Fixed
+
+- A read of `prefs.json` while another mdhouse process saves it no longer sees half a file and
+  moves the config aside (saved folders, users and the allow list kept)
+
 ## 1.5.0 — 2026-10-07
 
 ### Changed
