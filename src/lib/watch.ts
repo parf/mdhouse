@@ -8,7 +8,7 @@
  */
 
 import { watch, type FSWatcher } from 'node:fs';
-import { relative, sep } from 'node:path';
+import { isAbsolute, relative, sep } from 'node:path';
 import type { Root } from './roots';
 import { MD_EXT } from './filetypes';
 
@@ -32,27 +32,26 @@ export class Watcher {
   constructor(private readonly onChange: (events: WatchEvent[]) => void) {}
 
   /**
-   * Also watch the `.git` of the repository the root belongs to, when that repository sits
-   * *above* the root — serving `Plans/` out of a checkout, say. The recursive watch below only
-   * sees inside the root, so a commit made from the repository root would otherwise never
-   * reach the page and the recents would quietly go stale.
-   *
-   * Nothing to do when the repo is the root, or below it: the recursive watch covers it.
+   * Also watch the repository's git dirs (`gitDirs()`) that sit outside the root — the `.git` of a
+   * checkout the root is a folder of, a linked worktree's own and common dirs. The recursive watch
+   * below only sees inside the root, so a commit would otherwise never reach the page and the
+   * recents would quietly go stale. A dir inside the root is left to the recursive watch.
    */
-  watchRepo(root: Root, repo: string): void {
-    const inside = relative(repo, root.path);
-    if (!inside || inside.startsWith('..')) return; // root is not under this repo
-    const gitDir = `${repo}${sep}.git`;
-    try {
-      const watcher = watch(gitDir, { recursive: false, persistent: false });
-      watcher.on('error', () => {});
-      watcher.on('change', () => {
-        this.gitDirty.add(root.id);
-        this.schedule();
-      });
-      this.keep(root.id, watcher);
-    } catch {
-      /* no .git to watch, or watching is unavailable — the viewer still works */
+  watchRepo(root: Root, gitDirs: string[]): void {
+    for (const dir of new Set(gitDirs)) {
+      const inside = relative(root.path, dir);
+      if (!inside.startsWith('..') && !isAbsolute(inside)) continue;
+      try {
+        const watcher = watch(dir, { recursive: false, persistent: false });
+        watcher.on('error', () => {});
+        watcher.on('change', () => {
+          this.gitDirty.add(root.id);
+          this.schedule();
+        });
+        this.keep(root.id, watcher);
+      } catch {
+        /* no such dir, or watching is unavailable — the viewer still works */
+      }
     }
   }
 

@@ -184,7 +184,9 @@ contents list, so a heading link and its contents entry cannot disagree.
 ## Operational rules
 
 - Everything is cached per root in `lib/store.ts` and invalidated by the filesystem watcher —
-  never rebuilt per request. A root removed at runtime drops its cache and its watchers.
+  never rebuilt per request. A root removed at runtime drops its cache and its watchers. The
+  watcher: the root, recursive; plus the git dir and common dir (`rev-parse --absolute-git-dir
+  --git-common-dir`) outside it — a folder of a checkout, a linked worktree.
 - Live updates are WebSocket pushes. **No polling anywhere**, by decision.
 - `git` and `ripgrep` are used when present and degrade gracefully when absent. The sidebar
   footer shows `no git` when the git path was unavailable; the ripgrep fallback is currently

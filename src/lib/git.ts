@@ -479,6 +479,13 @@ export interface RepoHead {
   pulledAt: number | null;
 }
 
+/** The git dir and the common dir of the repository holding `dir`, absolute; one dir in a plain checkout. */
+export async function gitDirs(dir: string): Promise<string[]> {
+  const out = await git(dir, ['rev-parse', '--absolute-git-dir', '--git-common-dir']);
+  if (out === null) return [];
+  return [...new Set(out.split('\n').filter(Boolean).map((d) => resolve(dir, d)))];
+}
+
 export async function repoHead(repo: string): Promise<RepoHead | null> {
   const [refs, commit] = await Promise.all([
     git(repo, ['rev-parse', '--abbrev-ref', 'HEAD', '--absolute-git-dir', '--git-common-dir']),

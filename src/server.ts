@@ -18,7 +18,7 @@ import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
 import { applyQa, badgeName, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
 import { searchContent } from './lib/search';
-import { commitDiff, commitInfo, currentUser, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
+import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
 import { Watcher } from './lib/watch';
@@ -870,11 +870,8 @@ export async function serve(opts: ServeOptions) {
   });
   const watchTree = async (root: Root): Promise<void> => {
     watcher.watchRoot(root);
-    // A root inside a checkout has its .git above it, out of reach of the recursive watch.
-    if (!opts.noGit) {
-      const repo = await repoToplevel(root.path);
-      if (repo) watcher.watchRepo(root, repo);
-    }
+    // A root inside a checkout, or a linked worktree, has its git dirs out of reach of the recursive watch.
+    if (!opts.noGit) watcher.watchRepo(root, await gitDirs(root.path));
   };
   for (const root of registry.list()) await watchTree(root);
 
