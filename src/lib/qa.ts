@@ -473,9 +473,9 @@ const textLines = (text: string) => text.replace(/\r/g, '').replace(/\s+$/, '').
 
 /**
  * A line a quote must not start with: a new turn (💬, 💡, ✅ 💡), a question, or a mark the old
- * Q&A forms read (`?`, `?!`, `Q:`, `A:`, `!`, `!!`, `[!QUESTION]` — convertLegacy would turn them into one).
+ * Q&A forms read (`?`, `?!`, `Q:`, `A:`, `T:`, `!`, `!!`, `[!QUESTION]` — convertLegacy would turn them into one).
  */
-const TURN_START = /^(?:(?:(?:✅|🚫)[ \t]*)?(?:💬|💡)|❓|⁉|\?|!\?|!!?(?=[ \t])|Q:|A:|Q(?=\s)|\[!(?:QUESTION|ANSWER)\])/iu;
+const TURN_START = /^(?:(?:(?:✅|🚫)[ \t]*)?(?:💬|💡)|❓|⁉|\?|!\?|!!?(?=[ \t])|Q:|A:|T:|Q(?=\s)|\[!(?:QUESTION|ANSWER)\])/iu;
 /** …and the first line of a plain quote: any glyph that opens a quote item too. */
 export const QUOTE_START = (rest: string) => TURN_START.test(rest) || leadGlyphs(rest).glyphs.length > 0;
 

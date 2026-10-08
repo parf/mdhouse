@@ -4,7 +4,7 @@
  * file writes it converted.
  *
  * - `> ? q` / `> Q: q` / `> q: q` / `> Q q` → `> ❓ q`; `> ?! …` / `> !? …` → `> ⁉️ …`;
- *   `> A: a` / `> a: a` → `> 💬 a`; `> ! x` → `> 🟠 x`; `> !! x` → `> 🔴 x`
+ *   `> A: a` / `> a: a` → `> 💬 a`; `> T: t` / `> t: t` → `> 💡 t`; `> ! x` → `> 🟠 x`; `> !! x` → `> 🔴 x`
  * - `> [!QUESTION]` + `> q` → `> ❓ q`; `> [!ANSWER]` + `> a` → `> 💬 a`
  * - a `**Q:** q` paragraph → `> ❓ q`, its `**A:** a` lines → `> 💬 a`
  * - `- **Q:** q` → `- ❓ q`; a `- **A:** a` item after it → `  > 💬 a` under it
@@ -15,7 +15,7 @@
  * second question inside one quote starts a quote of its own. Fenced code is left alone.
  */
 
-const OLD_MARK = /^(\?!|!\?|!!?(?=[ \t])|⁉️?|\?|❓|\u{1F4AC}|[Qq]:|[Aa]:|Q(?=\s))[ \t]*/u;
+const OLD_MARK = /^(\?!|!\?|!!?(?=[ \t])|⁉️?|\?|❓|\u{1F4AC}|[Qq]:|[Aa]:|[Tt]:|Q(?=\s))[ \t]*/u;
 const QUOTE = /^([ \t]*>[ \t]?)(.*)$/;
 const LIST_BOLD = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+)\*\*([QA]):\*\*[ \t]*(.*)$/;
 const BOLD = /^\*\*([QA]):\*\*[ \t]*(.*)$/;
@@ -24,7 +24,7 @@ const CLOSE = /^:::[ \t]*$/;
 const STATUS = /^([ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+)(☐|☑|✔️?|☒)(?=[ \t])/u;
 const STATUS_TO: Record<string, string> = { '☐': '❓', '☑': '✅', '✔': '✅', '✔️': '✅', '☒': '🚫' };
 
-type Kind = 'q' | 'd' | 'a' | 'high' | 'medium';
+type Kind = 'q' | 'd' | 'a' | 'tip' | 'high' | 'medium';
 /** A mark only the old forms use — `?`, `?!`, `Q:`, `A:`, `!` …; ❓ ⁉️ 💬 are the new markup's own. */
 const isOld = (mark: string | undefined) => !!mark && !/^(❓|⁉|\u{1F4AC})/u.test(mark);
 const kindOf = (mark: string): Kind =>
@@ -32,13 +32,17 @@ const kindOf = (mark: string): Kind =>
     ? 'd'
     : mark === '\u{1F4AC}' || mark.toUpperCase() === 'A:'
       ? 'a'
-      : mark === '!!'
+      : mark.toUpperCase() === 'T:'
+        ? 'tip'
+        : mark === '!!'
         ? 'high'
         : mark === '!'
           ? 'medium'
           : 'q';
-const GLYPH: Record<Kind, string> = { q: '❓', d: '⁉️', a: '💬', high: '🔴', medium: '🟠' };
+const GLYPH: Record<Kind, string> = { q: '❓', d: '⁉️', a: '💬', tip: '💡', high: '🔴', medium: '🟠' };
 const blank = (l: string) => l.trim() === '';
+/** A turn in a thread — 💬 or 💡 — not a question of its own. */
+const isTurn = (k: Kind) => k === 'a' || k === 'tip';
 
 /** `src` with every old Q&A form in its body rewritten; the very same string when there is none. */
 export function convertLegacy(src: string, offset = 0): string {
@@ -103,19 +107,19 @@ export function convertLegacy(src: string, offset = 0): string {
         changed = true;
       } else if (mark && block.some((l) => isOld(OLD_MARK.exec(bodyOf(l))?.[1]))) {
         // a quote with an old mark in it; one in the new markup only (❓ ⁉️ 💬) is left as written
-        if (kindOf(mark[1]!) === 'a' && lastQ === prefix) join();
+        if (isTurn(kindOf(mark[1]!)) && lastQ === prefix) join();
         block.forEach((l, n) => {
           const m = OLD_MARK.exec(bodyOf(l));
           if (!m) return out.push(l);
           const kind = kindOf(m[1]!);
           // a second question in one quote: a quote of its own
-          if (n > 0 && kind !== 'a') out.push('');
+          if (n > 0 && !isTurn(kind)) out.push('');
           if (!isOld(m[1])) return out.push(l);
           const own = QUOTE.exec(l)![1]!.replace(/>[ \t]?$/, '> ');
           out.push(`${own}${GLYPH[kind]} ${bodyOf(l).slice(m[0].length)}`.trimEnd());
         });
         const lastMark = [...block].reverse().map((l) => OLD_MARK.exec(bodyOf(l))).find(Boolean);
-        lastQ = lastMark && kindOf(lastMark[1]!) !== 'a' ? prefix : null;
+        lastQ = lastMark && !isTurn(kindOf(lastMark[1]!)) ? prefix : null;
         changed = true;
       } else {
         out.push(...block);
