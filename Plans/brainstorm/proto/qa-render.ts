@@ -234,7 +234,10 @@ function itemHtml(it: Item): string {
   // `Evidence:` / `Impact:` lines under the claim: their own quiet lines
   const [claim, ...meta] = it.head.split(/\n(?=\s*(?:Evidence|Impact):)/);
   const metaHtml = meta.map((m) => `<span class="meta">${inline(m.trim())}</span>`).join('');
-  const text = `${sevText}${inline(claim!)}${metaHtml}`;
+  // plain sub-items (cases of one issue) — a list under the claim; options are rendered apart
+  const cases = it.items.filter((s) => !s.option && !s.glyphs.length);
+  const casesHtml = cases.length ? `<ul class="cases">${cases.map((c) => `<li>${inline(c.head)}</li>`).join('')}</ul>` : '';
+  const text = `${sevText}${inline(claim!)}${casesHtml}${metaHtml}`;
   const key = keyOf(it.glyphs, !closed, it.target);
   const mark = answeredAsk ? `<span class="g g-answered" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>` : null;
   const radio = options.some((o) => o.option === 'radio');
@@ -391,6 +394,7 @@ ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { marg
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
 .item.info { color: var(--dim); }
 /* an issue's Evidence / Impact: own lines, quiet */
+.cases { margin: 2px 0; padding-left: 18px; font-size: 14px; }
 .meta { display: block; font-size: 13px; color: var(--dim); margin-top: 2px; }
 .meta code { font-size: 12px; }
 /* 🎯 selected for the next run: bold red bars left and right, and its 🎯 lit */
