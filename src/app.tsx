@@ -151,10 +151,12 @@ function App() {
     void reloadTree();
   }, [reloadTree]);
 
+  const recentsSeq = useRef(0);
   const reloadRecents = useCallback(async () => {
     if (!rootId) return;
+    const seq = ++recentsSeq.current;
     const { entries } = await api.recents(rootId, showIgnored).catch(() => ({ entries: [] }));
-    setRecents(entries);
+    if (seq === recentsSeq.current) setRecents(entries);
   }, [rootId, showIgnored]);
 
   // Recents and Mine read the same list — the second is a filter over the first, so switching
@@ -194,6 +196,16 @@ function App() {
       .finally(() => seq === loadSeq.current && setLoadingDoc(false));
   }, [docPath]);
 
+  /** Re-reads the open document in place. Skipped while a load is in flight; a newer load wins. */
+  const refreshDoc = () => {
+    if (!doc || loadingDoc) return;
+    const seq = ++loadSeq.current;
+    void api
+      .doc(docPath)
+      .then((payload) => seq === loadSeq.current && setDoc(payload))
+      .catch(() => {});
+  };
+
   // Content search is debounced; name matching in the sidebar is instant and local.
   useEffect(() => {
     const q = query.trim();
@@ -205,14 +217,18 @@ function App() {
       return;
     }
     setSearching(true);
+    let live = true;
     const timer = setTimeout(() => {
       void api
         .search(rootId, q, showIgnored)
-        .then(setSearch)
-        .catch(() => setSearch(null))
-        .finally(() => setSearching(false));
+        .then((result) => live && setSearch(result))
+        .catch(() => live && setSearch(null))
+        .finally(() => live && setSearching(false));
     }, 160);
-    return () => clearTimeout(timer);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
   }, [query, rootId, showIgnored, searchIn.text]);
 
   // ── live updates ────────────────────────────────────────────────────────
@@ -235,12 +251,10 @@ function App() {
     setRevision((n) => n + 1);
     if (WANTS_RECENTS.has(tab)) void reloadRecents();
 
-    // Refresh the open document only when it is one of the files that actually changed.
-    if (msg.t === 'fs' && doc?.rel && msg.paths.includes(doc.rel)) {
-      void api
-        .doc(docPath)
-        .then(setDoc)
-        .catch(() => {});
+    // Refresh the open document when it is one of the files that changed, or on any git change
+    // in its root — a commit changes its status and history, not its text.
+    if ((msg.t === 'fs' && doc?.rel && msg.paths.includes(doc.rel)) || (msg.t === 'git' && msg.root === doc?.root)) {
+      refreshDoc();
     }
   };
 
@@ -555,12 +569,7 @@ function App() {
           gear={pageGear}
           rootName={docRoot?.name}
           editHref={editHref}
-          onReload={() =>
-            void api
-              .doc(docPath)
-              .then(setDoc)
-              .catch(() => {})
-          }
+          onReload={refreshDoc}
           rootDirUrl={dirPageUrl('', doc?.root)}
           onOpenRootDir={() => openDirPage('', doc?.root)}
           rootGitUrl={`${dirPageUrl('', doc?.root)}?git`}

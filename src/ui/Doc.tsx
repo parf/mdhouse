@@ -145,8 +145,11 @@ export function Doc({
   useEffect(() => {
     setLog(null);
     setLogFailed(false);
+  }, [docPath]);
+  // Asked again when the file's git status changes — a commit adds to its history — without
+  // clearing the panel first.
+  useEffect(() => {
     if (!docPath) return;
-
     let live = true;
     api
       .history(docPath)
@@ -155,7 +158,7 @@ export function Doc({
     return () => {
       live = false;
     };
-  }, [docPath]);
+  }, [docPath, doc?.status]);
 
   /**
    * Diff mode: the same document shown as what changed rather than as text.
@@ -199,7 +202,7 @@ export function Doc({
     return () => {
       live = false;
     };
-  }, [docPath, diffOn, diffRev]);
+  }, [docPath, diffOn, diffRev, doc?.status]);
 
   /** The file's uncommitted changes, counted for the History panel's top row. */
   const [local, setLocal] = useState<{ added: number; removed: number } | null>(null);

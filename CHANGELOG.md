@@ -104,6 +104,10 @@
   refuses the unit)
 - Without journald, a syslog file this user cannot read (`/var/log/messages` on Fedora) is no longer
   offered as the log; the hint says to run it with `--fg`
+- A slow refresh of the open document no longer replaces the page you moved to; an older search
+  answer no longer replaces the one for the query in the box
+- A commit from a terminal or an agent updates the open document: its "Uncommitted changes" row
+  goes, its History shows the commit
 
 ## 1.5.0 — 2026-10-07
 
