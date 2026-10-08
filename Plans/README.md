@@ -164,7 +164,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   switch and the CLI apply to a running server at once (`Prefs.refresh()` re-reads the file
   when it changed). Read as JSON with comments; every key is in `doc/prefs.json.dist`. Port and host resolve as flag → env → config →
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
-  comes up where a start by hand does. Beside it, `control-<port>.sock`. Never a dotfile inside a
+  comes up where a start by hand does; a port from `service --port` or `MDHOUSE_PORT` is pinned into it. Beside it, `control-<port>.sock`. Never a dotfile inside a
   browsed tree.
 - **Git view** — `/d/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
   plus `GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:

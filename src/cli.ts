@@ -272,7 +272,8 @@ if (command === 'exit') {
 // ---------------------------------------------------------------- mdhouse service …
 
 if (command === 'service') {
-  process.exit(await runService(serviceAction, { port: opts.port, explicit: opts.portGiven }));
+  const from = opts.portGiven ? 'flag' : process.env.MDHOUSE_PORT ? 'env' : 'config';
+  process.exit(await runService(serviceAction, { port: opts.port, from }));
 }
 
 // ---------------------------------------------------------------- access: users, --allow

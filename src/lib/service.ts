@@ -28,6 +28,16 @@ export function unitName(port: number, explicit = false): string {
   return explicit && port !== DEFAULT_PORT ? `mdhouse-${port}.service` : 'mdhouse.service';
 }
 
+/**
+ * The unit `service install` writes for this port, by where the port came from. A port from
+ * `--port` or `MDHOUSE_PORT` is pinned into it — the unit sees neither — so it listens where
+ * install stops and pings; a port from the config is left to the config.
+ */
+export function unitFor(port: number, from: 'flag' | 'env' | 'config'): { name: string; port?: number } {
+  const name = unitName(port, from === 'flag');
+  return from === 'config' ? { name } : { name, port };
+}
+
 /** The systemd unit this process runs in, when a unit started it; from its cgroup on Linux. */
 export function ownUnit(): string | undefined {
   if (process.env.MDHOUSE_SERVICE !== '1') return undefined;
@@ -46,7 +56,7 @@ export interface UnitSpec {
   bun: string;
   /** bin/mdhouse. */
   cli: string;
-  /** Pinned into the unit only for an explicit `service --port`; otherwise the config decides. */
+  /** Pinned into the unit when it came from `service --port` or `MDHOUSE_PORT`; otherwise the config decides. */
   port?: number;
   /** PATH to run with: systemd's own is minimal, and mdhouse needs git and rg on it. */
   path: string;
@@ -90,9 +100,9 @@ const systemctl = (...args: string[]) =>
   Bun.spawnSync(['systemctl', '--user', ...args], { stdout: 'inherit', stderr: 'inherit' }).exitCode;
 
 /** Run one `mdhouse service` action; returns the exit code. */
-export async function runService(action: string, opts: { port: number; explicit?: boolean }): Promise<number> {
-  const pinned = !!opts.explicit && opts.port !== DEFAULT_PORT;
-  const name = unitName(opts.port, opts.explicit);
+export async function runService(action: string, opts: { port: number; from: 'flag' | 'env' | 'config' }): Promise<number> {
+  const { name, port: pinned } = unitFor(opts.port, opts.from);
+  const separate = name !== 'mdhouse.service';
   const file = `${UNIT_DIR}/${name}`;
 
   if (!['install', 'uninstall', 'status'].includes(action)) {
@@ -133,7 +143,7 @@ export async function runService(action: string, opts: { port: number; explicit?
     unitText({
       bun: process.execPath,
       cli: resolve(import.meta.dir, '../../bin/mdhouse'),
-      port: pinned ? opts.port : undefined,
+      port: pinned,
       path: process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin',
       xdgConfigHome: process.env.XDG_CONFIG_HOME,
     }),
@@ -167,7 +177,7 @@ export async function runService(action: string, opts: { port: number; explicit?
   for (const root of live.roots) console.log(`  ${root.path}${root.writable ? '  [RW]' : ''}`);
   console.log(`\n  Log:        journalctl --user -u ${name} -f`);
   console.log(`  At boot, before you log in:  loginctl enable-linger ${process.env.USER ?? '$USER'}`);
-  console.log(`  Remove it:  mdhouse service uninstall${pinned ? ` --port ${opts.port}` : ''}`);
+  console.log(`  Remove it:  mdhouse service uninstall${separate ? ` --port ${opts.port}` : ''}`);
   if (!pinned) console.log(`  It listens where a plain \`mdhouse\` does; change that with:  mdhouse -p --port <n> --host <addr>`);
   return 0;
 }

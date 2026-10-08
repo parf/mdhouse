@@ -65,6 +65,8 @@
 - `journalctl -t mdhouse -f` shows the systemd service too (`SyslogIdentifier=mdhouse`; it was
   tagged `bun`) — an installed unit: `mdhouse service install`, then
   `systemctl --user restart mdhouse`
+- `service install` with `MDHOUSE_PORT` set, or `--port 7777` over a saved port, pins that port into
+  the unit: it listens where install stops and pings, not on the saved port
 
 ## 1.5.0 — 2026-10-07
 

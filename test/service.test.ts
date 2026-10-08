@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ownUnit, unitName, unitText } from '../src/lib/service';
+import { ownUnit, unitFor, unitName, unitText } from '../src/lib/service';
 
 const spec = { bun: '/usr/bin/bun', cli: '/opt/mdhouse/bin/mdhouse', path: '/usr/bin:/bin' };
 
@@ -25,6 +25,13 @@ describe('the systemd unit', () => {
     expect(unitName(8080, true)).toBe('mdhouse-8080.service');
     expect(unitName(7777, true)).toBe('mdhouse.service');
     expect(unitText({ ...spec, port: 8080 })).toContain('--fg --port 8080\n');
+  });
+
+  test('a port the unit would not see — `--port`, MDHOUSE_PORT — is pinned, so it listens where install looks (C7)', () => {
+    expect(unitFor(8080, 'config')).toEqual({ name: 'mdhouse.service' });
+    expect(unitFor(9000, 'env')).toEqual({ name: 'mdhouse.service', port: 9000 });
+    expect(unitFor(7777, 'flag')).toEqual({ name: 'mdhouse.service', port: 7777 }); // config may say 8080
+    expect(unitFor(8080, 'flag')).toEqual({ name: 'mdhouse-8080.service', port: 8080 });
   });
 
   test('paths with spaces are quoted, and a custom config home is carried over', () => {
