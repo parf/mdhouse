@@ -1,7 +1,7 @@
 /**
  * Questions and issues, as lines of a Markdown file — the markup of doc/qa.md.
  *
- * A question or an issue is a list item that opens with a glyph — `- ❓ …`, `- 🔴 D.1 …`,
+ * A question or an issue is a list item that opens with a glyph — `- ❓ …`, `- 🔴 D1 …`,
  * `- ✅ 🟠 …` — or a quote that does (`> ❓ …`). Its thread is quoted under it, one `💬` per turn;
  * its options are sub-items `( )` / `[ ]`. Items are found on markdown-it's block tokens — the
  * renderer and the server read the same parse, so they always agree on which lines an item is.

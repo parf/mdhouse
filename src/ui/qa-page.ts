@@ -152,7 +152,7 @@ export function markFolded(el: HTMLElement): () => void {
   };
 }
 
-/** An issue id in the address (`#B.44`): its folded item opened. */
+/** An issue id in the address (`#B44`): its folded item opened. */
 export function openTarget(el: HTMLElement, id: string): void {
   const item = id ? el.querySelector<HTMLElement>(`[data-qa][id="${CSS.escape(id)}"]`) : null;
   const d = item?.querySelector<HTMLDetailsElement>(':scope > details');

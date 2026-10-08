@@ -191,7 +191,7 @@ describe('writability per folder', () => {
   });
 });
 
-describe('writeFile (A.3)', () => {
+describe('writeFile (A3)', () => {
   test('a write cut short leaves the document as it was, not half old and half new', async () => {
     const { mkdtemp, rm, readdir } = await import('node:fs/promises');
     const { tmpdir } = await import('node:os');

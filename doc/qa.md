@@ -68,7 +68,7 @@ turns so GitHub keeps them apart:
 | `✅` `🚫` + severity | settled | muted, folded |
 | `🔵` | informational — treated as done or not relevant | muted, folded |
 
-An issue id first in the claim (`- 🔴 D.1 …`) is the item's anchor: `issues/2026-10-07.md#D.1`.
+An issue id first in the claim (`- 🔴 D1 …`) is the item's anchor: `issues/2026-10-07.md#D1`.
 
 ## Pick one, or several
 

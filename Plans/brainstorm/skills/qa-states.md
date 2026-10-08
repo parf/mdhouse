@@ -137,9 +137,11 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
   not commit. Running the skill is the ask: commit that file alone first (`docs: issues — triage` /
   `docs: questions — answers`), before the first change. The dirty-file rule below covers every other file.
 - **Group by root cause first**: items with one cause get one change and **one commit per group** —
-  the change, every item's `✅` (each with the same `` 💬👾 `<sha>` ``), the docs it touched —
-  `git commit <those paths>`. A crash between groups leaves nothing half.
-- The commit body names every issue it closes: `Fixes issues/2026-10-07.md#B.2, #B.3`.
+  the change and the docs it touched — `git commit <those paths>`. A crash between groups leaves nothing half.
+- **Update the Q&A file every time you deal with a task** — done, replied, refused, failed: its stage
+  and record (`` 💬👾 `<sha>` — … ``, 🎯 off) written right after it, and that file committed alone
+  (`docs: issues — <ids>`) before the next task.
+- The commit body names every issue it closes: `Fixes issues/2026-10-07.md#B2, #B3`.
 - A file with the user's uncommitted or staged edits (`git diff --quiet HEAD -- <file>` fails, or it is
   untracked): add your lines, do not commit it, say so in the report. Leftovers that are clearly yours
   (your records, `— from <file>` entries) — commit them.

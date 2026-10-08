@@ -238,8 +238,8 @@ function itemHtml(it: Item): string {
   // plain sub-items (cases of one issue) — a list under the claim; options are rendered apart
   const cases = it.items.filter((s) => !s.option && !s.glyphs.length);
   const casesHtml = cases.length ? `<ul class="cases">${cases.map((c) => `<li>${inline(c.head)}</li>`).join('')}</ul>` : '';
-  // an issue id (`B.44`) first in the claim: the item's anchor, shown as a link to itself
-  const id = claim!.match(/^([A-Z]\.\d+)\s/)?.[1];
+  // an issue id (`B44`) first in the claim: the item's anchor, shown as a link to itself
+  const id = claim!.match(/^([A-Z]\d+)\s/)?.[1];
   const idAttr = id ? ` id="${id}"` : '';
   const claimHtml = id ? `<a class="iid" href="#${id}">${id}</a>${inline(claim!.slice(id.length))}` : inline(claim!);
   const text = `${sevText}${claimHtml}${metaHtml}${casesHtml}`;

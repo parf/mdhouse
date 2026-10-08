@@ -215,12 +215,12 @@ describe('Q&A items', () => {
   });
 
   test('an item carries its line, the fingerprint the server checks, and what the strip filters on', async () => {
-    const src = '# T\n\n- ❓ Keep it?\n  > 💬👾 maybe\n- 🎯 🔴 D.1 `a.ts:1` lost\n  Evidence: ran it\n';
+    const src = '# T\n\n- ❓ Keep it?\n  > 💬👾 maybe\n- 🎯 🔴 D1 `a.ts:1` lost\n  Evidence: ran it\n';
     const { html } = await render(src, ctx);
     const items = parseQa(src, 0).items;
     expect(html).toContain(`<li class="item wait-me" data-qa="item" data-line="3" data-hash="${items[0]!.hash}" data-k="❓ open">`);
-    expect(html).toContain(`data-line="5" data-hash="${items[1]!.hash}" data-k="🔴 open 🎯" data-sev="🔴" id="D.1"`);
-    expect(html).toContain('<a class="iid" href="#D.1">D.1</a>');
+    expect(html).toContain(`data-line="5" data-hash="${items[1]!.hash}" data-k="🔴 open 🎯" data-sev="🔴" id="D1"`);
+    expect(html).toContain('<a class="iid" href="#D1">D1</a>');
     expect(html).toContain('<span class="meta">Evidence: ran it</span>');
     expect(html).toContain('<div class="reply" data-line="4"><span class="who" data-kind="agent">👾</span>');
   });
@@ -253,7 +253,7 @@ describe('Q&A items', () => {
   });
 });
 
-describe('curly braces (B.3)', () => {
+describe('curly braces (B3)', () => {
   test('a {word} is text; {#id .class key=value} after a block are its attributes', async () => {
     const html = async (s: string) => (await render(s, ctx)).html;
     expect(await html('GET /users/{id}\n')).toContain('>GET /users/{id}</p>');

@@ -220,7 +220,7 @@ describe('auto-rw', () => {
   });
 });
 
-test('a read while another process saves never sees a half file (D.1)', async () => {
+test('a read while another process saves never sees a half file (D1)', async () => {
   const { mkdtemp, rm } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');

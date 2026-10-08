@@ -5,10 +5,10 @@
 ### Changed
 
 - **One Q&A markup** (`Plans/brainstorm/markup.md`): a list item opening with a glyph — `- ❓ …`,
-  `- 🔴 D.1 …`, `- ✅ 🟠 …` — or a `> ❓` quote; its thread quoted under it, one `💬` per turn,
+  `- 🔴 D1 …`, `- ✅ 🟠 …` — or a `> ❓` quote; its thread quoted under it, one `💬` per turn,
   badges `👤name` `👾`; options `( )` / `[ ]`; `💡` proposals; 🎯 selected
 - Settled items (✅ 🚫 ⏸️, an answered ❓, 🔵 notes) fold, muted; open questions and 🔴 / 🟠 issues
-  are tinted; an issue id (`B.44`) is the item's anchor
+  are tinted; an issue id (`B44`) is the item's anchor
 - A strip over a page with items: the total, 🔴 🟠 ⚪ ✅ 🎯 — counts and a filter
 - The old forms — `> ?`, `> [!QUESTION]` / `[!ANSWER]`, `**Q:**` / `**A:**`, `::: q` / `::: a`,
   ☐ ☑ ☒ — are read as the new markup; the next write to the file writes it converted

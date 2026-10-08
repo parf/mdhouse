@@ -67,7 +67,7 @@ the meta-signals deciding where to look hardest — the format below and these r
 - **Never raise again** what the last 5 days' files in `Plans/issues/` and `Plans/done/issues/` already
   hold, open or closed.
   A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
-  new item starts with what changed and links the old one (`issues/2026-10-07.md#B.44`).
+  new item starts with what changed and links the old one (`issues/2026-10-07.md#B44`).
 - **One cause, one item**: issues that share a root cause (one stale doc, one missing helper) are one
   item listing every `file:line`.
 - `Plans/done/` and `Plans/brainstorm/` drafts raise nothing — unless a live doc describes them wrongly.
@@ -81,18 +81,18 @@ create it on the day's first run; a later run the same day appends to it:
 ```markdown
 ## <scope> — 📅YYYY-MM-DD · <HEAD short sha>
 
-- 🔴 D.1 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
+- 🔴 D1 `src/lib/prefs.ts:212` an unreadable prefs.json is overwritten on the next save — data loss
   Evidence: corrupted the file, `mdhouse <dir> -p` → the saved folders gone
   Impact: any start after a crash mid-write — every saved folder lost
   > 💡👾 Move the broken file aside and refuse the write.
 
 ### <Subsystem>
 
-- 🟠 D.2 `src/cli.ts:536` `--fg` hands its folders over on a busy port and exits 0 — systemd never retries
+- 🟠 D2 `src/cli.ts:536` `--fg` hands its folders over on a busy port and exits 0 — systemd never retries
   Evidence: :7777 taken → exit 0
   Impact: every boot where a hand-started copy holds the port — the service stays down
   > 💡👾 Exit 1 under `MDHOUSE_SERVICE=1`.
-- ❓ 🟠 A.1 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits
+- ❓ 🟠 A1 `src/server.ts:631` `limit=abc` becomes `NaN` — no cap on hits
   Evidence: `/api/search?q=x&limit=abc` → 600 hits
   Impact: any client that sends a bad limit — one slow response
   - ( ) clamp every `limit` through one helper 🌟
@@ -101,8 +101,8 @@ create it on the day's first run; a later run the same day appends to it:
 Checked and sound: <one line per subsystem — what was checked>.
 ```
 
-- **Every issue has a unique id** `<letter>.<n>` — the subsystem's letter; ids reset for every file
-  (file-per-day). Writing externally — `date#id`: `issues/2026-10-07.md#B.44`.
+- **Every issue has a unique id** `<letter><n>` (`A14`) — the subsystem's letter; ids reset for every file
+  (file-per-day). Writing externally — `date#id`: `issues/2026-10-07.md#B44`.
 - **Serious first**: an issue that loses the user's text, writes to :7777 or escapes a root goes right
   under the section heading, above the subsystems.
 - **An item is four lines, each on its own:**

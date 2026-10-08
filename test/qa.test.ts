@@ -14,7 +14,7 @@ const act = (src: string, line: number, op: QaChange, offset = 0) => {
 };
 
 describe('items: where an item and its thread end', () => {
-  test('a lazy line belongs to the question, not its answer (B.2)', () => {
+  test('a lazy line belongs to the question, not its answer (B2)', () => {
     const src = '> ❓ Do we keep\nthe old URLs?\n> 💬 yes\n';
     const it = itemAt(src, 1);
     expect(it.head).toBe('Do we keep\nthe old URLs?');
@@ -22,13 +22,13 @@ describe('items: where an item and its thread end', () => {
     expect(act('- ❓ Do we keep\nthe old URLs?\n', 1, { op: 'say', text: 'yes' })).toBe('- ❓ Do we keep\nthe old URLs?\n  > 💬 yes\n');
   });
 
-  test('a thread after a blank line is the item’s own (B.5)', () => {
+  test('a thread after a blank line is the item’s own (B5)', () => {
     const src = '- ❓ Which host?\n\n  > 💬 prod-a1\n';
     expect(itemAt(src, 1).replies.map((r) => r.body)).toEqual(['prod-a1']);
     expect(act(src, 1, { op: 'say', text: 'b2' })).toBe('- ❓ Which host?\n\n  > 💬 prod-a1\n  >\n  > 💬 b2\n');
   });
 
-  test('a sub-item’s reply is its own: answering the parent leaves it (B.1)', () => {
+  test('a sub-item’s reply is its own: answering the parent leaves it (B1)', () => {
     const src = '- ❓ Ship?\n  - ❓ Changelog?\n    > 💬 Yes, Ann.\n';
     expect(itemAt(src, 1).replies).toEqual([]);
     expect(itemAt(src, 2).replies.map((r) => r.body)).toEqual(['Yes, Ann.']);
@@ -40,9 +40,9 @@ describe('items: where an item and its thread end', () => {
   });
 
   test('an issue: claim, Evidence / Impact, cases, a 💡; an id', () => {
-    const it = itemAt('- 🔴 D.1 `a.ts:1` lost\n  Evidence: ran it\n  Impact: everyone\n  - case\n  > 💡👾 fix\n', 1);
+    const it = itemAt('- 🔴 D1 `a.ts:1` lost\n  Evidence: ran it\n  Impact: everyone\n  - case\n  > 💡👾 fix\n', 1);
     expect(it.glyphs).toEqual(['🔴']);
-    expect(it.head).toBe('D.1 `a.ts:1` lost\nEvidence: ran it\nImpact: everyone');
+    expect(it.head).toBe('D1 `a.ts:1` lost\nEvidence: ran it\nImpact: everyone');
     expect(it.children.map((c) => c.kind)).toEqual(['case']);
     expect(it.replies[0]!.suggest).toBe(true);
   });
@@ -85,7 +85,7 @@ describe('items: writing', () => {
     expect(act('- ❓ q\n', 1, { op: 'say', text: 'half', action: 'partial' })).toBe('- ❓ q\n  > 💬 ⚠️ half\n');
   });
 
-  test('a stage replaces the first glyph and keeps the severity (B.4); ✅ is signed settled', () => {
+  test('a stage replaces the first glyph and keeps the severity (B4); ✅ is signed settled', () => {
     expect(act('- 🔴 x\n', 1, { op: 'say', text: '', action: '✅' })).toBe('- ✅ 🔴 x\n  > 💬 👤parf settled\n');
     expect(act('- ❓ 🟠 x\n', 1, { op: 'say', text: 'later', action: '⏸️' })).toBe('- ⏸️ 🟠 x\n  > 💬 later\n');
     expect(act('- ✅ x\n', 1, { op: 'say', text: '', action: 'elaborate' })).toBe('- ❓ x\n  > 💬 👤parf elaborate\n');

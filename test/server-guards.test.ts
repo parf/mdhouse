@@ -227,7 +227,7 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
     expect(await readFile(join(ro, 'b.md'), 'utf8')).toBe('b changed\n');
     expect((await post(`${rwId}/new.md`)).status).toBe(409);
     expect((await post(`${rwId}/nope.md`)).status).toBe(404);
-    // saved again after the diff was shown: refused, the later edit kept (A.2)
+    // saved again after the diff was shown: refused, the later edit kept (A2)
     const old = await shown(`${rwId}/a.md`);
     expect(old).toMatch(/^[0-9a-f]{8}$/);
     await writeFile(join(repo, 'a.md'), 'a changed\nsaved later\n');
@@ -554,7 +554,7 @@ describe('/api/files', () => {
   });
 });
 
-test('/api/asset — an image never runs as a page: an SVG\'s script is sandboxed away (A.4)', async () => {
+test('/api/asset — an image never runs as a page: an SVG\'s script is sandboxed away (A4)', async () => {
   const { mkdtemp, rm } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
@@ -582,7 +582,7 @@ test('/api/asset — an image never runs as a page: an SVG\'s script is sandboxe
   }
 });
 
-test('a document that is gone, or a folder named *.md, is 404 on every document write route (A.5)', async () => {
+test('a document that is gone, or a folder named *.md, is 404 on every document write route (A5)', async () => {
   const { mkdtemp, rm, mkdir } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');

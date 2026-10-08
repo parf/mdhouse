@@ -106,7 +106,7 @@
     return th;
   };
 
-  // ---- an issue id in the address (#B.44): open its folded item and bring it into view
+  // ---- an issue id in the address (#B44): open its folded item and bring it into view
   const showHash = () => {
     const el = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (!el) return;

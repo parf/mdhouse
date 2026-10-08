@@ -87,10 +87,10 @@ export function qaHtml(r: QaRender) {
     );
   }
 
-  /** The claim: an issue id first (`B.44`) is the item's anchor, a link to itself; Evidence / Impact on lines of their own. */
+  /** The claim: an issue id first (`B44`) is the item's anchor, a link to itself; Evidence / Impact on lines of their own. */
   function text(node: QaNode, more: string[]): { html: string; id: string | null } {
     const [claim = '', ...meta] = node.head.split(/\n(?=\s*(?:Evidence|Impact):)/);
-    const id = /^([A-Z]\.\d+)(?=\s|$)/.exec(claim)?.[1] ?? null;
+    const id = /^([A-Z]\d+)(?=\s|$)/.exec(claim)?.[1] ?? null;
     const claimHtml = id ? `<a class="iid" href="#${id}">${id}</a>${inline(claim.slice(id.length))}` : inline(claim);
     const metaHtml = meta.map((m) => `<span class="meta">${inline(m.trim())}</span>`).join('');
     const cases = node.children.filter((c) => c.kind === 'case');
