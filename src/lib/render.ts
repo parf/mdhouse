@@ -422,7 +422,7 @@ function fileLinkPlugin(md: MarkdownIt, opts: { ctx: RenderContext; files: Map<s
     const text = (content: string) => Object.assign(new state.Token('text', '', 0), { content });
     const link = (rel: string, inner: Token[], line?: string): Token[] => {
       const open = new state.Token('link_open', 'a', 1);
-      open.attrs = [['href', `${localHref(ctx, rel)}${line ? `#L${line}` : ''}`], ['class', 'md-local-link']];
+      open.attrs = [['href', `${localHref(ctx, rel)}${line ? `#L${line}` : ''}`], ['class', 'md-local-link md-file-link']];
       return [open, ...inner, new state.Token('link_close', 'a', -1)];
     };
     for (const t of state.tokens) {

@@ -21,6 +21,7 @@
   --size-tiny: #f0206e;
   --dir: #6b4226;
   --doc-title: #2b6e3f; /* mid-dark green */
+  --file-link: #1a7f37; /* a file named in the text: green, apart from written links */
   --alert-note: #316dca;
   --alert-tip: #1a7f37;
   --alert-important: #8250df;
@@ -99,6 +100,7 @@
     --size-tiny: #ff3d85;
     --dir: #c9a07a;
     --doc-title: #7cc48d;
+    --file-link: #56d364;
     --alert-note: #4493f8;
     --alert-tip: #3fb950;
     --alert-important: #ab7df8;
@@ -158,6 +160,7 @@
   --size-tiny: #ff3d85;
   --dir: #c9a07a;
   --doc-title: #7cc48d;
+  --file-link: #56d364;
   --alert-note: #4493f8;
   --alert-tip: #3fb950;
   --alert-important: #ab7df8;
@@ -1026,6 +1029,8 @@ main {
 .md ul, .md ol { padding-left: 1.5em; }
 
 .md a.md-external-link::after { content: "↗"; font-size: 0.8em; color: var(--fg-faint); margin-left: 2px; }
+/* A link mdhouse made from a file named in the text: green, so it never passes for a written one. */
+.md a.md-file-link, .md a.md-file-link code { color: var(--file-link); }
 
 .md code {
   font: 0.875em/1.4 var(--mono);

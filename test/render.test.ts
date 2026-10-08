@@ -301,10 +301,10 @@ describe('file names in the text are links to the files', () => {
 
   test('a code span that is a path, a word with a / or a .md name — when the file exists', async () => {
     const out = await html('See CHANGELOG.md, `Plans/README.md`, `src/server.ts:557`, other.md and doc/logo.png.\n');
-    expect(out).toContain('<a href="/d/CHANGELOG.md" class="md-local-link">CHANGELOG.md</a>');
-    expect(out).toContain('<a href="/d/Plans/README.md" class="md-local-link"><code>Plans/README.md</code></a>');
+    expect(out).toContain('<a href="/d/CHANGELOG.md" class="md-local-link md-file-link">CHANGELOG.md</a>');
+    expect(out).toContain('<a href="/d/Plans/README.md" class="md-local-link md-file-link"><code>Plans/README.md</code></a>');
     expect(out).toContain('href="/api/raw?p=r%2Fsrc%2Fserver.ts#L557"');
-    expect(out).toContain('<a href="/d/docs/other.md" class="md-local-link">other.md</a>');
+    expect(out).toContain('<a href="/d/docs/other.md" class="md-local-link md-file-link">other.md</a>');
     expect(out).toContain('href="/api/asset?p=r%2Fdoc%2Flogo.png"');
   });
 
