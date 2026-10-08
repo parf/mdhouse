@@ -156,16 +156,17 @@ export class Store {
 
     const merged = new Map<string, FileStatus>();
     if (!this.opts.noGit) {
-      for (const repo of scan.repos) {
-        // Two shapes: the root is a subtree of one big repo, or the root holds many repos
-        // (`~/src`). Scope the query to whichever is narrower, then restate the answer
-        // relative to the root.
-        const nested = repo.startsWith(root.path) && repo !== root.path;
-        const prefix = nested ? repo.slice(root.path.length + 1) + '/' : '';
-        for (const [rel, st] of await workingStatus(repo, nested ? repo : root.path)) {
-          merged.set(prefix + rel, st);
-        }
-      }
+      // Two shapes: the root is a subtree of one big repo, or the root holds many repos
+      // (`~/src`). Scope the query to whichever is narrower, then restate the answer
+      // relative to the root. The repos are asked in parallel.
+      const all = await Promise.all(
+        scan.repos.map(async (repo) => {
+          const nested = repo.startsWith(root.path) && repo !== root.path;
+          const prefix = nested ? repo.slice(root.path.length + 1) + '/' : '';
+          return { prefix, status: await workingStatus(repo, nested ? repo : root.path) };
+        }),
+      );
+      for (const { prefix, status } of all) for (const [rel, st] of status) merged.set(prefix + rel, st);
     }
     s.status = merged;
     return merged;
@@ -179,8 +180,13 @@ export class Store {
    */
   async statusOf(root: Root, rel: string): Promise<FileStatus | undefined> {
     if (this.opts.noGit) return undefined;
-    const scan = await this.scan(root, true);
-    return (await this.status(root, scan)).get(rel);
+    return (await this.status(root, await this.anyScan(root))).get(rel);
+  }
+
+  /** A cached scan, either setting — the repos are the same — else the scan without ignored files. */
+  private async anyScan(root: Root): Promise<ScanResult> {
+    const s = await this.stateFor(root);
+    return s.scans.get(false) ?? s.scans.get(true) ?? this.scan(root, false);
   }
 
   async tree(root: Root, includeIgnored: boolean): Promise<TreePayload> {
@@ -388,12 +394,14 @@ export class Store {
     if (s.changes) return s.changes;
 
     const all: GitChange[] = [];
-    for (const repo of scan.repos) {
-      const inside = repo.startsWith(root.path);
-      const prefix = inside && repo !== root.path ? repo.slice(root.path.length + 1) + '/' : '';
-      const changes = await recentChanges(repo, inside ? repo : root.path, this.opts.gitLogLimit ?? 200);
-      for (const c of changes) all.push(prefix ? { ...c, rel: prefix + c.rel } : c);
-    }
+    const perRepo = await Promise.all(
+      scan.repos.map(async (repo) => {
+        const inside = repo.startsWith(root.path);
+        const prefix = inside && repo !== root.path ? repo.slice(root.path.length + 1) + '/' : '';
+        return { prefix, changes: await recentChanges(repo, inside ? repo : root.path, this.opts.gitLogLimit ?? 200) };
+      }),
+    );
+    for (const { prefix, changes } of perRepo) for (const c of changes) all.push(prefix ? { ...c, rel: prefix + c.rel } : c);
     all.sort((a, b) => b.date - a.date);
     s.changes = all;
     return all;
@@ -426,8 +434,13 @@ export class Store {
   }
 
   async repoFor(root: Root, rel: string): Promise<{ repo: string; repoRel: string } | null> {
-    const scan = await this.scan(root, true);
-    const file = scan.files.find((f) => f.rel === rel);
+    // The cached scan first; the scan with ignored files only for a file it does not list.
+    let scan = await this.anyScan(root);
+    let file = scan.files.find((f) => f.rel === rel);
+    if (!file) {
+      scan = await this.scan(root, true);
+      file = scan.files.find((f) => f.rel === rel);
+    }
     const repo = file?.repo ?? scan.repos[0];
     if (!repo) return null;
     // Measure from the repo to the file itself. Going via the root breaks when the repo is

@@ -48,6 +48,8 @@
 - A root in a linked worktree (`git worktree add`) updates on a commit — badges and recents were
   stale
 - An edited `.mdhouseignore` or `.gitignore` applies at once — was on restart / the next `.md` change
+- A document open no longer runs the show-ignored scan when the setting is off (big ignored trees:
+  ~240 ms → 0); a root of many repos asks them in parallel (40 repos: ~225 → ~50 ms)
 - A `{word}` at the end of a line stays on the page (`GET /users/{id}`, a `{placeholder}`, a table
   cell); only `{#id .class key=value}` is an attribute list
 - A tick, an answer or an added block is written whole or not at all: a write cut short (disk
