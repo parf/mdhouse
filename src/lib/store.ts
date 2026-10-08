@@ -420,16 +420,17 @@ export class Store {
   async authorship(root: Root, rel: string): Promise<Authorship | null> {
     if (this.opts.noGit) return null;
     const s = await this.stateFor(root);
-    s.authors ??= new Map();
+    // The map read here: a change to the repository mid-call drops it, and the answer with it.
+    const authors = (s.authors ??= new Map());
 
-    const hit = s.authors.get(rel);
+    const hit = authors.get(rel);
     if (hit) return hit;
 
     const where = await this.repoFor(root, rel);
     if (!where) return null;
 
     const by = await authorship(where.repo, where.repoRel);
-    s.authors.set(rel, by);
+    authors.set(rel, by);
     return by;
   }
 

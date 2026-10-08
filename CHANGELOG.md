@@ -5,6 +5,7 @@
 ### Fixed
 
 - A glyph needs no space after it: `- 🔴+ RW.2 …` reads as `- 🔴 + RW.2 …`
+- A file's header authors could fail (`s.authors.set`) when its repository changed mid-request
 
 ## 2.0.3 — 2026-10-08
 
