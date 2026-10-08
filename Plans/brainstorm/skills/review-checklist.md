@@ -1,68 +1,68 @@
-# Что проверяем
+# What we check
 
 Every `/find-issues` reviewer checks its subsystem's changes against all of this. Shipped:
 `.claude/skills/review-checklist.md`.
 
 ## Common sense
-- Действие делает не то, что ожидает человек: напр. открытие ссылки делает write.
+- An action does not do what a person expects: e.g. opening a link writes.
 
-## Корректность
-- Логические ошибки: инвертированные условия, off-by-one, неверные границы диапазонов, перепутанные аргументы одного типа.
-- Необработанные случаи: null/пусто/ноль/отрицательное, пустая коллекция, первый/последний элемент, таймзона, юникод.
-- Ошибки обработки ошибок: проглоченные исключения, `catch` без действия, возврат успеха при сбое, частичный откат.
-- Гонки и конкурентность: общее состояние без синхронизации, неатомарные check-then-act, забытый `close`/`unlock`/`defer`.
-- Утечки ресурсов: файлы, соединения, горутины/потоки, подписки.
-- Неправильные контракты: функция делает не то, что говорит имя/док; изменённая сигнатура, но не все вызовы обновлены.
+## Correctness
+- Logic errors: inverted conditions, off-by-one, wrong range bounds, swapped arguments of the same type.
+- Unhandled cases: null / empty / zero / negative, an empty collection, the first / last element, time zones, Unicode.
+- Error-handling errors: swallowed exceptions, a `catch` that does nothing, success returned on failure, a partial rollback.
+- Races and concurrency: shared state without synchronisation, non-atomic check-then-act, a forgotten `close` / `unlock` / `defer`.
+- Resource leaks: files, connections, goroutines / threads, subscriptions.
+- Broken contracts: a function does not do what its name / doc says; a signature changed but not every call updated.
 
-## Эффективность
-- Квадратичные и хуже алгоритмы там, где данных много; вложенный поиск вместо map/set.
-- N+1 запросов, запросы в цикле, отсутствие батчинга.
-- Лишние аллокации/копирования больших структур, повторные вычисления одного и того же.
-- Отсутствие индекса/лимита/пагинации на новом запросе к БД.
-- Блокирующие вызовы в горячем пути, синхронная I/O там, где ждут миллисекунд.
+## Efficiency
+- Quadratic or worse algorithms where there is a lot of data; a nested search instead of a map / set.
+- N+1 queries, queries in a loop, no batching.
+- Needless allocation / copying of large structures, the same thing computed again and again.
+- No index / limit / pagination on a new database query.
+- Blocking calls on a hot path, synchronous I/O where milliseconds are expected.
 
-## Безопасность
-- Инъекции (SQL, shell, path, template), конкатенация вместо параметров.
-- Доверие пользовательскому вводу без валидации; проверка прав не на границе.
-- Секреты/токены в коде, логах, сообщениях об ошибках.
-- Небезопасные дефолты: `0.0.0.0`, отключённая верификация TLS, `chmod 777`, широкие CORS.
-- Криптография «от руки», слабые алгоритмы, предсказуемая случайность.
+## Security
+- Injection (SQL, shell, path, template), concatenation instead of parameters.
+- Trusting user input without validation; permissions checked somewhere other than the boundary.
+- Secrets / tokens in code, logs, error messages.
+- Unsafe defaults: `0.0.0.0`, TLS verification off, `chmod 777`, wide CORS.
+- Home-made cryptography, weak algorithms, predictable randomness.
 
-## Поведение и совместимость
-- Нарушение обратной совместимости: API, формат данных, схема БД, конфиг — без миграции/версии.
-- Изменённый дефолт, который молча меняет поведение для существующих пользователей.
-- Миграция без отката; деструктивная миграция (drop/rename) без двухфазного плана.
-- Изменение общего кода (utils, base-класс) с непроверенным влиянием на остальных потребителей.
+## Behaviour and compatibility
+- Broken backward compatibility: an API, a data format, a database schema, a config — with no migration / version.
+- A changed default that silently changes behaviour for existing users.
+- A migration with no rollback; a destructive migration (drop / rename) without a two-phase plan.
+- A change to shared code (utils, a base class) with an unchecked effect on its other consumers.
 
-## Тесты
-- Критичный путь изменён, а тестов нет или они не трогают изменённые строки.
-- Тест изменён «под код» (ослаблен assert, удалён кейс) — красный флаг.
-- Нет негативных тестов: ошибки, граничные значения, пустой ввод.
-- Тесты зависят от времени, сети, порядка, случайности — флаки.
-- Моки заменяют именно то, что надо было проверить.
+## Tests
+- A critical path changed, and there are no tests, or they do not touch the changed lines.
+- A test changed "to fit the code" (an assert weakened, a case removed) — a red flag.
+- No negative tests: errors, boundary values, empty input.
+- Tests that depend on time, the network, order or randomness — flaky.
+- Mocks that replace exactly what needed checking.
 
-## Документация и согласованность
-- Изменено поведение/API/конфиг, а README, CHANGELOG, doc, примеры, `--help`, OpenAPI не обновлены.
-- Комментарии и docstrings теперь противоречат коду.
-- Названия (функции, переменные, файлы) больше не отражают суть после правки.
-- Новая опция конфига без описания дефолта и без валидации.
-- Мёртвый код, оставшийся после правки; TODO/FIXME без тикета; закомментированный код.
+## Docs and consistency
+- Behaviour / an API / a config changed, and the README, CHANGELOG, docs, examples, `--help`, OpenAPI were not updated.
+- Comments and docstrings now contradict the code.
+- Names (functions, variables, files) no longer say what the thing is after the change.
+- A new config option with no documented default and no validation.
+- Dead code left after the change; a TODO / FIXME without a ticket; commented-out code.
 
-## Архитектура и стиль проекта
-- Нарушение существующих конвенций проекта (слои, именование, где лежат файлы) — особенно в большой базе, где «как принято» важнее абстрактной красоты.
-- Дублирование уже существующей утилиты вместо её использования.
-- Протечка абстракции: модуль лезет во внутренности другого, циклические зависимости.
-- Новая зависимость ради тривиального; тяжёлая/неподдерживаемая/с плохой лицензией.
-- Магические числа/строки, которые должны быть константами или конфигом.
+## Architecture and project style
+- Breaking the project's existing conventions (layers, naming, where files go) — especially in a large codebase, where "how it is done here" matters more than abstract beauty.
+- Duplicating an existing utility instead of using it.
+- A leaking abstraction: a module reaching into another's internals, circular dependencies.
+- A new dependency for something trivial; a heavy / unmaintained one / one with a bad licence.
+- Magic numbers / strings that should be constants or config.
 
-## Операционка (deploy / runtime)
-- Логирование: нет логов в новом критичном пути, или логи с PII/секретами, или спам.
-- Нет метрик/алертов на новую фичу, которая может сломаться в проде.
-- Изменение, требующее действий при деплое (env, миграция, перезапуск, порядок выкладки), не описано.
-- Таймауты/ретраи/лимиты не заданы для новых внешних вызовов.
-- Фича без флага, когда проект использует флаги для рискованных изменений.
+## Operations (deploy / runtime)
+- Logging: no logs on a new critical path, or logs with PII / secrets, or spam.
+- No metrics / alerts on a new feature that can break in production.
+- A change that needs action at deploy (env, a migration, a restart, the rollout order) and does not say so.
+- No timeouts / retries / limits on new external calls.
+- A feature without a flag, where the project uses flags for risky changes.
 
-## Мета-сигналы (для приоритизации)
-- Большой diff в «страшном» файле (auth, billing, миграции, парсеры) → проверять строже.
-- Изменение + отсутствие теста + отсутствие доки в одном коммите → почти наверняка находка.
-- Коммит трогает много несвязанных модулей → разбить или проверить каждый отдельно.
+## Meta-signals (for priority)
+- A large diff in a "scary" file (auth, billing, migrations, parsers) → check harder.
+- A change + no test + no docs in one commit → almost certainly an issue.
+- A commit that touches many unrelated modules → split it, or check each part on its own.
