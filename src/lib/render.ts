@@ -178,7 +178,7 @@ function alertPlugin(md: MarkdownIt): void {
       const open = tokens[i]!;
       open.tag = 'div';
       open.attrSet('class', `markdown-alert markdown-alert-${kind}`);
-      const close = tokens.findIndex((t, n) => n > i && t.type === 'blockquote_close');
+      const close = tokens.findIndex((t, n) => n > i && t.type === 'blockquote_close' && t.level === open.level);
       if (close !== -1) tokens[close]!.tag = 'div';
 
       // Strip the marker and turn the first paragraph into the alert's title.

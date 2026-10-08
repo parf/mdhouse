@@ -211,6 +211,11 @@ describe('alerts', () => {
     expect(html).not.toContain('markdown-alert-title');
   });
 
+  test('a quote inside an alert closes inside it; the alert holds its tail', async () => {
+    const { html } = await render('> [!NOTE]\n> text\n> > nested\n>\n> tail\n', ctx);
+    expect(html.replace(/ data-line="\d+"/g, '')).toContain('<blockquote>\n<p>nested</p>\n</blockquote>\n<p>tail</p>\n</div>');
+  });
+
   test('an unknown marker stays a plain quote', async () => {
     expect((await render('> [!BOGUS]\n> x\n', ctx)).html).toContain('<blockquote');
   });
