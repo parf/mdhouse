@@ -90,8 +90,11 @@ Where a choice is the next step, the `💡` or the options go **under** that rep
 2. **Already done?** — the premise no longer reproduces and a commit names the claim (not only the line)
    → record the commit, `✅`.
 3. **Side-effect gate** — the change removes a deliberate design (a comment says why) → reply, set `❓`.
-4. Change minimally, one change per shared root cause; prove it (`bun test`, `npx tsc --noEmit -p .`,
-   the browser on a scratch instance for UI); update the docs it touches.
+4. **Worth it?** — confirmed, but nobody can hit it and a mistake would cost little → reply with the
+   evidence and a `💡👾 🚫 — <why>`, set `❓`: the user decides.
+5. Change minimally. **Proof grows with what a mistake would cost and how often it hits**: a write to the
+   user's files, a config / prefs.json migration, the service, publishing → a scratch instance and a
+   test that fails first; a preview-only nit → a quick check. Update the docs it touches.
 
 ## Writing a stage
 
@@ -106,8 +109,9 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
 
 ## Committing
 
-- **One commit per item**: the change (if any), its `✅` / reply in the file, the docs it touched —
-  `git commit <those paths>`. A crash between items leaves nothing half.
+- **Group by root cause first**: items with one cause get one change and **one commit per group** —
+  the change, every item's `✅` (each with the same `` 💬👾 `<sha>` ``), the docs it touched —
+  `git commit <those paths>`. A crash between groups leaves nothing half.
 - A file with the user's uncommitted or staged edits (`git diff --quiet HEAD -- <file>` fails, or it is
   untracked): add your lines, do not commit it, say so in the report. Leftovers that are clearly yours
   (your records, `— from <file>` entries) — commit them.
@@ -115,6 +119,7 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
 
 ## Report
 
-Counts: done (with commits), carried, replied, untouched. Listed by line: `⛔` / `❌` items and every `🚫`
-the agent set. Every item that waits on the user on its own line starting with ❓. Last line:
+**Serious first**: every confirmed issue that loses the user's text, writes to :7777 or escapes a
+root — done or not. Then counts: done (with commits), carried, replied, untouched. Listed by line:
+`⛔` / `❌` items and every `🚫` the agent set. Every item that waits on the user on its own line starting with ❓. Last line:
 `🟥🟥🟥 <n> wait on you in <file>` — `/ask-questions` and `/find-issues` have their own.

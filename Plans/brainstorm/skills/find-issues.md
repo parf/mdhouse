@@ -10,8 +10,8 @@ disable-model-invocation: true
 Writes issues for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
-- `scope` — `release` (default: commits since `git describe --tags --abbrev=0`), `all`, a `<rev>..` range,
-  or an existing path
+- `scope` — default: `<sha>..` from the newest `## … · <sha>` heading in `Plans/issues.md` (only what is
+  new since the last run), else since the last tag; or `release`, `all`, a `<rev>..` range, a path
 - `focus` — the rest: dimensions to run; default all three
 
 ## Reviewers
@@ -24,17 +24,27 @@ Three subagents in parallel, read-only, one dimension each:
 3. **Code & security** — server, lib, ui, tests: CLAUDE.md's invariants against the code, bugs,
    input handling, stale comments.
 
-Each gets the scope, its dimension, the format below and these rules: **verify before reporting** (read
-the line, run the test, grep the symbol, a scratch instance — never :7777); read `Plans/issues.md`
-first and do not raise again what is there, open or closed, unless the code changed; at most 10, worst
-first; return Markdown — the main loop writes the file.
+Each gets the scope, its dimension, `git log -p <scope> -- <its paths>`, the format below and these rules:
+
+- **Verify before reporting** — read the line, run the test, grep the symbol, a scratch instance, never
+  :7777. `file:line` as at HEAD; a bug added and fixed inside the range is not an issue.
+- **Never raise again** what `Plans/issues.md` or `Plans/done/issues*.md` already hold, open or closed.
+  A `🚫` / `⏸️` / `🎫` one comes back only when its **premise** changed — not merely its file — and the
+  new item starts with what changed and links the old one.
+- **One cause, one item**: issues that share a root cause (one stale doc, one missing helper) are one
+  item listing every `file:line`.
+- `Plans/done/` and `Plans/brainstorm/` drafts raise nothing — unless a live doc describes them wrongly.
+- At most 10, worst first. Return Markdown, plus one line: what was checked and found sound.
 
 ## Format
 
 `Plans/issues.md` has one `# Issues` at the top (create it so if missing); each run appends:
 
 ```markdown
-## <scope> — 📅YYYY-MM-DD
+## <scope> — 📅YYYY-MM-DD · <HEAD short sha>
+
+- 🔴 `src/prefs.ts:212` a save drops the user's folders when prefs.json is unreadable — data loss.
+  > 💡👾 Move the broken file aside and refuse the write.
 
 ### <Dimension>
 
@@ -45,16 +55,28 @@ first; return Markdown — the main loop writes the file.
   - ( ) clamp every `limit` through one helper 🌟
   - ( ) reject a non-numeric `limit` with 400
 - ⚪ `README.md:12` "browsable" — "browse" reads better.
+
+Checked and sound: <one line per dimension>.
 ```
 
+- **Serious first**: an issue that loses the user's text, writes to :7777 or escapes a root goes right
+  under the section heading, above the dimensions.
 - First symbol: the severity — 🔴 wrong / unsafe now · 🟠 matters, not now · ⚪ low · 🔵 information.
-- Then `file:line`, the claim, the consequence; the evidence in a few words when not obvious.
-- One fix → a `💡👾` line under it (✓ yes / ✗ no on the page). Two real ways → options, and the
-  line starts `❓` before the severity (a choice is a question).
-- No `✅`, no `💬` — triage is the user's. No preamble or summary in the file.
+- Then `file:line` (each one, for a shared cause), the claim, the consequence; the evidence in a few
+  words when not obvious.
+- One fix → a `💡👾` line under it (✓ yes / ✗ no on the page). Two real ways → options, and the line
+  starts `❓` before the severity (a choice is a question).
+- No `✅`, no `💬` — triage is the user's.
 
 ## Steps
 
-1. Resolve the scope. 2. Launch the reviewers. 3. Append the section; drop duplicates across reviewers,
-keeping the better-evidenced one. 4. Commit `Plans/issues.md` alone. 5. Report counts per severity,
-each 🔴 in one line; tail: `🟥🟥🟥 issues in Plans/issues.md — triage on the page`.
+1. `git status -s` not empty → list it and ask to commit first; going on anyway, add
+   `- 🔵 not reviewed — uncommitted: <files>` to the section.
+2. Resolve the scope. **Re-check every untriaged issue already in the file against HEAD** — gone, and a
+   commit names it → `✅` + `` 💬👾 `<sha>` — gone `` (qa-states.md "Already done?"). An empty scope still
+   does this, then stops.
+3. Launch the reviewers.
+4. Append the section; drop duplicates across reviewers, keeping the better-evidenced one.
+5. Commit `Plans/issues.md` alone.
+6. Report: the serious ones first, each in one line; counts per severity; tail:
+   `🟥🟥🟥 issues in Plans/issues.md — triage on the page`.
