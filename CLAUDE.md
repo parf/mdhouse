@@ -103,9 +103,10 @@ bun test                    # all tests — a temp config dir (test/preload.ts)
 npx tsc --noEmit -p .       # types
 ```
 
-- never bare `bun run dev` while :7777 runs — the port is busy, so it hands `.` to the live instance
+- `bun run dev` — :7790, its own config in `.scratch/`; never reaches :7777
 - lib → `test/<module>.test.ts`; a route → `serve()` on its own 617xx port, torn down in
-  `finally` (`test/server-guards.test.ts`); `src/ui` has no unit tests — the browser check is the test
+  `finally` (`test/server-guards.test.ts`); `src/ui` logic (`format`, `tree-model`) → its test; components —
+  the browser check is the test
 
 ## Testing in a browser — never on the live instance
 
@@ -114,17 +115,18 @@ has every Q&A form) + spare port + temp config:
 
 ```sh
 mkdir -p $S/repo $S/cfg && cp doc/*.md $S/repo && git -C $S/repo init -q && git -C $S/repo add -A && git -C $S/repo commit -qm init
-XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7790 --fg
+XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
 ```
 
 - `./bin/mdhouse` instead of `bun --hot` → restart it after every `src/` edit (bundle built at start)
-- stop it by pid (`ss -ltnpH 'sport = :7790'`), not `pkill -f`
+- stop it by pid (`ss -ltnpH 'sport = :7792'`), not `pkill -f`
 - look at it in light + dark, and ≤720px
 - headless Chrome — an SPA needs the time budget, without it the DOM is empty:
   `google-chrome --headless=new --disable-gpu --window-size=1280,900 --virtual-time-budget=3000 --screenshot=$S/a.png <url>`
   (`--dump-dom` the same way); clicks: `--remote-debugging-port` + a small CDP script in `$S`
 - never install/uninstall `mdhouse.service` in tests — `service --port <spare>` with a temp
-  `XDG_CONFIG_HOME`
+  `XDG_CONFIG_HOME`, then `mdhouse service uninstall --port <spare>` (the unit lands in
+  `~/.config/systemd/user` whatever the config)
 
 ## Live instance (:7777) — start / stop / reload
 
@@ -166,11 +168,16 @@ Only on "publish".
 
 - [ ] Clean tree except my own files; on `main`
 - [ ] `bun test` green, `npx tsc --noEmit -p .` clean
-- [ ] Bump semver version in `package.json` (+0.0.1 — minor feature, +0.1 otherwise, +1 — breaking:
-      URL, prefs key, CLI flag removed or renamed); then changelog
+- [ ] Bump semver version in `package.json`, from the one on npm (`npm view mdhouse version`):
+      +0.0.1 — minor feature, +0.1 otherwise, +1 — breaking: URL, prefs key, CLI flag removed or
+      renamed; then changelog
 - [ ] `CHANGELOG.md`: `## Unreleased` → `## X.Y.Z — YYYY-MM-DD`; covers every commit since the
-      last release (`git log $(git describe --tags --abbrev=0)..`); drop no-change entries
+      last release (`git log $(git describe --tags --abbrev=0)..`); drop no-change entries; a
+      `## X.Y.Z` with no tag (never published) folds into it
 - [ ] `Plans/README.md`, `TODO.md`, `DONE.md` current
+- [ ] Release commit `mdhouse X.Y.Z` (package.json + CHANGELOG), body = what changed
+- [ ] Pack, smoke-test and publish from a clean checkout of it — `npm pack` / `npm publish` take the
+      working tree, uncommitted edits included: `git worktree add $S/rel-src HEAD && cd $S/rel-src && bun install`
 - [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, no PNGs —
       ~55 files, ~184 kB (1.4.x); much more means a stray file
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
@@ -182,7 +189,6 @@ Only on "publish".
       XDG_CONFIG_HOME=$T/cfg $T/prefix/bin/mdhouse $T/notes --port 7791 --fg
       ```
       load `/` and a doc in headless Chrome — renders, no 500; stop it by pid
-- [ ] Release commit `mdhouse X.Y.Z` (package.json + CHANGELOG), body = what changed
 - [ ] `npm whoami` → the right account
 - [ ] `npm publish` (`prepublishOnly` runs the tests and tsc again) — before the push, so a failed
       publish costs a local amend, not a public commit
@@ -192,4 +198,5 @@ Only on "publish".
 - [ ] npmjs.com/package/mdhouse shows the README images (they come from GitHub)
 - [ ] Broken release: `npm deprecate mdhouse@X.Y.Z "broken — use …"`, fix, bump, publish; never
       `npm unpublish`
+- [ ] `git worktree remove $S/rel-src`
 - [ ] Restart the live instance (above)
