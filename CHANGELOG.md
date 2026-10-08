@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.0 — 2026-10-07
 
 ### Changed
 
@@ -19,6 +19,9 @@
 - **Reset file** in the head of a document's uncommitted changes (`--rw`): back to the last
   commit, after a confirm — `POST /api/git/reset`
 - A document's header: a git button before ✎, to the root's git view (inside a repo only)
+- A document's title: the folder page's size and logo, in the same dark green
+- Settings: each folder's name links to its folder page
+- The ❓ / ⁉️ / 💬 / heading-add buttons close their open form when clicked again, as Cancel does
 - List items opening with a severity glyph — `🔴 🟠 ⚪ 🟢` — can be answered too
 - A linked `.html` file opens rendered, sandboxed — its scripts run, but cannot reach mdhouse;
   `.css`, `.scss`, `.sass`, `.less` open as text
