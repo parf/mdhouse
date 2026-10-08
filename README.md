@@ -4,12 +4,13 @@
 
 # ❖ mdhouse
 
-**Every Markdown file under a folder, as a fast little website on your own machine.**
+**A Markdown workspace on your own machine — read every file, answer questions, triage issues and commit, together with your AI agents.**
 
 > ✦ **In ten seconds.** Point it at a folder — notes, a repo, a pile of repos — and get one
 > browser tab with a file tree, instant search, and a live *what changed lately* view fed by
-> git. Nothing is imported, indexed or copied anywhere: it reads the folder as it is right
-> now, and never writes to it unless you ask.
+> git. Questions and issues your agent writes into a `.md` file become buttons on the page; your
+> answers go back into the file. Nothing is imported, indexed or copied anywhere, and it never
+> writes to a folder unless you say `--rw`.
 
 ```bash
 mdhouse ~/notes
@@ -17,9 +18,8 @@ mdhouse ~/notes
 
 ![mdhouse showing a docs tree, a rendered document with its table of contents, and the file's git history](doc/screenshot.png)
 
-For people who read and write a lot of Markdown and are tired of `cat`, `less`, and editor
-previews that show one file at a time. Made for docs trees and `Plans/` folders; happy with any
-directory that has `.md` files in it.
+For people who read and write a lot of Markdown — and work with agents that write it too — and
+are tired of `cat`, `less`, and editor previews that show one file at a time.
 
 ---
 
@@ -37,67 +37,106 @@ mdhouse service install      # starts now and at every login, serving the saved 
 ```
 
 - Open <http://127.0.0.1:7777>
-- `mdhouse --rw <folder>` - add new folder and allow to [edit and answer on the page](#-editing-docs--answering--asking-questions)
+- `mdhouse --rw <folder>` - add new folder and allow to [edit and answer on the page](#-working-on-docs--with-you-and-your-agents)
 - More in [Running it](#-running-it)
 
 ---
 
 ## ❖ What you get
 
-Live, git-aware Markdown viewer — GithubMarkdown and more flavours
+Live, git-aware — GitHub Markdown and more flavours
 
-- 📁 **Browse** — a sidebar tree of `.md` / `.mdx` files only, in three widths (`Ctrl+B`), with
+- 📁 **Browse** — a sidebar tree of `.md` / `.mdx` files, in three widths (`Ctrl+B`), with
   age, size, git status (`M` `U` `S` `D`), and stubs marked **∅**
 - 🔍 **Search** — file names as you type; full text through ripgrep, a hit opens *at that line*
 - 🕐 **Recent** and 👤 **Mine** — what changed here, and your own work, uncommitted first; plus
   📄 **Files** and ★ **Favs**
 
-![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and ages that run from red to grey](doc/recent.png)
+![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and the age coloured by how fresh it is](doc/recent.png)
 
-- 🏠 **Front page** — branch, last pull and commit; then what changed, grouped by commit
-- 📂 **Folder pages** — every `.md` under a folder in one table, newest first or A–Z, with filters
+- 🗎 **Every file at its own address** — `/<folder>/<path>`: Markdown rendered; code highlighted
+  with line numbers (`#L557`); images, PDFs, video, audio; HTML sandboxed (⟨/⟩ source); anything
+  else a download. Nothing under `.git`
 - 📄 **Document page** — breadcrumb, age, author, `N/M done` for checkboxes, a table of contents
-  and the file's last five commits
-- 🗎 **Every file at its own address** — `/<folder>/<path>`: code highlighted with line numbers
-  (`#L557`), images, PDFs, video, HTML sandboxed (⟨/⟩ source), anything else a download
+  and the file's last five commits; a file named in the text (`src/cli.ts:557`) is a green link
+- ❓ **Questions and issues on the page** — `- ❓ …` and `- 🔴 …` items, threads, 💡 proposals,
+  options, a strip to count and filter them — [Questions and answers](doc/qa.md)
+- 📂 **Folder pages** — every file under a folder in one table (**ALL | MD**), newest first or
+  A–Z, with filters
+- 🌿 **Git view** — `/<folder>/?git`, also the front page: branch, last pull and commit, what
+  changed grouped by commit; Favs, Mine, Commits, Files
 - ⊟ **Diffs** — what changed, as a patch or ▤ laid over the whole document, rendered
 - ↔ full width · ★ favourite · 🔇 mute · 🔗 copy link · ✎ open in your editor
 - 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week
 - 🖋 **Renders properly** — GFM, alerts, footnotes, shiki highlighting, mermaid, front matter,
-  [and more](doc/markdown.md); [questions and answers](doc/qa.md)
+  [and more](doc/markdown.md)
 - 🗂 **Finds your repos** — point it at a folder of repositories; `.gitignore` is honoured
-- ⚡ **Live** — edit in your editor and the page follows, over a WebSocket
+- ⚡ **Live** — edit in your editor, or let an agent edit, and the page follows, over a WebSocket
 - ☀️ / 🌙 light and dark follow your system; `?` shows the shortcuts
 
 ---
 
-## ✎ Editing docs & answering / asking questions
+## ✎ Working on docs — with you and your agents
 
-- allow edits: `mdhouse -p --rw folder(s)`
-- ☑️ **Tick a checkbox** — that one line is saved
-- ❓⁉️ **Answer a question** — click its glyph, **💬** (Ctrl+Enter)
-- 🔴 🟠 ⚪ findings, 💡 ✓ yes / ✗ no, ( ) [ ] picks, 🎯 select — [Details](doc/qa.md#answering-in-the-browser)
+Writes need a folder served with `--rw`: `mdhouse -p --rw folder(s)`. The markup is plain GFM —
+[Questions and answers](doc/qa.md); try every form on the [Q&A playground](doc/qa-playground.md).
 
-<img src="doc/rw-answer.png" alt="An answered question with bullets, and a checkbox question with the answer editor open under it: Save, Check &amp; Save and Cancel" width="560">
+**Edit while reading**
 
-- Hover a heading for three buttons after its `#`:
-  - ✎ open the file at that line in your editor (`edit:/path:line`)
-  - ↓ add a block right under the heading · ⇊ at the end of its section
+- ☑️ Tick a checkbox — that one line is saved
+- Hover a heading: ↓ add a block right under it · ⇊ at the end of its section — as text, quote,
+  my quote, tip, question, disagreement or answer
+- ✎ / `e` / Alt+E — open the file at that line in your editor (`edit:/path:line`)
 
-<img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with the Add as buttons" width="560">
+<img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with its Add as buttons and Cancel" width="560">
 
-- 🛡 Each edit changes only its own lines; if the file changed meanwhile it is refused and your
-  text is kept. Esc cancels
-- 🧪 Try every form on the [Q&A playground](doc/qa-playground.md); syntax in
-  [Questions and answers](doc/qa.md)
+**Answer an agent's questions**
+
+- `/ask-questions` writes `- ❓ …` items — with a `💡` proposal or `( )` / `[ ]` options
+- You click the ❓ (or the item), write, **💬** — Ctrl+Enter; Ctrl+Shift+Enter saves and opens the
+  next one. On a 💡: ✓ agree / ✗ cancel. A click picks an option. ⚠️ need more, 🔍 more (Alt+1…9)
+- `/resolve-questions` carries the answers into `DECISIONS.md` / `TODO.md` and marks them ✅
+
+<img src="doc/rw-answer.png" alt="An answered question folded open, a question with an agent's proposal and its agree, cancel and reply buttons, a question with two options, and a question with its answer form open: the 💬 save button and the numbered actions settled, drop, defer, agent, need more, ticket, more, target, then ESC" width="560">
+
+**Review and fix with an agent**
+
+- `/find-issues` writes issues to `Plans/issues/YYYY-MM/YYYY-MM-DD.md` — 🔴 🟠 ⚪, an id (`B44`),
+  Evidence, Impact, a 💡 fix
+- You triage on the page: ✓ accept / ✗ ignore, or a stage — ✅ 🚫 ⏸️ ⏳ ⚠️ 🎫; 🎯 selects what to
+  do next; the strip `N │ 🔴 🟠 ⚪ ✅ 🚫 🎯` counts and filters
+- `/fix-issues` does the accepted and 🎯 ones, checks each first, records ✅ and the commit in place
+
+**Ask the agent**
+
+- Add your own `- ❓` or `⁉️` (↓ ⇊ → question), set ⏳ agent or 🎯 — the agent replies `💬👾` / `💡👾`
+
+**Commit from the page**
+
+- The git view: Commit (Markdown; any other file only once ticked), Pull, Push
+- A document's uncommitted changes: **Reset file** — back to the last commit, after a confirm
+
+🛡 Each write changes only its own lines; if the file changed meanwhile it is refused and your
+text is kept
+
+---
+
+## 👾 Agent skills
+
+Claude Code skills in [`.claude/skills/`](.claude/skills) — copy the folder into your project's
+`.claude/skills/`: `/ask-questions` → `/resolve-questions`, `/find-issues` → `/fix-issues`. The loop:
+the agent writes questions or issues in the markup → you answer and triage on the page → the agent
+acts on your answers. Shared: `qa-states.md` (who acts on what), `markup.md`, `glyphs.md`,
+`review-checklist.md`
 
 ---
 
 ## 🔒 Read-only unless you say, and local
 
 - 📖 **Read-only by default.** Write access - cli only `mdhouse -p --rw dir` (-p = save)
-- ✏️ **Small, checked writes** — a ticked checkbox, an answer, a block under a heading
-- 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`
+- ✏️ **Small, checked writes** — a tick, an answer, a block under a heading, a commit
+- 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`; users and allowed networks —
+  [Access](doc/access.md)
 - ⚙ Your settings live in `~/.config/mdhouse/`, never inside a served folder
 
 ---
@@ -138,12 +177,14 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 | `-p, --perm` | save the folders, and any `--port` / `--host` given, for every later start |
 | `--rw <folder(s)>` | allow editing |
 | `--rm <folder(s)>` | forget the folders and stop serving them |
+| `--auto-rw <path,…>` | every folder served from under these is writable |
 | `--host <addr>` | address to bind — default `127.0.0.1`; `0.0.0.0` to share on your LAN |
 | `--port <n>` | default 7777 |
+| `--fg` | stay in the foreground |
 
-A root may carry a **`.mdhouseignore`**: one directory name per line, `#` for comments, `!name`
-to bring back a directory the built-in deny list hides (`node_modules`, `vendor`, build output
-and the like)
+`mdhouse --help` lists the rest. A root may carry a **`.mdhouseignore`**: one directory name per
+line, `#` for comments, `!name` to bring back a directory the built-in deny list hides
+(`node_modules`, `vendor`, build output and the like)
 
 ---
 
@@ -162,7 +203,7 @@ mdhouse dir  # run it
 Want to debug:
 
 ```bash
-bun run dev          # this repo on :7790 with hot reload, its own config (.scratch/), foreground
+bun run dev          # this repo on :7790, its own config (.scratch/), foreground; restart after a UI edit
 bun test
 bunx tsc --noEmit
 ```
