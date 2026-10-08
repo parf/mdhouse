@@ -133,7 +133,8 @@ export const api = {
   gitRemote: (p: string, fresh = false) => get<RemoteState & { cachedAt: number | null }>('/api/git/remote', { p, fresh: fresh ? 1 : undefined }),
   gitCommit: (p: string, message: string, files: string[], nonMd: boolean) => gitPost('/api/git/commit', { p, message, files, nonMd }),
   gitSync: (p: string, action: 'pull' | 'push', confirmed: boolean) => gitPost(`/api/git/${action}`, { p, confirmed }),
-  gitReset: (p: string) => gitPost('/api/git/reset', { p }),
+  /** Back to the last commit — only if the file is still the one `hash` (the shown diff's) was taken from. */
+  gitReset: (p: string, hash: string) => gitPost('/api/git/reset', { p, hash }),
 
   roots: () => get<{ roots: RootInfo[]; single: boolean; home?: string }>('/api/roots'),
 

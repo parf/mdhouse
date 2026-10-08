@@ -183,7 +183,7 @@ describe('the git view — /api/git', () => {
   });
 });
 
-test('POST /api/git/reset — a file back to its last commit; refuses read-only, untracked and other sites', async () => {
+test('POST /api/git/reset — a file back to its last commit; refuses read-only, untracked, other sites, and a file changed since its diff was shown', async () => {
   const { mkdtemp, rm, writeFile, readFile, mkdir } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
@@ -212,8 +212,14 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
   ]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
   const [rwId, roId] = registry.list().map((r) => r.id);
-  const post = (p: string, headers: Record<string, string> = {}) =>
-    fetch(`http://127.0.0.1:${port}/api/git/reset`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify({ p }) });
+  /** The fingerprint the page got with the file's uncommitted changes. */
+  const shown = async (p: string) => ((await (await fetch(`http://127.0.0.1:${port}/api/git/diff?p=${p}`)).json()) as { hash?: string }).hash ?? '';
+  const post = async (p: string, headers: Record<string, string> = {}, hash?: string) =>
+    fetch(`http://127.0.0.1:${port}/api/git/reset`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify({ p, hash: hash ?? (await shown(p)) }),
+    });
   try {
     expect((await post(`${rwId}/a.md`, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
     expect(await readFile(join(repo, 'a.md'), 'utf8')).toBe('a changed\n');
@@ -221,6 +227,13 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
     expect(await readFile(join(ro, 'b.md'), 'utf8')).toBe('b changed\n');
     expect((await post(`${rwId}/new.md`)).status).toBe(409);
     expect((await post(`${rwId}/nope.md`)).status).toBe(404);
+    // saved again after the diff was shown: refused, the later edit kept (A.2)
+    const old = await shown(`${rwId}/a.md`);
+    expect(old).toMatch(/^[0-9a-f]{8}$/);
+    await writeFile(join(repo, 'a.md'), 'a changed\nsaved later\n');
+    expect((await post(`${rwId}/a.md`, {}, old)).status).toBe(409);
+    expect(await readFile(join(repo, 'a.md'), 'utf8')).toBe('a changed\nsaved later\n');
+    expect((await fetch(`http://127.0.0.1:${port}/api/git/reset`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ p: `${rwId}/a.md` }) })).status).toBe(400);
     expect((await post(`${rwId}/a.md`)).status).toBe(200);
     expect(await readFile(join(repo, 'a.md'), 'utf8')).toBe('a\n');
     expect(await readFile(join(repo, 'new.md'), 'utf8')).toBe('n\n');

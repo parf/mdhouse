@@ -164,7 +164,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Git view** — `/d/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
   plus `GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
   `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote`, POST
-  `/api/git/commit|pull|push|reset` (reset: one file, `git checkout HEAD -- file`) — writable folder, same origin, one at a time per repo; network
+  `/api/git/commit|pull|push|reset` (reset: one file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409) — writable folder, same origin, one at a time per repo; network
   git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Host links from `origin`.
   Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.
 - **One header** (`PageHead.tsx`) for a folder page and its git view: logo; folder name —

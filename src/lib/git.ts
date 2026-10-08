@@ -298,6 +298,8 @@ export interface FileDiff {
    * older revision's diff describes a text the page is not showing.
    */
   current?: boolean;
+  /** A working diff: the fingerprint (`lineHash`) of the file it was taken from — what Reset sends back. */
+  hash?: string;
 }
 
 /** Lines of patch body kept. A diff longer than this is being read by a machine, not a person. */

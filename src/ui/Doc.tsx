@@ -853,11 +853,12 @@ export function Doc({
       onClick={async () => {
         if (!confirm(`Reset ${doc.rel} to the last commit? Its uncommitted changes are lost.`)) return;
         try {
-          await api.gitReset(`${doc.root}/${doc.rel}`);
+          await api.gitReset(`${doc.root}/${doc.rel}`, diff.hash ?? '');
           setView('doc');
           onReload?.();
         } catch (err) {
           setTaskNote(`Could not reset the file: ${(err as Error).message}`);
+          onReload?.();
         }
       }}
     >

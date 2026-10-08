@@ -16,7 +16,7 @@ import { ASSET_EXT, HTML_EXT, RAW_EXT } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
-import { applyQa, badgeName, qaRequestOf, replyText, type QaError } from './lib/qa';
+import { applyQa, badgeName, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, currentUser, fileHistory, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
@@ -545,8 +545,9 @@ export async function serve(opts: ServeOptions) {
         POST: async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           if (opts.noGit) return fail(404, 'git is off');
-          const body = (await req.json().catch(() => null)) as { p?: string } | null;
-          const loc = body?.p ? await registry.resolve(body.p) : null;
+          const body = (await req.json().catch(() => null)) as { p?: string; hash?: string } | null;
+          if (!body?.p || typeof body.hash !== 'string') return fail(400, 'expected {p, hash}');
+          const loc = await registry.resolve(body.p);
           if (!loc || !(await stat(loc.abs).catch(() => null))?.isFile()) return fail(404, 'no such file');
           if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only`);
           const repo = await repoToplevel(loc.abs.replace(/\/[^/]*$/, ''));
@@ -555,6 +556,10 @@ export async function serve(opts: ServeOptions) {
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
           return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
             if ((await run(repo, ['ls-files', '--error-unmatch', '--', rel])).code !== 0) return fail(409, 'git has never seen this file');
+            // Only the changes the page showed: saved again since, the file is kept.
+            if (lineHash(await Bun.file(loc.abs).text()) !== body.hash) {
+              return json({ error: 'the file changed since its changes were shown', reason: 'stale' }, 409);
+            }
             const r = await run(repo, ['checkout', 'HEAD', '--', rel]);
             return r.code === 0 ? json({ ok: true }) : fail(500, (r.err || r.out).trim());
           }));
@@ -748,10 +753,12 @@ export async function serve(opts: ServeOptions) {
         }
 
         if (!committed) {
+          // Read before the diff: a file changed in between is refused by Reset, never thrown away.
+          const text = await Bun.file(loc.abs).text().catch(() => '');
           const working = await workingDiff(where.repo, where.repoRel);
           // An empty answer means the index and the working tree agree with HEAD after all —
           // a mode change, say. Fall through to the last commit rather than show nothing.
-          if (working?.hunks.length) return served(working, true);
+          if (working?.hunks.length) return served({ ...working, hash: lineHash(text) }, true);
         }
 
         const by = await store.authorship(loc.root, loc.rel);
