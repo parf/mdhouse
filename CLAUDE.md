@@ -1,6 +1,6 @@
 # mdhouse — agent guide
 
-Bun + Preact web viewer for every `.md` under a folder. npm package `mdhouse`, repo
+Bun + Preact Markdown workspace for every `.md` under a folder. npm package `mdhouse`, repo
 `github.com/parf/mdhouse`.
 
 - Project knowledge (modules, URLs, invariants, prefs, security rules): `Plans/README.md`
@@ -118,7 +118,8 @@ mkdir -p $S/repo $S/cfg && cp doc/*.md $S/repo && git -C $S/repo init -q && git 
 XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
 ```
 
-- `./bin/mdhouse` instead of `bun --hot` → restart it after every `src/` edit (bundle built at start)
+- the page bundle is built at start — `bun --hot` reloads server code only: restart after a UI edit;
+  `./bin/mdhouse` → restart after every `src/` edit
 - stop it by pid (`ss -ltnpH 'sport = :7792'`), not `pkill -f`
 - look at it in light + dark, and ≤720px
 - headless Chrome — an SPA needs the time budget, without it the DOM is empty:
