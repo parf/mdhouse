@@ -49,6 +49,10 @@ any item in the file carries `🎯`, `/resolve-questions` and `/fix-issues` act 
 Acting on one removes its `🎯` (`- 🎯 🔴 …` → `- ✅ 🔴 …`, or `- ❓ 🔴 …` after a reply). Never add `🎯`
 yourself.
 
+A `🎯` on an **untriaged** issue is the user's yes: do it — the newest `💡`, else the fix the item states
+→ `✅`, any severity; with options and no pick → reply "which one?", `❓`. A `🎯` on an unanswered `❓`
+→ as a bare `⏳`: find out, reply.
+
 ## The state of an item
 
 `✅` `🚫` `⏸️` are **closed** — the agent never acts on them. To reopen, the user sets `⏳` or `❓`.
@@ -67,7 +71,7 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | | the agent's own `💬` is last (it proposed something) | the user said yes: do what you proposed → `✅` |
 | | no `💬` — a question / an issue with one `💡` / with options | find out, reply, `❓` / do the `💡` → `✅` / reply "which one?", `❓` |
 | `⚠️` | the user's `💬` (else the item text) says what is missing | finish → `✅`; unclear → reply "what is missing?", `❓` |
-| `🎫` | a ticket requested; the user's `💬` names who (`👤name` / `👥team`) | file the ticket (the 🎫 is the go-ahead) → `✅` + `💬👾 🎫<ID> → 👤name` |
+| `🎫` | a ticket requested; the user's `💬` names who (`👤name` / `👥team`) | file it where the repo tracks work (the 🎫 is the go-ahead): `gh issue create` on its GitHub — title in English, body the item and its thread, `--assignee` when the name is a login; no tracker → `- [ ] <item> 👤name` in `TODO.md` (the ID: `TODO.md`) → `✅` + `💬👾 🎫<ID> → 👤name` |
 | `⛔` `❌` | blocked / failed | nobody — list them in the report |
 | `✅` `🚫` `⏸️` | closed | nobody |
 
@@ -102,12 +106,18 @@ Where a choice is the next step, the `💡` or the options go **under** that rep
    reply with the evidence, set `❓` (the user decides).
 2. **Already done?** — the premise no longer reproduces and a commit names the claim (not only the line)
    → record the commit, `✅`.
-3. **Side-effect gate** — the change removes a deliberate design (a comment says why) → reply, set `❓`.
+3. **Side-effect gate** — the change removes a deliberate design (a comment says why), breaks a CLAUDE.md
+   invariant (the write-route order, the error contract), changes what another caller or a test expects,
+   or changes more than the item names and the user sees (an exit code, a URL, a prefs key) → reply with
+   what it touches, set `❓`. The user's yes covers the item, not its side effects.
 4. **Worth it?** — confirmed, but nobody can hit it and a mistake would cost little → reply with the
    evidence and a `💡👾 🚫 — <why>`, set `❓`: the user decides.
 5. Change minimally. **Proof grows with what a mistake would cost and how often it hits**: a write to the
    user's files, a config / prefs.json migration, the service, publishing → a scratch instance and a
    test that fails first; a preview-only nit → a quick check. Update the docs it touches.
+6. **The proof fails** → revert the change (`git checkout -- <paths>`), set `❌` + `💬👾` with the output —
+   never `✅`, never a second try that widens the change. **Cannot start** (needs :7777, a secret, a
+   missing tool) → `⛔` + the obstacle.
 
 ## Writing a stage
 
@@ -122,6 +132,9 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
 
 ## Committing
 
+- **The Q&A file after a page triage is dirty by design** — the user's answers; the page saves, it does
+  not commit. Running the skill is the ask: commit that file alone first (`docs: issues — triage` /
+  `docs: questions — answers`), before the first change. The dirty-file rule below covers every other file.
 - **Group by root cause first**: items with one cause get one change and **one commit per group** —
   the change, every item's `✅` (each with the same `` 💬👾 `<sha>` ``), the docs it touched —
   `git commit <those paths>`. A crash between groups leaves nothing half.
@@ -134,5 +147,5 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
 
 **Serious first**: every confirmed issue that loses the user's text, writes to :7777 or escapes a
 root — done or not. Then counts: done (with commits), carried, replied, untouched. Listed by line:
-`⛔` / `❌` items and every `🚫` the agent set. Every item that waits on the user on its own line starting with ❓. Last line:
+`⛔` / `❌` items, every `🚫` the agent set, and every AUTO with its commit — code nobody asked for. Every item that waits on the user on its own line starting with ❓. Last line:
 `🟥🟥🟥 <n> wait on you in <file>` — `/ask-questions` and `/find-issues` have their own.

@@ -54,7 +54,8 @@ Agents, in parallel, read-only:
   for a release.
 
 Each gets its
-subsystem's row (the paths, what to check), its files, `git log -p <scope> -- <its paths>`,
+subsystem's row (the paths, what to check), its files, `git log -p --no-merges <scope> -- <its paths>`
+(`--author="$(git config user.name)"` with `mine` — without it the reviewer reads the merge traffic too),
 **[review-checklist.md](review-checklist.md)** (shipped: `../review-checklist.md`) — every section of it,
 the meta-signals deciding where to look hardest — the format below and these rules:
 
@@ -102,13 +103,13 @@ Checked and sound: <one line per subsystem>.
   severity follows the impact, not the feeling: no one hits it → ⚪ or not raised at all.
 - One fix → a `💡👾` line under it (✓ yes / ✗ no on the page). Two real ways → options, and the line
   starts `❓` before the severity (a choice is a question).
-- No `✅`, no `💬` — triage is the user's.
+- No `✅`, no `💬` in a new item — triage is the user's.
 
 ## Steps
 
 1. `git status -s` not empty → list it and ask to commit first; going on anyway, add
    `- 🔵 not reviewed — uncommitted: <files>` to the section.
-2. Resolve the scope. **Re-check every untriaged issue already in the file against HEAD** — gone, and a
+2. Resolve the scope. **Re-check every open issue already in the file — untriaged, ❓, ⏳, ⚠️, 🎫 — against HEAD** — gone, and a
    commit names it → `✅` + `` 💬👾 `<sha>` — gone `` (qa-states.md "Already done?"). An empty scope still
    does this, then stops.
 3. Map the scope's files to subsystems (keep `Plans/subsystems.md`); launch one reviewer per touched one.
