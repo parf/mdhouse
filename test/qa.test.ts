@@ -117,7 +117,7 @@ describe('items: writing', () => {
     expect(act('- ❓ 🟠 q\n  > 💡👾 do it\n', 1, { op: 'verdict', sug: 2, yes: false })).toBe('- 🚫 🟠 q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf cancel\n');
     expect(act('- ❓ q\n  > 💡👾 do it\n', 1, { op: 'verdict', sug: 2, yes: false, text: 'later' })).toBe('- 🚫 q\n  > 🚫 💡👾 do it\n  >\n  > 💬 👤parf cancel — later\n');
     // written before: a declined 💡 and a bare no read as closed
-    expect(stateOf(itemAt('- ❓ q\n  > 🚫 💡👾 x\n  >\n  > 💬 👤parf no\n', 1)).closed).toBe(true);
+    expect(stateOf(itemAt('- ❓ q\n  > 🚫 💡👾 x\n  >\n  > 💬 👤parf no\n', 1))).toMatchObject({ closed: true, ignored: true, waitMe: false, key: '🚫' });
     expect(stateOf(itemAt('- ❓ q\n  > 🚫 💡👾 x\n  >\n  > 💬 👤parf no — do Y\n', 1))).toMatchObject({ closed: true, answered: true });
   });
 

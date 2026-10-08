@@ -134,7 +134,7 @@ export function qaHtml(r: QaRender) {
       const answer = options.length ? (pick ? `<span class="t-a">${pick}</span>` : '') : last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : '';
       const mark = st.answered
         ? `<span class="g g-answered" role="button" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>`
-        : `<span class="g">${glyphButton(status, tip)}</span>`;
+        : `<span class="g">${glyphButton(st.ignored ? '🚫' : status, tip)}</span>`;
       return (
         `<li class="item settled${status === '🔵' ? ' info' : ''}"${attrs}><details class="settled"><summary>${mark}` +
         `<span class="t"><span class="t-q">${html}</span>${answer}</span>${TGT}</summary>` +

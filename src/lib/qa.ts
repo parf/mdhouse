@@ -195,6 +195,8 @@ export interface QaState {
   closed: boolean;
   /** An answered ❓ / ⁉️: the file keeps the glyph, the page shows a green ?. */
   answered: boolean;
+  /** A ❓ whose 💡 was turned down with a bare `no`: closed as 🚫, shown and counted as one. */
+  ignored: boolean;
   /** Waits on me: an unanswered ❓ / ⁉️. */
   waitMe: boolean;
   /** An open issue nobody has triaged — works as an unanswered question does. */
@@ -222,8 +224,9 @@ export function stateOf(node: QaNode): QaState {
     node.children.some((o) => o.option && o.picked) ||
     node.replies.some((r) => r.verdict || (!r.suggest && !/^(👾|📡)/u.test(r.who ?? '')));
   const triaged = !!severity && !ask && !closed && touched;
-  const key = [...node.glyphs, ...(closed ? [] : ['open']), ...(node.target ? ['🎯'] : [])].join(' ');
-  return { closed, answered, waitMe: ask && !answered, finding: !!severity && !ask && !closed && !triaged, triaged, severity, key };
+  const glyphs = ignored ? ['🚫', ...node.glyphs.filter((g) => !ASK.includes(g))] : node.glyphs;
+  const key = [...glyphs, ...(closed ? [] : ['open']), ...(node.target ? ['🎯'] : [])].join(' ');
+  return { closed, answered, ignored, waitMe: ask && !answered && !ignored, finding: !!severity && !ask && !closed && !triaged, triaged, severity, key };
 }
 
 /* ── finding items in the parse ── */
