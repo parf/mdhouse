@@ -24,10 +24,10 @@ committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edi
 
 | Path prefix | Subsystem | Check |
 |---|---|---|
-| `src/server.ts`, `src/lib/access.ts` | server | the write-route order, guards, error contract (CLAUDE.md "Server invariants") |
-| `src/lib/render.ts`, `src/lib/qa.ts` | render & Q&A | the source model, hashes, what a write touches |
+| `src/server.ts`, `src/lib/access.ts` | server ⚠️ | the write-route order, guards, error contract (CLAUDE.md "Server invariants") |
+| `src/lib/render.ts`, `src/lib/qa.ts` | render & Q&A ⚠️ | the source model, hashes, what a write touches |
 | `src/ui/` | ui | links, localStorage, live reload, the editors |
-| `src/cli.ts`, `src/lib/service.ts`, `bin/` | cli & service | systemd, the control socket, hand-over |
+| `src/cli.ts`, `src/lib/service.ts`, `bin/` | cli & service ⚠️ | systemd, the control socket, hand-over |
 | `test/` | tests | they test what they claim; no live config |
 | `package.json`, `CHANGELOG.md` | packaging | what ships, the Deploy checklist |
 | `CLAUDE.md`, `.claude/`, `doc/`, `*.md` | docs & skills | commands that do what they say |
@@ -39,11 +39,21 @@ committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edi
   (`--author="$(git config user.name)"` with `mine`) — and map each. A file that matches no row →
   add a row (a new subsystem, or a wider prefix for an existing one) and say so in the report. A
   subsystem whose paths are all gone → drop its row.
+- ⚠️ marks a **scary** subsystem: auth, writes to the user's files, migrations, parsers, the service.
 - Commit `Plans/subsystems.md` with the run's `Plans/issues.md`.
 
 ## Reviewers
 
-One subagent per **touched** subsystem, in parallel, read-only — as many as there are. Each gets its
+Agents, in parallel, read-only:
+
+- **one per touched subsystem**;
+- **two for a ⚠️ one**, the checklist split: correctness, security, architecture · compatibility,
+  operations, tests, docs, efficiency;
+- a subsystem with under ~50 changed lines goes to a neighbour's agent instead of its own;
+- **at most 10** — past that, more agents mostly find the same. Typical: 3–5 between releases, 8–10
+  for a release.
+
+Each gets its
 subsystem's row (the paths, what to check), its files, `git log -p <scope> -- <its paths>`,
 **[review-checklist.md](review-checklist.md)** (shipped: `../review-checklist.md`) — every section of it,
 the meta-signals deciding where to look hardest — the format below and these rules:
