@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { sameOrigin, trustedHost } from '../src/server';
+import { pageUrl, sameOrigin, trustedHost } from '../src/server';
 
 describe('trustedHost — the DNS-rebinding guard', () => {
   test('loopback names and IP literals are accepted', () => {
@@ -28,6 +28,12 @@ describe('trustedHost — the DNS-rebinding guard', () => {
     expect(trustedHost('box.evil.example', '0.0.0.0', 'box')).toBe(false);
     expect(trustedHost('box:7777', '127.0.0.1', 'box')).toBe(false);
   });
+});
+
+test('pageUrl brackets an IPv6 host, so the printed address is a URL (A9)', () => {
+  expect(pageUrl('127.0.0.1', 7777)).toBe('http://127.0.0.1:7777');
+  expect(pageUrl('::1', 7777)).toBe('http://[::1]:7777');
+  expect(new URL(pageUrl('::1', 7777)).port).toBe('7777');
 });
 
 describe('sameOrigin', () => {

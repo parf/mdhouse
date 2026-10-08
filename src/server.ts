@@ -68,6 +68,10 @@ export function trustedHost(host: string | null, bound: string, machine = machin
   return name === me || name === `${me}.local`;
 }
 
+/** The address mdhouse prints and opens — an IPv6 host in brackets. */
+export const pageUrl = (host: string, port: number | undefined): string =>
+  `http://${host.includes(':') ? `[${host}]` : host}:${port}`;
+
 /** Did this request come from a page mdhouse served itself? See `/api/roots/remove`. */
 export function sameOrigin(req: Request): boolean {
   const site = req.headers.get('sec-fetch-site');
@@ -910,7 +914,7 @@ export async function serve(opts: ServeOptions) {
     const roots = rootLines(added, asked).map((r) => (upgraded.has(r.id) ? { ...r, upgraded: true } : r));
     // Open tabs learn about the new root over the channel they already hold.
     server.publish('roots', JSON.stringify({ t: 'roots', roots: roots.map((r) => r.id) }));
-    return { url: `http://${hostname}:${server.port}`, roots };
+    return { url: pageUrl(hostname, server.port), roots };
   };
 
   const rootLines = (added: Set<string> = new Set(), asked: Set<string> = new Set()): RootLine[] =>
@@ -966,7 +970,7 @@ export async function serve(opts: ServeOptions) {
     remove: (req) => removeRoots(req.dirs),
     ping: () => ({
       pid: process.pid,
-      url: `http://${hostname}:${server.port}`,
+      url: pageUrl(hostname, server.port),
       roots: registry.list().map((r) => ({
         name: r.name,
         path: r.path,

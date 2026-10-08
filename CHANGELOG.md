@@ -40,6 +40,7 @@
 - A document URL renders Markdown only: `/d/<root>/.git/config` and other non-Markdown files are 404
 - `mdhouse <dir> --rw` for a folder already writable by auto-rw keeps it writable when auto-rw is
   turned off
+- `--host ::1` prints and opens `http://[::1]:<port>`, a valid URL
 
 ## 1.5.0 — 2026-10-07
 

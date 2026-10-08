@@ -12,7 +12,7 @@ import { existsSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
-import { serve } from './server';
+import { pageUrl, serve } from './server';
 import { askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply } from './lib/control';
 import { runService } from './lib/service';
 import { logHints } from './lib/loghint';
@@ -557,7 +557,7 @@ try {
 }
 const { server, shutdown } = started;
 
-const url = `http://${opts.host}:${server.port}`;
+const url = pageUrl(opts.host, server.port);
 console.log(`mdhouse  ${url}`);
 printRoots(
   registry.list().map((r) => ({ ...r, saved: prefs.isSaved(r.path) })),
