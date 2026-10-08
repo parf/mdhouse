@@ -21,6 +21,7 @@ mdhouse and every example below renders live.
 | [Front matter](#front-matter) | a leading `---` YAML block | Jekyll / Hugo convention |
 | [Raw HTML](#raw-html) | `<details>`, `<p align="center">`, … | CommonMark |
 | [Links between files](#links-and-images) | `[x](../other.md#section)` | mdhouse |
+| [File names as links](#links-and-images) | `src/cli.ts:557`, `Plans/README.md` in the text | **mdhouse** |
 
 **Not supported** (they render as typed): emoji shortcodes (`:smile:` — type the emoji itself),
 `==highlight==`, `H~2~O` subscript, `x^2^` superscript, `$math$`, wiki links (`[[page]]`).
@@ -163,5 +164,8 @@ Markdown inside **still works**.
   code highlighted (`#L557` — that line), an image, a PDF, a sandboxed HTML page, a download.
 - A relative image is served from the folder it lives in.
 - Links outside mdhouse open in a new tab.
+- A file named in the text is a green link to it, when the file exists: a code span that is a
+  whole path (`src/server.ts`, `src/server.ts:557` — that line), a word that is a path with a `/` or
+  a Markdown name (`Plans/README.md`, `CHANGELOG.md`); from the document's folder, else from the root.
 
 `.mdx` files are listed and rendered as Markdown; their JSX is not executed.
