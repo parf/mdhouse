@@ -366,6 +366,11 @@ details.settled[open] .more { display: none; }
 .item.finding[data-sev="🔴"] > .head .g-btn:hover { border-color: var(--q); }
 .item.finding[data-sev="🟠"] > .head .g-btn:hover { border-color: var(--dis); }
 .item.finding:hover { background: color-mix(in srgb, var(--code-bg) 70%, transparent); }
+/* an open 🔴 / 🟠 finding: the question's look — a light tint and a 1px line on the left, in its colour */
+.item.finding[data-sev="🔴"] { background: color-mix(in srgb, var(--q-bg) 55%, var(--bg)); box-shadow: inset 1px 0 0 color-mix(in srgb, var(--q) 45%, transparent); }
+.item.finding[data-sev="🟠"] { background: color-mix(in srgb, var(--dis-bg) 55%, var(--bg)); box-shadow: inset 1px 0 0 color-mix(in srgb, var(--dis) 45%, transparent); }
+.item.finding[data-sev="🔴"]:hover { background: color-mix(in srgb, var(--q-bg) 85%, var(--bg)); }
+.item.finding[data-sev="🟠"]:hover { background: color-mix(in srgb, var(--dis-bg) 85%, var(--bg)); }
 /* an unanswered question opens its form on a click anywhere on it */
 .item.wait-me { cursor: pointer; }
 .item.wait-me .reply, .item.wait-me .opts, .item.wait-me textarea { cursor: auto; }
