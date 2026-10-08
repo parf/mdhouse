@@ -346,7 +346,9 @@ if (import.meta.main) {
 main { max-width: 900px; }
 main > h1 { margin-bottom: 8px; }
 .strip.top { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 6px 0; margin: 0 0 6px; border-bottom: 1px solid var(--line); }
-ul.items { margin: 6px 0 14px; }
+ul.items { margin: 0; }
+/* the gap after a run of items, before ordinary text */
+ul.items + :not(ul):not(details), details.settled + :not(ul):not(details) { margin-top: 14px; }
 .qwrap { margin: 6px 0; }
 .qwrap > .thread, .req + .thread { margin-left: 30px; }
 .reply p { margin: 0 0 4px; } .reply p:last-child { margin: 0; } .reply ul { margin: 2px 0; padding-left: 20px; }
