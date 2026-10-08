@@ -34,13 +34,13 @@ const GLYPHS = [...STAGES, '🎯', ...SEVERITY];
 const norm = (g: string) => g.replace(/️/g, '');
 const KNOWN = new Map(GLYPHS.map((g) => [norm(g), g]));
 
-/** The glyphs a line opens with — 🎯 apart — and the column where its text starts. */
+/** The glyphs a line opens with — 🎯 apart, a space after each optional — and the column where its text starts. */
 export function leadGlyphs(text: string): { glyphs: string[]; target: boolean; len: number } {
   const glyphs: string[] = [];
   let target = false;
   let len = 0;
   for (let n = 0; n < 4; n++) {
-    const m = /^(\p{Extended_Pictographic}|[⁉⚠⏸])️?(?:[ \t]+|$)/u.exec(text.slice(len));
+    const m = /^(\p{Extended_Pictographic}|[⁉⚠⏸])️?(?!\u200d)[ \t]*/u.exec(text.slice(len));
     const g = m && KNOWN.get(norm(m[0].trim()));
     if (!g) break;
     if (g === '🎯') target = true;

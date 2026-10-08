@@ -49,6 +49,10 @@ describe('items: where an item and its thread end', () => {
 });
 
 describe('items: state', () => {
+  test('a glyph needs no space after it', () => {
+    for (const src of ['- 🔴+ RW.2 x\n', '- ✅🟠x\n', '> ❓q\n']) expect(itemAt(src, 1)?.glyphs.length).toBeGreaterThan(0);
+    expect(itemAt('- 🔴+ RW.2 x\n', 1)?.head).toBe('+ RW.2 x');
+  });
   const state = (src: string) => stateOf(itemAt(src, 1));
   test('a ❓ waits on me; a person’s whole reply answers it; an agent’s asks again', () => {
     expect(state('- ❓ q\n').waitMe).toBe(true);

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A glyph needs no space after it: `- 🔴+ RW.2 …` reads as `- 🔴 + RW.2 …`
+
 ## 2.0.3 — 2026-10-08
 
 ### Fixed
