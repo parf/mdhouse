@@ -71,8 +71,9 @@ function highlighter(): Promise<Highlighter> {
   return highlighterPromise;
 }
 
-/** Past this a file's page is a plain `<pre>`: highlighting grows it ~15× and takes seconds. */
-const HIGHLIGHT_FILE_MAX = 1_000_000;
+/** Past this a file's page is a plain `<pre>`: highlighting is synchronous, grows the page ~15× and takes
+ *  seconds near 1 MB (950 kB: 3.8 s, the server stalled). */
+const HIGHLIGHT_FILE_MAX = 300_000;
 
 /**
  * A whole file as its page shows it: Shiki-highlighted in `lang` (else plain), one

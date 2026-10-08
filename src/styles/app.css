@@ -1206,9 +1206,10 @@ main {
 /* a thread: one reply per turn, green; ⚠️ / elaborate yellow; 💡 blue */
 .md .thread { margin: 4px 0 2px calc(1.6em + 4px); display: grid; gap: 4px; }
 .md .thread.loose { margin-left: 0; }
-.md .reply { background: var(--qa-answer-bg); border-left: 3px solid var(--qa-answer); border-radius: 4px; padding: 3px 8px;
+/* a reply: its tint fades out fast, left to right, as an open question's does */
+.md .reply { background: linear-gradient(90deg, var(--qa-answer-bg), transparent 12em); border-left: 3px solid var(--qa-answer); border-radius: 4px; padding: 3px 8px;
   font-weight: 400; color: var(--fg); }
-.md .reply.partial { background: var(--qa-part-bg); border-left-color: var(--qa-part); }
+.md .reply.partial { background: linear-gradient(90deg, var(--qa-part-bg), transparent 12em); border-left-color: var(--qa-part); }
 .md .reply.record { background: var(--bg-panel); border-left-color: var(--border-strong); color: var(--fg-muted); }
 .md .reply p { margin: 0 0 4px; } .md .reply p:last-child { margin: 0; } .md .reply ul { margin: 2px 0; padding-left: 20px; }
 .md .reply.proposal { background: var(--qa-pick-bg); border-left-color: var(--qa-pick); }

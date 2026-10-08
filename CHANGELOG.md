@@ -10,7 +10,8 @@
 - **Every file opens at its own address** — `/mdhouse/src/cli.ts` highlighted with line numbers
   (`#L557` lands on and marks the line), `/mdhouse/doc/logo.png`, PDFs, video, audio; HTML
   rendered sandboxed, ⟨/⟩ shows its source; anything else: type, size, Download. Header, ★ / mute,
-  copy link, ✎ (at the line), History and the patch work for every file
+  copy link, ✎ (at the line), History and the patch work for every file; a file over 300 kB is shown
+  plain, not highlighted
 - Links in a document to any file — `cli.ts`, `logo.png` — open its page; a mention `src/x.ts:3`
   opens it at line 3
 - Folder page ALL and the git view (Files, commit files, changed files) open every file's page;

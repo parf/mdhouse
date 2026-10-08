@@ -153,7 +153,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   → `code`; an unknown name: no NUL in its first 8 kB → `text`, else `binary`.
 - `/api/doc` answers every kind: `{kind, raw, …}`; Markdown rendered; `code` / `text` / `html` →
   `html` by `render.ts` `highlightFile()` — one `<span class="line" id="L<n>">` per line, plain `<pre>`
-  over 1 MB, no body over 5 MB (`tooBig`). Write routes stay Markdown-only (`docAt`).
+  over 300 kB, no body over 5 MB (`tooBig`). Write routes stay Markdown-only (`docAt`).
 - **`.git` never:** a path with a `.git` segment is 404 on `/api/doc` and `/api/raw` (remote URLs,
   credentials).
 - `/api/raw` — any file, its type: `Content-Security-Policy: sandbox` on everything (an SVG or text
