@@ -109,6 +109,9 @@ and raw HTML escaped — in a diff, the markup is the content.
   `Host` and `Sec-Fetch-Site` all say same-origin. `trustedHost()` refuses any `Host` that is not
   `localhost`, an IP literal or (with `--host`) the machine's name. Reproduced with
   `Host: evil.example` before the fix (200) and after (421).
+- **Behind nginx (2.0.1)**: the proxy passes `Host: <its name>`, which 2.0.0 refused (421) — 0.5.0
+  had no guard. `--host-name` lets only those names in; checked on :7793 — localhost / IP 421,
+  `Host: rdvp` 200, `/ws` same-origin 101, cross-site 403.
 - `/api/marks` and the WebSocket took cross-site requests — Bun parses a `text/plain` body as
   JSON regardless. Both now check `sameOrigin()`.
 - **Wrapping Bun's `routes`**: the HTML bundle is an object with no enumerable values, so "every
