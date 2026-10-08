@@ -1,13 +1,13 @@
 ---
-name: questions
-description: Writes questions for the user in the Q&A markup — plain, with a 💡 suggested answer, or with options to pick — so the user answers them on the page in mdhouse. Use when a decision is the user's and several are open. Pair: /answers processes the answers.
+name: ask-questions
+description: Writes questions for the user in the Q&A markup — plain, with a 💡 suggested answer, or with options to pick — so the user answers them on the page in mdhouse. Use when a decision is the user's and several are open. Pair: /resolve-questions processes the answers.
 argument-hint: "[file] [topic]"
 disable-model-invocation: true
 ---
 
-# /questions [file] [topic]
+# /ask-questions [file] [topic]
 
-Writes questions into a Markdown file; the user answers on the page; `/answers` reads them back.
+Writes questions into a Markdown file; the user answers on the page; `/resolve-questions` reads them back.
 States, identities, threads, committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`).
 
 - `file` — an argument ending in `.md`; default `Plans/questions.md`, created with `# Questions` if missing

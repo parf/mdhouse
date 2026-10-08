@@ -11,4 +11,4 @@ generate/process this markups
 - [markup.md](markup.md) — suggested markups
 - [rendering.html](rendering.html) — markup → suggested rendering, every case
 - [qa-sample.md](qa-sample.md) — every case, long questions / answers → [qa-sample.html](qa-sample.html), rendered by [proto/qa-render.ts](proto/qa-render.ts)
-- skills — [questions](skills/questions.md) → [answers](skills/answers.md), [findings](skills/findings.md) → [fixes](skills/fixes.md)
+- skills — [ask-questions](skills/ask-questions.md) → [resolve-questions](skills/resolve-questions.md), [find-issues](skills/find-issues.md) → [fix-issues](skills/fix-issues.md)

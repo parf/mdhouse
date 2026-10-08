@@ -170,7 +170,7 @@ Search falls back to a JS regex when rg is missing.
 
 ## 🎯 Selecting what to process
 
-After `/findings` I pick the few that matter: a click on the **🎯** at the right of a line (it shows on hover)
+After `/find-issues` I pick the few that matter: a click on the **🎯** at the right of a line (it shows on hover)
 selects it at once — no form; a double-click or **9 🎯** in the form do the same. Written first in the line:
 
 ```markdown
@@ -179,7 +179,7 @@ selects it at once — no form; a double-click or **9 🎯** in the form do the 
 - 🟠 `src/server.ts:631` limit=abc …          ← not selected: left for later
 ```
 
-- when any item carries `🎯`, `/fixes` and `/answers` act on those only
+- when any item carries `🎯`, `/fix-issues` and `/resolve-questions` act on those only
 - the agent removes the `🎯` from each item it acted on
 - a selected item: bold blue bars (6px) left and right, 1px dashed blue top and
   bottom, a big blue ➤ in the left margin, its 🎯 lit; the strip has a `🎯 N` filter

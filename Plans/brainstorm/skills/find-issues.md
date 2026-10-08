@@ -1,13 +1,13 @@
 ---
-name: findings
-description: Reviews code and docs with three parallel read-only reviewers and writes verified findings to Plans/findings.md in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fixes acts on the user's triage.
+name: find-issues
+description: Reviews code and docs with three parallel read-only reviewers and writes verified findings to Plans/findings.md in the Q&A markup — severity first, file:line, a 💡 fix the user can accept or decline on the page. Never edits code. Pair: /fix-issues acts on the user's triage.
 argument-hint: "[scope] [focus]"
 disable-model-invocation: true
 ---
 
-# /findings [scope] [focus]
+# /find-issues [scope] [focus]
 
-Writes findings for the user to triage on the page; `/fixes` acts on the triage. States, identities,
+Writes findings for the user to triage on the page; `/fix-issues` acts on the triage. States, identities,
 committing: [qa-states.md](qa-states.md) (shipped: `../qa-states.md`). Never edits code or docs.
 
 - `scope` — `release` (default: commits since `git describe --tags --abbrev=0`), `all`, a `<rev>..` range,

@@ -1,4 +1,4 @@
-# Q&A states — shared by /questions, /answers, /findings, /fixes
+# Q&A states — shared by /ask-questions, /resolve-questions, /find-issues, /fix-issues
 
 One reference, so the four skills never drift: every rule below is stated here only. It is how mdhouse
 renders the file — the skills read it the way the page does. Every glyph and badge:
@@ -33,7 +33,7 @@ reopen an item and never count as its last word.
 ## 🎯 Selected
 
 `🎯` first in an item (before its stage and severity: `- 🎯 🔴 …`) selects it for the next run. **When
-any item in the file carries `🎯`, `/answers` and `/fixes` act on the `🎯` items only** — the rest wait.
+any item in the file carries `🎯`, `/resolve-questions` and `/fix-issues` act on the `🎯` items only** — the rest wait.
 Acting on one removes its `🎯` (`- 🎯 🔴 …` → `- ✅ 🔴 …`, or `- ❓ 🔴 …` after a reply). Never add `🎯`
 yourself.
 
@@ -48,7 +48,7 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | `❓` `⁉️` (question) | not answered, not asking for more | nobody — waits on the user |
 | | **answered** (below) | the agent: carry it over / do it → `✅` |
 | | **asks for more** (below) | the agent: reply, keep `❓` |
-| `🔴` `🟠` `⚪` `🔵` (finding) | untriaged — nothing from the user | `/fixes` AUTO only |
+| `🔴` `🟠` `⚪` `🔵` (finding) | untriaged — nothing from the user | `/fix-issues` AUTO only |
 | | **answered** | the agent: do it → `✅` |
 | | **asks for more** | the agent: reply, set `❓` first |
 | `⏳` | the user's last `💬` says what | do it → `✅`, or reply → `❓` |
@@ -117,4 +117,4 @@ never tick `(x)` / `[x]`. A record is optional — add one when it helps the use
 
 Counts: done (with commits), carried, replied, untouched. Listed by line: `⛔` / `❌` items and every `🚫`
 the agent set. Every item that waits on the user on its own line starting with ❓. Last line:
-`🟥🟥🟥 <n> wait on you in <file>` — `/questions` and `/findings` have their own.
+`🟥🟥🟥 <n> wait on you in <file>` — `/ask-questions` and `/find-issues` have their own.

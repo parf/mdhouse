@@ -1,14 +1,14 @@
 ---
-name: answers
+name: resolve-questions
 description: Processes the user's answers to questions in the Q&A markup — carries each decided one into Plans/DECISIONS.md and Plans/TODO.md and marks it ✅, replies where the user asked for more. Use after the user answered questions written by /questions.
 argument-hint: "[file]"
 disable-model-invocation: true
 ---
 
-# /answers [file]
+# /resolve-questions [file]
 
 **Read [qa-states.md](qa-states.md) first** (shipped: `../qa-states.md`) — who is who, the states,
-replying, doing a task, writing a stage, committing, the report. This file says only what `/answers`
+replying, doing a task, writing a stage, committing, the report. This file says only what `/resolve-questions`
 does with each state.
 
 - `file` — default: the file of the newest `docs: questions —` commit, else `Plans/questions.md`
