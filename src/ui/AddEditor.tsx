@@ -12,6 +12,18 @@ export const ADD_AS: readonly { kind: string; glyph: string; label: string; titl
   { kind: 'answer', glyph: '💬', label: 'answer', title: 'An answer: > 💬 …' },
 ];
 
+const LS_ADD_AS = 'mdhouse.addAs';
+/** The kind last added as, kept in this browser; a quote signed with your name until there is one. */
+function lastKind(): string {
+  try {
+    const k = localStorage.getItem(LS_ADD_AS);
+    if (k && ADD_AS.some((a) => a.kind === k)) return k;
+  } catch {
+    /* storage off: the default */
+  }
+  return 'my-quote';
+}
+
 interface Props {
   /** The draft to start from — a form reopened with what was typed before. */
   initial?: string;
@@ -27,14 +39,14 @@ interface Props {
 
 /**
  * A block being added under a heading: a textarea that grows with the text, and one button per
- * kind of block below it. Ctrl/⌘+Enter adds it as the kind last used (text at first); Esc
- * cancels; Alt+E opens the file at the heading instead. The editor keeps its own text — see
- * QaEditor.
+ * kind of block below it. Ctrl/⌘+Enter adds it as the kind last used — kept in this browser, "my
+ * quote" until there is one; Esc cancels; Alt+E opens the file at the heading instead. The editor
+ * keeps its own text — see QaEditor.
  */
 export function AddEditor({ initial = '', onText, onAdd, onCancel, saving, note, editHref }: Props) {
   const area = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState(initial);
-  const [last, setLast] = useState('text');
+  const [last, setLast] = useState(lastKind);
   const [opened, setOpened] = useState(false);
 
   useEffect(() => {
@@ -48,6 +60,11 @@ export function AddEditor({ initial = '', onText, onAdd, onCancel, saving, note,
   const add = (kind: string) => {
     if (empty || saving) return;
     setLast(kind);
+    try {
+      localStorage.setItem(LS_ADD_AS, kind);
+    } catch {
+      /* storage off: remembered for this form only */
+    }
     onAdd(kind);
   };
   if (opened) return <OpenedNotice onBack={() => setOpened(false)} onClose={onCancel} />;

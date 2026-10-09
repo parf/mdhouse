@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Add a block (↓ / ⇊): Ctrl+Enter adds it as the kind last used, kept in this browser — my quote at first
+
 ### Added
 
 - `doc/agent-markup.md` — the markup for agents, self-contained: questions, issues, decisions, IDs, `№` references
