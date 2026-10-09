@@ -41,6 +41,7 @@ plain GFM: every item is a list item, every reply a quote under it.
 | 💬 | a reply |
 | 💡 | a suggested answer — not the answer yet |
 | 🎯 | selected for the next run — set by a person only |
+| 🌟 ⭐ | on an option: suggested · runner-up |
 
 ## Question → answer
 
@@ -63,15 +64,17 @@ plain GFM: every item is a list item, every reply a quote under it.
 
 ```markdown
 - ❓ Q4 Where do logs go?
-  - ( ) journald
-  - ( ) a file 🌟
+  - ( ) journald 🌟
+  - ( ) a file ⭐
+  - ( ) stdout
 - ❓ Q5 Which checks run in CI?
   - [ ] tests
   - [ ] tsc
   - [ ] lint
 ```
 
-- A picked one: `(x)` / `[x]`. `🌟` after an option — the one you suggest.
+- Always mark what you suggest, at the end of the option: `🌟` — your pick, `⭐` — the runner-up.
+- A picked one: `(x)` / `[x]` — set by the person.
 
 ## Issue → stages
 
