@@ -128,12 +128,6 @@ text is kept
   [mdhouse](https://github.com/parf/mdhouse/tree/main/.claude/skills); we are pretty sure our review
   skills will trump yours :)
 
-Claude Code skills in [`.claude/skills/`](.claude/skills) — copy the folder into your project's
-`.claude/skills/`: `/ask-questions` → `/resolve-questions`, `/find-issues` → `/fix-issues`. The loop:
-the agent writes questions or issues in the markup → you answer and triage on the page → the agent
-acts on your answers. Shared: `qa-states.md` (who acts on what), `markup.md`, `glyphs.md`,
-`review-checklist.md`
-
 ---
 
 ## 🔒 Read-only unless you say, and local
