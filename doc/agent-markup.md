@@ -118,9 +118,13 @@ The first glyph is the stage; the severity stays after it:
 - The ID of the question it settles: `⁉️ Q3` → `📌 Q3`; a decision with no question — `R1`, `R2` …
 - Reference: `№Q3`; in another file `[№Q3](DECISIONS.md#Q3)`.
 
-### Decision
+### Where
 
-`DECISIONS.md`, after `⁉️ Q3` above is settled:
+- Settled where it was asked (`TODO.md`, `QUESTIONS.md`): the question becomes the decision —
+  `- ⁉️ Q3 …` → `- 📌 Q3 …`, the same item, its thread stays. May still change.
+- Final: moved to `DECISIONS.md`, the same ID; the old place keeps `[№Q3](DECISIONS.md#Q3)`.
+
+### Decision
 
 ```markdown
 - 📌 Q3 Timeout is 30 s

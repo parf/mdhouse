@@ -108,7 +108,7 @@ export function qaHtml(r: QaRender) {
    * A 📌 decision: its first line the title (an id first is its anchor), the lines after it the body.
    * A `🚫` item under it is a rejected alternative — a muted line, not an item of its own.
    */
-  function decisionHtml(item: QaItem, attrs: string, nested: QaItem[]): string {
+  function decisionHtml(item: QaItem, attrs: string, nested: QaItem[], opts: string): string {
     const [title = '', ...rest] = item.head.split('\n');
     const id = ITEM_ID.exec(title)?.[1] ?? null;
     const titleHtml = id ? `<a class="iid" href="#${id}">${id}</a>${inline(title.slice(id.length))}` : inline(title);
@@ -125,7 +125,7 @@ export function qaHtml(r: QaRender) {
     return (
       `<li class="item decision"${attrs}><div class="head c-row"><span class="g">${glyphButton(DECISION, 'Reply')}</span>` +
       `<span class="h-t"><span class="d-title">${titleHtml}</span>${bodyHtml}${casesHtml}${context}</span>${TGT}</div>` +
-      `${threadHtml(item.replies, 'thread q-thread')}${kids.length ? `<ul class="items alts">${kids.join('')}</ul>` : ''}</li>`
+      `${opts}${threadHtml(item.replies, 'thread q-thread')}${kids.length ? `<ul class="items alts">${kids.join('')}</ul>` : ''}</li>`
     );
   }
 
@@ -141,7 +141,7 @@ export function qaHtml(r: QaRender) {
     const radio = options.some((o) => o.option === 'radio');
     const name = `qa-o${++uid}`;
     const opts = options.length
-      ? `<div class="opts${st.closed || (radio && options.some((o) => o.picked)) ? ' done' : ''}${radio ? ' radio' : ''}">${options.map((o) => optionHtml(o, name)).join('')}</div>`
+      ? `<div class="opts${st.closed || st.decision || (radio && options.some((o) => o.picked)) ? ' done' : ''}${radio ? ' radio' : ''}">${options.map((o) => optionHtml(o, name)).join('')}</div>`
       : '';
     const nested = item.children.filter((c) => c.kind === 'item') as QaItem[];
     const nestedHtml = nested.length ? `<ul class="items">${nested.map(itemHtml).join('')}</ul>` : '';
@@ -150,7 +150,7 @@ export function qaHtml(r: QaRender) {
       ` data-qa="${item.kind}" data-line="${item.start + 1}" data-hash="${item.hash}" data-k="${esc(st.key)}"` +
       `${st.severity ? ` data-sev="${st.severity}"` : ''}${id ? ` id="${id}"` : ''}`;
 
-    if (st.decision) return decisionHtml(item, attrs, nested);
+    if (st.decision) return decisionHtml(item, attrs, nested, opts);
     if (st.closed) {
       const last = lastTurn(item.replies) ?? item.replies.at(-1);
       // folded: the answer line is the pick when there are options, else the last reply

@@ -20,6 +20,13 @@ describe('markdown rendering', () => {
     expect(html).toContain('<a class="who" data-kind="ref" href="#RW.2">№RW.2</a>');
   });
 
+  test('a question settled in place: 📌 keeps its options and thread', async () => {
+    const { html } = await render('- 📌 Q4 Where do logs go?\n  - (x) journald 🌟\n  - ( ) a file\n  > 💬 👤parf journald\n', ctx);
+    expect(html).toContain('class="item decision"');
+    expect(html).toMatch(/class="opts done radio"[\s\S]*journald/);
+    expect(html).toContain('👤parf');
+  });
+
   test('a link whose text is №Q3 is the same badge, to its own target', async () => {
     const { html } = await render('[№Q3](DECISIONS.md#Q3) [Q3 x](DECISIONS.md)\n', ctx);
     expect(html).toContain('<a href="/r/docs/DECISIONS.md#Q3" class="who md-local-link" data-kind="ref">№Q3</a>');

@@ -88,6 +88,7 @@ A settled decision that applies — more than ✅: it stands and should be follo
 - no ✅ on a decision: accepted by default
 - `- 🚫 …` under it — a rejected alternative, muted
 - an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
+- a question settled in place: `- ❓ Q3 …` → `- 📌 Q3 …` — its options and thread stay; final in `DECISIONS.md`
 - never folded, never waiting on anyone; 💬 under it — a reply
 
 ## Pick one, or several
