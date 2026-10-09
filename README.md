@@ -124,9 +124,9 @@ text is kept
 ## 👾 Agent skills
 
 - Ask your AI: *use https://github.com/parf/mdhouse/blob/main/doc/agent-markup.md and do a review*
-- Or use our Claude Code skills — ask Claude to copy them from
-  [mdhouse](https://github.com/parf/mdhouse/tree/main/.claude/skills); we are pretty sure our review
-  skills will trump yours :)
+- Or use our Claude Code skills — `/find-issues` → `/fix-issues`, `/ask-questions` →
+  `/resolve-questions`. Ask Claude: *copy .claude/skills from https://github.com/parf/mdhouse into
+  this project* — we are pretty sure our review skills will trump yours :)
 
 ---
 
