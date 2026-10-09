@@ -42,7 +42,7 @@ Not supported: `:smile:`, `==highlight==`, `H~2~O`, `x^2^`, `$math$`, `[[page]]`
 | `❓` `⏳` `⏸️` `🎫` `✅` `🚫` + severity | waiting on me · on the agent · deferred · ticket · done · cancelled |
 | `- 📌 Q-R1 …` · `- 🚫 …` under it | decision · rejected alternative |
 | `- 🔴 D1 …` · `Q-R1` · `RW.2` | item id — anchor `#D1` |
-| `№D1` · `№H` in the text | badge, a link to `#D1` |
+| `№D1` · `№H` in the text · `[№Q3](DECISIONS.md#Q3)` | badge, a link to `#D1` |
 | `- ( )` · `- (x)` under a question | pick one |
 | `- [ ]` · `- [x]` under a question | pick several — ✓ done |
 | `🌟` · `⭐` on an option | suggested · runner-up |

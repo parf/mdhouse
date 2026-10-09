@@ -513,14 +513,25 @@ function fileLinkPlugin(md: MarkdownIt, opts: { ctx: RenderContext; files: Map<s
 /** An issue reference in the text: `№A2`, `№D1`, `№H`. */
 const REF = /№(\p{L}[\p{L}\d]*(?:[.-][\p{L}\d]+)*)/gu;
 
-/** `№A2` in the text becomes a badge linking to `#A2` — never inside a link, never in code. */
+/**
+ * `№A2` in the text becomes a badge linking to `#A2` — never inside a link, never in code. A link
+ * whose whole text is `№A2` (`[№A2](other.md#A2)`) is the same badge, to its own target.
+ */
 function refPlugin(md: MarkdownIt): void {
   md.core.ruler.push('mdhouse_refs', (state) => {
     for (const t of state.tokens) {
       if (t.type !== 'inline' || !t.children) continue;
+      const kids = t.children;
+      for (let i = 0; i + 2 < kids.length; i++) {
+        const [open, txt, close] = [kids[i]!, kids[i + 1]!, kids[i + 2]!];
+        if (open.type !== 'link_open' || txt.type !== 'text' || close.type !== 'link_close') continue;
+        if (!new RegExp(`^${REF.source}$`, 'u').test(txt.content)) continue;
+        open.attrSet('class', 'who');
+        open.attrSet('data-kind', 'ref');
+      }
       const out: Token[] = [];
       let depth = 0;
-      for (const c of t.children) {
+      for (const c of kids) {
         if (c.type === 'link_open') depth++;
         if (c.type === 'link_close') depth--;
         if (depth > 0 || c.type !== 'text' || !c.content.includes('№')) {

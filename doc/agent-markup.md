@@ -11,15 +11,9 @@ plain GFM: every item is a list item, every reply a quote under it.
 - You sign every turn `👾`, glued: `💬👾 …`, `💡👾 …`. A person signs `👤name`: `💬 👤parf …`.
 - Append only: never edit or delete a turn, never touch a person's words.
 - Use only the glyphs below. No others, no substitutes.
-
-## IDs and references
-
-- Question: `Q1`, `Q2` …
-- Issue: an area letter + a number — `A1`, `B12`; no areas → `I1`.
-- Decision: the ID of the question it settles (`❓ Q3` → `📌 Q3`); a decision with no question — `R1`.
-- An ID is unique in its file; never reuse or renumber one.
-- The ID goes right after the glyphs: `- 🔴 A1 …`. It is the item's anchor: `file.md#A1`.
-- Refer to an item always with `№`: `№A1` in the same file, `[№Q3](DECISIONS.md#Q3)` in another one.
+- Every item has an ID, right after the glyphs: `- 🔴 A1 …`. It is the item's anchor: `file.md#A1`.
+  Unique in its file; never reuse or renumber one.
+- Refer to an item always with `№`: `№A1` in the same file, `[№A1](ISSUES.md#A1)` in another one.
 
 ## Glyphs
 
@@ -43,7 +37,14 @@ plain GFM: every item is a list item, every reply a quote under it.
 | 🎯 | selected for the next run — set by a person only |
 | 🌟 ⭐ | on an option: suggested · runner-up |
 
-## Question → answer
+## Questions
+
+### ID and reference
+
+- `Q1`, `Q2` … — numbered in the order you ask.
+- Reference: `№Q2`; in another file `[№Q2](QUESTIONS.md#Q2)`.
+
+### Question → answer
 
 ```markdown
 - ❓ Q1 Do we keep the old URLs?
@@ -76,7 +77,15 @@ plain GFM: every item is a list item, every reply a quote under it.
 - Always mark what you suggest, at the end of the option: `🌟` — your pick, `⭐` — the runner-up.
 - A picked one: `(x)` / `[x]` — set by the person.
 
-## Issue → stages
+## Issues
+
+### ID and reference
+
+- An area letter + a number: `A1`, `B12` — one letter per area (subsystem, section); no areas → `I1`.
+- Reference: `№A1`; in another file `[№A1](ISSUES.md#A1)`.
+- Under the claim: `Evidence:` — how you proved it; `Impact:` — who hits it, how often, what it costs.
+
+### Issue → stages
 
 ```markdown
 - 🔴 A1 `src/cli.ts:536` a busy port exits 0 — systemd never retries
@@ -104,6 +113,15 @@ The first glyph is the stage; the severity stays after it:
 
 ## Decisions
 
+### ID and reference
+
+- The ID of the question it settles: `⁉️ Q3` → `📌 Q3`; a decision with no question — `R1`, `R2` …
+- Reference: `№Q3`; in another file `[№Q3](DECISIONS.md#Q3)`.
+
+### Decision
+
+`DECISIONS.md`, after `⁉️ Q3` above is settled:
+
 ```markdown
 - 📌 Q3 Timeout is 30 s
   `src/net.ts:12` follows the README.
@@ -115,7 +133,7 @@ The first glyph is the stage; the severity stays after it:
 - `- 🚫 …` under it — a rejected alternative, with why.
 - Follow a decision in all work; never change it — reply under it.
 
-## 🎯
+## 🎯 Selected
 
 When any item in the file has `🎯` (`- 🎯 🔴 A1 …`), act on the `🎯` items only. Acting on one removes
 its `🎯`. Never add `🎯` yourself.

@@ -13,11 +13,17 @@ describe('markdown rendering', () => {
     expect(html).toMatch(/<li class="rejected" data-line="3"><span class="g">🚫<\/span><span class="t">410 — moves the weight<\/span>/);
   });
 
-  test('№A2 in the text is a badge linking to #A2 — not in code, not inside a link', async () => {
+  test('№A2 in the text is a badge linking to #A2 — not in code', async () => {
     const { html } = await render('See №A2, №H. `№X1` [№Y](#y)\n\n- 🔴 D1 see №RW.2\n', ctx);
     expect(html).toContain('See <a class="who" data-kind="ref" href="#A2">№A2</a>, <a class="who" data-kind="ref" href="#H">№H</a>.');
-    expect(html).toContain('<code>№X1</code> <a href="#y">№Y</a>');
+    expect(html).toContain('<code>№X1</code> <a href="#y" class="who" data-kind="ref">№Y</a>');
     expect(html).toContain('<a class="who" data-kind="ref" href="#RW.2">№RW.2</a>');
+  });
+
+  test('a link whose text is №Q3 is the same badge, to its own target', async () => {
+    const { html } = await render('[№Q3](DECISIONS.md#Q3) [Q3 x](DECISIONS.md)\n', ctx);
+    expect(html).toContain('<a href="/r/docs/DECISIONS.md#Q3" class="who md-local-link" data-kind="ref">№Q3</a>');
+    expect(html).toContain('<a href="/r/docs/DECISIONS.md" class="md-local-link">Q3 x</a>');
   });
 
   test('a backslash at the end of a line or before a space is a line break, not in code', async () => {
