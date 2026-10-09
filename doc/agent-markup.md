@@ -38,7 +38,7 @@ plain GFM: every item is a list item, every reply a quote under it.
 | ❌ | failed — it ran and did not pass |
 | ✅ | done |
 | 🚫 | cancelled / rejected — by decision |
-| 📌 | decision — settled, applies |
+| 📌 | a decision that matters — a rule much other work follows |
 | 💬 | a reply |
 | 💡 | a suggested answer — not the answer yet |
 | 🎯 | selected for the next run — set by a person only |
@@ -120,38 +120,35 @@ The first glyph is the stage; the severity stays after it:
 
 ## Decisions
 
-### Answer or decision
+### ✅ or 📌
 
-- A simple question → answer: the usual `✅` — `- ✅ Q2 …`. The answer closes its question; nothing
-  outside it changes.
-- A decision is an answer with consequences: it sets a rule for other work (code, other questions,
-  what is in or out). Only that is `📌`.
-- Facts, inventories, findings are not decisions: no `📌` — plain text, or research notes.
-- The test: must other work follow it? Yes → `📌`. "Which port?" → 7790 — `✅`. "X is out of scope",
-  "410, not 301", "admins see the same" — `📌`.
+- A decision is the usual `✅` — `- ✅ Q2 …`, in `DECISIONS.md` too.
+- `📌` — only a decision that matters: a rule much other work keeps following (scope, a contract,
+  a hard constraint). Few per file.
+- Facts, inventories, findings are not decisions — plain text, or research notes.
 
 ### ID and reference
 
-- The ID of the question it settles: `⁉️ Q3` → `📌 Q3`. A decision with no question — the next free
+- The ID of the question it settles: `⁉️ Q3` → `✅ Q3`. A decision with no question — the next free
   ID of the same question series (`Q14`; `Q-R14` where questions are `Q-R…`): one series, no clashes.
 - Reference: `№Q3`; in another file `[№Q3](DECISIONS.md#Q3)`.
 
 ### Where
 
-- Settled where it was asked (`TODO.md`, `QUESTIONS.md`), with consequences: the question becomes
-  the decision — `- ⁉️ Q3 …` → `- 📌 Q3 …`, the same item, its thread stays. May still change.
+- Settled where it was asked (`TODO.md`, `QUESTIONS.md`): the question becomes the decision —
+  `- ⁉️ Q3 …` → `- ✅ Q3 …` (or `📌`), the same item, its thread stays. May still change.
 - Final: moved to `DECISIONS.md`, the same ID; the old place keeps `[№Q3](DECISIONS.md#Q3)`.
 
 ### Decision
 
 ```markdown
-- 📌 Q3 Timeout is 30 s
+- ✅ Q3 Timeout is 30 s
   `src/net.ts:12` follows the README.
   - 🚫 10 s — too short on a cold start
-- 📌 Q6 Logs go to journald
+- 📌 Q6 Personal data never leaves the EU
+  Every service, log and backup.
 ```
 
-- No `✅` on a decision — a decision is accepted.
 - Every rejected alternative is a `- 🚫 <alternative> — <why>` line under it — never in the prose
   ("Alternative X was rejected" → `- 🚫 X — <why>`).
 - Follow a decision in all work; never change it — reply under it.
@@ -169,6 +166,6 @@ Apply every rule above to every item — the file must end up exactly in this ma
 - [ ] line breaks redone: no line starts with `,` or `.`, no title cut mid-phrase
 - [ ] every ID in the text: `№` — `(Q3)` → `(№Q3)`; from another file → a link
 - [ ] every rejected alternative in the prose → a `- 🚫 … — why` line
-- [ ] `📌` only on decisions with consequences; an answered simple question — `✅`
+- [ ] decisions `✅`; `📌` only on the few that matter
 - [ ] the wording kept — only the markup changes; nothing removed or moved unless a person said so
 - [ ] every ID mentioned in the other files of the project: `№` and a link

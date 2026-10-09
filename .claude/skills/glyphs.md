@@ -28,7 +28,7 @@ The glyph is the **first symbol of the line** — status first, then severity
 | ✅ | done / fixed / decided | proof or the commit in the 💬 under it | muted, folded |
 | 🚫 | cancelled / rejected — by decision, nothing failed | the deciding evidence in the 💬 | muted, folded |
 | ⏸️ | deferred / on hold | why it waits | muted |
-| 📌 | a decision — an answer with consequences: a rule for other work; settled, applies; no ✅ on it | `- 📌 <id> <title>`, the body under it, `- 🚫 …` under it a rejected alternative | a card, never folded; the 🚫 lines muted |
+| 📌 | a decision that matters — a rule much other work keeps following; a usual decision is ✅ | `- 📌 <id> <title>`, the body under it, `- 🚫 …` under it a rejected alternative | a card, never folded; the 🚫 lines muted |
 | 🎫 | a ticket requested — the agent files it | the user's 💬 names who: `👤name` / `👥team` (required); the agent then sets ✅ + `🎫<ID> → 👤name` | open, "ticket pending" |
 | ⛔ | cannot be done — blocked, nothing ran | name the obstacle | strong |
 | ❌ | failed — it ran and did not pass. Nothing else | the output | loud |
