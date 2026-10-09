@@ -127,10 +127,13 @@ The first glyph is the stage; the severity stays after it:
 - A decision is an answer with consequences: it sets a rule for other work (code, other questions,
   what is in or out). Only that is `📌`.
 - Facts, inventories, findings are not decisions: no `📌` — plain text, or research notes.
+- The test: must other work follow it? Yes → `📌`. "Which port?" → 7790 — `✅`. "X is out of scope",
+  "410, not 301", "admins see the same" — `📌`.
 
 ### ID and reference
 
-- The ID of the question it settles: `⁉️ Q3` → `📌 Q3`; a decision with no question — `R1`, `R2` …
+- The ID of the question it settles: `⁉️ Q3` → `📌 Q3`. A decision with no question — the next free
+  ID of the same question series (`Q14`; `Q-R14` where questions are `Q-R…`): one series, no clashes.
 - Reference: `№Q3`; in another file `[№Q3](DECISIONS.md#Q3)`.
 
 ### Where
@@ -145,7 +148,7 @@ The first glyph is the stage; the severity stays after it:
 - 📌 Q3 Timeout is 30 s
   `src/net.ts:12` follows the README.
   - 🚫 10 s — too short on a cold start
-- 📌 R1 Logs go to journald
+- 📌 Q6 Logs go to journald
 ```
 
 - No `✅` on a decision — a decision is accepted.
