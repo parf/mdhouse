@@ -113,6 +113,12 @@ The first glyph is the stage; the severity stays after it:
 
 ## Decisions
 
+### Answer or decision
+
+- An answer closes its question — nothing outside it changes: `- ✅ Q2 …`.
+- A decision is an answer with consequences: it sets a rule for other work (code, other questions,
+  what is in or out). Only that is `📌`.
+
 ### ID and reference
 
 - The ID of the question it settles: `⁉️ Q3` → `📌 Q3`; a decision with no question — `R1`, `R2` …
@@ -120,8 +126,8 @@ The first glyph is the stage; the severity stays after it:
 
 ### Where
 
-- Settled where it was asked (`TODO.md`, `QUESTIONS.md`): the question becomes the decision —
-  `- ⁉️ Q3 …` → `- 📌 Q3 …`, the same item, its thread stays. May still change.
+- Settled where it was asked (`TODO.md`, `QUESTIONS.md`), with consequences: the question becomes
+  the decision — `- ⁉️ Q3 …` → `- 📌 Q3 …`, the same item, its thread stays. May still change.
 - Final: moved to `DECISIONS.md`, the same ID; the old place keeps `[№Q3](DECISIONS.md#Q3)`.
 
 ### Decision

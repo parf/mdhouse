@@ -109,6 +109,7 @@ auto-ignores the issue: `🚫 💡` + `💬 👤parf ignore`, the issue `🚫`.
 ## 2b. Decisions — 📌
 
 A settled decision that applies — more than ✅: it stands and should be followed.
+An answer closes its question (`✅`); a decision is an answer with consequences — a rule for other work.
 
 ```markdown
 - 📌 Q-R1 `/p/F/L/NJ/` — keep the 301 to `/p/F/L/`
@@ -120,7 +121,7 @@ A settled decision that applies — more than ✅: it stands and should be follo
 - no ✅ on a decision: accepted by default
 - `- 🚫 …` under it — a rejected alternative, muted
 - an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
-- a question settled in place: `- ❓ Q3 …` → `- 📌 Q3 …` — its options and thread stay; final in `DECISIONS.md`
+- a question settled in place, with consequences: `- ❓ Q3 …` → `- 📌 Q3 …` — its options and thread stay; final in `DECISIONS.md`
 - never folded, never waiting on anyone; 💬 under it — a reply
 
 ## 3. Suggestions — pick one, or several
