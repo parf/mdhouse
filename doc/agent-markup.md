@@ -118,7 +118,8 @@ The first glyph is the stage; the severity stays after it:
 
 ### Answer or decision
 
-- An answer closes its question — nothing outside it changes: `- ✅ Q2 …`.
+- A simple question → answer: the usual `✅` — `- ✅ Q2 …`. The answer closes its question; nothing
+  outside it changes.
 - A decision is an answer with consequences: it sets a rule for other work (code, other questions,
   what is in or out). Only that is `📌`.
 - Facts, inventories, findings are not decisions: no `📌` — plain text, or research notes.
@@ -161,5 +162,5 @@ Apply every rule above to every item — the file must end up exactly in this ma
 - [ ] line breaks redone: no line starts with `,` or `.`, no title cut mid-phrase
 - [ ] every ID in the text: `№` — `(Q3)` → `(№Q3)`; from another file → a link
 - [ ] every rejected alternative in the prose → a `- 🚫 … — why` line
-- [ ] `📌` only on decisions with consequences
+- [ ] `📌` only on decisions with consequences; an answered simple question — `✅`
 - [ ] the wording kept — only the markup changes
