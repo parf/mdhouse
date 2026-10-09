@@ -1,6 +1,6 @@
 {
   "name": "mdhouse",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "A Markdown workspace on your own machine — read every file, answer questions, triage issues and commit, together with your AI agents",
   "license": "GPL-2.0-only",
   "type": "module",

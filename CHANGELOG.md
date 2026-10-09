@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.1.0 — 2026-10-08
 
 ### Changed
 
@@ -8,7 +8,7 @@
 
 ### Added
 
-- `doc/agent-markup.md` — the markup for agents, self-contained: questions, issues, decisions, IDs, `№` references
+- `doc/agent-markup.md` — the markup for agents, self-contained: questions, issues, decisions, IDs, `№` references; README: ask your AI to use it, or copy the skills
 - `- 📌 Q-R1 …` — a decision: settled, applies; `- 🚫 …` under it — a rejected alternative
 - Item ids `Q-R1`, `RW.2`, `A.4` — anchors, as `D1`
 - `№A2`, `№D1`, `№H` in the text — a badge linking to `#A2`; `[№Q3](DECISIONS.md#Q3)` — the same badge
