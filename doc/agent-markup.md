@@ -5,15 +5,18 @@ plain GFM: every item is a list item, every reply a quote under it.
 
 ## Rules
 
-- One item = one list item: `- <glyphs> <ID> <text>`. Glyphs first, a space after each.
-- More lines of the item: indented 2 spaces. `Evidence:` / `Impact:` — each on its own line.
+- One item = one list item: `- <glyphs> <ID> <title>`. Glyphs first, a space after each.
+- The first line is a short title — one line. Details go on the lines below it, indented 2 spaces.
+  `Evidence:` / `Impact:` — each on its own line.
 - Replies: a quote under the item, indented 2 spaces, one `💬` per turn, a blank `>` between turns.
 - You sign every turn `👾`, glued: `💬👾 …`, `💡👾 …`. A person signs `👤name`: `💬 👤parf …`.
 - Append only: never edit or delete a turn, never touch a person's words.
 - Use only the glyphs below. No others, no substitutes.
 - Every item has an ID, right after the glyphs: `- 🔴 A1 …`. It is the item's anchor: `file.md#A1`.
   Unique in its file; never reuse or renumber one.
-- Refer to an item always with `№`: `№A1` in the same file, `[№A1](ISSUES.md#A1)` in another one.
+- Every mention of an ID in the text has `№` — never a bare ID:
+  - same file: `№A1` — not `A1`, not `(A1)`;
+  - another file: always a link, `[№A1](ISSUES.md#A1)` — a bare `№A1` points to this file.
 
 ## Glyphs
 
@@ -118,6 +121,7 @@ The first glyph is the stage; the severity stays after it:
 - An answer closes its question — nothing outside it changes: `- ✅ Q2 …`.
 - A decision is an answer with consequences: it sets a rule for other work (code, other questions,
   what is in or out). Only that is `📌`.
+- Facts, inventories, findings are not decisions: no `📌` — plain text, or research notes.
 
 ### ID and reference
 
@@ -140,10 +144,22 @@ The first glyph is the stage; the severity stays after it:
 ```
 
 - No `✅` on a decision — a decision is accepted.
-- `- 🚫 …` under it — a rejected alternative, with why.
+- Every rejected alternative is a `- 🚫 <alternative> — <why>` line under it — never in the prose
+  ("Alternative X was rejected" → `- 🚫 X — <why>`).
 - Follow a decision in all work; never change it — reply under it.
 
 ## 🎯 Selected
 
 When any item in the file has `🎯` (`- 🎯 🔴 A1 …`), act on the `🎯` items only. Acting on one removes
 its `🎯`. Never add `🎯` yourself.
+
+## Converting an existing file
+
+Apply every rule above to every item — the file must end up exactly in this markup:
+
+- [ ] every item: glyphs, ID, a one-line title; the details under it
+- [ ] line breaks redone: no line starts with `,` or `.`, no title cut mid-phrase
+- [ ] every ID in the text: `№` — `(Q3)` → `(№Q3)`; from another file → a link
+- [ ] every rejected alternative in the prose → a `- 🚫 … — why` line
+- [ ] `📌` only on decisions with consequences
+- [ ] the wording kept — only the markup changes
