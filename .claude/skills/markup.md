@@ -106,6 +106,22 @@ auto-ignores the issue: `🚫 💡` + `💬 👤parf ignore`, the issue `🚫`.
 | `🎫` + severity | a ticket requested (who: `👤name` / `👥team`, required) — the agent files it, then `✅` + `🎫<ID>` | open, "ticket pending" |
 | `✅` `🚫` + severity | settled | muted, folded |
 
+## 2b. Decisions — 📌
+
+A settled decision that applies — more than ✅: it stands and should be followed.
+
+```markdown
+- 📌 Q-R1 `/p/F/L/NJ/` — keep the 301 to `/p/F/L/`
+  The name page filters NJ people itself.
+  - 🚫 410 — the 301 carries the NJ page's weight
+- 📌 Q-R9 ClickHouse down → 503 + `Retry-After`
+```
+
+- no ✅ on a decision: accepted by default
+- `- 🚫 …` under it — a rejected alternative, muted
+- an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
+- never folded, never waiting on anyone; 💬 under it — a reply
+
 ## 3. Suggestions — pick one, or several
 
 The markup decides: `( )` / `(x)` — one of (radio), `[ ]` / `[x]` — any of (checkboxes, GFM).
@@ -201,10 +217,11 @@ includes the ones before it.
 | **⚪** | every open line, any severity | 🔴 🟠 ⚪ ⏳ ❓ ⁉️ |
 | **✅** | solved as ✅ | ✅, an answered ❓ |
 | **🚫** | all solved NOT as ✅ | 🚫 ⏸️ 🔵 |
+| **📌** | decisions | 📌 |
 
 - counts are cumulative: 🔴 ⊂ 🟠 ⊂ ⚪, so the numbers grow left to right
 - do not show elements with 0
-- ⚪ + ✅ + 🚫 = the total: a line is open, solved as ✅, or solved NOT as ✅
+- ⚪ + ✅ + 🚫 + 📌 = the total: a line is open, solved as ✅, solved NOT as ✅, or a decision
 - ⏸️ counts as closed — under 🚫
 - one button at a time; a second click, or the total, brings everything back
 - every button has an instant tooltip (no browser delay): `Show all 9`, `High — 1`, `All open — 6`, …

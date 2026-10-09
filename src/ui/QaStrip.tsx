@@ -8,7 +8,7 @@ const open = (k: string[]) => has(k, 'open');
 /** Settled, but not as ✅: rejected, deferred, a 🔵 note. */
 const notDone = (k: string[]) => !open(k) && ['🚫', '⏸️', '🔵'].includes(k[0] ?? '');
 
-/** The total, then thresholds — 🔴 ⊂ 🟠 ⊂ ⚪ (every open line) — then ✅ and 🚫 (the closed ones) and 🎯. */
+/** The total, then thresholds — 🔴 ⊂ 🟠 ⊂ ⚪ (every open line) — then ✅ and 🚫 (the closed ones), 📌 decisions and 🎯. */
 const LEVELS: Array<{ key: string; test: (k: string[]) => boolean; tip: (n: number) => string }> = [
   { key: 'all', test: () => true, tip: (n) => `Show all ${n}` },
   { key: '🔴', test: (k) => open(k) && has(k, '🔴'), tip: (n) => `High — ${n}` },
@@ -18,8 +18,9 @@ const LEVELS: Array<{ key: string; test: (k: string[]) => boolean; tip: (n: numb
     tip: (n) => `Medium and up, and ❓ ⁉️ without a severity — ${n}`,
   },
   { key: '⚪', test: open, tip: (n) => `All open — ${n}` },
-  { key: '✅', test: (k) => !open(k) && !notDone(k), tip: (n) => `Done: ✅, an answered ❓ — ${n}` },
+  { key: '✅', test: (k) => !open(k) && !notDone(k) && !has(k, '📌'), tip: (n) => `Done: ✅, an answered ❓ — ${n}` },
   { key: '🚫', test: notDone, tip: (n) => `Closed, not as ✅: 🚫 ⏸️ 🔵 — ${n}` },
+  { key: '📌', test: (k) => k[0] === '📌', tip: (n) => `Decisions — ${n}` },
   { key: '🎯', test: (k) => has(k, '🎯'), tip: (n) => `Selected for the next run — ${n}` },
 ];
 

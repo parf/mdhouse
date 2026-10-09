@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { applyQa, badgeName, parseQa, stateOf, type QaChange, type QaRequest } from '../src/lib/qa';
+import { ITEM_ID, applyQa, badgeName, parseQa, stateOf, type QaChange, type QaRequest } from '../src/lib/qa';
 
 const itemAt = (src: string, line: number, offset = 0) => {
   const it = parseQa(src, offset).items.find((i) => i.start === line - 1);
@@ -49,6 +49,15 @@ describe('items: where an item and its thread end', () => {
 });
 
 describe('items: state', () => {
+  test('📌 a decision: settled, applies — not closed, not open, not waiting', () => {
+    const st = state('- 📌 Q-R1 keep the 301\n  - 🚫 410\n');
+    expect(st).toMatchObject({ decision: true, closed: false, waitMe: false, finding: false });
+    expect(st.key).toBe('📌');
+  });
+  test('an item id: D1, Q-R1, Q-R0b, RW.2, A.4 — never a word', () => {
+    for (const id of ['D1', 'Q-R1', 'Q-R0b', 'RW.2', 'A.4']) expect(ITEM_ID.exec(`${id} x`)?.[1]).toBe(id);
+    for (const w of ['API x', 'A x', 'Q- x']) expect(ITEM_ID.exec(w)).toBeNull();
+  });
   test('a glyph needs no space after it', () => {
     for (const src of ['- 🔴+ RW.2 x\n', '- ✅🟠x\n', '> ❓q\n']) expect(itemAt(src, 1)?.glyphs.length).toBeGreaterThan(0);
     expect(itemAt('- 🔴+ RW.2 x\n', 1)?.head).toBe('+ RW.2 x');

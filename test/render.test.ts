@@ -5,6 +5,14 @@ import { parseQa } from '../src/lib/qa';
 const ctx = { rootId: 'r', docPath: 'docs/guide.md', docUrl: (rel: string) => `/r/${rel}` };
 
 describe('markdown rendering', () => {
+  test('📌 a decision: a card, its id the anchor, a 🚫 under it a rejected line', async () => {
+    const { html } = await render('- 📌 Q-R1 keep the 301\n  The name page filters.\n  - 🚫 410 — moves the weight\n', ctx);
+    expect(html).toContain('class="item decision"');
+    expect(html).toContain('id="Q-R1"');
+    expect(html).toContain('<span class="d-title"><a class="iid" href="#Q-R1">Q-R1</a> keep the 301</span><div class="d-body">The name page filters.</div>');
+    expect(html).toMatch(/<li class="rejected" data-line="3"><span class="g">🚫<\/span><span class="t">410 — moves the weight<\/span>/);
+  });
+
   test('№A2 in the text is a badge linking to #A2 — not in code, not inside a link', async () => {
     const { html } = await render('See №A2, №H. `№X1` [№Y](#y)\n\n- 🔴 D1 see №RW.2\n', ctx);
     expect(html).toContain('See <a class="who" data-kind="ref" href="#A2">№A2</a>, <a class="who" data-kind="ref" href="#H">№H</a>.');

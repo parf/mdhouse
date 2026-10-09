@@ -59,7 +59,8 @@ control socket) lives outside every tree.
 ### A Q&A change touches its item, or nothing
 
 - `src/lib/qa.ts` — the item model of the markup (`.claude/skills/markup.md`): `qaItems` on markdown-it's
-  block tokens, shared by the renderer and the server; `stateOf` (`.claude/skills/qa-states.md`); `applyQa` — say ·
+  block tokens, shared by the renderer and the server; `stateOf` (`.claude/skills/qa-states.md`); `ITEM_ID` — an
+  item's anchor (`D1`, `Q-R1`, `RW.2`); `applyQa` — say ·
   verdict · pick · tick · done · target · edit
 - `src/lib/qa-html.ts` — an item as HTML: `data-qa`, `data-line`, `data-hash` (`lineHash` of the item's
   lines), `data-k`; every reply / option / 💡 its own `data-line`

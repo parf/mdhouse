@@ -31,11 +31,12 @@ const itemOf = (el: Element) => el.closest<HTMLElement>('[data-qa]');
 /** The item's own part of the page — not an item nested in it. */
 const own = (item: HTMLElement, sel: string) => [...item.querySelectorAll<HTMLElement>(sel)].filter((x) => itemOf(x) === item);
 
-/** A question's form or an issue's: an issue is an item with a severity that does not ask. */
+/** A question's form or an issue's: an issue is an item with a severity that does not ask; a 📌 decision takes a reply. */
 export function formFor(item: HTMLElement): QaTarget {
   const k = (item.dataset.k ?? '').split(' ');
   const ask = k[0] === '❓' || k[0] === '⁉️';
-  return { line: lineOf(item), hash: item.dataset.hash ?? '', kind: !ask && item.dataset.sev ? 'finding' : 'question' };
+  const kind = k[0] === '📌' ? 'comment' : !ask && item.dataset.sev ? 'finding' : 'question';
+  return { line: lineOf(item), hash: item.dataset.hash ?? '', kind };
 }
 
 /** Enable the options of a writable page, and wire every Q&A button. Returns the cleanup. */

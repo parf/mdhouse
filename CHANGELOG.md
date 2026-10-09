@@ -4,6 +4,8 @@
 
 ### Added
 
+- `- 📌 Q-R1 …` — a decision: settled, applies; `- 🚫 …` under it — a rejected alternative
+- Item ids `Q-R1`, `RW.2`, `A.4` — anchors, as `D1`
 - `№A2`, `№D1`, `№H` in the text — a badge linking to `#A2`
 
 ### Fixed

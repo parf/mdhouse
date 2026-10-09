@@ -172,6 +172,12 @@ GitHub as the hand-written answers around it. `> A:` answers are read but 💬 i
   then line). A changed question or a meanwhile answer is said in the editor before Save, and a
   stale POST is refused — the draft is kept in every case.
 
+## 📌 — a decision, not ✅ — 2026-10-08
+
+- A decision stands and should be followed; ✅ only says done. Almost every decision is accepted, so
+  no ✅ on it; a rejected alternative is `- 🚫 …` under it.
+- Not closed (the page never folds it), not open (nobody waits on it): the strip counts it apart.
+
 ## One Q&A markup; the old forms converted on load — 2026-10-07
 
 Replaces "An answer is written in the question's own syntax".

@@ -29,7 +29,9 @@ export const SEVERITY = ['🔴', '🟠', '⚪', '🔵'];
 export const CLOSED = ['✅', '🚫', '⏸️'];
 /** Waiting on a person. */
 export const ASK = ['❓', '⁉️'];
-const STAGES = ['❓', '⁉️', '⏳', '✅', '🚫', '⏸️', '🎫', '⛔', '❌', '⚠️'];
+/** A settled decision that applies: shown in full, never folded, never waiting on anyone. */
+export const DECISION = '📌';
+const STAGES = ['❓', '⁉️', '⏳', '✅', '🚫', '⏸️', '🎫', '⛔', '❌', '⚠️', DECISION];
 const GLYPHS = [...STAGES, '🎯', ...SEVERITY];
 const norm = (g: string) => g.replace(/️/g, '');
 const KNOWN = new Map(GLYPHS.map((g) => [norm(g), g]));
@@ -187,6 +189,9 @@ export function isAnswered(node: Pick<QaNode, 'replies' | 'children'>): boolean 
   return !!last && !last.partial;
 }
 
+/** An item's id, first in its text: `D1`, `Q-R1`, `Q-R0b`, `RW.2`, `A.4` — never a word like `API`. */
+export const ITEM_ID = /^([A-Z][A-Z.-]*\d+[a-z]?(?:\.\d+)?)(?=\s|$)/;
+
 /** An issue: a severity, and not a question — its 💡 is accepted or ignored, a question's answered yes or no. */
 export const isIssue = (node: Pick<QaNode, 'glyphs'>) => node.glyphs.some((g) => SEVERITY.includes(g)) && !ASK.includes(node.glyphs[0] ?? '');
 
@@ -199,6 +204,8 @@ export interface QaState {
   ignored: boolean;
   /** Waits on me: an unanswered ❓ / ⁉️. */
   waitMe: boolean;
+  /** A 📌 decision: settled, applies — not closed, not open. */
+  decision: boolean;
   /** An open issue nobody has triaged — works as an unanswered question does. */
   finding: boolean;
   /** An issue I triaged (a decided 💡, a pick, my own reply): over to the agent. */
@@ -219,14 +226,16 @@ export function stateOf(node: QaNode): QaState {
   // 🔵 an informational note: treated as done or not relevant
   const closed = CLOSED.includes(status) || answered || ignored || status === '🔵';
   const severity = node.glyphs.find((g) => SEVERITY.includes(g)) ?? null;
+  const decision = status === DECISION;
   const touched =
     ['⏳', '⚠️', '🎫'].includes(status) ||
     node.children.some((o) => o.option && o.picked) ||
     node.replies.some((r) => r.verdict || (!r.suggest && !/^(👾|📡)/u.test(r.who ?? '')));
-  const triaged = !!severity && !ask && !closed && touched;
+  const triaged = !!severity && !ask && !closed && !decision && touched;
   const glyphs = ignored ? ['🚫', ...node.glyphs.filter((g) => !ASK.includes(g))] : node.glyphs;
-  const key = [...glyphs, ...(closed ? [] : ['open']), ...(node.target ? ['🎯'] : [])].join(' ');
-  return { closed, answered, ignored, waitMe: ask && !answered && !ignored, finding: !!severity && !ask && !closed && !triaged, triaged, severity, key };
+  const key = [...glyphs, ...(closed || decision ? [] : ['open']), ...(node.target ? ['🎯'] : [])].join(' ');
+  const finding = !!severity && !ask && !closed && !decision && !triaged;
+  return { closed, answered, ignored, waitMe: ask && !answered && !ignored, decision, finding, triaged, severity, key };
 }
 
 /* ── finding items in the parse ── */

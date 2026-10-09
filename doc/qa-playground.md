@@ -49,6 +49,13 @@ What each form means is in [Questions and answers in mdhouse](qa.md).
   > 💬👾 later — we still have scars from the last one
 - 🔵 the office plant was watered
 
+## Decisions — 📌
+
+- 📌 P1 Friday is pizza day
+  Ordered by Thursday noon, the same place.
+  - 🚫 sushi — nobody agrees on the rolls
+- 📌 P2 meetings end on the hour
+
 ## Pick one, or several
 
 - ❓ Who gets the coffee machine's on-call rotation?

@@ -74,6 +74,7 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | `🎫` | a ticket requested; the user's `💬` names who (`👤name` / `👥team`) | file it where the repo tracks work (the 🎫 is the go-ahead): `gh issue create` on its GitHub — title in English, body the item and its thread, `--assignee` when the name is a login; no tracker → `- [ ] <item> 👤name` in `TODO.md` (the ID: `TODO.md`) → `✅` + `💬👾 🎫<ID> → 👤name` |
 | `⛔` `❌` | blocked / failed | nobody — list them in the report |
 | `✅` `🚫` `⏸️` | closed | nobody |
+| `📌` | a decision — settled, applies | nobody acts on it as a task; follow it in all work; never change it — reply under it |
 
 **Answered** — only the newest `💡` counts (an older one is superseded); when it is still undecided,
 nothing is answered. Otherwise any of:

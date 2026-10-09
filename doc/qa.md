@@ -74,6 +74,22 @@ auto-ignores the issue: `🚫 💡` + `💬 👤parf ignore`, the issue `🚫`.
 An issue id first in the claim (`- 🔴 D1 …`) is the item's anchor: `issues/2026-10/2026-10-07.md#D1`.
 `№D1` in the text — a badge linking to it.
 
+## Decisions — 📌
+
+A settled decision that applies — more than ✅: it stands and should be followed.
+
+```markdown
+- 📌 Q-R1 `/p/F/L/NJ/` — keep the 301 to `/p/F/L/`
+  The name page filters NJ people itself.
+  - 🚫 410 — the 301 carries the NJ page's weight
+- 📌 Q-R9 ClickHouse down → 503 + `Retry-After`
+```
+
+- no ✅ on a decision: accepted by default
+- `- 🚫 …` under it — a rejected alternative, muted
+- an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
+- never folded, never waiting on anyone; 💬 under it — a reply
+
 ## Pick one, or several
 
 The markup decides: `( )` / `(x)` — one of (radio), `[ ]` / `[x]` — any of (checkboxes, GFM).
@@ -119,6 +135,7 @@ level includes the ones before it.
 | **⚪** | every open line, any severity |
 | **✅** | done: ✅, an answered ❓ |
 | **🚫** | closed, not as ✅: 🚫 ⏸️ 🔵 |
+| **📌** | decisions |
 | **🎯** | selected for the next run |
 
 A level with 0 is not shown.
@@ -137,6 +154,7 @@ A level with 0 is not shown.
 | ✅ | done / fixed / decided |
 | 🚫 | cancelled / rejected — by decision, nothing failed |
 | ⏸️ | deferred / on hold |
+| 📌 | a decision — settled, applies |
 | 🎫 | a ticket requested — the agent files it |
 | ⛔ | cannot be done — blocked, nothing ran |
 | ❌ | failed — it ran and did not pass. Nothing else |
