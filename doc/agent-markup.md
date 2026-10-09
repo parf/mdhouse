@@ -8,13 +8,17 @@ plain GFM: every item is a list item, every reply a quote under it.
 - One item = one list item: `- <glyphs> <ID> <title>`. Glyphs first, a space after each.
 - The first line is a short title — one line. Details go on the lines below it, indented 2 spaces.
   `Evidence:` / `Impact:` — each on its own line.
-- Replies: a quote under the item, indented 2 spaces, one `💬` per turn, a blank `>` between turns.
+- Replies: a quote under the item, indented 2 spaces, one `💬` / `💡` per turn, a blank `>` between
+  every two turns — your own `💬👾` and `💡👾` too.
 - You sign every turn `👾`, glued: `💬👾 …`, `💡👾 …`. A person signs `👤name`: `💬 👤parf …`.
 - Append only: never edit or delete a turn, never touch a person's words.
 - Use only the glyphs below. No others, no substitutes.
+- Items go under headings that say what they are (`## Decisions`, `## Open questions`) — not under
+  `## Summary`: a summary is a few lines of prose.
 - Every item has an ID, right after the glyphs: `- 🔴 A1 …`. It is the item's anchor: `file.md#A1`.
   Unique in its file; never reuse or renumber one.
-- Every mention of an ID in the text has `№` — never a bare ID:
+- Every mention of an ID has `№` — in every file you write, not only the one you convert; never a
+  bare ID:
   - same file: `№A1` — not `A1`, not `(A1)`;
   - another file: always a link, `[№A1](ISSUES.md#A1)` — a bare `№A1` points to this file.
 
@@ -163,4 +167,5 @@ Apply every rule above to every item — the file must end up exactly in this ma
 - [ ] every ID in the text: `№` — `(Q3)` → `(№Q3)`; from another file → a link
 - [ ] every rejected alternative in the prose → a `- 🚫 … — why` line
 - [ ] `📌` only on decisions with consequences; an answered simple question — `✅`
-- [ ] the wording kept — only the markup changes
+- [ ] the wording kept — only the markup changes; nothing removed or moved unless a person said so
+- [ ] every ID mentioned in the other files of the project: `№` and a link
