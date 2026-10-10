@@ -13,6 +13,13 @@ describe('markdown rendering', () => {
     expect(html).toMatch(/<li class="rejected" data-line="3"><span class="g">🚫<\/span><span class="t">410 — moves the weight<\/span>/);
   });
 
+  test('✅ a decision: the body under the title, a 🚫 under it a rejected line — not an item', async () => {
+    const { html } = await render('- ✅ Q-R9 ClickHouse down → 503\n  As on VeriPages.\n  - 🚫 404 — pages drop out\n', ctx);
+    expect(html).toContain('<a class="iid" href="#Q-R9">Q-R9</a> ClickHouse down → 503<span class="i-body">As on VeriPages.</span>');
+    expect(html).toContain('<ul class="items alts"><li class="rejected" data-line="3"><span class="g">🚫</span><span class="t">404 — pages drop out</span>');
+    expect(html.match(/data-k=/g)).toHaveLength(1);
+  });
+
   test('№A2 in the text is a badge linking to #A2 — not in code', async () => {
     const { html } = await render('See №A2, №H. `№X1` [№Y](#y)\n\n- 🔴 D1 see №RW.2\n', ctx);
     expect(html).toContain('See <a class="who" data-kind="ref" href="#A2">№A2</a>, <a class="who" data-kind="ref" href="#H">№H</a>.');
@@ -38,7 +45,8 @@ describe('markdown rendering', () => {
     expect(html).toContain('one<br>');
     expect(html).toContain('two <br>\nthree');
     expect(html).toContain('<code>a\\ b</code>');
-    expect(html).toMatch(/q <br>\s*more/);
+    // in an item the next line is the body, on a line of its own already
+    expect(html).toContain('q<span class="i-body">more</span>');
   });
 
   test('a finding\'s Evidence / Impact lines ending in \\ show no backslash', async () => {

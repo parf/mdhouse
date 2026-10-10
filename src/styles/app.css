@@ -1201,6 +1201,7 @@ main {
 .md.qa-rw .g-answered { cursor: pointer; }
 .md.qa-rw .g-answered:hover { border-color: var(--qa-answer); background: var(--qa-answer-bg); }
 /* the claim's Evidence / Impact lines, its cases, an issue id */
+.md li.item .i-body { display: block; margin-top: 2px; }
 .md li.item .meta { display: block; font-size: 0.87em; font-weight: 400; color: var(--fg-muted); margin-top: 2px; }
 .md li.item .cases { margin: 2px 0; padding-left: 18px; font-size: 0.93em; font-weight: 400; }
 .md li.item .cases > li { list-style: disc; margin: 0; }
@@ -1215,11 +1216,11 @@ main {
 .md li.item.decision .d-title { font-weight: 600; }
 .md li.item.decision .d-body { margin-top: 2px; }
 .md li.item.decision .d-body > :last-child { margin-bottom: 0; }
-.md li.item.decision .alts { margin: 2px 0 2px 1.9em; padding: 0; }
-.md li.item.decision .alts > li.rejected { list-style: none; display: grid; grid-template-columns: 1.6em minmax(0, 1fr); column-gap: 4px;
+.md .alts { margin: 2px 0 2px 1.9em; padding: 0; }
+.md .alts > li.rejected { list-style: none; display: grid; grid-template-columns: 1.6em minmax(0, 1fr); column-gap: 4px;
   font-size: 0.93em; color: var(--fg-muted); }
-.md li.item.decision .alts > li.rejected .g { text-align: center; }
-.md li.item.decision .alts > li.rejected > .thread { grid-column: 2; }
+.md .alts > li.rejected .g { text-align: center; }
+.md .alts > li.rejected > .thread { grid-column: 2; }
 /* a thread: one reply per turn, green; ⚠️ / elaborate yellow; 💡 blue */
 .md .thread { margin: 4px 0 2px calc(1.6em + 4px); display: grid; gap: 4px; }
 .md .thread.loose { margin-left: 0; }

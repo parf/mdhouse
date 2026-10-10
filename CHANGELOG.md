@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- An item's first line is its title; the lines after it — on a line of their own under it
+- `- 🚫 …` under a `✅` — a rejected alternative, as under `📌`: a muted line, not counted in the strip
+
 ## 2.1.0 — 2026-10-08
 
 ### Changed

@@ -85,7 +85,7 @@ A decision that matters — a rule much other work keeps following. A usual deci
 - 📌 Q-R9 ClickHouse down → 503 + `Retry-After`
 ```
 
-- `- 🚫 …` under it — a rejected alternative, muted
+- `- 🚫 …` under it (or under a `✅`) — a rejected alternative, muted, not counted
 - an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
 - a question settled in place that matters: `- ❓ Q3 …` → `- 📌 Q3 …` — its options and thread stay; final in `DECISIONS.md`
 - never folded, never waiting on anyone; 💬 under it — a reply

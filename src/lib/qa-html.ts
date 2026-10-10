@@ -92,11 +92,24 @@ export function qaHtml(r: QaRender) {
     );
   }
 
-  /** The claim: an issue id first (`B44`) is the item's anchor, a link to itself; Evidence / Impact on lines of their own. */
+  /** The first line is the title — an id first (`B44`) is the item's anchor, a link to itself; the lines after it the body. */
+  function titleOf(head: string): { title: string; body: string; id: string | null } {
+    const [line = '', ...rest] = head.split('\n');
+    const id = ITEM_ID.exec(line)?.[1] ?? null;
+    const title = id ? `<a class="iid" href="#${id}">${id}</a>${inline(line.slice(id.length))}` : inline(line);
+    return { title, body: rest.join('\n').trim(), id };
+  }
+
+  /** A `🚫` under a decision (📌 or ✅): a rejected alternative — a muted line, not an item of its own. */
+  function rejectedHtml(n: QaItem): string {
+    return `<li class="rejected" data-line="${n.start + 1}"><span class="g">🚫</span><span class="t">${inline(n.head)}</span>${threadHtml(n.replies, 'thread', true)}</li>`;
+  }
+
+  /** The claim: its title, the body on a line of its own; Evidence / Impact on lines of their own. */
   function text(node: QaNode, more: string[]): { html: string; id: string | null } {
     const [claim = '', ...meta] = node.head.split(/\n(?=\s*(?:Evidence|Impact):)/);
-    const id = ITEM_ID.exec(claim)?.[1] ?? null;
-    const claimHtml = id ? `<a class="iid" href="#${id}">${id}</a>${inline(claim.slice(id.length))}` : inline(claim);
+    const { title, body, id } = titleOf(claim);
+    const claimHtml = `${title}${body ? `<span class="i-body">${inline(body)}</span>` : ''}`;
     const metaHtml = meta.map((m) => `<span class="meta">${inline(m.trim())}</span>`).join('');
     const cases = node.children.filter((c) => c.kind === 'case');
     const casesHtml = cases.length ? `<ul class="cases">${cases.map((c) => `<li data-line="${c.start + 1}">${inline(c.head)}</li>`).join('')}</ul>` : '';
@@ -104,24 +117,14 @@ export function qaHtml(r: QaRender) {
     return { html: `${more.length ? `${more.join(' ')} ` : ''}${claimHtml}${metaHtml}${casesHtml}${context}`, id };
   }
 
-  /**
-   * A 📌 decision: its first line the title (an id first is its anchor), the lines after it the body.
-   * A `🚫` item under it is a rejected alternative — a muted line, not an item of its own.
-   */
+  /** A 📌 decision: a card — the title, the body under it, its rejected alternatives. */
   function decisionHtml(item: QaItem, attrs: string, nested: QaItem[], opts: string): string {
-    const [title = '', ...rest] = item.head.split('\n');
-    const id = ITEM_ID.exec(title)?.[1] ?? null;
-    const titleHtml = id ? `<a class="iid" href="#${id}">${id}</a>${inline(title.slice(id.length))}` : inline(title);
-    const body = rest.join('\n').trim();
+    const { title: titleHtml, body } = titleOf(item.head);
     const bodyHtml = body ? `<div class="d-body">${blocky(body) ? badges(r.block(body)) : inline(body)}</div>` : '';
     const cases = item.children.filter((c) => c.kind === 'case');
     const casesHtml = cases.length ? `<ul class="cases">${cases.map((c) => `<li data-line="${c.start + 1}">${inline(c.head)}</li>`).join('')}</ul>` : '';
     const context = item.context.map((c) => `<blockquote class="context">${r.block(c)}</blockquote>`).join('');
-    const kids = nested.map((n) =>
-      n.glyphs[0] === '🚫'
-        ? `<li class="rejected" data-line="${n.start + 1}"><span class="g">🚫</span><span class="t">${inline(n.head)}</span>${threadHtml(n.replies, 'thread', true)}</li>`
-        : itemHtml(n),
-    );
+    const kids = nested.map((n) => (n.glyphs[0] === '🚫' ? rejectedHtml(n) : itemHtml(n)));
     return (
       `<li class="item decision"${attrs}><div class="head c-row"><span class="g">${glyphButton(DECISION, 'Reply')}</span>` +
       `<span class="h-t"><span class="d-title">${titleHtml}</span>${bodyHtml}${casesHtml}${context}</span>${TGT}</div>` +
@@ -145,6 +148,12 @@ export function qaHtml(r: QaRender) {
       : '';
     const nested = item.children.filter((c) => c.kind === 'item') as QaItem[];
     const nestedHtml = nested.length ? `<ul class="items">${nested.map(itemHtml).join('')}</ul>` : '';
+    // a ✅ is a decision too: its 🚫 children are rejected alternatives
+    const alts = status === '✅' ? nested.filter((n) => n.glyphs[0] === '🚫') : [];
+    const kept = nested.filter((n) => !alts.includes(n));
+    const settledKids =
+      (alts.length ? `<ul class="items alts">${alts.map(rejectedHtml).join('')}</ul>` : '') +
+      (kept.length ? `<ul class="items">${kept.map(itemHtml).join('')}</ul>` : '');
     const tip = ask ? 'Answer' : 'Reply, or set its stage';
     const attrs =
       ` data-qa="${item.kind}" data-line="${item.start + 1}" data-hash="${item.hash}" data-k="${esc(st.key)}"` +
@@ -165,7 +174,7 @@ export function qaHtml(r: QaRender) {
       return (
         `<li class="item settled${status === '🔵' ? ' info' : ''}"${attrs}><details class="settled"><summary>${mark}` +
         `<span class="t"><span class="t-q">${html}</span>${answer}</span>${TGT}</summary>` +
-        `${opts}${threadHtml(item.replies, 'thread', CLOSED.includes(status) || status === '🔵')}${nestedHtml}</details></li>`
+        `${opts}${threadHtml(item.replies, 'thread', CLOSED.includes(status) || status === '🔵')}${settledKids}</details></li>`
       );
     }
     const cls = [
