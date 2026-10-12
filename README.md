@@ -46,16 +46,11 @@ mdhouse service install      # starts now and at every login, serving the saved 
 
 ## ❖ What you get
 
-- ⚡ **Live filesystem updates via WebSocket instead of polling** — a file changes, the page
-  changes. No reload button.
-- 🔥 ♨️ **Freshness indicators** — 🔥 changed in the last 10 minutes, ♨️ in the last hour, then
-  the color fades to grey. You see at once what is new.
-- 🌿 **Git integration** — who changed what and when, what is new since yesterday. Commit with
-  one button.
-- ⊟ **Markdown diffs** — what changed is marked right on the page: added in green, removed in
-  red, as easy to read as the doc itself.
-- 🖋 **Many standards supported** — tables, checklists, diagrams, code in color, pictures,
-  PDFs, video. It looks like on GitHub, or better — [Markdown](doc/markdown.md)
+- ⚡ **Live filesystem updates via WebSocket instead of polling** — a file changes, the page changes. No reload button.
+- 🔥 ♨️ **Freshness indicators** — 🔥 changed in the last 10 minutes, ♨️ in the last hour, then fades to grey.
+- 🌿 **Git integration** — who changed what and when, what is new since yesterday. Commit with one button.
+- ⊟ **Markdown diffs** — what changed is marked right on the page: added in green, removed in red, as easy to read as the doc itself.
+- 🖋 **Many standards supported** — tables, checklists, diagrams, colored code, pictures, PDFs, video — [more](doc/markdown.md)
 - 📁 **All your files in one place** — every folder, every repo, one tree on the left.
 - 🔍 **Find anything** — type a word, jump to the exact line.
 - 🕐 **Recent and Mine** — what changed lately, and what *you* changed.
@@ -84,8 +79,7 @@ Writes need a folder served with `--rw`: `mdhouse -p --rw folder(s)`. The markup
 **Answer an agent's questions**
 
 - `/ask-questions` writes `- ❓ …` items — with a `💡` proposal or `( )` / `[ ]` options
-- You click the ❓ (or the item), write, **💬** — Ctrl+Enter; Ctrl+Shift+Enter saves and opens the
-  next one. On a 💡: ✓ agree / ✗ cancel. A click picks an option. ⚠️ need more, 🔍 more (Alt+1…9)
+- You click the ❓ (or the item), write, **💬** — Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next one. On a 💡: ✓ agree / ✗ cancel. A click picks an option. ⚠️ need more, 🔍 more (Alt+1…9)
 - `/resolve-questions` carries the answers into `DECISIONS.md` / `TODO.md` and marks them ✅
 
 <img src="doc/rw-answer.png" alt="An answered question folded open, a question with an agent's proposal and its agree, cancel and reply buttons, a question with two options, and a question with its answer form open: the 💬 save button and the numbered actions settled, drop, defer, agent, need more, ticket, more, target, then ESC" width="560">
@@ -124,8 +118,7 @@ text is kept
 
 - 📖 **Read-only by default.** Write access - cli only `mdhouse -p --rw dir` (-p = save)
 - ✏️ **Small, checked writes** — a tick, an answer, a block under a heading, a commit
-- 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`; users and allowed networks —
-  [Access](doc/access.md)
+- 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`; users and allowed networks — [Access](doc/access.md)
 - ⚙ Your settings live in `~/.config/mdhouse/`, never inside a served folder
 
 ---
