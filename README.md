@@ -6,6 +6,8 @@
 
 **A Markdown workspace on your own machine — read every file, answer questions, triage issues and commit, together with your AI agents.**
 
+**TL;DR** — [mdhouse in short](Readme2.md)
+
 > ✦ **In ten seconds.** Point it at a folder — notes, a repo, a pile of repos — and get one
 > browser tab with a file tree, instant search, and a live *what changed lately* view fed by
 > git. Questions and issues your agent writes into a `.md` file become buttons on the page; your
@@ -44,35 +46,24 @@ mdhouse service install      # starts now and at every login, serving the saved 
 
 ## ❖ What you get
 
-Live, git-aware — GitHub Markdown and more flavors
-
-- 📁 **Browse** — a sidebar tree of `.md` / `.mdx` files, in three widths (`Ctrl+B`), with
-  age, size, git status (`M` `U` `S` `D`), and stubs marked **∅**
-- 🔍 **Search** — file names as you type; full text through ripgrep, a hit opens *at that line*
-- 🕐 **Recent** and 👤 **Mine** — what changed here, and your own work, uncommitted first; plus
-  📄 **Files** and ★ **Favs**
+- ⚡ **Live filesystem updates via WebSocket instead of polling** — a file changes, the page
+  changes. No reload button.
+- 🔥 ♨️ **Freshness indicators** — 🔥 changed in the last 10 minutes, ♨️ in the last hour, then
+  the color fades to grey. You see at once what is new.
+- 🌿 **Git integration** — who changed what and when, what is new since yesterday. Commit with
+  one button.
+- ⊟ **Markdown diffs** — what changed is marked right on the page: added in green, removed in
+  red, as easy to read as the doc itself.
+- 🖋 **Many standards supported** — tables, checklists, diagrams, code in color, pictures,
+  PDFs, video. It looks like on GitHub, or better — [Markdown](doc/markdown.md)
+- 📁 **All your files in one place** — every folder, every repo, one tree on the left.
+- 🔍 **Find anything** — type a word, jump to the exact line.
+- 🕐 **Recent and Mine** — what changed lately, and what *you* changed.
 
 ![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and the age colored by how fresh it is](doc/recent.png)
 
-- 🗎 **Every file at its own address** — `/<folder>/<path>`: Markdown rendered; code highlighted
-  with line numbers (`#L557`); images, PDFs, video, audio; HTML sandboxed (⟨/⟩ source); anything
-  else a download. Nothing under `.git`
-- 📄 **Document page** — breadcrumb, age, author, `N/M done` for checkboxes, a table of contents
-  and the file's last five commits; a file named in the text (`src/cli.ts:557`) is a green link
-- ❓ **Questions and issues on the page** — `- ❓ …` and `- 🔴 …` items, threads, 💡 proposals,
-  options, a strip to count and filter them — [Questions and answers](doc/qa.md)
-- 📂 **Folder pages** — every file under a folder in one table (**ALL | MD**), newest first or
-  A–Z, with filters
-- 🌿 **Git view** — `/<folder>/?git`, also the front page: branch, last pull and commit, what
-  changed grouped by commit; Favs, Mine, Commits, Files
-- ⊟ **Diffs** — what changed, as a patch or ▤ laid over the whole document, rendered
-- ↔ full width · ★ favorite · 🔇 mute · 🔗 copy link · ✎ open in your editor
-- 🔥 **Ages as a heat map** — red under ten minutes, fading to grey over the week
-- 🖋 **Renders properly** — GFM, alerts, footnotes, shiki highlighting, mermaid, front matter,
-  [and more](doc/markdown.md)
-- 🗂 **Finds your repos** — point it at a folder of repositories; `.gitignore` is honored
-- ⚡ **Live** — edit in your editor, or let an agent edit, and the page follows, over a WebSocket
-- ☀️ / 🌙 light and dark follow your system; `?` shows the shortcuts
+- 🔒 **Safe** — nothing is copied or uploaded; it only reads, unless you allow writing.
+- 🌙 Light and dark, on a phone too.
 
 ---
 
