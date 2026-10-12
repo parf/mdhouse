@@ -1,34 +1,36 @@
-# mdhouse — an outside read
+# 🏠 mdhouse — in short
 
-mdhouse is a local web viewer for Markdown trees: point it at one or more folders and it serves
-a fast browser UI with file tree, search, Git-aware recency/history, diffs, favorites/mutes,
-live updates over WebSocket, and read-only-by-default behavior. It does not import or index
-content into a separate store; it reads files directly from disk. The repo is Bun + TypeScript
-+ Preact, with markdown-it, shiki, Mermaid, optional git, and optional ripgrep. The CLI
-launches a background server (or a systemd user service), and a second `mdhouse <dir>` call
-hands the new root to the already-running instance over a `0600` Unix socket in
-`~/.config/mdhouse/`. ([mdhouse repository](https://github.com/parf/mdhouse))
+Your notes and docs, in one browser tab. Your AI writes questions — you answer with a click.
 
-Since 1.1 it also writes — but only in folders served with `--rw`, and only small, checked
-edits: tick a checkbox, answer a question, add a note under a heading. That turns a plan folder
-into something you can work through in the browser, not just read.
+## 📖 1. mdHouse as a Reader
 
-## A few design choices stand out as especially good
+- ⚡ **Live filesystem updates via WebSocket instead of polling** — a file changes, the page
+  changes. No reload button.
+- 🔥 ♨️ **Freshness indicators** — 🔥 changed in the last 10 minutes, ♨️ in the last hour, then
+  the color fades to grey. You see at once what is new.
+- 🌿 **Git integration** — who changed what and when, what is new since yesterday. Commit with
+  one button.
+- ⊟ **Markdown diffs** — what changed is marked right on the page: added in green, removed in
+  red, as easy to read as the doc itself.
+- 🖋 **Many standards supported** — tables, checklists, diagrams, code in color, pictures,
+  PDFs, video. It looks like on GitHub, or better.
+- 📁 **All your files in one place** — every folder, every repo, one tree on the left.
+- 🔍 **Find anything** — type a word, jump to the exact line.
+- 🕐 **Recent and Mine** — what changed lately, and what *you* changed.
+- 🔒 **Safe** — nothing is copied or uploaded; it only reads, unless you allow writing.
+- 🌙 Light and dark, on a phone too.
 
-- Read-only by default; write access is per folder, granted only from the CLI, and every write
-  goes through one guarded path.
-- Each write is fingerprinted: the page sends a hash of the lines it showed, and the server
-  refuses if the file has moved on — a stale tab cannot clobber anything, and the draft is kept.
-- Edits are written in the document's own syntax — an answer to `> ?` is `> 💬`, to `**Q:**` is
-  `**A:**`, to `- [ ]` an indented quote — so the file stays as its author wrote it and reads the
-  same on GitHub.
-- Question / disagreement / answer blocks (❓ ⁉️ 💬) in five Markdown forms, plus checkbox and
-  status-glyph items, all render alike — a Q&A log reads at a glance.
-- No indexing/import step — good fit for repos and constantly changing `Plans/` trees.
-- Git is treated as first-class metadata, not just an optional decoration.
-- Recent/Mine views are more useful than a conventional "wiki home page" for active engineering
-  docs.
-- Live filesystem updates via WebSocket instead of polling.
-- The rendered diff / marked-up document idea is stronger than plain source diffs for Markdown.
-- The freshness scheme: 🔥 under 10 min, ♨️ for the rest of the first hour, then amber/grey age
-  coloring.
+## 👾 2. mdhouse as an AI Work tool
+
+- ❓ **Your AI asks — you click** — its questions become buttons on the page. Type the answer,
+  it goes back into the file. The AI reads it and goes on.
+- 💡 **The AI suggests — you decide** — ✓ agree or ✗ cancel. One click.
+- 🔴 🟠 ⚪ **Problems, sorted** — the AI finds bugs and marks how bad each is. You pick what to fix.
+- 🎯 **Point at the work** — mark the items you want done next; the AI does just those.
+- ✅ **Done is visible** — fixed items turn green and fold away, with the commit next to them.
+- 📌 **Decisions stay put** — the important rules stand out, so nobody (human or AI) forgets them.
+- 🗂 **One plain file is the whole conversation** — no chat history to lose. It reads the same on
+  GitHub.
+- 🛡 **No accidents** — every write is small and checked; if the file changed meanwhile, it stops
+  and keeps your text.
+- 🤝 **Any AI** — give it [agent-markup.md](doc/agent-markup.md) and say "do like this".
