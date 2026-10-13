@@ -1,13 +1,13 @@
 # Agent Bus — AI agent chat panel
 
-Your AI sessions already run on this machine, each in its own terminal. mdhouse puts them beside
-the document: you read, you see what needs doing, you tell the agent right there — and its answer
-comes back next to the page.
+**Main idea — AI agent chat about the current page.** History preserved!
 
 ![The Agent Bus panel on the right of a document: the agent it asks, the requests and the agent's answers, the note and the buttons](agent-bus.png)
 
 ## The idea
 
+- 💬 Chat with an AI agent about the page you are on — it reads the same file
+- 💾 History preserved — every page keeps its own chat
 - 📄 The document is the shared workspace; the chat only points an agent at it
 - 🔁 The agent edits the file → the page follows live → you answer on the page → "updated" hands it back
 - 🎯 One click asks for the usual next step: re-read, do the 🎯 items, carry answers over, review
