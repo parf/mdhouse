@@ -181,7 +181,8 @@ contents list, so a heading link and its contents entry cannot disagree.
 - The request text names the file by its absolute path and the page by its URL (`requestText`)
 - `/api/doc` → `ab: [names]` from `<!-- AB: … -->` — only while on
 - Page: `AgentBusPanel` — a chat panel on the right, `position: fixed`; `main` and the top strip get `margin-right` via `.app:has(.ab-panel)`; full width ≤720px. `a` / the button opens it and turns the left sidebar off (`onAgentPanel`). Closed, it stays mounted (returns null) so its jobs keep listening and the button shows waiting / answered
-- The conversation per document: a module `Map` keyed by the wire path, and its last 20 requests with their events in localStorage `mdhouse.ab.<root>/<rel>`; live events reach it through `src/ui/api.ts` `liveListeners`. A kept job still waiting that `/api/ab/job` no longer knows (404 — mdhouse restarted) is shown `lost`
+- **Every page keeps its last 20 requests** with their answers — localStorage `mdhouse.ab.<root>/<rel>` (`KEEP` in `src/ui/AgentBusPanel.tsx`); back after a reload
+- The conversation per document: a module `Map` keyed by the wire path, saved to that key; live events reach it through `src/ui/api.ts` `liveListeners`. A kept job still waiting that `/api/ab/job` no longer knows (404 — mdhouse restarted) is shown `lost`
 - A restart of mdhouse drops every waiting job: reply first, then restart
 - `agentBus.filter` — a regex per line against the name without `#` (default `^claude ^codex ^opencode`), narrows `/api/ab` agents; a default agent always stays; `POST /api/ab/filter` refuses a line that is not a regex
 
