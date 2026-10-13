@@ -68,6 +68,10 @@ describe('agent bus — helpers', () => {
   test('<!-- AB: … --> names the agents a page asks: several, in order, no repeats', () => {
     expect(abTargets('# x\n<!-- AB: #claude/a@h -->\ntext <!--AB: #claude/b@h, #Claude/A@h -->')).toEqual(['#claude/a@h', '#claude/b@h']);
     expect(abTargets('<!-- a comment -->')).toEqual([]);
+    // shown as code: an example, not a comment
+    expect(abTargets('- AI includes `<!-- AB: agent-bus name -->`; …\n')).toEqual([]);
+    expect(abTargets('```md\n<!-- AB: #claude/x@h -->\n```\n<!-- AB: #claude/y@h -->\n')).toEqual(['#claude/y@h']);
+    expect(abTargets('~~~\n<!-- AB: #claude/x@h -->\n')).toEqual([]);
   });
 
   test('own name: #mdhouse@<host>, in the bus alphabet', () => {

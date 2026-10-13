@@ -65,9 +65,13 @@ const ALIVE_MS = 90_000;
 /** Jobs kept for a page that reconnects. */
 const JOBS_KEPT = 50;
 
-/** `<!-- AB: #claude/x@host -->` in a document: the agents it asks, in order, no repeats. */
+/**
+ * `<!-- AB: #claude/x@host -->` in a document: the agents it asks, in order, no repeats. One shown
+ * as code — in a fenced block or a `code span` — is an example, not a comment.
+ */
 export function abTargets(src: string): string[] {
-  const names = [...src.matchAll(/<!--\s*AB:\s*([\s\S]*?)\s*-->/g)].flatMap((m) => m[1]!.split(/[\s,]+/));
+  const text = src.replace(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[^\n]*$|(?![\s\S]))/gm, '').replace(/(`+)(?!`)[\s\S]*?[^`]\1(?!`)/g, '');
+  const names = [...text.matchAll(/<!--\s*AB:\s*([\s\S]*?)\s*-->/g)].flatMap((m) => m[1]!.split(/[\s,]+/));
   return [...new Set(names.map((n) => n.trim().toLowerCase()).filter(Boolean))];
 }
 
