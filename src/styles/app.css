@@ -1879,7 +1879,8 @@ button.sync-chip { cursor: pointer; }
   white-space: nowrap; }
 /* row 1: the default (wide) and the note; row 2: the three asks */
 .ab-bar button:nth-child(1) { grid-column: span 4; }
-.ab-bar button:hover:not(:disabled) { border-color: var(--border-strong); background: var(--bg-raised); }
+.ab-bar button:not(.default):hover:not(:disabled) { border-color: var(--border-strong); background: var(--bg-raised); }
+.ab-bar button.default:hover:not(:disabled) { filter: brightness(1.08) saturate(1.1); box-shadow: 0 2px 8px color-mix(in srgb, var(--qa-answer) 35%, transparent); }
 .ab-bar button.default { background: linear-gradient(135deg, var(--qa-answer), color-mix(in srgb, var(--qa-answer) 70%, var(--accent)));
   color: #fff; border-color: transparent; font-weight: 600; text-shadow: 0 1px 1px rgb(0 0 0 / 0.35); }
 .ab-bar button:disabled { opacity: 0.45; cursor: default; }
