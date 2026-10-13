@@ -120,7 +120,7 @@ text is kept
 - Talk to an agent of your choice or a specific one associated with a page
 - `a` — a chat panel on the right: **Updated — reply**, Do 🎯, Resolve, Review, or a note
 - Answers come back into the panel; each page keeps its last 20
-- On with `mdhouse --agent-bus` — [Agent Bus integration](doc/agent-bus.md)
+- On with `mdhouse --agent-bus` [Agent Bus integration](doc/agent-bus.md)
 
 ---
 
