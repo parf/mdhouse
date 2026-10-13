@@ -172,7 +172,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 `src/lib/agent-bus.ts` — [ab-integration.md](ab-integration.md). Off until `mdhouse --agent-bus` (prefs `agentBus.enabled`); every `/api/ab*` POST is 404 while off.
 
-- The daemon over its account socket (`user-<login>.sock`, Bun `fetch({unix})`) — own client, not `@agent-bus/client` (not on npm)
+- The daemon over its account socket (`user-<login>.sock`, Bun `fetch({unix})`) — own client, not `@agent-bus/client` (not on npm); or `http(s)://host:port` with `agentBus.token` (asked for by `--agent-bus <url>`, never in argv, never sent to the page)
 - mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), token minted, every call with it
 - On connect it drains its own inbox: replies to an earlier run's jobs, which died with it
 - **Never `AGENT_BUS_*` from the environment** — a mdhouse started from an AI session's shell would act as that session
@@ -213,7 +213,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
-  argon2id hash, `hostNames`), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and `agentBus` (`enabled`, `socket` —
+  argon2id hash, `hostNames`), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and `agentBus` (`enabled`, `socket` — a path or `http(s)://`, `token` for a URL —
   `--agent-bus [on|off|<x.sock>]`; `default` agents and the names `filter` — the settings page), and
   `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
   `writable` is a getter — `--rw` asked, or under an auto-rw path with the switch on — so the

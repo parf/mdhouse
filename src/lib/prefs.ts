@@ -66,8 +66,10 @@ interface PrefsFile {
 export interface AgentBusConfig {
   /** Turned on and off from the CLI only. */
   enabled: boolean;
-  /** The daemon's socket; empty: `/run/agent-bus/user-<login>.sock`. */
+  /** The daemon: a socket path or `http(s)://host:port`; empty: `/run/agent-bus/user-<login>.sock`. */
   socket: string;
+  /** The credential for an `http(s)://` daemon — never sent to the page. */
+  token: string;
   /** The agents a page asks when it names none (`<!-- AB: … -->`). */
   default: string[];
   /** Which agents the lists show: a regex per line, against the name without its `#`; none — every one. */
@@ -128,7 +130,7 @@ const fresh = (): PrefsFile => ({
   server: {},
   access: { allow: [], users: {}, hostNames: [] },
   autoRw: [],
-  agentBus: { enabled: false, socket: '', default: [], filter: [...DEFAULT_AB_FILTER] },
+  agentBus: { enabled: false, socket: '', token: '', default: [], filter: [...DEFAULT_AB_FILTER] },
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
@@ -182,6 +184,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     agentBus: {
       enabled: parsed.agentBus?.enabled === true,
       socket: typeof parsed.agentBus?.socket === 'string' ? parsed.agentBus.socket : '',
+      token: typeof parsed.agentBus?.token === 'string' ? parsed.agentBus.token : '',
       default: Array.isArray(parsed.agentBus?.default) ? parsed.agentBus.default.filter((n) => typeof n === 'string') : [],
       filter: Array.isArray(parsed.agentBus?.filter) ? parsed.agentBus.filter.filter((n) => typeof n === 'string') : [...DEFAULT_AB_FILTER],
     },

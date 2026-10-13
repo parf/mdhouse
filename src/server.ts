@@ -136,7 +136,7 @@ export async function serve(opts: ServeOptions) {
   };
   /** The Agent Bus integration — on and off from the CLI (`--agent-bus`); its events go to every tab. */
   const bus = new AgentBus(
-    () => prefs.agentBus.socket || defaultSocket(),
+    () => ({ addr: prefs.agentBus.socket || defaultSocket(), token: prefs.agentBus.token }),
     (ev) => server.publish('ab', JSON.stringify({ t: 'ab', ...ev })),
   );
   /**

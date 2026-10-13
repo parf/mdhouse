@@ -88,7 +88,13 @@ export function ownName(host = hostname()): string {
   return `#mdhouse@${realm}`.slice(0, 64);
 }
 
-/** The daemon, as one credential sees it. An empty token on the account socket is the login. */
+/** A daemon over TCP — `http://host:6767`, `https://…` — rather than a unix socket. */
+export const isUrl = (addr: string) => /^https?:\/\//.test(addr);
+
+/**
+ * The daemon, as one credential sees it: a unix socket path or an `http(s)://` address. An empty
+ * token on the account socket is the login; over TCP every call needs one.
+ */
 export class Daemon {
   constructor(
     readonly socket: string,
@@ -96,9 +102,10 @@ export class Daemon {
   ) {}
 
   async call<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T | null> {
-    const res = await fetch(`http://localhost${path}`, {
+    const tcp = isUrl(this.socket);
+    const res = await fetch(`${tcp ? this.socket.replace(/\/+$/, '') : 'http://localhost'}${path}`, {
       method,
-      unix: this.socket,
+      ...(tcp ? {} : { unix: this.socket }),
       headers: { 'content-type': 'application/json', ...(this.token ? { 'x-agent-bus-token': this.token } : {}), ...headers },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     }).catch((err: Error) => {
@@ -186,7 +193,8 @@ export class AgentBus {
   private readonly jobs = new Map<string, AbEvent[]>();
 
   constructor(
-    private readonly socket: () => string,
+    /** Where the daemon is, and the credential to reach it with (empty: the account socket's login). */
+    private readonly where: () => { addr: string; token: string },
     private readonly emit: (ev: AbEvent) => void,
     opts: { me?: string; answerMs?: number; wait?: string } = {},
   ) {
@@ -199,10 +207,12 @@ export class AgentBus {
 
   /** The daemon as mdhouse's agent: registered if missing, its token minted. Retried after a failure. */
   private connect(): Promise<Daemon> {
-    const socket = this.socket();
-    if (this.agent && this.agentSocket === socket) return this.agent;
-    this.agentSocket = socket;
-    const owner = new Daemon(socket);
+    const { addr: socket, token } = this.where();
+    // a new address or credential: connect again
+    const key = `${socket}\n${token}`;
+    if (this.agent && this.agentSocket === key) return this.agent;
+    this.agentSocket = key;
+    const owner = new Daemon(socket, token);
     this.agent = (async () => {
       const rec = { name: this.me, kind: 'agent', descr: 'mdhouse — pages ask agents', personal: true, allow: ['@owner'] };
       // create only: an existing record keeps what its owner set on it

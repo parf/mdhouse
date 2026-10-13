@@ -8,18 +8,16 @@ import { abTargets, AgentBus, badPatterns, isAlive, passes, ownName, requestText
  * A fake `agent-busd` on a temp unix socket: register (412 when it exists), token, ls, send, and a
  * filtered consume served from what `reply` queued for a tag.
  */
-async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: number; reply?: (to: string) => Partial<Envelope>[] } = {}) {
+async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: number; tcp?: number; reply?: (to: string) => Partial<Envelope>[] } = {}) {
   let stale = opts.stale ?? 0;
   const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-'));
   const socket = join(dir, 'user-test.sock');
   const calls: string[] = [];
   const queued = new Map<string, Partial<Envelope>[]>();
-  const server = Bun.serve({
-    unix: socket,
-    async fetch(req) {
+  const handler = async (req: Request): Promise<Response> => {
       const url = new URL(req.url);
       const token = req.headers.get('x-agent-bus-token') ?? '';
-      calls.push(`${req.method} ${url.pathname}${token ? ' +token' : ''}`);
+      calls.push(`${req.method} ${url.pathname}${token === 'tok' ? ' +token' : token ? ` +${token}` : ''}`);
       if (url.pathname === '/register') {
         if (opts.exists && req.headers.get('if-none-match') === '*') return new Response('exists', { status: 412 });
         return Response.json(await req.json());
@@ -38,13 +36,15 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: n
         return next ? Response.json(next) : new Response(null, { status: 204 });
       }
       return new Response('not found', { status: 404 });
-    },
-  });
+  };
+  const server = Bun.serve({ unix: socket, fetch: handler });
+  const tcp = opts.tcp ? Bun.serve({ port: opts.tcp, hostname: '127.0.0.1', fetch: handler }) : null;
   return {
     socket,
     calls,
     stop: async () => {
       server.stop(true);
+      tcp?.stop(true);
       await rm(dir, { recursive: true, force: true });
     },
   };
@@ -121,7 +121,7 @@ describe('agent bus — the service, against a fake daemon', () => {
       ],
     });
     try {
-      const bus = new AgentBus(() => d.socket, () => {}, { me: '#mdhouse@h' });
+      const bus = new AgentBus(() => ({ addr: d.socket, token: '' }), () => {}, { me: '#mdhouse@h' });
       expect(await bus.agents()).toEqual([
         { name: '#claude/a@h', descr: 'a', alive: true },
         { name: '#claude/b@h', descr: '', alive: false },
@@ -141,7 +141,7 @@ describe('agent bus — the service, against a fake daemon', () => {
     });
     const c = collector();
     try {
-      const bus = new AgentBus(() => d.socket, c.emit, { me: '#mdhouse@h', answerMs: 50, wait: '0s' });
+      const bus = new AgentBus(() => ({ addr: d.socket, token: '' }), c.emit, { me: '#mdhouse@h', answerMs: 50, wait: '0s' });
       const job = await bus.ask(['#claude/a@h', '#claude/b@h', '#nobody@x', '#claude/c@h'], 'hi');
       await c.until(8);
       const by = (to: string) => c.events.filter((e) => e.to === to).map((e) => (e.body ? `${e.kind}: ${e.body}` : e.kind));
@@ -157,8 +157,19 @@ describe('agent bus — the service, against a fake daemon', () => {
     }
   });
 
+  test('over TCP: http://host:port, the configured token for the owner calls, then its own', async () => {
+    const d = await fakeDaemon({ tcp: 61789, agents: [{ name: '#claude/a@h', kind: 'agent', readers: 1 }] });
+    try {
+      const bus = new AgentBus(() => ({ addr: 'http://127.0.0.1:61789/', token: 'user-tok' }), () => {}, { me: '#mdhouse@h' });
+      expect((await bus.agents()).map((a) => a.name)).toEqual(['#claude/a@h']);
+      expect(d.calls).toEqual(['POST /register +user-tok', 'POST /token +user-tok', 'GET /consume +token', 'GET /ls +token']);
+    } finally {
+      await d.stop();
+    }
+  });
+
   test('no daemon: status says why, and connecting is tried again next time', async () => {
-    const bus = new AgentBus(() => '/nonexistent/agent-bus.sock', () => {});
+    const bus = new AgentBus(() => ({ addr: '/nonexistent/agent-bus.sock', token: '' }), () => {});
     const st = await bus.status();
     expect(st.connected).toBe(false);
     expect(st.error).toContain('unreachable');

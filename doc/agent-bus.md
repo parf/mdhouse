@@ -28,7 +28,16 @@ Settings → Agent Bus: the default agents, which names to list.
 
 ## Remote Agent Bus
 
-Only a local socket for now — forward the remote one over ssh:
+Over TCP, with a token:
+
+```sh
+mdhouse --agent-bus http://host:6767     # asks for the token, or reads it from stdin
+```
+
+- The token is saved in `~/.config/mdhouse/prefs.json` (0600), never in argv; `--agent-bus <x.sock>` drops it
+- Not `AGENT_BUS_TOKEN`: in an AI session's shell that is the session's own — mdhouse would act as it
+
+Or forward the remote socket over ssh — no token:
 
 ```sh
 ssh -N -o StreamLocalBindUnlink=yes \

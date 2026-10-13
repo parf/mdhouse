@@ -44,8 +44,9 @@ Options
                        --host-name reset: localhost and IP addresses again
       --auto-rw <p,…>  folders under these are writable (switch in settings); saved
                        --auto-rw reset: no such paths
-      --agent-bus [on|off|<x.sock>]  the Agent Bus integration: a page asks an AI
-                       session to read it and reply; saved
+      --agent-bus [on|off|<x.sock>|<http://host:port>]  the Agent Bus integration:
+                       a page asks an AI session to read it and reply; saved. A remote
+                       daemon asks for its token (or reads it from stdin)
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
@@ -133,7 +134,7 @@ function parse(argv: string[]): Options {
       case '--rm': o.rm = true; break;
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       // the value is optional: only on / off / a .sock path is taken — anything else is a folder
-      case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$/.test(argv[i + 1] ?? '') ? next() : 'on'; break;
+      case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$|^https?:\/\//.test(argv[i + 1] ?? '') ? next() : 'on'; break;
       case '--host-name': o.hostNames = [...(o.hostNames ?? []), ...next().split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)]; break;
       case '--allow': o.allow = [...(o.allow ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--help': console.log(USAGE); process.exit(0);
@@ -328,12 +329,12 @@ const printAccess = (): void => {
  * The password for `user-add <login>`: asked for on a terminal with echo off, else the first line
  * of stdin — never in argv, where shell history and the process list keep it.
  */
-async function readPassword(): Promise<string> {
+async function readPassword(label = 'password'): Promise<string> {
   const tty = !!process.stdin.isTTY;
   const echo = (on: boolean) => {
     if (tty) Bun.spawnSync(['stty', on ? 'echo' : '-echo'], { stdin: 'inherit' });
   };
-  if (tty) process.stderr.write('password: ');
+  if (tty) process.stderr.write(`${label}: `);
   echo(false);
   process.once('SIGINT', () => {
     echo(true);
@@ -413,8 +414,15 @@ if (opts.autoRw) {
 
 if (opts.agentBus) {
   const off = opts.agentBus === 'off';
-  const socket = opts.agentBus.endsWith('.sock') ? canonical(opts.agentBus) : undefined;
-  const ab = await prefs.setAgentBus({ enabled: !off, ...(socket ? { socket } : {}) });
+  const url = /^https?:\/\//.test(opts.agentBus) ? opts.agentBus.replace(/\/+$/, '') : undefined;
+  const socket = opts.agentBus.endsWith('.sock') ? canonical(opts.agentBus) : url;
+  // a remote daemon needs a credential: asked for, never in argv; a socket is the login's own
+  const token = url ? (await readPassword('agent bus token')).trim() : socket ? '' : undefined;
+  if (url && !token) {
+    console.error('mdhouse: --agent-bus <url> — no token given (a token for your login on that daemon)');
+    process.exit(2);
+  }
+  const ab = await prefs.setAgentBus({ enabled: !off, ...(socket ? { socket } : {}), ...(token !== undefined ? { token } : {}) });
   console.log(`mdhouse  agent-bus:  ${ab.enabled ? `on  ${ab.socket || '(default socket)'}` : 'off'}`);
   if (!opts.dirs.length) process.exit(0);
 }
