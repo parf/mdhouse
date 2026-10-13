@@ -115,7 +115,7 @@ text is kept
 
 ---
 
-## 🗨 Agent Bus
+## 🗨 Agent Bus - AI Agent Chat Panel
 
 - Talk to an agent of your choice or a specific one associated with a page
 - `a` opens AI agent chat panel on the right (like in VSCode/Antigravity)
