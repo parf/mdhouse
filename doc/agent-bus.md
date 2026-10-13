@@ -2,6 +2,8 @@
 
 **Main idea — AI agent chat about the current page.** History preserved!
 
+Runs on [Agent Bus](https://github.com/parf/ai-agent-bus) — https://github.com/parf/ai-agent-bus
+
 ![The Agent Bus panel on the right of a document: the agent it asks, the requests and the agent's answers, the note and the buttons](agent-bus.png)
 
 ## The idea

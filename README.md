@@ -120,7 +120,7 @@ text is kept
 - Talk to an agent of your choice or a specific one associated with a page
 - `a` opens AI agent chat panel on the right (like in VSCode/Antigravity)
 - Answers come back into the panel; each page keeps its last 20
-- details - [Agent Bus integration](doc/agent-bus.md)
+- details - [Agent Bus integration](doc/agent-bus.md) · Agent Bus: https://github.com/parf/ai-agent-bus
 
 ---
 
