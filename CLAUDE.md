@@ -77,7 +77,10 @@ For findings, reviews and task status — in docs, pages and replies; not decora
   + `.md` → 404 · read-only root → 403 · `queueWrite(loc.abs)` · re-read, `lineHash` → 409
   `{error, reason: 'stale'}` · `registry.writeFile()` (the only write to a tree).
 - **Git write:** `gitWrite()`, then `queueWrite('git:' + repo)` — one at a time per repo.
-- Errors: `fail(status, msg)` → `{error}`: 400 · 403 · 404 · 409 stale · 413 too long · 421 bad Host.
+- Errors: `fail(status, msg)` → `{error}`: 400 · 401 login · 403 · 404 · 409 stale · 413 too long · 421 bad Host ·
+  500 git / internal · 503 agent bus unreachable.
+- Agent Bus (`lib/agent-bus.ts`): never `AGENT_BUS_*` from the env — mdhouse talks as its own `#mdhouse@<host>`;
+  every `/api/ab*` POST is 404 while off.
 - A request value becomes a path only through `registry.resolve`. git/rg run as argv arrays,
   `--` before paths; a `rev` must match `/^[0-9a-f]{4,40}$/`.
 - `opts.noGit` short-circuits every route that runs git.
@@ -124,7 +127,7 @@ XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
 - look at it in light + dark, and ≤720px
 - headless Chrome — an SPA needs the time budget, without it the DOM is empty:
   `google-chrome --headless=new --disable-gpu --window-size=1280,900 --virtual-time-budget=3000 --screenshot=$S/a.png <url>`
-  (`--dump-dom` the same way); clicks: `--remote-debugging-port` + a small CDP script in `$S`
+  (`--dump-dom` the same way); clicks: `--remote-debugging-port=9333` + `scripts/cdp.ts` (usage in its first line)
 - never install/uninstall `mdhouse.service` in tests — `service --port <spare>` with a temp
   `XDG_CONFIG_HOME`, then `mdhouse service uninstall --port <spare>` (the unit lands in
   `~/.config/systemd/user` whatever the config)
@@ -180,7 +183,7 @@ Only on "publish".
 - [ ] Pack, smoke-test and publish from a clean checkout of it — `npm pack` / `npm publish` take the
       working tree, uncommitted edits included: `git worktree add $S/rel-src HEAD && cd $S/rel-src && bun install`
 - [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, no PNGs —
-      ~61 files, ~216 kB (2.0); much more means a stray file
+      ~65 files, ~234 kB (2.1); much more means a stray file
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh
       T=$S/rel; mkdir -p $T/prefix $T/cfg $T/notes
