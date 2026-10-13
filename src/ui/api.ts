@@ -75,7 +75,8 @@ export type AbInfo =
   | { enabled: false }
   | { enabled: true; me: string; socket: string; connected: boolean; error?: string; default: string[]; filter: string[]; agents: BusAgent[] };
 
-export type AbKind = 'sent' | 'ack' | 'answer' | 'done' | 'timeout' | 'error';
+/** `lost` is the page's own: a kept job the server no longer knows — mdhouse restarted while it waited. */
+export type AbKind = 'sent' | 'ack' | 'answer' | 'done' | 'timeout' | 'error' | 'lost';
 export interface AbEvent {
   job: string;
   to: string;
@@ -100,7 +101,7 @@ async function get<T>(path: string, params: Record<string, string | number | boo
   const res = await fetch(url);
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
+    throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
   }
   return res.json() as Promise<T>;
 }

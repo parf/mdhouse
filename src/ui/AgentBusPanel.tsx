@@ -29,8 +29,32 @@ interface Chat {
   events: AbEvent[];
 }
 
-/** Each document's conversation, kept for this tab while it stays open. */
+/** Each document's conversation: in memory for the tab, its last `KEEP` requests in localStorage. */
 const chats = new Map<string, Chat>();
+const KEEP = 20;
+const storeKey = (p: string) => `mdhouse.ab.${p}`;
+
+function loadChat(p: string): Chat {
+  try {
+    const got = JSON.parse(localStorage.getItem(storeKey(p)) ?? 'null') as Chat | null;
+    if (Array.isArray(got?.sent) && Array.isArray(got?.events)) return got;
+  } catch {
+    /* unavailable or not ours */
+  }
+  return { sent: [], events: [] };
+}
+
+function saveChat(p: string, chat: Chat): void {
+  const sent = chat.sent.slice(-KEEP);
+  const jobs = new Set(sent.map((s) => s.job));
+  const events = chat.events.filter((e) => jobs.has(e.job));
+  try {
+    if (sent.length) localStorage.setItem(storeKey(p), JSON.stringify({ sent, events }));
+    else localStorage.removeItem(storeKey(p));
+  } catch {
+    /* full or unavailable: the tab still has it */
+  }
+}
 
 /** Events in the order they happened, each once — the live channel and a catch-up can both bring one. */
 const merge = (a: AbEvent[], b: AbEvent[]): AbEvent[] => {
@@ -46,6 +70,7 @@ const STATUS: Record<AbEvent['kind'], string> = {
   done: 'done, no answer',
   timeout: 'no reply in 10 min',
   error: 'refused',
+  lost: 'reply lost — mdhouse restarted',
 };
 
 /** `#claude/home-parf-src-mdhouse@parf.us` → `home-parf-src-mdhouse` — the part a reader tells apart. */
@@ -75,12 +100,15 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chat, setChat] = useState<Chat>(() => chats.get(p) ?? { sent: [], events: [] });
+  const [chat, setChat] = useState<Chat>(() => chats.get(p) ?? loadChat(p));
   const bar = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
 
-  useEffect(() => void chats.set(p, chat), [p, chat]);
+  useEffect(() => {
+    chats.set(p, chat);
+    saveChat(p, chat);
+  }, [p, chat]);
 
   // the agents, fresh each time the panel opens: who is alive changes
   useEffect(() => {
@@ -98,7 +126,12 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
 
   // this document's jobs: their events as they come, and the ones sent before the page knew
   // a job — or while the socket reconnected — from the server's record of it
-  const jobs = chat.sent.map((s) => s.job).join(' ');
+  // only the jobs still waiting on someone: a finished one hears nothing more
+  const final = new Set(['answer', 'done', 'timeout', 'error', 'lost']);
+  const jobs = chat.sent
+    .filter((s) => s.targets.some((to) => !final.has(chat.events.filter((e) => e.job === s.job && e.to === to).at(-1)?.kind ?? '')))
+    .map((s) => s.job)
+    .join(' ');
   useEffect(() => {
     if (!jobs) return;
     const mine = new Set(jobs.split(' '));
@@ -106,7 +139,20 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
       for (const job of mine) {
         void api.abJob(job).then(
           (got) => setChat((c) => ({ ...c, events: merge(c.events, got.events) })),
-          () => {},
+          (err: { status?: number }) => {
+            if (err.status !== 404) return;
+            // the server forgot it — it restarted: a target still waiting will not hear back
+            setChat((c) => {
+              const s = c.sent.find((x) => x.job === job);
+              const open = (s?.targets ?? []).filter((to) => {
+                const ev = c.events.filter((e) => e.job === job && e.to === to).at(-1);
+                return !ev || ev.kind === 'sent' || ev.kind === 'ack';
+              });
+              if (!open.length) return c;
+              const at = Date.now();
+              return { ...c, events: merge(c.events, open.map((to) => ({ job, to, kind: 'lost' as const, at }))) };
+            });
+          },
         );
       }
     };
