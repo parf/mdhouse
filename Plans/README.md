@@ -33,6 +33,8 @@ src/
                  AboutModal, AgentBusPanel, QaEditor, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
                  RootSelect, tree building, icons, formatting
   styles/        one stylesheet, CSS custom properties, light and dark
+scripts/
+  cdp.ts         clicks and screenshots in headless Chrome for UI checks — not in the npm package
 ```
 
 `lib/` is imported by the client for its **types only** — those imports erase at build time —
@@ -178,6 +180,9 @@ contents list, so a heading link and its contents entry cannot disagree.
 - `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `send` (topic `mdhouse`, a fresh tag) → filtered `consume({topic, tag})` until the answer / `done` / 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
 - The request text names the file by its absolute path and the page by its URL (`requestText`)
 - `/api/doc` → `ab: [names]` from `<!-- AB: … -->` — only while on
+- Page: `AgentBusPanel` — a chat panel on the right, `position: fixed`; `main` and the top strip get `margin-right` via `.app:has(.ab-panel)`; full width ≤720px. `a` / the button opens it and turns the left sidebar off (`onAgentPanel`). Closed, it stays mounted (returns null) so its jobs keep listening and the button shows waiting / answered
+- The conversation per document lives in a module `Map` keyed by the wire path — for the tab, gone on reload; live events reach it through `api.ts` `liveListeners`
+- A restart of mdhouse drops every waiting job: reply first, then restart
 - `agentBus.filter` — a regex per line against the name without `#` (default `^claude ^codex ^opencode`), narrows `/api/ab` agents; a default agent always stays; `POST /api/ab/filter` refuses a line that is not a regex
 
 ### Agent skills read the page's states
@@ -238,8 +243,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   --git-common-dir`) outside it — a folder of a checkout, a linked worktree.
 - Live updates are WebSocket pushes. **No polling anywhere**, by decision.
 - `git` and `ripgrep` are used when present and degrade gracefully when absent. The sidebar
-  footer shows `no git` when the git path was unavailable; the ripgrep fallback is currently
-  silent (TODO.md).
+  footer shows `no git` when the git path was unavailable; search results say `no ripgrep` beside
+  "In contents" when the in-process scan ran (`SearchResult.degraded`).
 - `prefs.json` has several writers (the CLI, a daemon per port, the systemd service). Every
   change is read–apply–write against the file as it is now, one at a time within a process
   (`Prefs.queue`) and across processes (`prefs.json.lock`, `O_EXCL`; unchanged 2 s → stale, taken over), written to a uniquely named temp file (0600, the dir created 0700) and renamed
