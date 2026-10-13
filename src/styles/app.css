@@ -1840,6 +1840,8 @@ button.sync-chip { cursor: pointer; }
 
 /* the conversation: the reader's messages on the right, the agents' on the left */
 .ab-log { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; }
+/* the newest sits on the composer, as in any chat; margin, not justify-content, so it still scrolls */
+.ab-log > .ab-turn:first-child { margin-top: auto; }
 .ab-empty { margin: auto; text-align: center; color: var(--fg-faint); font-size: 13px; max-width: 260px; }
 .ab-empty svg { opacity: 0.5; }
 .ab-keys { font-size: 11.5px; }
