@@ -95,7 +95,7 @@ Writes need a folder served with `--rw`: `mdhouse -p --rw folder(s)`. The markup
 **Ask the agent**
 
 - Add your own `- ❓` or `⁉️` (↓ ⇊ → question), set ⏳ agent or 🎯 — the agent replies `💬👾` / `💡👾`
-- 🗨 / `a` — Agent Bus (`mdhouse --agent-bus`): tell a running AI session the page changed, see its answer — [Agent Bus integration](doc/AgentBusIntegration.md)
+- 🗨 / `a` — Agent Bus (`mdhouse --agent-bus`): tell a running AI session the page changed, see its answer — [Agent Bus integration](doc/agent-bus.md)
 
 **Commit from the page**
 
