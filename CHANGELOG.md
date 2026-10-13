@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.2.1 — 2026-10-13
 
 ### Changed
 
@@ -10,6 +10,7 @@
 ### Added
 
 - Agent Bus over TCP: `mdhouse --agent-bus http://host:6767` asks for the token and keeps it in the config
+- `doc/agent-bus.md`: a remote Agent Bus (TCP, or the socket over ssh); README links github.com/parf/ai-agent-bus
 
 ## 2.2.0 — 2026-10-13
 
