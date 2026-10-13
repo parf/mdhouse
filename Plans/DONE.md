@@ -198,11 +198,11 @@ Plan: [ab-integration.md](ab-integration.md). `mdhouse --agent-bus`; a page asks
 
 - Checked end to end against the real daemon: a page on a scratch server asked this repo's own
   Claude session; it went `→ sent` → `✓ read — working` → the answer.
-- The `sent` event used to be lost: it is published before the page has its job id. The popup
+- The `sent` event used to be lost: it is published before the page has its job id. The panel
   now fetches `/api/ab/job` right after it subscribes and merges by (to, kind, at).
 - `<!-- AB: … -->` inside a code span counted — `Plans/TODO.md` named `agent-bus` and `name`.
   Code spans and fences are stripped before matching.
-- The daemon refuses with `{"error": …}`; the popup showed the raw JSON — now its words.
+- The daemon refuses with `{"error": …}`; the panel showed the raw JSON — now its words.
 - A restart drops every job, and their replies stayed queued in `#mdhouse@<host>`'s inbox for
   good. On connect mdhouse drains its own inbox.
 

@@ -4,7 +4,7 @@ import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
 import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff, IconBus } from './icons';
-import { AgentBusModal, type AbState } from './AgentBusModal';
+import { AgentBusPanel, type AbState } from './AgentBusPanel';
 import { fileSize, timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -60,6 +60,8 @@ interface Props {
   /** The file failed to open but is still favorited / muted: the marks the error page offers to take off. */
   deadMarks?: Mark[];
   onUnmark?: (mark: Mark) => void;
+  /** The Agent Bus panel opened: the left sidebar makes room. */
+  onAgentPanel?: () => void;
 }
 
 /**
@@ -112,6 +114,7 @@ export function Doc({
   onReload,
   deadMarks = [],
   onUnmark,
+  onAgentPanel,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
   /** The file line the page landed on (`#L<n>`) — the ✎ link opens the file there. */
@@ -434,6 +437,11 @@ export function Doc({
   const [abOpen, setAbOpen] = useState(false);
   const [abState, setAbState] = useState<AbState>('idle');
   const abOn = doc?.kind === 'md' && !!doc.ab;
+  /** The panel takes the right side; the left sidebar closes to make room. */
+  const openAb = () => {
+    setAbOpen(true);
+    onAgentPanel?.();
+  };
   useEffect(() => {
     if (!abOn) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -441,7 +449,7 @@ export function Doc({
       const t = e.target as HTMLElement;
       if (t.closest('input, textarea, select, [contenteditable]')) return;
       e.preventDefault();
-      setAbOpen(true);
+      openAb();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -1096,7 +1104,7 @@ export function Doc({
                 class={`icon-btn ab-btn ${abState}`}
                 aria-pressed={abOpen}
                 title={`Ask an agent (a)${abState === 'waiting' ? ' — waiting for a reply' : abState === 'answered' ? ' — a reply came' : ''}`}
-                onClick={() => setAbOpen(true)}
+                onClick={() => (abOpen ? setAbOpen(false) : openAb())}
               >
                 <IconBus size={15} />
               </button>
@@ -1112,7 +1120,7 @@ export function Doc({
         </div>
       </header>
       {abOn && (
-        <AgentBusModal
+        <AgentBusPanel
           key={doc.url}
           open={abOpen}
           onClose={() => setAbOpen(false)}

@@ -30,7 +30,7 @@ src/
                  insert, git, gitpage, search, store, watch, control (unix socket), service (systemd unit),
                  loghint (where output goes), agent-bus (the Agent Bus client)
   ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, GitPanel, PageHead, Settings,
-                 AboutModal, AgentBusModal, QaEditor, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
+                 AboutModal, AgentBusPanel, QaEditor, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
                  RootSelect, tree building, icons, formatting
   styles/        one stylesheet, CSS custom properties, light and dark
 ```

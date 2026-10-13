@@ -580,6 +580,7 @@ function App() {
           onOpenRootDir={() => openDirPage('', doc?.root)}
           rootGitUrl={`${dirPageUrl('', doc?.root)}?git`}
           onOpenRootGit={() => go(`${dirPageUrl('', doc?.root)}?git`)}
+          onAgentPanel={() => setSidebar('off')}
         />
         )}
       </main>
