@@ -107,7 +107,7 @@ export class Daemon {
     // nothing arrived before the wait ran out
     if (res.status === 204) return null;
     const text = await res.text();
-    if (!res.ok) throw new BusError(res.status, text.trim() || res.statusText);
+    if (!res.ok) throw new BusError(res.status, reason(text) || res.statusText);
     return text ? (JSON.parse(text) as T) : null;
   }
 
@@ -123,6 +123,17 @@ export class Daemon {
   consume(topic: string, tag: string, wait = '55s'): Promise<Envelope | null> {
     return this.call<Envelope>('GET', `/consume?${new URLSearchParams({ topic, tag, wait })}`);
   }
+}
+
+/** A refusal's words: the daemon answers `{"error": "…"}`, or plain text. */
+function reason(text: string): string {
+  try {
+    const got = JSON.parse(text) as { error?: unknown };
+    if (typeof got?.error === 'string') return got.error;
+  } catch {
+    /* plain text */
+  }
+  return text.trim();
 }
 
 /** Alive: a long-poll open now, or the credential used within the last re-poll. */

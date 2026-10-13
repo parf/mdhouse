@@ -27,7 +27,7 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; reply?: (
       if (url.pathname === '/ls') return Response.json(opts.agents ?? []);
       if (url.pathname === '/send') {
         const m = (await req.json()) as { to: string; tag: string; topic: string };
-        if (m.to === '#nobody@x') return new Response('no such name', { status: 404 });
+        if (m.to === '#nobody@x') return Response.json({ error: 'no such receiver: #nobody@x (no such name)' }, { status: 404 });
         queued.set(m.tag, (opts.reply?.(m.to) ?? []).map((r) => ({ topic: m.topic, tag: m.tag, ...r })));
         return Response.json({ message_id: 'm1', ...m });
       }
@@ -134,7 +134,8 @@ describe('agent bus — the service, against a fake daemon', () => {
       const by = (to: string) => c.events.filter((e) => e.to === to).map((e) => (e.body ? `${e.kind}: ${e.body}` : e.kind));
       expect(by('#claude/a@h')).toEqual(['sent', 'ack', 'answer: read it — all good']);
       expect(by('#claude/b@h')).toEqual(['sent', 'done']);
-      expect(by('#nobody@x')).toEqual(['error: no such name']);
+      // the daemon's JSON refusal, as its words
+      expect(by('#nobody@x')).toEqual(['error: no such receiver: #nobody@x (no such name)']);
       expect(by('#claude/c@h')).toEqual(['sent', 'timeout']);
       expect(bus.job(job)).toHaveLength(8);
       expect(bus.job('nope')).toBeNull();

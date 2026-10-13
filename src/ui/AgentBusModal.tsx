@@ -147,7 +147,9 @@ export function AgentBusModal({ open, onClose, p, named, onState }: Props) {
         <input type="checkbox" checked={chosen.has(name)} onChange={() => toggle(name)} />
         <span>
           <span class="ab-name">{name}</span>
-          {!alive && info?.enabled && <span class="ab-dead">dead — not running</span>}
+          {!alive && info?.enabled && (
+            <span class="ab-dead">{agents.some((a) => a.name === name) ? 'dead — not running' : 'not on the bus'}</span>
+          )}
           {descr && <span class="ab-descr">{descr}</span>}
         </span>
       </label>
