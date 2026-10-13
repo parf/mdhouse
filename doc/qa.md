@@ -194,7 +194,7 @@ Each action has one number, the same in every form; **Alt+number** presses it.
 
 Each change touches only its item's lines. If the file changed since the page was loaded, the
 save is refused or the form says so, and the text you typed is kept; leaving the page keeps it
-too. A file with uncommitted changes opens on its diff; switch back to the document to answer.
+too. A file with uncommitted changes says so under its title (**uncommitted file**); a click shows the diff.
 
 A plain `- [ ]` checkbox (not under a ❓) is ticked with a click, not answered.
 

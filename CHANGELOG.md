@@ -4,6 +4,7 @@
 
 ### Changed
 
+- A file with uncommitted changes opens as the document, not its diff; a flashing **uncommitted file** under the title shows the diff on a click
 - Table cells align to the top
 
 ### Added

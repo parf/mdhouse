@@ -1896,3 +1896,10 @@ button.sync-chip { cursor: pointer; }
   background: var(--bg-raised); color: var(--fg); cursor: pointer; }
 .ab-filter-save:disabled { opacity: 0.5; cursor: default; }
 .ab-status.lost { color: var(--warn); }
+/* a file with work not committed yet: a flashing mark under the title; a click shows the diff */
+.doc-meta .uncommitted { font: inherit; font-size: 11.5px; font-weight: 600; color: var(--warn); cursor: pointer;
+  padding: 0 7px; border-radius: 9px; border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent); animation: uncommittedFlash 1.6s ease-in-out infinite; }
+.doc-meta .uncommitted:hover { animation: none; background: color-mix(in srgb, var(--warn) 18%, transparent); }
+@keyframes uncommittedFlash { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .doc-meta .uncommitted { animation: none; } }

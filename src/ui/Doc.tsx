@@ -182,10 +182,8 @@ export function Doc({
   /**
    * Diff mode: the same document shown as what changed rather than as text.
    *
-   * A file with uncommitted work opens on its diff — if you have edited it and come to look at
-   * it, the edit is the thing you came for. A file with nothing outstanding opens as a
-   * document and shows the last commit's change only when asked, which is what the button and
-   * the history rows are for.
+   * Every file opens as a document; a diff shows only when asked — the buttons, the history
+   * rows, or the "uncommitted file" mark under the title, which says there is work outstanding.
    */
   const [view, setView] = useState<DocView>('doc');
   /** Which of the two diff views to open on: whichever was last asked for. */
@@ -195,20 +193,14 @@ export function Doc({
   const dirty = doc?.status === 'modified' || doc?.status === 'staged' || doc?.status === 'untracked';
   const diffOn = view !== 'doc';
 
-  // Decided once per document, when it arrives — not again when its status changes while it is
-  // open. Ticking a checkbox makes the file "modified", and that must not throw the reader out
-  // of the document and into its diff.
+  // A new document opens as the document — not again when its status changes while it is open.
   const viewDecidedFor = useRef<string | null>(null);
   useEffect(() => {
     if (!doc || viewDecidedFor.current === doc.url) return;
     viewDecidedFor.current = doc.url;
     setDiffRev(null);
-    // The marked view is Markdown's: any other file opens on the patch.
-    setView(dirty ? (doc.kind === 'md' ? diffView : 'patch') : 'doc');
-    // diffView is deliberately not a dependency: changing the preferred view is already a
-    // change of view, and re-running here would fight the toggle that set it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc?.url, dirty]);
+    setView('doc');
+  }, [doc?.url]);
 
   useEffect(() => {
     setDiff(null);
@@ -1038,6 +1030,16 @@ export function Doc({
             <IconClock size={12} /> <Ago at={doc.mtime} />
           </span>
           <Authors authors={log?.authors ?? null} />
+          {dirty && (
+            <button
+              type="button"
+              class="uncommitted"
+              title={view === 'doc' ? 'Show your uncommitted changes' : 'Show the document'}
+              onClick={() => (view === 'doc' ? setView(doc.kind === 'md' ? diffView : 'patch') : setView('doc'))}
+            >
+              uncommitted file
+            </button>
+          )}
           {doc.tasks.total > 0 && (
             <span>
               {doc.tasks.done}/{doc.tasks.total} done
