@@ -8,7 +8,8 @@ import { abTargets, AgentBus, isAlive, ownName, requestText, validTarget, type A
  * A fake `agent-busd` on a temp unix socket: register (412 when it exists), token, ls, send, and a
  * filtered consume served from what `reply` queued for a tag.
  */
-async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; reply?: (to: string) => Partial<Envelope>[] } = {}) {
+async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: number; reply?: (to: string) => Partial<Envelope>[] } = {}) {
+  let stale = opts.stale ?? 0;
   const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-'));
   const socket = join(dir, 'user-test.sock');
   const calls: string[] = [];
@@ -32,6 +33,7 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; reply?: (
         return Response.json({ message_id: 'm1', ...m });
       }
       if (url.pathname === '/consume') {
+        if (!url.searchParams.get('tag')) return stale-- > 0 ? Response.json({ body: 'old reply' }) : new Response(null, { status: 204 });
         const next = queued.get(url.searchParams.get('tag') ?? '')?.shift();
         return next ? Response.json(next) : new Response(null, { status: 204 });
       }
@@ -102,6 +104,7 @@ describe('agent bus — the service, against a fake daemon', () => {
   test('connects as its own agent: registers (create only), mints a token, then talks with it', async () => {
     const d = await fakeDaemon({
       exists: true,
+      stale: 2,
       agents: [
         { name: '#claude/b@h', kind: 'agent', readers: 0 },
         { name: '#claude/a@h', kind: 'agent', readers: 1, descr: 'a' },
@@ -115,7 +118,8 @@ describe('agent bus — the service, against a fake daemon', () => {
         { name: '#claude/b@h', descr: '', alive: false },
       ]);
       // an existing record (412) is kept as is; every later call carries the agent's token
-      expect(d.calls).toEqual(['POST /register', 'POST /token', 'GET /ls +token']);
+      // and drains the replies an earlier run left: two, then empty
+      expect(d.calls).toEqual(['POST /register', 'POST /token', 'GET /consume +token', 'GET /consume +token', 'GET /consume +token', 'GET /ls +token']);
     } finally {
       await d.stop();
     }

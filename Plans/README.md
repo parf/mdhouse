@@ -172,6 +172,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 - The daemon over its account socket (`user-<login>.sock`, Bun `fetch({unix})`) — own client, not `@agent-bus/client` (not on npm)
 - mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), token minted, every call with it
+- On connect it drains its own inbox: replies to an earlier run's jobs, which died with it
 - **Never `AGENT_BUS_*` from the environment** — a mdhouse started from an AI session's shell would act as that session
 - Alive: `readers > 0`, or `last_used` < 90 s
 - `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `send` (topic `mdhouse`, a fresh tag) → filtered `consume({topic, tag})` until the answer / `done` / 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
