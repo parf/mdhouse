@@ -189,6 +189,21 @@ and raw HTML escaped — in a diff, the markup is the content.
   40 repos asked in parallel (~225 → ~50 ms); the Files tab capped at 5000 (100k files: 2.7 s,
   1.9 MB → 0.4 s, 94 kB); a fence over 100 KB plain; the npm package without PNGs (833 → 184 kB).
 
+## Agent Bus
+
+Plan: [ab-integration.md](ab-integration.md). `mdhouse --agent-bus`; a page asks an AI session
+(`<!-- AB: name -->`, else the default agents, else a pick) and shows its answer.
+
+- Checked end to end against the real daemon: a page on a scratch server asked this repo's own
+  Claude session; it went `→ sent` → `✓ read — working` → the answer.
+- The `sent` event used to be lost: it is published before the page has its job id. The popup
+  now fetches `/api/ab/job` right after it subscribes and merges by (to, kind, at).
+- `<!-- AB: … -->` inside a code span counted — `Plans/TODO.md` named `agent-bus` and `name`.
+  Code spans and fences are stripped before matching.
+- The daemon refuses with `{"error": …}`; the popup showed the raw JSON — now its words.
+- A restart drops every job, and their replies stayed queued in `#mdhouse@<host>`'s inbox for
+  good. On connect mdhouse drains its own inbox.
+
 ## Packaging
 
 - **Every npm release before 1.0.0 served `500 Build Failed` at `/`.** Bun bundles the UI at
