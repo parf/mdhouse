@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.2.0 — 2026-10-13
 
 ### Added
 
@@ -13,6 +13,8 @@
 
 - An item's first line is its title; the lines after it — on a line of their own under it
 - `- 🚫 …` under a `✅` — a rejected alternative, as under `📌`: a muted line, not counted in the strip
+- `doc/agent-markup.md`: a decision is `✅`, `📌` only for the few that matter; a blank `>` between turns; `№` and a link in every file
+- README: a TL;DR, "What you get" in short; `Readme2.md` — mdhouse in short; `doc/agent-bus.md`
 
 ## 2.1.0 — 2026-10-08
 
