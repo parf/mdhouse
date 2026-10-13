@@ -115,6 +115,16 @@ text is kept
 
 ---
 
+## 🗨 Agent Bus
+
+- Talk to your running AI sessions (Claude, Codex, OpenCode) from the page — no switching terminals
+- `a` — a chat panel on the right: **Updated — reply**, Do 🎯, Resolve, Review, or a note
+- The agent writes `<!-- AB: its-bus-name -->` into the file — the page knows whom to ask
+- Answers come back into the panel; each page keeps its last 20
+- On with `mdhouse --agent-bus` — [Agent Bus integration](doc/agent-bus.md)
+
+---
+
 ## 🔒 Read-only unless you say, and local
 
 - 📖 **Read-only by default.** Write access - cli only `mdhouse -p --rw dir` (-p = save)
