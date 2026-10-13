@@ -28,6 +28,7 @@ import { ownUnit } from './lib/service';
 import { allowedAddress, Users } from './lib/access';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
+import { AB_ACTIONS, abTargets, AgentBus, defaultSocket, requestText, validTarget, type AbAction } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
 
 export interface ServeOptions {
@@ -133,6 +134,11 @@ export async function serve(opts: ServeOptions) {
     prefs.refresh();
     return { ...prefs.settings, autoRwPaths: prefs.autoRw };
   };
+  /** The Agent Bus integration — on and off from the CLI (`--agent-bus`); its events go to every tab. */
+  const bus = new AgentBus(
+    () => prefs.agentBus.socket || defaultSocket(),
+    (ev) => server.publish('ab', JSON.stringify({ t: 'ab', ...ev })),
+  );
   /**
    * Writes to documents in flight, per file, so they apply one after another — two quick clicks
    * (a tick and an answer, or two ticks) each run against the file the previous one left.
@@ -534,6 +540,66 @@ export async function serve(opts: ServeOptions) {
         },
       },
 
+      /** The Agent Bus integration: on or off, connected or why not, the agents and the default ones. */
+      '/api/ab': async () => {
+        const ab = prefs.agentBus;
+        if (!ab.enabled) return json({ enabled: false });
+        const st = await bus.status();
+        const agents = st.connected ? await bus.agents().catch(() => []) : [];
+        return json({ enabled: true, me: bus.me, socket: ab.socket || defaultSocket(), ...st, default: ab.default, agents });
+      },
+
+      /** The settings page's default agents — asked by a page that names none. */
+      '/api/ab/default': {
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
+          const body = (await req.json().catch(() => null)) as { names?: unknown } | null;
+          if (!Array.isArray(body?.names) || !body.names.every(validTarget)) return fail(400, 'expected {names: [bus name]}');
+          const ab = await prefs.setAgentBus({ default: [...new Set(body.names as string[])] });
+          return json({ default: ab.default });
+        },
+      },
+
+      /** Ask agents about a document: the job id at once, its events over the WebSocket (`ab`). */
+      '/api/ab/send': {
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
+          const body = (await req.json().catch(() => null)) as { p?: unknown; targets?: unknown; action?: unknown; note?: unknown } | null;
+          const targets = body?.targets;
+          if (
+            typeof body?.p !== 'string' ||
+            !Array.isArray(targets) ||
+            !targets.length ||
+            targets.length > 10 ||
+            !targets.every(validTarget) ||
+            !AB_ACTIONS.includes(body.action as AbAction) ||
+            (body.note !== undefined && typeof body.note !== 'string')
+          ) {
+            return fail(400, 'expected {p, targets: [bus name], action, note?}');
+          }
+          const note = (body.note as string | undefined) ?? '';
+          if (note.length > 20_000) return fail(413, 'note too long');
+          if (body.action === 'note' && !note.trim()) return fail(400, 'a note is empty');
+          const loc = await docAt(body.p);
+          if (!loc) return fail(404, 'not a document');
+          const url = new URL(registry.docUrl(loc.root, loc.rel), req.url).href;
+          try {
+            const job = await bus.ask([...new Set(targets as string[])], requestText(body.action as AbAction, loc.abs, url, note));
+            return json({ job });
+          } catch (err) {
+            return fail(503, (err as Error).message);
+          }
+        },
+      },
+
+      /** A job's events so far — for a page that reconnected and missed some. */
+      '/api/ab/job': (req) => {
+        const events = bus.job(new URL(req.url).searchParams.get('id') ?? '');
+        return events ? json({ events }) : fail(404, 'no such job');
+      },
+
       /**
        * The settings page's delete button: forget a directory and stop serving it.
        *
@@ -731,7 +797,9 @@ export async function serve(opts: ServeOptions) {
           },
         });
 
-        return json({ ...common, frontmatter, lineOffset: offset, ...rendered });
+        // the agents the document asks — sent only while the integration is on
+        const ab = prefs.agentBus.enabled ? { ab: abTargets(src) } : {};
+        return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab });
       },
 
       /** A file's bytes, with its type — `rawHeaders`. `/api/asset` is the old name. */
@@ -923,6 +991,7 @@ export async function serve(opts: ServeOptions) {
         const rootIds = registry.list().map((r) => r.id);
         for (const id of rootIds) ws.subscribe(`root:${id}`);
         ws.subscribe('roots');
+        ws.subscribe('ab');
         ws.send(JSON.stringify({ t: 'hello', roots: rootIds }));
       },
       message(ws: ServerWebSocket<undefined>, raw: string | Buffer) {

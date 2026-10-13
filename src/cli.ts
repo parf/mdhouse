@@ -44,6 +44,8 @@ Options
                        --host-name reset: localhost and IP addresses again
       --auto-rw <p,…>  folders under these are writable (switch in settings); saved
                        --auto-rw reset: no such paths
+      --agent-bus [on|off|<x.sock>]  the Agent Bus integration: a page asks an AI
+                       session to read it and reply; saved
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
@@ -74,6 +76,8 @@ interface Options {
   allow: string[] | null;
   /** `--host-name`: the names to save, or null when not given. */
   hostNames: string[] | null;
+  /** `--agent-bus`: on, off, or a daemon socket (turns it on); null when not given. */
+  agentBus: string | null;
   /** `--auto-rw`: the paths to save, or null when not given. */
   autoRw: string[] | null;
   /** Given flags that only a fresh start applies — a running mdhouse keeps its own. */
@@ -99,6 +103,7 @@ function parse(argv: string[]): Options {
     allow: null,
     hostNames: null,
     autoRw: null,
+    agentBus: null,
     startOnly: new Set(),
   };
 
@@ -127,6 +132,8 @@ function parse(argv: string[]): Options {
       case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
+      // the value is optional: only on / off / a .sock path is taken — anything else is a folder
+      case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$/.test(argv[i + 1] ?? '') ? next() : 'on'; break;
       case '--host-name': o.hostNames = [...(o.hostNames ?? []), ...next().split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)]; break;
       case '--allow': o.allow = [...(o.allow ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--help': console.log(USAGE); process.exit(0);
@@ -401,6 +408,14 @@ if (opts.autoRw) {
   const saved = await prefs.setAutoRw(paths);
   const on = prefs.settings.autoRw ? '' : '  (switched off in settings)';
   console.log(`mdhouse  auto-rw:  ${saved.length ? saved.join(', ') : 'none'}${saved.length ? on : ''}`);
+  if (!opts.dirs.length) process.exit(0);
+}
+
+if (opts.agentBus) {
+  const off = opts.agentBus === 'off';
+  const socket = opts.agentBus.endsWith('.sock') ? canonical(opts.agentBus) : undefined;
+  const ab = await prefs.setAgentBus({ enabled: !off, ...(socket ? { socket } : {}) });
+  console.log(`mdhouse  agent-bus:  ${ab.enabled ? `on  ${ab.socket || '(default socket)'}` : 'off'}`);
   if (!opts.dirs.length) process.exit(0);
 }
 

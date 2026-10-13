@@ -14,6 +14,10 @@
   // (switched off and on by settings.autoRw, on the settings page)
   "autoRw": ["/home/you/src"],
 
+  // The Agent Bus integration: `mdhouse --agent-bus` / `--agent-bus off` / `--agent-bus <x.sock>`
+  // default — the agents a page asks when it names none (<!-- AB: … -->); set on the settings page
+  "agentBus": { "enabled": false, "socket": "", "default": [] },
+
   // Where to listen: `mdhouse -p --port 8080 --host 0.0.0.0`
   // Default 127.0.0.1:7777. MDHOUSE_PORT / MDHOUSE_HOST and --port / --host override it
   "server": { "port": 7777, "host": "127.0.0.1" },

@@ -91,6 +91,12 @@ export function AboutModal({ open, onClose }: Props) {
               </tr>
               <tr>
                 <td>
+                  <kbd>a</kbd>
+                </td>
+                <td>Ask an agent about the document (Agent Bus, when on)</td>
+              </tr>
+              <tr>
+                <td>
                   <kbd>?</kbd>
                 </td>
                 <td>Show this shortcuts & about dialog</td>

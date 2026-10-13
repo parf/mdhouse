@@ -17,6 +17,7 @@ test('doc/prefs.json.dist, comments and all, loads as a config', async () => {
     expect(Object.keys(prefs.access.users)).toEqual(['ann']);
     expect(prefs.settings).toEqual({ editLink: true, autoRw: true, me: '' });
     expect(prefs.autoRw).toEqual(['/home/you/src']);
+    expect(prefs.agentBus).toEqual({ enabled: false, socket: '', default: [] });
     expect(prefs.get('/home/you/notes').favorite).toEqual(['inbox.md', 'plans/']);
   } finally {
     await rm(dir, { recursive: true, force: true });

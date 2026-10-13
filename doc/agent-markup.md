@@ -158,6 +158,11 @@ The first glyph is the stage; the severity stays after it:
 When any item in the file has `🎯` (`- 🎯 🔴 A1 …`), act on the `🎯` items only. Acting on one removes
 its `🎯`. Never add `🎯` yourself.
 
+## Agent Bus
+
+On an agent bus, put your bus name in the file you work on: `<!-- AB: #claude/x@host -->`. mdhouse
+asks you from the page; reply on the bus.
+
 ## Converting an existing file
 
 Apply every rule above to every item — the file must end up exactly in this markup:

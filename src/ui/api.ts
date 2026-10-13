@@ -60,6 +60,36 @@ export interface DocPayload {
   tasks: { done: number; total: number };
   /** Working-tree status, when git has something to say: `modified`, `staged`, `untracked`. */
   status?: FileStatus;
+  /** The agents the document names (`<!-- AB: … -->`); present only while the Agent Bus integration is on. */
+  ab?: string[];
+}
+
+export interface BusAgent {
+  name: string;
+  descr: string;
+  alive: boolean;
+}
+
+/** `GET /api/ab`: off, or on — connected or why not, the agents, the default ones. */
+export type AbInfo =
+  | { enabled: false }
+  | { enabled: true; me: string; socket: string; connected: boolean; error?: string; default: string[]; agents: BusAgent[] };
+
+export type AbKind = 'sent' | 'ack' | 'answer' | 'done' | 'timeout' | 'error';
+export interface AbEvent {
+  job: string;
+  to: string;
+  kind: AbKind;
+  body?: string;
+  at: number;
+}
+export type AbAction = 'updated' | 'target' | 'resolve' | 'review' | 'note';
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const got = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
+  if (!res.ok || !got) throw Object.assign(new Error(got?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+  return got;
 }
 
 async function get<T>(path: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<T> {
@@ -239,6 +269,12 @@ export const api = {
     return res.json() as Promise<Settings>;
   },
 
+  abInfo: () => get<AbInfo>('/api/ab'),
+  abDefault: (names: string[]) => post<{ default: string[] }>('/api/ab/default', { names }),
+  /** Ask agents about document `p` (a wire path): the job id; its events come over the live channel. */
+  abSend: (req: { p: string; targets: string[]; action: AbAction; note: string }) => post<{ job: string }>('/api/ab/send', req),
+  abJob: (id: string) => get<{ events: AbEvent[] }>('/api/ab/job', { id }),
+
   /** Forget a directory and stop serving it. */
   async removeRoot(id: string): Promise<void> {
     const res = await fetch('/api/roots/remove', {
@@ -259,7 +295,12 @@ export type LiveMessage =
   | { t: 'fs'; root: string; paths: string[] }
   | { t: 'git'; root: string; paths: string[] }
   /** The served directories changed: one added by a second `mdhouse`, or one removed. */
-  | { t: 'roots'; roots: string[] };
+  | { t: 'roots'; roots: string[] }
+  /** An Agent Bus request's progress — every tab gets it; a page keeps its own jobs'. */
+  | ({ t: 'ab' } & AbEvent);
+
+/** Components that follow the live channel themselves; the app hands each message to every one. */
+export const liveListeners = new Set<(msg: LiveMessage) => void>();
 
 /**
  * The live channel. Reconnects with backoff; never polls. `onStatus` drives the dot in the

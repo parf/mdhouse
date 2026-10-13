@@ -59,6 +59,17 @@ interface PrefsFile {
    * without `--rw` — while `settings.autoRw` is on; the settings page turns it off and on.
    */
   autoRw: string[];
+  /** The Agent Bus integration — `mdhouse --agent-bus`; the settings page picks the default agents. */
+  agentBus: AgentBusConfig;
+}
+
+export interface AgentBusConfig {
+  /** Turned on and off from the CLI only. */
+  enabled: boolean;
+  /** The daemon's socket; empty: `/run/agent-bus/user-<login>.sock`. */
+  socket: string;
+  /** The agents a page asks when it names none (`<!-- AB: … -->`). */
+  default: string[];
 }
 
 export interface AccessConfig {
@@ -112,6 +123,7 @@ const fresh = (): PrefsFile => ({
   server: {},
   access: { allow: [], users: {}, hostNames: [] },
   autoRw: [],
+  agentBus: { enabled: false, socket: '', default: [] },
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
@@ -162,6 +174,11 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     server,
     access,
     autoRw: Array.isArray(parsed.autoRw) ? parsed.autoRw.filter((d) => typeof d === 'string') : [],
+    agentBus: {
+      enabled: parsed.agentBus?.enabled === true,
+      socket: typeof parsed.agentBus?.socket === 'string' ? parsed.agentBus.socket : '',
+      default: Array.isArray(parsed.agentBus?.default) ? parsed.agentBus.default.filter((n) => typeof n === 'string') : [],
+    },
   };
 }
 
@@ -379,6 +396,20 @@ export class Prefs {
       data.autoRw = [...paths];
     });
     return this.autoRw;
+  }
+
+  /** The Agent Bus settings as the file holds them now. */
+  get agentBus(): AgentBusConfig {
+    this.refresh();
+    return { ...this.data.agentBus, default: [...this.data.agentBus.default] };
+  }
+
+  /** Change the Agent Bus settings. */
+  async setAgentBus(patch: Partial<AgentBusConfig>): Promise<AgentBusConfig> {
+    await this.mutate((data) => {
+      data.agentBus = { ...data.agentBus, ...patch };
+    });
+    return this.agentBus;
   }
 
   /** Replace the allow list. */

@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff, IconBus } from './icons';
+import { AgentBusModal, type AbState } from './AgentBusModal';
 import { fileSize, timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -428,6 +429,23 @@ export function Doc({
 
   /** The ✎ link: at the line the page landed on, if any. */
   const editAt = editHref && atLine !== null ? `${editHref}:${atLine}` : editHref;
+
+  /** The Agent Bus popup — only while the integration is on (the payload names the page's agents). */
+  const [abOpen, setAbOpen] = useState(false);
+  const [abState, setAbState] = useState<AbState>('idle');
+  const abOn = doc?.kind === 'md' && !!doc.ab;
+  useEffect(() => {
+    if (!abOn) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'a' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement;
+      if (t.closest('input, textarea, select, [contenteditable]')) return;
+      e.preventDefault();
+      setAbOpen(true);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [abOn]);
 
   /** `e` opens the file in the editor, as the ✎ beside the title does — not while typing. */
   useEffect(() => {
@@ -1073,6 +1091,16 @@ export function Doc({
             >
               <IconMute size={15} />
             </button>
+            {abOn && (
+              <button
+                class={`icon-btn ab-btn ${abState}`}
+                aria-pressed={abOpen}
+                title={`Ask an agent (a)${abState === 'waiting' ? ' — waiting for a reply' : abState === 'answered' ? ' — a reply came' : ''}`}
+                onClick={() => setAbOpen(true)}
+              >
+                <IconBus size={15} />
+              </button>
+            )}
             <button
               class="icon-btn"
               title="Copy link"
@@ -1083,6 +1111,16 @@ export function Doc({
           </span>
         </div>
       </header>
+      {abOn && (
+        <AgentBusModal
+          key={doc.url}
+          open={abOpen}
+          onClose={() => setAbOpen(false)}
+          p={`${doc.root}/${doc.rel}`}
+          named={doc.ab ?? []}
+          onState={setAbState}
+        />
+      )}
 
       <div class="doc-aside">
         {doc.headings.filter((h) => h.level <= 3).length > 1 && (

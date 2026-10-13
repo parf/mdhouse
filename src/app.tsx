@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { api, connectLive, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options } from './ui/api';
+import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options } from './ui/api';
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
@@ -262,7 +262,8 @@ function App() {
   // and rebuild it each time a document loaded.
   const onLive = useRef<(msg: LiveMessage) => void>(() => {});
   onLive.current = (msg) => {
-    if (msg.t === 'hello' || msg.t === 'pong') return;
+    for (const l of liveListeners) l(msg);
+    if (msg.t === 'hello' || msg.t === 'pong' || msg.t === 'ab') return;
 
     // Another `mdhouse` handed this one a directory: pick up the new root list, but stay
     // where the reader is — the tree they are looking at has not changed.

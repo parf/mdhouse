@@ -214,6 +214,18 @@ export const IconLink = (p: Props) =>
     p,
   );
 
+/** Agent Bus: a speech bubble with an antenna — ask an agent. */
+export const IconBus = (p: Props) =>
+  svg(
+    <>
+      <path d="M3 5.25h10a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H7.5L5 14.5v-2.25H3a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1z" />
+      <path d="M8 5.25V2.75" />
+      <circle cx="8" cy="2" r="0.75" />
+      <path d="M5.5 8.75h5" />
+    </>,
+    p,
+  );
+
 /** Settings: a cog, six teeth. */
 export const IconGear = (p: Props) =>
   svg(

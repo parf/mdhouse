@@ -28,9 +28,9 @@ src/
   app.tsx        shell: routing, data loading, keyboard, live channel
   lib/           server side: roots, urls, access, filetypes, ignore, prefs, scan, render, qa, qa-html, legacy,
                  insert, git, gitpage, search, store, watch, control (unix socket), service (systemd unit),
-                 loghint (where output goes)
+                 loghint (where output goes), agent-bus (the Agent Bus client)
   ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, GitPanel, PageHead, Settings,
-                 AboutModal, QaEditor, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
+                 AboutModal, AgentBusModal, QaEditor, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
                  RootSelect, tree building, icons, formatting
   styles/        one stylesheet, CSS custom properties, light and dark
 ```
@@ -129,7 +129,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 - Routes: the page — `/`, `/<rootId>/…` (`fetch` → `rootPage`, unknown → 404), `/settings` (the bundle at `/__app/`), `/d/*` → 301, `/vendor/mermaid/*`, `/ws`; read —
   `/api/roots`, `/api/tree`, `/api/doc`, `/api/raw` (`/api/asset` its old name), `/api/files`, `/api/search`, `/api/recents`,
-  `/api/digest`, `/api/git`, `/api/git/commits|files|remote|log|diff`; write — below.
+  `/api/digest`, `/api/git`, `/api/git/commits|files|remote|log|diff`, `/api/ab`, `/api/ab/job`; write — below.
 - **Every route** (and the WebSocket) first passes `trustedHost()`: the `Host` header must be
   `localhost`, an IP literal, or — when bound to the network with `--host` — this machine's own
   name. Anything else is `421`. With `access.hostNames` (`--host-name`) set, only those names
@@ -143,7 +143,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
   code with no data, and stay open. [doc/access.md](../doc/access.md).
 - **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa`, `/api/insert`, `/api/roots/remove`, `/api/settings`,
-  `/api/git/commit|pull|push|reset` — and the
+  `/api/git/commit|pull|push|reset`, `/api/ab/default|send` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.
@@ -165,6 +165,18 @@ contents list, so a heading link and its contents entry cannot disagree.
 - Rendered links: every file in the root → its page (`localHref`); `<img src>` → `/api/raw`.
 - `/api/git/diff`: Markdown lines rendered (`markupHunks`); any other file's as typed.
 - The CLI goes over the `0600` unix socket instead, which a browser cannot reach at all.
+
+### Agent Bus
+
+`lib/agent-bus.ts` — [ab-integration.md](ab-integration.md). Off until `mdhouse --agent-bus` (prefs `agentBus.enabled`); every `/api/ab*` POST is 404 while off.
+
+- The daemon over its account socket (`user-<login>.sock`, Bun `fetch({unix})`) — own client, not `@agent-bus/client` (not on npm)
+- mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), token minted, every call with it
+- **Never `AGENT_BUS_*` from the environment** — a mdhouse started from an AI session's shell would act as that session
+- Alive: `readers > 0`, or `last_used` < 90 s
+- `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `send` (topic `mdhouse`, a fresh tag) → filtered `consume({topic, tag})` until the answer / `done` / 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
+- The request text names the file by its absolute path and the page by its URL (`requestText`)
+- `/api/doc` → `ab: [names]` from `<!-- AB: … -->` — only while on
 
 ### Agent skills read the page's states
 
@@ -193,7 +205,8 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
-  argon2id hash, `hostNames`), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and
+  argon2id hash, `hostNames`), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and `agentBus` (`enabled`, `socket` —
+  `--agent-bus [on|off|<x.sock>]`; `default` agents — the settings page), and
   `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
   `writable` is a getter — `--rw` asked, or under an auto-rw path with the switch on — so the
   switch and the CLI apply to a running server at once (`Prefs.refresh()` re-reads the file

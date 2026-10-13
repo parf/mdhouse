@@ -227,3 +227,10 @@ Reproduce before editing. Every finding from an outside review gets a script aga
 function, a scratch repo or the running server *first* — which is also how the regression tests
 get written, since a reproduction is a failing test with the assertion left off. Of eleven
 findings in the 0.4.0 review, two recommendations were wrong, and this step caught both.
+
+## Agent Bus — own client, own agent — 2026-10-13
+
+- Own small client over Bun `fetch({unix})`, not `@agent-bus/client`: that one is local only, and mdhouse ships on npm.
+- mdhouse talks as its own agent `#mdhouse@<host>`: a reply needs a registered inbox; the login's own inbox has one reader.
+- `AGENT_BUS_*` from the environment is never read: a mdhouse started from an AI session's shell would act as that session.
+- On and off from the CLI only; any page the server admits may send while it is on.

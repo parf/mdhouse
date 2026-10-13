@@ -1,5 +1,5 @@
-import { useState } from 'preact/hooks';
-import { api, type RootInfo, type Settings as Options } from './api';
+import { useEffect, useState } from 'preact/hooks';
+import { api, type AbInfo, type RootInfo, type Settings as Options } from './api';
 import { IconTrash } from './icons';
 
 /** Where to start when nothing handles `edit:` URLs yet. */
@@ -171,6 +171,91 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           </div>
         )}
       </section>
+
+      <AgentBusSettings />
     </div>
+  );
+}
+
+/** The Agent Bus section: off — how to turn it on; on — the connection, and the default agents. */
+function AgentBusSettings() {
+  const [info, setInfo] = useState<AbInfo | null>(null);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    api
+      .abInfo()
+      .then((got) => live && setInfo(got))
+      .catch((err: Error) => live && setError(err.message));
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const setDefault = async (names: string[]) => {
+    if (saving || !info?.enabled) return;
+    setSaving(true);
+    setError('');
+    try {
+      const got = await api.abDefault(names);
+      setInfo({ ...info, default: got.default });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // the default agents stay listed when they are not running
+  const listed = info?.enabled
+    ? [...info.agents.filter((a) => a.alive || info.default.includes(a.name)), ...info.default.filter((n) => !info.agents.some((a) => a.name === n)).map((name) => ({ name, descr: '', alive: false }))]
+    : [];
+
+  return (
+    <section class="settings-ab">
+      <h2>Agent Bus</h2>
+      {error && <p class="settings-error">{error}</p>}
+      {info && !info.enabled && (
+        <p class="settings-hint">
+          Enable the Agent Bus integration: <code>mdhouse --agent-bus</code>
+        </p>
+      )}
+      {info?.enabled && (
+        <>
+          <p class="settings-hint">
+            {info.connected ? '✅ connected' : `❌ not connected: ${info.error}`} · as <code>{info.me}</code> · <code>{info.socket}</code>
+          </p>
+          <p>
+            <b>Default agent</b> — asked by a page that names none with <code>&lt;!-- AB: name --&gt;</code>
+          </p>
+          <ul class="ab-defaults">
+            {listed.map((a) => (
+              <li key={a.name}>
+                <label class={a.alive ? '' : 'dead'}>
+                  <input
+                    type="checkbox"
+                    disabled={saving}
+                    checked={info.default.includes(a.name)}
+                    onChange={(e) =>
+                      void setDefault(
+                        (e.target as HTMLInputElement).checked ? [...info.default, a.name] : info.default.filter((n) => n !== a.name),
+                      )
+                    }
+                  />
+                  <span>
+                    <code>{a.name}</code>
+                    {!a.alive && <span class="ab-dead">dead — not running</span>}
+                    {a.descr && <span class="ab-descr">{a.descr}</span>}
+                  </span>
+                </label>
+              </li>
+            ))}
+            {info.connected && !listed.length && <li class="settings-hint">No agent is running</li>}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }
