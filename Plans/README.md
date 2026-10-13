@@ -70,7 +70,7 @@ control socket) lives outside every tree.
   through it (`readDoc` in server.ts), so a write writes it converted
 - `GET /api/qa` → `{me, text?}` (a reply's text to edit); `POST /api/qa` writes only if the item's
   fingerprint still matches — else `409`; shares the per-file queue with ticks
-- client: `ui/qa-page.ts` (delegated buttons), `ui/QaEditor.tsx` (the form, Alt+1…9, Alt+E), `ui/QaStrip.tsx`
+- client: `src/ui/qa-page.ts` (delegated buttons), `src/ui/QaEditor.tsx` (the form, Alt+1…9, Alt+E), `src/ui/QaStrip.tsx`
   (counts, filter); drafts live in `Doc`, kept per document when the reader leaves
 
 ### An added block goes where the heading says, or nowhere
@@ -84,7 +84,7 @@ the repository's `git config user.name` (else the login), resolved on the server
 
 ### A tick changes one line, or nothing
 
-`toggleTask(src, line, hash)` in `render.ts` flips one bracket, nothing else. The rendered
+`toggleTask(src, line, hash)` in `src/lib/render.ts` flips one bracket, nothing else. The rendered
 checkbox carries `data-line` (1-based, within the body) and `data-hash` (FNV-1a of the raw source
 line); the server re-reads the file, counts front matter back in, and flips the bracket only if
 that line still hashes the same and still looks like a task item — else `409`, and the page
@@ -95,7 +95,7 @@ reloads. Writes to one file are queued; `\r\n` and every other byte are kept.
 `Registry.resolve()` is the only way a request value becomes an absolute path. Two gates: a
 textual one (no `..`, no NUL) and a filesystem one — the nearest existing ancestor is
 `realpath`ed and the result must still be inside the root, so a not-yet-existing file under a
-symlink is judged by where it would really land. Nothing outside `roots.ts` may join a request
+symlink is judged by where it would really land. Nothing outside `src/lib/roots.ts` may join a request
 string onto a root path.
 
 ### URL shape
@@ -103,7 +103,7 @@ string onto a root path.
 - `/<rootId>/<rel>` — a file's page; the root id always leads, also with one root.
 - `/<rootId>/<dir>/` — a folder's page (trailing slash); `/<rootId>/`, `/<rootId>` — the root's.
   A folder without its slash → 301 to its page.
-- Built and parsed by `lib/urls.ts` (`fileUrl`, `dirUrl`, `routeOf`, `isPageHref`) — server
+- Built and parsed by `src/lib/urls.ts` (`fileUrl`, `dirUrl`, `routeOf`, `isPageHref`) — server
   (`Registry.docUrl()` / `fromDocUrl()`) and page alike.
 - A root id never takes a reserved name (`RESERVED`: `api ws vendor __app _bun settings d
   favicon.ico`) — suffixed `-2` as a clash is.
@@ -136,9 +136,9 @@ contents list, so a heading link and its contents entry cannot disagree.
   `localhost`, an IP literal, or — when bound to the network with `--host` — this machine's own
   name. Anything else is `421`. With `access.hostNames` (`--host-name`) set, only those names
   pass — localhost and IPs are `421` too; read per request like `access`. This is the DNS-rebinding guard: a rebound page looks
-  same-origin in every header except the name it was addressed to. `guard()` in `server.ts` wraps
+  same-origin in every header except the name it was addressed to. `guard()` in `src/server.ts` wraps
   every route.
-- **Then access** — `admit()`, `lib/access.ts`, off until set from the CLI: an address outside
+- **Then access** — `admit()`, `src/lib/access.ts`, off until set from the CLI: an address outside
   `--allow` (this machine always passes) is `403`; with any user, no valid Basic login is `401`.
   Read from `prefs.json` for every request (re-read when its mtime changes), so `user-add`
   applies to a running server at once. The page routes hand out the HTML bundle's page from a
@@ -151,12 +151,12 @@ contents list, so a heading link and its contents entry cannot disagree.
   a cross-site form post and the handler.
 - `/api/files?p=<root>/<dir>` lists every file under a folder (the folder page's ALL view): git's list
   in a repo (`.gitignore` holds), else (or in a folder its repo ignores) a walk without dot-folders and `node_modules`; at most 5000.
-  `lib/scan.ts` `listFiles()`.
-- Every file has a page. `lib/filetypes.ts` `kindOf()`: `md | code | text | image | pdf | html |
+  `src/lib/scan.ts` `listFiles()`.
+- Every file has a page. `src/lib/filetypes.ts` `kindOf()`: `md | code | text | image | pdf | html |
   video | audio | binary` — by name; `langOf()` (Shiki ids + aliases + `Dockerfile`, `.h`, `.conf` …)
   → `code`; an unknown name: no NUL in its first 8 kB → `text`, else `binary`.
 - `/api/doc` answers every kind: `{kind, raw, …}`; Markdown rendered; `code` / `text` / `html` →
-  `html` by `render.ts` `highlightFile()` — one `<span class="line" id="L<n>">` per line, plain `<pre>`
+  `html` by `src/lib/render.ts` `highlightFile()` — one `<span class="line" id="L<n>">` per line, plain `<pre>`
   over 300 kB, no body over 5 MB (`tooBig`). Write routes stay Markdown-only (`docAt`).
 - **`.git` never:** a path with a `.git` segment is 404 on `/api/doc` and `/api/raw` (remote URLs,
   credentials).
@@ -170,7 +170,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 ### Agent Bus
 
-`lib/agent-bus.ts` — [ab-integration.md](ab-integration.md). Off until `mdhouse --agent-bus` (prefs `agentBus.enabled`); every `/api/ab*` POST is 404 while off.
+`src/lib/agent-bus.ts` — [ab-integration.md](ab-integration.md). Off until `mdhouse --agent-bus` (prefs `agentBus.enabled`); every `/api/ab*` POST is 404 while off.
 
 - The daemon over its account socket (`user-<login>.sock`, Bun `fetch({unix})`) — own client, not `@agent-bus/client` (not on npm)
 - mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), token minted, every call with it
@@ -181,7 +181,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - The request text names the file by its absolute path and the page by its URL (`requestText`)
 - `/api/doc` → `ab: [names]` from `<!-- AB: … -->` — only while on
 - Page: `AgentBusPanel` — a chat panel on the right, `position: fixed`; `main` and the top strip get `margin-right` via `.app:has(.ab-panel)`; full width ≤720px. `a` / the button opens it and turns the left sidebar off (`onAgentPanel`). Closed, it stays mounted (returns null) so its jobs keep listening and the button shows waiting / answered
-- The conversation per document lives in a module `Map` keyed by the wire path — for the tab, gone on reload; live events reach it through `api.ts` `liveListeners`
+- The conversation per document lives in a module `Map` keyed by the wire path — for the tab, gone on reload; live events reach it through `src/ui/api.ts` `liveListeners`
 - A restart of mdhouse drops every waiting job: reply first, then restart
 - `agentBus.filter` — a regex per line against the name without `#` (default `^claude ^codex ^opencode`), narrows `/api/ab` agents; a default agent always stays; `POST /api/ab/filter` refuses a line that is not a regex
 
@@ -193,22 +193,22 @@ contents list, so a heading link and its contents entry cannot disagree.
   answers carried into `DECISIONS.md` / `TODO.md`, then `✅`
 - `/find-issues` → `/fix-issues` — a read-only reviewer per touched subsystem (`Plans/subsystems.md`)
   writes `Plans/issues/YYYY-MM/YYYY-MM-DD.md`; the triaged and `🎯` ones done, `✅` + the commit
-- shared: `qa-states.md` (states, who acts), `markup.md`, `glyphs.md`, `review-checklist.md`
-- `qa.ts` `stateOf` and `qa-states.md` say the same states — change both together
+- shared: `.claude/skills/qa-states.md` (states, who acts), `.claude/skills/markup.md`, `.claude/skills/glyphs.md`, `.claude/skills/review-checklist.md`
+- `src/lib/qa.ts` `stateOf` and `.claude/skills/qa-states.md` say the same states — change both together
 
 ## Data sources
 
 - **File list** — `git ls-files -co -s --exclude-standard` per repository, so `.gitignore` is
   honoured with no configuration; a nested repo (`name/`) or submodule (mode 160000) is listed
   the same way; a directory walk with a deny list covers ground that is not in
-  any repo, or that its repo ignores. `lib/scan.ts`.
+  any repo, or that its repo ignores. `src/lib/scan.ts`.
 - **Git history, status, HEAD** — `git log --name-status`, `git status --porcelain`, and
-  `rev-parse` plus `FETCH_HEAD`'s mtime for the front page's branch and last pull. `lib/git.ts`.
+  `rev-parse` plus `FETCH_HEAD`'s mtime for the front page's branch and last pull. `src/lib/git.ts`.
   A path goes to git as `:(literal)<path>` (`literal()`); a folder's Markdown as `./<dir, glob
   chars escaped>/*.md`.
 - **Content search** — `rg --json --hidden` when ripgrep is installed, an in-process scan when it
   is not; hits only in the scanned tree.
-  `lib/search.ts`.
+  `src/lib/search.ts`.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
@@ -222,13 +222,13 @@ contents list, so a heading link and its contents entry cannot disagree.
   comes up where a start by hand does; a port from `service --port` or `MDHOUSE_PORT` is pinned into it. Beside it, `control-<port>.sock`. Never a dotfile inside a
   browsed tree.
 - **Git view** — `/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
-  plus `GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
-  `lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote` (files: the first 5000, `capped`), POST
+  plus `src/ui/GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
+  `src/lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote` (files: the first 5000, `capped`), POST
   `/api/git/commit|pull|push|reset` (reset: one `.md` file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409) — writable folder, same origin, one at a time per repo; commit refuses (409) a file outside the root or in a read-only root, pull a repo holding a read-only root or files outside the root; network
   git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Files link to their pages (under the root;
   else plain text) — no host links.
   Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.
-- **One header** (`PageHead.tsx`) for a folder page and its git view: logo; folder name —
+- **One header** (`src/ui/PageHead.tsx`) for a folder page and its git view: logo; folder name —
   on the folder page a link to its git view, everywhere else to the folder page; on the right
   GIT / Favs / Recent / Mine / Commits / Files (GIT, Commits, Files only inside a repo) and ⚙.
   A document's header has a git button before ✎: the root's git view.
@@ -237,7 +237,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 ## Operational rules
 
-- Everything is cached per root in `lib/store.ts` and invalidated by the filesystem watcher —
+- Everything is cached per root in `src/lib/store.ts` and invalidated by the filesystem watcher —
   never rebuilt per request. A root removed at runtime drops its cache and its watchers. The
   watcher: the root, recursive; plus the git dir and common dir (`rev-parse --absolute-git-dir
   --git-common-dir`) outside it — a folder of a checkout, a linked worktree.
