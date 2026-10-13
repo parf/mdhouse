@@ -538,6 +538,11 @@ function SearchResults(props: SidebarProps & { sizes: Sizes; nameHits: Array<{ f
       {searchIn.text && (
         <div class="group-title">
           In contents {searching && <span class="spinner" style={{ display: 'inline-block', verticalAlign: -2 }} />}
+          {search?.degraded && (
+            <span class="search-degraded" title="ripgrep (rg) was not found: the built-in search ran instead — slower on a large tree">
+              no ripgrep
+            </span>
+          )}
         </div>
       )}
 

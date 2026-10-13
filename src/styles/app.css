@@ -1824,3 +1824,4 @@ button.sync-chip { cursor: pointer; }
 .ab-body { margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; padding: 6px 8px; border-left: 3px solid var(--qa-answer);
   background: var(--bg-panel); border-radius: 0 var(--radius) var(--radius) 0; }
 .ab-defaults { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; }
+.group-title .search-degraded { margin-left: 6px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--warn); }

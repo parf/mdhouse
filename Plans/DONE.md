@@ -40,6 +40,8 @@ repository ignores; `~/src` — ~30 sibling repositories.
   matched `rg -l` exactly.
 - **ripgrep reports byte offsets; JavaScript indexes UTF-16.** Highlights slid off matches on
   Cyrillic lines until `byteOffsetMapper()` converted them per line.
+- The fallback used to be silent: `degraded` came back and the page showed nothing. "In contents"
+  now says `no ripgrep` (checked with `PATH` holding only `bun` and `git`).
 
 ## Git
 
