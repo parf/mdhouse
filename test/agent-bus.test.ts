@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { abTargets, AgentBus, isAlive, ownName, requestText, validTarget, type AbEvent, type Envelope } from '../src/lib/agent-bus';
+import { abTargets, AgentBus, badPatterns, isAlive, passes, ownName, requestText, validTarget, type AbEvent, type Envelope } from '../src/lib/agent-bus';
 
 /**
  * A fake `agent-busd` on a temp unix socket: register (412 when it exists), token, ls, send, and a
@@ -92,6 +92,15 @@ describe('agent bus — helpers', () => {
   test('the request: the file by its path, the page by its URL, the note after', () => {
     expect(requestText('updated', '/n/a.md', 'http://h/r/a.md', ' see Q3 ')).toBe('mdhouse: /n/a.md was updated — read it and reply.\nPage: http://h/r/a.md\n\nsee Q3');
     expect(requestText('target', '/n/a.md', 'u')).toContain('🎯 items in /n/a.md');
+  });
+
+  test('the names filter: a regex per line, against the name without #, any case; none — all', () => {
+    expect(passes('#claude/a@h', ['^claude', '^codex'])).toBe(true);
+    expect(passes('#Codex/x@h', ['^codex'])).toBe(true);
+    expect(passes('#ab-runner/x@h', ['^claude', '^codex'])).toBe(false);
+    expect(passes('#ab-runner/x@h', [])).toBe(true);
+    expect(passes('#claude/a@h', ['(', '^claude'])).toBe(true);
+    expect(badPatterns(['^claude', '(', '[a-'])).toEqual(['(', '[a-']);
   });
 
   test('a target is a bus name', () => {
@@ -188,6 +197,9 @@ describe('agent bus — routes', () => {
       expect(typeof ((await ok.json()) as { job: string }).job).toBe('string');
       expect((await (await fetch(at(`/api/doc?p=${id}/a.md`))).json()).ab).toEqual(['#claude/a@h']);
 
+      expect((await post('/api/ab/filter', { lines: ['^claude', '('] })).status).toBe(400);
+      expect((await post('/api/ab/filter', { lines: [' ^claude ', ''] })).status).toBe(200);
+      expect(prefs.agentBus.filter).toEqual(['^claude']);
       expect((await post('/api/ab/default', { names: ['#claude/a@h'] })).status).toBe(200);
       expect(prefs.agentBus.default).toEqual(['#claude/a@h']);
       const info = (await (await fetch(at('/api/ab'))).json()) as { connected: boolean; default: string[] };

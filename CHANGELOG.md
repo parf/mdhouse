@@ -5,6 +5,7 @@
 ### Added
 
 - Agent Bus integration (`mdhouse --agent-bus`): on any Markdown page, the 🗨 button or `a` opens a chat panel on the right (the left sidebar closes): ask an AI session to read the page — Updated / Do 🎯 / Resolve / Review / a note — and see its answers; `<!-- AB: name -->` in the doc names whom to ask; the default agents on the settings page
+- Agent Bus settings: a names filter — a regex per line, `^claude` `^codex` `^opencode` by default
 - Search: `no ripgrep` beside "In contents" when the built-in search ran instead of ripgrep
 
 ### Changed

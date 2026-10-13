@@ -182,17 +182,31 @@ function AgentBusSettings() {
   const [info, setInfo] = useState<AbInfo | null>(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState<string | null>(null);
 
-  useEffect(() => {
-    let live = true;
+  const load = () =>
     api
       .abInfo()
-      .then((got) => live && setInfo(got))
-      .catch((err: Error) => live && setError(err.message));
-    return () => {
-      live = false;
-    };
-  }, []);
+      .then((got) => {
+        setInfo(got);
+        if (got.enabled) setFilter(got.filter.join('\n'));
+      })
+      .catch((err: Error) => setError(err.message));
+  useEffect(() => void load(), []);
+
+  const saveFilter = async () => {
+    if (saving || filter === null) return;
+    setSaving(true);
+    setError('');
+    try {
+      await api.abFilter(filter.split('\n'));
+      await load();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const setDefault = async (names: string[]) => {
     if (saving || !info?.enabled) return;
@@ -254,6 +268,33 @@ function AgentBusSettings() {
             ))}
             {info.connected && !listed.length && <li class="settings-hint">No agent is running</li>}
           </ul>
+          <p>
+            <b>Names filter</b> — which agents the lists show: a regex per line, against the name without its <code>#</code>; empty — all
+          </p>
+          <textarea
+            class="ab-filter"
+            rows={4}
+            spellcheck={false}
+            value={filter ?? ''}
+            onInput={(e) => setFilter((e.target as HTMLTextAreaElement).value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                void saveFilter();
+              }
+            }}
+          />
+          <div>
+            <button
+              type="button"
+              class="ab-filter-save"
+              disabled={saving || filter === info.filter.join('\n')}
+              onClick={() => void saveFilter()}
+              title="Save — Ctrl+Enter"
+            >
+              Save filter
+            </button>
+          </div>
         </>
       )}
     </section>

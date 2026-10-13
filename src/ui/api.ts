@@ -73,7 +73,7 @@ export interface BusAgent {
 /** `GET /api/ab`: off, or on — connected or why not, the agents, the default ones. */
 export type AbInfo =
   | { enabled: false }
-  | { enabled: true; me: string; socket: string; connected: boolean; error?: string; default: string[]; agents: BusAgent[] };
+  | { enabled: true; me: string; socket: string; connected: boolean; error?: string; default: string[]; filter: string[]; agents: BusAgent[] };
 
 export type AbKind = 'sent' | 'ack' | 'answer' | 'done' | 'timeout' | 'error';
 export interface AbEvent {
@@ -271,6 +271,7 @@ export const api = {
 
   abInfo: () => get<AbInfo>('/api/ab'),
   abDefault: (names: string[]) => post<{ default: string[] }>('/api/ab/default', { names }),
+  abFilter: (lines: string[]) => post<{ filter: string[] }>('/api/ab/filter', { lines }),
   /** Ask agents about document `p` (a wire path): the job id; its events come over the live channel. */
   abSend: (req: { p: string; targets: string[]; action: AbAction; note: string }) => post<{ job: string }>('/api/ab/send', req),
   abJob: (id: string) => get<{ events: AbEvent[] }>('/api/ab/job', { id }),

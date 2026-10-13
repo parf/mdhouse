@@ -28,7 +28,7 @@ import { ownUnit } from './lib/service';
 import { allowedAddress, Users } from './lib/access';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
-import { AB_ACTIONS, abTargets, AgentBus, defaultSocket, requestText, validTarget, type AbAction } from './lib/agent-bus';
+import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, validTarget, type AbAction } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
 
 export interface ServeOptions {
@@ -545,8 +545,9 @@ export async function serve(opts: ServeOptions) {
         const ab = prefs.agentBus;
         if (!ab.enabled) return json({ enabled: false });
         const st = await bus.status();
-        const agents = st.connected ? await bus.agents().catch(() => []) : [];
-        return json({ enabled: true, me: bus.me, socket: ab.socket || defaultSocket(), ...st, default: ab.default, agents });
+        // the filter narrows the lists; a default agent stays, whatever its name
+        const agents = (st.connected ? await bus.agents().catch(() => []) : []).filter((a) => passes(a.name, ab.filter) || ab.default.includes(a.name));
+        return json({ enabled: true, me: bus.me, socket: ab.socket || defaultSocket(), ...st, default: ab.default, filter: ab.filter, agents });
       },
 
       /** The settings page's default agents — asked by a page that names none. */
@@ -558,6 +559,23 @@ export async function serve(opts: ServeOptions) {
           if (!Array.isArray(body?.names) || !body.names.every(validTarget)) return fail(400, 'expected {names: [bus name]}');
           const ab = await prefs.setAgentBus({ default: [...new Set(body.names as string[])] });
           return json({ default: ab.default });
+        },
+      },
+
+      /** The settings page's names filter: a regex per line. */
+      '/api/ab/filter': {
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
+          const body = (await req.json().catch(() => null)) as { lines?: unknown } | null;
+          if (!Array.isArray(body?.lines) || body.lines.length > 50 || !body.lines.every((l) => typeof l === 'string' && l.length <= 200)) {
+            return fail(400, 'expected {lines: [regex]}');
+          }
+          const lines = (body.lines as string[]).map((l) => l.trim()).filter(Boolean);
+          const bad = badPatterns(lines);
+          if (bad.length) return fail(400, `not a regex: ${bad.join(', ')}`);
+          const ab = await prefs.setAgentBus({ filter: lines });
+          return json({ filter: ab.filter });
         },
       },
 

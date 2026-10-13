@@ -143,7 +143,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
   code with no data, and stay open. [doc/access.md](../doc/access.md).
 - **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa`, `/api/insert`, `/api/roots/remove`, `/api/settings`,
-  `/api/git/commit|pull|push|reset`, `/api/ab/default|send` — and the
+  `/api/git/commit|pull|push|reset`, `/api/ab/default|filter|send` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.
@@ -178,6 +178,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `send` (topic `mdhouse`, a fresh tag) → filtered `consume({topic, tag})` until the answer / `done` / 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
 - The request text names the file by its absolute path and the page by its URL (`requestText`)
 - `/api/doc` → `ab: [names]` from `<!-- AB: … -->` — only while on
+- `agentBus.filter` — a regex per line against the name without `#` (default `^claude ^codex ^opencode`), narrows `/api/ab` agents; a default agent always stays; `POST /api/ab/filter` refuses a line that is not a regex
 
 ### Agent skills read the page's states
 
@@ -207,7 +208,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
   argon2id hash, `hostNames`), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and `agentBus` (`enabled`, `socket` —
-  `--agent-bus [on|off|<x.sock>]`; `default` agents — the settings page), and
+  `--agent-bus [on|off|<x.sock>]`; `default` agents and the names `filter` — the settings page), and
   `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
   `writable` is a getter — `--rw` asked, or under an auto-rw path with the switch on — so the
   switch and the CLI apply to a running server at once (`Prefs.refresh()` re-reads the file

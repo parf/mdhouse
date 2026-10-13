@@ -1890,3 +1890,8 @@ button.sync-chip { cursor: pointer; }
 .ab-compose .ab-error { padding: 0; }
 .ab-defaults { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; }
 .group-title .search-degraded { margin-left: 6px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--warn); }
+.ab-filter { width: 100%; max-width: 420px; box-sizing: border-box; font: 12.5px/1.5 var(--mono); padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg); color: var(--fg); resize: vertical; }
+.ab-filter-save { margin-top: 6px; font: inherit; font-size: 12.5px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg-raised); color: var(--fg); cursor: pointer; }
+.ab-filter-save:disabled { opacity: 0.5; cursor: default; }

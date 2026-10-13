@@ -141,6 +141,32 @@ function reason(text: string): string {
   return text.trim();
 }
 
+/**
+ * Does the names filter let `name` through? A regex per line, matched against the name without
+ * its `#`, any case; a line that is not a regex is skipped; no lines — every name.
+ */
+export function passes(name: string, filter: string[]): boolean {
+  const res = filter.flatMap((line) => {
+    try {
+      return [new RegExp(line, 'i')];
+    } catch {
+      return [];
+    }
+  });
+  return !res.length || res.some((re) => re.test(name.replace(/^#/, '')));
+}
+
+/** The lines of a filter that are not regexes. */
+export const badPatterns = (filter: string[]): string[] =>
+  filter.filter((line) => {
+    try {
+      new RegExp(line);
+      return false;
+    } catch {
+      return true;
+    }
+  });
+
 /** Alive: a long-poll open now, or the credential used within the last re-poll. */
 export function isAlive(r: Pick<Rec, 'readers' | 'last_used'>, now = Date.now()): boolean {
   if ((r.readers ?? 0) > 0) return true;

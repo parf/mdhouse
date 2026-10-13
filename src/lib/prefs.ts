@@ -70,7 +70,12 @@ export interface AgentBusConfig {
   socket: string;
   /** The agents a page asks when it names none (`<!-- AB: … -->`). */
   default: string[];
+  /** Which agents the lists show: a regex per line, against the name without its `#`; none — every one. */
+  filter: string[];
 }
+
+/** Coding agents: Claude, Codex, OpenCode sessions. */
+export const DEFAULT_AB_FILTER = ['^claude', '^codex', '^opencode'];
 
 export interface AccessConfig {
   /** Networks allowed in besides this machine, `192.168.1.0/24`; empty allows every address. */
@@ -123,7 +128,7 @@ const fresh = (): PrefsFile => ({
   server: {},
   access: { allow: [], users: {}, hostNames: [] },
   autoRw: [],
-  agentBus: { enabled: false, socket: '', default: [] },
+  agentBus: { enabled: false, socket: '', default: [], filter: [...DEFAULT_AB_FILTER] },
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
@@ -178,6 +183,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
       enabled: parsed.agentBus?.enabled === true,
       socket: typeof parsed.agentBus?.socket === 'string' ? parsed.agentBus.socket : '',
       default: Array.isArray(parsed.agentBus?.default) ? parsed.agentBus.default.filter((n) => typeof n === 'string') : [],
+      filter: Array.isArray(parsed.agentBus?.filter) ? parsed.agentBus.filter.filter((n) => typeof n === 'string') : [...DEFAULT_AB_FILTER],
     },
   };
 }
@@ -401,7 +407,7 @@ export class Prefs {
   /** The Agent Bus settings as the file holds them now. */
   get agentBus(): AgentBusConfig {
     this.refresh();
-    return { ...this.data.agentBus, default: [...this.data.agentBus.default] };
+    return { ...this.data.agentBus, default: [...this.data.agentBus.default], filter: [...this.data.agentBus.filter] };
   }
 
   /** Change the Agent Bus settings. */
