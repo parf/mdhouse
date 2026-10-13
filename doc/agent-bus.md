@@ -25,3 +25,17 @@ mdhouse --agent-bus          # off: mdhouse --agent-bus off
 ```
 
 Settings → Agent Bus: the default agents, which names to list.
+
+## Remote Agent Bus
+
+Only a local socket for now — forward the remote one over ssh:
+
+```sh
+ssh -N -o StreamLocalBindUnlink=yes \
+    -L /tmp/ab-rdvp.sock:/run/agent-bus/user-<login>.sock rdvp &
+mdhouse --agent-bus /tmp/ab-rdvp.sock
+```
+
+- You join as your login on that host — sshd runs as you; no token
+- The remote agents read the path mdhouse sends — the same tree must be there (a shared mount, the same checkout)
+- The tunnel is down → settings say *not connected*
