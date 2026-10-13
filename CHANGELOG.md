@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Table cells align to the top
+
 ### Added
 
 - Agent Bus over TCP: `mdhouse --agent-bus http://host:6767` asks for the token and keeps it in the config

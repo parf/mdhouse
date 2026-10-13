@@ -1056,7 +1056,7 @@ main {
 .md blockquote > *:last-child { margin-bottom: 0; }
 
 .md table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
-.md th, .md td { border: 1px solid var(--border); padding: 5px 10px; text-align: left; }
+.md th, .md td { border: 1px solid var(--border); padding: 5px 10px; text-align: left; vertical-align: top; }
 .md th { background: var(--bg-panel); font-weight: 620; }
 .md tbody tr:nth-child(even) { background: color-mix(in srgb, var(--bg-panel) 55%, transparent); }
 
