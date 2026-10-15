@@ -13,7 +13,7 @@ import { RootSelect } from './RootSelect';
 import { follow } from './PageHead';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
-  IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser,
+  IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser, IconView,
 } from './icons';
 
 export type SidebarState = 'off' | 'compact' | 'open';
@@ -256,7 +256,7 @@ export function Sidebar(props: SidebarProps) {
                     aria-selected={props.tab === id}
                     onClick={() => props.onTab(id)}
                   >
-                    {id}
+                    <IconView n={id.slice(1)} size={wide ? 13 : 15} />
                     {n > 0 && <span class="n">{n}</span>}
                   </button>
                 );

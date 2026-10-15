@@ -1907,16 +1907,19 @@ button.sync-chip { cursor: pointer; }
 /* ── views V1 / V2: the switch under the root select, the chips on a page's title ── */
 
 .view-chips { display: inline-flex; gap: 4px; margin-left: 10px; align-self: center; }
-.view-chip { font: 600 11px/1 var(--mono); padding: 3px 6px; border-radius: 6px; cursor: pointer; letter-spacing: 0.02em; }
-.view-chip.on { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
-.view-chip.on:hover { text-decoration: line-through; }
+.view-chip { font: 600 11px/1 var(--mono); padding: 2px 4px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 1px; }
+.view-chip svg { display: block; }
+.view-chip.on { color: #fff; background: var(--accent); border: 1px solid var(--accent); --view-sheet: var(--accent); }
+.view-chip.on:hover { opacity: 0.6; }
 .view-chip.add { color: var(--fg-muted); background: none; border: 1px dashed var(--border-strong); }
 .view-chip.add:hover { color: var(--accent); border-color: var(--accent); }
 .view-add { display: inline-flex; gap: 4px; opacity: 0; transition: opacity 0.12s; }
 h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1; }
 .crumbs .view-chips { margin-left: 8px; }
-.crumbs .view-chip { font-size: 10px; padding: 2px 5px; }
+.crumbs .view-chip { font-size: 10px; padding: 1px 3px; }
+.crumbs .view-chip svg { width: 13px; height: 13px; }
 /* a view's tab in the sidebar: its name, and how many folders / files it holds */
+.tabs .view-tab[aria-selected="true"] { color: var(--accent); }
 .tabs .view-tab { font: 600 11px/1 var(--mono); display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
 .tabs .view-tab .n { font-size: 9.5px; padding: 1px 3px; border-radius: 5px; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 @media (hover: none) { .view-add { opacity: 1; } }

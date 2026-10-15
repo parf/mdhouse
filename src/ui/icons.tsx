@@ -226,6 +226,17 @@ export const IconBus = (p: Props) =>
     p,
   );
 
+/** A view: two sheets stacked, its number on the front one. */
+export const IconView = ({ n, size = 16 }: { n: string; size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
+    <rect x="4.6" y="1.2" width="10.2" height="10.2" rx="2" opacity="0.55" />
+    <rect x="1.2" y="4.6" width="10.2" height="10.2" rx="2" style={{ fill: 'var(--view-sheet, var(--bg-panel))' }} />
+    <text x="6.3" y="12.7" text-anchor="middle" font-size="8.4" font-weight="700" fill="currentColor" stroke="none" font-family="var(--mono)">
+      {n}
+    </text>
+  </svg>
+);
+
 /** Settings: a cog, six teeth. */
 export const IconGear = (p: Props) =>
   svg(
