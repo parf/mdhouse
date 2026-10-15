@@ -1917,6 +1917,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .crumbs .view-chips { margin-left: 8px; }
 .crumbs .view-chip { font-size: 10px; padding: 2px 5px; }
 /* a view's tab in the sidebar: its name, and how many folders / files it holds */
-.tabs .view-tab { flex: 0 0 auto; padding: 5px 7px; font: 600 11px/1 var(--mono); display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
+.tabs .view-tab { font: 600 11px/1 var(--mono); display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
 .tabs .view-tab .n { font-size: 9.5px; padding: 1px 3px; border-radius: 5px; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 @media (hover: none) { .view-add { opacity: 1; } }

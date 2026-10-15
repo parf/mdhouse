@@ -245,6 +245,8 @@ export function Sidebar(props: SidebarProps) {
               ))}
               {VIEW_IDS.map((id) => {
                 const n = props.views[id].length;
+                // V1 is always there to start with; V2 shows once it holds something
+                if (id === 'V2' && !n && props.tab !== id) return null;
                 return (
                   <button
                     key={id}
