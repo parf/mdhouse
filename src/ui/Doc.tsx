@@ -62,6 +62,8 @@ interface Props {
   onUnmark?: (mark: Mark) => void;
   /** The Agent Bus panel opened: the left sidebar makes room. */
   onAgentPanel?: () => void;
+  /** The view chips on the title. */
+  chips?: preact.ComponentChildren;
 }
 
 /**
@@ -115,6 +117,7 @@ export function Doc({
   deadMarks = [],
   onUnmark,
   onAgentPanel,
+  chips,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
   /** The file line the page landed on (`#L<n>`) — the ✎ link opens the file there. */
@@ -999,6 +1002,7 @@ export function Doc({
           <h1 class="doc-title">
             <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />
             {title}
+            {chips}
           </h1>
           {/* Hands the file to whatever handles `edit:` URLs — an editor, set up outside mdhouse.
               Settings turns it off where nothing does. */}

@@ -2,6 +2,8 @@ import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
+import { loadActive, loadViews, noViews, saveActive, saveViews, toggle, type ViewId } from './ui/views';
+import { ViewChips } from './ui/ViewChips';
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
@@ -383,6 +385,20 @@ function App() {
     if (dirTarget.dir) setExpanded((prev) => new Set([...prev, dirTarget.dir, ...ancestors(dirTarget.dir)]));
   }, [dirTarget?.rootId, dirTarget?.dir]);
 
+  // Views V1 / V2, per root: what each holds, and the one the sidebar shows.
+  const [views, setViews] = useState(loadViews);
+  const [activeView, setActiveView] = useState(loadActive);
+  useEffect(() => saveViews(views), [views]);
+  useEffect(() => saveActive(activeView), [activeView]);
+  const toggleView = (root: string, id: ViewId, item: string) =>
+    setViews((all) => {
+      const mine = all[root] ?? noViews();
+      return { ...all, [root]: { ...mine, [id]: toggle(mine[id], item) } };
+    });
+  /** The view chips for a page's title: a file `rel`, or a folder `dir/`; none for a root's own page. */
+  const chipsFor = (root: string, item: string) =>
+    root && item && item !== '/' ? <ViewChips item={item} views={views[root] ?? noViews()} onToggle={(id, it) => toggleView(root, id, it)} /> : null;
+
   // the page shown, remembered for its root
   // — a document by its own address: while the next page loads, the address bar is already its
   useEffect(() => {
@@ -487,6 +503,14 @@ function App() {
 
       {sidebar !== 'off' && (
         <Sidebar
+          views={views[rootId] ?? noViews()}
+          view={activeView[rootId] ?? null}
+          onView={(v) =>
+            setActiveView((a) => {
+              const { [rootId]: _, ...rest } = a;
+              return v ? { ...rest, [rootId]: v } : rest;
+            })
+          }
           state={sidebar}
           roots={roots}
           rootId={rootId}
@@ -559,9 +583,11 @@ function App() {
             crumbUrl={(d) => `${dirPageUrl(d, dirTarget.rootId)}?git`}
             view={viewOf(full.slice(path.length))}
             go={go}
+            chips={chipsFor(dirTarget.rootId, `${dirTarget.dir}/`)}
           />
         ) : dirTarget ? (
           <DirPage
+            chips={chipsFor(dirTarget.rootId, `${dirTarget.dir}/`)}
             tree={tree?.root.id === dirTarget.rootId ? tree : null}
             dir={dirTarget.dir}
             onOpen={openFile}
@@ -591,6 +617,7 @@ function App() {
           />
         ) : (
         <Doc
+          chips={doc ? chipsFor(doc.root, doc.rel) : null}
           doc={doc}
           loading={loadingDoc}
           error={docError}

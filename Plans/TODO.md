@@ -5,7 +5,7 @@
 - ✅ T1 Root switch keeps the file / folder open in this session
   When switching session (root-select) — preserve the file / directory opened in it.
   When page is missing or no page — just do not switch to it (current way).
-- ⏳ T2 Per-session views V1 / V2 — the left list filtered to the selected folders and files
+- ✅ T2 Per-session views V1 / V2 — the left list filtered to the selected folders and files
   Working with several directories in a big project is really hard today.
   - select several directories / files into a view; the left list shows only them
   - in view mode muted files are hidden

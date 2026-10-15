@@ -59,6 +59,8 @@ interface Props {
   go: (url: string) => void;
   onAbout?: () => void;
   gear?: preact.ComponentChildren;
+  /** The view chips on the title (`ViewChips`). */
+  chips?: preact.ComponentChildren;
 }
 
 /**
@@ -66,7 +68,7 @@ interface Props {
  * between them moves nothing. The name leads to the other view; the tabs on the right are
  * GIT, then the git view's own tabs.
  */
-export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear }: Props) {
+export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear, chips }: Props) {
   const segments = dir ? dir.split('/') : [];
   const name = segments.at(-1) ?? rootName;
   const onGit = view !== null;
@@ -99,6 +101,7 @@ export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAb
               {name}/
             </Link>
           )}
+          {chips}
         </h1>
         <div class="head-right">
         <div class="tabs" role="tablist">

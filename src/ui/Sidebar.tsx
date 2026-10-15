@@ -1,4 +1,5 @@
 import { useMemo } from 'preact/hooks';
+import { inView, VIEW_IDS, type RootViews, type ViewId } from './views';
 import type { RootInfo } from './api';
 import type { TreePayload, RecentEntry } from '../lib/store';
 import type { SearchResult } from '../lib/search';
@@ -76,6 +77,10 @@ export interface SidebarProps {
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
   onAbout?: () => void;
+  /** The root's views and the one shown (null: every file). */
+  views: RootViews;
+  view: ViewId | null;
+  onView: (view: ViewId | null) => void;
 }
 
 const STATE_ICON = { off: IconPanelOff, compact: IconPanel, open: IconPanelWide };
@@ -86,7 +91,29 @@ const NEXT_LABEL: Record<SidebarState, string> = {
   open: 'Hide sidebar',
 };
 
-export function Sidebar(props: SidebarProps) {
+export function Sidebar(outer: SidebarProps) {
+  // In a view every list narrows to its folders and files, muted ones left out: the tree, the
+  // favorites, recents and search — all built from these.
+  const entries = outer.view ? outer.views[outer.view] : null;
+  const viewTree = useMemo(() => {
+    const t = outer.tree;
+    if (!t || !entries) return t;
+    const keep = (rel: string) => inView(rel, entries);
+    return {
+      ...t,
+      files: t.files.filter((f) => keep(f.rel) && !f.marks?.includes('muted')),
+      marks: { ...t.marks, favorite: t.marks.favorite.filter((e) => keep(e) || entries.some((v) => v.startsWith(e))) },
+    };
+  }, [outer.tree, entries]);
+  const viewRecents = useMemo(
+    () => (entries && outer.recents ? outer.recents.filter((e) => inView(e.rel, entries)) : outer.recents),
+    [outer.recents, entries],
+  );
+  const viewSearch = useMemo(
+    () => (entries && outer.search ? { ...outer.search, hits: outer.search.hits.filter((h) => inView(h.rel, entries)) } : outer.search),
+    [outer.search, entries],
+  );
+  const props: SidebarProps = { ...outer, tree: viewTree, recents: viewRecents, search: viewSearch };
   const { state, tree, query } = props;
   const wide = state === 'open';
   const StateIcon = STATE_ICON[state];
@@ -167,6 +194,28 @@ export function Sidebar(props: SidebarProps) {
           />
         </div>
       )}
+
+      <div class={`view-switch${wide ? '' : ' compact'}`} role="tablist" aria-label="View">
+        <button role="tab" aria-selected={!props.view} onClick={() => props.onView(null)} title="Every file">
+          All
+        </button>
+        {VIEW_IDS.map((id) => {
+          const n = props.views[id].length;
+          return (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={props.view === id}
+              disabled={!n && props.view !== id}
+              onClick={() => props.onView(props.view === id ? null : id)}
+              title={n ? `View ${id}: ${n} folder${n === 1 ? '' : 's'} / file${n === 1 ? '' : 's'}` : `View ${id} is empty — add with +${id} on a page's title`}
+            >
+              {id}
+              {wide && n > 0 && <span class="n">{n}</span>}
+            </button>
+          );
+        })}
+      </div>
 
       <div class="side-tools">
         {wide && (

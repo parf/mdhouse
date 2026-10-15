@@ -27,6 +27,8 @@ const FILTER_HELP = [
 const FILTER_FROM = 50;
 
 interface Props {
+  /** The view chips on the title. */
+  chips?: preact.ComponentChildren;
   tree: TreePayload | null;
   /** Root-relative folder, '' for the root itself. */
   dir: string;
@@ -61,7 +63,7 @@ const loadSort = (): Sort => {
  * Built from the tree the sidebar already holds, so it costs no request and follows live
  * changes with it.
  */
-export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear, rootId }: Props) {
+export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear, rootId, chips }: Props) {
   const [inRepo, setInRepo] = useState(false);
   useEffect(() => {
     let live = true;
@@ -159,6 +161,7 @@ export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear,
         go={go}
         onAbout={onAbout}
         gear={gear}
+        chips={chips}
       />
 
       <div class="dir-meta">

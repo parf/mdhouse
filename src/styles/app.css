@@ -1903,3 +1903,26 @@ button.sync-chip { cursor: pointer; }
 .doc-meta .uncommitted:hover { animation: none; background: color-mix(in srgb, var(--warn) 18%, transparent); }
 @keyframes uncommittedFlash { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .doc-meta .uncommitted { animation: none; } }
+
+/* ── views V1 / V2: the switch under the root select, the chips on a page's title ── */
+
+.view-switch { display: flex; gap: 2px; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+.view-switch button { flex: 1; font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; padding: 3px 6px;
+  border: 1px solid transparent; border-radius: 6px; background: none; color: var(--fg-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.view-switch button:hover:not(:disabled) { background: var(--bg-hover); color: var(--fg); }
+.view-switch button[aria-selected="true"] { background: var(--bg-raised); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.view-switch button:disabled { opacity: 0.4; cursor: default; }
+.view-switch .n { font: 600 10px/1 var(--mono); padding: 1px 4px; border-radius: 6px; background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.view-switch.compact { padding: 4px 6px; }
+.view-switch.compact button { padding: 2px 2px; font-size: 10.5px; }
+
+.view-chips { display: inline-flex; gap: 4px; margin-left: 10px; align-self: center; }
+.view-chip { font: 600 11px/1 var(--mono); padding: 3px 6px; border-radius: 6px; cursor: pointer; letter-spacing: 0.02em; }
+.view-chip.on { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
+.view-chip.on:hover { text-decoration: line-through; }
+.view-chip.add { color: var(--fg-muted); background: none; border: 1px dashed var(--border-strong); }
+.view-chip.add:hover { color: var(--accent); border-color: var(--accent); }
+.view-add { display: inline-flex; gap: 4px; opacity: 0; transition: opacity 0.12s; }
+h1:hover .view-add, .view-add:focus-within { opacity: 1; }
+@media (hover: none) { .view-add { opacity: 1; } }

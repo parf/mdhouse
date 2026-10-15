@@ -11,6 +11,8 @@ import { Ago } from './Ago';
 export type { HomeView } from './PageHead';
 
 interface Props {
+  /** The view chips on the title. */
+  chips?: preact.ComponentChildren;
   rootId: string;
   roots: RootInfo[];
   tree: TreePayload | null;
@@ -136,6 +138,7 @@ export function Home(props: Props) {
         go={props.go}
         onAbout={props.onAbout}
         gear={props.gear}
+        chips={props.chips}
       />
 
       {(() => {

@@ -112,6 +112,10 @@ string onto a root path.
 - A root switch goes back to the page last shown in that root — localStorage `mdhouse.lastByRoot`
   `{rootId: url}`, a document by its own `url`; only when it is still there (`api.pageExists`:
   `HEAD /api/raw`, a folder `/api/files`), else as before.
+- Views V1 / V2 (`src/ui/views.ts`): per root, files `rel` and folders `dir/` — localStorage
+  `mdhouse.views`, the shown one `mdhouse.view`. `Sidebar` narrows the tree, favorites, recents and
+  search to the view, muted files left out; `ViewChips` on a document's and a folder's title adds
+  (`+V1`, on hover) and takes out (`V1`).
 
 ### Git is batched
 
