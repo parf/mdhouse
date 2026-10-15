@@ -4,7 +4,7 @@
 
 ### Added
 
-- Views V1 / V2: pick folders and files with `+V1` / `+V2` on a page's title; the switch under the root select narrows the sidebar — tree, favorites, recents, search — to them, muted files hidden; kept in this browser
+- Views V1 / V2: pick folders and files with `+V1` / `+V2` on a page's title or breadcrumbs; the V1 / V2 tabs in the sidebar show the tree of just them, muted files hidden; kept in this browser
 
 ### Changed
 

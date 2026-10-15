@@ -1906,17 +1906,6 @@ button.sync-chip { cursor: pointer; }
 
 /* ── views V1 / V2: the switch under the root select, the chips on a page's title ── */
 
-.view-switch { display: flex; gap: 2px; padding: 5px 8px; border-bottom: 1px solid var(--border); }
-.view-switch button { flex: 1; font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; padding: 3px 6px;
-  border: 1px solid transparent; border-radius: 6px; background: none; color: var(--fg-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-.view-switch button:hover:not(:disabled) { background: var(--bg-hover); color: var(--fg); }
-.view-switch button[aria-selected="true"] { background: var(--bg-raised); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
-.view-switch button:disabled { opacity: 0.4; cursor: default; }
-.view-switch .n { font: 600 10px/1 var(--mono); padding: 1px 4px; border-radius: 6px; background: color-mix(in srgb, var(--fg) 8%, transparent); }
-.view-switch.compact { padding: 4px 6px; }
-.view-switch.compact button { padding: 2px 2px; font-size: 10.5px; }
-
 .view-chips { display: inline-flex; gap: 4px; margin-left: 10px; align-self: center; }
 .view-chip { font: 600 11px/1 var(--mono); padding: 3px 6px; border-radius: 6px; cursor: pointer; letter-spacing: 0.02em; }
 .view-chip.on { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
@@ -1924,5 +1913,10 @@ button.sync-chip { cursor: pointer; }
 .view-chip.add { color: var(--fg-muted); background: none; border: 1px dashed var(--border-strong); }
 .view-chip.add:hover { color: var(--accent); border-color: var(--accent); }
 .view-add { display: inline-flex; gap: 4px; opacity: 0; transition: opacity 0.12s; }
-h1:hover .view-add, .view-add:focus-within { opacity: 1; }
+h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1; }
+.crumbs .view-chips { margin-left: 8px; }
+.crumbs .view-chip { font-size: 10px; padding: 2px 5px; }
+/* a view's tab in the sidebar: its name, and how many folders / files it holds */
+.tabs .view-tab { flex: 0 0 auto; padding: 5px 7px; font: 600 11px/1 var(--mono); display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
+.tabs .view-tab .n { font-size: 9.5px; padding: 1px 3px; border-radius: 5px; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 @media (hover: none) { .view-add { opacity: 1; } }

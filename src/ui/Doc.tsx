@@ -62,8 +62,9 @@ interface Props {
   onUnmark?: (mark: Mark) => void;
   /** The Agent Bus panel opened: the left sidebar makes room. */
   onAgentPanel?: () => void;
-  /** The view chips on the title. */
+  /** The view chips on the title, and on the breadcrumbs (the document's folder). */
   chips?: preact.ComponentChildren;
+  crumbChips?: preact.ComponentChildren;
 }
 
 /**
@@ -118,6 +119,7 @@ export function Doc({
   onUnmark,
   onAgentPanel,
   chips,
+  crumbChips,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
   /** The file line the page landed on (`#L<n>`) — the ✎ link opens the file there. */
@@ -994,6 +996,7 @@ export function Doc({
               </span>
             );
           })}
+          {dirs.length > 0 && crumbChips}
         </div>
 
         {/* The ⚙ shares the title's line: the top of a document is the breadcrumb, and a gear

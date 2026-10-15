@@ -17,7 +17,7 @@ import {
 } from './icons';
 
 export type SidebarState = 'off' | 'compact' | 'open';
-export type Tab = 'files' | 'favorites' | 'recent' | 'mine';
+export type Tab = 'files' | 'favorites' | 'recent' | 'mine' | ViewId;
 
 /**
  * The tab strip is present in compact as well as open — switching to recents or favorites
@@ -77,10 +77,8 @@ export interface SidebarProps {
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
   onAbout?: () => void;
-  /** The root's views and the one shown (null: every file). */
+  /** The root's views: their tabs show the tree narrowed to them. */
   views: RootViews;
-  view: ViewId | null;
-  onView: (view: ViewId | null) => void;
 }
 
 const STATE_ICON = { off: IconPanelOff, compact: IconPanel, open: IconPanelWide };
@@ -91,34 +89,18 @@ const NEXT_LABEL: Record<SidebarState, string> = {
   open: 'Hide sidebar',
 };
 
-export function Sidebar(outer: SidebarProps) {
-  // In a view every list narrows to its folders and files, muted ones left out: the tree, the
-  // favorites, recents and search — all built from these.
-  const entries = outer.view ? outer.views[outer.view] : null;
-  const viewTree = useMemo(() => {
-    const t = outer.tree;
-    if (!t || !entries) return t;
-    const keep = (rel: string) => inView(rel, entries);
-    return {
-      ...t,
-      files: t.files.filter((f) => keep(f.rel) && !f.marks?.includes('muted')),
-      marks: { ...t.marks, favorite: t.marks.favorite.filter((e) => keep(e) || entries.some((v) => v.startsWith(e))) },
-    };
-  }, [outer.tree, entries]);
-  const viewRecents = useMemo(
-    () => (entries && outer.recents ? outer.recents.filter((e) => inView(e.rel, entries)) : outer.recents),
-    [outer.recents, entries],
-  );
-  const viewSearch = useMemo(
-    () => (entries && outer.search ? { ...outer.search, hits: outer.search.hits.filter((h) => inView(h.rel, entries)) } : outer.search),
-    [outer.search, entries],
-  );
-  const props: SidebarProps = { ...outer, tree: viewTree, recents: viewRecents, search: viewSearch };
+export function Sidebar(props: SidebarProps) {
   const { state, tree, query } = props;
   const wide = state === 'open';
   const StateIcon = STATE_ICON[state];
 
-  const nodes = useMemo<Node[]>(() => (tree ? buildTree(tree.files.filter((f) => f.size > 0)) : []), [tree]);
+  // a view's tab: the tree narrowed to its folders and files, muted ones left out
+  const entries = props.tab === 'V1' || props.tab === 'V2' ? props.views[props.tab] : null;
+  const shown = useMemo(
+    () => (tree?.files ?? []).filter((f) => f.size > 0 && (!entries || (inView(f.rel, entries) && !f.marks?.includes('muted')))),
+    [tree, entries],
+  );
+  const nodes = useMemo<Node[]>(() => buildTree(shown), [shown]);
 
   const sizes = useMemo(() => new Map((tree?.files ?? []).map((f) => [f.rel, f.size])), [tree]);
 
@@ -195,28 +177,6 @@ export function Sidebar(outer: SidebarProps) {
         </div>
       )}
 
-      <div class={`view-switch${wide ? '' : ' compact'}`} role="tablist" aria-label="View">
-        <button role="tab" aria-selected={!props.view} onClick={() => props.onView(null)} title="Every file">
-          All
-        </button>
-        {VIEW_IDS.map((id) => {
-          const n = props.views[id].length;
-          return (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={props.view === id}
-              disabled={!n && props.view !== id}
-              onClick={() => props.onView(props.view === id ? null : id)}
-              title={n ? `View ${id}: ${n} folder${n === 1 ? '' : 's'} / file${n === 1 ? '' : 's'}` : `View ${id} is empty — add with +${id} on a page's title`}
-            >
-              {id}
-              {wide && n > 0 && <span class="n">{n}</span>}
-            </button>
-          );
-        })}
-      </div>
-
       <div class="side-tools">
         {wide && (
           <div class="search-box">
@@ -283,6 +243,22 @@ export function Sidebar(outer: SidebarProps) {
                   {wide && <span>{label}</span>}
                 </button>
               ))}
+              {VIEW_IDS.map((id) => {
+                const n = props.views[id].length;
+                return (
+                  <button
+                    key={id}
+                    role="tab"
+                    class="view-tab"
+                    title={n ? `View ${id}: ${n} folder${n === 1 ? '' : 's'} / file${n === 1 ? '' : 's'} — the tree narrowed to them` : `View ${id} — empty: add folders and files with +${id} on a page's title or its breadcrumbs`}
+                    aria-selected={props.tab === id}
+                    onClick={() => props.onTab(id)}
+                  >
+                    {id}
+                    {n > 0 && <span class="n">{n}</span>}
+                  </button>
+                );
+              })}
             </div>
 
             {wide && (
@@ -312,8 +288,10 @@ export function Sidebar(outer: SidebarProps) {
       <div class="side-body">
         {query ? (
           <SearchResults {...props} sizes={sizes} nameHits={nameHits} />
-        ) : props.tab === 'files' ? (
-          tree ? (
+        ) : props.tab === 'files' || entries ? (
+          entries && !nodes.length ? (
+            <p class="empty">View {props.tab} is empty — add folders and files with +{props.tab} on a page's title or its breadcrumbs.</p>
+          ) : tree ? (
             <Tree
               nodes={nodes}
               expanded={props.expanded}
@@ -339,7 +317,7 @@ export function Sidebar(outer: SidebarProps) {
         <span class={`dot ${props.live ? 'live' : 'lost'}`} title={props.live ? 'Live — watching for changes' : 'Reconnecting…'} />
         {tree && (
           <span>
-            {tree.files.length} files{tree.repos > 1 ? ` · ${tree.repos} repos` : ''}
+            {entries ? shown.length : tree.files.length} files{tree.repos > 1 ? ` · ${tree.repos} repos` : ''}
           </span>
         )}
         {tree?.degraded && <span title="git was unavailable; the list came from a filesystem walk">no git</span>}

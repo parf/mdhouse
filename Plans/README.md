@@ -113,9 +113,10 @@ string onto a root path.
   `{rootId: url}`, a document by its own `url`; only when it is still there (`api.pageExists`:
   `HEAD /api/raw`, a folder `/api/files`), else as before.
 - Views V1 / V2 (`src/ui/views.ts`): per root, files `rel` and folders `dir/` — localStorage
-  `mdhouse.views`, the shown one `mdhouse.view`. `Sidebar` narrows the tree, favorites, recents and
-  search to the view, muted files left out; `ViewChips` on a document's and a folder's title adds
-  (`+V1`, on hover) and takes out (`V1`).
+  `mdhouse.views`. Each is a sidebar tab after Mine (`Tab` `V1` / `V2`): the tree narrowed to it,
+  muted files left out; its count on the tab, an empty one says how to fill it. `ViewChips` on a
+  document's and a folder's title, and on a document's breadcrumbs (its folder), adds (`+V1`, on
+  hover) and takes out (`V1`).
 
 ### Git is batched
 

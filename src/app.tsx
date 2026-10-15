@@ -2,7 +2,7 @@ import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
-import { loadActive, loadViews, noViews, saveActive, saveViews, toggle, type ViewId } from './ui/views';
+import { loadViews, noViews, saveViews, toggle, type ViewId } from './ui/views';
 import { ViewChips } from './ui/ViewChips';
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
@@ -385,11 +385,9 @@ function App() {
     if (dirTarget.dir) setExpanded((prev) => new Set([...prev, dirTarget.dir, ...ancestors(dirTarget.dir)]));
   }, [dirTarget?.rootId, dirTarget?.dir]);
 
-  // Views V1 / V2, per root: what each holds, and the one the sidebar shows.
+  // Views V1 / V2, per root: what each holds; their sidebar tabs show the tree narrowed to it.
   const [views, setViews] = useState(loadViews);
-  const [activeView, setActiveView] = useState(loadActive);
   useEffect(() => saveViews(views), [views]);
-  useEffect(() => saveActive(activeView), [activeView]);
   const toggleView = (root: string, id: ViewId, item: string) =>
     setViews((all) => {
       const mine = all[root] ?? noViews();
@@ -504,13 +502,6 @@ function App() {
       {sidebar !== 'off' && (
         <Sidebar
           views={views[rootId] ?? noViews()}
-          view={activeView[rootId] ?? null}
-          onView={(v) =>
-            setActiveView((a) => {
-              const { [rootId]: _, ...rest } = a;
-              return v ? { ...rest, [rootId]: v } : rest;
-            })
-          }
           state={sidebar}
           roots={roots}
           rootId={rootId}
@@ -618,6 +609,7 @@ function App() {
         ) : (
         <Doc
           chips={doc ? chipsFor(doc.root, doc.rel) : null}
+          crumbChips={doc && doc.rel.includes('/') ? chipsFor(doc.root, `${doc.rel.slice(0, doc.rel.lastIndexOf('/'))}/`) : null}
           doc={doc}
           loading={loadingDoc}
           error={docError}

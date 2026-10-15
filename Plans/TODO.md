@@ -11,7 +11,8 @@
   - in view mode muted files are hidden
   - selected items stored in localStorage
   - two views: `V1` and `V2`
-  - turned on by a switch in the left icon block (below root select)
+  - turned on by a switch in the left icon block (below root select) — V1 / V2 tabs after Mine; Files is "all"
+  - `+V1` / `+V2` appearing near breadcrumbs (dir)
   - add: `[+V1] [+V2]` in the h1 doc-title, shown on mouseover
   - remove: a selected doc always shows `[V1]` / `[V2]` in the doc-title; a click de-selects
 - ✅ T3 HTML page title: `FileName - PATH(last2) - Root - MDHOUSE`
