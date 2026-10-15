@@ -1923,3 +1923,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .tabs .view-tab { font: 600 11px/1 var(--mono); display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
 .tabs .view-tab .n { font-size: 9.5px; padding: 1px 3px; border-radius: 5px; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 @media (hover: none) { .view-add { opacity: 1; } }
+/* a wide sidebar too narrow for six labels: the tabs keep only their icons */
+.side-tools { container-type: inline-size; }
+@container (max-width: 420px) {
+  .tabs:not(.icons) button > span:not(.n) { display: none; }
+  .tabs:not(.icons) button { display: flex; align-items: center; justify-content: center; }
+}
