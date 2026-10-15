@@ -19,6 +19,8 @@ import { IconGear, IconPanel, IconSearch } from './ui/icons';
 const STATES: SidebarState[] = ['off', 'compact', 'open'];
 const LS_STATE = 'mdhouse.sidebar';
 const LS_IGNORED = 'mdhouse.ignored';
+/** Per root, the page last shown in it — a root switch goes back there. */
+const LS_LAST = 'mdhouse.lastByRoot';
 
 const load = <T,>(key: string, fallback: T): T => {
   try {
@@ -352,12 +354,23 @@ function App() {
    * move with the pick — changing only the tree left the page waiting for a root it no longer
    * had. Elsewhere the reader stays where they are.
    */
+  /** A newer pick supersedes an older one still checking its saved page. */
+  const pickSeq = useRef(0);
   const pickRoot = useCallback(
     (id: string) => {
       setRootId(id);
-      if (route.kind === 'dir') go(dirPageUrl('', id));
+      const seq = ++pickSeq.current;
+      // back to the root's last page — when there is one and it is still there; else as before
+      const asBefore = () => route.kind === 'dir' && go(dirPageUrl('', id));
+      const saved = load<Record<string, string>>(LS_LAST, {})[id];
+      if (!saved || saved === full) return void asBefore();
+      void api.pageExists(saved).then((ok) => {
+        if (seq !== pickSeq.current) return;
+        if (ok) go(saved);
+        else asBefore();
+      });
     },
-    [route.kind, go, dirPageUrl],
+    [route.kind, go, dirPageUrl, full],
   );
 
   /** Which root and folder a folder page names. */
@@ -369,6 +382,13 @@ function App() {
     if (dirTarget.rootId && dirTarget.rootId !== rootId) setRootId(dirTarget.rootId);
     if (dirTarget.dir) setExpanded((prev) => new Set([...prev, dirTarget.dir, ...ancestors(dirTarget.dir)]));
   }, [dirTarget?.rootId, dirTarget?.dir]);
+
+  // the page shown, remembered for its root
+  // — a document by its own address: while the next page loads, the address bar is already its
+  useEffect(() => {
+    const [id, url] = dirTarget ? [dirTarget.rootId, full] : docPath && doc ? [doc.root, doc.url] : ['', ''];
+    if (id) save(LS_LAST, { ...load<Record<string, string>>(LS_LAST, {}), [id]: url });
+  }, [doc?.root, doc?.url, dirTarget?.rootId, full]);
 
   // The tab's title follows the page shown — `pageTitle()`; set again when the roots arrive.
   useEffect(() => {

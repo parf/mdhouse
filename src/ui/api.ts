@@ -8,6 +8,7 @@ import type { Mark } from '../lib/prefs';
 import type { FileDiff, FileHistory, FileStatus } from '../lib/git';
 import type { QaChange } from '../lib/qa';
 import type { Kind } from '../lib/filetypes';
+import { routeOf } from '../lib/urls';
 
 export interface Settings {
   editLink: boolean;
@@ -268,6 +269,19 @@ export const api = {
     });
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     return res.json() as Promise<Settings>;
+  },
+
+  /** Is the page at `url` still there: a file, or a folder — a root's own always is. */
+  async pageExists(url: string): Promise<boolean> {
+    const route = routeOf(new URL(url, location.origin).pathname);
+    try {
+      if (route.kind === 'dir') return !route.dir || (await fetch(`/api/files?p=${encodeURIComponent(`${route.rootId}/${route.dir}`)}`)).ok;
+      if (route.kind !== 'file') return false;
+      const wire = route.path.slice(1).split('/').map(decodeURIComponent).join('/');
+      return (await fetch(`/api/raw?p=${encodeURIComponent(wire)}`, { method: 'HEAD' })).ok;
+    } catch {
+      return false;
+    }
   },
 
   abInfo: () => get<AbInfo>('/api/ab'),

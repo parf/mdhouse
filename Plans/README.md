@@ -109,6 +109,9 @@ string onto a root path.
   favicon.ico`) — suffixed `-2` as a clash is.
 - `/d/…` (the old shape) → 301 to the new address, query kept.
 - `/` — the front page; `/settings` — settings.
+- A root switch goes back to the page last shown in that root — localStorage `mdhouse.lastByRoot`
+  `{rootId: url}`, a document by its own `url`; only when it is still there (`api.pageExists`:
+  `HEAD /api/raw`, a folder `/api/files`), else as before.
 
 ### Git is batched
 
