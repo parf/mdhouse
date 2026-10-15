@@ -12,6 +12,7 @@ Your notes and docs, in one browser tab. Your AI writes questions — you answer
 - 📁 **All your files in one place** — every folder, every repo, one tree on the left.
 - 🔍 **Find anything** — type a word, jump to the exact line.
 - 🕐 **Recent and Mine** — what changed lately, and what *you* changed.
+- 👁 **Views** — pick the folders and files you work on; one click shows only them.
 - 🔒 **Safe** — nothing is copied or uploaded; it only reads, unless you allow writing.
 - 🌙 Light and dark, on a phone too.
 

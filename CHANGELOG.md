@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+## 2.3.0 — 2026-10-14
 
 ### Added
 
-- Views V1 / V2: pick folders and files with `+V1` / `+V2` on a page's title or breadcrumbs; the V1 / V2 tabs in the sidebar show the tree of just them, muted files hidden; kept in this browser
+- Views V1 / V2: pick folders and files with `+` and the view's icon (two stacked sheets, its number on the front) on a page's title or a document's breadcrumbs; a view's tab in the sidebar shows the tree of just them, muted files hidden; V2 shows once it holds something; kept in this browser
+- Sidebar tabs: icons only when a wide sidebar is too narrow for their labels
 
 ### Changed
 

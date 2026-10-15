@@ -54,7 +54,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 - 📁 **All your files in one place** — every folder, every repo, one tree on the left.
 - 🔍 **Find anything** — type a word, jump to the exact line.
 - 🕐 **Recent and Mine** — what changed lately, and what *you* changed.
-- 👁 **Views V1 / V2** — pick the folders and files you work on; the left list shows only them.
+- 👁 **Views V1 / V2** — pick the folders and files you work on (`+` on a page's title); its sidebar tab shows only them.
 
 ![The Recent tab in the compact sidebar: file, folder and commit subject per row, a diamond on your own files, and the age colored by how fresh it is](doc/recent.png)
 

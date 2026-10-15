@@ -206,6 +206,18 @@ Plan: [ab-integration.md](ab-integration.md). `mdhouse --agent-bus`; a page asks
 - A restart drops every job, and their replies stayed queued in `#mdhouse@<host>`'s inbox for
   good. On connect mdhouse drains its own inbox.
 
+## Views, root switch, tab title (2.3)
+
+- T3 the tab's title `FileName - PATH - Root - MDHOUSE` — `pageTitle()` in `src/ui/format.ts`, tested; a
+  PATH like the root merges into it (one inside the other → the longer; the root's last folder
+  starting the PATH → written once). A document that does not load is named from its address.
+- T1 a root switch goes back to the page last open there — `mdhouse.lastByRoot`. First cut saved the
+  address bar, which during navigation already held the next page — the old root got the new
+  root's URL; a document is now saved by its own `url`. A page gone → nothing changes (`HEAD /api/raw`).
+- T2 views V1 / V2 — `src/ui/views.ts`; started as an `All · V1 · V2` row narrowing every list, then,
+  as asked, tabs after Mine narrowing the tree only (Files is "all"); `+` on titles and breadcrumbs;
+  a layers-and-number icon. Checked in headless Chrome, wide / compact, light / dark.
+
 ## Packaging
 
 - **Every npm release before 1.0.0 served `500 Build Failed` at `/`.** Bun bundles the UI at
