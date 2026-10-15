@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { likeMatcher, preciseAgo, fileSize, rootLabel, shortAgo } from '../src/ui/format';
+import { likeMatcher, pageTitle, preciseAgo, fileSize, rootLabel, shortAgo } from '../src/ui/format';
 
 describe('fileSize', () => {
   test('bytes stay bare under 1000', () => {
@@ -119,5 +119,27 @@ describe('likeMatcher', () => {
   test('a $ or ^ elsewhere is a literal character', () => {
     expect(likeMatcher('a$b')('xa$by')).toBe(true);
     expect(likeMatcher('a^b')('a^b')).toBe(true);
+  });
+});
+
+describe('pageTitle', () => {
+  test('FileName - PATH (the last two folders) - Root - MDHOUSE', () => {
+    expect(pageTitle({ rel: 'a/b/c/README.md', root: 'realty/Plans' })).toBe('README - b/c - realty/Plans - MDHOUSE');
+    expect(pageTitle({ rel: 'TODO.md', root: 'src/mdhouse' })).toBe('TODO - src/mdhouse - MDHOUSE');
+    expect(pageTitle({ rel: 'x/notes.mdx', root: 'r' })).toBe('notes.mdx - x - r - MDHOUSE');
+  });
+
+  test('a folder page: dir/, PATH from its parent; the root page; settings', () => {
+    expect(pageTitle({ rel: 'a/b/c', folder: true, root: 'r' })).toBe('c/ - a/b - r - MDHOUSE');
+    expect(pageTitle({ rel: '', folder: true, root: 'realty/Plans' })).toBe('realty/Plans - MDHOUSE');
+    expect(pageTitle({ settings: true })).toBe('Settings - MDHOUSE');
+  });
+
+  test('a PATH too like the root merges into it', () => {
+    // one inside the other: the longer
+    expect(pageTitle({ rel: 'Plans/README.md', root: 'realty/Plans' })).toBe('README - realty/Plans - MDHOUSE');
+    expect(pageTitle({ rel: 'src/mdhouse/a.md', root: 'mdhouse' })).toBe('a - src/mdhouse - MDHOUSE');
+    // the root's last folder starts the PATH: written once
+    expect(pageTitle({ rel: 'Plans/RLM-852/README.md', root: 'realty/Plans' })).toBe('README - realty/Plans/RLM-852 - MDHOUSE');
   });
 });

@@ -1,6 +1,7 @@
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options } from './ui/api';
+import { pageTitle, rootLabel } from './ui/format';
 import type { TreePayload, RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
@@ -187,7 +188,6 @@ function App() {
         setDocError(null);
         setRootId(payload.root);
         setExpanded((prev) => new Set([...prev, ...ancestors(payload.rel)]));
-        document.title = `${payload.rel.split('/').pop()} · mdhouse`;
       })
       .catch((err: Error) => {
         if (seq !== loadSeq.current) return;
@@ -368,15 +368,31 @@ function App() {
     if (!dirTarget) return;
     if (dirTarget.rootId && dirTarget.rootId !== rootId) setRootId(dirTarget.rootId);
     if (dirTarget.dir) setExpanded((prev) => new Set([...prev, dirTarget.dir, ...ancestors(dirTarget.dir)]));
-    document.title = `${dirTarget.dir || (roots.find((r) => r.id === dirTarget.rootId)?.name ?? 'root')}/ · mdhouse`;
   }, [dirTarget?.rootId, dirTarget?.dir]);
 
-  // The front page and Settings name themselves; documents and folder pages set their own titles
-  // when they load, so a title never outlives the page that set it.
+  // The tab's title follows the page shown — `pageTitle()`; set again when the roots arrive.
   useEffect(() => {
-    if (onSettings) document.title = 'Settings · mdhouse';
-    else if (!docPath) document.title = `${tree?.root.name ?? 'mdhouse'} · mdhouse`;
-  }, [onSettings, docPath, tree?.root.name]);
+    // the root's name as the switcher shows it
+    const rootName = (id: string) => {
+      const r = roots.find((x) => x.id === id);
+      return r ? rootLabel(r.path) : '';
+    };
+    if (onSettings) document.title = pageTitle({ settings: true });
+    else if (dirTarget) document.title = pageTitle({ rel: dirTarget.dir, folder: true, root: rootName(dirTarget.rootId) });
+    else if (docPath && doc) document.title = pageTitle({ rel: doc.rel, root: rootName(doc.root) });
+    // a document that did not load: named from its address
+    else if (docPath) {
+      const [id = '', ...rel] = docPath.slice(1).split('/').map((x) => {
+        try {
+          return decodeURIComponent(x);
+        } catch {
+          return x;
+        }
+      });
+      document.title = pageTitle({ rel: rel.join('/'), root: rootName(id) });
+    }
+    else if (!docPath) document.title = pageTitle({ root: rootName(tree?.root.id ?? '') });
+  }, [onSettings, docPath, doc?.rel, doc?.root, dirTarget?.rootId, dirTarget?.dir, tree?.root.id, roots]);
 
   const toggleDir = useCallback((dirPath: string) => {
     setExpanded((prev) => {

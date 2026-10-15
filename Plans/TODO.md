@@ -13,6 +13,8 @@
   - turned on by a switch in the left icon block (below root select)
   - add: `[+V1] [+V2]` in the h1 doc-title, shown on mouseover
   - remove: a selected doc always shows `[V1]` / `[V2]` in the doc-title; a click de-selects
+- ✅ T3 HTML page title: `FileName - PATH(last2) - Root - MDHOUSE`
+  When PATH is too similar to root — merge them.
 
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../CHANGELOG.md).

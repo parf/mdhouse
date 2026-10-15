@@ -127,3 +127,31 @@ export function highlightRanges(text: string, ranges: Array<[number, number]>): 
   if (at < text.length) out.push({ text: text.slice(at), hit: false });
   return out;
 }
+
+/**
+ * The browser tab's title: `FileName - PATH - Root - MDHOUSE`. PATH is the last two folders over
+ * the file (none at the root); a folder page is named `dir/`, its PATH taken from its parent. A
+ * PATH too like the root merges into it: one inside the other keeps the longer, and the root's
+ * last folder starting the PATH is written once.
+ */
+export function pageTitle(p: { rel?: string; folder?: boolean; root?: string; settings?: boolean }): string {
+  if (p.settings) return 'Settings - MDHOUSE';
+  const root = p.root ?? '';
+  const parts = (p.rel ?? '').split('/').filter(Boolean);
+  if (!parts.length) return [root, 'MDHOUSE'].filter(Boolean).join(' - ');
+  const last = parts.pop()!;
+  const name = p.folder ? `${last}/` : docName(last);
+  const path = parts.slice(-2).join('/');
+  return [name, ...placeOf(path, root), 'MDHOUSE'].filter(Boolean).join(' - ');
+}
+
+/** PATH and Root as the title shows them: apart, or merged when one repeats the other. */
+function placeOf(path: string, root: string): string[] {
+  if (!path || !root) return [path, root];
+  const [p, r] = [path.toLowerCase(), root.toLowerCase()];
+  if (r.includes(p)) return [root];
+  if (p.includes(r)) return [path];
+  const [head, ...rest] = path.split('/');
+  if (head!.toLowerCase() === r.split('/').pop()) return [[root, ...rest].join('/')];
+  return [path, root];
+}

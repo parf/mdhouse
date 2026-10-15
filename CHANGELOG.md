@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The tab's title: `FileName - PATH - Root - MDHOUSE` — the last two folders; a PATH like the root merges into it
+
 ## 2.2.1 — 2026-10-13
 
 ### Changed
