@@ -153,7 +153,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
   code with no data, and stay open. [doc/access.md](../doc/access.md).
 - **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa`, `/api/insert`, `/api/roots/remove`, `/api/settings`,
-  `/api/git/commit|pull|push|reset`, `/api/ab/default|filter|send` — and the
+  `/api/git/commit|commit-file|pull|push|reset`, `/api/ab/default|filter|send` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
   a cross-site form post and the handler.
@@ -233,7 +233,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Git view** — `/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
   plus `src/ui/GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
   `src/lib/gitpage.ts` behind `/api/git`, `/api/git/commits|files|remote` (files: the first 5000, `capped`), POST
-  `/api/git/commit|pull|push|reset` (reset: one `.md` file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409) — writable folder, same origin, one at a time per repo; commit refuses (409) a file outside the root or in a read-only root, pull a repo holding a read-only root or files outside the root; network
+  `/api/git/commit|commit-file|pull|push|reset` (reset: one `.md` file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409; commit-file: one file from its own page, `git add` when untracked then `git commit -- file`, 409 when it is clean) — writable folder, same origin, one at a time per repo; commit and commit-file refuse (409) a file outside the root or in a read-only root, pull a repo holding a read-only root or files outside the root; network
   git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Files link to their pages (under the root;
   else plain text) — no host links.
   Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.

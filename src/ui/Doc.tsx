@@ -17,6 +17,7 @@ import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
 import { follow } from './PageHead';
 import { isPageHref } from '../lib/urls';
+import { DocCommit } from './GitPanel';
 
 /** The two diff views; either can be the one a toggle turns on. */
 type DiffView = 'patch' | 'marked';
@@ -1046,6 +1047,10 @@ export function Doc({
             >
               uncommitted file
             </button>
+          )}
+          {/* Commit this one file, without leaving it for the git view. */}
+          {doc.writable && rootInRepo && (
+            <DocCommit p={`${doc.root}/${doc.rel}`} name={name} dirty={dirty} onDone={() => onReload?.()} />
           )}
           {doc.tasks.total > 0 && (
             <span>

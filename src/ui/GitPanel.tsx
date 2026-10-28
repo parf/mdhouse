@@ -218,6 +218,116 @@ export function GitActions({ p, info, onDone, remote }: { p: string; info: GitIn
   );
 }
 
+/** git's first line of output — the rest is help text, too much for the line under a title. */
+const firstLine = (text: string) => text.split('\n').find((l) => l.trim()) ?? text;
+
+/**
+ * Commit this one file, from its own page: `git commit -- <file>`, so nothing else in the repo
+ * goes with it. Either button opens one message row, pre-filled `Update <name>`.
+ *
+ * Stays mounted after the commit — `dirty` is a prop, not the condition that renders it — so a
+ * push that came after has somewhere to report. It hides itself once it has nothing to say.
+ */
+export function DocCommit({ p, name, dirty, onDone }: { p: string; name: string; dirty: boolean; onDone: () => void }) {
+  const [want, setWant] = useState<'commit' | 'push' | null>(null);
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState('');
+  // git's own output, of which only the first line is shown — the rest is on the note's title.
+  const [note, setNote] = useState<{ text: string; ok?: boolean; anyway?: boolean } | null>(null);
+  // The folder, for push: the repo routes resolve a folder, never a file.
+  const dir = p.replace(/\/[^/]*$/, '');
+
+  useEffect(() => {
+    if (dirty) return;
+    setWant(null);
+    setMessage('');
+  }, [dirty]);
+
+  if (!dirty && !note && !busy) return null;
+
+  const ask = (w: 'commit' | 'push') => {
+    setNote(null);
+    setWant((cur) => (cur === w ? null : w));
+    setMessage((m) => m || `Update ${name}`);
+  };
+
+  const push = async (confirmed: boolean) => {
+    setBusy('push');
+    try {
+      const r = await api.gitSync(dir, 'push', confirmed);
+      setNote({ text: r.output.trim() || 'pushed', ok: true });
+    } catch (e) {
+      // The commit is in; only the push did not go.
+      setNote({ text: `committed — push refused: ${(e as Error).message}`, anyway: e instanceof GitRefusal && e.confirm });
+    } finally {
+      setBusy('');
+      onDone();
+    }
+  };
+
+  const commit = async () => {
+    const andPush = want === 'push';
+    setBusy('commit');
+    setNote(null);
+    try {
+      const r = await api.gitCommitFile(p, message);
+      setWant(null);
+      setMessage('');
+      setNote({ text: r.output.trim() || 'committed', ok: true });
+      setBusy('');
+      onDone();
+      if (andPush) await push(false);
+    } catch (e) {
+      setNote({ text: (e as Error).message });
+      setBusy('');
+      onDone();
+    }
+  };
+
+  return (
+    <span class="doc-commit">
+      {dirty && (
+        <>
+          <button class="git-btn" disabled={!!busy} aria-expanded={want === 'commit'} onClick={() => ask('commit')} title={`git commit -- ${name}`}>
+            Commit
+          </button>
+          <button class="git-btn" disabled={!!busy} aria-expanded={want === 'push'} onClick={() => ask('push')} title={`git commit -- ${name}, then git push`}>
+            Commit + Push
+          </button>
+        </>
+      )}
+      {want && (
+        <>
+          <input
+            class="git-message"
+            value={message}
+            placeholder="Commit message"
+            onInput={(e) => setMessage((e.target as HTMLInputElement).value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && message.trim() && !busy) void commit();
+              if (e.key === 'Escape') setWant(null);
+            }}
+            ref={(el) => el?.focus()}
+          />
+          <button class="git-btn primary" disabled={!message.trim() || !!busy} onClick={() => void commit()}>
+            {busy === 'commit' ? 'Committing…' : busy === 'push' ? 'Pushing…' : want === 'push' ? 'Commit + Push' : 'Commit'}
+          </button>
+        </>
+      )}
+      {note && (
+        <span class={note.ok ? 'git-note ok' : 'git-note'} title={note.text}>
+          <span class="text">{firstLine(note.text)}</span>
+          {note.anyway && (
+            <button class="git-btn" disabled={!!busy} onClick={() => void push(true)}>
+              Push anyway
+            </button>
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
 /** Every commit that touched the folder, any file type; a click shows its files. */
 export function CommitsView({ p, info, onOpen, fileUrl, revision }: { p: string; info: GitInfo; onOpen: (rel: string) => void; fileUrl: (rel: string) => string; revision: number }) {
   const [commits, setCommits] = useState<GitCommit[] | null>(null);

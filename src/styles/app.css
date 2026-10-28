@@ -1904,6 +1904,14 @@ button.sync-chip { cursor: pointer; }
 @keyframes uncommittedFlash { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .doc-meta .uncommitted { animation: none; } }
 
+/* Commit this one file, beside that mark. The message row wraps onto its own line, and the
+   note stays after the mark has gone — a push can still be reporting. */
+.doc-commit { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.doc-commit .git-btn { font-size: 11.5px; padding: 1px 8px; }
+.doc-commit .git-message { flex: 0 1 240px; font-size: 12px; padding: 2px 7px; }
+.doc-commit .git-note { margin: 0; padding: 2px 8px; display: inline-flex; align-items: center; gap: 8px; max-width: 60ch; }
+.doc-commit .git-note .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ── views V1 / V2: the switch under the root select, the chips on a page's title ── */
 
 .view-chips { display: inline-flex; gap: 4px; margin-left: 10px; align-self: center; }

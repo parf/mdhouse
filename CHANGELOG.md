@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- A document with uncommitted work has `Commit` and `Commit + Push` buttons under its title: one
+  message row, pre-filled `Update <name>`, and the commit takes that file alone — the rest of the
+  repository is left as it was
+
 ### Changed
 
 - Sidebar tree: one level of nesting is 18px instead of 13, so a folder's `>` sits right under its parent's folder icon

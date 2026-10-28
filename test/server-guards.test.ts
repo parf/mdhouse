@@ -387,6 +387,74 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
   }
 });
 
+test('POST /api/git/commit-file — one file, leaving the rest of the repo alone; refuses read-only, other sites, a clean file and no message', async () => {
+  const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Registry } = await import('../src/lib/roots');
+  const { Prefs } = await import('../src/lib/prefs');
+  const { serve } = await import('../src/server');
+  const { run } = await import('../src/lib/gitpage');
+
+  const base = await mkdtemp(join(tmpdir(), 'mdhouse-commitfile-'));
+  const repo = join(base, 'repo');
+  const ro = join(repo, 'ro');
+  await mkdir(ro, { recursive: true });
+  const git = (args: string[]) => run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args]);
+  await writeFile(join(repo, 'a.md'), 'a\n');
+  await writeFile(join(repo, 'b.md'), 'b\n');
+  await writeFile(join(repo, 'code.ts'), 'const a = 1;\n');
+  await writeFile(join(ro, 'r.md'), 'r\n');
+  await git(['init', '-q']);
+  await git(['add', '.']);
+  await git(['commit', '-qm', 'first']);
+  await writeFile(join(repo, 'a.md'), 'a changed\n');
+  await writeFile(join(repo, 'b.md'), 'b changed\n');
+  await writeFile(join(repo, 'code.ts'), 'const a = 2;\n');
+  await writeFile(join(repo, 'new.md'), 'n\n');
+  await writeFile(join(ro, 'r.md'), 'r changed\n');
+
+  const port = 61931;
+  const registry = await Registry.create([
+    { path: repo, writable: true },
+    { path: ro, writable: false },
+  ]);
+  const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
+  const [rwId, roId] = registry.list().map((r) => r.id);
+  const post = (p: string, message = 'one file', headers: Record<string, string> = {}) =>
+    fetch(`http://127.0.0.1:${port}/api/git/commit-file`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify({ p, message }),
+    });
+  const dirty = async () => (await git(['status', '--porcelain'])).out.split('\n').filter(Boolean).sort().join('|');
+  try {
+    expect((await post(`${rwId}/a.md`, 'm', { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+    expect((await post(`${roId}/r.md`)).status).toBe(403); // the read-only root itself
+    expect((await post(`${rwId}/ro/r.md`)).status).toBe(409); // that same file through the writable root
+    expect((await post(`${rwId}/a.md`, '  ')).status).toBe(400);
+    expect((await post(`${rwId}/nope.md`)).status).toBe(404);
+
+    // One modified file: the others stay exactly as dirty as they were.
+    expect((await post(`${rwId}/a.md`, 'Update a.md')).status).toBe(200);
+    expect(await dirty()).toBe(' M b.md| M code.ts| M ro/r.md|?? new.md');
+    expect((await git(['log', '-1', '--name-only', '--format='])).out.trim()).toBe('a.md');
+    expect((await post(`${rwId}/a.md`)).status).toBe(409); // nothing to commit now
+
+    // Untracked: added first. And a file that is not Markdown needs no tick — it is the one on screen.
+    expect((await post(`${rwId}/new.md`, 'Add new.md')).status).toBe(200);
+    expect((await git(['log', '-1', '--name-only', '--format='])).out.trim()).toBe('new.md');
+    expect((await post(`${rwId}/code.ts`, 'Update code.ts')).status).toBe(200);
+    expect((await git(['log', '-1', '--name-only', '--format='])).out.trim()).toBe('code.ts');
+    expect(await dirty()).toBe(' M b.md| M ro/r.md');
+  } finally {
+    server.stop(true);
+    watcher.close();
+    control?.stop();
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
 test('POST /api/git/reset resets that file only — a name git would read as a glob or as magic', async () => {
   const { mkdtemp, rm, writeFile, readFile, mkdir } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');

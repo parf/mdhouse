@@ -150,6 +150,12 @@ export async function serve(opts: ServeOptions) {
     if (!loc || !MD_EXT.test(loc.rel)) return null;
     return (await stat(loc.abs).catch(() => null))?.isFile() ? loc : null;
   };
+  /** Any file in a root that is there now — a page shows code and text as well as Markdown. */
+  const fileAt = async (p: string) => {
+    const loc = await registry.resolve(p);
+    if (!loc) return null;
+    return (await stat(loc.abs).catch(() => null))?.isFile() ? loc : null;
+  };
 
   /**
    * A document as mdhouse reads it: the old Q&A forms rewritten into the new markup (legacy.ts).
@@ -721,6 +727,41 @@ export async function serve(opts: ServeOptions) {
             const r = await run(at.repo, ['commit', '-a', '-m', message]);
             return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
           });
+        },
+      },
+      /**
+       * One file, from its own page: `git commit -- <file>`, which takes that path from the
+       * working tree and leaves anything else staged alone. An untracked file is added first.
+       * No non-Markdown tick, unlike `/api/git/commit`: that one guards files the user never
+       * looked at, and this is the file on screen.
+       */
+      '/api/git/commit-file': {
+        POST: async (req) => {
+          const body = (await req.json().catch(() => null)) as { p?: string; message?: string } | null;
+          // The file's folder: same origin, git on, in a repo, writable.
+          const at = await gitWrite(req, body?.p?.replace(/\/[^/]*$/, ''));
+          if ('error' in at) return at.error;
+          const message = body?.message?.trim();
+          if (!body?.p) return fail(400, 'expected {p, message}');
+          if (!message) return fail(400, 'a commit message is needed');
+          if (message.length > 100_000) return fail(413, 'the commit message is too long');
+          const loc = await fileAt(body.p);
+          if (!loc) return fail(404, 'no such file');
+          const { repo } = at;
+          const rel = repoRel(repo, loc.abs);
+          if (!within(loc.abs, at.root.path) || registry.list().some((r) => !r.writable && within(loc.abs, r.path))) {
+            return fail(409, `${rel} is outside ${at.root.name} or in a read-only folder — commit in a terminal`);
+          }
+          // One git write at a time per repo, as commit / pull / push; and after any write to the file.
+          return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
+            const dirty = (await dirtyFiles(repo)).find((f) => f.path === rel);
+            if (!dirty) return fail(409, 'nothing to commit — this file matches the last commit');
+            if (dirty.code === '??' && (await run(repo, ['add', '--', literal(rel)])).code !== 0) {
+              return fail(500, `could not add ${rel}`);
+            }
+            const r = await run(repo, ['commit', '-m', message, '--', literal(rel)]);
+            return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
+          }));
         },
       },
       /** One document back to its last commit — its uncommitted changes thrown away. */

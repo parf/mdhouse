@@ -234,3 +234,14 @@ findings in the 0.4.0 review, two recommendations were wrong, and this step caug
 - mdhouse talks as its own agent `#mdhouse@<host>`: a reply needs a registered inbox; the login's own inbox has one reader.
 - `AGENT_BUS_*` from the environment is never read: a mdhouse started from an AI session's shell would act as that session.
 - On and off from the CLI only; any page the server admits may send while it is on.
+
+## Commit from a document's own page — 2026-10-28
+
+- `Commit` / `Commit + Push` under the title commit **that file only** —
+  `POST /api/git/commit-file`, `git commit -- <file>`, untracked added first. The repo-wide
+  `git commit -a` stays on the git view; `Reset file` beside them is per-file too.
+- No non-Markdown tick, unlike `/api/git/commit`: that tick guards files the user never looked
+  at, and this is the file on screen. The route takes any file; the buttons show only for
+  Markdown, because `/api/doc` reports `status` for Markdown alone.
+- Push is the existing `/api/git/push` — its rules (refuses over uncommitted non-Markdown, asks
+  over uncommitted Markdown) are unchanged, and a push refused after the commit landed says so.
