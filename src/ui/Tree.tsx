@@ -52,8 +52,16 @@ export function SizeMark({ size, end }: { size: number | undefined; end?: boolea
   );
 }
 
+/**
+ * One level of nesting: the 12px chevron slot, the row's 5px gap, and the 1px of empty space
+ * the folder icon leaves inside its box. A child's chevron lands under its parent's folder
+ * icon, and a file's name — which has no chevron — starts on the drawn edge of that icon, so
+ * the depth of a row can be read off the icon above it.
+ */
+const INDENT_STEP = 18;
+
 function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
-  const indent = 8 + depth * 13;
+  const indent = 8 + depth * INDENT_STEP;
 
   if (node.kind === 'dir') {
     const dir = node as DirNode;
@@ -123,9 +131,14 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       onClick={(e) => follow(e, () => p.onOpen(file.path))}
       title={`${file.path} · ${size < 1000 ? `${size} B` : fileSize(size)}`}
     >
-      {/* No page icon: every row here is a Markdown file, so it would say nothing. A favourite's
-          star sits in the chevron's slot, where it costs no width. */}
-      <span class="twist">{isFav && <IconStar size={12} filled />}</span>
+      {/* No page icon: every row here is a Markdown file, so it would say nothing, and no empty
+          chevron slot either — the name starts under the `>` of the folders beside it, as far
+          left as the row goes. A favourite's star stands in that spot when there is one. */}
+      {isFav && (
+        <span class="twist">
+          <IconStar size={12} filled />
+        </span>
+      )}
       <span class="label">{docName(file.name)}</span>
       {small === 'tiny' && <SizeMark size={size} end />}
 

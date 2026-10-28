@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Sidebar tree: one level of nesting is 18px instead of 13, so a folder's `>` sits right under its parent's folder icon
+- Sidebar tree: a file's name starts under the `>` of the folders beside it — on the drawn left edge of the parent folder's icon — instead of 17px further in; a favourite's star stands in that spot
+
 ## 2.3.0 — 2026-10-14
 
 ### Added
