@@ -2,8 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- macOS: `--host` an address the machine does not have (`127.0.0.2`) said "port is in use by something that is not mdhouse" — now "not an address of this machine" (on Linux: no stack trace)
+- macOS: a plain file left where the control socket goes was never cleared
+- Saved folders, `--rw` and auto-rw paths written through a symlink (`/tmp`, `/var` on macOS) now match the folder they name
+
 ### Added
 
+- `doc/mac.md` — install on macOS, possible issues, limitations
 - A document with uncommitted work has `Commit` and `Commit + Push` buttons under its title: one
   message row, pre-filled `Update <name>`, and the commit takes that file alone — the rest of the
   repository is left as it was

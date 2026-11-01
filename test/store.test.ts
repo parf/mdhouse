@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Store } from '../src/lib/store';
@@ -10,7 +10,8 @@ let base: string;
 let prefs: Prefs;
 
 beforeAll(async () => {
-  base = mkdtempSync(join(tmpdir(), 'mdhouse-store-'));
+  // resolved, as served roots are (macOS's tmpdir is under the /var symlink)
+  base = realpathSync(mkdtempSync(join(tmpdir(), 'mdhouse-store-')));
   prefs = await Prefs.load(join(base, 'prefs.json'));
 });
 

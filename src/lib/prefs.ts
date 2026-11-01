@@ -19,7 +19,7 @@
 
 import { homedir } from 'node:os';
 import { mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
@@ -104,6 +104,15 @@ export interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = { editLink: true, autoRw: true, me: '' };
+
+/** A path as the filesystem resolves it — a served root is always held so; as written when it is gone. */
+function real(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+}
 
 export const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
 const PREFS_PATH = `${CONFIG_DIR}/prefs.json`;
@@ -393,10 +402,16 @@ export class Prefs {
     return [...this.data.autoRw];
   }
 
-  /** Is a folder writable by an auto-rw path — one of them or under one, with the setting on? */
+  /**
+   * Is a folder writable by an auto-rw path — one of them or under one, with the setting on? A
+   * path written through a symlink (`/tmp` → `/private/tmp` on macOS) counts as its target too.
+   */
   autoRwCovers(dir: string): boolean {
     this.refresh();
-    return this.data.settings.autoRw && this.data.autoRw.some((p) => dir === p || dir.startsWith(p.endsWith('/') ? p : `${p}/`));
+    return (
+      this.data.settings.autoRw &&
+      this.data.autoRw.some((p) => [p, real(p)].some((q) => dir === q || dir.startsWith(q.endsWith('/') ? q : `${q}/`)))
+    );
   }
 
   /** Replace the auto-rw paths. */
@@ -468,12 +483,12 @@ export class Prefs {
   }
 
   isSaved(dir: string): boolean {
-    return this.data.saved.includes(dir);
+    return this.data.saved.some((d) => d === dir || real(d) === dir);
   }
 
-  /** Saved with `-p --rw`: mdhouse may write to it on every start. */
+  /** Saved with `-p --rw`: mdhouse may write to it on every start — also when written through a symlink. */
   isWritableSaved(dir: string): boolean {
-    return this.data.writable.includes(dir);
+    return this.data.writable.some((d) => d === dir || real(d) === dir);
   }
 
   /**

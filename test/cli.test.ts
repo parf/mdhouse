@@ -2,6 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { hostIsLocal } from '../src/lib/access';
 
 // Every run gets its own config dir and a 619xx port; every daemon is stopped by `exit --all`
 // with that same config dir, so nothing here can reach ~/.config/mdhouse or :7777.
@@ -143,14 +144,20 @@ describe('two servers on one port, bound to different hosts', () => {
     const a = s.folder('a');
     const b = s.folder('b');
     expect(s.run([a, '--port', '61922']).code).toBe(0);
-    const fg = Bun.spawn([process.execPath, CLI, b, '--port', '61922', '--host', '127.0.0.2', '--fg'], {
+    // another loopback address: every 127.x on Linux; macOS has only 127.0.0.1, and ::1
+    const other = hostIsLocal('127.0.0.2') ? '127.0.0.2' : '::1';
+    const fg = Bun.spawn([process.execPath, CLI, b, '--port', '61922', '--host', other, '--fg'], {
       env: { ...process.env, XDG_CONFIG_HOME: s.cfg, MDHOUSE_PORT: '', MDHOUSE_HOST: '', MDHOUSE_SERVICE: '', MDHOUSE_DAEMON: '' },
       stdout: 'pipe',
     });
     try {
       const reader = fg.stdout.getReader();
       let out = '';
-      while (!out.includes('stops it')) out += new TextDecoder().decode((await reader.read()).value);
+      while (!out.includes('stops it')) {
+        const { done, value } = await reader.read();
+        if (done) throw new Error(`the --fg one exited:\n${out}`);
+        out += new TextDecoder().decode(value);
+      }
       expect(out).toContain('mdhouse exit --port 61922 cannot reach it');
       const r = s.run(['exit', '--all']);
       expect(r.out).toContain('stopped http://127.0.0.1:61922');

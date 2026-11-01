@@ -31,6 +31,8 @@ are tired of `cat`, `less`, and editor previews that show one file at a time.
 bun install -g mdhouse      #  bun 1.4+ required
 ```
 
+- macOS: [mdhouse on macOS](doc/mac.md) — `PATH`, possible issues, limitations
+
 ## ▸ Start
 
 ```bash

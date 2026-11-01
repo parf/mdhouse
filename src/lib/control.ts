@@ -128,10 +128,11 @@ async function call<T>(port: number, path: string, body: unknown = {}, ms = QUIC
     // would cut off every later `mdhouse` call that wanted to reach it.
     //
     // Bun reports both "no such file" and "nothing is listening" as FailedToOpenSocket; the
-    // POSIX codes are listed too, for a runtime that uses them instead.
+    // POSIX codes are listed too, for a runtime that uses them instead. A plain file in the
+    // socket's place is ENOTSOCK on macOS (ECONNREFUSED on Linux) — nothing behind it either.
     if ((err as Error | null)?.name === 'TimeoutError') return { error: `the mdhouse on port ${port} is not answering` };
     const code = (err as { code?: string } | null)?.code;
-    if (code === 'FailedToOpenSocket' || code === 'ECONNREFUSED' || code === 'ENOENT') {
+    if (code === 'FailedToOpenSocket' || code === 'ECONNREFUSED' || code === 'ENOENT' || code === 'ENOTSOCK') {
       try {
         unlinkSync(sock);
       } catch {

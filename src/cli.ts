@@ -16,7 +16,7 @@ import { pageUrl, serve } from './server';
 import { answered, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
 import { ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
-import { hashPassword, parseCidr, validLogin } from './lib/access';
+import { hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
 
 const USAGE = `mdhouse — a Markdown workspace on your own machine
 
@@ -558,6 +558,18 @@ async function handOver(reply: AddReply | { error: string } | null): Promise<nev
 
 const stopHint = `mdhouse exit${portHint}`;
 
+/**
+ * A listen that failed because the address is not this machine's — stops with that, not "port in
+ * use". Linux says EADDRNOTAVAIL; Bun on macOS reports it as EADDRINUSE, so the address is checked.
+ */
+function failOnAddress(err: unknown): void {
+  const code = (err as { code?: string }).code;
+  if (code !== 'EADDRNOTAVAIL' && !(code === 'EADDRINUSE' && !hostIsLocal(opts.host))) return;
+  console.error(`mdhouse: cannot listen on ${opts.host} — not an address of this machine.`);
+  console.error('         Pass --host 127.0.0.1, or an address it has.');
+  process.exit(1);
+}
+
 if (!opts.fg) {
   // Already running? Hand it the directories without starting anything.
   if (await running()) await handOver(await askDaemon(opts.port, request));
@@ -568,6 +580,7 @@ if (!opts.fg) {
   try {
     Bun.serve({ port: opts.port, hostname: opts.host, reusePort: false, fetch: () => new Response('') }).stop(true);
   } catch (err) {
+    failOnAddress(err);
     if ((err as { code?: string }).code !== 'EADDRINUSE') throw err;
     // An mdhouse that is still starting — the service, a moment after `systemctl start` — holds
     // the port before its control socket is up. Give it a few seconds to answer before calling
@@ -674,6 +687,7 @@ try {
     includeIgnoredDefault: opts.all,
   });
 } catch (err) {
+  failOnAddress(err);
   const code = (err as { code?: string }).code;
   if (code !== 'EADDRINUSE') throw err;
   if (process.env.MDHOUSE_SERVICE === '1') {

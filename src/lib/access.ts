@@ -1,3 +1,5 @@
+import { networkInterfaces } from 'node:os';
+
 /**
  * Who may open mdhouse at all: an allow list of networks, and users with passwords.
  *
@@ -38,6 +40,19 @@ export function ipBytes(ip: string): number[] | null {
   const all = [...head, ...Array(fill).fill('0'), ...tail];
   if (all.length !== 8 || !all.every((g) => /^[0-9a-f]{1,4}$/i.test(g))) return null;
   return all.flatMap((g) => [parseInt(g, 16) >> 8, parseInt(g, 16) & 255]);
+}
+
+/**
+ * Can this machine listen on `host`: a name (the OS resolves it), the any-address, or an IP one
+ * of its interfaces holds. On Linux every 127.x is loopback; macOS has only the ones configured.
+ */
+export function hostIsLocal(host: string, ifaces = networkInterfaces(), platform = process.platform): boolean {
+  const ip = ipBytes(host);
+  if (!ip) return true;
+  if (ip.every((b) => b === 0)) return true;
+  if (platform !== 'darwin' && isLoopback(ip)) return true;
+  const key = ip.join('.');
+  return Object.values(ifaces).some((list) => list?.some((a) => ipBytes(a.address)?.join('.') === key));
 }
 
 export interface Cidr {

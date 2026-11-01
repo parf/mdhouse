@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { allowedAddress, basicCredentials, hashPassword, ipBytes, parseCidr, Users, validLogin } from '../src/lib/access';
+import { allowedAddress, basicCredentials, hashPassword, hostIsLocal, ipBytes, parseCidr, Users, validLogin } from '../src/lib/access';
 
 describe('ipBytes', () => {
   test('IPv4, IPv6, mapped, bracketed, zone', () => {
@@ -88,5 +88,17 @@ describe('Basic credentials', () => {
     const wrong = await time('ann:wrong');
     const unknown = await time('nobody:x');
     expect(unknown).toBeGreaterThan(wrong / 3);
+  });
+});
+
+describe('hostIsLocal — can this machine listen there', () => {
+  const ifaces = { lo0: [{ address: '127.0.0.1' }, { address: '::1' }], en0: [{ address: '192.168.1.5' }] } as unknown as ReturnType<typeof import('node:os').networkInterfaces>;
+  test('names, the any-address, and the addresses an interface holds', () => {
+    for (const h of ['localhost', 'box.local', '0.0.0.0', '::', '127.0.0.1', '::1', '192.168.1.5']) expect(hostIsLocal(h, ifaces, 'darwin')).toBe(true);
+  });
+  test('macOS: only the loopback addresses configured; Linux: every 127.x', () => {
+    expect(hostIsLocal('127.0.0.2', ifaces, 'darwin')).toBe(false);
+    expect(hostIsLocal('127.0.0.2', ifaces, 'linux')).toBe(true);
+    expect(hostIsLocal('10.9.9.9', ifaces, 'linux')).toBe(false);
   });
 });

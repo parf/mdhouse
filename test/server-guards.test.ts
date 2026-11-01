@@ -999,14 +999,15 @@ test('/api/doc answers every kind; code and text by numbered lines; nothing unde
 });
 
 test('--rw for a folder writable only by auto-rw sticks when auto-rw goes off (A8)', async () => {
-  const { mkdtemp, rm, mkdir } = await import('node:fs/promises');
+  const { mkdtemp, rm, mkdir, realpath } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
   const { Registry } = await import('../src/lib/roots');
   const { Prefs } = await import('../src/lib/prefs');
   const { serve } = await import('../src/server');
   const { askDaemon } = await import('../src/lib/control');
-  const base = await mkdtemp(join(tmpdir(), 'mdhouse-rwasked-'));
+  // resolved, as served roots are (macOS's tmpdir is under the /var symlink)
+  const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-rwasked-')));
   const notes = join(base, 'auto', 'notes');
   await mkdir(notes, { recursive: true });
   const prefs = await Prefs.load(join(base, 'prefs.json'));

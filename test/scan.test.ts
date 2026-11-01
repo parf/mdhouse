@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { listFiles, scanRoot } from '../src/lib/scan';
@@ -64,7 +64,8 @@ describe('nested repositories', () => {
   };
 
   test('a root inside a repo lists the repos embedded below it', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'mdhouse-nested-'));
+    // as served roots are held: resolved (macOS's tmpdir is under the /var symlink)
+    const home = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-nested-')));
     try {
       await repoWith(home, 'top.md');
       await repoWith(join(home, 'src', 'r1'), 'a.md');
