@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A system service (`/etc/systemd/system`) was told to stop with `systemctl --user stop` — now `sudo systemctl stop`, in the start banner and from `mdhouse exit`
+
 ## 2.3.1 — 2026-11-01
 
 ### Fixed

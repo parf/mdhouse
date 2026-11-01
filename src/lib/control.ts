@@ -69,6 +69,8 @@ export interface PingReply {
   roots: Array<{ name: string; path: string; writable: boolean; saved?: boolean }>;
   /** The systemd unit it runs as, if any — `mdhouse exit` leaves that one to systemctl. */
   service?: string;
+  /** The command that stops that unit: `systemctl --user stop …`, or `sudo systemctl stop …` for a system one. */
+  stop?: string;
 }
 
 export interface Handlers {

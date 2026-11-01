@@ -14,7 +14,7 @@ import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { pageUrl, serve } from './server';
 import { answered, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
-import { ownUnit, runService } from './lib/service';
+import { ownStopCommand, ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
 
@@ -284,7 +284,7 @@ if (command === 'exit') {
     const unit = who?.service;
     if (unit) {
       units++;
-      console.error(`mdhouse: port ${port} is the systemd unit ${unit} — stop it with:  systemctl --user stop ${unit}`);
+      console.error(`mdhouse: port ${port} is the systemd unit ${unit} — stop it with:  ${who?.stop ?? `systemctl --user stop ${unit}`}`);
       continue;
     }
     if (!who) continue;
@@ -721,7 +721,7 @@ console.log(writeNote(registry.list()));
 const unit = ownUnit();
 console.log(
   unit
-    ? `\n  Running as ${unit} — stop it with:  systemctl --user stop ${unit}`
+    ? `\n  Running as ${unit} — stop it with:  ${ownStopCommand()}`
     : !control
       ? `\n  ${stopHint} cannot reach it: another mdhouse on port ${opts.port} holds the control socket.` +
         `\n  ${process.env.MDHOUSE_DAEMON === '1' ? `kill ${process.pid}` : 'Ctrl+C'} stops it.`

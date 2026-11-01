@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ownUnit, unitFor, unitName, unitText } from '../src/lib/service';
+import { ownUnit, stopCommand, unitFor, unitName, unitText } from '../src/lib/service';
 
 const spec = { bun: '/usr/bin/bun', cli: '/opt/mdhouse/bin/mdhouse', path: '/usr/bin:/bin' };
 
@@ -58,4 +58,11 @@ describe('the systemd unit', () => {
       else process.env.MDHOUSE_SERVICE = was;
     }
   });
+});
+
+test('the stop command: sudo for a system unit, --user for a user\'s own', () => {
+  expect(stopCommand('mdhouse.service', '0::/system.slice/mdhouse.service\n')).toBe('sudo systemctl stop mdhouse.service');
+  expect(stopCommand('mdhouse.service', '0::/user.slice/user-1000.slice/user@1000.service/app.slice/mdhouse.service\n')).toBe(
+    'systemctl --user stop mdhouse.service',
+  );
 });

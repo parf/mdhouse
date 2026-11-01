@@ -38,14 +38,33 @@ export function unitFor(port: number, from: 'flag' | 'env' | 'config'): { name: 
   return from === 'config' ? { name } : { name, port };
 }
 
+const ownCgroup = (): string => {
+  try {
+    return readFileSync('/proc/self/cgroup', 'utf8');
+  } catch {
+    return '';
+  }
+};
+
 /** The systemd unit this process runs in, when a unit started it; from its cgroup on Linux. */
 export function ownUnit(): string | undefined {
   if (process.env.MDHOUSE_SERVICE !== '1') return undefined;
-  try {
-    return /\/([^/\n]+\.service)$/m.exec(readFileSync('/proc/self/cgroup', 'utf8'))?.[1] ?? 'mdhouse.service';
-  } catch {
-    return 'mdhouse.service';
-  }
+  return /\/([^/\n]+\.service)$/m.exec(ownCgroup())?.[1] ?? 'mdhouse.service';
+}
+
+/**
+ * How to stop a unit, by the cgroup it runs in: a system unit (`/system.slice/…`) with `sudo
+ * systemctl stop`, a user's own (`…/user@1000.service/…`, what `service install` writes) with
+ * `systemctl --user stop`.
+ */
+export function stopCommand(unit: string, cgroup: string): string {
+  return /\/system\.slice\//.test(cgroup) ? `sudo systemctl stop ${unit}` : `systemctl --user stop ${unit}`;
+}
+
+/** The command that stops the unit this process runs in, when a unit started it. */
+export function ownStopCommand(): string | undefined {
+  const unit = ownUnit();
+  return unit && stopCommand(unit, ownCgroup());
 }
 
 /** Where systemd looks for a user's own units. */
