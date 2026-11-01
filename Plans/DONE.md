@@ -206,6 +206,21 @@ Plan: [ab-integration.md](ab-integration.md). `mdhouse --agent-bus`; a page asks
 - A restart drops every job, and their replies stayed queued in `#mdhouse@<host>`'s inbox for
   good. On connect mdhouse drains its own inbox.
 
+## macOS (2.3.1)
+
+Checked on macOS 26, Apple silicon, bun 1.4.4 from Homebrew: install, background start, hand-over,
+exit, live updates, the page over an ssh tunnel; the whole suite.
+
+- The suite hung: the C3 test starts a second server on `127.0.0.2`, which macOS does not have; the
+  process exited and the stdout reader spun on `done`. It now stops at end of stream, and uses `::1`.
+- Bun on macOS reports an address no interface has as EADDRINUSE ("Is port in use?"), Linux as
+  EADDRNOTAVAIL — mdhouse said "in use by something that is not mdhouse" there, and threw on Linux.
+  `hostIsLocal()` tells them apart.
+- A plain file at the control socket's path: ENOTSOCK on macOS, ECONNREFUSED on Linux.
+- `tmpdir()` is under the `/var` → `/private/var` symlink: tests built roots from the link, while
+  served roots and git paths are real. Config paths written through a symlink missed their folder.
+- `~/.bun/bin` is not on `PATH` with a Homebrew bun — `doc/mac.md`.
+
 ## Views, root switch, tab title (2.3)
 
 - T3 the tab's title `FileName - PATH - Root - MDHOUSE` — `pageTitle()` in `src/ui/format.ts`, tested; a
