@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- `mdhouse --help` names the two `exit` options and links the full CLI reference
+
 ## 2.3.2 — 2026-11-02
 
 ### Added

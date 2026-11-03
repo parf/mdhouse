@@ -180,7 +180,7 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 | `--port <n>` | default 7777 |
 | `--fg` | stay in the foreground |
 
-`mdhouse --help` lists the rest. A root may carry a **`.mdhouseignore`**: one directory name per
+Full commands and options: [CLI reference](doc/cli.md). A root may carry a **`.mdhouseignore`**: one directory name per
 line, `#` for comments, `!name` to bring back a directory the built-in deny list hides
 (`node_modules`, `vendor`, build output and the like)
 

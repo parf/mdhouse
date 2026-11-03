@@ -21,7 +21,8 @@ import { hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
 const USAGE = `mdhouse — a Markdown workspace on your own machine
 
   mdhouse [dir ...] [options]     start it (in the background)
-  mdhouse exit [options]          stop the one running  (also: stop)
+  mdhouse exit [--port <n>]       stop the one running  (also: stop)
+  mdhouse exit --all              stop every mdhouse, whatever its port
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
   mdhouse user-add <login>        ask for a login from then on (any user turns it on);
@@ -56,6 +57,8 @@ Options
       --help           show this
 
 No folder passed - serves saved from ~/.config/mdhouse/prefs.json
+
+Full CLI reference: https://github.com/parf/mdhouse/blob/main/doc/cli.md
 `;
 
 interface Options {
