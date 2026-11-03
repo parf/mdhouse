@@ -122,6 +122,7 @@ text is kept
 
 - Talk to an agent of your choice or a specific one associated with a page
 - `a` opens AI agent chat panel on the right (like in VSCode/Antigravity)
+- The note accepts voice input — the microphone button or `Ctrl+Shift+Space`; `Esc` cancels
 - Answers come back into the panel; each page keeps its last 20
 - details - [Agent Bus integration](doc/agent-bus.md) · Agent Bus: https://github.com/parf/ai-agent-bus
 
@@ -147,6 +148,7 @@ text is kept
 | `e` | open the document in your editor |
 | `Ctrl+Enter` | in a form: save |
 | `Ctrl+Shift+Enter` | in an answer form: save, open the next open question |
+| `Ctrl+Shift+Space` | in Agent Bus: start or accept voice input |
 | `Alt+1`…`Alt+9` | in an answer form: the action with that number |
 | `Alt+E` | in a form: open the file at that line in your editor |
 

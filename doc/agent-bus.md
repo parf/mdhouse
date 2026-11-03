@@ -13,6 +13,8 @@ Runs on [Agent Bus](https://github.com/parf/ai-agent-bus) — https://github.com
 - 📄 The document is the shared workspace; the chat only points an agent at it
 - 🔁 The agent edits the file → the page follows live → you answer on the page → "updated" hands it back
 - 🎯 One click asks for the usual next step: re-read, do the 🎯 items, carry answers over, review
+- 🎙 The note accepts browser voice input: click the microphone or press `Ctrl+Shift+Space` to
+  start and accept; `Esc` cancels without changing the note
 - 📌 A page can belong to an agent — it writes its bus name into the file
   (`<!-- AB: #claude/x@host -->`); else you pick, or the default one answers
 - 🤝 Nothing new for the agent: a plain message on [Agent Bus](https://github.com/parf/ai-agent-bus);

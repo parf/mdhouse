@@ -27,3 +27,6 @@ Your notes and docs, in one browser tab. Your AI writes questions — you answer
 - 🗂 **One plain file is the whole conversation** — no chat history to lose. It reads the same on GitHub.
 - 🛡 **No accidents** — every write is small and checked; if the file changed meanwhile, it stops and keeps your text.
 - 🤝 **Any AI** — give it [agent-markup.md](doc/agent-markup.md) and say "do like this".
+
+
+...

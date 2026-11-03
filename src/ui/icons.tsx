@@ -205,6 +205,17 @@ export const IconX = (p: Props) =>
     p,
   );
 
+export const IconCheck = (p: Props) => svg(<polyline points="3,8.25 6.4,11.5 13,4.75" />, p);
+
+export const IconMic = (p: Props) =>
+  svg(
+    <>
+      <rect x="5.5" y="1.75" width="5" height="8.5" rx="2.5" />
+      <path d="M3.5 7.75a4.5 4.5 0 0 0 9 0M8 12.25v2M5.75 14.25h4.5" />
+    </>,
+    p,
+  );
+
 export const IconLink = (p: Props) =>
   svg(
     <>
