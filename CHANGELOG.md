@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Browser voice input in the Agent Bus note and every Q&A reply form — the microphone or `Ctrl+Shift+Space`; `Esc` cancels without changing the draft
+
 ### Fixed
 
 - A system service (`/etc/systemd/system`) was told to stop with `systemctl --user stop` — now `sudo systemctl stop`, in the start banner and from `mdhouse exit`

@@ -82,7 +82,7 @@ Writes need a folder served with `--rw`: `mdhouse -p --rw folder(s)`. The markup
 **Answer an agent's questions**
 
 - `/ask-questions` writes `- ❓ …` items — with a `💡` proposal or `( )` / `[ ]` options
-- You click the ❓ (or the item), write, **💬** — Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next one. On a 💡: ✓ agree / ✗ cancel. A click picks an option. ⚠️ need more, 🔍 more (Alt+1…9)
+- You click the ❓ (or the item), write or use the microphone, **💬** — Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next one. On a 💡: ✓ agree / ✗ cancel. A click picks an option. ⚠️ need more, 🔍 more (Alt+1…9)
 - `/resolve-questions` carries the answers into `DECISIONS.md` / `TODO.md` and marks them ✅
 
 <img src="doc/rw-answer.png" alt="An answered question folded open, a question with an agent's proposal and its agree, cancel and reply buttons, a question with two options, and a question with its answer form open: the 💬 save button and the numbered actions settled, drop, defer, agent, need more, ticket, more, target, then ESC" width="560">
@@ -148,7 +148,7 @@ text is kept
 | `e` | open the document in your editor |
 | `Ctrl+Enter` | in a form: save |
 | `Ctrl+Shift+Enter` | in an answer form: save, open the next open question |
-| `Ctrl+Shift+Space` | in Agent Bus: start or accept voice input |
+| `Ctrl+Shift+Space` | in Agent Bus or a reply form: start or accept voice input |
 | `Alt+1`…`Alt+9` | in an answer form: the action with that number |
 | `Alt+E` | in a form: open the file at that line in your editor |
 

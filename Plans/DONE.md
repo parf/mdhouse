@@ -76,6 +76,8 @@ and raw HTML escaped — in a diff, the markup is the content.
 
 - `ui/tree.ts` collided case-insensitively with `ui/Tree.tsx` and broke the bundler's resolver;
   it is `tree-model.ts`.
+- `VoiceInput` shares browser speech recognition between the Agent Bus note and every Q&A reply
+  form: `Ctrl+Shift+Space` starts and accepts; `Esc` cancels and restores the draft.
 - The WebSocket was torn down on every data load because the effect listed changing values; the
   handler lives in a ref and the socket opens once.
 - `buildTree` walked the *uncollapsed* children after collapsing a single-child chain, so every

@@ -30,7 +30,7 @@ src/
                  insert, git, gitpage, search, store, watch, control (unix socket), service (systemd unit),
                  loghint (where output goes), agent-bus (the Agent Bus client)
   ui/            client side: Sidebar, Tree, Doc, Diff, Home, DirPage, GitPanel, PageHead, Settings,
-                 AboutModal, AgentBusPanel, QaEditor, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
+                 AboutModal, AgentBusPanel, QaEditor, VoiceInput, QaStrip, qa-page, AddEditor, ExternalEdit, mark-changes,
                  RootSelect, tree building, icons, formatting
   styles/        one stylesheet, CSS custom properties, light and dark
 scripts/
@@ -70,7 +70,7 @@ control socket) lives outside every tree.
   through it (`readDoc` in server.ts), so a write writes it converted
 - `GET /api/qa` → `{me, text?}` (a reply's text to edit); `POST /api/qa` writes only if the item's
   fingerprint still matches — else `409`; shares the per-file queue with ticks
-- client: `src/ui/qa-page.ts` (delegated buttons), `src/ui/QaEditor.tsx` (the form, Alt+1…9, Alt+E), `src/ui/QaStrip.tsx`
+- client: `src/ui/qa-page.ts` (delegated buttons), `src/ui/QaEditor.tsx` (the form, Alt+1…9, Alt+E), `src/ui/VoiceInput.tsx` (browser speech input, shared with Agent Bus), `src/ui/QaStrip.tsx`
   (counts, filter); drafts live in `Doc`, kept per document when the reader leaves
 
 ### An added block goes where the heading says, or nowhere

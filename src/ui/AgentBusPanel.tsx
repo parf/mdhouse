@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, liveListeners, type AbAction, type AbEvent, type AbInfo, type BusAgent, type LiveMessage } from './api';
-import { IconBus, IconCheck, IconMic, IconX } from './icons';
+import { IconBus, IconX } from './icons';
+import { VoiceInputControls, useVoiceInput } from './VoiceInput';
 
 /** The buttons, numbered for Alt+1…5, in two rows; the first is the default — Ctrl+Enter. */
 const ACTIONS: Array<[AbAction, string, string]> = [
@@ -28,42 +29,6 @@ interface Chat {
   sent: Sent[];
   events: AbEvent[];
 }
-
-interface VoiceResult {
-  isFinal: boolean;
-  0?: { transcript: string };
-}
-
-interface VoiceRecognition {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: { results: ArrayLike<VoiceResult> }) => void) | null;
-  onerror: ((event: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-  abort(): void;
-}
-
-type VoiceRecognitionConstructor = new () => VoiceRecognition;
-
-/** Chrome/Edge expose the unprefixed name; Safari still uses the WebKit name. */
-const voiceRecognition = (): VoiceRecognitionConstructor | undefined => {
-  const w = window as typeof window & {
-    SpeechRecognition?: VoiceRecognitionConstructor;
-    webkitSpeechRecognition?: VoiceRecognitionConstructor;
-  };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
-};
-
-const voiceError = (error: string): string => {
-  if (error === 'not-allowed' || error === 'service-not-allowed') return 'Microphone access was not allowed';
-  if (error === 'no-speech') return 'No speech heard — try again';
-  if (error === 'audio-capture') return 'No microphone is available';
-  if (error === 'network') return 'Voice recognition could not reach its service';
-  return `Voice input failed: ${error}`;
-};
 
 /** Each document's conversation: in memory for the tab, its last `KEEP` requests in localStorage. */
 const chats = new Map<string, Chat>();
@@ -136,16 +101,10 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [listening, setListening] = useState(false);
-  const [voiceStatus, setVoiceStatus] = useState('');
   const [chat, setChat] = useState<Chat>(() => chats.get(p) ?? loadChat(p));
   const bar = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
-  const voiceStart = useRef<HTMLButtonElement>(null);
-  const voiceAccept = useRef<HTMLButtonElement>(null);
-  const recognition = useRef<VoiceRecognition | null>(null);
-  const voiceEnding = useRef<'accept' | 'cancel' | null>(null);
-  const beforeVoice = useRef('');
+  const voice = useVoiceInput(note, setNote, area);
   const log = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -259,79 +218,6 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
     }
   };
 
-  const endVoice = (keep: boolean, focus = true) => {
-    const active = recognition.current;
-    if (!active || voiceEnding.current) return;
-    voiceEnding.current = keep ? 'accept' : 'cancel';
-    setListening(false);
-    if (!keep) setNote(beforeVoice.current);
-    setVoiceStatus(keep ? 'Voice input accepted.' : 'Voice input cancelled.');
-    try {
-      keep ? active.stop() : active.abort();
-    } catch {
-      recognition.current = null;
-      voiceEnding.current = null;
-    }
-    if (focus) queueMicrotask(() => (keep ? area.current : voiceStart.current)?.focus());
-  };
-
-  const beginVoice = () => {
-    if (recognition.current) return;
-    const Recognition = voiceRecognition();
-    if (!Recognition) {
-      setError('Voice input is not enabled in this browser');
-      return;
-    }
-
-    const active = new Recognition();
-    const original = note;
-    voiceEnding.current = null;
-    beforeVoice.current = original;
-    active.continuous = true;
-    active.interimResults = true;
-    active.lang = navigator.language;
-    active.onresult = (event) => {
-      if (recognition.current !== active || voiceEnding.current === 'cancel') return;
-      let transcript = '';
-      for (let i = 0; i < event.results.length; i++) transcript += event.results[i]?.[0]?.transcript ?? '';
-      const space = original.trim() && transcript.trim() && !/\s$/.test(original) ? ' ' : '';
-      setNote(`${original}${space}${transcript.trimStart()}`);
-    };
-    active.onerror = (event) => {
-      if (recognition.current !== active) return;
-      const ending = voiceEnding.current;
-      recognition.current = null;
-      voiceEnding.current = null;
-      setListening(false);
-      if (ending === 'cancel') return;
-      setVoiceStatus('Voice input stopped.');
-      setError(voiceError(event.error));
-      queueMicrotask(() => voiceStart.current?.focus());
-    };
-    active.onend = () => {
-      if (recognition.current !== active) return;
-      const ending = voiceEnding.current;
-      recognition.current = null;
-      voiceEnding.current = null;
-      setListening(false);
-      if (ending !== 'cancel') {
-        setVoiceStatus('Voice input accepted.');
-        queueMicrotask(() => area.current?.focus());
-      }
-    };
-
-    try {
-      active.start();
-      recognition.current = active;
-      setError(null);
-      setListening(true);
-      setVoiceStatus('Listening. Press Escape to cancel or Control Shift Space to accept.');
-      queueMicrotask(() => voiceAccept.current?.focus());
-    } catch (err) {
-      setError((err as Error).message || 'Voice input could not start');
-    }
-  };
-
   // The voice shortcut belongs to the open panel even when the reader clicked back into the page.
   useEffect(() => {
     if (!open) return;
@@ -339,23 +225,14 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
       if (!event.ctrlKey || !event.shiftKey || event.altKey || event.code !== 'Space') return;
       event.preventDefault();
       event.stopPropagation();
-      recognition.current ? endVoice(true) : beginVoice();
+      voice.toggle();
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [open, listening, note]);
-
-  useEffect(
-    () => () => {
-      recognition.current?.abort();
-      recognition.current = null;
-      voiceEnding.current = null;
-    },
-    [],
-  );
+  }, [open, voice.toggle]);
 
   useEffect(() => {
-    if (!open && recognition.current) endVoice(false, false);
+    if (!open && voice.listening) voice.cancel(false);
   }, [open]);
 
   const agentRow = (name: string, descr = '') => (
@@ -380,7 +257,7 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
         if (e.key === 'Escape') {
           e.preventDefault();
           e.stopPropagation();
-          if (recognition.current) endVoice(false);
+          if (voice.listening) voice.cancel();
           else onClose();
         } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
@@ -474,7 +351,7 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
       </div>
 
       <footer class="ab-compose">
-        <div class={`ab-entry${listening ? ' listening' : ''}`}>
+        <div class={`voice-entry${voice.listening ? ' listening' : ''}`}>
           <textarea
             ref={area}
             class="ab-input"
@@ -484,43 +361,11 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
             value={note}
             onInput={(e) => setNote((e.target as HTMLTextAreaElement).value)}
           />
-          <span class="ab-voice-trigger">
-            <button
-              ref={voiceStart}
-              type="button"
-              class="ab-voice-btn"
-              aria-label="Start voice input"
-              aria-keyshortcuts="Control+Shift+Space"
-              onClick={beginVoice}
-            >
-              <IconMic size={17} />
-            </button>
-            <span class="ab-voice-tip" role="tooltip">
-              Voice input <kbd>Ctrl Shift Space</kbd>
-            </span>
-          </span>
-          <div class="ab-voice-session" aria-hidden={!listening}>
-            <span class="ab-voice-flow" aria-hidden="true" />
-            <span class="ab-voice-actions">
-              <button type="button" class="ab-voice-btn cancel" aria-label="Cancel voice input" title="Cancel — Esc" onClick={() => endVoice(false)}>
-                <IconX size={17} />
-              </button>
-              <button
-                ref={voiceAccept}
-                type="button"
-                class="ab-voice-btn accept"
-                aria-label="Accept voice input"
-                aria-keyshortcuts="Control+Shift+Space"
-                title="Accept — Ctrl+Shift+Space"
-                onClick={() => endVoice(true)}
-              >
-                <IconCheck size={17} />
-              </button>
-            </span>
-          </div>
+          <VoiceInputControls voice={voice} />
         </div>
         {error && <p class="ab-error">{error}</p>}
-        <div class="ab-bar" ref={bar} hidden={listening}>
+        {voice.error && <p class="ab-error">{voice.error}</p>}
+        <div class="ab-bar" ref={bar} hidden={voice.listening}>
           {ACTIONS.map(([a, label, tip], i) => (
             <button
               type="button"
@@ -535,9 +380,6 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
             </button>
           ))}
         </div>
-        <span class="sr-only" role="status" aria-live="polite">
-          {voiceStatus}
-        </span>
       </footer>
     </aside>
   );

@@ -1115,12 +1115,13 @@ main {
 .md .c-wrap > .answer-host .qa-edit { margin-left: 34px; }
 .md .qa-edit textarea {
   display: block; width: 100%; min-height: 3.2em; resize: vertical; box-sizing: border-box;
-  font: inherit; line-height: 1.5; padding: 6px 8px; color: var(--fg); background: var(--bg-raised);
+  font: inherit; line-height: 1.5; padding: 6px 44px 6px 8px; color: var(--fg); background: var(--bg-raised);
   border: 1px solid var(--qa-answer); border-radius: var(--radius);
 }
 .md .qa-edit textarea:focus { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--qa-answer) 25%, transparent); }
 .md .qa-edit.need textarea { border-color: var(--qa-question); box-shadow: 0 0 0 2px color-mix(in srgb, var(--qa-question) 25%, transparent); }
 .md .qa-edit .bar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.md .qa-edit .bar[hidden] { display: none; }
 .md .qa-edit .bar button { font: inherit; font-size: 12px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border);
   background: var(--bg-raised); color: var(--fg); cursor: pointer; position: relative; }
 .md .qa-edit .bar button.default { background: var(--qa-answer); color: #fff; border-color: var(--qa-answer); }
@@ -1869,34 +1870,35 @@ button.sync-chip { cursor: pointer; }
 @keyframes abDots { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
 .ab-compose { padding: 10px 12px 12px; border-top: 1px solid var(--border); background: var(--bg-raised); }
-.ab-entry { position: relative; }
+.voice-entry { position: relative; }
 .ab-input { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 8px 48px 8px 10px; border: 1px solid var(--border);
   border-radius: 10px; background: var(--bg); color: var(--fg); resize: vertical; min-height: 64px; }
 .ab-input:focus { outline: none; border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
-.ab-voice-trigger { position: absolute; right: 7px; bottom: 7px; }
-.ab-voice-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; color: var(--fg-muted);
+.voice-trigger { position: absolute; right: 7px; bottom: 7px; }
+.voice-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; color: var(--fg-muted);
   background: var(--bg-raised); border: 1px solid var(--border); border-radius: 9px; cursor: pointer; }
-.ab-voice-btn:hover { color: var(--fg); border-color: var(--border-strong); background: var(--bg-hover); }
-.ab-voice-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.ab-voice-trigger :is(.ab-voice-btn:hover, .ab-voice-btn:focus-visible) { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
-.ab-voice-tip { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 2; width: max-content; padding: 6px 8px;
+.voice-btn:disabled { opacity: 0.45; cursor: default; }
+.voice-btn:hover { color: var(--fg); border-color: var(--border-strong); background: var(--bg-hover); }
+.voice-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.voice-trigger :is(.voice-btn:hover, .voice-btn:focus-visible) { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.voice-tip { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 2; width: max-content; padding: 6px 8px;
   color: var(--bg-raised); background: var(--fg); border: 1px solid var(--border-strong); border-radius: 7px; font-size: 11.5px; line-height: 1.3;
   opacity: 0; pointer-events: none; transform: translateY(3px); transition: opacity 0.1s ease, transform 0.1s ease; }
-.ab-voice-tip kbd { margin-left: 5px; color: inherit; background: transparent; border-color: color-mix(in srgb, currentColor 35%, transparent); box-shadow: none; }
-.ab-voice-trigger:hover .ab-voice-tip, .ab-voice-trigger:focus-within .ab-voice-tip,
-.ab-voice-btn:focus-visible + .ab-voice-tip { opacity: 1; transform: translateY(0); }
-.ab-voice-session { display: none; min-height: 58px; align-items: center; gap: 12px; padding: 8px 8px 8px 13px;
+.voice-tip kbd { margin-left: 5px; color: inherit; background: transparent; border-color: color-mix(in srgb, currentColor 35%, transparent); box-shadow: none; }
+.voice-trigger:hover .voice-tip, .voice-trigger:focus-within .voice-tip,
+.voice-btn:focus-visible + .voice-tip { opacity: 1; transform: translateY(0); }
+.voice-session { display: none; min-height: 58px; align-items: center; gap: 12px; padding: 8px 8px 8px 13px;
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 10px; background: var(--bg);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
-.ab-entry.listening :is(.ab-input, .ab-voice-trigger) { display: none; }
-.ab-entry.listening .ab-voice-session { display: flex; }
-.ab-voice-flow { flex: 1; min-width: 0; height: 9px; color: var(--fg-muted); opacity: 0.8; background:
+.voice-entry.listening > :is(textarea, .voice-trigger) { display: none; }
+.voice-entry.listening .voice-session { display: flex; }
+.voice-flow { flex: 1; min-width: 0; height: 9px; color: var(--fg-muted); opacity: 0.8; background:
   radial-gradient(circle, currentColor 1.4px, transparent 1.7px) 0 50% / 8px 8px repeat-x; animation: abVoiceFlow 1.2s linear infinite; }
 @keyframes abVoiceFlow { from { background-position: 0 50%; } to { background-position: 24px 50%; } }
-.ab-voice-actions { display: flex; gap: 7px; }
-.ab-voice-btn.cancel:hover { color: var(--danger); }
-.ab-voice-btn.accept:hover { color: var(--ok); }
+.voice-actions { display: flex; gap: 7px; }
+.voice-btn.cancel:hover { color: var(--danger); }
+.voice-btn.accept:hover { color: var(--ok); }
 .ab-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 8px; }
 .ab-bar[hidden] { display: none; }
 .ab-bar button { grid-column: span 2; font: inherit; font-size: 12px; padding: 5px 6px; border-radius: 8px; border: 1px solid var(--border);
@@ -1930,7 +1932,7 @@ button.sync-chip { cursor: pointer; }
 .doc-meta .uncommitted:hover { animation: none; background: color-mix(in srgb, var(--warn) 18%, transparent); }
 @keyframes uncommittedFlash { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .doc-meta .uncommitted { animation: none; } }
-@media (prefers-reduced-motion: reduce) { .ab-voice-flow { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .voice-flow { animation: none; } }
 
 /* Commit this one file, beside that mark. The message row wraps onto its own line, and the
    note stays after the mark has gone — a push can still be reporting. */

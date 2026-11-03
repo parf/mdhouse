@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { EditLink, OpenedNotice, isEditKey } from './ExternalEdit';
+import { VoiceInputControls, useVoiceInput } from './VoiceInput';
 
 /** What is being written: a question's answer, an issue's reply, a comment on an option, a verdict on a 💡, an edit. */
 export type QaKind = 'question' | 'finding' | 'option' | 'proposal' | 'comment' | 'edit';
@@ -98,6 +99,14 @@ export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCan
   const [sign, setSign] = useState(loadSign);
   const [need, setNeed] = useState(false);
   const [opened, setOpened] = useState(false);
+  const voice = useVoiceInput(
+    text,
+    (value) => {
+      setText(value);
+      onText(value);
+    },
+    area,
+  );
 
   useEffect(() => {
     const el = area.current;
@@ -132,26 +141,21 @@ export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCan
 
   if (opened) return <OpenedNotice onBack={() => setOpened(false)} onClose={onCancel} />;
   return (
-    <div class={`qa-edit${need ? ' need' : ''}`} role="group" aria-label="Reply">
-      <textarea
-        ref={area}
-        value={text}
-        rows={2}
-        placeholder={
-          need
-            ? '🎫 needs who takes it: 👤name or 👥team (and what, if not obvious)'
-            : first === 'yes'
-              ? 'Yes — anything to add? (optional)'
-              : first === 'no'
-                ? 'No — why? (optional)'
-                : 'Reply — Markdown; a line starting with - is a bullet'
-        }
-        onInput={(e) => {
-          const value = (e.target as HTMLTextAreaElement).value;
-          setText(value);
-          onText(value);
-        }}
-        onKeyDown={(e) => {
+    <div
+      class={`qa-edit${need ? ' need' : ''}`}
+      role="group"
+      aria-label="Reply"
+      onKeyDown={(e) => {
+        if (e.ctrlKey && e.shiftKey && !e.altKey && e.code === 'Space') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!saving) voice.toggle();
+        } else if (voice.listening) {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            voice.cancel();
+          }
+        } else if (e.target === area.current) {
           if (e.key === 'Escape') {
             e.preventDefault();
             onCancel();
@@ -170,10 +174,34 @@ export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCan
               bar.current?.querySelector<HTMLButtonElement>(`[data-n="${n[1]}"]`)?.click();
             }
           }
-        }}
-      />
+        }
+      }}
+    >
+      <div class={`voice-entry${voice.listening ? ' listening' : ''}`}>
+        <textarea
+          ref={area}
+          value={text}
+          rows={2}
+          placeholder={
+            need
+              ? '🎫 needs who takes it: 👤name or 👥team (and what, if not obvious)'
+              : first === 'yes'
+                ? 'Yes — anything to add? (optional)'
+                : first === 'no'
+                  ? 'No — why? (optional)'
+                  : 'Reply — Markdown; a line starting with - is a bullet'
+          }
+          onInput={(e) => {
+            const value = (e.target as HTMLTextAreaElement).value;
+            setText(value);
+            onText(value);
+          }}
+        />
+        <VoiceInputControls voice={voice} disabled={saving} />
+      </div>
       {note && <p class="answer-note">{note}</p>}
-      <div class="bar" ref={bar}>
+      {voice.error && <p class="answer-note">{voice.error}</p>}
+      <div class="bar" ref={bar} hidden={voice.listening}>
         <button
           type="button"
           class={`save${save ? '' : ' default'}`}
