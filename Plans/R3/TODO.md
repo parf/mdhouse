@@ -14,6 +14,8 @@ part of the complete product journey.
     and release notes
   - Builds: mdhouse as the normal human interface, with the product goal of replacing direct
     Claude/AI CLI use and separate Markdown-editor use
+  - Builds: change R3 and later distributions to PolyForm Strict License 1.0.0, copyright Sergey
+    Porfiriev, with the canonical text in `LICENSE.md`
   - Includes: projects/spaces, Workspace/Viewer, Personal/Team, Reader/Editor and Markdown-native
     flows
   - Acceptance: no primary surface describes R3 as only a viewer or presents editing, agents and
@@ -24,6 +26,12 @@ part of the complete product journey.
     Markdown editor; specialized and recovery paths may still use them
   - Acceptance: a single owner can run Personal Workspace locally without login or remotely with
     optional GitHub login/trusted-network admission, including from an iPad or phone
+  - Acceptance: `LICENSE.md`, README/license links, package metadata and packed npm contents all name
+    PolyForm Strict License 1.0.0 and Sergey Porfiriev consistently; no R3-facing GPL metadata remains
+  - Acceptance: `package.json` uses `SEE LICENSE IN LICENSE.md`; a package-content test proves the
+    license file ships, and release notes call out the license change
+  - Acceptance: existing tags/published versions are not rewritten and third-party license notices
+    remain intact
   - Tracks: [`MW.0`](workspaces/TODO.md#w0-workspace-by-default)
   - Home: [The paradigm shift](README.md#the-paradigm-shift)
 
@@ -203,5 +211,6 @@ part of the complete product journey.
     enforcement at each step
   - Acceptance: unavailable agents, failed routes, rewritten Git history, disconnected clients and
     partial external actions retain recoverable state and precise errors
+  - Acceptance: repository and packed artifacts pass the R3 license/metadata/package-content check
   - Detailed Workspace gate: [`MW.6`](workspaces/TODO.md#gate)
   - Home: [Release gate](README.md#r3l-release-gate)

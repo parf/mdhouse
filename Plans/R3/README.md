@@ -71,7 +71,7 @@ R3 keeps four boundaries visible:
 
 | Group | Outcome | Main work |
 | --- | --- | --- |
-| R3a — Product identity | mdhouse aims to become the primary project UI, not a larger viewer | replacement goal for direct AI CLI and Markdown-editor use, project/space concepts, coherent onboarding and language |
+| R3a — Product identity | mdhouse aims to become the primary project UI, not a larger viewer | replacement goal for direct AI CLI and Markdown-editor use, project/space concepts, coherent language and PolyForm licensing |
 | R3b — Workspaces and access | Workspace is the default; Viewer and project access are explicit | modes, migration, user management, per-project RO/RW grants, Reader/Editor authorization |
 | R3c — Projects and setup | A project becomes usable without a manual integration pass | AI installation runbook, directory management, project names and new-project creation |
 | R3d — Markdown interaction | mdhouse aims to replace a separate Markdown editor | existing markup actions, full-document editor, stale-write safety, diff/history/commit, optional external editor |
@@ -85,6 +85,19 @@ R3 keeps four boundaries visible:
 | R3l — Complete journey | The pieces work as one product | install → project → agent → flow → edit → review → delivery validation |
 
 ## R3a–R3b — Product identity, workspaces and access
+
+### R3 license
+
+The first R3 distribution changes the project license to the **PolyForm Strict License 1.0.0**,
+copyright **Sergey Porfiriev**. The canonical license file is `LICENSE.md` and contains the official
+license text plus the copyright notice.
+
+Repository documentation, package metadata and published artifacts must identify the same license.
+For npm, a non-SPDX/custom license reference uses `SEE LICENSE IN LICENSE.md`, and the packed artifact
+must contain `LICENSE.md`. No current GPL label or stale `LICENSE` link may remain in R3-facing
+metadata or docs. Third-party dependencies retain their own licenses. Existing tags and already
+published versions retain the license distributed with those versions; the R3 change is not
+retroactive.
 
 ### Workspace and Viewer
 
@@ -588,6 +601,8 @@ R3 is complete when a fresh installation can:
    write;
 10. recover cleanly from unavailable agents, routing errors, rewritten Git history, disconnected
    browser IDs and partially failed external actions.
+11. publish repository and package artifacts with `LICENSE.md`, PolyForm Strict License 1.0.0 and
+    copyright Sergey Porfiriev, with no stale GPL metadata.
 
 The access matrix is also tested directly: Personal Workspace, Open Viewer, Private Viewer and Team
 Workspace, each with direct requests and stale tabs; trusted-network variants are tested separately.
