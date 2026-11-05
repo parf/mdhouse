@@ -4,3 +4,7 @@
 
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../CHANGELOG.md).
+
+## Active projects
+
+- [MDHOUSE Workspaces](mdhouse-workspaces/README.md) — personal-first/team-ready workspace, Viewer mode, AI installation, project flows and a full Markdown editor
