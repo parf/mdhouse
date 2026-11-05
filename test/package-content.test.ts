@@ -40,9 +40,8 @@ test('npm artifact ships the canonical R3 license and matching metadata', async 
     expect(readme).toContain('[`LICENSE.md`](LICENSE.md)');
     expect(readme).toContain('Sergey Porfiriev');
     expect(readme).not.toMatch(/GNU General Public License|GPL-\d|\]\(LICENSE\)/i);
-    const unreleased = (await read('CHANGELOG.md')).split('\n## ')[1] ?? '';
-    expect(unreleased).toStartWith('Unreleased\n');
-    expect(unreleased).toContain('PolyForm Strict License 1.0.0');
+    const changelog = await read('CHANGELOG.md');
+    expect(changelog).toContain('R3 and later distributions use the PolyForm Strict License 1.0.0');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
