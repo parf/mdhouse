@@ -2,11 +2,54 @@
 
 R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
 
+## Execution contract
+
+Unchecked items are planned, not evidence of execution. Assignments and exact revisions live in
+[`../EXECUTION.md`](../EXECUTION.md). CTO alone closes shared checkpoints after integration and checks.
+Partial slices do not close their parent task. State: assigned → working → ready → reviewed → integrated → done.
+
+Foundation DAG: MW.0f + MW.0g → MW.0h → MW.0c → MW.0d → MW.0e → MW.0 activation.
+MW.0a attribution can proceed independently; MW.0b assembles the completed access foundations.
+MW.0c/0d/0e may implement dormant primitives in order without requiring MW.0 default activation.
+Each integrated slice must preserve or reduce current access; no temporary permissive policy.
+MW.1 and MW.7 root/config controls wait for administrator authorization; project Editor is insufficient.
+Independent Copy, license and flow-package authoring may proceed before default activation.
+
 ## W0 — Workspace by default
 
-- ⏳ MW.0 Change the next release from viewer-by-default to workspace-by-default
+- [ ] MW.L Ship the approved R3 license and package metadata
+  - Builds: official PolyForm Strict License 1.0.0 in `LICENSE.md`, copyright Sergey Porfiriev; consistent README/package metadata and Unreleased notice
+  - Acceptance: `SEE LICENSE IN LICENSE.md`; actual packed tarball contains canonical license text/copyright and no stale current GPL metadata or LICENSE link
+  - Acceptance: regression check inspects packed contents; no version/tag rewrites or third-party notice changes
+
+- [ ] MW.0f Make the installed reference root immutable
+  - Builds: immutable reference root kind, canonical registration and installed reference auto-mount with plan/markup/syntax/shareable skills
+  - Slice MW.0f.1: root-kind/addReference primitive and all write/remove/promotion guards, no auto-mount or default flip
+  - Slice MW.0f.2: package content, installed auto-mount and UI identity; preserve project root IDs/default selection
+  - Acceptance: CLI/control, prefs/autoRw, web and direct writes cannot promote/remove or mutate reference files; symlink/overlapping-root and Git mutations preserve the boundary
+  - Acceptance: reference material ships and is readable on fresh packed install without an explicit user grant
+
+- [ ] MW.0g Establish authenticated instance administration and authorization seams
+  - Builds: common request actor and explicit instance-administrator capability, distinct from project Reader/Editor and trusted-source admission
+  - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
+  - Acceptance: trusted localhost/CIDR or project RW alone never grants administrator; existing OS-protected CLI/control remains an explicit administration path
+  - Acceptance: bootstrap/recovery binds administrator authority through explicit owner configuration, never first visitor or arbitrary Basic/GitHub login; secrets stay server-side
+  - Acceptance: classify document/Git/flow/control/config/marks/external-send mutations; direct/stale requests deny missing authority; no new privilege-granting endpoint before checks exist
+  - Acceptance: test every mutation family, cross-user/root isolation and denial; dormant foundations retain current RO defaults
+
+- [ ] MW.0h Implement safe mode and access migration before activation
+  - Depends: MW.0f, MW.0g
+  - Builds: explicit configured vs effective root access, Viewer hard cap, versioned compatible prefs migration and safe exposure defaults
+  - Acceptance: migration is idempotent; old absent RW grants become explicit RO choices before any new-root default applies
+  - Acceptance: old saved/session/autoRw choices preserve effective access; unknown/newer config cannot be destructively rewritten; no upgrade silently expands admission/RW
+  - Acceptance: Viewer refuses every mutation family through stale/direct requests and preserves configured choices; restart and downgrade behavior are documented/tested
+  - Acceptance: no non-loopback RW exposure without explicit admission policy; migration does not activate incomplete Team/profile UI
+
+
+- [ ] MW.0 Change the next release from viewer-by-default to workspace-by-default
   - Builds: workspace as the default product mode; new roots RW by default; `--ro`; persisted Viewer mode
-  - Depends: [№Q-W4](QUESTIONS.md#Q-W4), [№Q-W5](QUESTIONS.md#Q-W5)
+  - Depends: MW.0f, MW.0g, MW.0h, MW.0c, MW.0d, MW.0e, [№Q-W4](QUESTIONS.md#Q-W4), [№Q-W5](QUESTIONS.md#Q-W5)
+  - Acceptance: non-loopback binding requires explicit admission policy before any RW-default activation
   - Acceptance: a fresh install and every newly added root use workspace behavior unless Viewer or RO was explicitly selected
   - Acceptance: Viewer makes every root effectively RO and removes task toggles, Q&A/add editors, commit/pull/push actions and all other document write controls
   - Acceptance: Viewer never erases configured per-root access; switching back to Workspace restores it
@@ -15,18 +58,18 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: help, onboarding, settings, README, package description and release notes describe one mode model consistently
   - Home: [Next release](README.md#next-release)
 
-- ⏳ MW.0a Add a cookie-based author name for shared editing
+- [ ] MW.0a Add a cookie-based author name for shared editing
   - Why: one mdhouse instance is opened to a team; today every browser signs replies with the same server-wide `prefs.settings.me`
   - Builds: a user-name control in the web UI; a persistent per-browser cookie; the cookie identity passed through every signed Q&A and document-edit action
   - Acceptance: two browsers using the same mdhouse instance can set different names and their signed replies carry different `👤<name>` badges
-  - Acceptance: an authenticated Team user is attributed by current GitHub username; the cookie is a fallback for personal/trusted-anonymous use and cannot override authenticated identity
+  - Acceptance: this layer supplies fallback attribution only; authenticated GitHub precedence is verified with MW.0d, not a dependency of this slice
   - Acceptance: the cookie is attribution only and grants no access or write permission; its value is normalized and length-limited before it reaches Markdown
   - Acceptance: cookie scope, lifetime and behavior behind HTTP/HTTPS are documented and covered by server-route tests
   - Home: [Next release](README.md#next-release)
 
-- ⏳ MW.0b Add an explicit Team workspace setup
+- [ ] MW.0b Add an explicit Team workspace setup
   - Builds: Personal as the zero-config default; a Team setup flow combining network exposure, GitHub OAuth configuration, known users and per-browser fallback identity
-  - Depends: MW.0a, [№Q-W6](QUESTIONS.md#Q-W6)
+  - Depends: MW.0a, MW.0c, MW.0d, MW.0e, [№Q-W6](QUESTIONS.md#Q-W6)
   - Acceptance: a personal install still starts locally without onboarding or account setup
   - Acceptance: the owner can configure a shared instance without assembling unrelated host, access and identity options by hand
   - Acceptance: every teammate authenticates with GitHub and is distinguished by GitHub username in Markdown replies; trusted anonymous browsers use the fallback author control
@@ -35,12 +78,12 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: concurrent edits keep the existing stale-write refusal and never overwrite another teammate's newer change
   - Home: [Next release](README.md#next-release)
 
-- ⏳ MW.0c Add Reader and Editor access levels
+- [ ] MW.0c Add Reader and Editor access levels
   - Builds: public/unauthenticated Reader where enabled; GitHub-authenticated Editor; optional no-login Editor access for localhost or configured CIDRs; login/logout UI and visible current role
-  - Depends: MW.0, MW.0a, MW.0b, [№Q-W8](QUESTIONS.md#Q-W8)
+  - Depends: MW.0g, MW.0h, [№Q-W8](QUESTIONS.md#Q-W8)
   - Acceptance: Viewer always authorizes Reader only, regardless of login, CIDR or stored root mode
   - Acceptance: Workspace read routes remain available to Reader according to the existing network/host policy; document write and git mutation routes require Editor
-  - Acceptance: effective write requires Workspace mode + root RW + user project grant RW + actor Editor; every server mutation checks all four and stale/direct requests cannot bypass them
+  - Acceptance: this layer enforces mode/root/actor; absent project-grant support denies Team writes until MW.0d supplies the fourth factor, with stale/direct denial tests
   - Acceptance: Settings can optionally grant Editor without login to loopback and explicit intranet CIDRs; unmatched addresses remain Reader until login
   - Acceptance: trusted edit CIDRs reuse strict CIDR parsing and never trust forwarding headers unless a separately configured trusted proxy supplies them
   - Acceptance: GitHub OAuth validates callback state and immutable provider identity server-side; session cookies are Secure on HTTPS, HttpOnly, SameSite and revocable
@@ -49,9 +92,10 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: route tests cover Reader, login Editor, trusted-CIDR Editor, RO root, Viewer override, logout/revocation, CSRF and multiple users
   - Home: [Next release](README.md#next-release)
 
-- ⏳ MW.0d Add user management and per-project grants
+- [ ] MW.0d Add user management and per-project grants
   - Builds: Settings UI, matching CLI and protected APIs to add users by GitHub username, edit status/grants, disable and remove them; GitHub OAuth login; instance `ACCESS`; per-canonical-root `RO` / `RW` grants; known-users-only admission; optional trusted localhost/CIDRs
-  - Depends: MW.0b, MW.0c, [№Q-W8](QUESTIONS.md#Q-W8)
+  - Depends: MW.0g, MW.0c, [№Q-W8](QUESTIONS.md#Q-W8)
+  - Acceptance: final effective write requires Workspace + root RW + project grant RW + Editor, with authenticated GitHub attribution overriding cookie fallback
   - Acceptance: normal Add user has one required field, GitHub username; an authorized owner can inspect its resolved GitHub identity, edit status/grants, disable or remove the user and inspect effective access
   - Acceptance: adding a user from one project's access UI gives that project an RW grant by default; adding from global user management creates ACCESS and leaves project grants to the project-grant control
   - Acceptance: grants and audit identity use provider + immutable GitHub user ID; the current username can refresh after rename without losing/transferring access
@@ -71,9 +115,9 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: tests cover OAuth state/callback failure, unknown GitHub user, username rename, multiple users, duplicate display names, session revocation, every grant transition, trusted/untrusted sources, Viewer, root RO and project removal
   - Home: [Next release](README.md#next-release)
 
-- ⏳ MW.0e Add the four supported access profiles
+- [ ] MW.0e Add the four supported access profiles
   - Builds: first-class persisted `personal`, `open-viewer`, `private-viewer` and `team` profiles in onboarding, Settings and CLI; one shared enforcement model beneath them
-  - Depends: MW.0, MW.0b, MW.0c, MW.0d, [№Q-W6](QUESTIONS.md#Q-W6)
+  - Depends: MW.0h, MW.0c, MW.0d, [№Q-W6](QUESTIONS.md#Q-W6)
   - Acceptance: **Personal Workspace** is single-owner with optional login and uses root RW by default while preserving explicit root RO and immutable references
   - Acceptance: localhost Personal Workspace is zero-config/no-login; remote Personal Workspace supports owner GitHub login or an explicit trusted CIDR/VPN/proxy boundary
   - Acceptance: binding Personal Workspace beyond loopback requires an explicit admission choice and never silently publishes RW access
@@ -90,9 +134,9 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
 
 ## W1 — Install and connect
 
-- ⏳ MW.1 Add the AI installation runbook and managed workspace convention
+- [ ] MW.1 Add the AI installation runbook and managed workspace convention
   - Builds: `install.md`; `~/mdhouse/<project>` as the standard always-RW development workspace
-  - Depends: MW.0, [№Q-W1](QUESTIONS.md#Q-W1), [№Q-W2](QUESTIONS.md#Q-W2)
+  - Depends: MW.0, MW.0f, MW.0g, [№Q-W1](QUESTIONS.md#Q-W1), [№Q-W2](QUESTIONS.md#Q-W2)
   - Acceptance: from a clean account, an AI follows `install.md`, creates one project workspace and opens it writable in mdhouse
   - Acceptance: a symlink from the workspace cannot write outside the workspace root
   - Acceptance: `Settings → Directories` has Add directory; it accepts a path and RW/RO, then uses the same canonical add path as the CLI
@@ -104,7 +148,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: save and mode actions use same-origin protected APIs and route tests cover persistence and live state
   - Home: [Workspace](README.md#workspace)
 
-- ⏳ MW.1a Add optional human names for project directories
+- [ ] MW.1a Add optional human names for project directories
   - Builds: project display-name metadata keyed by canonical root path; a Project name field in the Settings directory editor; CLI `--name`
   - Acceptance: `mdhouse ~/mdhouse -p --name "All MDHouse Projects"` saves that human name for the canonical directory
   - Acceptance: `--name` requires exactly one named directory; ambiguous multi-directory use is refused with a useful error
@@ -114,7 +158,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: names are trimmed, length-limited and rendered as text; prefs migration and duplicate human names are covered by tests
   - Home: [Workspace](README.md#workspace)
 
-- ⏳ MW.2 Make Agent Bus work out of the box
+- [ ] MW.2 Make Agent Bus work out of the box
   - Builds: install-time Agent Bus setup; a connected mdhouse project ready to ask an agent; optional Agent Bus endpoint and default agents per space/root
   - Depends: MW.1, MW.1a
   - Acceptance: the installed project page can open Agent Bus, send a request and receive its reply without a separate integration pass
@@ -132,7 +176,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: tests cover every precedence level separately from endpoint precedence
   - Home: [Workspace](README.md#workspace)
 
-- ⏳ MW.2a Integrate the Agent Bus RAG agent lifecycle
+- [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle
   - Why: the Agent Bus RAG agent already provides source ingestion, embeddings, indexing, refresh and retrieval; mdhouse should expose the full R3 capability instead of building a second backend
   - Builds: per-space/project source configuration; add/select/remove; ingestion; embedding/index jobs; refresh/reindex; progress/errors/freshness; retrieval test; request/flow source selection; citations/provenance in generated Markdown
   - Depends: MW.2 and verification/documentation of the Agent Bus RAG agent lifecycle/request API
@@ -146,7 +190,14 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
 
 ## W2 — Existing projects
 
-- ⏳ MW.3 Build the shared flow runtime for existing projects
+Every MW.3a–MW.3h package must include a named entry/route, concrete default scope/range/audience/output
+and local Markdown destination, evidence/missing-source behavior, approval boundaries, one small
+input → output/route example, and manual/optional scheduled execution through MW.3. A coverage manifest
+maps every named package to its example/check. Schedules start work, never approve consequential actions.
+No package is done before shared runner/permission checks pass; tracker-free output remains complete.
+
+
+- [ ] MW.3 Build the shared flow runtime for existing projects
   - Builds: discoverable packages of Markdown documents plus routing; common scope, change range, audience, output and destination controls; optional schedules; run history
   - Depends: MW.2
   - Acceptance: every flow leaves its inputs, plan, source evidence, findings, checks and outcome in project Markdown
@@ -164,7 +215,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: uncommitted files are reported separately and never implied to be included in a commit range
   - Home: [Existing-project flows](README.md#existing-project-flows)
 
-- ⏳ MW.3a Add Documentation flows
+- [ ] MW.3a Add Documentation flows
   - Builds: generate/update; subsystem decomposition and deep docs; summaries; refresh/verify; audience overview; documentation architecture and trust report
   - Depends: MW.3
   - Acceptance: scope can be whole project, subsystem, aspect, path or change timeframe; audience can be executive, marketing/product, development, QA, operations, security or custom
@@ -172,7 +223,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: generated docs can be organized as tutorial, how-to, reference or explanation rather than one undifferentiated document
   - Home: [Documentation](README.md#documentation)
 
-- ⏳ MW.3b Add Recent commits review
+- [ ] MW.3b Add Recent commits review
   - Builds: project/user/developer/operations change summaries; changelog; author review; error and risk findings; task/ticket generation; plan-vs-delivery report
   - Depends: MW.3
   - Acceptance: run by range, author, branch, subsystem or week/month; the same document/routing package runs manually or on its optional schedule
@@ -180,7 +231,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: findings carry evidence and severity; filing tickets is optional, previewed and provider-neutral
   - Home: [Recent commits review](README.md#recent-commits-review)
 
-- ⏳ MW.3c Add Pull request and incoming-change flows
+- [ ] MW.3c Add Pull request and incoming-change flows
   - Builds: intake summary; ownership/impact routing; review; feedback resolution; merge-readiness gate; confirmed merge; post-merge docs/tasks
   - Depends: MW.3
   - Acceptance: review covers correctness, tests, security, dependency changes, compatibility, docs and operational risk
@@ -188,48 +239,57 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: mdhouse never merges from an automated review alone; merge is a separate explicitly confirmed action with provider response recorded
   - Home: [Pull requests and incoming changes](README.md#pull-requests-and-incoming-changes)
 
-- ⏳ MW.3d Add all Engineering and operations flow packages
+- [ ] MW.3d Add all Engineering and operations flow packages
   - Builds: Release readiness; Architecture and ownership; Project health; Onboarding and handoff; Incident/regression investigation; Requirements and delivery sync; API/schema impact; Maintenance/debt sweep
   - Depends: MW.3
   - Acceptance: every flow has useful default scope/output, evidence requirements, approval boundaries and a small example; each can run manually or on an optional schedule
   - Home: [Engineering and operations flows](README.md#engineering-and-operations-flows)
 
-- ⏳ MW.3e Add Business and Ideas flow packages
+- [ ] MW.3e Add Business and Ideas flow packages
   - Builds: Business overview; Strategy/planning; Market/customer brief; KPI/operating review; Decision memo; Idea capture; research/synthesis; prioritization; experiment design; idea-to-project
   - Depends: MW.3
   - Acceptance: Business flows separate evidence, assumptions, decisions and follow-up; Ideas flows preserve rejected alternatives and can promote a selected idea into a project/plan
   - Home: [Business flows](README.md#business-flows), [Ideas flows](README.md#ideas-flows)
 
-- ⏳ MW.3f Add Finance flow packages
+- [ ] MW.3f Add Finance flow packages
   - Builds: Budget/forecast; Variance/management report; Unit economics/pricing; Cash/runway; Financial document review
   - Depends: MW.3
   - Acceptance: outputs cite inputs, expose formulas/assumptions, label estimates and scenarios, and require human approval for consequential actions
   - Acceptance: flows never initiate payments, move funds or present drafts as financial advice
   - Home: [Finance flows](README.md#finance-flows)
 
-- ⏳ MW.3g Add Legal flow packages
+- [ ] MW.3g Add Legal flow packages
   - Builds: Contract review; Obligation/renewal register; Policy/compliance review; Legal change impact; Legal request brief
   - Depends: MW.3
   - Acceptance: outputs preserve source references, confidentiality boundaries and uncertainty; interpretation and external actions require a qualified human
   - Acceptance: flows never file, sign, accept terms or present drafts as legal advice
   - Home: [Legal flows](README.md#legal-flows)
 
+- [ ] MW.3h Add Feature and delivery flow packages
+  - Builds: clarify → plan → implement → test → review; project/subsystem review; update → review → delivery readiness/rollback → confirmed deploy; next-feature continuity
+  - Depends: MW.3
+  - Acceptance: task/owner/scope/acceptance/base/target and exact-revision tests/review evidence remain inspectable in Markdown; unanswered required questions hold dependent work
+  - Acceptance: all four paths have defaults/evidence/examples and manual/optional scheduled entry; changed target invalidates review readiness
+  - Acceptance: edit/commit/ticket/merge/deploy use separate preview/approval boundaries; denied/partial actions preserve provider results and recoverable state
+  - Acceptance: readiness includes unresolved findings, migrations, release notes and rollback; next feature preserves decisions and unfinished work
+  - Home: [Feature and delivery](README.md#feature-and-delivery)
+
 ## W3 — New projects
 
-- ⏳ MW.4 Create new AI projects from the web UI
+- [ ] MW.4 Create new AI projects from the web UI
   - Builds: workspace creation; project initialization; `Plans/`; markup and review skills; Agent Bus connection; first flow
-  - Depends: MW.1, MW.2, MW.3
+  - Depends: MW.1, MW.2, MW.3, MW.3h
   - Acceptance: a new project is created under `~/mdhouse/`, opens writable and can immediately run its first review or feature flow with Parf's conventions
   - Home: [New-project flow](README.md#new-project-flow)
 
 ## W4 — Full-document editing
 
-- ⏳ MW.5 Add a real Markdown editor for complete documents
+- [ ] MW.5 Add a real Markdown editor for complete documents
   - Builds: edit the full source document; save; preserve the draft on stale writes; document diff, history and commit
   - Acceptance: a writable document can be edited end to end; a concurrent file change is refused without losing the draft; a read-only root cannot save
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
-- ⏳ MW.5a Make the external edit-link scheme configurable
+- [ ] MW.5a Make the external edit-link scheme configurable
   - Why: `edit:` can keep opening the user's common editor while a separate scheme such as `mdedit:` opens Markdown files in Typora
   - Builds: `settings.editScheme`, default `edit`; an inline Settings field next to the existing Edit link switch; generated `<scheme>:/full/path:line` links everywhere
   - Acceptance: an existing prefs file with no scheme continues to generate `edit:/full/path:line`
@@ -242,7 +302,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: prefs migration, Settings API, rendering and keyboard-open behavior are covered by tests; README and platform setup docs show `edit` and `mdedit` examples
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
-- ⏳ MW.5b Keep mdhouse controls out of copied document text
+- [ ] MW.5b Keep mdhouse controls out of copied document text
   - Why: selecting a rendered heading currently copies injected controls such as `#`, `✎`, `↓` and `⇊` together with the authored title
   - Builds: one copy-exclusion contract for mdhouse-injected heading links, edit/add actions, badges and other document controls
   - Acceptance: normal selection and Copy produce the authored document text without mdhouse UI chrome
@@ -252,7 +312,7 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: rendering/UI tests cover a heading, Q&A item, multi-block selection and source-authored control glyphs
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
-- ⏳ MW.5c Make the primary workspace journey usable on iPad and phone
+- [ ] MW.5c Make the primary workspace journey usable on iPad and phone
   - Why: Personal Workspace may run remotely so one owner can develop from a tablet or phone without an AI CLI or separate Markdown editor
   - Builds: responsive and touch-usable project/document navigation, Agent Bus work, Q&A, flows, full Markdown editing, diff/review and commit actions
   - Acceptance: no critical action depends only on hover, right-click, a hardware keyboard or a desktop-width panel
@@ -260,15 +320,16 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: the owner can open a remote Personal Workspace, authenticate when configured, ask an agent, edit/save Markdown, inspect the diff and commit from an iPad
   - Acceptance: a phone can perform the same primary journey with an intentionally compact layout; large diffs/documents may use progressive disclosure without removing actions
   - Acceptance: desktop shortcuts remain enhancements and every shortcut-only action gains a visible touch control
-  - Acceptance: responsive UI tests and a documented manual device matrix cover iPad landscape/portrait and representative phone widths
+  - Acceptance: heading add/edit, selection, Copy, Agent Bus and shortcut-equivalent controls are visible and touch-usable without hover
+  - Acceptance: responsive UI tests and a documented manual device matrix in `Plans/R3/QA.md` cover iPad landscape/portrait and representative phone widths
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
 ## W5 — Agent Bus control
 
-- ⏳ MW.7 Let Agent Bus control a mdhouse workspace
+- [ ] MW.7 Let Agent Bus control a mdhouse workspace
   - Main goal: an Agent Bus command opens one specific Markdown file in mdhouse
   - Builds: a small versioned, typed Agent Bus control API; list control IDs; add project/directory; set its allowed config; open document; structured reply and errors
-  - Depends: MW.0, MW.0b, MW.2, [№Q-W7](QUESTIONS.md#Q-W7)
+  - Depends: MW.0, MW.0g, MW.0b, MW.2, [№Q-W7](QUESTIONS.md#Q-W7)
   - Acceptance: the inventory response gives Agent Bus the available `rootId` values and connected `clientId` values with enough labels/current state to choose them
   - Acceptance: an authorized AB sender supplies `rootId`, Markdown `path` and destination `clientId`; mdhouse resolves the document through `Registry.resolve()`, returns its canonical page URL and directs only that browser/tab to it
   - Acceptance: there is no pairing step and no broadcast fallback; an unknown or disconnected `clientId` returns the URL with `opened: false`
@@ -283,9 +344,13 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
 
 ## Gate
 
-- ⏳ MW.6 Review the complete workspace flow
-  - Depends: MW.0a, MW.0b, MW.0c, MW.0d, MW.0e, MW.1, MW.1a, MW.2, MW.2a, MW.3, MW.3a, MW.3b, MW.3c, MW.3d, MW.3e, MW.3f, MW.3g, MW.4, MW.5, MW.5a, MW.5b, MW.5c, MW.7
-  - Acceptance: a fresh install creates a project, connects an agent, runs a project flow, edits a document, reviews the diff and deploys without leaving mdhouse for coordination
+- [ ] MW.6 Review the complete workspace flow
+  - Depends: MW.L, MW.0, MW.0f, MW.0g, MW.0h, MW.0a, MW.0b, MW.0c, MW.0d, MW.0e, MW.1, MW.1a, MW.2, MW.2a, MW.3, MW.3a, MW.3b, MW.3c, MW.3d, MW.3e, MW.3f, MW.3g, MW.3h, MW.4, MW.5, MW.5a, MW.5b, MW.5c, MW.7
+  - Acceptance: packed license text/copyright/metadata and immutable installed reference contents are verified
+  - Acceptance: every mutation family (document/Git/flow/control/config/users/grants/profiles/roots/external sends) has direct/stale denial checks for Viewer, Reader, RO, revoked and non-admin actors
+  - Acceptance: `Plans/R3/QA.md` records desktop Chrome/Edge/Safari, Firefox Copy fallback, iPad portrait/landscape and phone Safari/Chrome evidence or explicit unverified gaps
+  - Acceptance: a fresh install creates a project, connects an agent, runs Feature/delivery and RAG flows, edits and copies authored Markdown, uses touch heading controls, reviews diff/history and reaches explicit delivery approval without an AI CLI/external editor
+  - Acceptance: validation uses scratch instances and simulated/explicitly authorized delivery destinations; this gate does not authorize production deploy
   - Acceptance: an owner adds only a GitHub username, the user authenticates through GitHub, receives the project as RW by default, changes to RO, then is removed; UI, active sessions and direct APIs enforce every transition immediately
   - Acceptance: an allowed RAG source can be ingested, embedded/indexed, queried and refreshed through the Agent Bus RAG agent; requests/flows record source identity and citations without exposing credentials
   - Acceptance: Personal Workspace, Open Viewer, Private Viewer and Team Workspace each pass their full admission/read/write matrix, including trusted-network variants and profile switching

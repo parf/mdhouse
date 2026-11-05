@@ -305,9 +305,7 @@ The core delivery package covers:
 - update → review → deploy, including readiness and rollback checks;
 - start the next feature while carrying forward decisions and unresolved work.
 
-This family is part of the R3 product scope and is currently described in the plan narrative, but it
-does not yet have its own `MW.3x` item in `TODO.md`. Before implementation begins it must either gain
-an explicit work item and acceptance criteria or be named as a concrete deliverable of `MW.3`.
+Feature and delivery is tracked as `MW.3h`, with shared runtime and release-gate dependencies.
 
 ### Documentation flows
 
@@ -565,7 +563,7 @@ Agent Bus clients.
 
 ## R3 delivery order
 
-1. Establish the four access profiles, Workspace/Viewer migration and Reader/Editor authorization.
+1. Establish immutable reference roots, authenticated administrator control and safe migration; then Reader/Editor/project grants and profiles before RW-default activation.
 2. Add browser author identity and Personal/Team setup.
 3. Ship the installation runbook, managed workspace convention and directory/project controls.
 4. Make Agent Bus connection, per-space routing and the RAG agent lifecycle work out of the box.
@@ -622,9 +620,7 @@ The following are planned extensions after the workspace, flow and control primi
 They remain recorded in [`workspaces/FUTURE.md`](workspaces/FUTURE.md) and should not
 expand the R3 gate unless explicitly promoted.
 
-## Open decisions and tracking gaps
+## Delivery tracking
 
-- Feature and delivery flows need an explicit `MW.3x` task or an explicit inclusion in `MW.3` before
-  work is estimated and assigned.
 - R3 is intentionally broad. Scheduling should be based on vertical release slices and the complete
   gate, not on marking isolated UI controls or template files complete.

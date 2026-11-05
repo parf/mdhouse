@@ -1,8 +1,8 @@
 # Workspaces — R3 program
 
 MDHOUSE becomes the local workspace where a person and AI agents install, review, change and
-ship projects together. The first layers are installation and project flows; teams and general
-automation build on them later.
+ship projects together. Immutable references, safe migration and authenticated administrator/access foundations precede
+RW-default activation; installation and project flows build on them. Extended teams remain future work.
 
 Release umbrella: [`Release 3 — Paradigm Shift`](../README.md).
 
@@ -292,8 +292,8 @@ authorized and every command is auditable.
 
 ## Delivery order
 
-1. Workspace-by-default mode, Viewer configuration and safe upgrade from existing prefs.
-2. Personal-by-default setup and an explicit, safe Team profile.
+1. Immutable references, authenticated instance administration and safe prefs/mode migration.
+2. Reader/Editor/project grants and profiles, then Workspace default activation and Team setup.
 3. `install.md` and the workspace convention.
 4. Agent Bus out of the box.
 5. Existing-project flows.
