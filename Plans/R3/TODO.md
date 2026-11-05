@@ -9,9 +9,9 @@ part of the complete product journey.
 
 Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outcomes are planned.
 
-## R3a — Product identity
+## [№R3a](#R3a) — Product identity {#r3a-product-identity}
 
-- [ ] R3a Establish mdhouse as a Markdown-native work environment
+- [ ] R3a Establish mdhouse as a Markdown-native work environment <a id="R3a"></a>
   - Builds: one product model and vocabulary across onboarding, Settings, CLI, README, package copy
     and release notes
   - Builds: mdhouse as the normal human interface, with the product goal of replacing direct
@@ -34,13 +34,13 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     license file ships, and release notes call out the license change
   - Acceptance: existing tags/published versions are not rewritten and third-party license notices
     remain intact
-  - Tracks: [`MW.L`, `MW.0`](workspaces/TODO.md#w0-workspace-by-default)
+  - Tracks: [№MW.L](workspaces/TODO.md#MW.L), [№MW.0](workspaces/TODO.md#MW.0)
   - Home: [The paradigm shift](README.md#the-paradigm-shift)
 
-## R3b — Workspaces and access
+## [№R3b](#R3b) — Workspaces and access {#r3b-workspaces-and-access}
 
-- [ ] R3b Ship the Workspace/Viewer and Reader/Editor model
-  - Depends: MW.0f, MW.0g, MW.0h; R3a vocabulary alignment proceeds in parallel
+- [ ] R3b Ship the Workspace/Viewer and Reader/Editor model <a id="R3b"></a>
+  - Depends: [№MW.0f](workspaces/TODO.md#MW.0f), [№MW.0g](workspaces/TODO.md#MW.0g), [№MW.0h](workspaces/TODO.md#MW.0h); [№R3a](#R3a) vocabulary alignment proceeds in parallel
   - Builds: Workspace by default; explicit hard-RO Viewer; per-root RW/RO; per-user project grants;
     safe migration; server-side effective-write authorization
   - Acceptance: effective write requires Workspace + RW root + user project grant RW + Editor actor
@@ -49,26 +49,26 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
   - Acceptance: upgrading never silently makes an existing root writable
   - Acceptance: Settings, onboarding and CLI expose Personal Workspace, Open Viewer, Private Viewer
     and Team Workspace with the same enforcement semantics
-  - Tracks: [`MW.0`, `MW.0c`, `MW.0d`, `MW.0e`](workspaces/TODO.md#w0-workspace-by-default)
+  - Tracks: [№MW.0](workspaces/TODO.md#MW.0), [№MW.0c](workspaces/TODO.md#MW.0c), [№MW.0d](workspaces/TODO.md#MW.0d), [№MW.0e](workspaces/TODO.md#MW.0e)
   - Home: [Product identity, workspaces and access](README.md#r3a-r3b-product-identity-workspaces-and-access)
 
-## R3c — Projects and setup
+## [№R3c](#R3c) — Projects and setup {#r3c-projects-and-setup}
 
-- [ ] R3c Make existing and new projects ready to work
-  - Depends: R3b
+- [ ] R3c Make existing and new projects ready to work <a id="R3c"></a>
+  - Depends: [№R3b](#R3b)
   - Builds: AI-executable `install.md`; `~/mdhouse/<project>` convention; web/CLI directory
     management; optional project names; new-project creation
   - Acceptance: a clean account can create or add a named project, choose its access, save it and
     open it without assembling unrelated CLI/config steps
   - Acceptance: web and CLI use the same canonical root-registration path and project identity
   - Acceptance: a newly created project starts with Plans, skills, Agent Bus and a first flow
-  - Tracks: [`MW.1`, `MW.1a`, `MW.4`](workspaces/TODO.md#w1-install-and-connect)
+  - Tracks: [№MW.1](workspaces/TODO.md#MW.1), [№MW.1a](workspaces/TODO.md#MW.1a), [№MW.4](workspaces/TODO.md#MW.4)
   - Home: [Projects, installation and connection](README.md#r3c-projects-installation-and-connection)
 
-## R3d — Markdown interaction
+## [№R3d](#R3d) — Markdown interaction {#r3d-markdown-interaction}
 
-- [ ] R3d Make a document a complete, clean work surface
-  - Depends: R3b
+- [ ] R3d Make a document a complete, clean work surface <a id="R3d"></a>
+  - Depends: [№R3b](#R3b)
   - Builds: full-source Markdown editing; existing focused markup actions; stale-draft preservation;
     diff/history/commit; configurable external-editor scheme; content-clean Copy
   - Acceptance: an Editor can change and review a complete document without losing focused Q&A,
@@ -80,13 +80,13 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     and `⇊`, while identical source-authored glyphs remain content
   - Acceptance: the primary agent/document/edit/review journey is responsive and touch-usable on
     iPad and phone; no critical action is hover-only or keyboard-only
-  - Tracks: [`MW.5`, `MW.5a`, `MW.5b`, `MW.5c`](workspaces/TODO.md#w4-full-document-editing)
+  - Tracks: [№MW.5](workspaces/TODO.md#MW.5), [№MW.5a](workspaces/TODO.md#MW.5a), [№MW.5b](workspaces/TODO.md#MW.5b), [№MW.5c](workspaces/TODO.md#MW.5c)
   - Home: [Complete Markdown interaction and editing](README.md#r3d-complete-markdown-interaction-and-editing)
 
-## R3e — Agent collaboration
+## [№R3e](#R3e) — Agent collaboration {#r3e-agent-collaboration}
 
-- [ ] R3e Make Agent Bus a native project capability
-  - Depends: R3b, R3c
+- [ ] R3e Make Agent Bus a native project capability <a id="R3e"></a>
+  - Depends: [№R3b](#R3b), [№R3c](#R3c)
   - Builds: out-of-box connection; instance and per-space endpoints/defaults; explicit target
     precedence; typed authorized mdhouse control API
   - Acceptance: a project can ask the intended agent without a separate integration pass
@@ -96,11 +96,11 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     default, with no silent fallback from an unavailable higher-priority target
   - Acceptance: an authorized command can add/configure a project and open one jailed Markdown path
     in one named connected browser, idempotently and auditably
-  - Tracks: [`MW.2`, `MW.2a`, `MW.7`](workspaces/TODO.md#w1-install-and-connect)
+  - Tracks: [№MW.2](workspaces/TODO.md#MW.2), [№MW.2a](workspaces/TODO.md#MW.2a), [№MW.7](workspaces/TODO.md#MW.7)
   - Home: [Agent collaboration and control](README.md#r3e-agent-collaboration-and-control)
 
-- [ ] R3f Integrate the Agent Bus RAG agent lifecycle
-  - Depends: R3e
+- [ ] R3f Integrate the Agent Bus RAG agent lifecycle <a id="R3f"></a>
+  - Depends: [№R3e](#R3e)
   - Why: the Agent Bus RAG agent already provides ingestion, embeddings, indexing and retrieval; R3
     should expose the complete capability instead of treating RAG as future work
   - Builds: per-space/project sources; add/select/remove; ingest; index/reindex; progress, errors and
@@ -110,13 +110,13 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
   - Acceptance: source and job state are visible; missing/denied/failed sources and jobs fail
     explicitly; project grants and Agent Bus authorization remain enforced independently
   - First step: owner provides the versioned [RAG contract](RAG-CONTRACT.md); per-project instances are intended, exact API/grants remain open
-  - Tracks: [`MW.2a`](workspaces/TODO.md#w1-install-and-connect)
+  - Tracks: [№MW.2a](workspaces/TODO.md#MW.2a)
   - Home: [RAG through the Agent Bus RAG agent](README.md#r3f-rag-through-the-agent-bus-rag-agent)
 
-## R3g — Flows and automation
+## [№R3g](#R3g) — Flows and automation {#r3g-flows-and-automation}
 
-- [ ] R3g Build the shared Markdown flow runtime
-  - Depends: R3c, R3e
+- [ ] R3g Build the shared Markdown flow runtime <a id="R3g"></a>
+  - Depends: [№R3c](#R3c), [№R3e](#R3e)
   - Builds: editable document/routing packages; common inputs; manual and optional scheduled runs;
     run history; provider adapters; previews and approvals
   - Acceptance: work, evidence, questions, decisions, transitions, approvals and outcomes remain
@@ -125,39 +125,39 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     dropping or duplicating work
   - Acceptance: every generated document uses full `last-commit-id`; **since last run** advances its
     marker only after the whole run succeeds
-  - Tracks: [`MW.3`](workspaces/TODO.md#w2-existing-projects)
+  - Tracks: [№MW.3](workspaces/TODO.md#MW.3)
   - Home: [Flow platform](README.md#r3g-r3h-flow-platform-and-built-in-flow-library)
 
-## R3h — Built-in flow library
+## [№R3h](#R3h) — Built-in flow library {#r3h-built-in-flow-library}
 
-- [ ] R3h Ship a useful first version of every planned flow family
-  - Depends: R3g
+- [ ] R3h Ship a useful first version of every planned flow family <a id="R3h"></a>
+  - Depends: [№R3g](#R3g)
   - Builds: Feature and delivery; Documentation; Recent commits; PR/incoming changes; Engineering and
     operations; Business; Ideas; Finance; Legal
   - Acceptance: every package has useful default inputs/output, evidence expectations, approval
     boundaries, one small example and manual/optional scheduled execution
   - Acceptance: ticketing, merge, deploy, financial and legal consequences remain separate,
     explicitly confirmed actions
-  - Tracks: [`MW.3a`–`MW.3h`](workspaces/TODO.md#w2-existing-projects)
+  - Tracks: [№MW.3a](workspaces/TODO.md#MW.3a)–[№MW.3h](workspaces/TODO.md#MW.3h)
   - Home: [Built-in flow library](README.md#r3g-r3h-flow-platform-and-built-in-flow-library)
 
-## R3i — Plans, markup and skills
+## [№R3i](#R3i) — Plans, markup and skills {#r3i-plans-markup-and-skills}
 
-- [ ] R3i Turn the working conventions into a product protocol
-  - Depends: R3a
+- [ ] R3i Turn the working conventions into a product protocol <a id="R3i"></a>
+  - Depends: [№R3a](#R3a)
   - Builds: immutable installed reference root; current plan/markup/syntax documentation; shareable
     skills; project initialization; flow packages using the same visible states
   - Acceptance: a person or any compatible agent can inspect and continue work from project Markdown
     without private orchestration state
   - Acceptance: reference material is current and immutable; project documents remain ordinary,
     editable, versioned project files
-  - Tracks: [`MW.0f`, `MW.1`, `MW.4`](workspaces/TODO.md#w1-install-and-connect)
+  - Tracks: [№MW.0f](workspaces/TODO.md#MW.0f), [№MW.1](workspaces/TODO.md#MW.1), [№MW.4](workspaces/TODO.md#MW.4)
   - Home: [Plans, markup, skills and reference material](README.md#r3i-plans-markup-skills-and-reference-material)
 
-## R3j — Team collaboration
+## [№R3j](#R3j) — Team collaboration {#r3j-team-collaboration}
 
-- [ ] R3j Make one mdhouse safe and understandable for a team
-  - Depends: R3b
+- [ ] R3j Make one mdhouse safe and understandable for a team <a id="R3j"></a>
+  - Depends: [№R3b](#R3b)
   - Builds: Personal zero-config default; Team setup; GitHub OAuth login; user add/edit/remove by
     GitHub username; per-browser fallback author; Reader/Editor sessions; per-project RO/RW grants;
     known-users-only mode; optional trusted localhost/CIDRs; visible identity/role; attributable actions
@@ -176,13 +176,13 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
   - Acceptance: removing/denying a user or grant revokes active access without erasing authored
     Markdown or audit history
   - Acceptance: concurrent edits preserve the losing draft and never overwrite newer content
-  - Tracks: [`MW.0a`, `MW.0b`, `MW.0c`, `MW.0d`, `MW.0e`](workspaces/TODO.md#w0-workspace-by-default)
+  - Tracks: [№MW.0a](workspaces/TODO.md#MW.0a), [№MW.0b](workspaces/TODO.md#MW.0b), [№MW.0c](workspaces/TODO.md#MW.0c), [№MW.0d](workspaces/TODO.md#MW.0d), [№MW.0e](workspaces/TODO.md#MW.0e)
   - Home: [Team collaboration](README.md#r3j-team-collaboration)
 
-## R3k — Safety, migration and compatibility
+## [№R3k](#R3k) — Safety, migration and compatibility {#r3k-safety-migration-and-compatibility}
 
-- [ ] R3k Preserve hard boundaries across every new capability
-  - Runs across: R3b–R3j
+- [ ] R3k Preserve hard boundaries across every new capability <a id="R3k"></a>
+  - Runs across: [№R3b](#R3b)–[№R3j](#R3j)
   - Builds: permission matrix tests; canonical-path and symlink tests; immutable reference-root checks;
     same-origin/session security; prefs/access migration; external-action failure recovery
   - Acceptance: all request-derived paths resolve through the jail and no root/config/control path
@@ -195,10 +195,10 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     grants and trusted-source admission
   - Home: [Safety, migration and compatibility](README.md#r3k-safety-migration-and-compatibility)
 
-## R3l — Release gate
+## [№R3l](#R3l) — Release gate {#r3l-release-gate}
 
-- [ ] R3l Review the complete Paradigm Shift journey
-  - Depends: R3a, R3b, R3c, R3d, R3e, R3f, R3g, R3h, R3i, R3j, R3k
+- [ ] R3l Review the complete Paradigm Shift journey <a id="R3l"></a>
+  - Depends: [№R3a](#R3a), [№R3b](#R3b), [№R3c](#R3c), [№R3d](#R3d), [№R3e](#R3e), [№R3f](#R3f), [№R3g](#R3g), [№R3h](#R3h), [№R3i](#R3i), [№R3j](#R3j), [№R3k](#R3k)
   - Acceptance: fresh install → create/add project → connect agent → run flow → edit document →
     review diff/history → explicitly perform the next delivery action
   - Acceptance: the normal primary journey uses mdhouse as both the AI-agent interface and the
@@ -215,5 +215,5 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
   - Acceptance: repository and packed artifacts pass the R3 license/metadata/package-content check
   - Acceptance: immutable installed references and every mutation family pass direct/stale authorization checks, including administrator versus project Editor
   - Acceptance: desktop and mobile full journey plus authored-text Copy are recorded in `QA.md`; unavailable browser/device checks remain open
-  - Detailed Workspace gate: [`MW.6`](workspaces/TODO.md#gate)
+  - Detailed Workspace gate: [№MW.6](workspaces/TODO.md#MW.6)
   - Home: [Release gate](README.md#r3l-release-gate)
