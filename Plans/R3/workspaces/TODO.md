@@ -25,6 +25,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
 - [ ] MW.0f Make the installed reference root immutable
   - Builds: immutable reference root kind, canonical registration and installed reference auto-mount with plan/markup/syntax/shareable skills
   - Slice MW.0f.1: root-kind/addReference primitive and all write/remove/promotion guards, no auto-mount or default flip
+  - Acceptance: reference or overlapping paths cannot dispatch an Agent Bus action/note that delegates mutation; validate before external send
   - Slice MW.0f.2: package content, installed auto-mount and UI identity; preserve project root IDs/default selection
   - Acceptance: CLI/control, prefs/autoRw, web and direct writes cannot promote/remove or mutate reference files; symlink/overlapping-root and Git mutations preserve the boundary
   - Acceptance: reference material ships and is readable on fresh packed install without an explicit user grant
@@ -181,7 +182,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle
   - Why: the Agent Bus RAG agent already provides source ingestion, embeddings, indexing, refresh and retrieval; mdhouse should expose the full R3 capability instead of building a second backend
   - Builds: per-space/project source configuration; add/select/remove; ingestion; embedding/index jobs; refresh/reindex; progress/errors/freshness; retrieval test; request/flow source selection; citations/provenance in generated Markdown
-  - Depends: MW.2 and verification/documentation of the Agent Bus RAG agent lifecycle/request API
+  - Depends: MW.2 and owner-delivered [RAG contract](../RAG-CONTRACT.md); project-specific instances with independent provider grants, no namespace-label security assumption
   - Acceptance: mdhouse sends stable source/job IDs rather than source credentials or copied backend configuration
   - Acceptance: the UI starts and monitors ingestion/indexing, shows progress/failure/freshness, and can refresh/reindex or remove a source through the RAG agent
   - Acceptance: unavailable, failed or unauthorized sources/jobs are visible and never silently fall back to a different source
@@ -200,6 +201,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 
 - [ ] MW.3 Build the shared flow runtime for existing projects
+  - Slice MW.3.1: strict package schema/loader and four Feature/delivery authoring packages; no execution/manual/schedule completion claim
   - Builds: discoverable packages of Markdown documents plus routing; common scope, change range, audience, output and destination controls; optional schedules; run history
   - Depends: MW.2
   - Acceptance: every flow leaves its inputs, plan, source evidence, findings, checks and outcome in project Markdown

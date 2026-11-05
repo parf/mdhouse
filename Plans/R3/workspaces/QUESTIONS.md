@@ -149,3 +149,11 @@
   > separately approved ownership, or explicitly revise the R3 requirement to the available API.
   > Recommend identifying the intended provider/version first. Do not invent endpoints or silently
   > reduce release scope. Independent R3 work continues; only dependent MW.2a implementation waits.
+  >
+  > 💬 📡 CEO relayed owner direction: "we can make instances of rag; each one have own namespace #rag/project1".
+  > Owner will add the missing provider capabilities. Questions and wishes are now collected separately
+  > in [`../RAG-CONTRACT.md`](../RAG-CONTRACT.md), including the verbatim owner wording.
+  >
+  > 💬👾 Per-project instances are the intended routing/isolation model. Namespace labels alone are
+  > still not authorization. Exact provider schemas/grants remain open as RAG-Q1–RAG-Q12; MW.2a stays
+  > pending their handoff. No provider repository changes or functional/paid calls are authorized here.

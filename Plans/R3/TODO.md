@@ -109,7 +109,7 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     credentials and lifecycle operations; mdhouse owns the user/project UI and orchestration
   - Acceptance: source and job state are visible; missing/denied/failed sources and jobs fail
     explicitly; project grants and Agent Bus authorization remain enforced independently
-  - First step: verify and document the Agent Bus RAG agent lifecycle and request API
+  - First step: owner provides the versioned [RAG contract](RAG-CONTRACT.md); per-project instances are intended, exact API/grants remain open
   - Tracks: [`MW.2a`](workspaces/TODO.md#w1-install-and-connect)
   - Home: [RAG through the Agent Bus RAG agent](README.md#r3f-rag-through-the-agent-bus-rag-agent)
 

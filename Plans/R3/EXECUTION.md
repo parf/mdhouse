@@ -19,9 +19,9 @@ All implementation uses isolated worktrees; CTO integrates serially. Plans remai
 | R3-A2 | W2 | done (analysis only) | main at base | Copy and mobile premise evidence; browser check pending | same evidence route |
 | R3-A3 | W3 | done (analysis only) | main at base | actual npm pack license mismatch and missing flow family confirmed | same evidence route |
 | R3-A4 | Review | done (advisory only) | base revision, read-only | independent foundation sequencing advisory; no future-code approval | B1–B3/S1–S3 incorporated; exact-target verdicts still required |
-| MW.0f.1 | W1 | working | `.scratch/worktrees/r3-reference` / `r3/reference-foundation` | roots/server/control types and focused tests; immutable root kind, explicit reference registration, promotion/removal/direct write denial, project identity preserved; no auto-mount/default flip | no implementation dependencies; preserve Git overlap denial; independent exact-SHA review + focused/all tests/tsc |
-| MW.5b | W2 | working | `.scratch/worktrees/r3-copy` / `r3/copy-controls` | document chrome Copy exclusion in styles/Doc if needed; preserve source glyphs, focus/accessibility; no access defaults | independent; scratch light/dark/narrow selection/clipboard and controls checks; unavailable Safari/Firefox checks stay open |
-| MW.L | W3 | working | `.scratch/worktrees/r3-license` / `r3/license` | LICENSE → LICENSE.md, package.json, README, CHANGELOG, package-content test; official approved text/copyright, actual tarball regression | independent; no version/dependency changes; focused pack test/all tests/tsc, CTO review |
+| MW.0f.1 | W1 | ready; review follow-up | `.scratch/worktrees/r3-reference` / `r3/reference-foundation` | roots/server/control types and focused tests; immutable root kind, explicit reference registration, promotion/removal/direct write denial, project identity preserved; no auto-mount/default flip | no implementation dependencies; preserve Git overlap denial; independent exact-SHA review + focused/all tests/tsc |
+| MW.5b | W2 | integrated; partial acceptance | `.scratch/worktrees/r3-copy` / `r3/copy-controls` | document chrome Copy exclusion in styles/Doc if needed; preserve source glyphs, focus/accessibility; no access defaults | independent; scratch light/dark/narrow selection/clipboard and controls checks; unavailable Safari/Firefox checks stay open |
+| MW.L | W3 | integrated; checks pending | `.scratch/worktrees/r3-license` / `r3/license` | LICENSE → LICENSE.md, package.json, README, CHANGELOG, package-content test; official approved text/copyright, actual tarball regression | independent; no version/dependency changes; focused pack test/all tests/tsc, CTO review |
 
 Worker docs: report needed shared Plans/README and R3 checkpoint updates to CTO. CHANGELOG overlap is
 resolved during integration; preserve other workers' entries. Ready reports include exact base/target,
@@ -30,6 +30,13 @@ owned paths/commit, checks, gaps and next step. Material fixes invalidate prior 
 Implementation base for all three initial slices: `035b46510454a79b365288985e5f40c4f02919bb`.
 W2 working receipt `432972659a6078d0`; W3 working receipt `54bc509df588a0d5`; W1 working verified
 by owned roots/test diffs in the assigned worktree (23:22 UTC), following acknowledgement `50e89a3b6bb6e473`.
+
+## Continuing assignments
+
+| Task | Owner | State | Base / checkout / branch | Scope / acceptance |
+| --- | --- | --- | --- | --- |
+| MW.5c.1 | W2 | working (review revision) | `d7b0ef7c193b19d873c53ce6e160c5fb82afd343`; r3-copy / r3/touch-actions | touch/focus visibility and 44px controls; light/dark phone/tablet tap/overflow checks; real devices still open |
+| MW.3.1 | W3 | working | `4a3472a564106cfd9ad411aad7f6f9cae9766dd3`; `.scratch/worktrees/r3-flows` / r3/flow-packages | approved pure schema/loader, catalog and four Feature/delivery authoring packages/examples, strict graph/asset validation and actual tarball tests; independent architecture/path review required; no executor |
 
 ## Next dependency slices
 
@@ -65,7 +72,7 @@ Admin bootstrap is independent of ordinary project session authentication. Recov
 
 ## RAG prerequisite — verified 2026-11-05 23:21 UTC
 
-MW.2a provider contract is not confirmed. `#rag@parf.us` help/help-json v0.2.0 advertises record
+MW.2a provider contract is not confirmed. Owner now owns provider enhancements and intends per-project RAG instances; [RAG-CONTRACT.md](RAG-CONTRACT.md), committed by CEO `4a3472a`, collects the required handoff. `#rag@parf.us` help/help-json v0.2.0 advertises record
 upsert/get/list, keyword search/index, delete and prompts; no source/job lifecycle or semantic search.
 Upsert does perform classification/embeddings. The local provider docs explicitly say namespaces are labels, not access locks. No provider writes or
 paid calls ran. [Q-R3-RAG1](workspaces/QUESTIONS.md) is routed to CEO; independent slices continue.
@@ -73,7 +80,11 @@ Do not claim the approved full RAG lifecycle is implemented by these record meth
 
 ## Integration evidence
 
-No implementation integrated yet. Release checkpoints remain open.
+- Copy: author `08dddd35ba00a6b5eb4c9b63115b2272cd087d05` reviewed by CTO; integrated unchanged as `d7b0ef7c193b19d873c53ce6e160c5fb82afd343`. Suite 307/307 and tsc passed; CTO scratch Chromium 390px light/dark real text+HTML clipboard preserves authored glyphs and removes injected chrome; focus/click opens add form. Artifacts `.scratch/r3-cto-qa/{light,dark}.png`. Safari/Firefox/context-menu/real iOS checks remain open, so MW.5b stays partial.
+- License: author target `625253e90c93ff238d9cccdbad4070cef4966edb` reviewed by CTO; integrated `ecf0e5b` + `e9c1b779de23ce4741e9fd9a0ee896a6a813000e`. CHANGELOG conflict resolved by retaining both Copy and license entries. Actual tarball/full checks on main pending; parent R3a stays open.
+- References: author target `0104385c13257360da184e16f5ecd8e21748ec7d`, Review PASS `aaa49e279395f61f` with reproduced 315 tests/tsc. Integration held for CTO follow-up on `/api/ab/send` reference mutation delegation; material fix needs fresh verdict. No production auto-mount exists yet.
+
+All release/parent checkpoints remain open.
 
 ## Test coordination
 
