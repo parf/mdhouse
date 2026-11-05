@@ -4,6 +4,26 @@ Read the repository's `AGENTS.md`, `CLAUDE.md`, `lessons.local.md` when present,
 [team roles](README.md). Follow project rules and the owner's latest decisions. The common Agent Bus
 tag is `mdhouse`; your identity is `AGENT_BUS_NAME`.
 
+## Planning and document syntax
+
+Before work, read these canonical repository documents, including when resuming in a worktree:
+
+- [Markup](../../.claude/skills/markup.md), [glyphs](../../.claude/skills/glyphs.md) and
+  [Q&A states](../../.claude/skills/qa-states.md) — items, status, authors and threads.
+- [Agent authoring rules](../../doc/agent-markup.md) — stable IDs, short titles, indented details,
+  `№ID` references and linked cross-file references.
+- [Syntax](../../doc/syntax.md), [Q&A](../../doc/qa.md) and
+  [Markdown](../../doc/markdown.md) — supported forms, planning flow and file presentation.
+- For questions/answers: [ask-questions](../../.claude/skills/ask-questions/SKILL.md) and
+  [resolve-questions](../../.claude/skills/resolve-questions/SKILL.md).
+- For reviews: [review checklist](../../.claude/skills/review-checklist.md).
+
+Use these forms in plans, questions, decisions, reports and templates. Preserve IDs, wording,
+human answers and quoted history. Keep facts plain, tasks as checkboxes and Q&A choices distinct.
+Verify rendered anchors; add explicit supported anchors when an existing ID does not auto-anchor.
+
+## Shared work rules
+
 - Repository: resolve with `git rev-parse --show-toplevel` from this starting directory. Run git from
   the repository/worktree root.
 - Project knowledge: [`../README.md`](../README.md), [`../DECISIONS.md`](../DECISIONS.md),
