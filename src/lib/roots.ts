@@ -165,14 +165,15 @@ export class Registry {
   /**
    * Serve mdhouse's reference material: read-only for good, irremovable. Its id starts with `_`,
    * which no project slug does, so project ids never shift. Throws for a directory already
-   * served, or an id that is taken, reserved or not `_[a-z0-9-]+`.
+   * served, or an id that is taken, reserved or not `_[a-z0-9-]+`. `name` defaults to the
+   * directory's basename.
    */
-  async addReference(spec: string, id = '_mdhouse'): Promise<Root> {
+  async addReference(spec: string, id = '_mdhouse', name?: string): Promise<Root> {
     const abs = await realpath(resolvePath(spec));
     if (!/^_[a-z0-9][a-z0-9-]*$/.test(id) || RESERVED.has(id)) throw new Error(`not a reference root id: ${id}`);
     if (this.byId.has(id)) throw new Error(`root id already in use: ${id}`);
     if (this.list().some((r) => r.path === abs)) throw new Error(`${abs} is already served`);
-    const root: Root = { id, name: abs.split(sep).filter(Boolean).pop() ?? abs, path: abs, kind: 'reference', writable: false };
+    const root: Root = { id, name: name ?? abs.split(sep).filter(Boolean).pop() ?? abs, path: abs, kind: 'reference', writable: false };
     this.byId.set(id, root);
     return root;
   }
@@ -211,9 +212,11 @@ export class Registry {
     return this.projects().length === 1;
   }
 
-  /** The root a bare, unprefixed path belongs to: the first project root. */
+  /** The root a bare, unprefixed path belongs to: the first project root. Throws when there is none. */
   defaultRoot(): Root {
-    return this.projects()[0]!;
+    const root = this.projects()[0];
+    if (!root) throw new Error('no project root is served');
+    return root;
   }
 
   /** Build the wire path for a file inside a root. */

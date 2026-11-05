@@ -229,3 +229,61 @@ describe('user-add', () => {
     expect(s.run(['user-add', 'cy:pw']).out).toContain('cy  added'); // login:pwd still works
   });
 });
+
+describe('the reference root (MW.0f.2)', () => {
+  const REF = realpathSync(resolve(import.meta.dir, '../doc'));
+  const at = (port: number, path: string, body?: unknown) =>
+    fetch(`http://127.0.0.1:${port}${path}`, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+
+  test('every start serves the installed doc/ read-only as _mdhouse, after the projects', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const started = s.run([a, '--rw', '--port', '61940']);
+    try {
+      expect(started.code).toBe(0);
+      expect(started.out).toContain(`${REF}  [reference]`);
+      const { roots, single } = (await (await at(61940, '/api/roots')).json()) as { roots: Array<{ id: string; path: string; kind: string; writable: boolean }>; single: boolean };
+      expect(single).toBe(true);
+      expect(roots.map((r) => [r.id, r.kind, r.writable])).toEqual([['a', 'project', true], ['_mdhouse', 'reference', false]]);
+      expect(roots[1]!.path).toBe(REF);
+      const doc = (await (await at(61940, '/api/doc?p=_mdhouse/syntax.md')).json()) as { writable: boolean; reference?: boolean };
+      expect(doc).toMatchObject({ writable: false, reference: true });
+      expect((await at(61940, '/api/task', { p: '_mdhouse/qa-playground.md', line: 1, hash: '00000000' })).status).toBe(403);
+      expect((await at(61940, '/api/roots/remove', { id: '_mdhouse' })).status).toBe(403);
+      expect(s.run(['--rm', REF, '--port', '61940']).code).toBe(1);
+    } finally {
+      s.run(['exit', '--port', '61940']);
+    }
+  });
+
+  test('naming doc/ — or a symlink to it — is refused, and nothing is saved', () => {
+    const s = scratch();
+    const { symlinkSync } = require('node:fs') as typeof import('node:fs');
+    symlinkSync(REF, join(s.dir, 'ref-link'));
+    for (const dir of [REF, join(s.dir, 'ref-link')]) {
+      const r = s.run([dir, '-p', '--rw', '--port', '61941']);
+      expect(r.code).toBe(1);
+      expect(r.err).toContain("mdhouse's reference material");
+    }
+    expect(s.prefs().saved).toEqual([]);
+  });
+
+  test('a saved doc/ from before is served as the reference only — never as a project, prefs untouched', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    mkdirSync(join(s.cfg, 'mdhouse'), { recursive: true });
+    const before = { version: 1, saved: [REF, a].sort(), writable: [REF] };
+    writeFileSync(join(s.cfg, 'mdhouse/prefs.json'), JSON.stringify(before));
+    const started = s.run(['--port', '61942']);
+    try {
+      expect(started.code).toBe(0);
+      expect(started.err).toContain('served read-only as _mdhouse instead');
+      const { roots } = (await (await at(61942, '/api/roots')).json()) as { roots: Array<{ id: string; kind: string; writable: boolean }> };
+      expect(roots.map((r) => [r.id, r.kind, r.writable])).toEqual([['a', 'project', false], ['_mdhouse', 'reference', false]]);
+      expect(s.prefs().saved).toEqual(before.saved);
+      expect(s.prefs().writable).toEqual(before.writable);
+    } finally {
+      s.run(['exit', '--port', '61942']);
+    }
+  });
+});

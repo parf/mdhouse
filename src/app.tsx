@@ -467,10 +467,11 @@ function App() {
   const pageGear = sidebar !== 'off' ? gear() : null;
 
   // `edit:` plus the file's full path: the root's path is on disk, the document's is under it.
+  // None for reference material: an editor would write it past every check.
   const docRoot = doc ? roots.find((r) => r.id === doc.root) : undefined;
   // Each segment encoded on its own: `encodeURI` leaves `#` and `?` alone, which cut the path.
   const editHref =
-    optionsLoaded && options.editLink && doc && docRoot
+    optionsLoaded && options.editLink && doc && docRoot && !doc.reference
       ? `edit:${`${docRoot.path}/${doc.rel}`.split('/').map(encodeURIComponent).join('/')}`
       : null;
 

@@ -1188,6 +1188,13 @@ describe('a reference root on a running server (MW.0f.1)', () => {
       expect(roots.single).toBe(true);
       expect(roots.roots.find((r) => r.id === reference.id)).toMatchObject({ kind: 'reference', writable: false });
       expect(roots.roots.find((r) => r.id === projId)).toMatchObject({ kind: 'project', writable: true });
+      // what a document page is told: no write controls, no edit link, no agents (MW.0f.2)
+      const docOf = async (p: string) => (await (await fetch(url(`/api/doc?p=${p}`))).json()) as { writable: boolean; reference?: boolean };
+      expect(await docOf(`${reference.id}/a.md`)).toMatchObject({ writable: false, reference: true });
+      expect(await docOf(`${projId}/ref/a.md`)).toMatchObject({ writable: false, reference: true });
+      const plain = await docOf(`${projId}/p.md`);
+      expect(plain.writable).toBe(true);
+      expect(plain.reference).toBeUndefined();
 
       for (const p of [`${reference.id}/a.md`, `${projId}/ref/a.md`]) {
         expect((await post('/api/task', { p, line: 3, hash: lineHash('- [ ] task') })).status).toBe(403);

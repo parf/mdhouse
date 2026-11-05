@@ -27,6 +27,8 @@ export interface RootInfo {
   writable: boolean;
   /** In the saved list: served on every start, not just this session. */
   saved?: boolean;
+  /** `reference`: mdhouse's own read-only material — never removed, written or sent to agents. */
+  kind?: 'project' | 'reference';
 }
 
 /** Who created a file and who last committed it. Arrives with the history, not the document. */
@@ -50,6 +52,8 @@ export interface DocPayload {
   /** Code or text over 5 MB: no body, a download. */
   tooBig?: boolean;
   writable: boolean;
+  /** Inside mdhouse's reference material: no edit link, no agents. */
+  reference?: boolean;
   frontmatter: string | null;
   lineOffset: number;
   mtime: number;

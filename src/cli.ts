@@ -10,6 +10,7 @@
 
 import { accessSync, constants, existsSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { pageUrl, serve } from './server';
@@ -203,14 +204,14 @@ const FG_HINT = 'run it in the foreground to see its output:  mdhouse … --fg';
 
 /** The root list, ids and paths in columns: `+` for one just added, `·` for one already served. */
 const printRoots = (
-  roots: Array<{ id: string; path: string; writable: boolean; added?: boolean; asked?: boolean; saved?: boolean }>,
+  roots: Array<{ id: string; path: string; writable: boolean; kind?: string; added?: boolean; asked?: boolean; saved?: boolean }>,
   showIds: boolean,
 ): void => {
   const width = Math.max(...roots.map((r) => r.id.length)) + 2;
   for (const root of roots) {
     const mark = root.added ? '+' : root.asked ? '·' : ' ';
     const id = showIds ? root.id.padEnd(width) : '';
-    console.log(`${mark} ${id}${root.path}${root.writable ? '  [RW]' : ''}${root.saved ? '  [saved]' : ''}`);
+    console.log(`${mark} ${id}${root.path}${root.writable ? '  [RW]' : ''}${root.saved ? '  [saved]' : ''}${root.kind === 'reference' ? '  [reference]' : ''}`);
   }
 };
 
@@ -479,6 +480,18 @@ const saveServer = async (): Promise<void> => {
 /** Is this a directory we can serve? Saved ones may have been deleted since. */
 const isDir = (abs: string): boolean => existsSync(abs) && statSync(abs).isDirectory();
 
+/**
+ * mdhouse's own reference material, the installed package's `doc/`: every daemon serves it
+ * read-only as `_mdhouse`. Null when it is missing — a broken install.
+ */
+const REFERENCE = (() => {
+  try {
+    return realpathSync(fileURLToPath(new URL('../doc', import.meta.url)));
+  } catch {
+    return null;
+  }
+})();
+
 const dirs: string[] = [];
 for (const dir of opts.dirs) {
   const abs = resolve(dir);
@@ -486,13 +499,23 @@ for (const dir of opts.dirs) {
     console.error(`mdhouse: not a directory: ${dir}`);
     process.exit(1);
   }
+  if (canonical(abs) === REFERENCE) {
+    console.error(`mdhouse: ${dir} is mdhouse's reference material — always served, read-only, as _mdhouse; it cannot be added`);
+    process.exit(1);
+  }
   dirs.push(abs);
 }
 
 const saved = prefs.savedDirs().filter((dir) => {
-  if (isDir(dir)) return true;
-  console.error(`mdhouse: saved directory is gone, skipping: ${dir}  (mdhouse --rm ${dir} forgets it)`);
-  return false;
+  if (!isDir(dir)) {
+    console.error(`mdhouse: saved directory is gone, skipping: ${dir}  (mdhouse --rm ${dir} forgets it)`);
+    return false;
+  }
+  if (canonical(dir) === REFERENCE) {
+    console.error(`mdhouse: saved directory ${dir} is mdhouse's reference material — served read-only as _mdhouse instead`);
+    return false;
+  }
+  return true;
 });
 
 if (!dirs.length && !saved.length) {
@@ -677,6 +700,12 @@ const registry = await Registry.create(
     writable: named.has(path) && opts.perm ? opts.rw : (named.has(path) && opts.rw) || prefs.isWritableSaved(path),
   })),
 );
+if (!REFERENCE) {
+  console.error(`mdhouse: the reference material is missing: ${fileURLToPath(new URL('../doc', import.meta.url))} — reinstall mdhouse`);
+  process.exit(1);
+}
+// Last, so the project roots keep their ids and the first of them stays the default.
+await registry.addReference(REFERENCE, '_mdhouse', 'mdhouse reference');
 
 let started: Awaited<ReturnType<typeof serve>>;
 try {

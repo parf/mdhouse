@@ -431,10 +431,10 @@ export function Doc({
   /** The ✎ link: at the line the page landed on, if any. */
   const editAt = editHref && atLine !== null ? `${editHref}:${atLine}` : editHref;
 
-  /** The Agent Bus popup — only while the integration is on (the payload names the page's agents). */
+  /** The Agent Bus popup — only while the integration is on (the payload names the page's agents), never on reference material. */
   const [abOpen, setAbOpen] = useState(false);
   const [abState, setAbState] = useState<AbState>('idle');
-  const abOn = doc?.kind === 'md' && !!doc.ab;
+  const abOn = doc?.kind === 'md' && !!doc.ab && !doc.reference;
   /** The panel takes the right side; the left sidebar closes to make room. */
   const openAb = () => {
     setAbOpen(true);

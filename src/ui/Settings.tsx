@@ -29,7 +29,7 @@ interface Props {
 export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const last = roots.length === 1;
+  const last = roots.filter((r) => r.kind !== 'reference').length === 1;
 
   const remove = async (root: RootInfo) => {
     const how = root.saved ? 'forget it and stop serving it' : 'stop serving it';
@@ -75,26 +75,34 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   {root.path}
                 </span>
               </div>
-              <span
-                class={`tag ${root.saved ? 'saved' : 'session'}`}
-                title={root.saved ? 'Served on every start' : 'Served until mdhouse stops'}
-              >
-                {root.saved ? 'saved' : 'this session'}
-              </span>
-              {root.writable && (
-                <span class="tag rw" title="mdhouse may write to this tree">
-                  RW
+              {root.kind === 'reference' ? (
+                <span class="tag saved" title="mdhouse's own documentation — served on every start, read-only">
+                  reference
                 </span>
+              ) : (
+                <>
+                  <span
+                    class={`tag ${root.saved ? 'saved' : 'session'}`}
+                    title={root.saved ? 'Served on every start' : 'Served until mdhouse stops'}
+                  >
+                    {root.saved ? 'saved' : 'this session'}
+                  </span>
+                  {root.writable && (
+                    <span class="tag rw" title="mdhouse may write to this tree">
+                      RW
+                    </span>
+                  )}
+                  <button
+                    class="icon-btn danger"
+                    disabled={last || busy !== null}
+                    onClick={() => void remove(root)}
+                    title={last ? 'The last directory cannot be removed — mdhouse would have nothing to serve' : 'Remove'}
+                    aria-label={`Remove ${root.path}`}
+                  >
+                    <IconTrash size={15} />
+                  </button>
+                </>
               )}
-              <button
-                class="icon-btn danger"
-                disabled={last || busy !== null}
-                onClick={() => void remove(root)}
-                title={last ? 'The last directory cannot be removed — mdhouse would have nothing to serve' : 'Remove'}
-                aria-label={`Remove ${root.path}`}
-              >
-                <IconTrash size={15} />
-              </button>
             </li>
           ))}
         </ul>

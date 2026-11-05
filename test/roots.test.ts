@@ -393,3 +393,9 @@ describe('a reference root (MW.0f.1)', () => {
     }
   });
 });
+
+test('defaultRoot throws when only a reference is served (MW.0f.2)', async () => {
+  const registry = await Registry.create([]);
+  await registry.addReference(`${HERE}/doc`);
+  expect(() => registry.defaultRoot()).toThrow('no project root');
+});

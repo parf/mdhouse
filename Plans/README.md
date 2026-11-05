@@ -67,7 +67,11 @@ control socket) lives outside every tree.
 Reference roots (`kind: 'reference'`, `Registry.addReference`, `_…` IDs) are never writable or removable
 and do not count as projects for `defaultRoot`/`single`. `Registry.writeFile()` also refuses their files
 through overlapping project roots or symlinks. Git commit/reset/pull preserve the same read-only floor.
-Installed auto-mount and reference-specific UI remain R3 work.
+Every daemon start mounts installed `<pkg>/doc` as `_mdhouse` (`mdhouse reference`) after project
+roots. Naming that directory or its alias is refused; a saved copy is skipped without rewriting prefs.
+`/api/doc` reports `writable: Registry.writableAt(loc)` and `reference: true` for reference paths,
+including overlap addressing; UI hides write controls, external editing and Agent Bus dispatch there.
+Plan convention/shareable skill content remains R3 work.
 
 ### A Q&A change touches its item, or nothing
 

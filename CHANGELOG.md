@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- mdhouse's own documentation is always served, read-only, as `_mdhouse` (`mdhouse reference` in Settings): no write controls, edit link or agent requests on it, and it cannot be removed or added as a project
+
 ### Changed
 
 - R3 and later distributions use the PolyForm Strict License 1.0.0, copyright Sergey Porfiriev; earlier releases retain their distributed licenses
