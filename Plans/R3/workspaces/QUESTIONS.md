@@ -136,7 +136,7 @@
   >
   > 💬👾 → [`DECISIONS.md`](DECISIONS.md#USER-W1), [`USER-W4`](DECISIONS.md#USER-W4)
 
-- ❓ Q-R3-RAG1 Which Agent Bus contract supplies the approved R3 source/job lifecycle?
+- ❓ <a id="Q-R3-RAG1"></a>Q-R3-RAG1 Which Agent Bus contract supplies the approved R3 source/job lifecycle?
   > 💬👾 Verified 2026-11-05 through `#rag@parf.us` help/help-json v0.2.0 and local
   > `/usr/local/src/ai-agent-bus/docs/agents/rag.md`: available methods are `upsert`, `get`,
   > `list`, keyword/BM25 `search`, `keyword_index`, `delete`, `prompts`. No source registry,
