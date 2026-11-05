@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Copying from a rendered document leaves out mdhouse's own controls — heading `#`, `✎ ↓ ⇊`, Q&A buttons; glyphs written in the Markdown still copy
+
 ## 2.3.3 — 2026-11-02
 
 ### Changed

@@ -1067,6 +1067,13 @@ main {
 .md h1:hover .header-anchor, .md h2:hover .header-anchor,
 .md h3:hover .header-anchor, .md h4:hover .header-anchor { opacity: 1; }
 
+/* Copy leaves out what mdhouse injects: heading # and ✎ ↓ ⇊, Q&A buttons and chips, footnote
+   back-links, removed-text overlays. Glyphs written in the Markdown are text nodes outside these. */
+.md :is(.header-anchor, .heading-actions, .tgt, .c-btn, .c-done, .s-act, .btn, .footnote-backref, .chg-del) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* A checkbox item hangs: the box sits in the left padding, so a wrapped line and a nested
    list start under the item's text — the 💬 button is part of the text. */
 .md li.task-item { list-style: none; position: relative; margin-left: -1.5em; padding-left: 1.5em; }
