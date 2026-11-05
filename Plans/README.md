@@ -13,6 +13,12 @@ writes ticks, answers and added blocks into the file, and commits, pulls, pushes
 
 Ticket: PRF-55 — <https://linear.app/realmo-product/issue/PRF-55/md-files-viewereditor-web-mdhouse>
 
+## AI team development
+
+[`ai-team/`](ai-team/README.md) defines the project-wide development model: durable scope and status
+live in Plans, assignments and results travel through Agent Bus, and the role sessions run in Kitty
+through the required `ab-*` launchers. It applies across the project and is not part of a release.
+
 ## Architecture
 
 One Bun process. `Bun.serve` bundles `src/index.html` and everything it imports natively, so

@@ -5,6 +5,9 @@
 What is done is in [`DONE.md`](DONE.md); user-facing history in
 [`CHANGELOG.md`](../CHANGELOG.md).
 
+Development model: [AI team](ai-team/README.md) — the project-wide roles, Agent Bus coordination,
+Kitty launcher and plan-accountability rules used to deliver work across releases.
+
 ## Active projects
 
 - [R3 — Paradigm Shift](R3/README.md) ([TODO](R3/TODO.md)) — the next release: mdhouse changes from a Markdown viewer/tool
