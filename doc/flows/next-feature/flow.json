@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "id": "next-feature",
+  "title": "Carry delivery context into the next feature",
+  "family": "feature-delivery",
+  "entry": "collect",
+  "defaults": {
+    "scope": "selected-document",
+    "range": "explicit-baseline",
+    "audience": "development",
+    "output": "feature-brief",
+    "destination": "Plans/flows/next-feature.md"
+  },
+  "evidence": {
+    "required": [
+      "prior delivery report",
+      "settled decisions and rejected alternatives",
+      "unfinished tasks and open questions",
+      "next feature goal and owner"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "collect",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "brief"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "brief",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "handoff"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "handoff",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "handoff",
+          "to": "person",
+          "target": "project-owner"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}

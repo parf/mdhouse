@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "delivery",
+  "title": "Update, review and prepare delivery",
+  "family": "feature-delivery",
+  "entry": "update",
+  "defaults": {
+    "scope": "selected-project",
+    "range": "explicit-baseline",
+    "audience": "operations",
+    "output": "delivery-readiness",
+    "destination": "Plans/flows/delivery.md"
+  },
+  "evidence": {
+    "required": [
+      "approved update task and owner",
+      "exact base and target revisions",
+      "test and independent review results",
+      "migration release notes and rollback",
+      "configured delivery destination and provider result"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "update",
+      "document": "workflow.md",
+      "effect": "edit",
+      "approval": "explicit",
+      "on": {
+        "succeeded": {
+          "kind": "step",
+          "id": "checks"
+        },
+        "denied": {
+          "kind": "end",
+          "status": "cancelled"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        },
+        "partial": {
+          "kind": "end",
+          "status": "partial"
+        }
+      }
+    },
+    {
+      "id": "checks",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "commit"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "commit",
+      "document": "workflow.md",
+      "effect": "commit",
+      "approval": "explicit",
+      "on": {
+        "succeeded": {
+          "kind": "step",
+          "id": "review"
+        },
+        "denied": {
+          "kind": "end",
+          "status": "cancelled"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        },
+        "partial": {
+          "kind": "end",
+          "status": "partial"
+        }
+      }
+    },
+    {
+      "id": "review",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "readiness"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "readiness",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "deploy"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "deploy",
+      "document": "workflow.md",
+      "effect": "deploy",
+      "approval": "explicit",
+      "on": {
+        "succeeded": {
+          "kind": "step",
+          "id": "result"
+        },
+        "denied": {
+          "kind": "end",
+          "status": "cancelled"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        },
+        "partial": {
+          "kind": "end",
+          "status": "partial"
+        }
+      }
+    },
+    {
+      "id": "result",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "end",
+          "status": "complete"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}

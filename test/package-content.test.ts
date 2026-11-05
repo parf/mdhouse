@@ -1,10 +1,11 @@
 import { expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { loadFlowCatalog } from '../src/lib/flow-package';
 
-test('npm artifact ships the canonical R3 license and matching metadata', async () => {
+test('npm artifact ships the canonical R3 license and loadable flow authoring packages', async () => {
   const root = resolve(import.meta.dir, '..');
   const dir = await mkdtemp(join(tmpdir(), 'mdhouse-package-'));
   const run = async (args: string[]) => {
@@ -42,6 +43,15 @@ test('npm artifact ships the canonical R3 license and matching metadata', async 
     expect(readme).not.toMatch(/GNU General Public License|GPL-\d|\]\(LICENSE\)/i);
     const changelog = await read('CHANGELOG.md');
     expect(changelog).toContain('R3 and later distributions use the PolyForm Strict License 1.0.0');
+    expect(entries).toContain('package/src/lib/flow-package.ts');
+    expect(entries).toContain('package/doc/flows/README.md');
+    const extracted = join(dir, 'extracted');
+    await mkdir(extracted);
+    await run(['tar', '-xzf', archive, '-C', extracted]);
+    const shipped = await loadFlowCatalog(join(extracted, 'package/doc/flows'));
+    const source = await loadFlowCatalog(join(root, 'doc/flows'));
+    expect(shipped.map((flow) => flow.manifest.id)).toEqual(['feature', 'project-review', 'delivery', 'next-feature']);
+    expect(shipped).toEqual(source);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

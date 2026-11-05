@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "id": "feature",
+  "title": "Implement a feature",
+  "family": "feature-delivery",
+  "entry": "clarify",
+  "defaults": {
+    "scope": "selected-project",
+    "range": "explicit-baseline",
+    "audience": "development",
+    "output": "plan-and-review",
+    "destination": "Plans/flows/feature.md"
+  },
+  "evidence": {
+    "required": [
+      "task and owner",
+      "scope and acceptance",
+      "base and target revisions",
+      "test results and independent review"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "clarify",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "plan"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "plan",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "implement"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "implement",
+      "document": "workflow.md",
+      "effect": "edit",
+      "approval": "explicit",
+      "on": {
+        "succeeded": {
+          "kind": "step",
+          "id": "checks"
+        },
+        "denied": {
+          "kind": "end",
+          "status": "cancelled"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        },
+        "partial": {
+          "kind": "end",
+          "status": "partial"
+        }
+      }
+    },
+    {
+      "id": "checks",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "commit"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "commit",
+      "document": "workflow.md",
+      "effect": "commit",
+      "approval": "explicit",
+      "on": {
+        "succeeded": {
+          "kind": "step",
+          "id": "review"
+        },
+        "denied": {
+          "kind": "end",
+          "status": "cancelled"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        },
+        "partial": {
+          "kind": "end",
+          "status": "partial"
+        }
+      }
+    },
+    {
+      "id": "review",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "end",
+          "status": "complete"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}

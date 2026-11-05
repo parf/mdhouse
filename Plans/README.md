@@ -289,3 +289,10 @@ contents list, so a heading link and its contents entry cannot disagree.
 normalize custom app schemes, refuse browser/executable schemes and encode path segments. Invalid
 Settings patches return 400 before changes; invalid loaded values use `edit`. Disabling `editLink`
 hides controls without erasing the scheme. Reference documents never expose external editor links.
+
+## Flow authoring packages
+
+`lib/flow-package.ts` validates data-only versioned manifests and explicitly catalogued Markdown assets
+under `doc/flows/`. The bounded loader reads trusted caller-selected package directories, rejects
+traversal/symlink escapes and declares approval boundaries; it never grants access or executes work.
+The four Feature/delivery packages are authoring assets. Runtime, schedules and run records remain R3 work.

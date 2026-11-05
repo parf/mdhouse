@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    {
+      "id": "feature",
+      "family": "feature-delivery",
+      "manifest": "feature/flow.json",
+      "example": "feature/example.md"
+    },
+    {
+      "id": "project-review",
+      "family": "feature-delivery",
+      "manifest": "project-review/flow.json",
+      "example": "project-review/example.md"
+    },
+    {
+      "id": "delivery",
+      "family": "feature-delivery",
+      "manifest": "delivery/flow.json",
+      "example": "delivery/example.md"
+    },
+    {
+      "id": "next-feature",
+      "family": "feature-delivery",
+      "manifest": "next-feature/flow.json",
+      "example": "next-feature/example.md"
+    }
+  ]
+}
