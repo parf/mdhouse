@@ -58,7 +58,7 @@ accounts are secondary Advanced compatibility/recovery configuration. An instanc
 users, optionally also admitting explicitly trusted localhost/CIDRs.
 
 The product term is **Markdown workspace**. The four profiles are settled in
-[`Q-W6`](QUESTIONS.md#Q-W6).
+[№Q-W6](QUESTIONS.md#Q-W6).
 
 ## Workspace
 

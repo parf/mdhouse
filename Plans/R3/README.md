@@ -71,20 +71,20 @@ R3 keeps four boundaries visible:
 
 | Group | Outcome | Main work |
 | --- | --- | --- |
-| R3a — Product identity | mdhouse aims to become the primary project UI, not a larger viewer | replacement goal for direct AI CLI and Markdown-editor use, project/space concepts, coherent language and PolyForm licensing |
-| R3b — Workspaces and access | Workspace is the default; Viewer and project access are explicit | modes, migration, user management, per-project RO/RW grants, Reader/Editor authorization |
-| R3c — Projects and setup | A project becomes usable without a manual integration pass | AI installation runbook, directory management, project names and new-project creation |
-| R3d — Markdown interaction | mdhouse aims to replace a separate Markdown editor | existing markup actions, full-document editor, stale-write safety, diff/history/commit, optional external editor |
-| R3e — Agent collaboration | mdhouse aims to replace direct Claude/AI CLI interaction | out-of-box agent UI, per-space routing, explicit target precedence and mdhouse control API |
-| R3f — RAG lifecycle | RAG is native to the R3 product through the Agent Bus RAG agent | ingestion, embeddings, indexing, retrieval, source administration and citations/provenance |
-| R3g — Flows and automation | Projects gain reusable, inspectable workflows | document/routing runtime, optional schedules, run history, Git checkpoints and approval boundaries |
-| R3h — Flow library | Common project and organizational work ships ready to run | feature, documentation, review, engineering, business, ideas, finance and legal packages |
-| R3i — Plans, markup and skills | The working protocol is available wherever a project needs it | immutable reference root, project initialization, Plans convention, markup/review skills |
-| R3j — Team collaboration | Multiple people can safely share one mdhouse | user CRUD, project grants, login, trusted networks, attribution and concurrency behavior |
-| R3k — Safety and compatibility | The broader product retains mdhouse's hard boundaries | path jail, canonical roots, write authorization, same-origin protection, migration and explicit mutations |
-| R3l — Complete journey | The pieces work as one product | install → project → agent → flow → edit → review → delivery validation |
+| [№R3a](TODO.md#R3a) — Product identity | mdhouse aims to become the primary project UI, not a larger viewer | replacement goal for direct AI CLI and Markdown-editor use, project/space concepts, coherent language and PolyForm licensing |
+| [№R3b](TODO.md#R3b) — Workspaces and access | Workspace is the default; Viewer and project access are explicit | modes, migration, user management, per-project RO/RW grants, Reader/Editor authorization |
+| [№R3c](TODO.md#R3c) — Projects and setup | A project becomes usable without a manual integration pass | AI installation runbook, directory management, project names and new-project creation |
+| [№R3d](TODO.md#R3d) — Markdown interaction | mdhouse aims to replace a separate Markdown editor | existing markup actions, full-document editor, stale-write safety, diff/history/commit, optional external editor |
+| [№R3e](TODO.md#R3e) — Agent collaboration | mdhouse aims to replace direct Claude/AI CLI interaction | out-of-box agent UI, per-space routing, explicit target precedence and mdhouse control API |
+| [№R3f](TODO.md#R3f) — RAG lifecycle | RAG is native to the R3 product through the Agent Bus RAG agent | ingestion, embeddings, indexing, retrieval, source administration and citations/provenance |
+| [№R3g](TODO.md#R3g) — Flows and automation | Projects gain reusable, inspectable workflows | document/routing runtime, optional schedules, run history, Git checkpoints and approval boundaries |
+| [№R3h](TODO.md#R3h) — Flow library | Common project and organizational work ships ready to run | feature, documentation, review, engineering, business, ideas, finance and legal packages |
+| [№R3i](TODO.md#R3i) — Plans, markup and skills | The working protocol is available wherever a project needs it | immutable reference root, project initialization, Plans convention, markup/review skills |
+| [№R3j](TODO.md#R3j) — Team collaboration | Multiple people can safely share one mdhouse | user CRUD, project grants, login, trusted networks, attribution and concurrency behavior |
+| [№R3k](TODO.md#R3k) — Safety and compatibility | The broader product retains mdhouse's hard boundaries | path jail, canonical roots, write authorization, same-origin protection, migration and explicit mutations |
+| [№R3l](TODO.md#R3l) — Complete journey | The pieces work as one product | install → project → agent → flow → edit → review → delivery validation |
 
-## R3a–R3b — Product identity, workspaces and access
+## [№R3a](TODO.md#R3a)–[№R3b](TODO.md#R3b) — Product identity, workspaces and access {#r3a-r3b-product-identity-workspaces-and-access}
 
 ### R3 license
 
@@ -211,9 +211,9 @@ server, then creates mdhouse's secure, revocable session cookie. OAuth client se
 never enter browser application state or project files. Existing local credentials and HTTP Basic
 may remain for explicit Advanced compatibility and recovery, but they are not the normal Team web
 login. This settles
-[`Q-W8`](workspaces/QUESTIONS.md#Q-W8).
+[№Q-W8](workspaces/QUESTIONS.md#Q-W8).
 
-## R3c — Projects, installation and connection
+## [№R3c](TODO.md#R3c) — Projects, installation and connection {#r3c-projects-installation-and-connection}
 
 ### AI-executable installation
 
@@ -273,7 +273,7 @@ A missing higher-priority target is shown as unavailable and is never silently r
 all fields in a space's `[AB]` editor deletes the override and restores fallback behavior, but the
 button remains visible.
 
-## R3g–R3h — Flow platform and built-in flow library
+## [№R3g](TODO.md#R3g)–[№R3h](TODO.md#R3h) — Flow platform and built-in flow library {#r3g-r3h-flow-platform-and-built-in-flow-library}
 
 ### Shared flow runtime
 
@@ -305,7 +305,7 @@ The core delivery package covers:
 - update → review → deploy, including readiness and rollback checks;
 - start the next feature while carrying forward decisions and unresolved work.
 
-Feature and delivery is tracked as `MW.3h`, with shared runtime and release-gate dependencies.
+Feature and delivery is tracked as [№MW.3h](workspaces/TODO.md#MW.3h), with shared runtime and release-gate dependencies.
 
 ### Documentation flows
 
@@ -413,7 +413,7 @@ confidentiality boundaries.
 They identify issues and prepare work for a qualified person. They never file, sign, accept terms or
 present drafts as legal advice; interpretation and external communication require human approval.
 
-## R3c — New-project creation
+## [№R3c](TODO.md#R3c) — New-project creation {#r3c-new-project-creation}
 
 The web UI creates a new AI-ready project under `~/mdhouse/`, initializes it, adds the `Plans/`
 convention and mdhouse markup/review skills, connects Agent Bus and starts the first selected flow.
@@ -424,7 +424,7 @@ Project creation uses the same canonical directory registration, access modes, d
 per-space Agent Bus configuration as existing-project setup. Partial initialization must be visible
 and recoverable rather than leaving an apparently ready but inconsistent project.
 
-## R3d — Complete Markdown interaction and editing
+## [№R3d](TODO.md#R3d) — Complete Markdown interaction and editing {#r3d-complete-markdown-interaction-and-editing}
 
 R3 adds a real full-source Markdown editor alongside the existing focused checkbox, Q&A and insert
 actions. A writable Editor can change an entire document, save it, inspect its diff and history, and
@@ -454,7 +454,7 @@ keeping `edit:` for a common editor. Settings shows the scheme next to Edit link
 is enabled; disabling hides but preserves the value. Scheme validation, migration, rendering,
 keyboard behavior and platform documentation are included.
 
-## R3e — Agent collaboration and control
+## [№R3e](TODO.md#R3e) — Agent collaboration and control {#r3e-agent-collaboration-and-control}
 
 mdhouse is the human-facing agent environment: people select agents, give them work, answer their
 questions, inspect progress and continue routed flows without operating Claude Code or another AI
@@ -478,7 +478,7 @@ record. Add + configure + open is atomic from the caller's point of view and rep
 step without leaving a half-configured project. All root and document paths reuse the same canonical
 registration and resolution boundaries as CLI, Settings and HTTP.
 
-### R3f — RAG through the Agent Bus RAG agent
+### [№R3f](TODO.md#R3f) — RAG through the Agent Bus RAG agent {#r3f-rag-through-the-agent-bus-rag-agent}
 
 R3 includes native RAG capability as part of the mdhouse product. The Agent Bus RAG agent provides
 the backend lifecycle: source ingestion, chunking/embeddings, indexing, refresh/reindex, retrieval
@@ -496,7 +496,7 @@ Agent Bus authorization apply independently; a RAG source never grants mdhouse f
 exposes server-side credentials. Verifying and documenting that Agent Bus API is the first
 implementation step, not a reason to defer RAG beyond R3.
 
-## R3i — Plans, markup, skills and reference material
+## [№R3i](TODO.md#R3i) — Plans, markup, skills and reference material {#r3i-plans-markup-skills-and-reference-material}
 
 R3 promotes the existing Plans convention, agent markup and review skills from useful repository
 customs into a first-class working protocol:
@@ -516,7 +516,7 @@ This is a product protocol, not a requirement that every repository use one rigi
 reference explains the common semantics; projects may extend their documents and route packages
 without requiring a new mdhouse UI for each domain.
 
-## R3j — Team collaboration
+## [№R3j](TODO.md#R3j) — Team collaboration {#r3j-team-collaboration}
 
 The team change is broader than adding login. One running mdhouse may serve several people who must
 remain distinguishable and must not overwrite or impersonate each other:
@@ -537,7 +537,7 @@ remain distinguishable and must not overwrite or impersonate each other:
 Personal use remains the default and must not acquire mandatory account setup. Team capability is an
 additional deployment shape built from the same project, document and authorization model.
 
-## R3k — Safety, migration and compatibility
+## [№R3k](TODO.md#R3k) — Safety, migration and compatibility {#r3k-safety-migration-and-compatibility}
 
 Paradigm Shift expands what mdhouse can do, so existing boundaries become more important rather than
 less important:
@@ -578,7 +578,7 @@ The order is architectural, not necessarily a single serial implementation plan.
 be authored while runtime work proceeds, but no package is complete until it passes the shared
 runtime and permission contracts.
 
-## R3l — Release gate
+## [№R3l](TODO.md#R3l) — Release gate {#r3l-release-gate}
 
 R3 is complete when a fresh installation can:
 
@@ -605,7 +605,7 @@ R3 is complete when a fresh installation can:
 The access matrix is also tested directly: Personal Workspace, Open Viewer, Private Viewer and Team
 Workspace, each with direct requests and stale tabs; trusted-network variants are tested separately.
 
-The detailed Workspace dependency gate is [`MW.6`](workspaces/TODO.md#gate).
+The detailed Workspace dependency gate is [№MW.6](workspaces/TODO.md#MW.6).
 
 ## Not in R3
 
