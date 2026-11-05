@@ -22,6 +22,10 @@ Use these forms in plans, questions, decisions, reports and templates. Preserve 
 human answers and quoted history. Keep facts plain, tasks as checkboxes and Q&A choices distinct.
 Verify rendered anchors; add explicit supported anchors when an existing ID does not auto-anchor.
 
+Move solved questions to the owning `DECISIONS.md` for important decisions, otherwise to `resolved.md`.
+Preserve the ID, wording and complete answer/thread; leave an anchored linked `№ID` pointer at the
+old location. Keep unresolved questions in place and retain the questions file.
+
 ## Shared work rules
 
 - Repository: resolve with `git rev-parse --show-toplevel` from this starting directory. Run git from

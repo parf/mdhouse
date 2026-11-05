@@ -44,7 +44,8 @@ Bun + Preact Markdown workspace for every `.md` under a folder. npm package `mdh
   - `TODO.md` — tick / reword items as each step lands; `DECISIONS.md` when a choice changes
   - `CHANGELOG.md` `## Unreleased` — every user-visible change
 - **Questions files:** when folding answers into TODO/DECISIONS, carry over every answer;
-  never delete the questions file unasked.
+  move solved questions with their IDs and complete threads to `DECISIONS.md` (important decisions)
+  or `resolved.md` (the rest), leaving anchored links at the old location; never delete the questions file unasked.
 - **My files:** don't commit, reset or delete my uncommitted edits (TODO ticks, playground
   docs) unless asked. Commit only the paths you changed (`git commit <paths>`).
 - **Push / publish only when I say "publish"** (or "deploy").
