@@ -37,18 +37,18 @@ describe('preciseAgo', () => {
 
 describe('rootLabel', () => {
   test('the folder and its parent, by default', () => {
-    expect(rootLabel('/rd/vhosts/rdc/Plans/Removal')).toBe('Plans/Removal');
+    expect(rootLabel('/srv/sites/project/Plans/Removal')).toBe('Plans/Removal');
     expect(rootLabel('/home/parf/doc/RealmoMove')).toBe('doc/RealmoMove');
   });
 
   test('two folders above, for the wide sidebar', () => {
-    expect(rootLabel('/rd/vhosts/rdc/Plans/Removal', { above: 2 })).toBe('rdc/Plans/Removal');
+    expect(rootLabel('/srv/sites/project/Plans/Removal', { above: 2 })).toBe('project/Plans/Removal');
   });
 
   test('a short path is shown whole, with its slash', () => {
-    expect(rootLabel('/rd')).toBe('/rd');
-    expect(rootLabel('/rd/tmp')).toBe('/rd/tmp');
-    expect(rootLabel('/rd/tmp', { above: 2 })).toBe('/rd/tmp');
+    expect(rootLabel('/srv')).toBe('/srv');
+    expect(rootLabel('/srv/tmp')).toBe('/srv/tmp');
+    expect(rootLabel('/srv/tmp', { above: 2 })).toBe('/srv/tmp');
   });
 
   test('the whole path, home written as ~', () => {
@@ -56,7 +56,7 @@ describe('rootLabel', () => {
     expect(rootLabel('/home/parf/doc/RealmoMove', { above: 'all', home, max: 99 })).toBe('~/doc/RealmoMove');
     expect(rootLabel('/home/parf', { above: 'all', home })).toBe('~');
     expect(rootLabel('/home/parfx/doc', { above: 'all', home })).toBe('/home/parfx/doc');
-    expect(rootLabel('/rd/tmp', { above: 'all', home })).toBe('/rd/tmp');
+    expect(rootLabel('/srv/tmp', { above: 'all', home })).toBe('/srv/tmp');
   });
 
   test('a home with a trailing slash is still ~', () => {

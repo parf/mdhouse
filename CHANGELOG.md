@@ -406,7 +406,7 @@ save, read-only folders refused), but new: use it on folders under git.
 ## 1.1.1 — never published
 
 The first release that writes — tick a checkbox in a `--rw` folder and that line is saved — and
-a much richer Markdown: `/rd`-style alerts, question / disagreement / answer blocks in four
+a much richer Markdown: docs-viewer-style alerts, question / disagreement / answer blocks in four
 forms, and two new docs. Neither 1.1.0 nor 1.1.1 reached npm: they shipped in 1.2.0.
 
 ### Added
@@ -437,7 +437,7 @@ forms, and two new docs. Neither 1.1.0 nor 1.1.1 reached npm: they shipped in 1.
 ### Changed
 
 - **GitHub alerts** (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) look like
-  the `/rd` docs viewer's: an icon on the title (ℹ️ 💡 📣 ⚠️ 🛑, added in CSS), GitHub's colours, a
+  the earlier docs viewer's: an icon on the title (ℹ️ 💡 📣 ⚠️ 🛑, added in CSS), GitHub's colours, a
   tinted background and a 4px edge — with darker-theme colours in dark mode. NOTE and TIP are
   one line (icon, then text, no title row); IMPORTANT, WARNING and CAUTION keep their title.
 

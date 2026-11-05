@@ -153,8 +153,8 @@ A Q&A item looks the same however it was written — `> [!QUESTION]`, `> ?` / `>
 
 The fills are bright on purpose — a Q&A log should read at a glance, and stand apart from the
 pale GitHub alerts. Questions are red, like the ❓ glyph; an answer is indented a little, under
-what it settles. Meanings follow `/rd/.claude/Glyphs.md`: ❓ open question, ⁉️ open
-disagreement, 💬 the answer that settles either.
+what it settles. Meanings follow the project's shared glyph convention: ❓ open question,
+⁉️ open disagreement, 💬 the answer that settles either.
 
 ## An answer is written in the question's own syntax — 2026-10-06
 
@@ -164,8 +164,8 @@ status item. The file stays in the style its author chose, and the result reads 
 GitHub as the hand-written answers around it. `> A:` answers are read but 💬 is written.
 
 - **Checkbox and status-glyph list items are questions** (the QUESTIONS.md convention): the box
-  or glyph is the item's status, the answer an indented quote inside it. The glyphs are the
-  status vocabulary of `/rd/.claude/Glyphs.md`; any other emoji leaves an item a plain one.
+  or glyph is the item's status, the answer an indented quote inside it. The glyphs use the
+  project's shared status vocabulary; any other emoji leaves an item a plain one.
   Check & Save ticks `[ ]`, or turns a glyph into ✅.
 - **The draft outlives the HTML.** The page is re-rendered whenever the file changes; the
   editor's text lives in `Doc` and is mounted again under its question (found by fingerprint,

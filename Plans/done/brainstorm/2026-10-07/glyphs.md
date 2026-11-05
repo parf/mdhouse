@@ -1,7 +1,7 @@
 # Glyphs
 
-Meanings follow `/rd/.claude/Glyphs.md`; rows marked **new** are additions our processes need.
-The glyph is the **first symbol of the line** — status first, then severity
+These are the shared meanings; rows marked **new** are additions our processes need. The glyph
+is the **first symbol of the line** — status first, then severity
 (`- ✅ 🔴 …`). Default is no glyph: an ordinary line takes none.
 
 ## Severity — how much it matters

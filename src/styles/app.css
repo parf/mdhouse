@@ -1084,7 +1084,7 @@ main {
 }
 
 /* GitHub alerts: > [!NOTE] and friends, with GitHub's class names, colours and an icon on the
-   title — the same look as the docs viewer at /rd, so a document reads the same in both. */
+   title, so a document reads like its GitHub rendering. */
 .md .markdown-alert {
   margin: 0 0 14px;
   padding: 8px 16px;

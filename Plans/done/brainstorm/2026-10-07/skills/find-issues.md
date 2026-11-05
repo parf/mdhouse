@@ -70,7 +70,7 @@ the meta-signals deciding where to look hardest — the format below and these r
   new item starts with what changed and links the old one (`issues/2026-10/2026-10-07.md#B44`).
 - **One cause, one item**: issues that share a root cause (one stale doc, one missing helper) are one
   item listing every `file:line`.
-- `Plans/done/` and `Plans/brainstorm/` drafts raise nothing — unless a live doc describes them wrongly.
+- `Plans/done/` drafts raise nothing — unless a live doc describes them wrongly.
 - At most 10, worst first. Return Markdown, plus one line: what was checked and found sound.
 
 ## Format

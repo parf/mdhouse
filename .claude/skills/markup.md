@@ -1,4 +1,4 @@
-# Suggested markup — for [patterns.md](../../Plans/brainstorm/2026-10-07/patterns.md)
+# Suggested markup — for [patterns.md](../../Plans/done/brainstorm/2026-10-07/patterns.md)
 
 Rules: plain GFM that reads well on GitHub and in an editor; mdhouse adds the behaviour
 (buttons, muting, folding) on render — never markup that only mdhouse understands.

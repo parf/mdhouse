@@ -71,7 +71,7 @@ export function fileSize(bytes: number): string {
  * A root as the switcher names it: its folder and `above` folders over it — `Plans/Removal`
  * rather than a bare `Removal`, since several roots are often siblings or namesakes and the
  * parents are what tell them apart. A path that has fewer segments keeps its leading slash
- * (`/rd`). `above: 'all'` is the whole path, with the home directory written `~`.
+ * (`/srv`). `above: 'all'` is the whole path, with the home directory written `~`.
  *
  * Past `max` characters the left end goes, behind an ellipsis: the last segment is the one
  * that must stay readable, and a `<select>` can only cut text off on the right.
