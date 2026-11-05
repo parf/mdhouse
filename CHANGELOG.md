@@ -4,6 +4,7 @@
 
 ### Added
 
+- Five Documentation authoring packages cover deep subsystem docs, refresh/verify, audience overviews, documentation architecture and trust reports, with synthetic examples; execution remains future work
 - Shared flow-package validation and loading, with four Feature/delivery authoring packages and synthetic examples; flow execution is not included
 - mdhouse's own documentation is always served, read-only, as `_mdhouse` (`mdhouse reference` in Settings): no write controls, edit link or agent requests on it, and it cannot be removed or added as a project
 - Settings → Edit link has a Scheme field: the ✎ link opens `<scheme>:/path:line`, `edit` by default — e.g. `mdedit` for Typora next to `edit:` for your common editor; web and executable schemes (`javascript`, `http`, `file` …) are refused

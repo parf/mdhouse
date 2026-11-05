@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "id": "docs-project-overview",
+  "title": "Generate an audience-specific project overview",
+  "family": "documentation",
+  "entry": "scope",
+  "defaults": {
+    "scope": "selected-project",
+    "range": "explicit-baseline",
+    "audience": "executive",
+    "output": "project-overview",
+    "destination": "Plans/flows/docs-project-overview.md"
+  },
+  "evidence": {
+    "required": [
+      "project or subsystem evidence",
+      "audience and selected aspect paths or timeframe",
+      "current change baseline"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "scope",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "synthesize"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "synthesize",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "report"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "report",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "end",
+          "status": "complete"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}

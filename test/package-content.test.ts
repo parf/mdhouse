@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { loadFlowCatalog } from '../src/lib/flow-package';
+import { EXPECTED_PACKAGE_IDS } from './flow-library-coverage';
 
 test('npm artifact ships the canonical R3 license and loadable flow authoring packages', async () => {
   const root = resolve(import.meta.dir, '..');
@@ -50,7 +51,7 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     await run(['tar', '-xzf', archive, '-C', extracted]);
     const shipped = await loadFlowCatalog(join(extracted, 'package/doc/flows'));
     const source = await loadFlowCatalog(join(root, 'doc/flows'));
-    expect(shipped.map((flow) => flow.manifest.id)).toEqual(['feature', 'project-review', 'delivery', 'next-feature']);
+    expect(shipped.map((flow) => flow.manifest.id)).toEqual([...EXPECTED_PACKAGE_IDS]);
     expect(shipped).toEqual(source);
   } finally {
     await rm(dir, { recursive: true, force: true });

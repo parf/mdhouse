@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { FLOW_LIMITS, loadFlowCatalog, loadFlowPackage, validateFlowPackage } from '../src/lib/flow-package';
+import { FEATURE_PACKAGE_IDS } from './flow-library-coverage';
 
 function sample(): any {
   return {
@@ -163,8 +164,9 @@ for (const scenario of ['missing', 'empty', 'oversize', 'invalid-utf8', 'directo
 }
 
 test('built-in catalog covers all four Feature/delivery paths with examples and explicit gates', async () => {
-  const packages = await loadFlowCatalog(resolve(import.meta.dir, '../doc/flows'));
-  expect(packages.map((p) => p.manifest.id)).toEqual(['feature', 'project-review', 'delivery', 'next-feature']);
+  const packages = (await loadFlowCatalog(resolve(import.meta.dir, '../doc/flows')))
+    .filter((flow) => flow.manifest.family === 'feature-delivery');
+  expect(packages.map((p) => p.manifest.id)).toEqual([...FEATURE_PACKAGE_IDS]);
   for (const flow of packages) {
     expect(flow.manifest.family).toBe('feature-delivery');
     expect(flow.example).toContain('Synthetic example');

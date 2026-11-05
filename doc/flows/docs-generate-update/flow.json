@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "id": "docs-generate-update",
+  "title": "Generate and update project documentation",
+  "family": "documentation",
+  "entry": "inventory",
+  "defaults": {
+    "scope": "selected-project",
+    "range": "explicit-baseline",
+    "audience": "development",
+    "output": "documentation-set",
+    "destination": "Plans/flows/docs-generate-update.md"
+  },
+  "evidence": {
+    "required": [
+      "code and configuration inventory",
+      "subsystem boundaries and dependencies",
+      "API contracts and checks"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "inventory",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "decompose"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "decompose",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "deep-docs"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "deep-docs",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "summarize"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "summarize",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "report"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "report",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "end",
+          "status": "complete"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}

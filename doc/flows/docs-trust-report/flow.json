@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "id": "docs-trust-report",
+  "title": "Report documentation trust and drift",
+  "family": "documentation",
+  "entry": "inventory",
+  "defaults": {
+    "scope": "selected-project",
+    "range": "explicit-baseline",
+    "audience": "development",
+    "output": "documentation-trust-report",
+    "destination": "Plans/flows/docs-trust-report.md"
+  },
+  "evidence": {
+    "required": [
+      "documentation inventory",
+      "source revisions and verification records",
+      "owner metadata or explicit unknown"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "inventory",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "verify"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "verify",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "register"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "register",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "report"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "report",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "end",
+          "status": "complete"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}

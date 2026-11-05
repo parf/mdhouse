@@ -24,6 +24,36 @@
       "family": "feature-delivery",
       "manifest": "next-feature/flow.json",
       "example": "next-feature/example.md"
+    },
+    {
+      "id": "docs-generate-update",
+      "family": "documentation",
+      "manifest": "docs-generate-update/flow.json",
+      "example": "docs-generate-update/example.md"
+    },
+    {
+      "id": "docs-refresh-verify",
+      "family": "documentation",
+      "manifest": "docs-refresh-verify/flow.json",
+      "example": "docs-refresh-verify/example.md"
+    },
+    {
+      "id": "docs-project-overview",
+      "family": "documentation",
+      "manifest": "docs-project-overview/flow.json",
+      "example": "docs-project-overview/example.md"
+    },
+    {
+      "id": "docs-architecture",
+      "family": "documentation",
+      "manifest": "docs-architecture/flow.json",
+      "example": "docs-architecture/example.md"
+    },
+    {
+      "id": "docs-trust-report",
+      "family": "documentation",
+      "manifest": "docs-trust-report/flow.json",
+      "example": "docs-trust-report/example.md"
     }
   ]
 }

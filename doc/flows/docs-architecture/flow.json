@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "id": "docs-architecture",
+  "title": "Review documentation architecture",
+  "family": "documentation",
+  "entry": "inventory",
+  "defaults": {
+    "scope": "selected-project",
+    "range": "explicit-baseline",
+    "audience": "development",
+    "output": "documentation-architecture",
+    "destination": "Plans/flows/docs-architecture.md"
+  },
+  "evidence": {
+    "required": [
+      "documentation and link inventory",
+      "reader tasks and product evidence"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "inventory",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "classify"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "classify",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "gaps"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "gaps",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "report"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "report",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "end",
+          "status": "complete"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}

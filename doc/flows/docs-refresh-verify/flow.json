@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "id": "docs-refresh-verify",
+  "title": "Refresh and verify documentation",
+  "family": "documentation",
+  "entry": "scope",
+  "defaults": {
+    "scope": "selected-document",
+    "range": "explicit-baseline",
+    "audience": "development",
+    "output": "documentation-findings",
+    "destination": "Plans/flows/docs-refresh-verify.md"
+  },
+  "evidence": {
+    "required": [
+      "selected documentation",
+      "current code configuration and API evidence",
+      "explicit change range"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "scope",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "compare"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "compare",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "resolve"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "resolve",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "report"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "report",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "end",
+          "status": "complete"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}
