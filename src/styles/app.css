@@ -315,6 +315,7 @@ main {
 .settings-option label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .settings-option code, .settings-hint code { font-size: 11.5px; }
 .settings-hint { color: var(--fg-muted); font-size: 12.5px; }
+.settings-option label.settings-scheme-field { gap: 8px; }
 .settings-scheme { font: inherit; font-family: var(--mono); width: 9em; padding: 3px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); }
 @media (hover: none), (pointer: coarse) { .settings-scheme { font-size: 16px; min-height: 44px; } }
 .edit-link, .git-link { flex: none; }

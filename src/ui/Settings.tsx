@@ -151,16 +151,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               <b>Edit link</b> — ✎ beside each title, opening <code>{options.editScheme}:/full/path</code>.
             </span>
           </label>
-          <span class="settings-hint">
-            Needs a <code>{options.editScheme}:</code> URL handler.{' '}
-            <a href={EDIT_HELP} target="_blank" rel="noopener noreferrer">
-              How to set one up
-            </a>
-          </span>
-        </div>
-        {options.editLink && (
-          <div class="settings-option">
-            <label>
+          {options.editLink && (
+            <label class="settings-scheme-field">
               <b>Scheme</b>
               <input
                 class="settings-scheme"
@@ -175,13 +167,23 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
               />
             </label>
-            <span class="settings-hint">
-              Opens <code>{options.editScheme}:/path:line</code>. <code>edit</code> keeps your common editor;{' '}
-              <code>mdedit</code> can be registered for Typora separately.
-            </span>
-            {schemeError && <span class="settings-error">{schemeError}</span>}
-          </div>
-        )}
+          )}
+          <span class="settings-hint">
+            Needs a <code>{options.editScheme}:</code> URL handler.{' '}
+            <a href={EDIT_HELP} target="_blank" rel="noopener noreferrer">
+              How to set one up
+            </a>
+            .
+            {options.editLink && (
+              <>
+                {' '}
+                Example <code>mdedit:/path:line</code>: <code>mdedit</code> can be registered for Typora separately from your common{' '}
+                <code>edit</code> handler.
+              </>
+            )}
+          </span>
+          {options.editLink && schemeError && <span class="settings-error">{schemeError}</span>}
+        </div>
         {/* The paths are set from the CLI; here only the switch. */}
         {!!options.autoRwPaths?.length && (
           <div class="settings-option">
