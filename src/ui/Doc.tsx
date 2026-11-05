@@ -16,7 +16,7 @@ import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
 import { follow } from './PageHead';
-import { isPageHref } from '../lib/urls';
+import { editTarget, isPageHref } from '../lib/urls';
 import { DocCommit } from './GitPanel';
 
 /** The two diff views; either can be the one a toggle turns on. */
@@ -1026,7 +1026,7 @@ export function Doc({
             </a>
           )}
           {editAt && (
-            <a class="icon-btn edit-link" href={editAt} title={`Edit ${editAt.slice(5)} (e)`} aria-label="Edit">
+            <a class="icon-btn edit-link" href={editAt} title={`Edit ${editTarget(editAt)} (e)`} aria-label="Edit">
               <IconEdit />
             </a>
           )}

@@ -1235,3 +1235,40 @@ describe('a reference root on a running server (MW.0f.1)', () => {
     }
   });
 });
+
+describe('POST /api/settings — the edit scheme', () => {
+  test('a reserved or malformed scheme is 400 and nothing changes; a custom one is kept', async () => {
+    const { mkdtemp, rm, realpath } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-scheme-')));
+    const prefs = await Prefs.load(join(base, 'prefs.json'));
+    const port = 61810;
+    const { server, watcher, control } = await serve({ registry: await Registry.create([base]), prefs, port, hostname: '127.0.0.1', noGit: true });
+    const post = (body: unknown) =>
+      fetch(`http://127.0.0.1:${port}/api/settings`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const get = async () => (await (await fetch(`http://127.0.0.1:${port}/api/settings`)).json()) as { editScheme: string; editLink: boolean };
+    try {
+      expect((await get()).editScheme).toBe('edit');
+      for (const bad of ['javascript', 'JavaScript:', 'data', 'http', 'mailto', 'file', '', '1x', 'a b', 5, null]) {
+        const res = await post({ editScheme: bad, editLink: false });
+        expect(res.status).toBe(400);
+        expect(((await res.json()) as { error: string }).error).toContain('editScheme');
+      }
+      expect(await get()).toMatchObject({ editScheme: 'edit', editLink: true }); // the whole patch refused
+      const ok = await post({ editScheme: ' MdEdit: ' });
+      expect(ok.status).toBe(200);
+      expect(((await ok.json()) as { editScheme: string }).editScheme).toBe('mdedit');
+      expect((await post({ editLink: false })).status).toBe(200);
+      expect(await get()).toMatchObject({ editScheme: 'mdedit', editLink: false }); // off keeps the value
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+});

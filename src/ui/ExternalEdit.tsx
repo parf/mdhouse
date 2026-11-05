@@ -1,3 +1,4 @@
+import { editTarget } from '../lib/urls';
 import { IconEdit } from './icons';
 
 /** Alt+E in a form: by the key, not the character — on a Mac Option+E types an accent. */
@@ -6,7 +7,7 @@ export const isEditKey = (e: KeyboardEvent) => e.altKey && !e.ctrlKey && !e.meta
 /** The form's ✎: opens the file at the form's line, as Alt+E does. */
 export function EditLink({ href, onOpen }: { href: string; onOpen: () => void }) {
   return (
-    <a class="form-edit" href={href} onClick={onOpen} title={`Edit ${href.slice(5)} (Alt+E)`} aria-label="Edit in external editor">
+    <a class="form-edit" href={href} onClick={onOpen} title={`Edit ${editTarget(href)} (Alt+E)`} aria-label="Edit in external editor">
       <IconEdit size={14} />
     </a>
   );

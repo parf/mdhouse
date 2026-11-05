@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { api, type AbInfo, type RootInfo, type Settings as Options } from './api';
 import { IconTrash } from './icons';
 
-/** Where to start when nothing handles `edit:` URLs yet. */
+/** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
   'linux xdg configure edit protocol to open files in my editor',
 )}`;
@@ -28,6 +28,20 @@ interface Props {
  */
 export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
+  // The edit scheme as typed; saved on Enter or leaving the field, put back when the server refuses it.
+  const [scheme, setScheme] = useState(options.editScheme);
+  const [schemeError, setSchemeError] = useState<string | null>(null);
+  useEffect(() => setScheme(options.editScheme), [options.editScheme]);
+  const saveScheme = async () => {
+    setSchemeError(null);
+    if (scheme.trim().replace(/:+$/, '').toLowerCase() === options.editScheme) return setScheme(options.editScheme);
+    try {
+      onOptions(await api.setSettings({ editScheme: scheme }));
+    } catch (err) {
+      setScheme(options.editScheme);
+      setSchemeError((err as Error).message);
+    }
+  };
   const [error, setError] = useState('');
   const last = roots.filter((r) => r.kind !== 'reference').length === 1;
 
@@ -134,16 +148,40 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               }}
             />
             <span>
-              <b>Edit link</b> — ✎ beside each title, opening <code>edit:/full/path</code>.
+              <b>Edit link</b> — ✎ beside each title, opening <code>{options.editScheme}:/full/path</code>.
             </span>
           </label>
           <span class="settings-hint">
-            Needs an <code>edit:</code> URL handler.{' '}
+            Needs a <code>{options.editScheme}:</code> URL handler.{' '}
             <a href={EDIT_HELP} target="_blank" rel="noopener noreferrer">
               How to set one up
             </a>
           </span>
         </div>
+        {options.editLink && (
+          <div class="settings-option">
+            <label>
+              <b>Scheme</b>
+              <input
+                class="settings-scheme"
+                type="text"
+                value={scheme}
+                spellcheck={false}
+                autocapitalize="off"
+                autocomplete="off"
+                aria-label="Edit link URL scheme"
+                onInput={(e) => setScheme((e.target as HTMLInputElement).value)}
+                onBlur={saveScheme}
+                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+              />
+            </label>
+            <span class="settings-hint">
+              Opens <code>{options.editScheme}:/path:line</code>. <code>edit</code> keeps your common editor;{' '}
+              <code>mdedit</code> can be registered for Typora separately.
+            </span>
+            {schemeError && <span class="settings-error">{schemeError}</span>}
+          </div>
+        )}
         {/* The paths are set from the CLI; here only the switch. */}
         {!!options.autoRwPaths?.length && (
           <div class="settings-option">

@@ -15,7 +15,7 @@ import { AboutModal } from './ui/AboutModal';
 import { Settings } from './ui/Settings';
 import { DirPage } from './ui/DirPage';
 import { ancestors } from './ui/tree-model';
-import { dirUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
+import { dirUrl, editUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
 import { IconGear, IconPanel, IconSearch } from './ui/icons';
 
 const STATES: SidebarState[] = ['off', 'compact', 'open'];
@@ -42,7 +42,7 @@ const save = (key: string, value: unknown) => {
 
 function App() {
   const [roots, setRoots] = useState<RootInfo[]>([]);
-  const [options, setOptions] = useState<Options>({ editLink: true, autoRw: true, me: '' });
+  const [options, setOptions] = useState<Options>({ editLink: true, editScheme: 'edit', autoRw: true, me: '' });
   // Until the saved settings arrive, nothing that depends on them is drawn — otherwise a ✎
   // turned off in Settings flashed on every load.
   const [optionsLoaded, setOptionsLoaded] = useState(false);
@@ -466,13 +466,13 @@ function App() {
 
   const pageGear = sidebar !== 'off' ? gear() : null;
 
-  // `edit:` plus the file's full path: the root's path is on disk, the document's is under it.
+  // The edit scheme plus the file's full path: the root's path is on disk, the document's is under it.
   // None for reference material: an editor would write it past every check.
   const docRoot = doc ? roots.find((r) => r.id === doc.root) : undefined;
   // Each segment encoded on its own: `encodeURI` leaves `#` and `?` alone, which cut the path.
   const editHref =
     optionsLoaded && options.editLink && doc && docRoot && !doc.reference
-      ? `edit:${`${docRoot.path}/${doc.rel}`.split('/').map(encodeURIComponent).join('/')}`
+      ? editUrl(options.editScheme, `${docRoot.path}/${doc.rel}`)
       : null;
 
   return (

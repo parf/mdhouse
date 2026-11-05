@@ -67,7 +67,7 @@ describe('settings', () => {
   test('unknown keys and wrong types are ignored', async () => {
     const prefs = await Prefs.load(join(dir, 'settings2.json'));
     const after = await prefs.updateSettings({ editLink: 'no', nonsense: 1 });
-    expect(after).toEqual({ editLink: true, autoRw: true, me: '' });
+    expect(after).toEqual({ editLink: true, editScheme: 'edit', autoRw: true, me: '' });
   });
 });
 
@@ -113,6 +113,29 @@ describe('an unreadable prefs file', () => {
     const f = join(dir, 'badtype.json');
     await writeFile(f, JSON.stringify({ settings: { editLink: 'no' } }));
     expect((await Prefs.load(f)).settings.editLink).toBe(true);
+  });
+
+  test('the edit scheme: default edit, a valid one kept and normalized, a bad one refused with the old value kept', async () => {
+    const f = join(dir, 'scheme.json');
+    const prefs = await Prefs.load(f);
+    expect(prefs.settings.editScheme).toBe('edit');
+    expect((await prefs.updateSettings({ editScheme: ' MdEdit: ' })).editScheme).toBe('mdedit');
+    expect((await Prefs.load(f)).settings.editScheme).toBe('mdedit');
+    for (const bad of ['javascript', 'http:', 'a b', '', 7]) {
+      expect((await prefs.updateSettings({ editScheme: bad })).editScheme).toBe('mdedit');
+    }
+    expect((await prefs.updateSettings({ editLink: false })).editScheme).toBe('mdedit'); // Edit link off keeps it
+    expect((await Prefs.load(f)).settings.editScheme).toBe('mdedit');
+  });
+
+  test('a file with no scheme, or a hand-edited bad one, loads as edit', async () => {
+    const f = join(dir, 'noscheme.json');
+    await writeFile(f, JSON.stringify({ settings: { editLink: false } }));
+    expect((await Prefs.load(f)).settings).toMatchObject({ editLink: false, editScheme: 'edit' });
+    for (const bad of ['javascript', 'data:', 'a b', 5]) {
+      await writeFile(f, JSON.stringify({ settings: { editScheme: bad } }));
+      expect((await Prefs.load(f)).settings.editScheme).toBe('edit');
+    }
   });
 });
 

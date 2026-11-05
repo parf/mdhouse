@@ -34,5 +34,5 @@ mdhouse ~/notes
   instead (it runs in the background, and a second `mdhouse <dir>` adds to the running one)
 - Agent Bus: no default socket on macOS — give one: `mdhouse --agent-bus <x.sock>` or
   `--agent-bus http://host:6767` — [Agent Bus](agent-bus.md)
-- ✎ `edit:` links need an app that handles `edit:` URLs
+- ✎ `edit:` links need an app that handles `edit:` URLs (`mdedit:` the same, if you set Settings → Scheme to `mdedit`)
 - Paths are case-insensitive on a default APFS volume — `Notes.md` and `notes.md` are one file

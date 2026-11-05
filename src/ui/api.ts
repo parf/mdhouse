@@ -12,6 +12,8 @@ import { routeOf } from '../lib/urls';
 
 export interface Settings {
   editLink: boolean;
+  /** The ✎ link's URL scheme, no `:`. */
+  editScheme: string;
   /** Folders under the auto-rw paths are writable. */
   autoRw: boolean;
   /** The name a signed Q&A reply carries; empty: from git. */
@@ -273,7 +275,10 @@ export const api = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(patch),
     });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
+    }
     return res.json() as Promise<Settings>;
   },
 

@@ -75,7 +75,7 @@ Writes need a folder served with `--rw`: `mdhouse -p --rw folder(s)`. The markup
 - ☑️ Tick a checkbox — that one line is saved
 - Hover a heading: ↓ add a block right under it · ⇊ at the end of its section — as text, quote,
   my quote, tip, question, disagreement or answer; Ctrl+Enter — the last one used, my quote at first
-- ✎ / `e` / Alt+E — open the file at that line in your editor (`edit:/path:line`)
+- ✎ / `e` / Alt+E — open the file at that line in your editor (`edit:/path:line`; Settings → Scheme changes `edit`, e.g. `mdedit:/path:line` for Typora)
 
 <img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with its Add as buttons and Cancel" width="560">
 

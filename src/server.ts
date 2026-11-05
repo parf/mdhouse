@@ -11,7 +11,7 @@ import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
 import { Registry, ReadOnlyError, type Resolved, type Root } from './lib/roots';
-import { dirUrl } from './lib/urls';
+import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
@@ -540,6 +540,7 @@ export async function serve(opts: ServeOptions) {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
           if (!body) return fail(400, 'expected a JSON object');
+          if ('editScheme' in body && normalizeEditScheme(body.editScheme) === null) return fail(400, 'editScheme: not an allowed URL scheme');
           const before = prefs.settings.autoRw;
           await prefs.updateSettings(body);
           // Auto-rw on or off changes which folders are writable: every tab shows it.

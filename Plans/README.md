@@ -282,3 +282,10 @@ contents list, so a heading link and its contents entry cannot disagree.
 - One control socket per port. A live one is never unlinked: a second server on the port (another
   host) runs without it and says `mdhouse exit` cannot reach it.
 - Tests: `bun test`, against a temp config dir (`test/preload.ts`); types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.
+
+## External editor schemes
+
+`settings.editScheme` defaults to `edit`; `normalizeEditScheme` and `editUrl` in shared `lib/urls.ts`
+normalize custom app schemes, refuse browser/executable schemes and encode path segments. Invalid
+Settings patches return 400 before changes; invalid loaded values use `edit`. Disabling `editLink`
+hides controls without erasing the scheme. Reference documents never expose external editor links.

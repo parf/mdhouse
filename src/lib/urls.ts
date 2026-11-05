@@ -50,3 +50,30 @@ export function isPageHref(href: string): boolean {
   const first = decode(href.slice(1).split(/[/?#]/)[0] ?? '');
   return first !== '' && !RESERVED.has(first);
 }
+
+/**
+ * Schemes the ✎ link never uses: they run script, render a page or navigate the browser instead of
+ * handing the file to an editor app. `javascript:` runs its percent-decoded body, so a file name
+ * would become code; `http:/home/x` names a host.
+ */
+export const RESERVED_EDIT_SCHEMES = new Set([
+  'javascript', 'data', 'vbscript', 'http', 'https', 'file', 'ftp', 'ws', 'wss', 'blob', 'about',
+  'view-source', 'chrome', 'chrome-extension', 'mailto', 'tel', 'sms',
+]);
+
+export const DEFAULT_EDIT_SCHEME = 'edit';
+
+/** The scheme for the ✎ link: trailing `:` dropped, lower-cased; null unless a URL scheme (`[a-z][a-z0-9+.-]*`) that is not reserved. */
+export function normalizeEditScheme(input: unknown): string | null {
+  if (typeof input !== 'string') return null;
+  const scheme = input.trim().replace(/:+$/, '').toLowerCase();
+  if (!/^[a-z][a-z0-9+.-]*$/.test(scheme) || RESERVED_EDIT_SCHEMES.has(scheme)) return null;
+  return scheme;
+}
+
+/** `<scheme>:<absolute path>` with each segment encoded; an unusable scheme falls back to `edit`. */
+export const editUrl = (scheme: unknown, absPath: string): string =>
+  `${normalizeEditScheme(scheme) ?? DEFAULT_EDIT_SCHEME}:${absPath.split('/').map(encodeURIComponent).join('/')}`;
+
+/** The path part of an edit link, for a tooltip: everything after the scheme's `:`. */
+export const editTarget = (href: string): string => href.slice(href.indexOf(':') + 1);

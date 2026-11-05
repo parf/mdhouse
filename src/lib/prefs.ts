@@ -21,6 +21,7 @@ import { homedir } from 'node:os';
 import { mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { readFileSync, realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { DEFAULT_EDIT_SCHEME, normalizeEditScheme } from './urls';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -95,15 +96,23 @@ export interface ServerConfig {
 
 /** The options on the settings page. Each has a default, so an older file needs none of them. */
 export interface Settings {
-  /** An `edit:` link on every document, for a URL handler that opens the file in an editor. */
+  /** An `<editScheme>:` link on every document, for a URL handler that opens the file in an editor. */
   editLink: boolean;
+  /** The link's URL scheme, no `:`; `edit` unless set — `normalizeEditScheme` says what is valid. */
+  editScheme: string;
   /** Folders under the auto-rw paths are writable. */
   autoRw: boolean;
   /** The name a signed Q&A reply carries (`💬 👤me …`); empty: from git, else the login. */
   me: string;
 }
 
-const DEFAULT_SETTINGS: Settings = { editLink: true, autoRw: true, me: '' };
+const DEFAULT_SETTINGS: Settings = { editLink: true, editScheme: DEFAULT_EDIT_SCHEME, autoRw: true, me: '' };
+
+/** A setting's value if it is valid for its key, else undefined. */
+function validSetting<K extends keyof Settings>(key: K, value: unknown): Settings[K] | undefined {
+  if (key === 'editScheme') return (normalizeEditScheme(value) ?? undefined) as Settings[K] | undefined;
+  return typeof value === typeof DEFAULT_SETTINGS[key] ? (value as Settings[K]) : undefined;
+}
 
 /** A path as the filesystem resolves it — a served root is always held so; as written when it is gone. */
 function real(path: string): string {
@@ -157,7 +166,8 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   const settings = { ...DEFAULT_SETTINGS };
   for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
     const value = parsed.settings?.[key];
-    if (typeof value === typeof DEFAULT_SETTINGS[key]) settings[key] = value as never;
+    const ok = validSetting(key, value);
+    if (ok !== undefined) settings[key] = ok as never;
   }
   const server: ServerConfig = {};
   if (validPort(parsed.server?.port)) server.port = parsed.server.port;
@@ -347,8 +357,8 @@ export class Prefs {
   async updateSettings(patch: Record<string, unknown>): Promise<Settings> {
     await this.mutate((data) => {
       for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
-        const value = patch[key];
-        if (typeof value === typeof DEFAULT_SETTINGS[key]) data.settings[key] = value as never;
+        const ok = validSetting(key, patch[key]);
+        if (ok !== undefined) data.settings[key] = ok as never;
       }
     });
     return this.settings;
