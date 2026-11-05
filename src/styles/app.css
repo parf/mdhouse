@@ -1662,6 +1662,8 @@ kbd {
 /* Adding under a heading: ✎ ↓ ⇊ after the # link, shown with it on hover. */
 .md .heading-actions { opacity: 0; margin-left: 0.3em; font-size: 13px; font-weight: 400; vertical-align: middle; white-space: nowrap; }
 .md :is(h1, h2, h3, h4, h5, h6):hover .heading-actions, .md .heading-actions:focus-within { opacity: 1; }
+.md .header-anchor:focus-visible { opacity: 1; }
+.md.qa-rw .tgt:focus-visible { opacity: 0.55; }
 .md .heading-act {
   display: inline-block; min-width: 1.7em; margin-left: 0.25em; padding: 0 0.35em; line-height: 1.5;
   font: inherit; text-align: center; text-decoration: none; cursor: pointer;
@@ -1672,6 +1674,16 @@ kbd {
 .md .heading-act:hover, .md .heading-act:focus-visible {
   background: color-mix(in srgb, var(--accent) 15%, var(--bg)); border-color: var(--accent);
   outline: 2px solid var(--accent); outline-offset: 1px; transform: scale(1.12);
+}
+/* Touch: no hover to reveal controls — # ✎ ↓ ⇊ 🎯 💬 stay visible, with finger-sized targets. */
+@media (hover: none), (pointer: coarse) {
+  .md .header-anchor, .md .heading-actions { opacity: 1; }
+  .md .heading-actions { white-space: normal; }
+  .md .heading-act { min-width: 2.8em; min-height: 2.8em; margin: 2px 0 2px 0.3em; padding: 0.55em 0.5em; line-height: 1; box-sizing: border-box; }
+  .md .header-anchor { display: inline-block; min-width: 1.6em; padding: 0.4em 0.3em; text-align: center; }
+  .md.qa-rw .tgt { opacity: 0.55; min-width: 36px; min-height: 36px; right: 0; top: 0; font-size: 16px; }
+  .md.qa-rw .c-btn { visibility: visible; min-height: 36px; min-width: 36px; font-size: 14px; }
+  .md.qa-rw .c-done { min-height: 36px; }
 }
 /* The editor: a neutral block, since it is not yet any kind. */
 .md .add-editor {
