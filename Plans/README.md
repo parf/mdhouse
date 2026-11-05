@@ -64,6 +64,11 @@ over it (through a symlink to its target, the mode kept). Its callers are `POST 
 under a heading). mdhouse's own config (`prefs.json`, the
 control socket) lives outside every tree.
 
+Reference roots (`kind: 'reference'`, `Registry.addReference`, `_…` IDs) are never writable or removable
+and do not count as projects for `defaultRoot`/`single`. `Registry.writeFile()` also refuses their files
+through overlapping project roots or symlinks. Git commit/reset/pull preserve the same read-only floor.
+Installed auto-mount and reference-specific UI remain R3 work.
+
 ### A Q&A change touches its item, or nothing
 
 - `src/lib/qa.ts` — the item model of the markup (`.claude/skills/markup.md`): `qaItems` on markdown-it's

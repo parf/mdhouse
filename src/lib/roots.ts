@@ -10,16 +10,25 @@ import { chmod, realpath, rename, stat, unlink, writeFile } from 'node:fs/promis
 import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
 import { fileUrl, RESERVED } from './urls';
 
+/**
+ * `project`: a directory the user added. `reference`: mdhouse's own reference material — never
+ * writable, never removed, and never counted as the user's project (`defaultRoot`, `single`).
+ */
+export type RootKind = 'project' | 'reference';
+
 export interface Root {
   /** Short slug used in URLs. Never contains a slash. */
   id: string;
+  /** Absent means `project`. */
+  readonly kind?: RootKind;
   /** Display name — the directory's basename, deduplicated if needed. */
   name: string;
   /** Absolute, symlink-resolved path. */
   path: string;
   /**
    * false => every write through writeFile() throws. True when `--rw` was passed for it, or it
-   * sits under an auto-rw path with that setting on — worked out each time it is read.
+   * sits under an auto-rw path with that setting on — worked out each time it is read. Always
+   * false for a reference root and for a root inside one.
    */
   readonly writable: boolean;
   /** `--rw` was passed for it. */
@@ -112,7 +121,7 @@ export class Registry {
    */
   setWritable(id: string, on: boolean): boolean {
     const root = this.byId.get(id);
-    if (!root) return false;
+    if (!root || root.kind === 'reference') return false;
     root.rwAsked = on;
     return true;
   }
@@ -130,6 +139,7 @@ export class Registry {
   async add(spec: string, writable = false): Promise<Root> {
     const abs = await realpath(resolvePath(spec));
     const existing = this.list().find((r) => r.path === abs);
+    if (existing?.kind === 'reference') throw new Error(`${abs} is mdhouse's reference material — it cannot be added as a project`);
     if (existing) return existing;
 
     const name = abs.split(sep).filter(Boolean).pop() ?? abs;
@@ -142,17 +152,44 @@ export class Registry {
       id,
       name,
       path: abs,
+      kind: 'project',
       rwAsked: writable,
       get writable() {
-        return !!this.rwAsked || registry.autoRw(this.path);
+        return (!!this.rwAsked || registry.autoRw(this.path)) && !registry.inReference(this.path);
       },
     };
     this.byId.set(id, root);
     return root;
   }
 
-  /** Stop serving a root. Its id becomes free; paths under it no longer resolve. */
+  /**
+   * Serve mdhouse's reference material: read-only for good, irremovable. Its id starts with `_`,
+   * which no project slug does, so project ids never shift. Throws for a directory already
+   * served, or an id that is taken, reserved or not `_[a-z0-9-]+`.
+   */
+  async addReference(spec: string, id = '_mdhouse'): Promise<Root> {
+    const abs = await realpath(resolvePath(spec));
+    if (!/^_[a-z0-9][a-z0-9-]*$/.test(id) || RESERVED.has(id)) throw new Error(`not a reference root id: ${id}`);
+    if (this.byId.has(id)) throw new Error(`root id already in use: ${id}`);
+    if (this.list().some((r) => r.path === abs)) throw new Error(`${abs} is already served`);
+    const root: Root = { id, name: abs.split(sep).filter(Boolean).pop() ?? abs, path: abs, kind: 'reference', writable: false };
+    this.byId.set(id, root);
+    return root;
+  }
+
+  /** Is `abs` (symlink-resolved) a reference root or inside one? */
+  inReference(abs: string): boolean {
+    return this.list().some((r) => r.kind === 'reference' && isUnder(r.path, abs));
+  }
+
+  /** May this location be written: its root is writable and it is not reference material. */
+  writableAt(loc: Resolved): boolean {
+    return loc.root.writable && !this.inReference(loc.abs);
+  }
+
+  /** Stop serving a project root. Its id becomes free; paths under it no longer resolve. */
   remove(id: string): boolean {
+    if (this.byId.get(id)?.kind === 'reference') return false;
     return this.byId.delete(id);
   }
 
@@ -164,13 +201,19 @@ export class Registry {
     return this.byId.get(id);
   }
 
-  get single(): boolean {
-    return this.byId.size === 1;
+  /** The roots the user added — every root but reference ones. */
+  projects(): Root[] {
+    return this.list().filter((r) => r.kind !== 'reference');
   }
 
-  /** The root a bare, unprefixed path belongs to. */
+  /** One project root served. */
+  get single(): boolean {
+    return this.projects().length === 1;
+  }
+
+  /** The root a bare, unprefixed path belongs to: the first project root. */
   defaultRoot(): Root {
-    return this.list()[0]!;
+    return this.projects()[0]!;
   }
 
   /** Build the wire path for a file inside a root. */
@@ -244,7 +287,7 @@ export class Registry {
   async writeFile(p: string, data: string | Uint8Array): Promise<Resolved> {
     const loc = await this.resolve(p);
     if (!loc) throw new Error(`path outside any root: ${p}`);
-    if (!loc.root.writable) throw new ReadOnlyError(loc.abs);
+    if (!this.writableAt(loc)) throw new ReadOnlyError(loc.abs);
     // Whole or not at all: a temp file beside the document, renamed over it — a write cut short
     // (disk full, a crash) leaves the document as it was. Through a symlink to its target; the
     // file keeps its mode.

@@ -9,6 +9,7 @@
 ### Fixed
 
 - Copying from a rendered document leaves out mdhouse's own controls — heading `#`, `✎ ↓ ⇊`, Q&A buttons; glyphs written in the Markdown still copy
+- Discard changes (`git reset` of one file) reached a file inside a read-only folder through a writable folder around it — now refused, as commit already was
 
 ## 2.3.3 — 2026-11-02
 

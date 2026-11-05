@@ -257,3 +257,139 @@ describe('writeFile (A3)', () => {
     }
   });
 });
+
+describe('a reference root (MW.0f.1)', () => {
+  const setup = async () => {
+    const { mkdtemp, mkdir, writeFile, symlink } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-ref-'));
+    const proj = join(base, 'proj');
+    const ref = join(proj, 'ref');
+    const other = join(base, 'other');
+    await mkdir(ref, { recursive: true });
+    await mkdir(other);
+    await writeFile(join(ref, 'a.md'), 'ref\n');
+    await writeFile(join(proj, 'p.md'), 'proj\n');
+    await writeFile(join(other, 'o.md'), 'other\n');
+    await symlink(join(ref, 'a.md'), join(proj, 'alias.md'));
+    await symlink(ref, join(base, 'ref-link'));
+    return { base, proj, ref, other, join };
+  };
+  const cleanup = async (base: string) => (await import('node:fs/promises')).rm(base, { recursive: true, force: true });
+
+  test('is never writable: not by rwAsked, auto-rw, setWritable or a direct write', async () => {
+    const { base, ref, join } = await setup();
+    try {
+      const registry = await Registry.create([join(base, 'other')]);
+      registry.autoRw = () => true;
+      const root = await registry.addReference(ref);
+      expect(root.kind).toBe('reference');
+      expect(root.writable).toBe(false);
+      expect(registry.setWritable(root.id, true)).toBe(false);
+      (root as { rwAsked?: boolean }).rwAsked = true;
+      expect(root.writable).toBe(false);
+      await expect(registry.writeFile(`${root.id}/a.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
+      await expect(registry.writeFile(`${root.id}/new.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
+      expect(await Bun.file(join(ref, 'a.md')).text()).toBe('ref\n');
+    } finally {
+      await cleanup(base);
+    }
+  });
+
+  test('cannot be registered again as a project root, also through a symlink alias', async () => {
+    const { base, ref, other, join } = await setup();
+    try {
+      const registry = await Registry.create([other]);
+      await registry.addReference(ref);
+      await expect(registry.add(ref, true)).rejects.toThrow(/reference/);
+      await expect(registry.add(join(base, 'ref-link'), true)).rejects.toThrow(/reference/);
+      await expect(registry.addReference(ref)).rejects.toThrow();
+      // and a served project root cannot be turned into a reference
+      await expect(registry.addReference(other)).rejects.toThrow();
+      expect(registry.list().filter((r) => r.kind === 'reference')).toHaveLength(1);
+    } finally {
+      await cleanup(base);
+    }
+  });
+
+  test('cannot be removed', async () => {
+    const { base, ref, other } = await setup();
+    try {
+      const registry = await Registry.create([other]);
+      const root = await registry.addReference(ref);
+      expect(registry.remove(root.id)).toBe(false);
+      expect(registry.get(root.id)).toBe(root);
+      expect(await registry.resolve(`${root.id}/a.md`)).not.toBeNull();
+    } finally {
+      await cleanup(base);
+    }
+  });
+
+  test('an overlapping project root cannot write into it — directly or through a symlink', async () => {
+    const { base, proj, ref, join } = await setup();
+    try {
+      const registry = await Registry.create([{ path: proj, writable: true }]);
+      const p = registry.list()[0]!;
+      await registry.addReference(ref);
+      await expect(registry.writeFile(`${p.id}/ref/a.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
+      await expect(registry.writeFile(`${p.id}/ref/new.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
+      await expect(registry.writeFile(`${p.id}/alias.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
+      expect(await Bun.file(join(ref, 'a.md')).text()).toBe('ref\n');
+      // the rest of the project stays writable
+      await registry.writeFile(`${p.id}/p.md`, 'changed\n');
+      expect(await Bun.file(join(proj, 'p.md')).text()).toBe('changed\n');
+    } finally {
+      await cleanup(base);
+    }
+  });
+
+  test('a project root inside it is read-only, whatever was asked', async () => {
+    const { base, ref, other, join } = await setup();
+    try {
+      const { mkdir, writeFile } = await import('node:fs/promises');
+      await mkdir(join(ref, 'sub'));
+      await writeFile(join(ref, 'sub', 's.md'), 's\n');
+      const registry = await Registry.create([other]);
+      registry.autoRw = () => true;
+      await registry.addReference(ref);
+      const sub = await registry.add(join(ref, 'sub'), true);
+      expect(sub.kind ?? 'project').toBe('project');
+      expect(sub.writable).toBe(false);
+      await expect(registry.writeFile(`${sub.id}/s.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
+    } finally {
+      await cleanup(base);
+    }
+  });
+
+  test('leaves project ids, the default root and single-root mode as they were', async () => {
+    const { base, ref, other, proj } = await setup();
+    try {
+      const registry = await Registry.create([other]);
+      const root = await registry.addReference(ref);
+      expect(root.id).toBe('_mdhouse');
+      expect(registry.defaultRoot().id).toBe('other');
+      expect(registry.single).toBe(true);
+      // a project directory named like the reference keeps its own slug
+      const later = await registry.add(proj);
+      expect(later.id).toBe('proj');
+      expect(registry.defaultRoot().id).toBe('other');
+      expect(registry.single).toBe(false);
+    } finally {
+      await cleanup(base);
+    }
+  });
+
+  test('takes only an id no project slug or server route can be', async () => {
+    const { base, ref, other } = await setup();
+    try {
+      const registry = await Registry.create([other]);
+      for (const id of ['other', 'ref', 'api', '_bun', '_', '_A', '_a/b']) {
+        await expect(registry.addReference(ref, id)).rejects.toThrow();
+      }
+      expect((await registry.addReference(ref, '_docs')).id).toBe('_docs');
+    } finally {
+      await cleanup(base);
+    }
+  });
+});

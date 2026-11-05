@@ -363,6 +363,9 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
     expect(await readFile(join(repo, 'a.md'), 'utf8')).toBe('a changed\n');
     expect((await post(`${roId}/b.md`)).status).toBe(403);
     expect(await readFile(join(ro, 'b.md'), 'utf8')).toBe('b changed\n');
+    // the same file through the writable root around it: refused too
+    expect((await post(`${rwId}/ro/b.md`)).status).toBe(409);
+    expect(await readFile(join(ro, 'b.md'), 'utf8')).toBe('b changed\n');
     expect((await post(`${rwId}/new.md`)).status).toBe(409);
     expect((await post(`${rwId}/nope.md`)).status).toBe(404);
     // not a document: never reset (A7)
@@ -1140,4 +1143,88 @@ test('/api/doc on a folder named without its slash gives the folder page\'s addr
     control?.stop();
     await rm(base, { recursive: true, force: true });
   }
+});
+
+describe('a reference root on a running server (MW.0f.1)', () => {
+  test('refuses every document and Git write, removal and promotion; overlapping project writes too', async () => {
+    const { mkdtemp, rm, writeFile, readFile, mkdir } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { run } = await import('../src/lib/gitpage');
+    const { lineHash } = await import('../src/lib/qa');
+    const { askDaemon, askRemove } = await import('../src/lib/control');
+
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-refsrv-'));
+    const repo = join(base, 'repo');
+    const ref = join(repo, 'ref');
+    await mkdir(ref, { recursive: true });
+    const doc = '# R\n\n- [ ] task\n\n## H\n\nbody\n';
+    await writeFile(join(ref, 'a.md'), doc);
+    await writeFile(join(repo, 'p.md'), 'p\n');
+    const git = ['-c', 'user.name=t', '-c', 'user.email=t@t'];
+    await run(repo, ['init', '-q']);
+    await run(repo, [...git, 'add', '.']);
+    await run(repo, [...git, 'commit', '-qm', 'first']);
+    const changed = `${doc}local change\n`;
+    await writeFile(join(ref, 'a.md'), changed);
+
+    const port = 61784;
+    const prefs = await Prefs.load(join(base, 'prefs.json'));
+    await prefs.setAutoRw([base]);
+    const registry = await Registry.create([{ path: repo, writable: true }]);
+    const reference = await registry.addReference(ref);
+    const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1' });
+    const projId = registry.defaultRoot().id;
+    const url = (path: string) => `http://127.0.0.1:${port}${path}`;
+    const post = (path: string, body: unknown) =>
+      fetch(url(path), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const unchanged = async () => expect(await readFile(join(ref, 'a.md'), 'utf8')).toBe(changed);
+    try {
+      // what the page is told
+      const roots = (await (await fetch(url('/api/roots'))).json()) as { roots: Array<{ id: string; kind: string; writable: boolean }>; single: boolean };
+      expect(roots.single).toBe(true);
+      expect(roots.roots.find((r) => r.id === reference.id)).toMatchObject({ kind: 'reference', writable: false });
+      expect(roots.roots.find((r) => r.id === projId)).toMatchObject({ kind: 'project', writable: true });
+
+      for (const p of [`${reference.id}/a.md`, `${projId}/ref/a.md`]) {
+        expect((await post('/api/task', { p, line: 3, hash: lineHash('- [ ] task') })).status).toBe(403);
+        expect((await post('/api/insert', { p, line: 5, hash: lineHash('## H'), where: 'end', kind: 'text', text: 'added' })).status).toBe(403);
+        expect((await post('/api/qa', { p, line: 3, hash: lineHash('- [ ] task'), op: 'say', text: 'x' })).status).toBe(403);
+        await unchanged();
+      }
+      // Git: a reset or commit through the overlapping project root is refused; so is a pull
+      const shown = ((await (await fetch(url(`/api/git/diff?p=${projId}/ref/a.md`))).json()) as { hash?: string }).hash;
+      expect((await post('/api/git/reset', { p: `${projId}/ref/a.md`, hash: shown })).status).toBe(409);
+      await unchanged();
+      expect((await post('/api/git/reset', { p: `${reference.id}/a.md`, hash: shown })).status).toBe(403);
+      await unchanged();
+      expect((await post('/api/git/commit-file', { p: `${projId}/ref/a.md`, message: 'm' })).status).toBe(409);
+      expect((await post('/api/git/commit', { p: projId, message: 'm', files: ['ref/a.md'] })).status).toBe(409);
+      expect((await post('/api/git/pull', { p: projId })).status).toBe(409);
+      expect((await run(repo, ['status', '--porcelain'])).out).toContain('ref/a.md');
+
+      // removal and promotion — the page, and the control socket a second `mdhouse` uses
+      expect((await post('/api/roots/remove', { id: reference.id })).status).toBe(403);
+      expect('error' in ((await askRemove(port, { dirs: [ref] })) ?? {})).toBe(true);
+      expect('error' in ((await askDaemon(port, { dirs: [ref], rw: true, save: true })) ?? {})).toBe(true);
+      expect(registry.get(reference.id)?.writable).toBe(false);
+      expect(prefs.savedDirs()).not.toContain(ref);
+      // auto-rw switched off and on again changes nothing
+      expect((await post('/api/settings', { autoRw: false })).status).toBe(200);
+      expect((await post('/api/settings', { autoRw: true })).status).toBe(200);
+      expect(registry.get(reference.id)?.writable).toBe(false);
+      // removing the last project root still keeps it: a reference does not count as one
+      const removed = (await (await post('/api/roots/remove', { id: projId })).json()) as { results: Array<{ kept?: boolean }> };
+      expect(removed.results[0]?.kept).toBe(true);
+      expect(registry.defaultRoot().id).toBe(projId);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
+    }
+  });
 });

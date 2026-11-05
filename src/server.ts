@@ -10,7 +10,7 @@ import index from './index.html';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
-import { Registry, ReadOnlyError, type Root } from './lib/roots';
+import { Registry, ReadOnlyError, type Resolved, type Root } from './lib/roots';
 import { dirUrl } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
@@ -202,6 +202,9 @@ export async function serve(opts: ServeOptions) {
     if (!at.root.writable) return { error: fail(403, `${at.root.name} is read-only`) };
     return at;
   };
+  /** The refusal for a document write to a location `registry.writableAt` refuses. */
+  const readOnly = (loc: Resolved, what: string): Response =>
+    fail(403, registry.inReference(loc.abs) ? `${loc.rel} is mdhouse reference material — read-only` : `${loc.root.name} is read-only — start it with --rw to ${what}`);
   /** A path is the folder or inside it. */
   const within = (path: string, dir: string): boolean => path === dir || path.startsWith(`${dir}/`);
   /** A read-only root that shares files with the repo — a write to the repo may land in it. */
@@ -383,6 +386,7 @@ export async function serve(opts: ServeOptions) {
             id: r.id,
             name: r.name,
             path: r.path,
+            kind: r.kind ?? 'project',
             writable: r.writable,
             saved: prefs.isSaved(r.path),
           })),
@@ -408,7 +412,7 @@ export async function serve(opts: ServeOptions) {
           }
           const loc = await docAt(body.p);
           if (!loc) return fail(404, 'not a document');
-          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to tick boxes`);
+          if (!registry.writableAt(loc)) return readOnly(loc, 'tick boxes');
 
           const result = await queueWrite(loc.abs, async () => {
             const result = toggleTask(await readDoc(loc.abs), body.line!, body.hash!);
@@ -455,7 +459,7 @@ export async function serve(opts: ServeOptions) {
           if ('text' in body && (body.text?.length ?? 0) > 100_000) return fail(413, 'the text is too long');
           const loc = await docAt(body.p);
           if (!loc) return fail(404, 'not a document');
-          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to answer`);
+          if (!registry.writableAt(loc)) return readOnly(loc, 'answer');
 
           const me = await signer(loc);
           const result = await queueWrite(loc.abs, async () => {
@@ -502,7 +506,7 @@ export async function serve(opts: ServeOptions) {
           if (body.text.length > 100_000) return fail(413, 'the text is too long');
           const loc = await docAt(body.p);
           if (!loc) return fail(404, 'not a document');
-          if (!loc.root.writable) return fail(403, `${loc.root.name} is read-only — start it with --rw to add to it`);
+          if (!registry.writableAt(loc)) return readOnly(loc, 'add to it');
 
           // Who signs a "my quote": the git identity of the file's repository, else the login.
           let who = '';
@@ -638,6 +642,7 @@ export async function serve(opts: ServeOptions) {
           const body = (await req.json().catch(() => null)) as { id?: string } | null;
           const root = body?.id ? registry.get(body.id) : undefined;
           if (!root) return fail(404, 'unknown root');
+          if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be removed`);
           return json(await removeRoots([root.path]));
         },
       },
@@ -776,6 +781,9 @@ export async function serve(opts: ServeOptions) {
           if (!loc) return fail(404, 'not a document');
           const { repo } = at;
           const rel = repoRel(repo, loc.abs);
+          if (!within(loc.abs, at.root.path) || registry.list().some((r) => !r.writable && within(loc.abs, r.path))) {
+            return fail(409, `${rel} is outside ${at.root.name} or in a read-only folder — reset it in a terminal`);
+          }
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
           return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
             if ((await run(repo, ['ls-files', '--error-unmatch', '--', literal(rel)])).code !== 0) return fail(409, 'git has never seen this file');
@@ -1131,20 +1139,23 @@ export async function serve(opts: ServeOptions) {
    * Forget directories and stop serving them — `mdhouse --rm`, or the settings page.
    *
    * A directory may have been deleted since it was saved, so a path that no longer resolves is
-   * matched as written. The last root is never removed: with none, every request would have
-   * nothing to answer from. It is unsaved, kept until exit, and the reply says so.
+   * matched as written. The last project root is never removed: with none, every request would
+   * have nothing to answer from. It is unsaved, kept until exit, and the reply says so. Throws,
+   * removing nothing, when a directory named is a reference root.
    */
   const removeRoots = async (dirs: string[]): Promise<RemoveReply> => {
     const results: RemoveReply['results'] = [];
-    for (const dir of dirs) {
-      const abs = await realpath(resolvePath(dir)).catch(() => resolvePath(dir));
+    const paths = await Promise.all(dirs.map((dir) => realpath(resolvePath(dir)).catch(() => resolvePath(dir))));
+    const reference = registry.list().find((r) => r.kind === 'reference' && paths.includes(r.path));
+    if (reference) throw new Error(`${reference.path} is mdhouse reference material — it cannot be removed`);
+    for (const abs of paths) {
       const unsaved = await prefs.removeSaved(abs);
       const root = registry.list().find((r) => r.path === abs);
       if (!root) {
         results.push({ path: abs, unsaved, removed: false });
         continue;
       }
-      if (registry.list().length === 1) {
+      if (registry.projects().length === 1) {
         results.push({ path: abs, unsaved, removed: false, kept: true });
         continue;
       }
