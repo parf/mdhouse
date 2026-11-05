@@ -1679,11 +1679,16 @@ kbd {
 @media (hover: none), (pointer: coarse) {
   .md .header-anchor, .md .heading-actions { opacity: 1; }
   .md .heading-actions { white-space: normal; }
-  .md .heading-act { min-width: 2.8em; min-height: 2.8em; margin: 2px 0 2px 0.3em; padding: 0.55em 0.5em; line-height: 1; box-sizing: border-box; }
-  .md .header-anchor { display: inline-block; min-width: 1.6em; padding: 0.4em 0.3em; text-align: center; }
-  .md.qa-rw .tgt { opacity: 0.55; min-width: 36px; min-height: 36px; right: 0; top: 0; font-size: 16px; }
-  .md.qa-rw .c-btn { visibility: visible; min-height: 36px; min-width: 36px; font-size: 14px; }
-  .md.qa-rw .c-done { min-height: 36px; }
+  .md .heading-act { min-width: 44px; min-height: 44px; margin: 2px 0 2px 0.3em; padding: 0 0.5em; line-height: 40px; box-sizing: border-box; }
+  .md .header-anchor { display: inline-block; min-width: 44px; min-height: 44px; line-height: 44px; text-align: center; vertical-align: middle; }
+  .md.qa-rw .tgt { opacity: 0.55; min-width: 44px; min-height: 44px; right: 0; top: 0; font-size: 18px; }
+  .md.qa-rw .c-btn { visibility: visible; min-height: 44px; min-width: 44px; font-size: 16px; }
+  .md.qa-rw :is(.c-done, .s-act button) { min-height: 44px; }
+  .md.qa-rw :is(.head, summary):has(> .tgt) { padding-right: 44px; }
+}
+/* A tap leaves :hover on: the data-tip bubble would stick and run off the screen. */
+@media (hover: none) {
+  .md.qa-rw [data-tip]:hover::after, .qa-strip [data-tip]:hover::after, .qa-edit [data-tip]:hover::after { display: none; }
 }
 /* The editor: a neutral block, since it is not yet any kind. */
 .md .add-editor {

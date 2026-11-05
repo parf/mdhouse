@@ -8,7 +8,7 @@
 
 ### Fixed
 
-- On touch screens the heading `#` `✎ ↓ ⇊` and the Q&A 🎯 `💬` controls are always visible and finger-sized, no hover needed
+- On touch screens the heading `#` `✎ ↓ ⇊` and the Q&A 🎯 `💬` controls are always visible and at least 44 px, no hover needed; the hover tooltips are off there
 - Copying from a rendered document leaves out mdhouse's own controls — heading `#`, `✎ ↓ ⇊`, Q&A buttons; glyphs written in the Markdown still copy
 - Discard changes (`git reset` of one file) reached a file inside a read-only folder through a writable folder around it — now refused, as commit already was
 
