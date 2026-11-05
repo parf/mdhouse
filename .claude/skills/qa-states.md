@@ -41,6 +41,11 @@ Append; never edit or delete a turn, never touch the user's words. The agent's *
 `💬👾 → …`, `` 💬👾 `<sha>` — … ``, `💬👾 🎫<ID> → …` — are not turns: they never
 reopen an item and never count as its last word.
 
+After resolution: shortest important rule → `DECISIONS.md`; full original question/thread →
+`resolved.md`. Other solved questions go only to `resolved.md`. Preserve IDs and verbatim history;
+leave anchored `№ID` links at the old location. Decisions contain only the rule and necessary
+conditions; no discussion, repetition or useless prose. Unresolved questions stay in place.
+
 ## 🎯 Selected
 
 `🎯` first in an item (before its stage and severity: `- 🎯 🔴 …`) selects it for the next run. **When

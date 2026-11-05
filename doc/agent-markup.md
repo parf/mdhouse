@@ -135,9 +135,12 @@ The first glyph is the stage; the severity stays after it:
 
 ### Where
 
-- Settled where it was asked (`TODO.md`, `QUESTIONS.md`): the question becomes the decision —
-  `- ⁉️ Q3 …` → `- ✅ Q3 …` (or `📌`), the same item, its thread stays. May still change.
-- Final: moved to `DECISIONS.md`, the same ID; the old place keeps `[№Q3](DECISIONS.md#Q3)`.
+- Important decision → `DECISIONS.md`: same ID, shortest possible rule; necessary conditions only.
+- Resolved question/thread → `resolved.md`: preserve wording, answers, options and history verbatim.
+- Old location → anchored `[№Q3](DECISIONS.md#Q3)` or `[№Q3](resolved.md#Q3)` pointer.
+- Unresolved questions stay; never delete the questions file.
+- `DECISIONS.md`: minimal terms/forms; no discussion, repetition, obsolete investigation or useless prose.
+  Link to `resolved.md` for history.
 
 ### Decision
 
@@ -151,7 +154,7 @@ The first glyph is the stage; the severity stays after it:
 
 - Every rejected alternative is a `- 🚫 <alternative> — <why>` line under it — never in the prose
   ("Alternative X was rejected" → `- 🚫 X — <why>`).
-- Follow a decision in all work; never change it — reply under it.
+- Follow decisions; proposals/questions go in `QUESTIONS.md`, linked to the decision.
 
 ## 🎯 Selected
 

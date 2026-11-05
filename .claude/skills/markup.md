@@ -119,7 +119,8 @@ A decision that matters — a rule much other work keeps following. A usual deci
 
 - `- 🚫 …` under it — a rejected alternative, muted
 - an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
-- a question settled in place that matters: `- ❓ Q3 …` → `- 📌 Q3 …` — its options and thread stay; final in `DECISIONS.md`
+- important resolved rule → `DECISIONS.md`, same ID, shortest form; full question/options/thread → `resolved.md`
+- old location keeps an anchored `№ID` link; decisions contain no discussion or useless prose
 - never folded, never waiting on anyone; 💬 under it — a reply
 
 ## 3. Suggestions — pick one, or several

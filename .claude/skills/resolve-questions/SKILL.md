@@ -24,18 +24,14 @@ that the problem exists and needs doing.
 
 ## Carry over
 
-**Look first**: an entry for this question already in DECISIONS.md (`— from <file>` and the question's
-words) or TODO.md → rewrite it in place (the answer changed); never a second entry for one question.
+**Look first**: reuse the existing ID/entry; never duplicate a question or decision.
 
-- **DECISIONS.md** — under the section matching the topic, else a new `## <topic> — 📅date` at the end:
-
-  ```markdown
-  - **<subject, from the question>: <the decision>.** — from <file>
-    > <the user's words, verbatim — a long or multi-paragraph answer quoted here>
-  ```
-
-  The decision: for a `✓ agree`, the `💡` text (+ the user's note); for a pick, the option's text; for a
-  `no` with an alternative, `Not <X> — <Y>`; else the user's answer in brief.
+- **DECISIONS.md** — important rules only: `- 📌 <ID> <shortest decision>`; necessary conditions below.
+  Use minimal terms/forms. No discussion, repetition, obsolete investigation or useless prose.
+  For agree: accepted proposal + note; for a pick: chosen option; otherwise the final answer in brief.
+- **resolved.md** — full original solved question, answers, options and history, verbatim; same ID.
+  Other solved questions need no DECISIONS entry. Link important decisions to their archived history.
+- **Old location** — anchored linked `№ID` pointer to the decision or archive; keep the questions file.
 - **TODO.md** — each action the answer implies, at the end: `- [ ] <action>`; an action the new answer
   cancels: rewrite or remove the line that came from this question.
-- Check each one landed, then `✅`.
+- Check every answer/action landed, then close/archive; unresolved questions remain open.
