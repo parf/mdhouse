@@ -156,3 +156,19 @@
   marker advances only after all document writes and routed outputs for that run succeed. A missing
   or unreachable commit after rewritten history requires an explicit new baseline rather than a
   silent full-project scan or skipped range.
+
+## Instance administration
+
+- 📌 ADMIN-W1 Instance administration is distinct from project Reader/Editor and trusted-network
+  admission. A project RW grant, localhost/CIDR, first visitor or author cookie grants no admin power.
+  The existing OS-owner-protected CLI/control socket may bootstrap a revocable browser admin session
+  without GitHub/account onboarding, preserving local Personal optional login. Remote administrator
+  designation is explicit. CEO confirmed this contract on 2026-11-05 (`mdhouse-r3-start/kickoff-confirmed`).
+
+  Mint browser bootstrap proof only through OS-controlled CLI/unix control, never through public HTTP.
+  Use a short-lived, single-use random proof held in server memory, deliver it as a URL fragment and
+  remove it before project content renders. Exchange behind trusted-host/admission/same-origin checks
+  for a revocable HttpOnly host-only session with expiry and appropriate HTTPS/SameSite flags. No token
+  in config/project files, logs, query strings or audit records. Service startup prints no secret;
+  explicit owner CLI and browser opening provide the recovery/setup path. Exact transport and session
+  enforcement require independent security review and negative tests before integration.

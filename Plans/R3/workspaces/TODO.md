@@ -32,6 +32,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
 - [ ] MW.0g Establish authenticated instance administration and authorization seams
   - Builds: common request actor and explicit instance-administrator capability, distinct from project Reader/Editor and trusted-source admission
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
+  - Contract: [ADMIN-W1](DECISIONS.md#instance-administration); short-lived single-use OS-control proof, fragment cleanup, revocable HttpOnly session, no secret in journal/history/query/config
   - Acceptance: trusted localhost/CIDR or project RW alone never grants administrator; existing OS-protected CLI/control remains an explicit administration path
   - Acceptance: local Personal administration uses OS-owner-protected CLI/control bootstrap into a browser session without GitHub/account onboarding; remote admin designation remains explicit
   - Acceptance: bootstrap/recovery never trusts first visitor, localhost/CIDR or arbitrary Basic/GitHub login; single-use proof/session expiry/revocation and secret handling are tested
