@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- R3 and later distributions use the PolyForm Strict License 1.0.0, copyright Sergey Porfiriev; earlier releases retain their distributed licenses
+
 ### Fixed
 
 - Copying from a rendered document leaves out mdhouse's own controls — heading `#`, `✎ ↓ ⇊`, Q&A buttons; glyphs written in the Markdown still copy

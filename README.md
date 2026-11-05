@@ -208,4 +208,4 @@ bunx tsc --noEmit
 
 What changed in each release: [`CHANGELOG.md`](CHANGELOG.md)
 
-Licensed under the **GNU General Public License v2** — see [`LICENSE`](LICENSE)
+Licensed under the **PolyForm Strict License 1.0.0** — see [`LICENSE.md`](LICENSE.md). Copyright Sergey Porfiriev.
