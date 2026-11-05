@@ -1,8 +1,10 @@
 # RAG — requirements and open questions
 
-For the owner implementing the Agent Bus RAG agent. mdhouse integration: R3f / MW.2a.
+<!-- AB: #cx/mdhouse-ceo -->
+
+For the owner implementing the Agent Bus RAG agent. mdhouse integration: [№R3f](TODO.md#R3f) / [№MW.2a](workspaces/TODO.md#MW.2a).
 Scope: [release](README.md#r3f-rag-through-the-agent-bus-rag-agent),
-[implementation](workspaces/TODO.md), [original question](workspaces/QUESTIONS.md#Q-R3-RAG1).
+[implementation](workspaces/TODO.md), [№Q-R3-RAG1](workspaces/QUESTIONS.md#Q-R3-RAG1).
 API names below describe capabilities, not agreed method names. Questions remain open until answered.
 
 ## Owner direction
@@ -32,20 +34,41 @@ Local `docs/agents/rag.md` and `src/agents/rag/agent.json` in `/usr/local/src/ai
 
 ## R3 integration requirements
 
-| ID | Capability | Required result |
-| --- | --- | --- |
-| RAG-R1 | Instance routing and isolation | Resolve project → endpoint + RAG agent + namespace; reject cross-project access without silent fallback |
-| RAG-R2 | Source registry | Add/list/inspect/select/remove allowed sources using stable source IDs and safe display metadata |
-| RAG-R3 | Ingestion and indexing | Start ingestion, embedding/indexing and refresh/reindex; return stable job IDs for long operations |
-| RAG-R4 | Observable jobs | Expose state, stage, progress, timestamps, failures and recoverable partial results |
-| RAG-R5 | Freshness | Expose source revision/content hash, index generation and last successful refresh; distinguish stale/partial/ready |
-| RAG-R6 | Retrieval | Query explicitly selected sources; support semantic retrieval and identify effective search mode/version |
-| RAG-R7 | Evidence | Return citations/provenance sufficient to preserve inspectable references in Markdown and flow history |
-| RAG-R8 | Authorization | Check provider grants separately from mdhouse grants; distinguish read/query from source/index mutations |
-| RAG-R9 | Recovery | Define replay/idempotency, timeout/unknown/incomplete outcomes and safe retry without duplicate work/spend |
-| RAG-R10 | Live updates | Deliver job/source changes without browser/server polling; support reconnect and state reconciliation |
-| RAG-R11 | Secrets and paths | Keep credentials server-side; no source connector, path or URL may bypass its own explicit grant |
-| RAG-R12 | Common request contract | Manual requests, retrieval tests and scheduled flows use the same source selection and evidence contract |
+- [ ] RAG-R1 Instance routing and isolation
+  Resolve project → endpoint + RAG agent + namespace; reject cross-project access without silent fallback {#RAG-R1}
+
+- [ ] RAG-R2 Source registry
+  Add/list/inspect/select/remove allowed sources using stable source IDs and safe display metadata {#RAG-R2}
+
+- [ ] RAG-R3 Ingestion and indexing
+  Start ingestion, embedding/indexing and refresh/reindex; return stable job IDs for long operations {#RAG-R3}
+
+- [ ] RAG-R4 Observable jobs
+  Expose state, stage, progress, timestamps, failures and recoverable partial results {#RAG-R4}
+
+- [ ] RAG-R5 Freshness
+  Expose source revision/content hash, index generation and last successful refresh; distinguish stale/partial/ready {#RAG-R5}
+
+- [ ] RAG-R6 Retrieval
+  Query explicitly selected sources; support semantic retrieval and identify effective search mode/version {#RAG-R6}
+
+- [ ] RAG-R7 Evidence
+  Return citations/provenance sufficient to preserve inspectable references in Markdown and flow history {#RAG-R7}
+
+- [ ] RAG-R8 Authorization
+  Check provider grants separately from mdhouse grants; distinguish read/query from source/index mutations {#RAG-R8}
+
+- [ ] RAG-R9 Recovery
+  Define replay/idempotency, timeout/unknown/incomplete outcomes and safe retry without duplicate work/spend {#RAG-R9}
+
+- [ ] RAG-R10 Live updates
+  Deliver job/source changes without browser/server polling; support reconnect and state reconciliation {#RAG-R10}
+
+- [ ] RAG-R11 Secrets and paths
+  Keep credentials server-side; no source connector, path or URL may bypass its own explicit grant {#RAG-R11}
+
+- [ ] RAG-R12 Common request contract
+  Manual requests, retrieval tests and scheduled flows use the same source selection and evidence contract {#RAG-R12}
 
 ## Questions for the provider
 
@@ -122,15 +145,15 @@ Local `docs/agents/rag.md` and `src/agents/rag/agent.json` in `/usr/local/src/ai
 
 ## Requested handoff and acceptance
 
-- [ ] Versioned typed schemas and examples for every supported capability, including errors and limits.
-- [ ] Instance provisioning/grant runbook and a safe fixture; no secrets in docs or example responses.
-- [ ] Two instances: project1 callers cannot reach project2 data by changing namespace/source/job IDs.
-- [ ] Add source → ingest/index → progress/completion → inspect freshness → retrieve cited result.
-- [ ] Change source → refresh/reindex → retrieve the intended generation; test deletion and stale citations.
-- [ ] Exercise unavailable/denied source, revoked access, cancellation, crash/reconnect and partial provider failure.
-- [ ] Replay one request ID without duplicate work; resolve unknown outcome before any repeat paid call.
-- [ ] Manual request and scheduled-flow fixtures preserve the same source IDs, versions and provenance.
-- [ ] Document supported retrieval modes; missing required capability leaves MW.2a/R3f acceptance open.
+- [ ] RAG-A1 Versioned typed schemas and examples for every supported capability, including errors and limits. {#RAG-A1}
+- [ ] RAG-A2 Instance provisioning/grant runbook and a safe fixture; no secrets in docs or example responses. {#RAG-A2}
+- [ ] RAG-A3 Two instances: project1 callers cannot reach project2 data by changing namespace/source/job IDs. {#RAG-A3}
+- [ ] RAG-A4 Add source → ingest/index → progress/completion → inspect freshness → retrieve cited result. {#RAG-A4}
+- [ ] RAG-A5 Change source → refresh/reindex → retrieve the intended generation; test deletion and stale citations. {#RAG-A5}
+- [ ] RAG-A6 Exercise unavailable/denied source, revoked access, cancellation, crash/reconnect and partial provider failure. {#RAG-A6}
+- [ ] RAG-A7 Replay one request ID without duplicate work; resolve unknown outcome before any repeat paid call. {#RAG-A7}
+- [ ] RAG-A8 Manual request and scheduled-flow fixtures preserve the same source IDs, versions and provenance. {#RAG-A8}
+- [ ] RAG-A9 Document supported retrieval modes; missing required capability leaves [№MW.2a](workspaces/TODO.md#MW.2a)/[№R3f](TODO.md#R3f) acceptance open. {#RAG-A9}
 
 Nice to have, subject to provider support: cost preview/usage, cancellation, hybrid search/reranking,
 generation retention controls and richer file/URL/service connectors. These are questions and wishes,
