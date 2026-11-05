@@ -94,13 +94,17 @@
   >
   > 💬👾 → [`DECISIONS.md`](DECISIONS.md#Q-W5)
 
-- ❓ Q-W6 How should a personal mdhouse become a Team workspace?
+- 📌 Q-W6 How should a personal mdhouse become a Team workspace?
   > 💬👾 Team is a deployment profile, not another editing mode. It should assemble the existing network
   > and access controls with per-browser author identity, while Workspace/Viewer remains a separate
   > choice. Personal use must stay zero-config and local by default.
   >
-  > 💡👾 Add one Team setup flow in Settings and CLI: choose listen address, require authentication,
-  > create/invite users, and ask each browser for its author name on first use.
+  > ✅ 💡👾 Support four access profiles in Settings, onboarding and CLI: Personal Workspace, Open
+  > Viewer, Private Viewer and Team Workspace. Team setup selects Team Workspace, configures GitHub
+  > login, adds usernames and grants projects. Trusted localhost/CIDRs are an explicit visible
+  > modifier, not a hidden bypass.
+  >
+  > 💬👾 → [`DECISIONS.md`](DECISIONS.md#PROFILE-W1)
 
 - 📌 Q-W7 Which browser should an Agent Bus `open` command navigate in a Team workspace?
   > 💬👾 Returning the canonical URL is always safe, but the main goal needs a visible browser to open it.
@@ -117,3 +121,17 @@
   >
   > 💬👾 → [`DECISIONS.md`](DECISIONS.md#CTRL-W1): no pairing and no broadcast; the command names
   > the destination IDs explicitly.
+
+- 📌 Q-W8 How should Reader → Editor login work?
+  > 💬👾 Read access can remain open while writes require an Editor actor. Viewer always stays Reader.
+  > Workspace may grant Editor through login, and may optionally trust localhost or configured
+  > intranet CIDRs without login. Root RW is necessary but not sufficient: every write route must
+  > also authorize the actor.
+  >
+  > ✅ 💡👾 Use GitHub OAuth for normal Team web login. Add users by GitHub username, but bind their
+  > account and grants to the immutable GitHub user ID. The callback creates a secure revocable
+  > mdhouse session; current GitHub username identifies authored work. Localhost/configured CIDRs may
+  > remain an explicitly trusted alternative. Local username/password and HTTP Basic remain secondary
+  > Advanced compatibility/recovery mechanisms, not the normal Add user or Team login path.
+  >
+  > 💬👾 → [`DECISIONS.md`](DECISIONS.md#USER-W1), [`USER-W4`](DECISIONS.md#USER-W4)

@@ -7,5 +7,6 @@ automation platform layered on mdhouse and Agent Bus, not part of the first work
 - Expand the Markdown document/routing flow library and shared marketplace after the built-in set ships.
 - Trigger flows from email and webhooks; manual and scheduled runs are part of the core flow model.
 - Give scripts controlled database access.
-- Connect RAG sources.
+- Add native/advanced RAG ingestion and source administration after R3's thin integration for
+  connecting existing Agent Bus RAG sources.
 - Keep an audit trail: who started a flow, what it read, what it changed and what it published.

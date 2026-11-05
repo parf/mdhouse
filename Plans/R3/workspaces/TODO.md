@@ -1,5 +1,7 @@
 # TODO — MDHOUSE Workspaces
 
+R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
+
 ## W0 — Workspace by default
 
 - ⏳ MW.0 Change the next release from viewer-by-default to workspace-by-default
@@ -17,19 +19,73 @@
   - Why: one mdhouse instance is opened to a team; today every browser signs replies with the same server-wide `prefs.settings.me`
   - Builds: a user-name control in the web UI; a persistent per-browser cookie; the cookie identity passed through every signed Q&A and document-edit action
   - Acceptance: two browsers using the same mdhouse instance can set different names and their signed replies carry different `👤<name>` badges
-  - Acceptance: the cookie overrides the shared prefs/git/login identity; clearing it restores that legacy fallback
+  - Acceptance: an authenticated Team user is attributed by current GitHub username; the cookie is a fallback for personal/trusted-anonymous use and cannot override authenticated identity
   - Acceptance: the cookie is attribution only and grants no access or write permission; its value is normalized and length-limited before it reaches Markdown
   - Acceptance: cookie scope, lifetime and behavior behind HTTP/HTTPS are documented and covered by server-route tests
   - Home: [Next release](README.md#next-release)
 
 - ⏳ MW.0b Add an explicit Team workspace setup
-  - Builds: Personal as the zero-config default; a Team setup flow combining network exposure, authentication and per-browser author identity
+  - Builds: Personal as the zero-config default; a Team setup flow combining network exposure, GitHub OAuth configuration, known users and per-browser fallback identity
   - Depends: MW.0a, [№Q-W6](QUESTIONS.md#Q-W6)
   - Acceptance: a personal install still starts locally without onboarding or account setup
   - Acceptance: the owner can configure a shared instance without assembling unrelated host, access and identity options by hand
-  - Acceptance: every teammate authenticates, chooses their own author name and can be distinguished in Markdown replies
+  - Acceptance: every teammate authenticates with GitHub and is distinguished by GitHub username in Markdown replies; trusted anonymous browsers use the fallback author control
+  - Acceptance: Team onboarding configures GitHub login and known usernames; it does not ask the owner to create local passwords for normal users
   - Acceptance: Team setup does not imply RW or Viewer; access profile and editing mode remain independent and visible
   - Acceptance: concurrent edits keep the existing stale-write refusal and never overwrite another teammate's newer change
+  - Home: [Next release](README.md#next-release)
+
+- ⏳ MW.0c Add Reader and Editor access levels
+  - Builds: public/unauthenticated Reader where enabled; GitHub-authenticated Editor; optional no-login Editor access for localhost or configured CIDRs; login/logout UI and visible current role
+  - Depends: MW.0, MW.0a, MW.0b, [№Q-W8](QUESTIONS.md#Q-W8)
+  - Acceptance: Viewer always authorizes Reader only, regardless of login, CIDR or stored root mode
+  - Acceptance: Workspace read routes remain available to Reader according to the existing network/host policy; document write and git mutation routes require Editor
+  - Acceptance: effective write requires Workspace mode + root RW + user project grant RW + actor Editor; every server mutation checks all four and stale/direct requests cannot bypass them
+  - Acceptance: Settings can optionally grant Editor without login to loopback and explicit intranet CIDRs; unmatched addresses remain Reader until login
+  - Acceptance: trusted edit CIDRs reuse strict CIDR parsing and never trust forwarding headers unless a separately configured trusted proxy supplies them
+  - Acceptance: GitHub OAuth validates callback state and immutable provider identity server-side; session cookies are Secure on HTTPS, HttpOnly, SameSite and revocable
+  - Acceptance: Reader UI removes edit/Q&A/task/git mutation actions and shows a Login to edit action; successful login upgrades the live page without losing location or drafts
+  - Acceptance: the author-name cookie remains attribution only and cannot grant Editor; authentication and displayed author are tested independently
+  - Acceptance: route tests cover Reader, login Editor, trusted-CIDR Editor, RO root, Viewer override, logout/revocation, CSRF and multiple users
+  - Home: [Next release](README.md#next-release)
+
+- ⏳ MW.0d Add user management and per-project grants
+  - Builds: Settings UI, matching CLI and protected APIs to add users by GitHub username, edit status/grants, disable and remove them; GitHub OAuth login; instance `ACCESS`; per-canonical-root `RO` / `RW` grants; known-users-only admission; optional trusted localhost/CIDRs
+  - Depends: MW.0b, MW.0c, [№Q-W8](QUESTIONS.md#Q-W8)
+  - Acceptance: normal Add user has one required field, GitHub username; an authorized owner can inspect its resolved GitHub identity, edit status/grants, disable or remove the user and inspect effective access
+  - Acceptance: adding a user from one project's access UI gives that project an RW grant by default; adding from global user management creates ACCESS and leaves project grants to the project-grant control
+  - Acceptance: grants and audit identity use provider + immutable GitHub user ID; the current username can refresh after rename without losing/transferring access
+  - Acceptance: web and CLI operate on the same user/grant model and never expose OAuth client secrets, access tokens or session secrets
+  - Acceptance: local username/password accounts remain available only as an explicit Advanced compatibility/recovery path and are never silently created by Add user or Team setup
+  - Acceptance: local and GitHub identities cannot collide or inherit one another's grants when their visible usernames match
+  - Acceptance: adding a project grant defaults to `RW`; the owner can choose/change `RO`, change it back to `RW` or remove the grant
+  - Acceptance: a user without a project grant does not see that project in roots, search, recents or Agent Bus inventory and cannot read it by direct URL/API
+  - Acceptance: `RO` permits reads but refuses every document, Git, flow and configuration mutation; `RW` still requires Workspace mode, root RW and an Editor session
+  - Acceptance: Viewer and root RO cap an `RW` user grant at effective RO; a user grant can never promote an immutable reference root or escape the path jail
+  - Acceptance: the instance can require known users for access, with an explicit option to also admit localhost and configured CIDRs; all other addresses must authenticate as a known user
+  - Acceptance: trusted-source admission has an explicit project policy and never inherits the server owner/admin project grants implicitly
+  - Acceptance: forwarded addresses are ignored unless supplied by a separately configured trusted proxy; CIDRs use the existing strict parser
+  - Acceptance: disabling/removing a user revokes active sessions; changing/removing a grant updates open tabs and blocks direct/stale requests immediately
+  - Acceptance: removing a user or grant never rewrites/deletes their earlier Markdown attribution or audit records
+  - Acceptance: user names and project names are display metadata; grants are keyed by stable user ID and canonical root identity
+  - Acceptance: tests cover OAuth state/callback failure, unknown GitHub user, username rename, multiple users, duplicate display names, session revocation, every grant transition, trusted/untrusted sources, Viewer, root RO and project removal
+  - Home: [Next release](README.md#next-release)
+
+- ⏳ MW.0e Add the four supported access profiles
+  - Builds: first-class persisted `personal`, `open-viewer`, `private-viewer` and `team` profiles in onboarding, Settings and CLI; one shared enforcement model beneath them
+  - Depends: MW.0, MW.0b, MW.0c, MW.0d, [№Q-W6](QUESTIONS.md#Q-W6)
+  - Acceptance: **Personal Workspace** is single-owner with optional login and uses root RW by default while preserving explicit root RO and immutable references
+  - Acceptance: localhost Personal Workspace is zero-config/no-login; remote Personal Workspace supports owner GitHub login or an explicit trusted CIDR/VPN/proxy boundary
+  - Acceptance: binding Personal Workspace beyond loopback requires an explicit admission choice and never silently publishes RW access
+  - Acceptance: **Open Viewer** admits anyone allowed by host/network policy, makes every root effectively RO and refuses every mutation regardless of stale UI or direct request
+  - Acceptance: **Private Viewer** admits approved GitHub users only; only granted projects are visible and every grant is effectively RO
+  - Acceptance: **Team Workspace** admits approved GitHub users only and enforces their per-project RO/RW grants
+  - Acceptance: Private Viewer and Team Workspace may enable a separately visible trusted-localhost/CIDR modifier with an explicit project policy; forwarding headers remain untrusted without trusted-proxy configuration
+  - Acceptance: profile labels and summaries always show who can enter and whether writes are possible; Reader/Editor terminology remains actor capability, not a competing profile name
+  - Acceptance: switching profile previews affected roots/users, asks for confirmation and applies live to open tabs and server routes
+  - Acceptance: Viewer profiles preserve configured root modes and user grants while capping effective access at RO; returning to a Workspace profile restores them only after the switch preview/confirmation
+  - Acceptance: prefs migration chooses the profile that preserves existing effective access; it never silently expands admission or write permission
+  - Acceptance: route/UI tests cover all four profiles, every mutation family, stale sessions/tabs, loopback, configured CIDRs, disallowed addresses and profile transitions
   - Home: [Next release](README.md#next-release)
 
 ## W1 — Install and connect
@@ -75,6 +131,17 @@
   - Acceptance: an unavailable document-named or explicitly selected agent is shown as unavailable, never silently replaced with a lower-priority default
   - Acceptance: tests cover every precedence level separately from endpoint precedence
   - Home: [Workspace](README.md#workspace)
+
+- ⏳ MW.2a Connect existing Agent Bus RAG sources
+  - Why: Agent Bus already provides RAG; mdhouse should integrate it instead of building another ingestion/indexing stack
+  - Builds: list allowed Agent Bus RAG sources; per-space/project source defaults; request/flow source selection; citations/provenance in generated Markdown
+  - Depends: MW.2 and verification of the Agent Bus source-list/request contract
+  - Acceptance: mdhouse sends stable source IDs rather than source credentials or copied backend configuration
+  - Acceptance: unavailable or unauthorized sources are visible and fail explicitly without silently running against a different source
+  - Acceptance: user project grants and Agent Bus source authorization are checked independently; a RAG selection grants no mdhouse filesystem access
+  - Acceptance: manual requests and scheduled flows use the same selection contract and record the effective sources in run history/output
+  - Non-goal: native mdhouse ingestion, embeddings, indexing, retrieval or RAG source administration
+  - Home: [Agent Bus control](README.md#agent-bus-control)
 
 ## W2 — Existing projects
 
@@ -174,6 +241,27 @@
   - Acceptance: prefs migration, Settings API, rendering and keyboard-open behavior are covered by tests; README and platform setup docs show `edit` and `mdedit` examples
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
+- ⏳ MW.5b Keep mdhouse controls out of copied document text
+  - Why: selecting a rendered heading currently copies injected controls such as `#`, `✎`, `↓` and `⇊` together with the authored title
+  - Builds: one copy-exclusion contract for mdhouse-injected heading links, edit/add actions, badges and other document controls
+  - Acceptance: normal selection and Copy produce the authored document text without mdhouse UI chrome
+  - Acceptance: a `#`, `✎`, `↓`, `⇊` or badge-like glyph that actually exists in the source Markdown is still copied
+  - Acceptance: keyboard and context-menu Copy behave the same in supported Chrome, Edge and Safari; Firefox has a safe documented fallback
+  - Acceptance: controls remain visible, focusable, accessible and clickable; copy exclusion does not remove their accessible names
+  - Acceptance: rendering/UI tests cover a heading, Q&A item, multi-block selection and source-authored control glyphs
+  - Home: [Full Markdown editor](README.md#full-markdown-editor)
+
+- ⏳ MW.5c Make the primary workspace journey usable on iPad and phone
+  - Why: Personal Workspace may run remotely so one owner can develop from a tablet or phone without an AI CLI or separate Markdown editor
+  - Builds: responsive and touch-usable project/document navigation, Agent Bus work, Q&A, flows, full Markdown editing, diff/review and commit actions
+  - Acceptance: no critical action depends only on hover, right-click, a hardware keyboard or a desktop-width panel
+  - Acceptance: touch targets, focus behavior, virtual-keyboard layout, draft preservation and panel transitions work in supported mobile Safari and Chrome
+  - Acceptance: the owner can open a remote Personal Workspace, authenticate when configured, ask an agent, edit/save Markdown, inspect the diff and commit from an iPad
+  - Acceptance: a phone can perform the same primary journey with an intentionally compact layout; large diffs/documents may use progressive disclosure without removing actions
+  - Acceptance: desktop shortcuts remain enhancements and every shortcut-only action gains a visible touch control
+  - Acceptance: responsive UI tests and a documented manual device matrix cover iPad landscape/portrait and representative phone widths
+  - Home: [Full Markdown editor](README.md#full-markdown-editor)
+
 ## W5 — Agent Bus control
 
 - ⏳ MW.7 Let Agent Bus control a mdhouse workspace
@@ -195,5 +283,9 @@
 ## Gate
 
 - ⏳ MW.6 Review the complete workspace flow
-  - Depends: MW.0a, MW.0b, MW.1, MW.1a, MW.2, MW.3, MW.3a, MW.3b, MW.3c, MW.3d, MW.3e, MW.3f, MW.3g, MW.4, MW.5, MW.5a, MW.7
+  - Depends: MW.0a, MW.0b, MW.0c, MW.0d, MW.0e, MW.1, MW.1a, MW.2, MW.2a, MW.3, MW.3a, MW.3b, MW.3c, MW.3d, MW.3e, MW.3f, MW.3g, MW.4, MW.5, MW.5a, MW.5b, MW.5c, MW.7
   - Acceptance: a fresh install creates a project, connects an agent, runs a project flow, edits a document, reviews the diff and deploys without leaving mdhouse for coordination
+  - Acceptance: an owner adds only a GitHub username, the user authenticates through GitHub, receives the project as RW by default, changes to RO, then is removed; UI, active sessions and direct APIs enforce every transition immediately
+  - Acceptance: an Agent Bus request and a scheduled flow can use an allowed existing RAG source and record source identity/citations without exposing credentials
+  - Acceptance: Personal Workspace, Open Viewer, Private Viewer and Team Workspace each pass their full admission/read/write matrix, including trusted-network variants and profile switching
+  - Acceptance: the remote Personal Workspace journey passes on iPad and a representative phone viewport without requiring a hardware keyboard, AI CLI or external editor

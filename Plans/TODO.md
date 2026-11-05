@@ -7,4 +7,7 @@ What is done is in [`DONE.md`](DONE.md); user-facing history in
 
 ## Active projects
 
-- [MDHOUSE Workspaces](mdhouse-workspaces/README.md) — personal-first/team-ready workspace, Viewer mode, AI installation, project flows and a full Markdown editor
+- [R3 — Paradigm Shift](R3/README.md) ([TODO](R3/TODO.md)) — the next release: mdhouse changes from a Markdown viewer/tool
+  into a project, collaboration and agent-workflow environment
+  - [Workspaces](R3/workspaces/README.md) — personal/team access, directories, installation,
+    project flows, full Markdown editing and Agent Bus control

@@ -1,10 +1,12 @@
-# MDHOUSE Workspaces
+# Workspaces — R3 program
 
 MDHOUSE becomes the local workspace where a person and AI agents install, review, change and
 ship projects together. The first layers are installation and project flows; teams and general
 automation build on them later.
 
-Active work: [`TODO.md`](TODO.md). Decisions: [`DECISIONS.md`](DECISIONS.md). Open choices:
+Release umbrella: [`Release 3 — Paradigm Shift`](../README.md).
+
+Active work: [`TODO.md`](TODO.md). Decisions: [`DECISIONS.md`](DECISIONS.md). Question history:
 [`QUESTIONS.md`](QUESTIONS.md). After-project automation: [`FUTURE.md`](FUTURE.md).
 
 ## Next release
@@ -15,16 +17,47 @@ and agents, reviewed and shipped. It stays a zero-config personal workspace by d
 a shared team workspace when configured. Viewer remains a configured mode for publishing or
 browsing Markdown without edits.
 
+Four supported access profiles make the usual deployments explicit:
+
+| Profile | Config | Admission | Effective access |
+| --- | --- | --- | --- |
+| **Personal Workspace** | `personal` | One owner; login optional | RW by default |
+| **Open Viewer** | `open-viewer` | Anyone admitted by host/network policy | RO for all |
+| **Private Viewer** | `private-viewer` | Approved GitHub users | RO for granted projects |
+| **Team Workspace** | `team` | Approved GitHub users | Per-project RO/RW grants |
+
+Personal Workspace is single-owner, not localhost-only: localhost is zero-config/no-login, while a
+remote personal deployment may use the owner's GitHub login or an explicitly trusted CIDR/VPN/proxy
+boundary. This supports working from an iPad or phone without exposing RW access accidentally.
+
+Private Viewer and Team Workspace may add an explicit trusted-localhost/CIDR modifier. The UI names
+that state, for example **Team Workspace + trusted network**, and trusted requests receive their own
+project policy. Personal Workspace requires an explicit admission choice beyond loopback. Open
+Viewer is unauthenticated but still bounded by host/CIDR admission.
+
 These are independent choices:
 
 - **Workspace / Viewer** — whether the served roots are edited or viewed read-only.
 - **Personal / Team** — whether one person uses the instance locally or authenticated teammates
   connect with their own browser identity.
+- **Reader / Editor** — what this browser may do: everyone else can remain a Reader while login or
+  an explicitly trusted network grants Editor access.
 
 Viewer is a hard read-only presentation: every root is effectively RO and document write controls
 are absent. It preserves configured per-root modes for a later return to Workspace.
 
-The product term is **Markdown workspace**. The Team setup remains open in
+In Workspace mode, read access may stay open while edit access requires login. Optionally localhost
+or configured intranet CIDRs may receive Editor access without login; requests from everywhere else
+remain Reader until authenticated. Effective write access requires both an RW root and Editor access.
+For a known user it also requires that user's RW grant for the project.
+
+Normal Team login is GitHub OAuth. Add user asks only for a GitHub username; mdhouse binds grants to
+the immutable GitHub user ID and displays the current username. Adding from a project's access panel
+grants that project RW by default; RO and removal are explicit alternatives. Local username/password
+accounts are secondary Advanced compatibility/recovery configuration. An instance may require known
+users, optionally also admitting explicitly trusted localhost/CIDRs.
+
+The product term is **Markdown workspace**. The four profiles are settled in
 [`Q-W6`](QUESTIONS.md#Q-W6).
 
 ## Workspace
@@ -38,6 +71,9 @@ The product term is **Markdown workspace**. The Team setup remains open in
   wins over space and instance defaults. In Settings every directory has an `[AB]` button beside
   its `[RW]` / `[RO]` access badge; its per-space value appears next to the button only when set. Emptying it deletes the
   override while the button remains.
+- Existing Agent Bus RAG sources are available to document requests and flows. A space may select
+  defaults, generated Markdown records effective source IDs and citations/provenance, and Agent Bus
+  remains responsible for ingestion, indexing, retrieval and credentials.
 - Every explicitly added root is RW by default and `--ro` opts out in Workspace; Viewer forces every
   root effectively RO. There is no protected-path list: adding a root is the user's grant. A symlink must never
   grant access outside that root; the existing realpath jail and `Registry.writeFile()` remain the
@@ -233,6 +269,15 @@ The editor keeps the current safety contract:
 External-editor links keep `edit:` as their default scheme, but the scheme is configurable. For
 example, `mdedit:` may be registered to open Markdown in Typora without replacing the user's common
 `edit:` handler. Settings shows the scheme next to Edit link only while that link is enabled.
+
+Copying from the rendered document produces document content, not mdhouse chrome. Injected heading
+links and actions such as `#`, `✎`, `↓` and `⇊`, plus other injected controls, stay visible and
+accessible but are excluded from selection/clipboard text. The same glyphs remain copyable when they
+were authored in the Markdown itself.
+
+The primary project → agent → document → edit → review/commit journey is responsive and touch-usable
+on iPad and phone browsers. Critical actions have visible controls and do not depend on hover, a
+right-click or a hardware keyboard; desktop shortcuts remain optional accelerators.
 
 ## Agent Bus control
 

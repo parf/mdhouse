@@ -20,7 +20,50 @@
   Stored per-root choices are preserved, but grant no write access until Workspace is enabled again;
   existing roots keep their configured access during upgrade.
 
+- 📌 PROFILE-W1 R3 supports four named access profiles: **Personal Workspace** (`personal`) — one
+  owner, optional login, RW by default; **Open Viewer** (`open-viewer`) — anyone admitted by host/network policy,
+  hard RO; **Private Viewer** (`private-viewer`) — approved GitHub users, hard RO; and **Team
+  Workspace** (`team`) — approved GitHub users with per-project RO/RW grants.
+
+  Profiles are first-class presets over the same admission, Workspace/Viewer and grant enforcement.
+  Trusted localhost/CIDRs are an explicit visible modifier for Private Viewer and Team Workspace,
+  with their own project policy. Switching profile previews and confirms effective-access changes;
+  Viewer preserves stored root/user grants while capping them at RO.
+
+  Personal Workspace is not limited to localhost. Local no-login is its zero-config default; a
+  remote single-owner deployment may use GitHub login or an explicit trusted CIDR/VPN/proxy boundary.
+  Any bind beyond loopback requires an explicit admission choice and must not silently expose RW.
+
 ## Access model
+
+- 📌 USER-W1 Team instances manage known users in mdhouse: an authorized owner may add them by GitHub
+  username, edit status/grants, disable and remove them. The normal Add user UI has one required
+  field: GitHub username. Normal Team login uses GitHub OAuth.
+  mdhouse resolves and stores the immutable GitHub user ID as identity; the username is refreshed
+  display/routing metadata, so a rename neither loses nor transfers grants. Instance `ACCESS` permits
+  sign-in; content access is granted separately per canonical project/root as `RO` or `RW`. A newly
+  added project grant defaults to `RW`, and no project grant means no project visibility or
+  direct-route access.
+
+  Local username/password accounts are secondary compatibility/recovery identities under Advanced,
+  not part of normal Add user or Team onboarding. Provider identity keeps a local account distinct
+  from a GitHub account with the same visible name.
+
+- 📌 USER-W2 Effective permission is the intersection of every applicable boundary. Write requires
+  Workspace mode, root RW, user project grant RW and an Editor session. Viewer, root RO or user RO
+  reduces the result to RO. User/grant changes apply immediately and cannot promote the immutable
+  reference root or grant access outside the root jail.
+
+- 📌 USER-W3 An instance may require known users for access and may optionally admit requests from
+  localhost or configured CIDRs as a trusted alternative. Trusted-source access has an explicit
+  project policy, never inherits an administrator's grants, and never trusts forwarding headers
+  without a separately configured trusted proxy.
+
+- 📌 USER-W4 A successful GitHub OAuth callback creates mdhouse's secure revocable web session.
+  Authenticated Markdown attribution uses the current GitHub username while audit/grant identity uses
+  provider + immutable GitHub ID. A per-browser author cookie is only a fallback for personal or
+  explicitly trusted anonymous use and cannot override authenticated identity. OAuth secrets and
+  tokens remain server-side.
 
 - 📌 Q-W1 An explicitly added root is RW by default.
   `mdhouse add <dir>` means the user intends mdhouse to work in that directory. `--ro` opts one
