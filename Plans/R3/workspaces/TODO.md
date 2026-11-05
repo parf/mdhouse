@@ -17,14 +17,16 @@ Independent Copy, license and flow-package authoring may proceed before default 
 
 ## W0 — Workspace by default
 
-- [ ] MW.L Ship the approved R3 license and package metadata
+- [x] MW.L Ship the approved R3 license and package metadata
   - Builds: official PolyForm Strict License 1.0.0 in `LICENSE.md`, copyright Sergey Porfiriev; consistent README/package metadata and Unreleased notice
   - Acceptance: `SEE LICENSE IN LICENSE.md`; actual packed tarball contains canonical license text/copyright and no stale current GPL metadata or LICENSE link
   - Acceptance: regression check inspects packed contents; no version/tag rewrites or third-party notice changes
+  - Verified: integrated `e9c1b77`; actual tarball/full 317 tests/tsc pass at `80c17e65017c5a4febf14502c1ac52348aea2e62`
 
 - [ ] MW.0f Make the installed reference root immutable
   - Builds: immutable reference root kind, canonical registration and installed reference auto-mount with plan/markup/syntax/shareable skills
-  - Slice MW.0f.1: root-kind/addReference primitive and all write/remove/promotion guards, no auto-mount or default flip
+  - [x] MW.0f.1 Root-kind/addReference primitive, write/remove/promotion and Agent Bus dispatch guards; no auto-mount/default flip
+    - Verified: integrated `be776cf` + `6bd2300`; independent PASS and 317 tests/tsc at `80c17e65017c5a4febf14502c1ac52348aea2e62`
   - Acceptance: reference or overlapping paths cannot dispatch an Agent Bus action/note that delegates mutation; validate before external send
   - Slice MW.0f.2: package content, installed auto-mount and UI identity; preserve project root IDs/default selection
   - Acceptance: CLI/control, prefs/autoRw, web and direct writes cannot promote/remove or mutate reference files; symlink/overlapping-root and Git mutations preserve the boundary

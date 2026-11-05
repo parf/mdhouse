@@ -29,5 +29,18 @@ use simulations or separately authorized destinations. A test gate does not auth
 
 ## Evidence
 
-No implementation verification recorded yet. Repository baseline focused roots/access tests: CEO reports
+Integrated `80c17e65017c5a4febf14502c1ac52348aea2e62`: CTO full 317/317 + tsc; independent
+Review PASS with focused70/70, full317/317 and tsc. Covers immutable root primitive/direct/overlap/Git/
+control/AB-dispatch guards, actual packed license/metadata, Copy and touch CSS. Installed reference
+mount, full profiles and complete journey remain open.
+
+Copy: CTO scratch Chrome390px light/dark, real Ctrl+C text+HTML preserves source glyphs/excludes chrome;
+focus/click opens add form. `.scratch/r3-cto-qa/{light,dark}.png`. Safari/Firefox/context-menu/real-device
+checks remain open.
+
+Touch: W2 touch-emulated390×844/768×1024/1024×768 light/dark, tap add/target/reply/done, 44px controls,
+no horizontal overflow or target/text overlap; CTO inspected light/dark390px evidence. Artifacts
+`.scratch/r3-cto-qa/touch/`. Virtual keyboard, long-press Copy, real devices and full journey still open.
+
+Repository baseline focused roots/access tests: CEO reports
 34 passed at `c1fb27f35cbd82270c754e4dfc6a562d36e0924d`; this is not R3 acceptance.

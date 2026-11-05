@@ -19,9 +19,9 @@ All implementation uses isolated worktrees; CTO integrates serially. Plans remai
 | R3-A2 | W2 | done (analysis only) | main at base | Copy and mobile premise evidence; browser check pending | same evidence route |
 | R3-A3 | W3 | done (analysis only) | main at base | actual npm pack license mismatch and missing flow family confirmed | same evidence route |
 | R3-A4 | Review | done (advisory only) | base revision, read-only | independent foundation sequencing advisory; no future-code approval | B1–B3/S1–S3 incorporated; exact-target verdicts still required |
-| MW.0f.1 | W1 | ready; review follow-up | `.scratch/worktrees/r3-reference` / `r3/reference-foundation` | roots/server/control types and focused tests; immutable root kind, explicit reference registration, promotion/removal/direct write denial, project identity preserved; no auto-mount/default flip | no implementation dependencies; preserve Git overlap denial; independent exact-SHA review + focused/all tests/tsc |
+| MW.0f.1 | W1 | done (primitive slice) | `.scratch/worktrees/r3-reference` / `r3/reference-foundation` | roots/server/control types and focused tests; immutable root kind, explicit reference registration, promotion/removal/direct write denial, project identity preserved; no auto-mount/default flip | no implementation dependencies; preserve Git overlap denial; independent exact-SHA review + focused/all tests/tsc |
 | MW.5b | W2 | integrated; partial acceptance | `.scratch/worktrees/r3-copy` / `r3/copy-controls` | document chrome Copy exclusion in styles/Doc if needed; preserve source glyphs, focus/accessibility; no access defaults | independent; scratch light/dark/narrow selection/clipboard and controls checks; unavailable Safari/Firefox checks stay open |
-| MW.L | W3 | integrated; checks pending | `.scratch/worktrees/r3-license` / `r3/license` | LICENSE → LICENSE.md, package.json, README, CHANGELOG, package-content test; official approved text/copyright, actual tarball regression | independent; no version/dependency changes; focused pack test/all tests/tsc, CTO review |
+| MW.L | W3 | done | `.scratch/worktrees/r3-license` / `r3/license` | LICENSE → LICENSE.md, package.json, README, CHANGELOG, package-content test; official approved text/copyright, actual tarball regression | independent; no version/dependency changes; focused pack test/all tests/tsc, CTO review |
 
 Worker docs: report needed shared Plans/README and R3 checkpoint updates to CTO. CHANGELOG overlap is
 resolved during integration; preserve other workers' entries. Ready reports include exact base/target,
@@ -35,8 +35,10 @@ by owned roots/test diffs in the assigned worktree (23:22 UTC), following acknow
 
 | Task | Owner | State | Base / checkout / branch | Scope / acceptance |
 | --- | --- | --- | --- | --- |
-| MW.5c.1 | W2 | working (review revision) | `d7b0ef7c193b19d873c53ce6e160c5fb82afd343`; r3-copy / r3/touch-actions | touch/focus visibility and 44px controls; light/dark phone/tablet tap/overflow checks; real devices still open |
+| MW.5c.1 | W2 | done (touch-control slice) | `d7b0ef7c193b19d873c53ce6e160c5fb82afd343`; r3-copy / r3/touch-actions | touch/focus visibility and 44px controls; light/dark phone/tablet tap/overflow checks; real devices still open |
 | MW.3.1 | W3 | working | `4a3472a564106cfd9ad411aad7f6f9cae9766dd3`; `.scratch/worktrees/r3-flows` / r3/flow-packages | approved pure schema/loader, catalog and four Feature/delivery authoring packages/examples, strict graph/asset validation and actual tarball tests; independent architecture/path review required; no executor |
+| MW.0f.2 | W1 | working | `a9b331f6ab411cd590a771db4cc36efe94adb776`; `.scratch/worktrees/r3-reference-install` / r3/reference-install | installed doc auto-mount, conservative duplicate/ref-only handling, read-only UI identity and no agent-send; independent exact-SHA review + actual packed install/browser checks |
+| MW.5a | W2 | working | `80c17e65017c5a4febf14502c1ac52348aea2e62`; `.scratch/worktrees/r3-edit-scheme` / r3/edit-scheme | configurable custom editor scheme, reject browser/executable schemes, atomic config validation, encoded links and Settings UI; independent URI/config review |
 
 ## Next dependency slices
 
@@ -81,10 +83,12 @@ Do not claim the approved full RAG lifecycle is implemented by these record meth
 ## Integration evidence
 
 - Copy: author `08dddd35ba00a6b5eb4c9b63115b2272cd087d05` reviewed by CTO; integrated unchanged as `d7b0ef7c193b19d873c53ce6e160c5fb82afd343`. Suite 307/307 and tsc passed; CTO scratch Chromium 390px light/dark real text+HTML clipboard preserves authored glyphs and removes injected chrome; focus/click opens add form. Artifacts `.scratch/r3-cto-qa/{light,dark}.png`. Safari/Firefox/context-menu/real iOS checks remain open, so MW.5b stays partial.
-- License: author target `625253e90c93ff238d9cccdbad4070cef4966edb` reviewed by CTO; integrated `ecf0e5b` + `e9c1b779de23ce4741e9fd9a0ee896a6a813000e`. CHANGELOG conflict resolved by retaining both Copy and license entries. Actual tarball/full checks on main pending; parent R3a stays open.
-- References: author target `0104385c13257360da184e16f5ecd8e21748ec7d`, Review PASS `aaa49e279395f61f` with reproduced 315 tests/tsc. Integration held for CTO follow-up on `/api/ab/send` reference mutation delegation; material fix needs fresh verdict. No production auto-mount exists yet.
+- License: author target `625253e90c93ff238d9cccdbad4070cef4966edb` reviewed by CTO; integrated `ecf0e5b` + `e9c1b779de23ce4741e9fd9a0ee896a6a813000e`. CHANGELOG conflict resolved by retaining both Copy and license entries. Actual tarball/full checks passed at `80c17e6`; MW.L done, parent R3a stays open.
+- References: author target `0104385c13257360da184e16f5ecd8e21748ec7d` integrated as `be776cf254f3be0bf945f6c164a6f93a832d26ca`; dispatch author `a9b331f6ab411cd590a771db4cc36efe94adb776` integrated as `6bd2300`. Review exact-HEAD PASS `64822a48f88075d7` and CTO full suite 317/317 + tsc at `80c17e65017c5a4febf14502c1ac52348aea2e62`; MW.0f.1 closed, parent MW.0f open for auto-mount/content/UI.
+- Touch controls: author `e4bbcdb` + `0f603c3`, integrated `f434fd5` + `80c17e6`; CTO inspected light/dark 390px screenshots and diff; six touch-emulated dimensions/themes passed tap/overflow checks, with 44px targets and no target/text overlap. Full317/tsc green on integrated HEAD. MW.5c.1 closed; parent mobile journey/device/keyboard gaps remain open. Artifacts `.scratch/r3-cto-qa/touch/`.
 
-All release/parent checkpoints remain open.
+
+All release/parent checkpoints remain open; only named implementation slices and MW.L are closed.
 
 ## Test coordination
 
