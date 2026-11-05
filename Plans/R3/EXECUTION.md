@@ -63,6 +63,14 @@ Use bounded single-use proof and a revocable HttpOnly session; same-origin, expi
 secret handling require exact-target review/tests. Concrete transport is chosen after security advisory.
 Admin bootstrap is independent of ordinary project session authentication. Recovery stays OS-controlled.
 
+## RAG prerequisite — verified 2026-11-05 23:21 UTC
+
+MW.2a provider contract is not confirmed. `#rag@parf.us` help/help-json v0.2.0 advertises record
+upsert/get/list, keyword search/index, delete and prompts; no source/job lifecycle or semantic search.
+The local provider docs explicitly say namespaces are labels, not access locks. No provider writes or
+paid calls ran. [Q-R3-RAG1](workspaces/QUESTIONS.md) is routed to CEO; independent slices continue.
+Do not claim the approved full RAG lifecycle is implemented by these record methods.
+
 ## Integration evidence
 
 No implementation integrated yet. Release checkpoints remain open.

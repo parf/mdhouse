@@ -135,3 +135,17 @@
   > Advanced compatibility/recovery mechanisms, not the normal Add user or Team login path.
   >
   > 💬👾 → [`DECISIONS.md`](DECISIONS.md#USER-W1), [`USER-W4`](DECISIONS.md#USER-W4)
+
+- ❓ Q-R3-RAG1 Which Agent Bus contract supplies the approved R3 source/job lifecycle?
+  > 💬👾 Verified 2026-11-05 through `#rag@parf.us` help/help-json v0.2.0 and local
+  > `/usr/local/src/ai-agent-bus/docs/agents/rag.md`: available methods are `upsert`, `get`,
+  > `list`, keyword/BM25 `search`, `keyword_index`, `delete`, `prompts`. No source registry,
+  > asynchronous job/progress, semantic retrieval or source refresh lifecycle is advertised.
+  > Namespace/table filters are labels, not authorization boundaries; admitted callers can access
+  > all namespaces. No data mutations or paid provider calls were performed in this discovery.
+  >
+  > 💬👾 R3f/MW.2a assumes those capabilities already exist. Options: identify another approved
+  > existing endpoint/version with that contract, coordinate missing Agent Bus capabilities under
+  > separately approved ownership, or explicitly revise the R3 requirement to the available API.
+  > Recommend identifying the intended provider/version first. Do not invent endpoints or silently
+  > reduce release scope. Independent R3 work continues; only dependent MW.2a implementation waits.
