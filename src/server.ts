@@ -612,6 +612,8 @@ export async function serve(opts: ServeOptions) {
           if (body.action === 'note' && !note.trim()) return fail(400, 'a note is empty');
           const loc = await docAt(body.p);
           if (!loc) return fail(404, 'not a document');
+          // An agent acts on the file itself, past every write check here.
+          if (registry.inReference(loc.abs)) return fail(403, `${loc.rel} is mdhouse reference material — not sent to agents`);
           const url = new URL(registry.docUrl(loc.root, loc.rel), req.url).href;
           try {
             const job = await bus.ask([...new Set(targets as string[])], requestText(body.action as AbAction, loc.abs, url, note));

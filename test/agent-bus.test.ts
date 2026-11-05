@@ -225,3 +225,47 @@ describe('agent bus — routes', () => {
     }
   });
 });
+
+describe('agent bus — reference material (MW.0f.1)', () => {
+  test('a document inside a reference root is never sent to an agent — by its own id or through an overlapping project', async () => {
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { mkdir } = await import('node:fs/promises');
+    const d = await fakeDaemon();
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-ref-'));
+    await mkdir(join(dir, 'ref'));
+    await writeFile(join(dir, 'ref', 'r.md'), '# r\n');
+    await writeFile(join(dir, 'a.md'), '# a\n');
+    const prefs = await Prefs.load(join(dir, 'prefs.json'));
+    await prefs.setAgentBus({ enabled: true, socket: d.socket });
+    const registry = await Registry.create([{ path: dir, writable: true }]);
+    const id = registry.defaultRoot().id;
+    const ref = await registry.addReference(join(dir, 'ref'));
+    const port = 61785;
+    const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
+    const post = (p: string, action: string) =>
+      fetch(`http://127.0.0.1:${port}/api/ab/send`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ p, targets: ['#claude/a@h'], action, note: 'edit it' }),
+      });
+    const sends = () => d.calls.filter((c) => c.startsWith('POST /send')).length;
+    try {
+      for (const p of [`${ref.id}/r.md`, `${id}/ref/r.md`]) {
+        for (const action of ['review', 'target', 'resolve', 'updated', 'note']) {
+          expect((await post(p, action)).status).toBe(403);
+        }
+      }
+      expect(sends()).toBe(0);
+      expect((await post(`${id}/a.md`, 'review')).status).toBe(200);
+      expect(sends()).toBe(1);
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await d.stop();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
