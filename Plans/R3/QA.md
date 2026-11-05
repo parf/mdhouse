@@ -30,16 +30,16 @@ use simulations or separately authorized destinations. A test gate does not auth
 ## Evidence
 
 Integrated `80c17e65017c5a4febf14502c1ac52348aea2e62`: CTO full 317/317 + tsc; independent
-Review PASS with focused70/70, full317/317 and tsc. Covers immutable root primitive/direct/overlap/Git/
+Review PASS with focused 70/70, full 317/317 and tsc. Covers immutable root primitive/direct/overlap/Git/
 control/AB-dispatch guards, actual packed license/metadata, Copy and touch CSS. Installed reference
 mount, full profiles and complete journey remain open.
 
-Copy [№MW.5b](workspaces/TODO.md#MW.5b): CTO scratch Chrome390px light/dark, real Ctrl+C text+HTML preserves source glyphs/excludes chrome;
+Copy [№MW.5b](workspaces/TODO.md#MW.5b): CTO scratch Chrome 390 px light/dark, real Ctrl+C text+HTML preserves source glyphs/excludes chrome;
 focus/click opens add form. `.scratch/r3-cto-qa/{light,dark}.png`. Safari/Firefox/context-menu/real-device
 checks remain open.
 
 Touch [№MW.5c.1](workspaces/TODO.md#MW.5c.1): W2 touch-emulated390×844/768×1024/1024×768 light/dark, tap add/target/reply/done, 44px controls,
-no horizontal overflow or target/text overlap; CTO inspected light/dark390px evidence. Artifacts
+no horizontal overflow or target/text overlap; CTO inspected light/dark 390 px evidence. Artifacts
 `.scratch/r3-cto-qa/touch/`. Virtual keyboard, long-press Copy, real devices and full journey still open.
 
 Repository baseline focused roots/access tests: CEO reports
