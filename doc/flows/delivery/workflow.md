@@ -57,7 +57,8 @@ or fabricate proof. Keep output readable without a tracker. Uncommitted files ar
 
 ## Questions
 
-- ❓ `<required unanswered question; dependent work remains blocked>`
+- ❓ Q1 `<required unanswered question>`
+  Dependent work remains blocked.
   > 💬👾 `<context and the evidence needed to answer>`
 
 Preserve every human answer and quoted history. Replace template placeholders only with real evidence.
