@@ -33,7 +33,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Builds: common request actor and explicit instance-administrator capability, distinct from project Reader/Editor and trusted-source admission
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
   - Acceptance: trusted localhost/CIDR or project RW alone never grants administrator; existing OS-protected CLI/control remains an explicit administration path
-  - Acceptance: bootstrap/recovery binds administrator authority through explicit owner configuration, never first visitor or arbitrary Basic/GitHub login; secrets stay server-side
+  - Acceptance: local Personal administration uses OS-owner-protected CLI/control bootstrap into a browser session without GitHub/account onboarding; remote admin designation remains explicit
+  - Acceptance: bootstrap/recovery never trusts first visitor, localhost/CIDR or arbitrary Basic/GitHub login; single-use proof/session expiry/revocation and secret handling are tested
   - Acceptance: classify document/Git/flow/control/config/marks/external-send mutations; direct/stale requests deny missing authority; no new privilege-granting endpoint before checks exist
   - Acceptance: test every mutation family, cross-user/root isolation and denial; dormant foundations retain current RO defaults
 
