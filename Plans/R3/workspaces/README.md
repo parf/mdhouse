@@ -71,9 +71,10 @@ The product term is **Markdown workspace**. The four profiles are settled in
   wins over space and instance defaults. In Settings every directory has an `[AB]` button beside
   its `[RW]` / `[RO]` access badge; its per-space value appears next to the button only when set. Emptying it deletes the
   override while the button remains.
-- Existing Agent Bus RAG sources are available to document requests and flows. A space may select
-  defaults, generated Markdown records effective source IDs and citations/provenance, and Agent Bus
-  remains responsible for ingestion, indexing, retrieval and credentials.
+- Native RAG is delivered through the Agent Bus RAG agent. A space can configure sources, start and
+  monitor ingestion/embedding/index jobs, refresh/reindex, test retrieval and use sources in document
+  requests and flows. Generated Markdown records source IDs and citations/provenance; Agent Bus owns
+  RAG storage, indexes, execution and credentials while mdhouse provides the project UI.
 - Every explicitly added root is RW by default and `--ro` opts out in Workspace; Viewer forces every
   root effectively RO. There is no protected-path list: adding a root is the user's grant. A symlink must never
   grant access outside that root; the existing realpath jail and `Registry.writeFile()` remain the

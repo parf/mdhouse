@@ -71,19 +71,20 @@ R3 keeps four boundaries visible:
 
 | Group | Outcome | Main work |
 | --- | --- | --- |
-| R3.1 — Product identity | mdhouse aims to become the primary project UI, not a larger viewer | replacement goal for direct AI CLI and Markdown-editor use, project/space concepts, coherent onboarding and language |
-| R3.2 — Workspaces and access | Workspace is the default; Viewer and project access are explicit | modes, migration, user management, per-project RO/RW grants, Reader/Editor authorization |
-| R3.3 — Projects and setup | A project becomes usable without a manual integration pass | AI installation runbook, directory management, project names and new-project creation |
-| R3.4 — Markdown interaction | mdhouse aims to replace a separate Markdown editor | existing markup actions, full-document editor, stale-write safety, diff/history/commit, optional external editor |
-| R3.5 — Agent collaboration | mdhouse aims to replace direct Claude/AI CLI interaction | out-of-box agent UI, per-space routing, existing Agent Bus RAG sources, explicit target precedence and mdhouse control API |
-| R3.6 — Flows and automation | Projects gain reusable, inspectable workflows | document/routing runtime, optional schedules, run history, Git checkpoints and approval boundaries |
-| R3.7 — Flow library | Common project and organizational work ships ready to run | feature, documentation, review, engineering, business, ideas, finance and legal packages |
-| R3.8 — Plans, markup and skills | The working protocol is available wherever a project needs it | immutable reference root, project initialization, Plans convention, markup/review skills |
-| R3.9 — Team collaboration | Multiple people can safely share one mdhouse | user CRUD, project grants, login, trusted networks, attribution and concurrency behavior |
-| R3.10 — Safety and compatibility | The broader product retains mdhouse's hard boundaries | path jail, canonical roots, write authorization, same-origin protection, migration and explicit mutations |
-| Gate — Complete journey | The pieces work as one product | install → project → agent → flow → edit → review → delivery validation |
+| R3a — Product identity | mdhouse aims to become the primary project UI, not a larger viewer | replacement goal for direct AI CLI and Markdown-editor use, project/space concepts, coherent onboarding and language |
+| R3b — Workspaces and access | Workspace is the default; Viewer and project access are explicit | modes, migration, user management, per-project RO/RW grants, Reader/Editor authorization |
+| R3c — Projects and setup | A project becomes usable without a manual integration pass | AI installation runbook, directory management, project names and new-project creation |
+| R3d — Markdown interaction | mdhouse aims to replace a separate Markdown editor | existing markup actions, full-document editor, stale-write safety, diff/history/commit, optional external editor |
+| R3e — Agent collaboration | mdhouse aims to replace direct Claude/AI CLI interaction | out-of-box agent UI, per-space routing, explicit target precedence and mdhouse control API |
+| R3f — RAG lifecycle | RAG is native to the R3 product through the Agent Bus RAG agent | ingestion, embeddings, indexing, retrieval, source administration and citations/provenance |
+| R3g — Flows and automation | Projects gain reusable, inspectable workflows | document/routing runtime, optional schedules, run history, Git checkpoints and approval boundaries |
+| R3h — Flow library | Common project and organizational work ships ready to run | feature, documentation, review, engineering, business, ideas, finance and legal packages |
+| R3i — Plans, markup and skills | The working protocol is available wherever a project needs it | immutable reference root, project initialization, Plans convention, markup/review skills |
+| R3j — Team collaboration | Multiple people can safely share one mdhouse | user CRUD, project grants, login, trusted networks, attribution and concurrency behavior |
+| R3k — Safety and compatibility | The broader product retains mdhouse's hard boundaries | path jail, canonical roots, write authorization, same-origin protection, migration and explicit mutations |
+| R3l — Complete journey | The pieces work as one product | install → project → agent → flow → edit → review → delivery validation |
 
-## R3.1–R3.2 — Product identity, workspaces and access
+## R3a–R3b — Product identity, workspaces and access
 
 ### Workspace and Viewer
 
@@ -199,7 +200,7 @@ may remain for explicit Advanced compatibility and recovery, but they are not th
 login. This settles
 [`Q-W8`](workspaces/QUESTIONS.md#Q-W8).
 
-## R3.3 — Projects, installation and connection
+## R3c — Projects, installation and connection
 
 ### AI-executable installation
 
@@ -259,7 +260,7 @@ A missing higher-priority target is shown as unavailable and is never silently r
 all fields in a space's `[AB]` editor deletes the override and restores fallback behavior, but the
 button remains visible.
 
-## R3.6–R3.7 — Flow platform and built-in flow library
+## R3g–R3h — Flow platform and built-in flow library
 
 ### Shared flow runtime
 
@@ -401,7 +402,7 @@ confidentiality boundaries.
 They identify issues and prepare work for a qualified person. They never file, sign, accept terms or
 present drafts as legal advice; interpretation and external communication require human approval.
 
-## R3.3 — New-project creation
+## R3c — New-project creation
 
 The web UI creates a new AI-ready project under `~/mdhouse/`, initializes it, adds the `Plans/`
 convention and mdhouse markup/review skills, connects Agent Bus and starts the first selected flow.
@@ -412,7 +413,7 @@ Project creation uses the same canonical directory registration, access modes, d
 per-space Agent Bus configuration as existing-project setup. Partial initialization must be visible
 and recoverable rather than leaving an apparently ready but inconsistent project.
 
-## R3.4 — Complete Markdown interaction and editing
+## R3d — Complete Markdown interaction and editing
 
 R3 adds a real full-source Markdown editor alongside the existing focused checkbox, Q&A and insert
 actions. A writable Editor can change an entire document, save it, inspect its diff and history, and
@@ -442,7 +443,7 @@ keeping `edit:` for a common editor. Settings shows the scheme next to Edit link
 is enabled; disabling hides but preserves the value. Scheme validation, migration, rendering,
 keyboard behavior and platform documentation are included.
 
-## R3.5 — Agent collaboration and control
+## R3e — Agent collaboration and control
 
 mdhouse is the human-facing agent environment: people select agents, give them work, answer their
 questions, inspect progress and continue routed flows without operating Claude Code or another AI
@@ -466,23 +467,25 @@ record. Add + configure + open is atomic from the caller's point of view and rep
 step without leaving a half-configured project. All root and document paths reuse the same canonical
 registration and resolution boundaries as CLI, Settings and HTTP.
 
-### Connected Agent Bus RAG sources
+### R3f — RAG through the Agent Bus RAG agent
 
-Agent Bus already provides RAG, so R3 can connect its existing sources without building a second
-ingestion, embedding or retrieval system. A space/project may select allowed Agent Bus RAG sources;
-document requests and flows can use that selection and keep source citations/provenance in their
-Markdown output.
+R3 includes native RAG capability as part of the mdhouse product. The Agent Bus RAG agent provides
+the backend lifecycle: source ingestion, chunking/embeddings, indexing, refresh/reindex, retrieval
+and source administration. mdhouse provides the project-facing UI and flow integration instead of
+implementing a second RAG stack inside the mdhouse process.
 
-The integration is deliberately thin: mdhouse discovers/selects sources, sends their stable IDs with
-Agent Bus work and displays availability and cited results. Agent Bus owns indexing, retrieval and
-source credentials. A user's project grant and Agent Bus authorization still apply; selecting a RAG
-source never grants access to another mdhouse project or exposes server-side credentials.
+A space/project can add or select allowed sources, start and monitor ingestion/index jobs, see
+progress/errors/freshness, refresh or remove an index, test retrieval and use the selected sources in
+document requests and scheduled flows. Generated Markdown and run history record effective source
+IDs, citations and provenance.
 
-This thin integration is part of R3 because the backend capability already exists. Verifying the
-Agent Bus source-list/request contract is the first implementation step. Native mdhouse RAG
-ingestion and administration remain outside R3.
+Agent Bus owns RAG storage, embeddings, indexes, retrieval execution and source credentials. mdhouse
+uses the RAG agent's typed lifecycle/request API and displays its state. A user's project grant and
+Agent Bus authorization apply independently; a RAG source never grants mdhouse filesystem access or
+exposes server-side credentials. Verifying and documenting that Agent Bus API is the first
+implementation step, not a reason to defer RAG beyond R3.
 
-## R3.8 — Plans, markup, skills and reference material
+## R3i — Plans, markup, skills and reference material
 
 R3 promotes the existing Plans convention, agent markup and review skills from useful repository
 customs into a first-class working protocol:
@@ -502,7 +505,7 @@ This is a product protocol, not a requirement that every repository use one rigi
 reference explains the common semantics; projects may extend their documents and route packages
 without requiring a new mdhouse UI for each domain.
 
-## R3.9 — Team collaboration
+## R3j — Team collaboration
 
 The team change is broader than adding login. One running mdhouse may serve several people who must
 remain distinguishable and must not overwrite or impersonate each other:
@@ -523,7 +526,7 @@ remain distinguishable and must not overwrite or impersonate each other:
 Personal use remains the default and must not acquire mandatory account setup. Team capability is an
 additional deployment shape built from the same project, document and authorization model.
 
-## R3.10 — Safety, migration and compatibility
+## R3k — Safety, migration and compatibility
 
 Paradigm Shift expands what mdhouse can do, so existing boundaries become more important rather than
 less important:
@@ -552,7 +555,7 @@ Agent Bus clients.
 1. Establish the four access profiles, Workspace/Viewer migration and Reader/Editor authorization.
 2. Add browser author identity and Personal/Team setup.
 3. Ship the installation runbook, managed workspace convention and directory/project controls.
-4. Make Agent Bus connection, per-space routing and existing RAG sources work out of the box.
+4. Make Agent Bus connection, per-space routing and the RAG agent lifecycle work out of the box.
 5. Build the shared Markdown flow runtime, routing, scheduling and Git checkpoint semantics.
 6. Ship the first version of every existing-project flow family.
 7. Create new AI projects from the web UI using the same primitives.
@@ -564,15 +567,15 @@ The order is architectural, not necessarily a single serial implementation plan.
 be authored while runtime work proceeds, but no package is complete until it passes the shared
 runtime and permission contracts.
 
-## Release gate
+## R3l — Release gate
 
 R3 is complete when a fresh installation can:
 
 1. start locally as a Personal Workspace without account setup, or run the same single-owner profile
    remotely with optional GitHub login/trusted-network admission from an iPad or phone;
 2. create or add a named project with an explicit effective access state;
-3. connect Agent Bus, address the intended agent and select an allowed RAG source using the
-   documented precedence and authorization;
+3. connect Agent Bus, address the intended agent, ingest/index an allowed RAG source and retrieve a
+   cited result using the documented authorization;
 4. run a project flow whose evidence, decisions, routing and Git checkpoint remain in Markdown;
 5. edit the full document without bypassing path, role, root-mode or stale-write checks;
 6. review the diff/history and explicitly perform the next delivery action;
@@ -599,8 +602,6 @@ The following are planned extensions after the workspace, flow and control primi
 - a shared flow/template marketplace and broader package library;
 - email and webhook triggers (manual and scheduled runs are in R3);
 - controlled database access for AI scripts;
-- native RAG ingestion, embedding, indexing and source administration (R3 only connects existing
-  Agent Bus RAG sources);
 - broader automation audit/reporting beyond the R3 run history and control-command audit.
 
 They remain recorded in [`workspaces/FUTURE.md`](workspaces/FUTURE.md) and should not

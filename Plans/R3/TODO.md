@@ -7,9 +7,9 @@ This file tracks release outcomes. A lower-level `MW.*` task may support more th
 finishing that implementation task does not close a release outcome until the outcome is verified as
 part of the complete product journey.
 
-## R3.1 — Product identity
+## R3a — Product identity
 
-- ⏳ R3.1 Establish mdhouse as a Markdown-native work environment
+- ⏳ R3a Establish mdhouse as a Markdown-native work environment
   - Builds: one product model and vocabulary across onboarding, Settings, CLI, README, package copy
     and release notes
   - Builds: mdhouse as the normal human interface, with the product goal of replacing direct
@@ -27,10 +27,10 @@ part of the complete product journey.
   - Tracks: [`MW.0`](workspaces/TODO.md#w0-workspace-by-default)
   - Home: [The paradigm shift](README.md#the-paradigm-shift)
 
-## R3.2 — Workspaces and access
+## R3b — Workspaces and access
 
-- ⏳ R3.2 Ship the Workspace/Viewer and Reader/Editor model
-  - Depends: R3.1
+- ⏳ R3b Ship the Workspace/Viewer and Reader/Editor model
+  - Depends: R3a
   - Builds: Workspace by default; explicit hard-RO Viewer; per-root RW/RO; per-user project grants;
     safe migration; server-side effective-write authorization
   - Acceptance: effective write requires Workspace + RW root + user project grant RW + Editor actor
@@ -40,12 +40,12 @@ part of the complete product journey.
   - Acceptance: Settings, onboarding and CLI expose Personal Workspace, Open Viewer, Private Viewer
     and Team Workspace with the same enforcement semantics
   - Tracks: [`MW.0`, `MW.0c`, `MW.0d`, `MW.0e`](workspaces/TODO.md#w0-workspace-by-default)
-  - Home: [Product identity, workspaces and access](README.md#r3-1-r3-2-product-identity-workspaces-and-access)
+  - Home: [Product identity, workspaces and access](README.md#r3a-r3b-product-identity-workspaces-and-access)
 
-## R3.3 — Projects and setup
+## R3c — Projects and setup
 
-- ⏳ R3.3 Make existing and new projects ready to work
-  - Depends: R3.2
+- ⏳ R3c Make existing and new projects ready to work
+  - Depends: R3b
   - Builds: AI-executable `install.md`; `~/mdhouse/<project>` convention; web/CLI directory
     management; optional project names; new-project creation
   - Acceptance: a clean account can create or add a named project, choose its access, save it and
@@ -53,12 +53,12 @@ part of the complete product journey.
   - Acceptance: web and CLI use the same canonical root-registration path and project identity
   - Acceptance: a newly created project starts with Plans, skills, Agent Bus and a first flow
   - Tracks: [`MW.1`, `MW.1a`, `MW.4`](workspaces/TODO.md#w1-install-and-connect)
-  - Home: [Projects, installation and connection](README.md#r3-3-projects-installation-and-connection)
+  - Home: [Projects, installation and connection](README.md#r3c-projects-installation-and-connection)
 
-## R3.4 — Markdown interaction
+## R3d — Markdown interaction
 
-- ⏳ R3.4 Make a document a complete, clean work surface
-  - Depends: R3.2
+- ⏳ R3d Make a document a complete, clean work surface
+  - Depends: R3b
   - Builds: full-source Markdown editing; existing focused markup actions; stale-draft preservation;
     diff/history/commit; configurable external-editor scheme; content-clean Copy
   - Acceptance: an Editor can change and review a complete document without losing focused Q&A,
@@ -71,12 +71,12 @@ part of the complete product journey.
   - Acceptance: the primary agent/document/edit/review journey is responsive and touch-usable on
     iPad and phone; no critical action is hover-only or keyboard-only
   - Tracks: [`MW.5`, `MW.5a`, `MW.5b`, `MW.5c`](workspaces/TODO.md#w4-full-document-editing)
-  - Home: [Complete Markdown interaction and editing](README.md#r3-4-complete-markdown-interaction-and-editing)
+  - Home: [Complete Markdown interaction and editing](README.md#r3d-complete-markdown-interaction-and-editing)
 
-## R3.5 — Agent collaboration
+## R3e — Agent collaboration
 
-- ⏳ R3.5 Make Agent Bus a native project capability
-  - Depends: R3.2, R3.3
+- ⏳ R3e Make Agent Bus a native project capability
+  - Depends: R3b, R3c
   - Builds: out-of-box connection; instance and per-space endpoints/defaults; explicit target
     precedence; typed authorized mdhouse control API
   - Acceptance: a project can ask the intended agent without a separate integration pass
@@ -87,24 +87,26 @@ part of the complete product journey.
   - Acceptance: an authorized command can add/configure a project and open one jailed Markdown path
     in one named connected browser, idempotently and auditably
   - Tracks: [`MW.2`, `MW.2a`, `MW.7`](workspaces/TODO.md#w1-install-and-connect)
-  - Home: [Agent collaboration and control](README.md#r3-5-agent-collaboration-and-control)
+  - Home: [Agent collaboration and control](README.md#r3e-agent-collaboration-and-control)
 
-- ⏳ R3.5a Connect existing Agent Bus RAG sources
-  - Why: Agent Bus already supplies RAG, so mdhouse needs a thin source-selection/request integration
-    rather than its own RAG implementation
-  - Builds: discover allowed sources; select defaults per space/project; attach stable source
-    IDs to Agent Bus requests and flows; retain citations/provenance in Markdown output
-  - Boundary: Agent Bus owns ingestion, embeddings, retrieval, credentials and source administration
-  - Acceptance: source availability is visible; missing/denied sources fail explicitly;
-    project grants and Agent Bus authorization remain enforced independently
-  - First step: verify and document the Agent Bus source-list and request contract
+- ⏳ R3f Integrate the Agent Bus RAG agent lifecycle
+  - Depends: R3e
+  - Why: the Agent Bus RAG agent already provides ingestion, embeddings, indexing and retrieval; R3
+    should expose the complete capability instead of treating RAG as future work
+  - Builds: per-space/project sources; add/select/remove; ingest; index/reindex; progress, errors and
+    freshness; retrieval testing; request/flow source selection; citations/provenance in Markdown
+  - Boundary: Agent Bus owns RAG storage, embeddings, indexes, retrieval execution, source
+    credentials and lifecycle operations; mdhouse owns the user/project UI and orchestration
+  - Acceptance: source and job state are visible; missing/denied/failed sources and jobs fail
+    explicitly; project grants and Agent Bus authorization remain enforced independently
+  - First step: verify and document the Agent Bus RAG agent lifecycle and request API
   - Tracks: [`MW.2a`](workspaces/TODO.md#w1-install-and-connect)
-  - Home: [Connected Agent Bus RAG sources](README.md#connected-agent-bus-rag-sources)
+  - Home: [RAG through the Agent Bus RAG agent](README.md#r3f-rag-through-the-agent-bus-rag-agent)
 
-## R3.6 — Flows and automation
+## R3g — Flows and automation
 
-- ⏳ R3.6 Build the shared Markdown flow runtime
-  - Depends: R3.3, R3.5
+- ⏳ R3g Build the shared Markdown flow runtime
+  - Depends: R3c, R3e
   - Builds: editable document/routing packages; common inputs; manual and optional scheduled runs;
     run history; provider adapters; previews and approvals
   - Acceptance: work, evidence, questions, decisions, transitions, approvals and outcomes remain
@@ -114,12 +116,12 @@ part of the complete product journey.
   - Acceptance: every generated document uses full `last-commit-id`; **since last run** advances its
     marker only after the whole run succeeds
   - Tracks: [`MW.3`](workspaces/TODO.md#w2-existing-projects)
-  - Home: [Flow platform](README.md#r3-6-r3-7-flow-platform-and-built-in-flow-library)
+  - Home: [Flow platform](README.md#r3g-r3h-flow-platform-and-built-in-flow-library)
 
-## R3.7 — Built-in flow library
+## R3h — Built-in flow library
 
-- ⏳ R3.7 Ship a useful first version of every planned flow family
-  - Depends: R3.6
+- ⏳ R3h Ship a useful first version of every planned flow family
+  - Depends: R3g
   - Builds: Feature and delivery; Documentation; Recent commits; PR/incoming changes; Engineering and
     operations; Business; Ideas; Finance; Legal
   - Acceptance: every package has useful default inputs/output, evidence expectations, approval
@@ -128,12 +130,12 @@ part of the complete product journey.
     explicitly confirmed actions
   - Tracks: [`MW.3a`–`MW.3g`](workspaces/TODO.md#w2-existing-projects)
   - Gap: Feature and delivery still needs its own `MW.3x` task or explicit acceptance under `MW.3`
-  - Home: [Built-in flow library](README.md#r3-6-r3-7-flow-platform-and-built-in-flow-library)
+  - Home: [Built-in flow library](README.md#r3g-r3h-flow-platform-and-built-in-flow-library)
 
-## R3.8 — Plans, markup and skills
+## R3i — Plans, markup and skills
 
-- ⏳ R3.8 Turn the working conventions into a product protocol
-  - Depends: R3.1
+- ⏳ R3i Turn the working conventions into a product protocol
+  - Depends: R3a
   - Builds: immutable installed reference root; current plan/markup/syntax documentation; shareable
     skills; project initialization; flow packages using the same visible states
   - Acceptance: a person or any compatible agent can inspect and continue work from project Markdown
@@ -141,12 +143,12 @@ part of the complete product journey.
   - Acceptance: reference material is current and immutable; project documents remain ordinary,
     editable, versioned project files
   - Tracks: [`MW.1`, `MW.4`](workspaces/TODO.md#w1-install-and-connect)
-  - Home: [Plans, markup, skills and reference material](README.md#r3-8-plans-markup-skills-and-reference-material)
+  - Home: [Plans, markup, skills and reference material](README.md#r3i-plans-markup-skills-and-reference-material)
 
-## R3.9 — Team collaboration
+## R3j — Team collaboration
 
-- ⏳ R3.9 Make one mdhouse safe and understandable for a team
-  - Depends: R3.2
+- ⏳ R3j Make one mdhouse safe and understandable for a team
+  - Depends: R3b
   - Builds: Personal zero-config default; Team setup; GitHub OAuth login; user add/edit/remove by
     GitHub username; per-browser fallback author; Reader/Editor sessions; per-project RO/RW grants;
     known-users-only mode; optional trusted localhost/CIDRs; visible identity/role; attributable actions
@@ -166,12 +168,12 @@ part of the complete product journey.
     Markdown or audit history
   - Acceptance: concurrent edits preserve the losing draft and never overwrite newer content
   - Tracks: [`MW.0a`, `MW.0b`, `MW.0c`, `MW.0d`, `MW.0e`](workspaces/TODO.md#w0-workspace-by-default)
-  - Home: [Team collaboration](README.md#r3-9-team-collaboration)
+  - Home: [Team collaboration](README.md#r3j-team-collaboration)
 
-## R3.10 — Safety, migration and compatibility
+## R3k — Safety, migration and compatibility
 
-- ⏳ R3.10 Preserve hard boundaries across every new capability
-  - Runs across: R3.2–R3.9
+- ⏳ R3k Preserve hard boundaries across every new capability
+  - Runs across: R3b–R3j
   - Builds: permission matrix tests; canonical-path and symlink tests; immutable reference-root checks;
     same-origin/session security; prefs/access migration; external-action failure recovery
   - Acceptance: all request-derived paths resolve through the jail and no root/config/control path
@@ -182,18 +184,18 @@ part of the complete product journey.
   - Acceptance: Personal/Team, Workspace/Viewer, Reader/Editor, RW/RO, saved/session and
     connected/disconnected combinations have explicit expected behavior, including per-project user
     grants and trusted-source admission
-  - Home: [Safety, migration and compatibility](README.md#r3-10-safety-migration-and-compatibility)
+  - Home: [Safety, migration and compatibility](README.md#r3k-safety-migration-and-compatibility)
 
-## Release gate
+## R3l — Release gate
 
-- ⏳ R3.G Review the complete Paradigm Shift journey
-  - Depends: R3.1, R3.2, R3.3, R3.4, R3.5, R3.5a, R3.6, R3.7, R3.8, R3.9, R3.10
+- ⏳ R3l Review the complete Paradigm Shift journey
+  - Depends: R3a, R3b, R3c, R3d, R3e, R3f, R3g, R3h, R3i, R3j, R3k
   - Acceptance: fresh install → create/add project → connect agent → run flow → edit document →
     review diff/history → explicitly perform the next delivery action
   - Acceptance: the normal primary journey uses mdhouse as both the AI-agent interface and the
     Markdown editor; specialized and recovery paths may still leave mdhouse
-  - Acceptance: the agent journey selects an existing allowed RAG source and preserves effective
-    source IDs and citations/provenance in Markdown/run history
+  - Acceptance: the agent journey configures an allowed RAG source, completes ingestion/indexing,
+    retrieves a cited result and preserves source IDs/citations/provenance in Markdown/run history
   - Acceptance: the journey passes in personal Workspace, Team Workspace, RO-root and Viewer
     configurations, including stale tabs and direct API attempts
   - Acceptance: the Team journey adds one GitHub username, authenticates it through GitHub, grants a
@@ -202,4 +204,4 @@ part of the complete product journey.
   - Acceptance: unavailable agents, failed routes, rewritten Git history, disconnected clients and
     partial external actions retain recoverable state and precise errors
   - Detailed Workspace gate: [`MW.6`](workspaces/TODO.md#gate)
-  - Home: [Release gate](README.md#release-gate)
+  - Home: [Release gate](README.md#r3l-release-gate)

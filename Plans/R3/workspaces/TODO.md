@@ -132,15 +132,16 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Acceptance: tests cover every precedence level separately from endpoint precedence
   - Home: [Workspace](README.md#workspace)
 
-- ⏳ MW.2a Connect existing Agent Bus RAG sources
-  - Why: Agent Bus already provides RAG; mdhouse should integrate it instead of building another ingestion/indexing stack
-  - Builds: list allowed Agent Bus RAG sources; per-space/project source defaults; request/flow source selection; citations/provenance in generated Markdown
-  - Depends: MW.2 and verification of the Agent Bus source-list/request contract
-  - Acceptance: mdhouse sends stable source IDs rather than source credentials or copied backend configuration
-  - Acceptance: unavailable or unauthorized sources are visible and fail explicitly without silently running against a different source
-  - Acceptance: user project grants and Agent Bus source authorization are checked independently; a RAG selection grants no mdhouse filesystem access
-  - Acceptance: manual requests and scheduled flows use the same selection contract and record the effective sources in run history/output
-  - Non-goal: native mdhouse ingestion, embeddings, indexing, retrieval or RAG source administration
+- ⏳ MW.2a Integrate the Agent Bus RAG agent lifecycle
+  - Why: the Agent Bus RAG agent already provides source ingestion, embeddings, indexing, refresh and retrieval; mdhouse should expose the full R3 capability instead of building a second backend
+  - Builds: per-space/project source configuration; add/select/remove; ingestion; embedding/index jobs; refresh/reindex; progress/errors/freshness; retrieval test; request/flow source selection; citations/provenance in generated Markdown
+  - Depends: MW.2 and verification/documentation of the Agent Bus RAG agent lifecycle/request API
+  - Acceptance: mdhouse sends stable source/job IDs rather than source credentials or copied backend configuration
+  - Acceptance: the UI starts and monitors ingestion/indexing, shows progress/failure/freshness, and can refresh/reindex or remove a source through the RAG agent
+  - Acceptance: unavailable, failed or unauthorized sources/jobs are visible and never silently fall back to a different source
+  - Acceptance: user project grants and Agent Bus RAG authorization are checked independently; a source grants no mdhouse filesystem access beyond explicit project permissions
+  - Acceptance: manual requests and scheduled flows use the same selection contract and record effective source IDs, index version/freshness and citations/provenance in run history/output
+  - Acceptance: RAG storage, embeddings, indexes, retrieval execution and credentials stay owned by Agent Bus and do not enter browser state or project prefs
   - Home: [Agent Bus control](README.md#agent-bus-control)
 
 ## W2 — Existing projects
@@ -286,6 +287,6 @@ R3 scope: [`Release 3 — Paradigm Shift`](../README.md).
   - Depends: MW.0a, MW.0b, MW.0c, MW.0d, MW.0e, MW.1, MW.1a, MW.2, MW.2a, MW.3, MW.3a, MW.3b, MW.3c, MW.3d, MW.3e, MW.3f, MW.3g, MW.4, MW.5, MW.5a, MW.5b, MW.5c, MW.7
   - Acceptance: a fresh install creates a project, connects an agent, runs a project flow, edits a document, reviews the diff and deploys without leaving mdhouse for coordination
   - Acceptance: an owner adds only a GitHub username, the user authenticates through GitHub, receives the project as RW by default, changes to RO, then is removed; UI, active sessions and direct APIs enforce every transition immediately
-  - Acceptance: an Agent Bus request and a scheduled flow can use an allowed existing RAG source and record source identity/citations without exposing credentials
+  - Acceptance: an allowed RAG source can be ingested, embedded/indexed, queried and refreshed through the Agent Bus RAG agent; requests/flows record source identity and citations without exposing credentials
   - Acceptance: Personal Workspace, Open Viewer, Private Viewer and Team Workspace each pass their full admission/read/write matrix, including trusted-network variants and profile switching
   - Acceptance: the remote Personal Workspace journey passes on iPad and a representative phone viewport without requiring a hardware keyboard, AI CLI or external editor
