@@ -296,3 +296,10 @@ hides controls without erasing the scheme. Reference documents never expose exte
 under `doc/flows/`. The bounded loader reads trusted caller-selected package directories, rejects
 traversal/symlink escapes and declares approval boundaries; it never grants access or executes work.
 The four Feature/delivery packages are authoring assets. Runtime, schedules and run records remain R3 work.
+
+## Administrator session primitives
+
+`lib/admin-session.ts` holds bounded memory-only single-use proofs and expiring revocable sessions.
+Cookie helpers use separate port-scoped names, host-only HttpOnly/SameSite flags and explicit HTTPS.
+The module has no production callers or HTTP/control endpoints; bootstrap and authorization wiring
+remain R3 work. Port-specific names prevent accidental overwrites, not a browser origin boundary.
