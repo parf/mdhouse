@@ -54,12 +54,12 @@ export function scopeOf(entry: string): string | null {
 }
 
 /**
- * The folders to reveal: `open` (the folder page shown) first, then the folders of V1 and V2.
- * Files are not revealed. `omitted` counts selections left out by the request limits, so
+ * The folders to reveal: `open` (the folder page shown) first, then the folders of V1 and V2 — or of
+ * `only` when a view's tab is shown, so a tab never receives what the other view selected. Files are not revealed. `omitted` counts selections left out by the request limits, so
  * the caller can say the list is incomplete.
  */
-export function revealScopes(views: RootViews, open?: string | null): { scopes: string[]; omitted: number } {
-  const wanted = [...(open ? [`${open}/`] : []), ...VIEW_IDS.flatMap((id) => views[id])].map(scopeOf).filter((d): d is string => d !== null);
+export function revealScopes(views: RootViews, open?: string | null, only?: ViewId | null): { scopes: string[]; omitted: number } {
+  const wanted = [...(open ? [`${open}/`] : []), ...(only ? views[only] : VIEW_IDS.flatMap((id) => views[id]))].map(scopeOf).filter((d): d is string => d !== null);
   const scopes: string[] = [];
   let total = 0;
   let omitted = 0;

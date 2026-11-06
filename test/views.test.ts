@@ -35,6 +35,21 @@ describe('ignored browsing scopes', () => {
     expect(revealScopes({ V1: [], V2: [] })).toEqual({ scopes: [], omitted: 0 });
   });
 
+  test('revealScopes: a view tab asks for its own folders (and the open folder) only', () => {
+    const views = { V1: ['x/'], V2: ['y/'] };
+    expect(revealScopes(views, null, 'V1').scopes).toEqual(['x']);
+    expect(revealScopes(views, 'o', 'V2').scopes).toEqual(['o', 'y']);
+    expect(revealScopes(views, null, null).scopes).toEqual(['x', 'y']);
+  });
+
+  test('revealScopes: the open folder is requested whatever the root holds, newlines in names stay distinct', () => {
+    expect(revealScopes({ V1: [], V2: [] }, 'vendor').scopes).toEqual(['vendor']);
+    expect(revealScopes({ V1: [], V2: [] }, '.ai-team/runs').scopes).toEqual(['.ai-team/runs']);
+    const a = JSON.stringify(['r', revealScopes({ V1: ['a\nb/'], V2: [] }).scopes]);
+    const b = JSON.stringify(['r', revealScopes({ V1: ['a/', 'b/'], V2: [] }).scopes]);
+    expect(a).not.toBe(b);
+  });
+
   test('revealScopes: over the limits, the rest is counted, not dropped silently', () => {
     const many = Array.from({ length: MAX_REVEAL + 3 }, (_, i) => `d${i}/`);
     const r = revealScopes({ V1: many, V2: [] });

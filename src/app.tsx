@@ -390,12 +390,13 @@ function App() {
   // Views V1 / V2, per root: what each holds; their sidebar tabs show the tree narrowed to it.
   const [views, setViews] = useState(loadViews);
   useEffect(() => saveViews(views), [views]);
-  // Ignored folders selected in V1 or V2, and the folder page shown (only when something is ignored), are listed
-  // in the default tree; the global Show ignored switch is not touched. A changed set reloads the tree (a root switch already does).
-  const openDir = dirTarget && (!dirTarget.rootId || dirTarget.rootId === rootId) && tree?.hasIgnored ? dirTarget.dir : null;
-  const revealPlan = revealScopes(views[rootId] ?? noViews(), openDir);
+  // Ignored folders selected in V1 or V2 are listed in the default tree — a view's tab asks for its own only —
+  // and so is the folder page shown (a deliberate request: it does not depend on what the root holds). The global
+  // Show ignored switch is not touched. A changed set reloads the tree (a root switch already does).
+  const openDir = dirTarget && (!dirTarget.rootId || dirTarget.rootId === rootId) ? dirTarget.dir : null;
+  const revealPlan = revealScopes(views[rootId] ?? noViews(), openDir, tab === 'V1' || tab === 'V2' ? tab : null);
   reveal.current = revealPlan.scopes;
-  const revealKey = revealPlan.scopes.join('\n');
+  const revealKey = JSON.stringify([rootId, revealPlan.scopes]);
   const revealFirst = useRef(true);
   useEffect(() => {
     if (revealFirst.current) revealFirst.current = false;
