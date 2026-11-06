@@ -295,7 +295,12 @@ hides controls without erasing the scheme. Reference documents never expose exte
 `lib/flow-package.ts` validates data-only versioned manifests and explicitly catalogued Markdown assets
 under `doc/flows/`. The bounded loader reads trusted caller-selected package directories, rejects
 traversal/symlink escapes and declares approval boundaries; it never grants access or executes work.
-The four Feature/delivery packages are authoring assets. Runtime, schedules and run records remain R3 work.
+The catalog ships 39 authoring packages; live runtime, schedules and persisted run records remain R3 work.
+
+`lib/flow-run.ts` validates bounded caller-asserted analysis state and replays versioned events for
+consistency, not authenticity or semantic truth. `lib/flow-run-markdown.ts` renders a deterministic
+unsaved preview with supplied data in inert JSON fences. Both grant no authority and perform no
+filesystem/provider/HTTP work; materialization, actual approvals and marker updates are separate.
 
 ## Administrator session primitives
 
