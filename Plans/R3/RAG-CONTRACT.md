@@ -63,6 +63,22 @@ inconclusive check stays unknown. A client improvement is filed, not scheduled/d
 
 ### T-49 actual setup checkpoint
 
+T-48 is provider-reported deployed (bus 1.0.51 / pack 1.0.3, 14:22). CTO applied the authorized
+FileScan mode=demand change, preserving every other config field, then targeted restart of only
+filescan/mdhouse. Actual status returned mode/effective_mode demand, 195 tracked, paused null,
+subscribers empty; no scan/sync/ingestion occurred. RAG queue TTL is unset, not below the 30-minute
+large-upsert sender budget. Real daemon long-wait behavior is provider-investigated, not claimed
+proven here; unknown outcomes require free check, never automatic paid resend.
+
+Delivered FileScan `sync <rag> as rag <namespace> <table> [resend:true]` returns result confirmed/
+incomplete/unknown/failed, confirmed/remaining/sent counts, capped and bounded per-file states.
+Capped/unknown/failed never map to success; rerun resumes provider marks without auto-resending
+unknown. Actual adapter must verify mode=demand, agreed source configuration and live RAG capability;
+no subscription/watch workaround or policy guessed from a draft. First real owner-demand sync is
+app use/live proof, not a paid test; record result, status and matching get/check for a large file.
+Dedicated Qdrant/RAG runtime still waits on the private key handoff before that first sync.
+
+
 Latest Q376–Q378 choices are settled through #ab-dir: shared Voyage/production AI, own Qdrant proxy
 to existing store. Store URL is explicitly `http://127.0.0.1:6333`; the key install is a private
 owner-side step and is not yet confirmed. No Qdrant/RAG enable/start/reload/collection/index is run

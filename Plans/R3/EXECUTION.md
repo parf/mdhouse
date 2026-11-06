@@ -929,3 +929,20 @@ empty/oversize coverage remains explicit. Review notes direct module invocation 
 bin is the entrypoint) and hardlink paths remain separate metadata sources; neither expands scope.
 [№MW.2a.1](workspaces/TODO.md#MW.2a.1) and parent RAG acceptance remain open until real adapter,
 index/search, T-48 deployment and T-49 runtime readiness are satisfied. No publish/push/deploy.
+
+## FileScan demand switch and connected-bin cohort selected
+
+Provider #ab-dir reports T-48 deployed at 14:22. CTO performed only the authorized configuration
+switch to demand (all other fields preserved) and targeted runner restart `filescan/mdhouse`.
+Actual status confirms demand/demand, 195 tracked, no pause/subscribers. Evidence retained at
+`.scratch/cto/filescan-demand-config.json` and `filescan-demand-restart.json`; no sync/scan/ingest
+or paid provider call. RAG queue TTL remains unset; owner private Qdrant-key installation is pending.
+
+[№MW.2a.1b](workspaces/TODO.md#MW.2a.1b) is selected before code: W3 typed strict provider-response
+client/orchestration, W1 bounded correlated account-socket bus transport and explicit CLI wiring.
+One coherent integration branch/gate/security review, no version bump; tests use injected transport
+only. Missing/unsupported live capability or non-demand/mismatched source config refuses before
+paid effects. No AgentBus.connect/drain/registration, no implicit reset/drop/config/grants/sub/watch.
+Explicit sync apply is needed; keyword search is default, paid query modes and unknown resend require
+separate explicit intent. This does not authorize a live test against production AI/Voyage. Actual
+first sync waits for reviewed code and runtime readiness; its results are app proof, not test upserts.
