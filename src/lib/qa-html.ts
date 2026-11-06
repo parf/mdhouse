@@ -38,11 +38,36 @@ const labels = (html: string) =>
 /** A body with paragraphs or a list is rendered as blocks; a run of lines is one inline paragraph. */
 const blocky = (body: string) => /\n\s*\n|\n\s*[-*+]\s|\n\s*\d+[.)]\s|\n\s*(```|~~~)/.test(body);
 
-const TGT = '<button class="tgt" type="button" data-tip="Select for the next run (double-click works too)">🎯</button>';
+/**
+ * What a control acts on, written on the control itself: this render's token (`data-act`), the
+ * item's line, hash, state and kind, and the option or reply it is about. The page acts only on
+ * a node carrying the token it was sent with, and reads nothing from the node's ancestors — a
+ * document's own markup can neither carry the token nor move a control onto another item.
+ */
+export interface Act {
+  token: string;
+  qa: string;
+  line: number;
+  hash: string;
+  k: string;
+  sev?: string;
+}
 
-function glyphButton(g: string, tip: string): string {
+/** A control's provenance attributes; nothing when the render marks no controls. */
+function actAttrs(a: Act | null, extra: { opt?: number; reply?: number } = {}): string {
+  if (!a) return '';
+  return (
+    ` data-act="${a.token}" data-act-qa="${esc(a.qa)}" data-act-line="${a.line}" data-act-hash="${esc(a.hash)}" data-act-k="${esc(a.k)}"` +
+    `${a.sev ? ` data-act-sev="${esc(a.sev)}"` : ''}` +
+    `${extra.opt !== undefined ? ` data-act-opt="${extra.opt}"` : ''}${extra.reply !== undefined ? ` data-act-reply="${extra.reply}"` : ''}`
+  );
+}
+
+const tgt = (a: Act | null) => `<button class="tgt" type="button" data-tip="Select for the next run (double-click works too)"${actAttrs(a)}>🎯</button>`;
+
+function glyphButton(g: string, tip: string, a: Act | null): string {
   const cls = ASK.includes(g) ? (g === '⁉️' ? ' dis' : '') : ' sev';
-  return `<span class="g-btn${cls}" role="button" data-tip="${esc(tip)}">${g}</span>`;
+  return `<span class="g-btn${cls}" role="button" data-tip="${esc(tip)}"${actAttrs(a)}>${g}</span>`;
 }
 
 export function qaHtml(r: QaRender) {
@@ -52,8 +77,9 @@ export function qaHtml(r: QaRender) {
   const firstLine = (rep: Reply) => `${rep.who ? whoChip(rep.who) : ''}${inline(rep.body.replace(/^\s*[-*+]\s+/gm, '• '))}`;
 
   /** `issue`: the 💡 of an issue is accepted or ignored; a question's is answered yes or no. */
-  function replyHtml(rep: Reply, quiet: boolean, issue = false): string {
+  function replyHtml(rep: Reply, quiet: boolean, issue: boolean, a: Act | null): string {
     const line = ` data-line="${rep.start + 1}"`;
+    const at = actAttrs(a, { reply: rep.start + 1 });
     const who = rep.who ? whoChip(rep.who) : '';
     if (rep.suggest && rep.verdict) {
       return `<div class="reply proposal decided ${rep.verdict === '✅' ? 'taken' : 'declined'}"${line}>${rep.verdict} 💡 ${who}<span class="txt">${inline(rep.body)}</span></div>`;
@@ -62,33 +88,36 @@ export function qaHtml(r: QaRender) {
     if (rep.suggest) {
       const acts =
         (issue
-          ? '<span class="s-act"><button class="accept" type="button" data-tip="Accept the solution — the agent does it">✓ accept</button>' +
-            '<button class="reject" type="button" data-tip="Ignore — the issue is closed 🚫">✗ ignore</button>'
-          : '<span class="s-act"><button class="accept" type="button" data-tip="Agree — it is the answer">✓ agree</button>' +
-            '<button class="reject" type="button" data-tip="Cancel — the question is closed 🚫">✗ cancel</button>') +
-        `<button class="s-reply" type="button" data-tip="Reply — a form: a reply, or ${issue ? 'accept / ignore' : 'agree / cancel'} with a note">💬 reply</button></span>`;
+          ? `<span class="s-act"><button class="accept" type="button" data-tip="Accept the solution — the agent does it"${at}>✓ accept</button>` +
+            `<button class="reject" type="button" data-tip="Ignore — the issue is closed 🚫"${at}>✗ ignore</button>`
+          : `<span class="s-act"><button class="accept" type="button" data-tip="Agree — it is the answer"${at}>✓ agree</button>` +
+            `<button class="reject" type="button" data-tip="Cancel — the question is closed 🚫"${at}>✗ cancel</button>`) +
+        `<button class="s-reply" type="button" data-tip="Reply — a form: a reply, or ${issue ? 'accept / ignore' : 'agree / cancel'} with a note"${at}>💬 reply</button></span>`;
       return `<div class="reply proposal"${line}>💡 ${who}<span class="txt">${inline(rep.body)}</span>${acts}</div>`;
     }
     const cls = `reply${rep.partial ? ' partial' : ''}${isRecord(rep) ? ' record' : ''}`;
     const lead = `${rep.partial && !/^elaborate\b/i.test(rep.body) ? '⚠️ ' : ''}${who}`;
+    // a plain reply opens its own form when clicked; a record does not
+    const open = `${line}${isRecord(rep) ? '' : at}`;
     // a long reply: the author opens its first paragraph rather than standing on a line of its own
-    if (blocky(rep.body)) return `<div class="${cls}"${line}>${badges(r.block(rep.body)).replace(/^<p([^>]*)>/, `<p$1>${lead}`)}</div>`;
-    return `<div class="${cls}"${line}>${lead}<span class="txt">${inline(rep.body)}</span></div>`;
+    if (blocky(rep.body)) return `<div class="${cls}"${open}>${badges(r.block(rep.body)).replace(/^<p([^>]*)>/, `<p$1>${lead}`)}</div>`;
+    return `<div class="${cls}"${open}>${lead}<span class="txt">${inline(rep.body)}</span></div>`;
   }
 
   /** `quiet`: a closed item — no 💡 buttons; an older 💡, superseded by a newer one, is always quiet. */
-  function threadHtml(rs: Reply[], cls: string, quiet = false, issue = false): string {
+  function threadHtml(rs: Reply[], cls: string, a: Act | null, quiet = false, issue = false): string {
     if (!rs.length) return '';
     const newest = rs.filter((x) => x.suggest).at(-1);
-    return `<div class="${cls}">${rs.map((x) => replyHtml(x, quiet || (x.suggest && x !== newest), issue)).join('')}</div>`;
+    return `<div class="${cls}">${rs.map((x) => replyHtml(x, quiet || (x.suggest && x !== newest), issue, a)).join('')}</div>`;
   }
 
-  function optionHtml(o: QaNode, name: string): string {
-    const input = `<input type="${o.option === 'radio' ? 'radio' : 'checkbox'}" name="${name}"${o.picked ? ' checked' : ''} disabled>`;
+  function optionHtml(o: QaNode, name: string, a: Act | null): string {
+    const at = actAttrs(a, { opt: o.start + 1 });
+    const input = `<input type="${o.option === 'radio' ? 'radio' : 'checkbox'}" name="${name}"${o.picked ? ' checked' : ''} disabled${at}>`;
     return (
       `<div class="c-wrap" data-line="${o.start + 1}"><div class="c-row"><label class="opt${o.picked ? ' picked' : ''}">${input} <span>${labels(inline(o.head))}</span></label>` +
-      `<button class="c-btn" type="button" data-tip="Comment on this option">💬</button></div>` +
-      `${threadHtml(o.replies, 'thread opt-thread')}</div>`
+      `<button class="c-btn" type="button" data-tip="Comment on this option"${at}>💬</button></div>` +
+      `${threadHtml(o.replies, 'thread opt-thread', a)}</div>`
     );
   }
 
@@ -102,7 +131,7 @@ export function qaHtml(r: QaRender) {
 
   /** A `🚫` under a decision (📌 or ✅): a rejected alternative — a muted line, not an item of its own. */
   function rejectedHtml(n: QaItem): string {
-    return `<li class="rejected" data-line="${n.start + 1}"><span class="g">🚫</span><span class="t">${inline(n.head)}</span>${threadHtml(n.replies, 'thread', true)}</li>`;
+    return `<li class="rejected" data-line="${n.start + 1}"><span class="g">🚫</span><span class="t">${inline(n.head)}</span>${threadHtml(n.replies, 'thread', null, true)}</li>`;
   }
 
   /** The claim: its title, the body on a line of its own; Evidence / Impact on lines of their own. */
@@ -118,48 +147,53 @@ export function qaHtml(r: QaRender) {
   }
 
   /** A 📌 decision: a card — the title, the body under it, its rejected alternatives. */
-  function decisionHtml(item: QaItem, attrs: string, nested: QaItem[], opts: string): string {
+  function decisionHtml(item: QaItem, attrs: string, nested: QaItem[], opts: string, a: Act | null, token: string | null): string {
     const { title: titleHtml, body } = titleOf(item.head);
     const bodyHtml = body ? `<div class="d-body">${blocky(body) ? badges(r.block(body)) : inline(body)}</div>` : '';
     const cases = item.children.filter((c) => c.kind === 'case');
     const casesHtml = cases.length ? `<ul class="cases">${cases.map((c) => `<li data-line="${c.start + 1}">${inline(c.head)}</li>`).join('')}</ul>` : '';
     const context = item.context.map((c) => `<blockquote class="context">${r.block(c)}</blockquote>`).join('');
-    const kids = nested.map((n) => (n.glyphs[0] === '🚫' ? rejectedHtml(n) : itemHtml(n)));
+    const kids = nested.map((n) => (n.glyphs[0] === '🚫' ? rejectedHtml(n) : itemHtml(n, token)));
     return (
-      `<li class="item decision"${attrs}><div class="head c-row"><span class="g">${glyphButton(DECISION, 'Reply')}</span>` +
-      `<span class="h-t"><span class="d-title">${titleHtml}</span>${bodyHtml}${casesHtml}${context}</span>${TGT}</div>` +
-      `${opts}${threadHtml(item.replies, 'thread q-thread')}${kids.length ? `<ul class="items alts">${kids.join('')}</ul>` : ''}</li>`
+      `<li class="item decision"${attrs}><div class="head c-row"><span class="g">${glyphButton(DECISION, 'Reply', a)}</span>` +
+      `<span class="h-t"><span class="d-title">${titleHtml}</span>${bodyHtml}${casesHtml}${context}</span>${tgt(a)}</div>` +
+      `${opts}${threadHtml(item.replies, 'thread q-thread', a)}${kids.length ? `<ul class="items alts">${kids.join('')}</ul>` : ''}</li>`
     );
   }
 
   let uid = 0;
 
-  /** One item, as a list item of its own list: `<li class="item …">`. */
-  function itemHtml(item: QaItem): string {
+  /**
+   * One item, as a list item of its own list: `<li class="item …">`. With a `token` its controls
+   * carry what they act on (`Act`); without one — a fragment rendered inside a reply, whose lines
+   * are not the file's — nothing is marked.
+   */
+  function itemHtml(item: QaItem, token: string | null = null): string {
     const st = stateOf(item);
     const [status = '', ...more] = item.glyphs;
     const ask = ASK.includes(status);
     const { html, id } = text(item, more);
     const options = item.children.filter((c) => c.option);
+    const a: Act | null = token ? { token, qa: item.kind, line: item.start + 1, hash: item.hash, k: st.key, ...(st.severity ? { sev: st.severity } : {}) } : null;
     const radio = options.some((o) => o.option === 'radio');
     const name = `qa-o${++uid}`;
     const opts = options.length
-      ? `<div class="opts${st.closed || st.decision || (radio && options.some((o) => o.picked)) ? ' done' : ''}${radio ? ' radio' : ''}">${options.map((o) => optionHtml(o, name)).join('')}</div>`
+      ? `<div class="opts${st.closed || st.decision || (radio && options.some((o) => o.picked)) ? ' done' : ''}${radio ? ' radio' : ''}">${options.map((o) => optionHtml(o, name, a)).join('')}</div>`
       : '';
     const nested = item.children.filter((c) => c.kind === 'item') as QaItem[];
-    const nestedHtml = nested.length ? `<ul class="items">${nested.map(itemHtml).join('')}</ul>` : '';
+    const nestedHtml = nested.length ? `<ul class="items">${nested.map((n) => itemHtml(n, token)).join('')}</ul>` : '';
     // a ✅ is a decision too: its 🚫 children are rejected alternatives
     const alts = status === '✅' ? nested.filter((n) => n.glyphs[0] === '🚫') : [];
     const kept = nested.filter((n) => !alts.includes(n));
     const settledKids =
       (alts.length ? `<ul class="items alts">${alts.map(rejectedHtml).join('')}</ul>` : '') +
-      (kept.length ? `<ul class="items">${kept.map(itemHtml).join('')}</ul>` : '');
+      (kept.length ? `<ul class="items">${kept.map((n) => itemHtml(n, token)).join('')}</ul>` : '');
     const tip = ask ? 'Answer' : 'Reply, or set its stage';
     const attrs =
       ` data-qa="${item.kind}" data-line="${item.start + 1}" data-hash="${item.hash}" data-k="${esc(st.key)}"` +
       `${st.severity ? ` data-sev="${st.severity}"` : ''}${id ? ` id="${id}"` : ''}`;
 
-    if (st.decision) return decisionHtml(item, attrs, nested, opts);
+    if (st.decision) return decisionHtml(item, attrs, nested, opts, a, token);
     if (st.closed) {
       const last = lastTurn(item.replies) ?? item.replies.at(-1);
       // folded: the answer line is the pick when there are options, else the last reply
@@ -169,12 +203,12 @@ export function qaHtml(r: QaRender) {
         .join(' · ');
       const answer = options.length ? (pick ? `<span class="t-a">${pick}</span>` : '') : last ? `<span class="t-a">💬 ${firstLine(last)}</span>` : '';
       const mark = st.answered
-        ? `<span class="g g-answered" role="button" data-tip="Answered — click to edit the answer">${status === '⁉️' ? '!?' : '?'}</span>`
-        : `<span class="g">${glyphButton(st.ignored ? '🚫' : status, tip)}</span>`;
+        ? `<span class="g g-answered" role="button" data-tip="Answered — click to edit the answer"${actAttrs(a)}>${status === '⁉️' ? '!?' : '?'}</span>`
+        : `<span class="g">${glyphButton(st.ignored ? '🚫' : status, tip, a)}</span>`;
       return (
         `<li class="item settled${status === '🔵' ? ' info' : ''}"${attrs}><details class="settled"><summary>${mark}` +
-        `<span class="t"><span class="t-q">${html}</span>${answer}</span>${TGT}</summary>` +
-        `${opts}${threadHtml(item.replies, 'thread', CLOSED.includes(status) || status === '🔵')}${settledKids}</details></li>`
+        `<span class="t"><span class="t-q">${html}</span>${answer}</span>${tgt(a)}</summary>` +
+        `${opts}${threadHtml(item.replies, 'thread', a, CLOSED.includes(status) || status === '🔵')}${settledKids}</details></li>`
       );
     }
     const cls = [
@@ -188,19 +222,21 @@ export function qaHtml(r: QaRender) {
       .join(' ');
     // checkboxes (any of): ticking does not settle the question — ✓ done does
     const doneBtn = options.some((o) => o.option === 'check')
-      ? '<button class="c-done" type="button" data-tip="Done picking: answers the question">✓ done</button>'
+      ? `<button class="c-done" type="button" data-tip="Done picking: answers the question"${actAttrs(a)}>✓ done</button>`
       : '';
     const chip = status === '🎫' ? '<span class="btn">ticket pending</span>' : status === '⏳' || st.triaged ? '<span class="btn">waiting on agent</span>' : doneBtn;
+    // an open question or finding opens its form when its body is clicked
+    const open = st.waitMe || st.finding ? actAttrs(a) : '';
     return (
-      `<li class="${cls}"${attrs}><div class="head c-row"><span class="g">${glyphButton(status || '🎯', tip)}</span><span class="h-t">${html}</span>${chip}` +
-      `${options.length ? '<button class="c-btn" type="button" data-tip="Comment on the question">💬</button>' : ''}${TGT}</div>` +
-      `${opts}${threadHtml(item.replies, 'thread q-thread', false, isIssue(item))}${nestedHtml}</li>`
+      `<li class="${cls}"${attrs}${open}><div class="head c-row"><span class="g">${glyphButton(status || '🎯', tip, a)}</span><span class="h-t">${html}</span>${chip}` +
+      `${options.length ? `<button class="c-btn" type="button" data-tip="Comment on the question"${actAttrs(a)}>💬</button>` : ''}${tgt(a)}</div>` +
+      `${opts}${threadHtml(item.replies, 'thread q-thread', a, false, isIssue(item))}${nestedHtml}</li>`
     );
   }
 
   /** A standalone thread — `> 💬 …` with no question over it: shown as replies, nothing to answer. */
   function looseThread(replies: Reply[], line: number): string {
-    return `<div class="thread loose" data-line="${line}">${replies.map((x) => replyHtml(x, true)).join('')}</div>`;
+    return `<div class="thread loose" data-line="${line}">${replies.map((x) => replyHtml(x, true, false, null)).join('')}</div>`;
   }
 
   return { itemHtml, looseThread };

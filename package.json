@@ -52,17 +52,21 @@
     "test": "bun test"
   },
   "dependencies": {
+    "dompurify": "3.4.17",
+    "htmlparser2": "12.0.0",
     "markdown-it": "^14.1.0",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-attrs": "^4.3.1",
     "markdown-it-footnote": "^4.0.0",
     "mermaid": "^12.0.0",
     "preact": "^10.27.0",
+    "sanitize-html": "2.18.1",
     "shiki": "^3.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "@types/markdown-it": "^14.1.2",
+    "@types/sanitize-html": "2.16.2",
     "typescript": "^7.0.2"
   }
 }

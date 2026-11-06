@@ -93,8 +93,11 @@ For findings, reviews and task status — in docs, pages and replies; not decora
 - `opts.noGit` short-circuits every route that runs git.
 - `Root.writable` is a getter (`--rw` / auto-rw) — never cache it. `prefs.json` changes only via
   `Prefs.mutate`.
-- Rendered HTML is trusted (`html: true`), no sanitizer: page input is written to the file as
-  Markdown, never injected as HTML.
+- Rendered document/file/diff HTML is passive through `lib/passive.ts`; authored HTML cannot carry
+  renderer action metadata. Client HTML sinks use `ui/safe-html.ts`; write controls require their own
+  fresh render token and target metadata, never authored classes or ancestor context.
+- Mermaid runs only through the app-controlled constrained renderer and displays as inert images.
+  Raw HTML is sandboxed without scripts; code is text/plain + nosniff. Page CSP is defense in depth.
 - `/__app/` (code only) sits outside `guard()`; every other route is behind `trustedHost` → `admit`.
 
 ## Shell tricks

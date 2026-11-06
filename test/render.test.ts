@@ -42,8 +42,8 @@ describe('markdown rendering', () => {
 
   test('a backslash at the end of a line or before a space is a line break, not in code', async () => {
     const { html } = await render('one\\\ntwo \\ three `a\\ b`\n\n> ❓ q \\\n> more\n', ctx);
-    expect(html).toContain('one<br>');
-    expect(html).toContain('two <br>\nthree');
+    expect(html).toContain('one<br />');
+    expect(html).toContain('two <br />\nthree');
     expect(html).toContain('<code>a\\ b</code>');
     // in an item the next line is the body, on a line of its own already
     expect(html).toContain('q<span class="i-body">more</span>');
@@ -65,7 +65,7 @@ describe('markdown rendering', () => {
   test('a fence is highlighted up to a size; a bigger one is plain', async () => {
     expect((await render('```json\n{"a": 1}\n```\n', ctx)).html).toContain('class="shiki shiki-themes');
     const big = `{"a": "${'x'.repeat(100_001)}"}`;
-    expect((await render(`\`\`\`json\n${big}\n\`\`\`\n`, ctx)).html.startsWith('<pre class="shiki plain"><code>{&quot;a&quot;')).toBe(true);
+    expect((await render(`\`\`\`json\n${big}\n\`\`\`\n`, ctx)).html.startsWith('<pre class="shiki plain"><code>{"a"')).toBe(true);
   });
 
   test('GitHub alerts become markdown-alert blocks', async () => {
@@ -300,11 +300,11 @@ describe('Q&A items', () => {
     const src = '# T\n\n- ❓ Keep it?\n  > 💬👾 maybe\n- 🎯 🔴 D1 `a.ts:1` lost\n  Evidence: ran it\n';
     const { html } = await render(src, ctx);
     const items = parseQa(src, 0).items;
-    expect(html).toContain(`<li class="item wait-me" data-qa="item" data-line="3" data-hash="${items[0]!.hash}" data-k="❓ open">`);
+    expect(html).toContain(`<li class="item wait-me" data-qa="item" data-line="3" data-hash="${items[0]!.hash}" data-k="❓ open" data-act=`);
     expect(html).toContain(`data-line="5" data-hash="${items[1]!.hash}" data-k="🔴 open 🎯" data-sev="🔴" id="D1"`);
     expect(html).toContain('<a class="iid" href="#D1">D1</a>');
     expect(html).toContain('<span class="meta">Evidence: ran it</span>');
-    expect(html).toContain('<div class="reply" data-line="4"><span class="who" data-kind="agent">👾</span>');
+    expect(html).toMatch(/<div class="reply" data-line="4" data-act="[0-9a-f]{32}"[^>]*><span class="who" data-kind="agent">👾<\/span>/);
   });
 
   test('settled and answered items fold; 🔵 a note is closed', async () => {

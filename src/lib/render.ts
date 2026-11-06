@@ -11,6 +11,7 @@
  * list, so a link to a heading and the contents entry for it can never disagree.
  */
 
+import { randomBytes } from 'node:crypto';
 import MarkdownIt from 'markdown-it';
 import type { PluginWithOptions } from 'markdown-it';
 import type Token from 'markdown-it/lib/token.mjs';
@@ -24,6 +25,15 @@ export { lineHash };
 import type { DiffHunk } from './git';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 import { MD_EXT } from './filetypes';
+import { authored, passive } from './passive';
+
+/** The renderer's own raw-HTML tokens; every other `html_block` / `html_inline` is a document's — `authored()`. */
+const ours = new WeakSet<Token>();
+/** A raw-HTML token the renderer made itself. */
+function own(token: Token): Token {
+  ours.add(token);
+  return token;
+}
 
 export interface RenderContext {
   /** Root id the document lives in, for building asset and raw-file URLs. */
@@ -50,7 +60,21 @@ export interface Rendered {
   hasMermaid: boolean;
   /** Checkbox counts, for the progress badge in the tree. */
   tasks: { done: number; total: number };
+  /**
+   * This render's token, fresh each time: every control it made carries it as `data-act`, with
+   * what it acts on in its own `data-act-*`. A node without it is the document's own markup.
+   * It proves where a node came from on the page, nothing more — no route reads it.
+   */
+  actToken: string;
 }
+
+/** The env of a top-level render: `act` marks the controls it makes. A nested render has none. */
+interface ActEnv {
+  act?: string;
+}
+
+/** The provenance attributes of a control that acts on one source line. */
+const lineAct = (act: string, line: number, hash: string) => ` data-act="${act}" data-act-line="${line}" data-act-hash="${hash}"`;
 
 /** GitHub's five alerts. */
 const ALERTS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
@@ -80,6 +104,10 @@ const HIGHLIGHT_FILE_MAX = 300_000;
  * `<span class="line" id="L<n>" data-line="<n>">` per line — the target of `#L<n>`.
  */
 export async function highlightFile(file: string, lang: string | null): Promise<string> {
+  return passive(await highlighted(file, lang));
+}
+
+async function highlighted(file: string, lang: string | null): Promise<string> {
   // The newline that ends the last line starts no line of its own.
   const text = file.endsWith('\n') ? file.slice(0, -1) : file;
   const hl = await highlighter();
@@ -187,7 +215,14 @@ function lineMapPlugin(md: MarkdownIt): void {
       // A heading of the document itself (not inside a list or a quote) carries a fingerprint of
       // its line: a block can be added under it, and the server checks it is still the same one.
       if (token.type === 'heading_open' && token.level === 0 && token.map) {
-        token.attrSet('data-hash', lineHash(bodyLinesOf(state.src)[token.map[0]] ?? ''));
+        const hash = lineHash(bodyLinesOf(state.src)[token.map[0]] ?? '');
+        token.attrSet('data-hash', hash);
+        const act = (state.env as ActEnv).act;
+        if (act) {
+          token.attrSet('data-act', act);
+          token.attrSet('data-act-line', String(token.map[0] + 1));
+          token.attrSet('data-act-hash', hash);
+        }
       }
     }
   });
@@ -242,7 +277,7 @@ function alertPlugin(md: MarkdownIt): void {
         continue;
       }
 
-      const titleToken = new state.Token('html_block', '', 0);
+      const titleToken = own(new state.Token('html_block', '', 0));
       titleToken.content = `<p class="markdown-alert-title">${title}</p>\n`;
       tokens.splice(i + 1, 0, titleToken);
 
@@ -299,9 +334,10 @@ function qaPlugin(md: MarkdownIt): void {
   });
   let html: ReturnType<typeof qaHtml> | null = null;
   const view = () => (html ??= qaHtml({ inline: (s) => md.renderInline(s), block: (s) => md.render(s) }));
-  md.renderer.rules.qa_item = (tokens, idx) => {
+  md.renderer.rules.qa_item = (tokens, idx, _options, env: ActEnv) => {
     const item = tokens[idx]!.meta as QaItem;
-    return `${item.kind === 'quote' ? `<ul class="items qa-quote">${view().itemHtml(item)}</ul>` : view().itemHtml(item)}\n`;
+    const one = view().itemHtml(item, env.act ?? null);
+    return `${item.kind === 'quote' ? `<ul class="items qa-quote">${one}</ul>` : one}\n`;
   };
   md.renderer.rules.qa_thread = (tokens, idx) => {
     const { replies, line } = tokens[idx]!.meta;
@@ -374,10 +410,11 @@ function taskListPlugin(md: MarkdownIt, counts: { done: number; total: number })
       }
 
       const raw = (source[line - 1] ?? '').replace(/\r$/, '');
-      const box = new state.Token('html_inline', '', 0);
+      const box = own(new state.Token('html_inline', '', 0));
       box.content =
         `<input class="task-checkbox" type="checkbox" disabled` +
-        `${done ? ' checked' : ''} data-line="${line}" data-hash="${lineHash(raw)}">`;
+        `${done ? ' checked' : ''} data-line="${line}" data-hash="${lineHash(raw)}"` +
+        `${(state.env as ActEnv).act ? lineAct((state.env as ActEnv).act!, line, lineHash(raw)) : ''}>`;
       inline.children?.unshift(box);
       i += 2;
     }
@@ -542,7 +579,7 @@ function refPlugin(md: MarkdownIt): void {
         for (const m of c.content.matchAll(REF)) {
           if (m.index! > at) out.push(Object.assign(new state.Token('text', '', 0), { content: c.content.slice(at, m.index) }));
           const id = md.utils.escapeHtml(m[1]!);
-          out.push(Object.assign(new state.Token('html_inline', '', 0), { content: `<a class="who" data-kind="ref" href="#${id}">№${id}</a>` }));
+          out.push(own(Object.assign(new state.Token('html_inline', '', 0), { content: `<a class="who" data-kind="ref" href="#${id}">№${id}</a>` })));
           at = m.index! + m[0].length;
         }
         if (at < c.content.length) out.push(Object.assign(new state.Token('text', '', 0), { content: c.content.slice(at) }));
@@ -631,7 +668,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   let hasMermaid = false;
 
   const md: MarkdownIt = new MarkdownIt({
-    html: true, // docs are trusted: their HTML is rendered as written, there is no sanitizer
+    html: true, // a document's HTML is rendered, then made passive with everything else — `passive()`
     linkify: true,
     breaks: false,
     highlight(code: string, lang: string): string {
@@ -687,8 +724,13 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   md.use(refPlugin);
   md.use(linkPlugin, ctx);
 
-  const html = rewriteHtmlImages(md.render(src), ctx);
-  return { html, headings, hasMermaid, tasks };
+  // A document's own raw HTML loses what only the renderer may write; the renderer's passes as made.
+  md.renderer.rules.html_block = (tokens, idx) => (ours.has(tokens[idx]!) ? tokens[idx]!.content : authored(tokens[idx]!.content));
+  md.renderer.rules.html_inline = (tokens, idx) => (ours.has(tokens[idx]!) ? tokens[idx]!.content : authored(tokens[idx]!.content));
+
+  const actToken = randomBytes(16).toString('hex');
+  const html = passive(rewriteHtmlImages(md.render(src, { act: actToken } satisfies ActEnv), ctx));
+  return { html, headings, hasMermaid, tasks, actToken };
 }
 
 /** A YAML key, the line right after the opening `---`: `title:`, `"a b":`, `tags:`. */
@@ -788,7 +830,7 @@ export function markupHunks(hunks: DiffHunk[]): DiffHunk[] {
         const fence = FENCE.test(line.text);
         const html = markupLine(line.text, fenced || fence);
         if (fence) fenced = !fenced;
-        return { ...line, html };
+        return { ...line, html: passive(html) };
       }),
     };
   });
