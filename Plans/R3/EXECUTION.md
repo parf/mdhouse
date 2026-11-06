@@ -1135,3 +1135,14 @@ after exact review, inspectable focused/native proof and CEO actual15s stability
 [№MW.10](workspaces/TODO.md#MW.10) selected before edits: W2 Settings project grouping, W1 safe
 current config/read mapping, W3 terminology/docs. Concrete current controls and honest inherited
 settings ship independently of new admin-gated mutations; no RAG/OAuth foundation detour or full gate.
+
+
+## Projects Settings current-controls cohort integrated and live
+
+[№MW.10](workspaces/TODO.md#MW.10): W2 UI `040578c`, W1 read DTO `381d250`, W3 terminology
+`927faa8`; CTO inventory `be56acd`. Non-author CTO review, focused5/0 and owned UI proof passed,
+fast-forward source identity unchanged. CEO verified actual Settings after local reload
+`e061cd7d59e9822f`; all roots/RW retained. [QA](QA.md#projects-settings-current-controls-checkpoint).
+No full/types blanket run, publish or version bump. Existing per-project facts/controls and grouping
+are delivered; new name/access/save/AB mutations remain the explicit admin-gated dependent scope,
+not blocked by RAG/OAuth and not falsely marked complete. Workers completed their named assignments.

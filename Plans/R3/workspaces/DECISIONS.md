@@ -134,3 +134,8 @@
 - 📌 RENDER-W1 Unchanged file content must not trigger document-body/token replacement or new diagram work. <a id="RENDER-W1"></a>
   Refresh Git metadata separately; actual content changes refresh body/provenance normally. Image cache
   is defense, not a substitute for eliminating redundant full rendering. [History](resolved.md#RENDER-W1).
+
+
+- 📌 PROJECTS-W1 Settings uses Projects with project selection/details, separate browser and instance scopes. <a id="PROJECTS-W1"></a>
+  Filesystem directory/path and internal root/API/storage semantics stay unchanged; unsupported
+  per-project mutations require their existing admin-gated owning work. [History](resolved.md#PROJECTS-W1).

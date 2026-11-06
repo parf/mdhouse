@@ -353,3 +353,24 @@ real changed source produces new body/token/decoded valid IMG. Untracked empty/p
 tracked preservation covered. Reviewer corrected unrelated inherited RAG/session probes out of scope.
 CEO actual15s observation (`693b4d284727048e`): samePre/sameImg true, childMutations0/gapFrames0,
 261x150 decoded; ignored history/actions absent, nine roots/RW retained. No realty edits/paid calls.
+
+
+## Projects Settings current-controls checkpoint
+
+[№MW.10](workspaces/TODO.md#MW.10): worker-authored exact `be56acd` non-author CTO review PASS
+(UI/copy/descriptive read DTO, no new mutation/authority). Fast-forward integration preserves source/
+package/test identity. Focused project-groups + project-roots 5/0; logs `.scratch/cto/projects-settings/`.
+No full/types/CLI blanket run for copy/layout. CLI diff inspected: human strings only, parser/flags/
+template expressions unchanged. RootInfo DTO stays allowlisted; writableBy is descriptive only, absent
+for RO/reference; reference removal stays403. No admin grant follows from RW or author cookie.
+
+Owned safe-smoke scratch proof: Saved/This session/Reference groups, selection preserves URL/last
+shown document, canonical path and actual access/persistence, explicit RW reason, immutable reference,
+remove selected saved project falls back, last remaining project removal disabled. Light desktop/dark
+phone screenshots opened, own processes cleaned. Existing authorized controls preserved; new project
+name/RW/save/AB override edits not implemented or disguised as working controls.
+
+CEO applied targeted local reload (`e061cd7d59e9822f`): actual Settings Projects/group/details,
+canonical path/access/kept visible; browser and all-project scopes distinct, chooser Switch project.
+Nine roots/path/RW preserved, no build/provider call/version bump. Parent add/naming/per-space AB and
+admin gates remain open until their own complete acceptance; only this scoped checkpoint closes.

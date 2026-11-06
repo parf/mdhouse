@@ -14,7 +14,7 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
 Integrated: immutable reference root/package, fallback browser author, license, editor scheme,
 Copy/touch implementation slices, 39 flow authoring packages, pure run core, passive content boundary
 and dormant route classification. [Owning checkpoints](workspaces/TODO.md).
-MW.0d.1 pure session/history/mock GeoIP (`e5382e1`) and MW.0d.2 codec/store foundations (`c529bf1`) are integrated. Standalone RAG local-plan bin (`ae04901`) and connected finite bin (`1fd503a`) are integrated; actual provider indexing/search remains unproven. Ignored Markdown browsing (`9b90362`), direct file reveal/Git-state UI (`8fa40e1`) and Mermaid XML/refresh fixes (`4ccd007`) are integrated; CEO verified the actual diagram after local reload. Access/OAuth/admin wiring, materialization,
+MW.0d.1 pure session/history/mock GeoIP (`e5382e1`) and MW.0d.2 codec/store foundations (`c529bf1`) are integrated. Standalone RAG local-plan bin (`ae04901`) and connected finite bin (`1fd503a`) are integrated; actual provider indexing/search remains unproven. Ignored Markdown browsing (`9b90362`), direct file reveal/Git-state UI (`8fa40e1`) and Mermaid XML/refresh fixes (`4ccd007`) are integrated; CEO verified the actual diagram after local reload. Projects Settings organization/current controls (`be56acd`) is integrated and live; new per-project mutation editors remain open. Access/OAuth/admin wiring, materialization,
 RAG integration and complete desktop/mobile journeys remain open; release parents below stay open.
 
 ## [№R3a](#R3a) — Product identity {#r3a-product-identity}

@@ -391,3 +391,12 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬 👤parf если файл не меняется - зачем ?
   >
   > 💬👾 CEO steering `7fc318b1241e4cd8`: generic root Git events must not rerender unchanged documents; refresh Git status/history separately or check content identity, retaining valid body/token. Changed content refreshes normally; cache/restore alone is insufficient.
+
+
+## Current Projects Settings — 2026-11-06
+
+- ✅ PROJECTS-W1 Projects terminology and current supported configuration <a id="PROJECTS-W1"></a>
+  CEO handoff (`042ab6f45fcc9e53`):
+  > Owner reminds remaining requested work: per-project settings IN Settings view; rename Directories→Projects; many tasks simple, should progress them. Audit owning TODO/currentUI against original approved acceptance NOW and pick compatible simple/medium cohort beforecode, not more inert foundation detours. Ship rename throughout relevant UI/shared terms + current per-project settings that existing authority supports, project selection/grouping in Settings. Do not make routine text/UI work wait for unrelated OAuth/RAG; preserve required admin gates for mutations, explicitly scope any unavoidable dependent portion. Delegate available workers via established scheme, one proportional combined gate/review, no full after minor changes; exact task list/status back concise. Local reload after accepted integration under standing owner request, coordinated CEO only.
+  >
+  > 💬👾 Current Projects UI/read DTO/copy cohort accepted on be56acd. New name/access/kept/AB override editors remain explicit admin-gated tasks, not claimed delivered. Live result: e061cd7d59e9822f.

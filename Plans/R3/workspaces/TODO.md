@@ -183,7 +183,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Depends: [№MW.0](#MW.0), [№MW.0f](#MW.0f), [№MW.0g](#MW.0g), [№Q-W1](DECISIONS.md#Q-W1), [№Q-W2](DECISIONS.md#Q-W2)
   - Acceptance: from a clean account, an AI follows `install.md`, creates one project workspace and opens it writable in mdhouse
   - Acceptance: a symlink from the workspace cannot write outside the workspace root
-  - Acceptance: `Settings → Directories` has Add directory; it accepts a path and RW/RO, then uses the same canonical add path as the CLI
+  - Acceptance: `Settings → Projects` has Add project; it accepts a path and RW/RO, then uses the same canonical add path as the CLI
   - Acceptance: saved roots show no saved badge; session-only roots show `[unsaved]`
   - Acceptance: clicking `[unsaved]` asks before saving the canonical root and its current RW/RO mode to prefs, then removes the badge without restarting
   - Acceptance: every root shows `[RW]` or `[RO]`; clicking it asks before switching immediately to the opposite mode
@@ -193,7 +193,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.1a Add optional human names for project directories <a id="MW.1a"></a>
-  - Builds: project display-name metadata keyed by canonical root path; a Project name field in the Settings directory editor; CLI `--name`
+  - Builds: project display-name metadata keyed by canonical root path; a Project name field in the Settings project editor; CLI `--name`
   - Acceptance: `mdhouse ~/mdhouse -p --name "All MDHouse Projects"` saves that human name for the canonical directory
   - Acceptance: `--name` requires exactly one named directory; ambiguous multi-directory use is refused with a useful error
   - Acceptance: Settings can add or edit the name; saving an empty value, or CLI `--name reset`, deletes the override and restores the directory-derived label
@@ -213,7 +213,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: Agent Bus status shows the effective endpoint and whether it comes from the space or the default
   - Acceptance: every directory row always shows a compact `[AB]` button beside its `[RW]` / `[RO]` access badge; `[AB]` opens its Agent Bus editor
   - Acceptance: the per-space Agent Bus value is shown next to `[AB]` only when set; an inherited/default value adds no text to the row
-  - Acceptance: a legend below Directories explains `[unsaved]`, `[RW]` / `[RO]` and `[AB]`
+  - Acceptance: a legend below Projects explains `[unsaved]`, `[RW]` / `[RO]` and `[AB]`
   - Acceptance: saving an empty endpoint/default removes that override and its displayed value without hiding `[AB]` or restarting mdhouse; clearing every field deletes the config entry
   - Acceptance: target precedence is explicit right-panel selection → document `<!-- AB: name -->` → space defaults → instance defaults
   - Acceptance: changing defaults or reopening the panel does not overwrite an explicit panel choice for that document
@@ -475,8 +475,9 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: any optional cache/reuse is bounded, source/theme-bound and generated-img-only, never a substitute for stopping redundant full rendering; stale async work cannot replace current nodes, no active SVG fallback
   - Meaningful native unchanged-refetch stability and changed-source positives; exact independent review, no full or blanket checks, CEO-only coordinated live reload
 
-- [ ] MW.10 Projects naming and current per-project Settings organization <a id="MW.10"></a>
+- [x] MW.10 Projects naming and current per-project Settings organization <a id="MW.10"></a>
   - Owner priority: rename Directories to Projects and put current per-project settings inside Settings; no OAuth/RAG wait or unsupported overrides
+  - Verified: non-author CTO review exact `be56acd`, fast-forward integration unchanged; focused5/0 and owned Settings proof. CEO local reload/actual Settings PASS (`e061cd7d59e9822f`), nine roots/RW preserved; no full/types rerun
   - Cohort: W2 Settings project selection/grouping/current controls; W1 current project config/API mapping and safe scoped read support; W3 user-facing Project terminology/docs outside Settings paths
   - Acceptance: Settings clearly selects/groups projects, shows canonical path and current supported configuration, separates browser/instance settings; reference root remains immutable
   - Acceptance: user-facing served-root terminology is Projects; filesystem subdirectories, IDs, paths, API/storage keys retain semantics
