@@ -354,7 +354,7 @@ freeipapi.com only on any primary failure (timeout, network, non-200, 429 back-o
 non-JSON, `success:false`, wrong echoed IP, bad country). Fixed HTTPS hosts, `redirect: 'error'`,
 no credentials. Geo: city, state, country, ISP, org, ASN + label — null when the provider omits it.
 
-## Standalone RAG sync local planner
+## Standalone RAG sync bin
 
 `bin/mdhouse-rag-sync` calls `src/rag-sync-cli.ts` independently of the app/service entrypoint.
 Help/import have no work; `plan` requires explicit root/FileScan/RAG/namespace/table and inventories
@@ -363,9 +363,16 @@ node_modules/bower_components/jspm_packages are excluded, symlinks/special files
 Incomplete listing is visible with nonzero exit; >32 KiB files are annotated, not silently dropped.
 `lib/rag-sync-plan.ts` strictly validates bounded metadata/root device+inode/target/selection and
 produces a deterministic full-metadata digest, not content hash, auth or atomic-folder proof.
-Only local preview is implemented: provider readiness stays unverified; sync/search return not-wired
-without side effects. No credential, Agent Bus call, agent registration or background process is
-created by this command. Future connected adapter/index/search acceptance remains separate.
+`lib/rag-sync-runtime.ts` validates finite sync preflights/results and scoped search citations through
+an injected transport. Sync requires explicit apply, matching owner configuration, demand mode,
+no subscribers and the delivered RAG 0.4.2 capabilities/collection health. Unknown outcomes never
+retry automatically; semantic/hybrid search requires explicit paid intent.
+`lib/rag-sync-bus.ts` uses only the protected local account socket: verifies the account and existing
+owned mdhouse agent, holds its token in memory and consumes only each request's random topic/tag.
+No registration, subscription, watch or background process is created. App reconnect cleanup also
+consumes only the mdhouse topic; older running app versions need an operator-authorized reload.
+Help/import/plan remain credential/network-free. Connected mock acceptance does not prove live
+provider readiness, source-mask deployment or real indexing/search; those remain separate gates.
 
 ## Session-history snapshot foundations
 
