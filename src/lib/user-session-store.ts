@@ -158,25 +158,38 @@ export class UserSessionStore {
 
   /**
    * Writes `next` if the file is still the one `etag` names (null: still no file) — else `stale`
-   * and nothing is written. The new revision is the current one + 1.
+   * and nothing is written. The new revision is the current one + 1. `next` is copied through the
+   * codec at the call, so changing it afterwards changes nothing that is written or returned.
    */
   save(etag: string | null, next: Model): Promise<Snapshot> {
+    let copy: Model;
+    try {
+      copy = decodeSnapshot(encode(next, 0)).model;
+    } catch (err) {
+      return Promise.reject(err instanceof SnapshotError ? new StoreError(err.reason, `the model cannot be saved: ${err.message}`) : err);
+    }
     return this.#serial(() =>
       this.#locked(async () => {
         const cur = await this.#read();
         if (cur.etag !== etag) throw new StoreError('stale', `${this.path} changed since it was read`);
-        return this.#write(cur, next);
+        return this.#write(cur, copy);
       }),
     );
   }
 
-  /** Reads, applies `fn` and writes, all under the lock. `fn` returning its input writes nothing. */
+  /**
+   * Reads, applies `fn` to a fresh copy and writes, all under the lock. Whether `fn` returns a new
+   * model or changes its argument in place, what it returns is what is written; nothing is written
+   * only when that encodes to the same snapshot as the file.
+   */
   update(fn: (model: Model) => Model): Promise<Snapshot> {
     return this.#serial(() =>
       this.#locked(async () => {
         const cur = await this.#read();
-        const next = fn(cur.model);
-        return next === cur.model ? cur : this.#write(cur, next);
+        const before = encode(cur.model, cur.revision);
+        const after = encode(fn(cur.model), cur.revision);
+        if (after === before) return { etag: cur.etag, revision: cur.revision, model: decodeSnapshot(before).model };
+        return this.#write(cur, after);
       }),
     );
   }
@@ -194,7 +207,7 @@ export class UserSessionStore {
       fh = await open(this.path, constants.O_RDONLY | NOFOLLOW);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
-      if (code === 'ENOENT') return { etag: null, revision: 0, model: EMPTY };
+      if (code === 'ENOENT') return { etag: null, revision: 0, model: { ...EMPTY } };
       if (code === 'ELOOP') throw new StoreError('unsafe-file', `${this.path} is a symlink`);
       throw new StoreError('io', `${this.path}: ${(err as Error).message}`);
     }
@@ -228,21 +241,17 @@ export class UserSessionStore {
   }
 
   /**
-   * Replaces the file with `next` at `cur.revision + 1`: a new 0600 file in the same directory,
-   * synced, renamed over the old one, then the directory synced. A failure before the rename
-   * removes the temporary file and leaves the old one as it was (`unchanged`); one after it is
-   * `unknown`.
+   * Replaces the file with `next` — a model, or the snapshot text it already encoded to — at
+   * `cur.revision + 1`: a new 0600 file in the same directory, synced, renamed over the old one,
+   * then the directory synced. A failure before the rename removes the temporary file and leaves
+   * the old one as it was (`unchanged`); one after it is `unknown`. Returns the model decoded from
+   * the written bytes — never the caller's object.
    */
-  async #write(cur: Snapshot, next: Model): Promise<Snapshot> {
+  async #write(cur: Snapshot, next: Model | string): Promise<Snapshot> {
     if (cur.revision >= Number.MAX_SAFE_INTEGER) throw new StoreError('revision-overflow', `${this.path} is at the last revision`);
     const revision = cur.revision + 1;
-    let text: string;
-    try {
-      text = encodeSnapshot(next, revision);
-    } catch (err) {
-      if (err instanceof SnapshotError) throw new StoreError(err.reason, `the model cannot be saved: ${err.message}`);
-      throw err;
-    }
+    const model = typeof next === 'string' ? decodeSnapshot(next).model : next;
+    const text = encode(model, revision);
     const bytes = Buffer.from(text, 'utf8');
     if (bytes.length > MAX_BYTES) throw new StoreError('too-large', `the snapshot is larger than ${MAX_BYTES} bytes`);
 
@@ -273,7 +282,7 @@ export class UserSessionStore {
     } catch (err) {
       throw new StoreError('io', `${this.path} was replaced, but the write may not be durable (${(err as Error).message}) — load() before any retry`, 'unknown');
     }
-    return { etag: createHash('sha256').update(bytes).digest('hex'), revision, model: next };
+    return { etag: createHash('sha256').update(bytes).digest('hex'), revision, model: decodeSnapshot(text).model };
   }
 
   /**
@@ -314,6 +323,16 @@ export class UserSessionStore {
       const st = await lstat(this.#lock).catch(() => null);
       if (st && mine && sameNode(st, mine)) await unlink(this.#lock).catch(() => {});
     }
+  }
+}
+
+/** The codec's snapshot text; a model it rejects is a `StoreError` with the codec's reason. */
+function encode(model: unknown, revision: number): string {
+  try {
+    return encodeSnapshot(model, revision);
+  } catch (err) {
+    if (err instanceof SnapshotError) throw new StoreError(err.reason, `the model cannot be saved: ${err.message}`);
+    throw err;
   }
 }
 

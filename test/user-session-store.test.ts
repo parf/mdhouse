@@ -314,3 +314,68 @@ describe('the lock', () => {
     expect(existsSync(file())).toBe(false);
   });
 });
+
+describe('returned snapshots are what is on disk', () => {
+  type Mutable = Record<string, { status: string }>;
+
+  test('save copies its input at the call: later changes to it reach neither the file nor the result', async () => {
+    const s = await UserSessionStore.open({ dir });
+    const next = addUser(EMPTY, A) as unknown as Mutable;
+    const pending = s.save(null, next as unknown as Model);
+    next[A]!.status = 'disabled';
+    const saved = await pending;
+    next[A]!.status = 'removed';
+    expect(saved.model[A]!.status).toBe('enabled');
+    expect((await s.load()).model[A]!.status).toBe('enabled');
+  });
+
+  test('a returned model is a copy: changing it changes neither the file nor the next load', async () => {
+    const s = await UserSessionStore.open({ dir });
+    const saved = await s.update(() => addUser(EMPTY, A));
+    (saved.model as unknown as Mutable)[A]!.status = 'disabled';
+    const loaded = await s.load();
+    expect(loaded.model[A]!.status).toBe('enabled');
+    (loaded.model as unknown as Mutable)[A]!.status = 'disabled';
+    expect((await s.load()).model[A]!.status).toBe('enabled');
+  });
+
+  test('update changing its argument in place: written, or refused — never reported as saved when it is not', async () => {
+    const s = await UserSessionStore.open({ dir });
+    await s.update(() => addUser(EMPTY, A));
+    const r = await s
+      .update((m) => {
+        (m as unknown as Mutable)[A]!.status = 'disabled';
+        return m;
+      })
+      .then(
+        (snap) => ({ snap }),
+        (err: unknown) => ({ err }),
+      );
+    const disk = await s.load();
+    if ('snap' in r) {
+      expect(r.snap.revision).toBe(2);
+      expect(r.snap.model[A]!.status).toBe('disabled');
+      expect(disk).toEqual(r.snap);
+    } else {
+      expect(disk.revision).toBe(1);
+      expect(disk.model[A]!.status).toBe('enabled');
+    }
+    expect((await s.update((m) => addUser(m, B))).revision).toBe(disk.revision + 1);
+  });
+
+  test('update returning an equal new object writes nothing and returns the file', async () => {
+    const s = await UserSessionStore.open({ dir });
+    const first = await s.update(() => addUser(EMPTY, A));
+    const same = await s.update((m) => JSON.parse(JSON.stringify(m)) as Model);
+    expect(same).toEqual(first);
+    expect((await s.load()).revision).toBe(1);
+  });
+
+  test('save of a model the codec rejects is refused at the call and leaves the queue working', async () => {
+    const s = await UserSessionStore.open({ dir });
+    const err = await refused(s.save(null, { bad: 1 } as unknown as Model));
+    expect(err.outcome).toBe('unchanged');
+    expect(readdirSync(dir)).toEqual([]);
+    expect((await s.save(null, addUser(EMPTY, A))).revision).toBe(1);
+  });
+});
