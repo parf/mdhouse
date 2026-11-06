@@ -35,3 +35,15 @@
   > pending their handoff. No provider repository changes or functional/paid calls are authorized here.
 
 - [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1) <a id="Q-R3-HTML1"></a>
+
+## Shared marks authorization — 2026-11-05
+
+- ❓ Q-R3-ADMIN1 Who may change the existing shared file marks? <a id="Q-R3-ADMIN1"></a>
+  `/api/marks` stores favorite/muted/ignored for the entire root in instance prefs, including RO roots.
+  Ignored entries disappear from everyone's default tree; this is not a private browser preference.
+  [№MW.0g](TODO.md#MW.0g) must classify this mutation before activating web administration.
+  - ( ) Personal owner / Team configured instance administrator 🌟
+  - ( ) Project Editor with an explicit grant to that project
+  > 💬👾 Verified `src/server.ts` marks route and `src/lib/prefs.ts`: all browsers share the same
+  > root-keyed arrays; ignored changes invalidate the shared tree. Recommend treating these existing
+  > global marks as instance configuration. A per-user marks store is a separate scope, not inferred.

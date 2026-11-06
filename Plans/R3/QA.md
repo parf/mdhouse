@@ -148,3 +148,18 @@ Owner reply, verbatim: «done». CEO receipt `9c053f95c199c924` independently ve
 W1 confirms the verified own group was stopped after owner approval. The classifier-denied action
 was not proxied through another agent/command. Cleanup blocker is removed; injection/browser HOLD
 remains until corrected helper review. No old-code fail-first run is to be repeated.
+
+## Clean passive-content verification
+
+Verified common launcher `814c10a` replaces both ad-hoc process lifecycles. W2 clean runs used it;
+no live instance or foreign endpoint was used. Fixed actions 33/33 and hostile/style corpus passed;
+baseline `31e4992` failed the five new exact-node/double-click checks as expected. Full candidate
+suite 689/689 and tsc passed; source/marker/draft preservation is covered.
+
+Raw HTML first failed at the harness layer (framed:false); those runs prove no in-frame negative or
+positive result. Corrected test-only `0f44675` reads iframe DOM/CSS through CDP: scripts/handlers/SVG
+markers absent before any fetch, no probes or frame navigation, parent unchanged; empty sandbox and
+page/source modes confirmed. X06 shows passive text/table/details and green computed h1. Control on
+old `b11e47f` detects execution/probes/navigation; X03 did not fire there and X06 only fails the old
+sandbox attribute assertion, so neither is claimed as a positive exploit control. Link/form click
+landing is not asserted. Real Safari/Firefox/device checks remain open in release QA.

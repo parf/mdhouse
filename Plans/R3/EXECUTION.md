@@ -572,3 +572,29 @@ must not be used dynamically. W2 is assigned a separate sync to final `814c10a` 
 that closes its own probe/staging even when helper stop fails, propagating failure. Review must verify
 exact helper identity and exclude obsolete helper snapshots during candidate assembly. No browser
 run from this consolidation target has occurred; helper safety gate remains pending.
+
+## Final passive-content verification candidate
+
+Common helper `814c10a` received independent final PASS (`faf204e0030adcfe`): corrected procedure
+suite and full/tsc green, no process/port/temp leftovers. Scoped browser testing resumed only through
+that helper; ad-hoc lifecycle and old unsafe fail-first runs remain prohibited.
+
+Candidate `5617731` combines server `09b3cd7`, client production `1f4e475`/adapter `19f3886` and
+helper `814c10a` with canonical CLAUDE/Plans invariants. CTO full 689/689, tsc clean, new-renderer
+R3 audit 384 links/zero errors. No production-code identity drift was introduced. Final test-only
+raw harness `0f44675` and current main's shared-marks question are added in the followup candidate;
+the old pinned review target remains unchanged.
+
+W2 clean helper runs: fixed actions 33/33, hostile 34 and passive-style positives 3 pass; baseline
+`31e4992` reproduces the five newly asserted action/double-click differences. Draft/live/document
+switch behavior and marker exclusion from Copy/source pass. Initial raw HTML checks failed to
+observe the sandboxed frame and were not acceptance evidence. Corrected X01–X06 checks use DOM/CSS
+protocols for the isolated static iframe, not a nonexistent default JS context: fixed local markers
+absent, no probe/navigation/parent effect, empty sandbox, working source/page toggle; passive text and
+green computed heading preserved. Old `b11e47f` control detects execution/navigation for applicable
+vectors. Raw link/form mouse delivery is best-effort, not asserted; Safari/Firefox remain release-QA
+gaps. Cleanup after each owned run was checked clear.
+
+Final combined exact-SHA review still gates integration. Main stays on the pre-security source until
+that verdict; admin wiring and materialization remain unassigned. Early undocumented 7794 PID
+ownership is preserved as incident uncertainty, separate from the accepted common procedure.

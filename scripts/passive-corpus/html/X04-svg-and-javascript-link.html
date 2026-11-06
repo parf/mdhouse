@@ -1,3 +1,3 @@
 <!doctype html><html><body><h1>X04 svg script and javascript link</h1>
-<svg><script>fetch('http://127.0.0.1:PROBE_PORT/html-svgscript',{mode:'no-cors'})</script></svg>
-<a id="j" href="javascript:fetch('http://127.0.0.1:PROBE_PORT/html-jslink',{mode:'no-cors'})">link</a></body></html>
+<svg><script>document.documentElement.setAttribute('data-ran-svgscript','1');fetch('http://127.0.0.1:PROBE_PORT/html-svgscript',{mode:'no-cors'})</script></svg>
+<a id="j" href="javascript:document.documentElement.setAttribute('data-ran-jslink','1');fetch('http://127.0.0.1:PROBE_PORT/html-jslink',{mode:'no-cors'})">link</a></body></html>
