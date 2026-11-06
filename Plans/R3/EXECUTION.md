@@ -1073,3 +1073,13 @@ versus Untracked semantics and direct-file ancestor reveal/selection. W1 owns ca
 W2 shared semantic UI/classes and navigation. Existing recents synthesize untracked for loose non-repo
 files; that must not become a Git badge. Interface agreement precedes code, one coherent gate/review;
 no duplicate [№MW.9](workspaces/TODO.md#MW.9), full suite, version bump or worker live restart.
+
+
+## Mermaid XML fix joins the pre-code UI cohort
+
+CEO owner report (`f6cf0e66e4616a61`) reproduced a diagram image with zero natural dimensions:
+Mermaid output's foreignObject HTML br makes standalone SVG XML invalid. Source svgImage currently
+feeds the original string to img despite failed XML parsing. [№MW.8c](workspaces/TODO.md#MW.8c)
+assigned to W3 before code, with native inert XML serialization design first. Same cohort as
+[№MW.9a](workspaces/TODO.md#MW.9a); Doc badge and render hunks have separate owners. One combined
+gate/review, preserve img-only/strict configuration; no live source mutation, full gate or deploy.

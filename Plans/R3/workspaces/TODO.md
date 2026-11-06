@@ -446,6 +446,13 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: preserve explicit exclusions, hard `.git`, Registry jail and source/passive-content boundary; no per-row Git subprocesses
   - One combined focused/types gate, owned scratch UI proof and independent exact review as needed; no full/version bump/live restart by workers
 
+- [ ] MW.8c Serialize Mermaid output as valid standalone SVG XML <a id="MW.8c"></a>
+  - Owner-reported evidence: `.ai-team/README.md` diagram image complete but natural dimensions zero; SVG XML rejects HTML br inside foreignObject despite valid Mermaid source
+  - Cohort: W3 native inert serialization in Mermaid image helper/render block; combined with [№MW.9a](#MW.9a), W2 owns separate Doc badge hunk
+  - Acceptance: ordinary/text/br-label diagrams including failing-shaped cto/rg/tester labels load with nonzero image dimensions and valid SVG XML; invalid conversion fails visibly
+  - Acceptance: strict Mermaid config, passive action boundary and inert img-only SVG remain; no active inline SVG fallback, new authority/dependency or source-content mutation
+  - One combined proportional gate/security review and owned scratch browser proof; no full/version bump/live7777 checks
+
 ## Gate
 
 - [ ] MW.6 Review the complete workspace flow <a id="MW.6"></a>
