@@ -1,5 +1,5 @@
 import { render as mount } from 'preact';
-import { fetchesHistory, gitStateOf, heldFor, showsHistory, type Held } from './git-state';
+import { fetchesHistory, gitStateOf, heldFor, holdAnswer, showsHistory, type Held, type HistoryAsk } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { safeHtml } from './safe-html';
@@ -37,6 +37,8 @@ const whatDiff = (dirty: boolean, how: string) =>
 
 interface Props {
   doc: DocPayload | null;
+  /** Changes when the file's Git metadata does (a commit that leaves the file clean); history and authors are asked again. */
+  metadataRevision?: string | null;
   loading: boolean;
   error: string | null;
   /** Line to scroll to and flash, from a search hit. */
@@ -130,6 +132,7 @@ async function renderMermaid(container: HTMLElement, current: () => boolean): Pr
 
 export function Doc({
   doc,
+  metadataRevision = null,
   loading,
   error,
   jumpLine,
@@ -203,6 +206,8 @@ export function Doc({
 
   const log = heldFor(held, docPath);
   const docGitState = gitStateOf(doc);
+  const askNow = useRef<HistoryAsk | null>(null);
+  askNow.current = docPath ? { path: docPath, revision: metadataRevision, state: docGitState } : null;
 
   useEffect(() => {
     setLogFailed(false);
@@ -212,15 +217,16 @@ export function Doc({
   // drops the answer still in flight.
   useEffect(() => {
     if (!docPath || !fetchesHistory(docGitState)) return;
+    const ask: HistoryAsk = { path: docPath, revision: metadataRevision, state: docGitState };
     let live = true;
     api
       .history(docPath)
-      .then((h) => live && setHeld({ path: docPath, value: h }))
+      .then((h) => live && askNow.current && setHeld((prev) => holdAnswer(prev, ask, askNow.current!, h)))
       .catch(() => live && setLogFailed(true));
     return () => {
       live = false;
     };
-  }, [docPath, doc?.status, docGitState]);
+  }, [docPath, doc?.status, docGitState, metadataRevision]);
 
   /**
    * Diff mode: the same document shown as what changed rather than as text.

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fetchesHistory, gitStateClass, gitStateOf, GIT_STATE, heldFor, parentScope, showsHistory, shownStatus } from '../src/ui/git-state';
+import { fetchesHistory, gitStateClass, gitStateOf, GIT_STATE, heldFor, holdAnswer, parentScope, showsHistory, shownStatus } from '../src/ui/git-state';
 import { revealScopes } from '../src/ui/views';
 
 describe('git state', () => {
@@ -80,5 +80,19 @@ describe('file history visibility', () => {
     expect(heldFor(held, 'r/b.md')).toBeNull();
     expect(heldFor(held, null)).toBeNull();
     expect(heldFor(null, 'r/a.md')).toBeNull();
+  });
+
+  test('an answer for an old revision of the same file does not replace the current one', () => {
+    const ask = (revision: string | null) => ({ path: 'r/a.md', revision, state: null });
+    const held = { path: 'r/a.md', value: 'v1' };
+    // asked on revision 1, the page is now on revision 2: the old answer is dropped
+    expect(holdAnswer(held, ask('1'), ask('2'), 'old')).toBe(held);
+    // the answer for the revision now shown lands
+    expect(holdAnswer(held, ask('2'), ask('2'), 'new')).toEqual({ path: 'r/a.md', value: 'new' });
+    // a changed state or another file also drops it
+    expect(holdAnswer(held, ask('1'), { ...ask('1'), state: 'untracked' as const }, 'x')).toBe(held);
+    expect(holdAnswer(held, ask('1'), { ...ask('1'), path: 'r/b.md' }, 'x')).toBe(held);
+    // the first answer, nothing held yet
+    expect(holdAnswer<string>(null, ask(null), ask(null), 'first')).toEqual({ path: 'r/a.md', value: 'first' });
   });
 });

@@ -56,3 +56,16 @@ export interface Held<T> {
 
 /** The held answer, only for the path now shown — a previous file's never stands in for this one. */
 export const heldFor = <T>(held: Held<T> | null, path: string | null): T | null => (held && path !== null && held.path === path ? held.value : null);
+
+/** What a history request was asked for: the file, the metadata revision the page was on, the file's Git state. */
+export interface HistoryAsk {
+  path: string;
+  revision: string | null;
+  state: GitState | null;
+}
+
+export const sameAsk = (a: HistoryAsk, b: HistoryAsk): boolean => a.path === b.path && a.revision === b.revision && a.state === b.state;
+
+/** The answer held after `value` arrives for `ask`: replaced only while `ask` is still what is shown, else `held` stays. */
+export const holdAnswer = <T>(held: Held<T> | null, ask: HistoryAsk, now: HistoryAsk, value: T): Held<T> | null =>
+  sameAsk(ask, now) ? { path: ask.path, value } : held;
