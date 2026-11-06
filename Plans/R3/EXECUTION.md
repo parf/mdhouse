@@ -319,3 +319,23 @@ comment/entity handling, duplicates, mixed filtering and allowed `!important`. C
 passive `!important` behavior on whitelisted properties; W2 must test parser consistency with the shared
 policy or explicitly report conservative differences. Final server target remains frozen/unintegrated;
 client action gate and combined review still block whole [№MW.8](workspaces/TODO.md#MW.8)/admin wiring.
+
+## Finance authoring checkpoint
+
+[№MW.3f](workspaces/TODO.md#MW.3f) target `c59750a9ba239ccdd8efc76d1cdfffa7fa4390bb`
+(base `7dbafe0`) received CTO asset/coverage review and integrated without conflict as
+`25c3515edcd151e446287b6c64e70a0e59588af6`. Assets/catalog/matrix/tests match the author target;
+all prior 29 packages/defaults/checks remain. Exact integrated HEAD: full 562/562, 3966 assertions,
+tsc clean. Library now ships 34 authoring packages. Formula tests reconcile supplied synthetic table
+cells; unknown balances, zero baseline, nonpositive contribution, restricted cash and unexplained
+invoice differences retain their limits. No provider access/financial action or production calculation
+engine is implemented. Parent/runtime/manual/scheduled acceptance remains open. Next W3 batch is
+five Legal authoring packages under [№MW.3g](workspaces/TODO.md#MW.3g), same bounded asset/test scope.
+
+## Capacity — 2026-11-06 01:01 UTC
+
+Kitty status: W1 default Claude 5h 76% remaining/reset 3h12m, 7d 96%/6d21h;
+W2 second account 5h 96%/3h48m, 7d 97%/6d11h. Shared Codex weekly 38% remaining;
+short-window/reset unavailable. Review shows GLM session context, no fresh provider quota.
+Continue bounded independent slices and serialized test/review/integration; reserve shared Codex
+capacity for final security checkpoint and handoff. Recheck roughly hourly during active work.

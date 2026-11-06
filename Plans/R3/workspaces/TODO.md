@@ -273,6 +273,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Home: [Business flows](README.md#business-flows), [Ideas flows](README.md#ideas-flows)
 
 - [ ] MW.3f Add Finance flow packages <a id="MW.3f"></a>
+  - Checkpoint: five Finance authoring packages integrated `25c3515`; library contains 34 packages; full 562/562 + tsc on that exact HEAD; runtime/manual/schedule acceptance stays open
   - Builds: Budget/forecast; Variance/management report; Unit economics/pricing; Cash/runway; Financial document review
   - Depends: [№MW.3](#MW.3)
   - Acceptance: outputs cite inputs, expose formulas/assumptions, label estimates and scenarios, and require human approval for consequential actions
