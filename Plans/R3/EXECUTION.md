@@ -976,3 +976,14 @@ types passed, production unchanged after the focused run. Disk logs:
 `.scratch/cto/rag-connected-741a97f/` (`focused.out`, `package-fixed.out`, `types.out`, exit files).
 Own frozen-lock modules, no full/browser/live/provider/production-AI calls. J124 fix is provider-reported
 in review; first sync still waits deploy/tracked-key audit plus private key/runtime readiness.
+
+
+## Connected-bin cohort integrated
+
+[№MW.2a.1b](workspaces/TODO.md#MW.2a.1b) accepted: independent exact-target PASS
+`60def3a69dfdbd14` on `8f3d134`; integrated `1fd503a` without conflicts or production delta.
+Source/bin/package/tests and cohort inventory/changelog are byte-identical to the reviewed target;
+current Plans retained. Integrated pure runtime check passed; no repeated full/types/browser gate.
+[QA limitations](QA.md#connected-rag-bin-checkpoint) preserve separate provider/readiness and old
+running-app gates. Parent [№MW.2a.1](workspaces/TODO.md#MW.2a.1) remains open for actual indexing/search;
+no version bump, deployment, live app reload or paid/provider call.

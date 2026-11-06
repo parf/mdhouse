@@ -240,3 +240,20 @@ No repeated landing gate. Local adversarial temp-tree checks cover exclusions, U
 oversize and explicit partial inventory; no network/provider/server process was used. This proves
 help/local preview only; no connected indexing/search/paid effects, runtime authorization or source
 content/atomic snapshot proof is claimed.
+
+
+## Connected RAG bin checkpoint
+
+Exact `8f3d134` independent PASS `60def3a69dfdbd14`, integrated `1fd503a` with unchanged
+source/bin/package/tests/docs identity; current owning Plans preserved without conflict.
+One combined gate: all 123 non-package focused cases passed; package test initially failed only
+on obsolete help wording, corrected and rerun PASS. Types exit 0; frozen-lock modules and actual
+npm artifact/help/license/39-flow coverage. Logs: `.scratch/cto/rag-connected-741a97f/`.
+Integrated pure runtime check 13/0; no repeated full/types/browser/provider gate.
+
+Review exercised the same exact cohort checkout after its review-checkout module symlink proved
+broken; that dependency failure is not source regression evidence. Strict result decoding, explicit
+apply/paid intent, owner-config/root binding, scoped correlation and topic-only app reconnect cleanup
+are accepted in fake/local scope. Live key/collection readiness, J124 deploy/tracked-key audit and
+operator-authorized upgrade of the old running app remain separate. No live indexing/search proof,
+provider call, production AI test, automatic resend, background sync or app reload was performed.
