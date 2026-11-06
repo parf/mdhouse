@@ -136,6 +136,21 @@ export async function recentChanges(repo: string, rootPath: string, limit = 200)
   return changes;
 }
 
+/**
+ * The paths under `cwd` that its repository does not track, relative to `cwd`: those it ignores
+ * and those merely untracked. A directory holding nothing tracked comes as `dir/` (`./` for `cwd`
+ * itself), so an ignored `node_modules` is one entry. Null when git cannot list `cwd`.
+ */
+export async function untrackedPaths(cwd: string): Promise<{ ignored: string[]; untracked: string[] } | null> {
+  const [ignored, untracked] = await Promise.all([
+    git(cwd, ['ls-files', '-o', '-i', '--exclude-standard', '--directory', '-z']),
+    git(cwd, ['ls-files', '-o', '--exclude-standard', '--directory', '-z']),
+  ]);
+  if (ignored === null || untracked === null) return null;
+  const list = (out: string) => out.split('\0').filter(Boolean);
+  return { ignored: list(ignored), untracked: list(untracked) };
+}
+
 /** Working-tree state for the Markdown under a root, as `rel -> status`. */
 export async function workingStatus(repo: string, rootPath: string): Promise<Map<string, FileStatus>> {
   const subdir = subdirOf(repo, rootPath);
