@@ -430,7 +430,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: direct ignored-directory navigation lists its eligible contents without changing the global toggle; `.ai-team/` and deliberate vendor scope covered
   - Acceptance: ignored directories selected in either V1 or V2 are included with contents in main/default; each V tab contains only its own selected entries
   - Acceptance: `.git`, explicit `.mdhouseignore`/CLI exclusions and Registry path jail remain enforced for every reveal input, including escape/symlink/direct requests
-  - State: W1 backend and W2 UI working on base `a3e096e`, integration `r3/ignored-browse-cohort`; agreed hasIgnored/revealed/capped and bounded repeated reveal directory parameters. Main uses selected-folder union; each V tab only its own entries
+  - State: frozen candidate `2dce337` on `r3/ignored-browse-cohort`, base `a3e096e`; combined focused/types and owned scratch browser proof complete, independent exact security review pending. Not integrated
+  - API: hasIgnored/revealed/capped and bounded repeated reveal directory parameters. Main uses selected-folder union; each V tab only its own entries
   - Scope correction: W1 reproduced pre-existing ALL listing bypass of explicit .mdhouseignore exclusions; same cohort fixes /api/files filtering/jail with focused negative fixtures. Built-in vendor visibility remains distinct from explicit denies
   - No full/version bump/live7777 checks or reload; ready is not integrated/done
 

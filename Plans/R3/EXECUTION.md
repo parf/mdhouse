@@ -1013,3 +1013,21 @@ preserve explicit excludes/jail in ALL, with focused negative coverage; no unrel
 CEO independently completed owner-authorized live app reload (`95ff0d32e65091bd`) after frozen-lock
 runtime dependency installation. HTTP/roots verified; topic-only drain now applied. This is not
 [№MW.9](workspaces/TODO.md#MW.9) implementation evidence or live RAG indexing proof.
+
+
+## Ignored-browsing cohort ready for review
+
+[№MW.9](workspaces/TODO.md#MW.9): base `a3e096e` → frozen `2dce337`, pinned
+`r3-ignored-browse-review`. Backend `fdd0e296` + `122c3b0`, UI `1198055` + `5cad16a` + `5e09bad`;
+CTO combined README/Unreleased facts. No version/dependency/lock change. Base tree's pre-existing
+outside/explicit-alias symlink metadata leak was reproduced and fixed through Registry before stat,
+including hasIgnored availability; focused regression and valid in-root-link behavior included.
+
+One combined focused gate 108/0 and types exit 0 with own frozen-lock modules; logs
+`.scratch/cto/mw9/gate/`. Scratch browser via approved safe-smoke + flock passed toggle, direct ignored
+folder, preserved toggle, default selection union, strict V1/V2 and explicit ALL denial. Initial harness
+used a text selector for SVG V buttons; next targeted attempt exposed harness reload/storage timing.
+Both failed attempts cleaned their own processes; corrected targeted views run passed. Product target
+unchanged. Logs `.scratch/cto/mw9/browser*.out`, results JSON and opened light/dark screenshots;
+final owned mdhouse/Chrome PIDs verified absent. No full/live7777/provider checks or reload.
+Independent exact security review pending; checkpoint remains open until reviewed integration.
