@@ -392,3 +392,19 @@ Focused/full/tsc and independent exact-SHA architecture review gate integration.
 Checkpoint B remains unassigned: jailed writes, actor/access/stale rechecks, apply confirmation,
 saved history/marker transactions wait for the required access/content gates and separate approval.
 No core-preview result claims a saved document or advanced marker.
+
+Run-core type sketch accepted: create/apply/validate/preview accept unknown public data; state is
+reconstructed by bounded replay and compared with derived fields. Input has explicit selection,
+validated package snapshot, declared digests/revisions, sources/dirty inputs and evidence/question
+assertions. Events update assertions, submit analysis outcomes or cancel; each carries ID/version/time.
+Exact duplicates are idempotent; changed-ID payloads, stale nodes/versions/times and terminal changes
+are rejected. Limits: 128 nodes/evidence/sources/questions, 256 events, 16 KiB supplied text, 1 MiB
+input/state, 4 MiB preview. Public data must be finite bounded JSON-like data, rejecting cycles/depth
+and oversize values. Digests/revisions are exact hex; timestamps are valid supplied UTC values.
+
+Caller digests are declarations, not proof of a trusted installed artifact; replay checks consistency,
+not authenticity or a tamper-proof journal. Later materialization independently rechecks trusted
+packages, sources and access. Evidence keys bind to declared package requirements; duplicate/unknown
+entries or invalid references are rejected. Preview keeps supplied payloads in collision-safe inert
+JSON fences, never dynamic Markdown controls or fabricated human approvals. No additional paths or
+materialization scope is authorized by this accepted sketch.
