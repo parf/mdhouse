@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
 import { parentScope } from './ui/git-state';
+import { docMetadataRevision, docRefreshTicket, mergeDocRefresh } from './ui/doc-refresh';
 import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
 import { ViewChips } from './ui/ViewChips';
 import type { RecentEntry } from './lib/store';
@@ -88,6 +89,8 @@ function App() {
   const gitView = /[?&]git(?:[=&]|$)/.test(full);
   const route = useMemo(() => routeOf(path), [path]);
   const docPath = route.kind === 'file' ? route.path : '';
+  const currentDocPath = useRef(docPath);
+  currentDocPath.current = docPath;
   const onSettings = route.kind === 'settings';
 
   /** Navigate without a page load. */
@@ -172,8 +175,11 @@ function App() {
 
   // Document load, keyed on the URL.
   const loadSeq = useRef(0);
+  const metadataSeq = useRef(0);
+  const contentCommit = useRef(0);
   useEffect(() => {
     if (!docPath) {
+      ++loadSeq.current;
       setDoc(null);
       setDocError(null);
       return;
@@ -184,20 +190,21 @@ function App() {
     void api
       .doc(docPath)
       .then((payload) => {
-        if (seq !== loadSeq.current) return;
+        if (seq !== loadSeq.current || currentDocPath.current !== docPath) return;
         if ('folder' in payload) {
           // `/root/sub` names a folder: its page, in place of this address
           history.replaceState(null, '', payload.folder + location.search);
           setPath(location.pathname + location.search);
           return;
         }
+        ++contentCommit.current;
         setDoc(payload);
         setDocError(null);
         setRootId(payload.root);
         setExpanded((prev) => new Set([...prev, ...ancestors(payload.rel)]));
       })
       .catch((err: Error) => {
-        if (seq !== loadSeq.current) return;
+        if (seq !== loadSeq.current || currentDocPath.current !== docPath) return;
         setDoc(null);
         setDocError(err.message);
         // The tree of the root the address names — its marks may hold the file that is gone.
@@ -206,14 +213,52 @@ function App() {
       .finally(() => seq === loadSeq.current && setLoadingDoc(false));
   }, [docPath]);
 
-  /** Re-reads the open document in place. Skipped while a load is in flight; a newer load wins. */
-  const refreshDoc = () => {
-    if (!doc || loadingDoc) return;
+  /** Explicit reloads refresh semantic context; exact-file notifications can skip unchanged rendering. */
+  const refreshDoc = (conditional = false) => {
+    if (!doc || !docPath || loadingDoc) return;
     const seq = ++loadSeq.current;
-    void api
-      .doc(docPath)
-      .then((payload) => seq === loadSeq.current && !('folder' in payload) && setDoc(payload))
-      .catch(() => {});
+    const path = docPath;
+    const ticket = docRefreshTicket(doc, seq);
+    const response = conditional && doc.contentHash && /^[a-f0-9]{64}$/.test(doc.contentHash)
+      ? api.docConditional(path, doc.contentHash) : api.doc(path);
+    void response.then((payload) => {
+      if (seq !== loadSeq.current || currentDocPath.current !== path) return;
+      if ('folder' in payload) {
+        history.replaceState(null, '', payload.folder + location.search);
+        setPath(location.pathname + location.search);
+        return;
+      }
+      if ('unchanged' in payload && (payload.kind !== doc.kind || payload.contentHash !== ticket.contentHash)) {
+        refreshDoc();
+        return;
+      }
+      ++contentCommit.current;
+      setDoc(current => {
+        const merged = mergeDocRefresh(current, payload, ticket, loadSeq.current);
+        return merged.kind === 'update' ? merged.doc : current;
+      });
+    }).catch(() => {});
+  };
+
+  /** Git notifications update metadata/history only, never the document's body or action token. */
+  const refreshDocMetadata = () => {
+    if (!doc || !docPath || loadingDoc) return;
+    const path = docPath;
+    const seq = ++metadataSeq.current;
+    const generation = loadSeq.current;
+    const commit = contentCommit.current;
+    const ticket = docRefreshTicket(doc, generation);
+    void api.docMeta(path).then(payload => {
+      if (seq !== metadataSeq.current || generation !== loadSeq.current || commit !== contentCommit.current || currentDocPath.current !== path) return;
+      if ('folder' in payload || payload.kind !== doc.kind) {
+        refreshDoc();
+        return;
+      }
+      setDoc(current => {
+        const merged = mergeDocRefresh(current, payload, ticket, loadSeq.current);
+        return merged.kind === 'update' ? merged.doc : current;
+      });
+    }).catch(() => {});
   };
 
   // Content search is debounced; name matching in the sidebar is instant and local.
@@ -283,10 +328,10 @@ function App() {
     setRevision((n) => n + 1);
     if (WANTS_RECENTS.has(tab)) void reloadRecents();
 
-    // Refresh the open document when it is one of the files that changed, or on any git change
-    // in its root — a commit changes its status and history, not its text.
-    if ((msg.t === 'fs' && doc?.rel && msg.paths.includes(doc.rel)) || (msg.t === 'git' && msg.root === doc?.root)) {
-      refreshDoc();
+    // File notifications may change content; root Git notifications change metadata/history.
+    if (doc && msg.root === doc.root) {
+      if (msg.t === 'fs' && doc.rel && msg.paths.includes(doc.rel)) refreshDoc(true);
+      else if (msg.t === 'git') refreshDocMetadata();
     }
   };
 
@@ -634,6 +679,7 @@ function App() {
           chips={doc ? chipsFor(doc.root, doc.rel) : null}
           crumbChips={doc && doc.rel.includes('/') ? chipsFor(doc.root, `${doc.rel.slice(0, doc.rel.lastIndexOf('/'))}/`) : null}
           doc={doc}
+          metadataRevision={docMetadataRevision(doc)}
           loading={loadingDoc}
           error={docError}
           jumpLine={jumpLine}
