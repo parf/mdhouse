@@ -126,9 +126,9 @@ export class Daemon {
     return this.call<Envelope>('POST', '/send', msg);
   }
 
-  /** Takes one message from the own inbox without waiting; false when it is empty. */
-  async drain(): Promise<boolean> {
-    return (await this.call<Envelope>('GET', '/consume?wait=0s')) !== null;
+  /** Takes one message of this topic from the own inbox without waiting; false when there is none. */
+  async drain(topic: string): Promise<boolean> {
+    return (await this.call<Envelope>('GET', `/consume?${new URLSearchParams({ topic, wait: '0s' })}`)) !== null;
   }
 
   /** A filtered long-poll: only this topic + tag; null when the wait ran out. */
@@ -222,8 +222,8 @@ export class AgentBus {
       const got = await owner.call<{ token: string }>('POST', '/token', { name: this.me });
       if (!got?.token) throw new BusError(500, `agent bus gave no token for ${this.me}`);
       const agent = new Daemon(socket, got.token);
-      // replies to jobs of an earlier run: nobody waits for them any more
-      for (let i = 0; i < 1000 && (await agent.drain()); i++);
+      // replies to jobs of an earlier run: nobody waits for them any more; other topics are not ours
+      for (let i = 0; i < 1000 && (await agent.drain(TOPIC)); i++);
       return agent;
     })();
     this.agent.catch(() => {
