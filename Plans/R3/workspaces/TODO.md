@@ -35,7 +35,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
 - [ ] MW.0g Establish authenticated instance administration and authorization seams <a id="MW.0g"></a>
   - Builds: common request actor and explicit instance-administrator capability, distinct from project Reader/Editor and trusted-source admission
   - [ ] MW.0g.1 Memory-only proof/session primitive; no endpoints or grants <a id="MW.0g.1"></a>
-  - Wiring prerequisite: owner decision [№Q-R3-HTML1](QUESTIONS.md#Q-R3-HTML1); no silent change to trusted HTML
+  - Wiring prerequisite: [№MW.8](#MW.8) content isolation reviewed and verified under [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1)
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
   - Contract: [№ADMIN-W1](DECISIONS.md#ADMIN-W1); short-lived single-use OS-control proof, fragment cleanup, revocable HttpOnly session, no secret in journal/history/query/config
   - Acceptance: trusted localhost/CIDR or project RW alone never grants administrator; existing OS-protected CLI/control remains an explicit administration path
@@ -93,6 +93,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: this layer enforces mode/root/actor; absent project-grant support denies Team writes until [№MW.0d](#MW.0d) supplies the fourth factor, with stale/direct denial tests
   - Acceptance: Settings can optionally grant Editor without login to loopback and explicit intranet CIDRs; unmatched addresses remain Reader until login
   - Acceptance: trusted edit CIDRs reuse strict CIDR parsing and never trust forwarding headers unless a separately configured trusted proxy supplies them
+  - Acceptance: authenticated `/user` supplies immutable identity plus optional profile fields; missing name/avatar/email/SSH keys does not block valid login, profile metadata grants no rights
   - Acceptance: GitHub OAuth validates callback state and immutable provider identity server-side; session cookies are Secure on HTTPS, HttpOnly, SameSite and revocable
   - Acceptance: Reader UI removes edit/Q&A/task/git mutation actions and shows a Login to edit action; successful login upgrades the live page without losing location or drafts
   - Acceptance: the author-name cookie remains attribution only and cannot grant Editor; authentication and displayed author are tested independently
@@ -103,6 +104,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Builds: Settings UI, matching CLI and protected APIs to add users by GitHub username, edit status/grants, disable and remove them; GitHub OAuth login; instance `ACCESS`; per-canonical-root `RO` / `RW` grants; known-users-only admission; optional trusted localhost/CIDRs
   - Depends: [№MW.0g](#MW.0g), [№MW.0c](#MW.0c), [№Q-W8](QUESTIONS.md#Q-W8)
   - Acceptance: final effective write requires Workspace + root RW + project grant RW + Editor, with authenticated GitHub attribution overriding cookie fallback
+  - Acceptance: Add user is server lookup → public-profile preview → explicit confirmation; no user/grant writes before it, input changes invalidate preview, stale or changed immutable identity is rejected safely
+  - Acceptance: nonexistent account differs from provider/network/rate-limit failure; cancel/failure/duplicate ID are tested, email may be hidden and private email is not requested for another person
   - Acceptance: normal Add user has one required field, GitHub username; an authorized owner can inspect its resolved GitHub identity, edit status/grants, disable or remove the user and inspect effective access
   - Acceptance: adding a user from one project's access UI gives that project an RW grant by default; adding from global user management creates ACCESS and leaves project grants to the project-grant control
   - Acceptance: grants and audit identity use provider + immutable GitHub user ID; the current username can refresh after rename without losing/transferring access
@@ -350,10 +353,21 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: commands are idempotent by request id, produce an audit record, and have integration tests for replay, denial, path escape, stale client IDs, multiple roots and multiple browsers
   - Home: [Agent Bus control](README.md#agent-bus-control)
 
+## W6 — Passive document content
+
+- [ ] MW.8 Prohibit document-supplied active content <a id="MW.8"></a>
+  - Contract: [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1); preserve passive HTML, source/edit/Copy and normal app behavior
+  - [ ] MW.8a Server content policy, raw response boundaries and defense headers <a id="MW.8a"></a>
+  - [ ] MW.8b Browser sinks and constrained app-controlled Mermaid rendering <a id="MW.8b"></a>
+  - Acceptance: inline handlers, scripts, srcdoc/frames, javascript URLs, forms/base, raw script MIME and SVG/HTML embedding cannot gain app-script or privileged-request capability
+  - Acceptance: document/diff/preview and stale/direct surfaces share the boundary; Q&A actions, line hashes, passive tables/details/formatting and source text remain usable
+  - Acceptance: Mermaid labels, links/callbacks/config directives and SVG output are constrained; renderer code may execute, diagram source may not gain arbitrary authority
+  - Acceptance: owned scratch browser attack/passive compatibility corpus, full tests/tsc and exact-SHA independent security verdict before integration; Referer is not a substitute
+
 ## Gate
 
 - [ ] MW.6 Review the complete workspace flow <a id="MW.6"></a>
-  - Depends: [№MW.L](#MW.L), [№MW.0](#MW.0), [№MW.0f](#MW.0f), [№MW.0g](#MW.0g), [№MW.0h](#MW.0h), [№MW.0a](#MW.0a), [№MW.0b](#MW.0b), [№MW.0c](#MW.0c), [№MW.0d](#MW.0d), [№MW.0e](#MW.0e), [№MW.1](#MW.1), [№MW.1a](#MW.1a), [№MW.2](#MW.2), [№MW.2a](#MW.2a), [№MW.3](#MW.3), [№MW.3a](#MW.3a), [№MW.3b](#MW.3b), [№MW.3c](#MW.3c), [№MW.3d](#MW.3d), [№MW.3e](#MW.3e), [№MW.3f](#MW.3f), [№MW.3g](#MW.3g), [№MW.3h](#MW.3h), [№MW.4](#MW.4), [№MW.5](#MW.5), [№MW.5a](#MW.5a), [№MW.5b](#MW.5b), [№MW.5c](#MW.5c), [№MW.7](#MW.7)
+  - Depends: [№MW.8](#MW.8), [№MW.L](#MW.L), [№MW.0](#MW.0), [№MW.0f](#MW.0f), [№MW.0g](#MW.0g), [№MW.0h](#MW.0h), [№MW.0a](#MW.0a), [№MW.0b](#MW.0b), [№MW.0c](#MW.0c), [№MW.0d](#MW.0d), [№MW.0e](#MW.0e), [№MW.1](#MW.1), [№MW.1a](#MW.1a), [№MW.2](#MW.2), [№MW.2a](#MW.2a), [№MW.3](#MW.3), [№MW.3a](#MW.3a), [№MW.3b](#MW.3b), [№MW.3c](#MW.3c), [№MW.3d](#MW.3d), [№MW.3e](#MW.3e), [№MW.3f](#MW.3f), [№MW.3g](#MW.3g), [№MW.3h](#MW.3h), [№MW.4](#MW.4), [№MW.5](#MW.5), [№MW.5a](#MW.5a), [№MW.5b](#MW.5b), [№MW.5c](#MW.5c), [№MW.7](#MW.7)
   - Acceptance: packed license text/copyright/metadata and immutable installed reference contents are verified
   - Acceptance: every mutation family (document/Git/flow/control/config/users/grants/profiles/roots/external sends) has direct/stale denial checks for Viewer, Reader, RO, revoked and non-admin actors
   - Acceptance: `Plans/R3/QA.md` records desktop Chrome/Edge/Safari, Firefox Copy fallback, iPad portrait/landscape and phone Safari/Chrome evidence or explicit unverified gaps

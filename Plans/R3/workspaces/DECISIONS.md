@@ -18,8 +18,9 @@
 
 ## Access
 
-- 📌 USER-W1 Add user: GitHub username; login: GitHub OAuth. <a id="Q-W8"></a>
+- 📌 USER-W1 Add user: GitHub lookup → public profile preview → explicit confirmation; login: GitHub OAuth. <a id="Q-W8"></a>
   Identity = provider + immutable GitHub ID; username = refreshable display/routing; renames never transfer grants.
+  No writes before confirmation; bind it to the verified numeric ID, reject changed/stale identity.
   Owner manages status/grants/disable/remove. ACCESS = sign-in; project grant = content; new grant = RW; absent = hidden/denied.
   Local/password/Basic: Advanced recovery only; local/GitHub identities separate. [History](resolved.md#Q-W8).
 - 📌 USER-W2 Write = Workspace ∩ root RW ∩ project RW ∩ Editor.
@@ -27,6 +28,8 @@
 - 📌 USER-W3 Admission: known users; optional trusted localhost/CIDRs with explicit project policy.
   No inherited admin grants. Forwarded addresses require a configured trusted proxy.
 - 📌 USER-W4 GitHub OAuth → secure revocable session; secrets/tokens server-side.
+  After login fetch authenticated `/user`; name/avatar/email are optional display metadata, never grants.
+  No email/key requirement or silent account merge.
   Markdown: current GitHub username; grants/audit: immutable provider ID. Browser author cookie: anonymous fallback only.
 - 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](resolved.md#Q-W1).
   No protected-path list; canonical root = grant; realpath jail = boundary; automatic references stay RO.
@@ -74,3 +77,10 @@
   Exchange: trusted-host + admission + same-origin; expiring HttpOnly host-only cookie, appropriate HTTPS/SameSite.
   No secrets in config/projects/logs/query/audit/startup output; explicit CLI/browser recovery.
   Independent security review + negative tests before integration. [History](resolved.md#ADMIN-W1).
+
+## Document content
+
+- 📌 Q-R3-HTML1 Prohibit document-supplied active content. <a id="Q-R3-HTML1"></a>
+  Keep passive HTML. Mermaid runs only through the app-controlled constrained renderer; diagram
+  source gains no arbitrary script or privileged-request capability. Referer is not this boundary.
+  [History](resolved.md#Q-R3-HTML1).

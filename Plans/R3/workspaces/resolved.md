@@ -160,3 +160,62 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   audit records. Service startup prints no secret; explicit owner CLI and browser opening provide
   the recovery/setup path. Exact transport and session enforcement require independent security
   review and negative tests before integration.
+
+
+## Document content history
+
+- ✅ Q-R3-HTML1 How should trusted HTML coexist with authenticated administration? <a id="Q-R3-HTML1"></a>
+  Evidence: current rendered Markdown permits active same-origin HTML; `img onerror` changed only
+  scratch `editLink` through `/api/settings`, and iframe `srcdoc` changed the parent DOM.
+  Impact: future admin/session cookies do not stop document script from making same-origin privileged
+  requests. The current trusted-HTML contract is deliberate; changing it needs an owner decision.
+  - ( ) Constrain document-supplied active content while retaining passive HTML; verify CSP/frames/forms/base/raw-MIME boundaries and normal app/mermaid behavior 🌟
+  - ( ) Retain active trusted HTML and design separate privileged origins/capabilities with an explicit trust contract
+  > 💬👾 Verified by W1 in owned scratch on ports 7861/7862, fresh browser profiles, temporary config,
+  > and captured own PIDs. No secrets, real admin endpoints or live instance were used. Current
+  > `onerror` and inline iframe `srcdoc` ran; direct script nodes and raw `.js` did not run. A proxy
+  > adding `script-src 'self'` blocked all four probes, but full app compatibility and isolation
+  > were not proved. Same-origin form/base/frame and future script-resource paths still need review.
+  >
+  > 💡👾 Choose the intended content/privilege contract before implementation. Keep
+  > [№MW.0g](TODO.md#MW.0g) admin wiring on hold; attribution, reference content and flow packages
+  > continue independently. A partial CSP patch is not an accepted isolation guarantee.
+  >
+  > 💬 👤parf we can check referer on admin forms and never accept incorrect one
+  >
+  > 💬👾 This proposes an additional check, not a changed HTML/CSP/origin contract. W1 is verifying
+  > whether active same-origin document code can supply the exact expected admin/settings URL through
+  > Fetch `referrer`, with actual Referer/Origin/Sec-Fetch headers and a harmless scratch state change.
+  > Missing-header behavior and legitimate Settings requests will be recorded separately.
+  >
+  > 💬👾 Scratch Referer equality test confirmed the limitation: explicit Fetch referrer, history
+  > replacement and same-origin Settings iframe all sent the same expected Referer, Origin and
+  > Sec-Fetch headers as a legitimate Settings click; each changed scratch editLink. Default or
+  > missing Referer was denied. Evidence is retained in W1's owned xss/ref-run.sh and referer.jsonl.
+  >
+  > 💬 👤parf запретить активное содержимое документов,
+  >
+  > 💬 👤parf для mermaid можно сделать исключение
+  >
+  > 💬👾 → [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1): passive document boundary approved, with the
+  > app-controlled Mermaid renderer as a constrained exception. Referer is additional evidence,
+  > never the isolation mechanism. Implementation/review/browser acceptance remains open.
+
+
+## Profile clarification history
+
+- ✅ USER-W4 Fetch the authenticated GitHub profile after login.
+  Public profile metadata does not authenticate another account or grant project/admin access.
+  Email may be hidden; no key-based feature is added.
+  > 💬 👤parf Да - как только у нас есть logged in user - we ask it
+  >
+  > 💬👾 → [№USER-W4](DECISIONS.md#USER-W4): authenticated `/user` profile, immutable provider ID,
+  > optional display fields; no live GitHub account operations were performed.
+
+- ✅ USER-W1 Preview the verified public account before adding a user.
+  Look up server-side; keep provider/not-found failures distinct. Input changes invalidate preview;
+  confirmation binds the verified immutable ID, with safe stale/change rejection before save.
+  > 💬 👤parf когда admin добавляет пользователя через web interface - надо тоже ходить и проверять 1. есть ли такой user in general 2. показать public data - тот ли это человек (легко ошибиться в имени) ; only then confirm
+  >
+  > 💬👾 → [№USER-W1](DECISIONS.md#USER-W1): global add creates ACCESS only; project-context add
+  > grants only that explicit project (default RW). Lookup/cancel/failure creates no account/grant.
