@@ -59,7 +59,10 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     await run(['tar', '-xzf', archive, '-C', extracted]);
     const help = await run([join(extracted, 'package/bin/mdhouse-rag-sync'), '--help']);
     expect(help).toContain('mdhouse-rag-sync');
-    expect(help).toContain('plan --root');
+    expect(help).toContain('mdhouse-rag-sync plan');
+    expect(help).toContain('--root <dir>');
+    expect(help).toContain('--apply');
+    expect(help).toContain('--paid');
     const shipped = await loadFlowCatalog(join(extracted, 'package/doc/flows'));
     const source = await loadFlowCatalog(join(root, 'doc/flows'));
     expect(shipped.map((flow) => flow.manifest.id)).toEqual([...EXPECTED_PACKAGE_IDS]);
