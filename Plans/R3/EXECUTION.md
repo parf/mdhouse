@@ -172,12 +172,24 @@ Server-only Review receipt `7832e89cdff448e6`: PASS bound to frozen `d9f4290`; i
 528/528, 2604 assertions and tsc, plus additional live adversarial URL/CSS/namespace/raw-header checks.
 No whole-boundary/admin-wiring approval. Integration waits for the provenance followup and fresh review.
 
-Provenance implementation choice for [№MW.8a](workspaces/TODO.md#MW.8a): generated HTML tokens are
+Superseded CTO direction (not integrated) for [№MW.8a](workspaces/TODO.md#MW.8a): generated HTML tokens are
 tracked by identity; authored raw HTML start tags lose class/role/renderer data attributes before final
 passive sanitization. Markdown attribute syntax accepts authored IDs only, not classes: `{.tgt}` can
 otherwise impersonate a genuine control. Preserve anchors and source Copy; update syntax/Markdown docs
 and CHANGELOG with the implementation. Test malformed/cross-token fragments, exact nested list forgery
-and genuine controls. Direct DOMPurify dependency is pinned to 3.4.17, with Mermaid deduplication only
+and genuine controls. Direct DOMPurify dependency is planned to be pinned to 3.4.17, with Mermaid deduplication only
 inside its declared compatible range; W1 owns the manifest/lock followup, W2 consumes the shared version.
 Official [release notes](https://github.com/cure53/DOMPurify/releases/tag/3.4.17) confirm the maintained
 version's security fixes. A directly imported HTML parser must also be a declared dependency.
+
+Compatibility correction: CEO confirmed that `{#id .class}` and raw passive classes are an existing
+promised feature. CTO withdrew the class-removal/id-only direction before integration; syntax docs and
+main implementation remain unchanged. Preserve arbitrary passive classes and explicit IDs. The action
+boundary must prove generated-control provenance independently of CSS selectors, exact line/hash and
+matching list structure. W1/W2 are assessing a fresh per-render unpredictable marker attached only while
+constructing generated actionable nodes, checked on the exact action element against trusted payload
+metadata, or an equivalent mechanism. Inherited ancestor markers and a blanket final-HTML marking pass
+are insufficient. Strip/isolate authored provenance attributes; guessed/copied/stale markers must fail.
+The design is under analysis, not an implemented guarantee. Require arbitrary-passive-class positive
+fixtures and real-click forgery negatives alongside genuine control positives; any remaining necessary
+compatibility loss goes to CEO before integration. Whole content boundary/admin wiring remain on hold.
