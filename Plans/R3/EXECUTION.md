@@ -1146,3 +1146,43 @@ fast-forward source identity unchanged. CEO verified actual Settings after local
 No full/types blanket run, publish or version bump. Existing per-project facts/controls and grouping
 are delivered; new name/access/save/AB mutations remain the explicit admin-gated dependent scope,
 not blocked by RAG/OAuth and not falsely marked complete. Workers completed their named assignments.
+
+
+## Personal local administrator wiring cohort — selected 2026-11-06 {#personal-local-admin-wiring}
+
+- [ ] MW.0g.2b Local Personal bootstrap and existing administrator web boundaries
+  Parent [№MW.0g](workspaces/TODO.md#MW.0g) remains open; contract [№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1).
+  Base: `5273ebee4abf1f865b731dd6fc51e9fd1c090bef` on `main`; integration target `main`.
+  Product outcome: the OS owner establishes/revokes a browser administrator session without GitHub onboarding;
+  existing instance settings and root removal require that session. New project-property editors follow separately.
+  W1 owns backend/CLI/control in isolated `.scratch/worktrees/r3-admin-local-backend`, branch `r3/admin-local-backend`:
+  `src/lib/admin-session.ts`, `src/lib/authz.ts`, `src/lib/control.ts`, `src/server.ts`, `src/cli.ts`, focused backend tests,
+  test bootstrap helper, `doc/cli.md`. Reuse integrated foundations; do not reimplement them.
+  W2 owns browser entry and Settings in isolated `.scratch/worktrees/r3-admin-local-ui`, branch `r3/admin-local-ui`:
+  `src/app.tsx`, `src/ui/admin-entry.ts`, `src/ui/Settings.tsx`, `src/ui/api.ts`, necessary styles and focused UI tests.
+  CTO owns shared Plans/README, R3 EXECUTION/TODO/QA and CHANGELOG integration evidence.
+  API seam: GET `/api/admin` returns safe `{admin, expiresAt?}`; POST `/api/admin/session` consumes `{proof}`;
+  POST `/api/admin/logout` revokes current session and clears cookie. Session writes use explicit `admin-session` family.
+  Protected existing POSTs: `/api/settings`, `/api/ab/default`, `/api/ab/filter`, `/api/roots/remove`.
+  Local bootstrap requires protected OS-owner control mint/revoke, actual loopback client and exact local Host;
+  ordinary Basic admission remains admission only. No first-visitor, address, author-cookie or RW-derived admin.
+  Browser removes even malformed admin fragments synchronously before requests/content; exchange once, no retry;
+  no app content/API startup until exchange settles. Proof/session responses are no-store; appropriate referrer policy.
+  Acceptance: CLI recovery and browser exchange work end to end; proof replay/expiry and session revocation deny;
+  missing/spoofed/expired/revoked admin and cross-origin/Host/nonloopback exchange refuse with no mutation;
+  existing CLI/control operations remain OS-owner authorized, without web login requirements.
+  Acceptance: Settings clearly shows administrator state/logout/recovery, disables protected controls without authority,
+  handles stale-session denial, preserves browser author attribution and read-only/reference behavior.
+  Secret delivery must preserve memory-only proof and exclude argv, journal, startup output, query/config/project/temp files.
+  Proposed explicit owner-TTY-only fragment URL handoff is routed to CEO before implementing that dependent delivery.
+  Marks policy [№Q-R3-ADMIN1](workspaces/QUESTIONS.md#Q-R3-ADMIN1) stays open and unchanged; doc/Git/send families,
+  Team identity/OAuth, remote/headless bootstrap, new project properties and full mode migration remain outside this slice.
+  Verification: author commits, one combined bounded focused/types gate, owned scratch browser light/dark/compact proof,
+  dedicated pinned exact-SHA independent security review before serial integration; preserve first failures and negative evidence.
+  No duplicate full gates, version bump, ACL changes, live service actions, push/publish/deploy or session restart.
+
+Capacity checked 2026-11-06 23:57 UTC: W1 default Claude 5h 73% (reset ~1h17m), weekly 56% (~5d22h);
+W2 account 2 5h 65% (~1h37m), weekly 60% (~5d13h). Codex shared weekly 8%, resets November 10 21:35
+(screen timezone unspecified), short-window unavailable: reserve W3 and Codex for coordination/fallback.
+Review GLM-5.3 reports short-window 94% used, reset 21:12 (~2h), weekly 44% used. Keep one frozen review
+and use non-author fallback only if actual unavailability blocks it; do not run duplicate reviews.
