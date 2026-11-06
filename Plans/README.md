@@ -354,6 +354,19 @@ freeipapi.com only on any primary failure (timeout, network, non-200, 429 back-o
 non-JSON, `success:false`, wrong echoed IP, bad country). Fixed HTTPS hosts, `redirect: 'error'`,
 no credentials. Geo: city, state, country, ISP, org, ASN + label — null when the provider omits it.
 
+## Standalone RAG sync local planner
+
+`bin/mdhouse-rag-sync` calls `src/rag-sync-cli.ts` independently of the app/service entrypoint.
+Help/import have no work; `plan` requires explicit root/FileScan/RAG/namespace/table and inventories
+local metadata through a read-only Registry. Recursive `*.md` is case-sensitive; dot entries,
+node_modules/bower_components/jspm_packages are excluded, symlinks/special files are not followed.
+Incomplete listing is visible with nonzero exit; >32 KiB files are annotated, not silently dropped.
+`lib/rag-sync-plan.ts` strictly validates bounded metadata/root device+inode/target/selection and
+produces a deterministic full-metadata digest, not content hash, auth or atomic-folder proof.
+Only local preview is implemented: provider readiness stays unverified; sync/search return not-wired
+without side effects. No credential, Agent Bus call, agent registration or background process is
+created by this command. Future connected adapter/index/search acceptance remains separate.
+
 ## Session-history snapshot foundations
 
 `lib/user-session-codec.ts` encodes/decodes strict version-1 `{version,revision,model}` snapshots as

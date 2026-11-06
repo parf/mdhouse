@@ -4,6 +4,8 @@
 
 ### Added
 
+- Standalone `mdhouse-rag-sync plan` previews local Markdown coverage and explicit RAG targets without network calls; connected sync/search remain unavailable
+
 - Pure analysis-run state transitions and deterministic unsaved Markdown previews validate bounded caller assertions; no analysis execution, filesystem writes, real approvals or scheduling are included
 - Five Legal authoring packages cover contracts, obligations/renewal, policy comparisons, change impacts and counsel briefs with supplied-source uncertainty and qualified-review stops; execution and legal actions are not included
 - Five Finance authoring packages cover budget/forecast, variance, unit economics, cash/runway and document review with inspectable scenario formulas and evidence gaps; no financial actions or execution are included
