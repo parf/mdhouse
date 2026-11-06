@@ -15,6 +15,7 @@ import { LIST_CAP, repoToplevel, scanRoot, type MdFile, type ScanResult } from '
 import {
   recentChanges,
   repoHead,
+  headCommit,
   type RepoHead,
   workingStatus,
   untrackedPaths,
@@ -163,6 +164,8 @@ interface RootState {
   gitPaths?: RepoPaths[];
   changes?: GitChange[];
   head?: (RepoHead & { repo: string }) | null;
+  /** HEAD commit by repository; dropped with any invalidate. */
+  revisions?: Map<string, string | null>;
   authors?: Map<string, Authorship>;
   user?: { name: string; email: string } | null;
 }
@@ -204,6 +207,7 @@ export class Store {
     delete s.gitPaths;
     delete s.changes;
     delete s.head;
+    delete s.revisions;
     delete s.authors;
     if (!gitOnly) {
       s.scans.clear();
@@ -334,6 +338,28 @@ export class Store {
   /** What git says of the root-relative `rel` when it does not track it; see `gitStateIn`. */
   async gitStateOf(root: Root, rel: string): Promise<GitState | undefined> {
     return gitStateIn(await this.gitPaths(root), rel);
+  }
+
+  /**
+   * The HEAD commit of the repository holding the root-relative `rel` — the innermost one the
+   * scan knows — once per repository per invalidation. Null without git, outside any repository
+   * and for an unborn HEAD.
+   */
+  async gitRevision(root: Root, rel: string): Promise<string | null> {
+    if (this.opts.noGit) return null;
+    const s = await this.stateFor(root);
+    // The map read here: a change to the repository mid-call drops it, and the answer with it.
+    const revisions = (s.revisions ??= new Map());
+    const abs = resolvePath(root.path, rel);
+    const repo = (await this.anyScan(root)).repos
+      .filter((r) => abs === r || abs.startsWith(`${r}${sep}`))
+      .reduce<string | null>((best, r) => (best && best.length >= r.length ? best : r), null);
+    if (!repo) return null;
+    const hit = revisions.get(repo);
+    if (hit !== undefined) return hit;
+    const rev = await headCommit(repo);
+    revisions.set(repo, rev);
+    return rev;
   }
 
   /** A cached scan, either setting — the repos are the same — else the scan without ignored files. */

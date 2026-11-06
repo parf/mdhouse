@@ -1,5 +1,5 @@
 import { render as mount } from 'preact';
-import { gitStateOf } from './git-state';
+import { fetchesHistory, gitStateOf, heldConfirmed, heldFor, holdAnswer, showsHistory, type Held, type HistoryAsk } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { safeHtml } from './safe-html';
@@ -37,6 +37,8 @@ const whatDiff = (dirty: boolean, how: string) =>
 
 interface Props {
   doc: DocPayload | null;
+  /** Changes when the file's Git metadata does (a commit that leaves the file clean); history and authors are asked again. */
+  metadataRevision?: string | null;
   loading: boolean;
   error: string | null;
   /** Line to scroll to and flash, from a search hit. */
@@ -130,6 +132,7 @@ async function renderMermaid(container: HTMLElement, current: () => boolean): Pr
 
 export function Doc({
   doc,
+  metadataRevision = null,
   loading,
   error,
   jumpLine,
@@ -182,7 +185,8 @@ export function Doc({
    * repository. That used to be inside `/api/doc`, so every document waited on it before a
    * word was rendered. Now the page paints first and the two names arrive a moment later.
    */
-  const [log, setLog] = useState<HistoryPayload | null>(null);
+  // The answer is held with its file, so the previous file's commits never show for this one.
+  const [held, setHeld] = useState<Held<HistoryPayload> | null>(null);
   const docRootId = doc?.root;
   const [rootInRepo, setRootInRepo] = useState(false);
   useEffect(() => {
@@ -200,23 +204,33 @@ export function Doc({
   const [logFailed, setLogFailed] = useState(false);
   const docPath = doc ? `${doc.root}/${doc.rel}` : null;
 
+  const log = heldFor(held, docPath);
+  const docGitState = gitStateOf(doc);
+  const currentAsk: HistoryAsk | null = docPath ? { path: docPath, revision: metadataRevision, state: docGitState } : null;
+  const askNow = useRef<HistoryAsk | null>(null);
+  askNow.current = currentAsk;
+  // An untracked file's history counts only when asked for this very revision and state; a tracked one keeps
+  // the previous answer on screen while the fresh one is on its way.
+  const historyShown = showsHistory(docGitState, docGitState === 'untracked' ? heldConfirmed(held, currentAsk) : log);
+
   useEffect(() => {
-    setLog(null);
     setLogFailed(false);
   }, [docPath]);
-  // Asked again when the file's git status changes — a commit adds to its history — without
-  // clearing the panel first.
+  // Asked again when the file's git status or state changes — a commit adds to its history — without
+  // clearing the panel first. A Gitignored file is not asked at all; a change of file or state
+  // drops the answer still in flight.
   useEffect(() => {
-    if (!docPath) return;
+    if (!docPath || !fetchesHistory(docGitState)) return;
+    const ask: HistoryAsk = { path: docPath, revision: metadataRevision, state: docGitState };
     let live = true;
     api
       .history(docPath)
-      .then((h) => live && setLog(h))
+      .then((h) => live && askNow.current && setHeld((prev) => holdAnswer(prev, ask, askNow.current!, h)))
       .catch(() => live && setLogFailed(true));
     return () => {
       live = false;
     };
-  }, [docPath, doc?.status]);
+  }, [docPath, doc?.status, docGitState, metadataRevision]);
 
   /**
    * Diff mode: the same document shown as what changed rather than as text.
@@ -231,6 +245,9 @@ export function Doc({
   const [diff, setDiff] = useState<FileDiff | null>(null);
   const dirty = doc?.status === 'modified' || doc?.status === 'staged' || doc?.status === 'untracked';
   const diffOn = view !== 'doc';
+  // The header's compare-with-previous-revision buttons need a history to compare with or work to show;
+  // while a diff is on screen they stay, as the way back to the document.
+  const diffButtons = dirty || historyShown || diffOn;
 
   // A new document opens as the document — not again when its status changes while it is open.
   const viewDecidedFor = useRef<string | null>(null);
@@ -1119,23 +1136,27 @@ export function Doc({
             </button>
             {/* Two ways to look at the same change: the patch, and the document with the
                 change marked on it. Either one toggles back to the plain document. */}
-            <button
-              class="icon-btn"
-              aria-pressed={view === 'patch'}
-              title={view === 'patch' ? 'Show the document' : whatDiff(dirty, 'as a patch')}
-              onClick={() => pick('patch')}
-            >
-              <IconDiff size={15} />
-            </button>
-            {md && (
-              <button
-                class="icon-btn"
-                aria-pressed={view === 'marked'}
-                title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
-                onClick={() => pick('marked')}
-              >
-                <IconDiffDoc size={15} />
-              </button>
+            {diffButtons && (
+              <>
+                <button
+                  class="icon-btn"
+                  aria-pressed={view === 'patch'}
+                  title={view === 'patch' ? 'Show the document' : whatDiff(dirty, 'as a patch')}
+                  onClick={() => pick('patch')}
+                >
+                  <IconDiff size={15} />
+                </button>
+                {md && (
+                  <button
+                    class="icon-btn"
+                    aria-pressed={view === 'marked'}
+                    title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
+                    onClick={() => pick('marked')}
+                  >
+                    <IconDiffDoc size={15} />
+                  </button>
+                )}
+              </>
             )}
             {doc.kind === 'html' && (
               <button
@@ -1230,6 +1251,7 @@ export function Doc({
           </details>
         )}
         <History
+          shown={historyShown}
           log={log}
           failed={logFailed}
           activeRev={diffOn ? diffRev : null}
@@ -1371,6 +1393,7 @@ const saveHistoryOpen = (open: boolean) => {
  * document until shown again.
  */
 function History({
+  shown,
   log,
   failed,
   activeRev,
@@ -1379,6 +1402,8 @@ function History({
   localOn,
   onPickLocal,
 }: {
+  /** The history part is shown; the uncommitted-changes row is not part of it. */
+  shown: boolean;
   /** Uncommitted changes to the file: always shown, even with the panel hidden. */
   local: { added: number; removed: number; loading: boolean; at: number; isNew: boolean } | null;
   localOn: boolean;
@@ -1392,16 +1417,21 @@ function History({
   const [open, setOpen] = useState(loadHistoryOpen);
   useEffect(() => saveHistoryOpen(open), [open]);
 
+  // Without a file history to show, only the uncommitted-changes row can remain.
+  if (!shown && !local) return null;
+
   return (
     <section class="gitlog">
-      <div class="summary" role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen(!open)}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(!open))}>
-        <IconGit size={12} /> History
-        {/* Its state, at a glance: a closed panel otherwise reads as an empty one. */}
-        <span class="gitlog-state" title={open ? 'Shown — click to hide' : 'Hidden — click to show'}>
-          {open ? <IconEye size={13} /> : <IconEyeOff size={13} />}
-        </span>
-      </div>
+      {shown && (
+        <div class="summary" role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen(!open)}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(!open))}>
+          <IconGit size={12} /> History
+          {/* Its state, at a glance: a closed panel otherwise reads as an empty one. */}
+          <span class="gitlog-state" title={open ? 'Shown — click to hide' : 'Hidden — click to show'}>
+            {open ? <IconEye size={13} /> : <IconEyeOff size={13} />}
+          </span>
+        </div>
+      )}
       {/* Outside the folding part: the panel's hide never hides work not yet committed. */}
       {local && (
         <button class="commit local" aria-pressed={localOn} title="Your uncommitted changes to this file" onClick={onPickLocal}>
@@ -1420,7 +1450,7 @@ function History({
         </button>
       )}
 
-      {open && (
+      {shown && open && (
         <>
       {!log && !failed && <div class="spinner" />}
       {failed && <p class="empty">git is unavailable here.</p>}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { gitStateClass, gitStateOf, GIT_STATE, parentScope, shownStatus } from '../src/ui/git-state';
+import { fetchesHistory, gitStateClass, gitStateOf, GIT_STATE, heldConfirmed, heldFor, holdAnswer, parentScope, showsHistory, shownStatus } from '../src/ui/git-state';
 import { revealScopes } from '../src/ui/views';
 
 describe('git state', () => {
@@ -43,5 +43,78 @@ describe('git state', () => {
     expect(shownStatus('untracked')).toBeUndefined();
     expect(shownStatus(undefined)).toBeUndefined();
     for (const st of ['modified', 'staged', 'deleted'] as const) expect(shownStatus(st)).toBe(st);
+  });
+});
+
+describe('file history visibility', () => {
+  const none = { commits: [] };
+  const some = { commits: [{}] };
+
+  test('a Gitignored file is never asked for history and never shows the panel', () => {
+    expect(fetchesHistory('ignored')).toBe(false);
+    expect(showsHistory('ignored', null)).toBe(false);
+    expect(showsHistory('ignored', some)).toBe(false);
+  });
+
+  test('an untracked file is asked, and shows history only once the current file has commits', () => {
+    expect(fetchesHistory('untracked')).toBe(true);
+    expect(showsHistory('untracked', null)).toBe(false);
+    expect(showsHistory('untracked', none)).toBe(false);
+    expect(showsHistory('untracked', some)).toBe(true);
+  });
+
+  test('tracked, no repository and unknown keep the panel as it was, whatever the log', () => {
+    for (const state of [null]) {
+      expect(fetchesHistory(state)).toBe(true);
+      expect(showsHistory(state, null)).toBe(true);
+      expect(showsHistory(state, none)).toBe(true);
+      expect(showsHistory(state, some)).toBe(true);
+    }
+    // nothing but the server's gitState decides: status, marks and the ignored flag do not
+    expect(showsHistory(gitStateOf({ status: 'untracked', marks: ['ignored'], ignored: true }), none)).toBe(true);
+  });
+
+  test('an answer is held for its file: another file, none, or a moved path gets nothing', () => {
+    const held = { path: 'r/a.md', value: 'A-commits' };
+    expect(heldFor(held, 'r/a.md')).toBe('A-commits');
+    expect(heldFor(held, 'r/b.md')).toBeNull();
+    expect(heldFor(held, null)).toBeNull();
+    expect(heldFor(null, 'r/a.md')).toBeNull();
+  });
+
+  test('an answer for an old revision of the same file does not replace the current one', () => {
+    const ask = (revision: string | null) => ({ path: 'r/a.md', revision, state: null });
+    const held = { path: 'r/a.md', value: 'v1' };
+    // asked on revision 1, the page is now on revision 2: the old answer is dropped
+    expect(holdAnswer(held, ask('1'), ask('2'), 'old')).toBe(held);
+    // the answer for the revision now shown lands
+    expect(holdAnswer(held, ask('2'), ask('2'), 'new')).toEqual({ path: 'r/a.md', value: 'new', ask: ask('2') });
+    // a changed state or another file also drops it
+    expect(holdAnswer(held, ask('1'), { ...ask('1'), state: 'untracked' as const }, 'x')).toBe(held);
+    expect(holdAnswer(held, ask('1'), { ...ask('1'), path: 'r/b.md' }, 'x')).toBe(held);
+    // the first answer, nothing held yet
+    expect(holdAnswer<string>(null, ask(null), ask(null), 'first')).toEqual({ path: 'r/a.md', value: 'first', ask: ask(null) });
+  });
+
+  test('an old answer for the same file cannot confirm untracked history after the revision or state changed', () => {
+    const ask = (revision: string | null, state: 'untracked' | null = 'untracked') => ({ path: 'r/a.md', revision, state });
+    const commits = { commits: [{}] };
+    const held = holdAnswer<typeof commits>(null, ask('1'), ask('1'), commits);
+    // asked for what is shown: confirmed, the panel shows
+    expect(heldConfirmed(held, ask('1'))).toBe(commits);
+    expect(showsHistory('untracked', heldConfirmed(held, ask('1')))).toBe(true);
+    // same path, newer revision or another state: the old commits confirm nothing, the panel hides until the fresh answer
+    expect(heldConfirmed(held, ask('2'))).toBeNull();
+    expect(showsHistory('untracked', heldConfirmed(held, ask('2')))).toBe(false);
+    expect(heldConfirmed(held, ask('1', null))).toBeNull();
+    // another file, nothing held, or a value held without an ask
+    expect(heldConfirmed(held, { ...ask('1'), path: 'r/b.md' })).toBeNull();
+    expect(heldConfirmed(null, ask('1'))).toBeNull();
+    expect(heldConfirmed({ path: 'r/a.md', value: commits }, ask('1'))).toBeNull();
+    // the matching fresh answer shows it again
+    const fresh = holdAnswer(held, ask('2'), ask('2'), commits);
+    expect(showsHistory('untracked', heldConfirmed(fresh, ask('2')))).toBe(true);
+    // a tracked file keeps the old panel while the fresh request is on its way (no confirmation needed)
+    expect(showsHistory(null, commits)).toBe(true);
   });
 });

@@ -4,7 +4,9 @@
 
 ### Fixed
 
-- Mermaid diagrams with HTML line breaks in labels are serialized as valid standalone SVG images and rerender after same-URL refresh; failed rendering is shown visibly while diagrams remain inert
+- File Git history and empty comparison actions stay hidden for Gitignored files and Untracked files without confirmed history; tracked history and useful current-change actions remain
+
+- Mermaid diagrams with HTML line breaks remain valid inert SVG images and update on real source changes; metadata-only Git refresh and conditional unchanged-source responses preserve body/token/images without flicker
 - Direct opening of ignored Markdown reveals its parent and selects the file in the left tree; Gitignored and Untracked have distinct orange/blue colors and right-panel badges, while tracked and no-repo files stay neutral
 
 - Agent Bus connection uses the canonical Personal tag instead of the retired record field, preserving create-only registration and existing owner settings

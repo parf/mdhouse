@@ -232,11 +232,26 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 ## Data sources
 
+- `/api/doc?meta=1` returns common metadata and owning HEAD `gitRevision`, no body/token/render.
+  `ifContent=<64 lowercase hex>` compares SHA256 of normalized full renderer source (frontmatter
+  included) or read highlighter text; equal returns `unchanged:true` plus metadata before rendering.
+  Binary/tooBig has no hash. Parameters cannot be combined; existing root/.git/admission guards apply.
+  Source hash is not authorization or filesystem-atomic proof. Manual/full reload refreshes semantic
+  context such as link existence and Agent Bus targets; conditional answers retain that context.
+  `ui/doc-refresh.ts` binds replies to root/path/content/generation; stale metadata cannot win newer
+  content/navigation, missing optional status/state/reference clears old values while body/token stay.
+- File History is hidden and not fetched for authoritative Gitignored. Untracked history is fetched
+  but hidden until current-file commits are confirmed; tracked behavior is preserved. Shared history
+  helper binds path/revision/state, so old answers cannot reopen another file's panel. Useful current
+  changes and the return-from-diff control remain; empty previous-revision controls are hidden.
+
 - Mermaid output remains an inert SVG image: detached template normalization + XMLSerializer, strict
   SVG namespace/XML/viewBox validation, decoded natural dimensions before replacement. Native helper
   `ui/mermaid-image.ts` bounds input/output and decode wait; errors are visible text, no active SVG fallback.
   Mermaid effect follows actual safeBody/actToken changes, including same-URL refetch; stale async
-  generations cannot replace or mark detached/currently superseded blocks.
+  generations cannot replace or mark detached/currently superseded blocks. Generic Git events
+  request file metadata only; exact-file FS events use conditional renderer-source hashes, retaining
+  unchanged body/provenance. Stable HEAD/status/state drives history without repeated body rendering.
 
 - **File list** — `git ls-files -co -s --exclude-standard` per repository, so `.gitignore` is
   honoured with no configuration; a nested repo (`name/`) or submodule (mode 160000) is listed
