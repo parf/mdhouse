@@ -14,10 +14,12 @@
 
 - ❓ Q-R3-RAG1 Which typed FileScan handoff completes the R3 source lifecycle? <a id="Q-R3-RAG1"></a>
   RAG 0.3.0 free capabilities are verified; retrieval is no longer blocked on v0.2 discovery.
-  Dedicated `#rag/mdhouse@parf.us` provisioning Q353 and FileScan typed source/progress/event/snapshot
-  fixture T-45 remain pending. A4 end-to-end and A7 dedup are still unmet.
+  Dedicated `#rag/mdhouse@parf.us` provisioning Q353 and FileScan roots Q355 remain pending.
+  T-45 typed docs/fixture are delivered: subscriber change messages and status snapshots, but no
+  source registry, job API/history or event stream. A4 end-to-end and A7 dedup remain unmet.
   > 💡👾 Use the explicit dedicated endpoint/stored project namespace after provisioning; complete
-  > FileScan/recovery fixture acceptance without inventing jobs, history or automatic paid retries.
+  > FileScan/recovery fixture acceptance without inventing provider jobs/history, treating pending:0
+  > as complete-folder proof or silently substituting polling for required live lifecycle updates.
   > [Current contract](../RAG-CONTRACT.md); [original question/history](resolved.md#Q-R3-RAG1).
 
 - [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1) <a id="Q-R3-HTML1"></a>

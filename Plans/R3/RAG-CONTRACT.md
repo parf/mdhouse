@@ -6,7 +6,7 @@ For the owner implementing the Agent Bus RAG agent. mdhouse integration: [№R3f
 Scope: [release](README.md#r3f-rag-through-the-agent-bus-rag-agent),
 [implementation](workspaces/TODO.md), [№Q-R3-RAG1](workspaces/QUESTIONS.md#Q-R3-RAG1).
 API names below describe capabilities, not agreed method names. Provider answers are recorded below;
-RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning, FileScan handoff and end-to-end acceptance remain open.
+RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning and end-to-end acceptance remain open; FileScan typed docs/fixture are delivered with the limitations below.
 
 ## Owner direction
 
@@ -24,13 +24,24 @@ RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning, Fil
 
 ## Current provider checkpoint — 2026-11-06
 
-🔴 FileScan→RAG wiring blocked: provider receipt `33de2bc2e7a56822` reports a sink expecting
-`status:ok`, which real upsert does not return. Successful writes stay pending and are resent,
-repeating paid embeddings/classification. Provider reports no live FileScan root/process here;
-mdhouse has not enabled this path. Do not connect FileScan until corrected confirmation matches
-namespace/table/id/content_hash, real-core regression passes and provider confirms deployment.
-Direct RAG calls are not affected by this sink defect; this is not authorization for paid calls.
-ETA is not deployment evidence. T-45 docs/fixture must retain the warning until resolved.
+FileScan paid-replay defect: provider receipt `e6f9c7a3de48dd99` reports fix `0f5340c3` deployed
+2026-11-06 02:07 EST, verified upstream against real RAG core with fake providers. Acknowledgment now
+requires matching namespace/table/id/source/content_hash; not_found settles deletes only. CTO read
+local source/docs revision descriptions and fixture, without running providers or verifying live
+roots. The earlier HIGH warning is historical below; provisioning Q353/Q355 still blocks live wiring.
+
+T-45 docs `7a26cf1b` and replay fixture are delivered: local official
+`docs/agents/filescan.md#reference-for-a-consumer`, `docs/agents/rag.md#troubleshooting`,
+`src/agents/filescan/fixtures/filescan-session.jsonl`, `src/agents/filescan/replay.py` in
+`/usr/local/src/ai-agent-bus`. No FileScan root/record is provisioned per provider report.
+`pending:0` plus `paused:null` means caught up only for scanned state; full-scan completion additionally
+requires non-null last_scan and latest scan capped:false. No rename/pause message, source registry,
+job/progress API, scan history or event stream is supplied. Subscriber change messages and status
+snapshots are available, not a promised durable lifecycle stream. R1–R12/A1–A9 gaps stay explicit.
+
+Free get inspection of an unknown upsert compares content_hash/source/table/id and indexed_at;
+matching text alone does not prove classification/metadata/old-chunk cleanup. No request-id dedup or
+automatic safe retry is implied. A4/A7/history/generation acceptance remains open.
 
 
 Provider reports RAG 0.3.0 live at `#rag@parf.us`. CTO help and free `capabilities` returned version
@@ -46,7 +57,7 @@ Provider recommends a separate `#rag/mdhouse@parf.us` instance/collection, pendi
 FileScan identities are added only per provisioned exact project name. mdhouse project grants and
 stored namespace mapping remain independent access boundaries. No grant change was performed here.
 
-Provider followup T-45 is docs/fixture-only: exact typed FileScan source/progress/event/snapshot
+Delivered provider followup T-45 is docs/fixture-only: exact typed FileScan source/progress/event/snapshot
 contract and replayable fixture; free get/content_hash inspection guidance for unknown upsert
 outcomes; explicit A4/history/generation limitations. A7 request-id dedup remains unmet; a replayed
 upsert may pay twice. Do not infer safe automatic retry from same record ID. A4 end-to-end and the
@@ -253,3 +264,16 @@ Acceptance reconciliation; no gate closed by this provider report:
 Nice to have, subject to provider support: cost preview/usage, cancellation, hybrid search/reranking,
 generation retention controls and richer file/URL/service connectors. These are questions and wishes,
 not additional R3 release gates beyond the approved lifecycle, retrieval, isolation and evidence contract.
+
+## Historical FileScan paid-replay warning
+
+🔴 FileScan→RAG wiring blocked: provider receipt `33de2bc2e7a56822` reports a sink expecting
+`status:ok`, which real upsert does not return. Successful writes stay pending and are resent,
+repeating paid embeddings/classification. Provider reports no live FileScan root/process here;
+mdhouse has not enabled this path. Do not connect FileScan until corrected confirmation matches
+namespace/table/id/content_hash, real-core regression passes and provider confirms deployment.
+Direct RAG calls are not affected by this sink defect; this is not authorization for paid calls.
+ETA is not deployment evidence. T-45 docs/fixture must retain the warning until resolved.
+
+
+Superseded for the deployed fix by the current provider checkpoint; retained as incident history.

@@ -744,3 +744,14 @@ Independent combined review `session-cohort-3dd661e` is assigned to OpenCode wit
 checkout `r3-session-persistence-review`. Author and candidate checkouts stay frozen. Ready is not
 integrated or done; filesystem permissions/concurrency/outcome boundaries and documented no-openat
 race limitation are part of the review. No new author task is started while findings are pending.
+
+## FileScan T-45 delivered; provisioning and lifecycle acceptance remain open
+
+Provider receipt `e6f9c7a3de48dd99` reports paid-replay fix `0f5340c3` deployed 02:07 EST and real-RAG
+core regression with fake providers. CTO read local official docs `7a26cf1b` and replay-fixture paths;
+no tests/provider calls/roots/subscriptions were run here. RAG stays 0.3.0. The earlier sink-defect
+hold is superseded by provider fix evidence; live wiring remains blocked on owner Q353/Q355.
+T-45 documents available change messages/status snapshots and missing registry/jobs/history/events;
+[№Q-R3-RAG1](workspaces/QUESTIONS.md#Q-R3-RAG1) and [current contract](RAG-CONTRACT.md) retain those
+acceptance gaps. Unknown upsert inspection is free get + exact identity/hash/source/indexed_at;
+matching text alone does not prove all side effects or authorize a paid retry.
