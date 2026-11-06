@@ -233,3 +233,15 @@ document switches and open drafts/forms. Payload/token and rendered DOM must sta
 is DOM provenance, not server authorization: same-origin, root/actor and stale-write checks remain
 independent. Final combined target still requires fresh exact-SHA security review and real-click
 negative/positive browser evidence. Whole [№MW.8](workspaces/TODO.md#MW.8) and admin wiring remain open.
+
+## Business authoring checkpoint
+
+[№MW.3e](workspaces/TODO.md#MW.3e) Business target `7ef988a1ba4b579116c806d72bcbdb95fa481bd3`
+(base `d931d94`) received CTO asset/coverage review and integrated without conflict as
+`74c018d4c3f5784f93e80673b7d3e96f173280cd`. Catalog/assets/matrix/tests match the author target;
+all previous 19 packages and checks remain. Exact integrated HEAD: full 527/527, 3300 assertions,
+tsc clean. Library now ships 24 authoring packages. Examples preserve metric/cohort comparability,
+source limitations, scenario assumptions and pending decision authority. No runtime or provider call
+is implemented. Ideas and the parent manual/scheduled/runtime acceptance remain open.
+Next W3 batch: five Ideas packages, assets/catalog/independent coverage/tarball tests/CHANGELOG only;
+no source/schema/Plans changes or live research/actions.
