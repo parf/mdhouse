@@ -211,3 +211,25 @@ for implementation/testing, not yet verified. Preserve passive classes/styles an
 Require raw/attrs forgery, current line/hash/context, nested control/DOM-repair, guessed/stale-token
 negatives at real click sinks plus genuine-action positives. Client sanitization must retain generated
 provenance and the approved server passive-style contract. Whole boundary/admin wiring remains open.
+
+## Provenance followup — intermediate target and approved next step
+
+W1 intermediate `2947f56d23951ae9290d78438636bf4d6ce49672` follows frozen `d9f4290`, without
+amendment or integration. Authored classes/IDs remain supported. Authored raw HTML loses renderer data
+attributes; unfinished start tags/comments become inert text across token boundaries. W1 reports full
+531/531 and tsc; independent review of this followup is pending. Direct htmlparser2 12.0.0 and DOMPurify
+3.4.17 are pinned, with compatible Mermaid resolution; lock changes need fresh review.
+
+W1's real browser probe demonstrated that authored list markup can re-parent a genuine question control
+under a different item. Ancestor lookup can then apply a genuine action to the wrong line/hash. The
+approved next server/client step therefore puts each generated action's own line/hash/op/option on the
+actionable node, with a fresh 128-bit per-render `actToken` in the trusted payload and matching `data-act`
+on that node. Authored provenance attributes are stripped. Client reads no ancestor action context;
+a re-parented genuine control acts on its original item or becomes inert, never another item.
+
+W1 owns server generation/payload/allowlist and W2 owns exact-node checks. Verify malformed/nested
+fragments, copied/guessed/stale tokens, generated descendants, live updates, superseded responses,
+document switches and open drafts/forms. Payload/token and rendered DOM must stay paired. This token
+is DOM provenance, not server authorization: same-origin, root/actor and stale-write checks remain
+independent. Final combined target still requires fresh exact-SHA security review and real-click
+negative/positive browser evidence. Whole [№MW.8](workspaces/TODO.md#MW.8) and admin wiring remain open.
