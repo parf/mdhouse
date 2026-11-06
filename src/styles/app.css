@@ -299,18 +299,9 @@ main {
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--fg-muted); margin: 6px 0 10px;
 }
-.settings-roots { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); }
-.settings-roots li { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: var(--bg-panel); }
-.settings-roots li + li { border-top: 1px solid var(--border); }
-.settings-roots li:first-child { border-radius: var(--radius) var(--radius) 0 0; }
-.settings-roots li:last-child { border-radius: 0 0 var(--radius) var(--radius); }
-.settings-roots .what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.settings-roots .name { font-weight: 600; color: var(--dir); text-decoration: none; }
-.settings-roots .name:hover { text-decoration: underline; }
-.settings-roots .path { font: 11.5px var(--mono); color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.settings-roots .tag { flex: none; font-size: 10.5px; padding: 1px 6px; border-radius: 3px; color: var(--fg-muted); border: 1px solid var(--border-strong); }
-.settings-roots .tag.saved { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
-.settings-roots .tag.rw { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.settings-projects .tag { flex: none; font-size: 10.5px; padding: 1px 6px; border-radius: 3px; color: var(--fg-muted); border: 1px solid var(--border-strong); }
+.settings-projects .tag.saved { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.settings-projects .tag.rw { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
 .icon-btn.danger:hover:not(:disabled) { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .settings-error { color: var(--danger); font-size: 12.5px; }
@@ -2016,3 +2007,29 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .home-table tr.git-untracked td.name .link { color: var(--git-untracked); }
 .doc-git { margin: 0 0 8px; }
 .doc-git .git-badge { font-size: 12px; padding: 1px 7px; }
+
+/* Settings: Projects — a list to choose from, the chosen one's facts beside it (stacked on a phone). */
+.settings h2 .scope { font-size: 11px; font-weight: 500; color: var(--fg-faint); margin-left: 8px; text-transform: none; letter-spacing: 0; }
+.projects-pane { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 16px; align-items: start; }
+.project-list { display: flex; flex-direction: column; gap: 10px; }
+.project-group h3 { margin: 0 0 4px; font-size: 11px; font-weight: 600; color: var(--fg-faint); text-transform: uppercase; letter-spacing: .04em; }
+.project-pick { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 8px 10px; min-height: 36px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel); color: var(--fg); cursor: pointer; }
+.project-pick + .project-pick { margin-top: 4px; }
+.project-pick .name { font-weight: 600; color: var(--dir); overflow-wrap: anywhere; }
+.project-pick[aria-current='true'] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.project-pick:focus-visible, .project-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.project-detail { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel); padding: 12px 14px; min-width: 0; }
+.project-detail h3 { margin: 0 0 8px; font-size: 16px; }
+.project-detail h3 .name { color: var(--dir); text-decoration: none; }
+.project-detail h3 .name:hover { text-decoration: underline; }
+.project-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0 0 12px; }
+.project-facts dt { color: var(--fg-muted); }
+.project-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.project-facts dd.path { font: 12.5px var(--mono); }
+.project-remove { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--danger); cursor: pointer; }
+.project-remove:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 720px) {
+  .projects-pane { grid-template-columns: 1fr; }
+  .project-facts { grid-template-columns: 1fr; gap: 2px; }
+  .project-facts dd { margin-bottom: 6px; }
+}

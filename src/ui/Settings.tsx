@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { api, type AbInfo, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import { IconTrash } from './icons';
+import { groupProjects, removable, selectedProject, writableVia } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
@@ -23,8 +24,8 @@ interface Props {
 }
 
 /**
- * Settings. One section for now — the directories mdhouse serves — laid out so the next
- * options become sections beneath it rather than a rework.
+ * Settings. The Projects mdhouse serves — chosen and shown here, with what the server lets be
+ * changed — then this browser's own setting, then the instance-wide ones.
  *
  * Removing is the only action here. Adding needs a path typed into a browser that cannot
  * check it exists or offer completion; `mdhouse <dir> -p` in a terminal does both.
@@ -76,11 +77,14 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     }
   };
   const [error, setError] = useState('');
-  const last = roots.filter((r) => r.kind !== 'reference').length === 1;
+  const last = removable(roots).length === 1;
+  // The project whose details show; kept by id, the first one when it is gone.
+  const [picked, setPicked] = useState<string | null>(null);
+  const project = selectedProject(roots, picked);
 
   const remove = async (root: RootInfo) => {
     const how = root.saved ? 'forget it and stop serving it' : 'stop serving it';
-    if (!confirm(`Remove ${root.path}?\n\nmdhouse will ${how}. Nothing on disk is touched.`)) return;
+    if (!confirm(`Remove project ${root.name} (${root.path})?\n\nmdhouse will ${how}. Nothing on disk is touched.`)) return;
     setBusy(root.id);
     setError('');
     try {
@@ -93,6 +97,37 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     }
   };
 
+  const authorCard = (
+    <>
+        {author && (
+          <div class="settings-option">
+            <label class="settings-scheme-field">
+              <b>Your name</b>
+              <input
+                class="settings-scheme"
+                type="text"
+                value={authorDraft}
+                placeholder={author.cookie ? '' : author.name}
+                maxLength={64}
+                spellcheck={false}
+                autocomplete="off"
+                aria-label="Your author name in this browser"
+                onInput={(e) => setAuthorDraft((e.target as HTMLInputElement).value)}
+                onBlur={saveAuthor}
+                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+              />
+            </label>
+            <span class="settings-hint">
+              Signs your replies and quotes as <code>👤{author.name}</code> in this browser only
+              {author.cookie ? ' (set here)' : ` — now from ${AUTHOR_FROM[author.source]}`}. It is a name, not a login: it gives no access. Empty
+              clears it.
+            </span>
+            {authorError && <span class="settings-error">{authorError}</span>}
+          </div>
+        )}
+    </>
+  );
+
   return (
     <div class="settings">
       <header class="home-head">
@@ -100,68 +135,112 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         <span class="head-gear">{gear}</span>
       </header>
 
-      <section>
-        <h2>Directories</h2>
-        <ul class="settings-roots">
-          {roots.map((root) => (
-            <li key={root.id}>
-              <div class="what">
+      <section class="settings-projects">
+        <h2>Projects</h2>
+        <div class="projects-pane">
+          <nav class="project-list" aria-label="Projects">
+            {groupProjects(roots).map((group) => (
+              <div class="project-group" key={group.key}>
+                <h3>{group.title}</h3>
+                {group.roots.map((root) => (
+                  <button
+                    key={root.id}
+                    class="project-pick"
+                    aria-current={project?.id === root.id ? 'true' : undefined}
+                    onClick={() => setPicked(root.id)}
+                    title={root.path}
+                  >
+                    <span class="name">{root.name}</span>
+                    {root.writable && root.kind !== 'reference' && <span class="tag rw">RW</span>}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </nav>
+          {project && (
+            <div class="project-detail" role="region" aria-label={`Project ${project.name}`}>
+              <h3>
                 <a
                   class="name"
-                  href={rootUrl(root.id)}
-                  title={`${root.name}/ — every file, as a list`}
+                  href={rootUrl(project.id)}
+                  title={`${project.name}/ — every file, as a list`}
                   onClick={(e) => {
                     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
                     e.preventDefault();
-                    go(rootUrl(root.id));
+                    go(rootUrl(project.id));
                   }}
                 >
-                  {root.name}
+                  {project.name}
                 </a>
-                <span class="path" title={root.path}>
-                  {root.path}
-                </span>
-              </div>
-              {root.kind === 'reference' ? (
-                <span class="tag saved" title="mdhouse's own documentation — served on every start, read-only">
-                  reference
-                </span>
-              ) : (
-                <>
-                  <span
-                    class={`tag ${root.saved ? 'saved' : 'session'}`}
-                    title={root.saved ? 'Served on every start' : 'Served until mdhouse stops'}
-                  >
-                    {root.saved ? 'saved' : 'this session'}
-                  </span>
-                  {root.writable && (
+              </h3>
+              <dl class="project-facts">
+                <dt>Folder</dt>
+                <dd class="path" title={project.path}>
+                  {project.path}
+                </dd>
+                <dt>Access</dt>
+                <dd>
+                  {project.kind === 'reference' ? (
+                    <span class="tag saved">read-only</span>
+                  ) : project.writable ? (
                     <span class="tag rw" title="mdhouse may write to this tree">
-                      RW
+                      read and write
+                      {writableVia(project) === 'rw' && ' — started with --rw'}
+                      {writableVia(project) === 'auto' && ' — auto-RW'}
+                    </span>
+                  ) : (
+                    <span class="tag session">read-only</span>
+                  )}
+                </dd>
+                <dt>Kept</dt>
+                <dd>
+                  {project.kind === 'reference' ? (
+                    <span class="tag saved" title="mdhouse's own documentation — served on every start, read-only">
+                      reference — always served, cannot be changed
+                    </span>
+                  ) : (
+                    <span
+                      class={`tag ${project.saved ? 'saved' : 'session'}`}
+                      title={project.saved ? 'Served on every start' : 'Served until mdhouse stops'}
+                    >
+                      {project.saved ? 'saved — served on every start' : 'this session — served until mdhouse stops'}
                     </span>
                   )}
-                  <button
-                    class="icon-btn danger"
-                    disabled={last || busy !== null}
-                    onClick={() => void remove(root)}
-                    title={last ? 'The last directory cannot be removed — mdhouse would have nothing to serve' : 'Remove'}
-                    aria-label={`Remove ${root.path}`}
-                  >
-                    <IconTrash size={15} />
-                  </button>
-                </>
+                </dd>
+              </dl>
+              {project.kind !== 'reference' && (
+                <button
+                  class="project-remove danger"
+                  disabled={last || busy !== null}
+                  onClick={() => void remove(project)}
+                  title={last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : 'Stop serving this project'}
+                >
+                  <IconTrash size={15} /> Remove project
+                </button>
               )}
-            </li>
-          ))}
-        </ul>
+              <p class="settings-note">
+                Name, access and whether it is kept are set when it is added: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start
+                (<code>--rw</code> for write access); without <code>-p</code> it lasts until mdhouse stops.
+              </p>
+            </div>
+          )}
+        </div>
         {error && <p class="settings-error">{error}</p>}
-        <p class="settings-note">
-          Add one from a terminal: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start.
-          Without <code>-p</code> it lasts until mdhouse stops.
-        </p>
       </section>
 
+      {author && (
+        <section>
+          <h2>
+            This browser <span class="scope">only here</span>
+          </h2>
+          {authorCard}
+        </section>
+      )}
+
       <section>
-        <h2>Documents</h2>
+        <h2>
+          Documents <span class="scope">all projects</span>
+        </h2>
         {/* One line: the option, then how to make it work. The link stays outside the label —
             inside one, a click can toggle the checkbox instead of opening the page. */}
         <div class="settings-option">
@@ -217,32 +296,6 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           </span>
           {options.editLink && schemeError && <span class="settings-error">{schemeError}</span>}
         </div>
-        {author && (
-          <div class="settings-option">
-            <label class="settings-scheme-field">
-              <b>Your name</b>
-              <input
-                class="settings-scheme"
-                type="text"
-                value={authorDraft}
-                placeholder={author.cookie ? '' : author.name}
-                maxLength={64}
-                spellcheck={false}
-                autocomplete="off"
-                aria-label="Your author name in this browser"
-                onInput={(e) => setAuthorDraft((e.target as HTMLInputElement).value)}
-                onBlur={saveAuthor}
-                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-              />
-            </label>
-            <span class="settings-hint">
-              Signs your replies and quotes as <code>👤{author.name}</code> in this browser only
-              {author.cookie ? ' (set here)' : ` — now from ${AUTHOR_FROM[author.source]}`}. It is a name, not a login: it gives no access. Empty
-              clears it.
-            </span>
-            {authorError && <span class="settings-error">{authorError}</span>}
-          </div>
-        )}
         {/* The paths are set from the CLI; here only the switch. */}
         {!!options.autoRwPaths?.length && (
           <div class="settings-option">
@@ -336,7 +389,9 @@ function AgentBusSettings() {
 
   return (
     <section class="settings-ab">
-      <h2>Agent Bus</h2>
+      <h2>
+        Agent Bus <span class="scope">all projects</span>
+      </h2>
       {error && <p class="settings-error">{error}</p>}
       {info && !info.enabled && (
         <p class="settings-hint">
