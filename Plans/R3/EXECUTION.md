@@ -245,3 +245,16 @@ source limitations, scenario assumptions and pending decision authority. No runt
 is implemented. Ideas and the parent manual/scheduled/runtime acceptance remain open.
 Next W3 batch: five Ideas packages, assets/catalog/independent coverage/tarball tests/CHANGELOG only;
 no source/schema/Plans changes or live research/actions.
+
+Browser prototype receipt `d1dc5343485d9e8a`: W2 reports 34 hostile and two positive fixtures passing;
+no committed browser target yet. Baseline active HTML produced script/probe/navigation effects.
+A mixed allowed/forbidden CSS declaration initially preserved a `url()` request; W2 corrected attribute
+reconstruction and reran the affected negatives/positives. Keep this regression in the repeatable
+corpus. Computed passive colours, font styles, author classes, Shiki colours and table alignment were
+checked; this does not yet prove action provenance. W1/W2 may share a pure style-allowlist module in
+the next unfrozen target to prevent policy drift, subject to fresh review.
+
+Client payload/DOM pairing uses the trusted Preact body ref with `data-act-root`, never an authored
+ancestor/ID/class selector; authored root-marker attributes are stripped. Action metadata must be
+validated on the generated control itself. Final real-click forgery/genuine-action and live-draft
+checks await W1's exact server metadata commit. Whole content boundary/admin wiring stays open.
