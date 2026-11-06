@@ -275,3 +275,11 @@ whole boundary. Require final operation dispatch to use trusted generated action
 class/role/ancestor confusion, alongside token/context checks and stale guards. Client real-click
 negative/positive/lifecycle corpus and combined exact-SHA security review still gate integration.
 Shared style policy extraction, if needed, is a separate followup; frozen targets stay unchanged.
+
+Shared-style followup `09b3cd7461044fec0a02443bdcbe9689384379f0` is a separate commit above frozen
+`c6a1965`. CTO compared the delta: identical style-property/value regexes moved into pure
+`src/lib/passive-style.ts`, imported by server; new CSS edge-case tests cover comments, important,
+escapes, case, duplicates and mixed declarations. W1 reports full 538/538 and tsc. Fresh final-target
+delta review requested; W2 consumes the shared policy. Standard CSS property normalization and
+case-sensitive custom properties need explicit client/server corpus checks. No source integration or
+whole-boundary completion is claimed before the client gate and combined review.
