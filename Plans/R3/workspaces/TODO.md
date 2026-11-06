@@ -114,8 +114,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
   - [x] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
   - Verified: approved `b9986d2`, integrated `e5382e1`; exact source/dependency identity and focused pure/mock 65/0. No persistence/routes/OAuth/live; [evidence](../EXECUTION.md#pure-session-history-and-mock-geoip-integrated)
-  - [ ] MW.0d.2 Session-history persistence foundation cohort: strict versioned pure codec (W3) + protected atomic snapshot store (W1); one combined security review/gate <a id="MW.0d.2"></a>
-  - State: cohort ready `3dd661e`, combined focused 108/0 + types; independent Review in progress, not integrated
+  - [x] MW.0d.2 Session-history persistence foundation cohort: strict versioned pure codec (W3) + protected atomic snapshot store (W1); one combined security review/gate <a id="MW.0d.2"></a>
+  - Verified: approved `3dd661e`, integrated `c529bf1`; one combined focused 108/0 + types, source/test/dependency identity unchanged at merge. [Evidence](../EXECUTION.md#session-persistence-cohort-integrated)
   - Cohort boundary: model snapshots only, no cookie-secret authentication, FS routes, OAuth, proxy config, live GeoIP or unresolved initial-country enforcement; no session cap/purge/new TTL
   - Slice owner: W1; exact canonical IPs, no new session cap/purge/absolute TTL; cached/current geo observations refresh lastSeen without a new lookup; separate city/state/country MRUs; provider region may map honestly to state
   - Acceptance: web user management is Personal-owner/Team-configured-admin only; Editor/project RW cannot add or manage users, including direct/stale requests

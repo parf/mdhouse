@@ -11,6 +11,7 @@ fallback author, license/scheme/Copy-touch implementation slices, 39 authoring p
 core, [№MW.8](workspaces/TODO.md#MW.8) passive content (`3b044d5`) and dormant classification
 (`484a277`). Latest controlled full: `fdb4098`, 703/0 + tsc; no new suite for documentation changes.
 [№MW.0d.1](workspaces/TODO.md#MW.0d.1): approved `b9986d2`, integrated `e5382e1`, pure/mock scope done.
+[№MW.0d.2](workspaces/TODO.md#MW.0d.2): approved cohort `3dd661e`, integrated `c529bf1`; codec/store foundation done, no runtime authentication or routes.
 Admin/OAuth/access wiring, materialization, RAG runtime and cross-browser/real-device release QA stay
 open. Country/identity rules are current in [DECISIONS](workspaces/DECISIONS.md); historical pending
 reports below are chronological evidence, not current blockers.
@@ -755,3 +756,20 @@ T-45 documents available change messages/status snapshots and missing registry/j
 [№Q-R3-RAG1](workspaces/QUESTIONS.md#Q-R3-RAG1) and [current contract](RAG-CONTRACT.md) retain those
 acceptance gaps. Unknown upsert inspection is free get + exact identity/hash/source/indexed_at;
 matching text alone does not prove all side effects or authorize a paid retry.
+
+## Session persistence cohort integrated
+
+[№MW.0d.2](workspaces/TODO.md#MW.0d.2): independent Review receipt `8fa9a3de019bd381` PASS exact
+`3dd661e8b3ba53145e51f87fe0761753fe3bf237`, base `43d3408`. Combined author cohort (W3 codec + W1
+store/fix) integrated at `c529bf1f6c7b1de6136d3c8a3eb5dea13973fd5b`. Source/tests/dependencies/version
+are byte-identical to approved target; current owner workflow/contact rules, questions and tooling
+were preserved. No merge conflict or material delta, so no repeated tests/types gate at landing.
+
+Single combined gate: model/GeoIP/codec/store 108/0 + types exit 0. Review inspected those logs and
+performed independent focused/temp-FS adversarial checks. It confirmed strict/refuse-not-repair
+snapshot codec, permissions/nofollow, CAS/revision/lock behavior, atomic outcomes and no-alias fixes.
+Known limits: no openat means same-OS-owner path race is narrowed, not eliminated; failed best-effort
+temp removal may leave inert 0600 temporary data, without replacing the old snapshot. Runtime wiring,
+OAuth/cookie authentication, self/admin APIs/UI, live GeoIP and initial-unknown policy remain open.
+No version bump, publish, push, deploy or provider call. Unreleased facts are unchanged for this inert
+foundation; future owner-authorized deployment groups product changes in one entry.

@@ -9,7 +9,7 @@ Immutable references and fallback browser author are accepted integrated scopes 
 cohort identity PASS; mount `052eaf8`, content `4de0d3`, author `b11e47f`). Copy/touch implementation
 has recorded Chromium checks; cross-browser/real-device parents remain open. MW.8 is integrated with
 latest controlled 703/0 + tsc and final independent CEO PASS; dormant classification is integrated.
-MW.0d.1 `b9986d2` is reviewed and integrated as `e5382e1` for pure/mock scope only. Detailed reports below retain
+MW.0d.1 `b9986d2` is reviewed and integrated as `e5382e1` for pure/mock scope only. MW.0d.2 codec/store is reviewed and integrated as `c529bf1`; one combined 108/0 + types gate, no landing rerun. Detailed reports below retain
 historical failures/pending states; later confirmed cleanup/verdicts supersede those states.
 
 ## Required checks
@@ -217,3 +217,13 @@ async observedAt/IP/session binding and mock sequential provider failure handlin
 No full/tsc/browser rerun for the identity merge. Pure historyView consumes caller declarations;
 this is not self/admin route authorization. Persistence, OAuth/routes/UI/live GeoIP and initial-unknown
 policy are outside the accepted slice and remain open.
+
+## Session persistence combined checkpoint
+
+Approved `3dd661e`, independent PASS `8fa9a3de019bd381`; integrated `c529bf1` with exact
+source/tests/dependency identity. Combined focused 108/0 and types exit 0, retained under
+`.scratch/cto/session-cohort-gate/`; Review independently exercised codec/store temp-FS behavior.
+No duplicate full/types/browser gate at integration. Earlier save-alias/in-place-no-op defects were
+reproduced and fixed before the single gate; tests cover persisted-byte snapshot agreement.
+No runtime auth/grants are supplied by snapshot consistency. Same-owner path replacement races and
+best-effort inert temp cleanup remain documented limitations; initial-unknown and live wiring are open.
