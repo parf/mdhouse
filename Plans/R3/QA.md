@@ -12,6 +12,9 @@ latest controlled 703/0 + tsc and final independent CEO PASS; dormant classifica
 MW.0d.1 `b9986d2` is reviewed and integrated as `e5382e1` for pure/mock scope only. MW.0d.2 codec/store is reviewed and integrated as `c529bf1`; one combined 108/0 + types gate, no landing rerun. Detailed reports below retain
 historical failures/pending states; later confirmed cleanup/verdicts supersede those states.
 
+Standalone RAG planning bin is integrated (`ae04901`, approved `4087601`): combined pure/CLI/
+actual-artifact gate and independent review PASS; connected sync/index/search remains not-wired.
+
 ## Required checks
 
 | Surface | Required journey/check | Evidence / state |
@@ -227,3 +230,13 @@ No duplicate full/types/browser gate at integration. Earlier save-alias/in-place
 reproduced and fixed before the single gate; tests cover persisted-byte snapshot agreement.
 No runtime auth/grants are supplied by snapshot consistency. Same-owner path replacement races and
 best-effort inert temp cleanup remain documented limitations; initial-unknown and live wiring are open.
+
+## Standalone RAG local-plan bin checkpoint
+
+Exact independent PASS `0140cdf207c56a6b` on `4087601`; integrated `ae04901` source/bin/package/tests
+identity unchanged. One combined 35/0 + types gate retained in `.scratch/cto/rag-bin-cohort-gate/`;
+actual tarball exports/runs new-bin --help and retains canonical license and all 39 authoring packages.
+No repeated landing gate. Local adversarial temp-tree checks cover exclusions, UPPER.MD, symlinks,
+oversize and explicit partial inventory; no network/provider/server process was used. This proves
+help/local preview only; no connected indexing/search/paid effects, runtime authorization or source
+content/atomic snapshot proof is claimed.

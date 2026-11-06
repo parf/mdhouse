@@ -12,6 +12,7 @@ core, [№MW.8](workspaces/TODO.md#MW.8) passive content (`3b044d5`) and dormant
 (`484a277`). Latest controlled full: `fdb4098`, 703/0 + tsc; no new suite for documentation changes.
 [№MW.0d.1](workspaces/TODO.md#MW.0d.1): approved `b9986d2`, integrated `e5382e1`, pure/mock scope done.
 [№MW.0d.2](workspaces/TODO.md#MW.0d.2): approved cohort `3dd661e`, integrated `c529bf1`; codec/store foundation done, no runtime authentication or routes.
+[№MW.2a.1a](workspaces/TODO.md#MW.2a.1a): approved cohort `4087601`, integrated `ae04901`; standalone local-plan bin done, no connected provider transport/index/search.
 Admin/OAuth/access wiring, materialization, RAG runtime and cross-browser/real-device release QA stay
 open. Country/identity rules are current in [DECISIONS](workspaces/DECISIONS.md); historical pending
 reports below are chronological evidence, not current blockers.
@@ -911,3 +912,20 @@ return not-wired; metadata preview is not indexing/search completion or provider
 Usage footer check during active work: W1 5h 49% (reset 1h01m), 7d 63% (6d02h); W2 5h 87%
 (reset 3h12m), 7d 70% (5d19h). Current Codex/OpenCode usage not available from those footers.
 The old W2 1% pause is superseded by this fresh display; no extra task or heavy rerun was assigned.
+
+## Standalone RAG local-plan bin integrated
+
+[№MW.2a.1a](workspaces/TODO.md#MW.2a.1a): independent Review receipt `0140cdf207c56a6b` PASS exact
+`40876012259e70306540c977d4bc3453fb5581a9`, base `01c842c`. Integrated cohort
+`ae04901d2be8a82f775548176a08b2e7e4ba87e1` without conflict; source/bin/package/lock/tests identical
+to approved target, current owner/provider/routing docs preserved. One combined gate 35/0 + types,
+including actual npm tarball/license/39-flow preservation and executable packed-bin help; no landing
+rerun/full/browser/provider call. Package adds only the bin entry, version/dependencies unchanged.
+
+The executable supports help and actual jailed local Markdown metadata planning, not fake index
+or search completion. Import/help have no work; sync/search return not-wired with zero effects.
+Metadata digest/readiness/caller are declarations, not contents/auth/provider readiness. Incomplete/
+empty/oversize coverage remains explicit. Review notes direct module invocation is a no-op (published
+bin is the entrypoint) and hardlink paths remain separate metadata sources; neither expands scope.
+[№MW.2a.1](workspaces/TODO.md#MW.2a.1) and parent RAG acceptance remain open until real adapter,
+index/search, T-48 deployment and T-49 runtime readiness are satisfied. No publish/push/deploy.
