@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { gitStateClass, gitStateOf, GIT_STATE, parentScope } from '../src/ui/git-state';
+import { gitStateClass, gitStateOf, GIT_STATE, parentScope, shownStatus } from '../src/ui/git-state';
 import { revealScopes } from '../src/ui/views';
 
 describe('git state', () => {
@@ -37,5 +37,11 @@ describe('git state', () => {
     expect(revealScopes(views, open).scopes).toEqual(['realty/.ai-team', 'a', 'b']);
     expect(revealScopes(views, open, 'V1').scopes).toEqual(['realty/.ai-team', 'a']);
     expect(revealScopes({ V1: [], V2: [] }, parentScope('README.md')).scopes).toEqual([]);
+  });
+
+  test('shownStatus: untracked is never a status badge, the others pass through', () => {
+    expect(shownStatus('untracked')).toBeUndefined();
+    expect(shownStatus(undefined)).toBeUndefined();
+    for (const st of ['modified', 'staged', 'deleted'] as const) expect(shownStatus(st)).toBe(st);
   });
 });

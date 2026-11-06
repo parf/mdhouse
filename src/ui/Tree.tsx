@@ -4,7 +4,7 @@ import { IconChevron, IconFolder, IconStar, IconMute } from './icons';
 import { docName, fileSize, shortAgo } from './format';
 import { Ago, RecentHeat } from './Ago';
 import { follow } from './PageHead';
-import { gitStateClass, gitStateOf } from './git-state';
+import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 
 interface Props {
@@ -120,9 +120,7 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
   const marks = file.file.marks ?? [];
   const isFav = marks.includes('favorite');
   const isMuted = marks.includes('muted');
-  const gitState = gitStateOf(file.file);
-  // an actual Git state replaces the old untracked mark
-  const status = gitState === 'untracked' && file.file.status === 'untracked' ? undefined : file.file.status;
+  const status = shownStatus(file.file.status);
   const size = file.file.size;
   const small = sizeClass(size);
 

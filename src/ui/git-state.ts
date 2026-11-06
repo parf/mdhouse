@@ -22,6 +22,12 @@ export const gitStateClass = (item: unknown): string => {
   return state ? ` git-${state}` : '';
 };
 
+/**
+ * A file's `status` for display. `untracked` is never shown as a status: it may be synthesized (no
+ * repository), so only a reported `gitState` presents it. Other statuses pass through.
+ */
+export const shownStatus = <S extends string>(status: S | undefined): S | undefined => (status === ('untracked' as string) ? undefined : status);
+
 /** The parent folder of a file `rel` as a reveal scope; null for a file at the root. */
 export function parentScope(rel: string): string | null {
   const at = rel.lastIndexOf('/');

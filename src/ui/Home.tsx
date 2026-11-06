@@ -7,7 +7,7 @@ import { loadWide } from './wide';
 import { IconGit } from './icons';
 import { preciseAgo, docName } from './format';
 import { Ago } from './Ago';
-import { gitStateClass, gitStateOf } from './git-state';
+import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 
 export type { HomeView } from './PageHead';
@@ -223,7 +223,7 @@ export function Home(props: Props) {
                       {docName(row.r.name)}
                     </a>
                     <GitStateBadge item={row.r} />
-                    {tagOf(row.r.status, row.loud) && !(gitStateOf(row.r) === 'untracked' && row.r.status === 'untracked') && <span class="tag">{tagOf(row.r.status, row.loud)}</span>}
+                    {tagOf(shownStatus(row.r.status), row.loud) && <span class="tag">{tagOf(shownStatus(row.r.status), row.loud)}</span>}
                   </td>
                   {/* Empty under a commit — the commit's own age heads its block — but the cell
                       stays, so every file name sits in the same column all the way down. */}
