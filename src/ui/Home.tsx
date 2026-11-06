@@ -7,6 +7,8 @@ import { loadWide } from './wide';
 import { IconGit } from './icons';
 import { preciseAgo, docName } from './format';
 import { Ago } from './Ago';
+import { gitStateClass, gitStateOf } from './git-state';
+import { GitStateBadge } from './GitStateBadge';
 
 export type { HomeView } from './PageHead';
 
@@ -206,7 +208,7 @@ export function Home(props: Props) {
                 </tr>
               ) : (
                 <tr
-                  class={row.loud ? 'file loud' : 'file'}
+                  class={`${row.loud ? 'file loud' : 'file'}${gitStateClass(row.r)}`}
                   key={row.key}
                   onClick={(e) => !inLink(e) && props.onOpen(row.r.rel)}
                   title={row.r.rel}
@@ -220,7 +222,8 @@ export function Home(props: Props) {
                     <a class="link" href={props.fileUrl(row.r.rel)} onClick={(e) => follow(e, () => props.onOpen(row.r.rel))}>
                       {docName(row.r.name)}
                     </a>
-                    {tagOf(row.r.status, row.loud) && <span class="tag">{tagOf(row.r.status, row.loud)}</span>}
+                    <GitStateBadge item={row.r} />
+                    {tagOf(row.r.status, row.loud) && !(gitStateOf(row.r) === 'untracked' && row.r.status === 'untracked') && <span class="tag">{tagOf(row.r.status, row.loud)}</span>}
                   </td>
                   {/* Empty under a commit — the commit's own age heads its block — but the cell
                       stays, so every file name sits in the same column all the way down. */}
@@ -334,7 +337,7 @@ type Row =
   | { kind: 'commit'; key: string; c: CommitGroup; own?: boolean }
   | { kind: 'file'; key: string; r: FileRow; loud?: boolean; span: number };
 
-type FileRow = Pick<RecentEntry, 'rel' | 'dir' | 'name' | 'status'> & { at?: number };
+type FileRow = Pick<RecentEntry, 'rel' | 'dir' | 'name' | 'status'> & { at?: number; gitState?: unknown };
 
 /**
  * Directory cells span the rows beneath them, so a run of files from the same folder names it

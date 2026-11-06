@@ -3,6 +3,8 @@ import { inViewTab, VIEW_IDS, type RootViews, type ViewId } from './views';
 import type { RootInfo } from './api';
 import type { RecentEntry } from '../lib/store';
 import type { UiTree } from './api';
+import { gitStateClass, gitStateOf } from './git-state';
+import { GitStateBadge } from './GitStateBadge';
 import type { SearchResult } from '../lib/search';
 import type { Mark } from '../lib/prefs';
 import { SizeMark, sizeClass } from './Tree';
@@ -496,7 +498,7 @@ function Recents(props: SidebarProps & { sizes: Sizes }) {
         <FileHit
           fileUrl={props.fileUrl}
           onOpen={props.onOpen}
-          class={`hit recent${e.uncommitted ? ` uncommitted ${e.status}` : ''}${sizeCls(props.sizes, e.rel)}`}
+          class={`hit recent${gitStateClass(e)}${e.uncommitted ? ` uncommitted ${e.status}` : ''}${sizeCls(props.sizes, e.rel)}`}
           key={`${e.rel}-${e.hash ?? e.at}`}
           rel={e.rel}
           title={e.uncommitted ? `${e.rel} — ${e.status}, not committed` : e.rel}
@@ -510,7 +512,8 @@ function Recents(props: SidebarProps & { sizes: Sizes }) {
             )}
             <span class="hit-name">{docName(e.name)}</span>
             <span class="meta">
-              {e.uncommitted && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
+              <GitStateBadge item={e} />
+              {e.uncommitted && !(gitStateOf(e) === 'untracked' && e.status === 'untracked') && <span class="tag">{STATUS_LABEL[e.status ?? ''] ?? e.status}</span>}
               <Ago at={e.at} />
               {e.author && props.tab !== 'mine' && <span class="who">{e.author}</span>}
               <SizeMark size={props.sizes.get(e.rel)} end />

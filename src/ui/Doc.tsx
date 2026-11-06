@@ -1,4 +1,6 @@
 import { render as mount } from 'preact';
+import { gitStateOf } from './git-state';
+import { GitStateBadge } from './GitStateBadge';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { safeHtml } from './safe-html';
 import { loadWide, saveWide } from './wide';
@@ -1182,6 +1184,11 @@ export function Doc({
       )}
 
       <div class="doc-aside">
+        {gitStateOf(doc) && (
+          <div class="doc-git">
+            <GitStateBadge item={doc} full />
+          </div>
+        )}
         {doc.headings.filter((h) => h.level <= 3).length > 1 && (
           <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
             <summary>
