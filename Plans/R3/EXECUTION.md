@@ -646,3 +646,5 @@ and new endpoints remain proposals. Async GeoIP must bind the requested canonica
 time, recheck current user/access before applying, and never resurrect removed users or overwrite
 newer history/UA. Idle checks remain per session before touch; admin TTLs are independent. Future
 implementation is bounded per slice and independently security-reviewed before integration.
+
+Owner clarification supersedes the county coverage gap above: «yes, i meant city,country (for use city,state,country)». [№USER-W6](workspaces/DECISIONS.md#USER-W6) now uses city/state/country, with provider region mapped honestly to state. County is not required; the gap is closed without a third provider.

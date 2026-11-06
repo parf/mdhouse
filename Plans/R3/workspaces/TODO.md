@@ -111,7 +111,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
   - [ ] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
-  - Slice owner: W1; exact canonical IPs, no new session cap/purge/absolute TTL; cached/current geo observations refresh lastSeen without a new lookup; county remains a coverage gap
+  - Slice owner: W1; exact canonical IPs, no new session cap/purge/absolute TTL; cached/current geo observations refresh lastSeen without a new lookup; city/state/country location key; provider region may map honestly to state
   - Acceptance: web user management is Personal-owner/Team-configured-admin only; Editor/project RW cannot add or manage users, including direct/stale requests
   - Builds: Settings UI, matching CLI and protected APIs to add users by GitHub username, edit status/grants, disable and remove them; GitHub OAuth login; instance `ACCESS`; per-canonical-root `RO` / `RW` grants; known-users-only admission; optional trusted localhost/CIDRs
   - Depends: [№MW.0g](#MW.0g), [№MW.0c](#MW.0c), [№Q-W8](QUESTIONS.md#Q-W8)
@@ -132,12 +132,12 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: trusted-source admission has an explicit project policy and never inherits the server owner/admin project grants implicitly
   - Acceptance: forwarded addresses are ignored unless supplied by a separately configured trusted proxy; CIDRs use the existing strict parser
   - Acceptance: disabling/removing a user revokes active sessions; changing/removing a grant updates open tabs and blocks direct/stale requests immediately
-  - Acceptance: retain each user’s sessions, last 10 IPs, last 10 unique city/county locations, last 10 unique countries with last-seen date and latest browser User-Agent ([№USER-W6](DECISIONS.md#USER-W6)); county is a separate field from country
+  - Acceptance: retain each user’s sessions, last 10 IPs, last 10 unique city/state/country locations, last 10 unique countries with last-seen date and latest browser User-Agent ([№USER-W6](DECISIONS.md#USER-W6)); provider region may map to state
   - Acceptance: session/history list and details are visible only to self or configured admin; server-side checks deny another user’s direct/list/detail requests without leaking metadata
   - Acceptance: idle >30 days on the specific user session requires GitHub reauthentication before refreshing last-used; test boundary, rejected/expired requests and a neighboring active session; admin proof/session TTLs remain separate
-  - Acceptance: GeoIP uses two public HTTPS services sequentially, primary first and secondary only on failure; no fan-out, private/loopback IP disclosure, guessed county or untrusted XFF
-  - Planning gate: select the exact provider pair from official API docs; report city/county/country availability, free limits/terms and timeout/invalid-response/429/5xx fallback before live wiring. Research uses docs/mocks, no real user-IP lookups or implied paid/signup credentials
-  - Planning gate: verify trusted client-IP extraction, bounded history ordering/dedup and storage; missing geo/county remains unavailable
+  - Acceptance: GeoIP uses two public HTTPS services sequentially, primary first and secondary only on failure; no fan-out, private/loopback IP disclosure, guessed location or untrusted XFF
+  - Planning gate: select the exact provider pair from official API docs; report city/state/country availability, free limits/terms and timeout/invalid-response/429/5xx fallback before live wiring. Research uses docs/mocks, no real user-IP lookups or implied paid/signup credentials
+  - Planning gate: verify trusted client-IP extraction, bounded history ordering/dedup and storage; missing geo/state remains unavailable
   - Review gate: bounded worker plan then exact-SHA independent security review; no premature Team-auth activation
   - Acceptance: removing a user or grant never rewrites/deletes their earlier Markdown attribution or audit records
   - Acceptance: user names and project names are display metadata; grants are keyed by stable user ID and canonical root identity

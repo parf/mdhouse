@@ -250,3 +250,8 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > 💬 👤parf use some 2 public service for IP resolve (try one, only on fail try second)
   >
   > 💬👾 Public-service selection/use is authorized for this feature; official API docs and mocks suffice for research, with no real user-IP lookup. Select HTTPS/free public services without implied paid/signup credentials; report exact pair, fields/limits/terms and county gaps before live wiring. Secondary follows primary failure only; trusted client-IP validation and private/loopback exclusion remain mandatory.
+
+  >
+  > 💬 👤parf yes, i meant city,country (for use city,state,country)
+  >
+  > 💬👾 Clarification supersedes county in [№USER-W6](DECISIONS.md#USER-W6): fields and unique location key are city/state/country; provider region may map to state with its meaning preserved. County was a typo and is not required; no third provider search. Last 10 unique countries with lastSeen remain separate; other session policy is unchanged.
