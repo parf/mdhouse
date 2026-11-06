@@ -893,3 +893,21 @@ because the Python client cannot return their long inline reply yet. A refusal c
 incomplete through the wait/deadline; the future bin must report that, never success on timeout or
 automatic paid resend. Small-file handling is unchanged; followup client fix is only filed. Current
 planner/bin foundation still has no live adapter and made no provider call/test.
+
+## Standalone RAG local-plan bin cohort ready
+
+[№MW.2a.1a](workspaces/TODO.md#MW.2a.1a): base `01c842c` → frozen target
+`40876012259e70306540c977d4bc3453fb5581a9`. W3 strict planner `b9f9439`; W1 CLI/bin `ea98b2e`
+plus case-sensitive Markdown-mask fix `fdff00d`. CTO pre-gate temp-FS check found UPPER.MD made the
+whole plan fail because CLI/planner mask semantics differed; exact *.md matching now has regressions.
+CTO added module inventory, one Unreleased fact and actual npm artifact bin-export/help assertions.
+Package version/dependencies/lock are unchanged; no provider or application server is started.
+
+One combined gate: planner/CLI/actual tarball + all 39 package assets and packed new-bin --help,
+35/0 + types exit 0. Logs `.scratch/cto/rag-bin-cohort-gate/`. Exact independent review assigned
+OpenCode at pinned `r3-rag-bin-review`; ready is not integrated/done. Connected sync/search deliberately
+return not-wired; metadata preview is not indexing/search completion or provider-readiness evidence.
+
+Usage footer check during active work: W1 5h 49% (reset 1h01m), 7d 63% (6d02h); W2 5h 87%
+(reset 3h12m), 7d 70% (5d19h). Current Codex/OpenCode usage not available from those footers.
+The old W2 1% pause is superseded by this fresh display; no extra task or heavy rerun was assigned.
