@@ -283,3 +283,15 @@ escapes, case, duplicates and mixed declarations. W1 reports full 538/538 and ts
 delta review requested; W2 consumes the shared policy. Standard CSS property normalization and
 case-sensitive custom properties need explicit client/server corpus checks. No source integration or
 whole-boundary completion is claimed before the client gate and combined review.
+
+## Ideas authoring checkpoint
+
+[№MW.3e](workspaces/TODO.md#MW.3e) Ideas target `843d405b3ed55570274e0a978270a07fa119e4fb`
+(base `84d3891`) received CTO asset/coverage review and integrated without conflict as
+`c580622cbe1f3f39e6910cb141c028cadc07bed2`. Assets/catalog/matrix/tests match the author target;
+all previous 24 packages/defaults/checks remain. Exact integrated HEAD: full 544/544, 3597 assertions,
+tsc clean. Library now ships 29 authoring packages. Original idea IDs, rejected alternatives and
+unanswered questions remain; project handoff is inert metadata, not creation/configuration/send.
+Business and Ideas authoring are represented; parent/runtime/manual/scheduled acceptance remains open.
+Next W3 batch: five Finance packages under [№MW.3f](workspaces/TODO.md#MW.3f), assets/catalog/
+independent coverage/tarball tests/CHANGELOG only; no source/schema/Plans, provider calls or financial actions.

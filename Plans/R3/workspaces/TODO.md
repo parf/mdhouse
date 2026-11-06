@@ -266,7 +266,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Home: [Engineering and operations flows](README.md#engineering-and-operations-flows)
 
 - [ ] MW.3e Add Business and Ideas flow packages <a id="MW.3e"></a>
-  - Checkpoint: Business five authoring packages integrated `74c018d`; library contains 24 packages; full 527/527 + tsc on that exact HEAD; Ideas and runtime/manual/schedule acceptance stay open
+  - Checkpoint: Business five + Ideas five authoring packages integrated `74c018d` + `c580622`; library contains 29 packages; full 544/544 + tsc on `c580622`; runtime/manual/schedule acceptance stays open
   - Builds: Business overview; Strategy/planning; Market/customer brief; KPI/operating review; Decision memo; Idea capture; research/synthesis; prioritization; experiment design; idea-to-project
   - Depends: [№MW.3](#MW.3)
   - Acceptance: Business flows separate evidence, assumptions, decisions and follow-up; Ideas flows preserve rejected alternatives and can promote a selected idea into a project/plan
