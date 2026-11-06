@@ -118,3 +118,19 @@ PID 3167577 absent and old PGID 3167572 absent. No restoration is required for t
 active Review checks used other ports and are confirmed unaffected. This does not establish ownership
 of earlier W2 listener-selected stops on 7794; that uncertainty stays separate. Common launcher tests
 must cover wrapper/child group cleanup and post-cleanup verification before clean browser reruns.
+
+## W1 injected-cleanup fixture leak — blocked remediation
+
+Receipt `af5767607563804b` and gitignored handoff
+`.scratch/incidents/w1-safe-smoke-leak-2026-11-05.md`: fail-first EPERM cleanup test on old `96cdfcc`
+left own group 250110 (fixture Bun on 61741 with child sleep 250118) and own sleep group 250141.
+CTO independently read listener/process/cwd/args: start 20:46:12; unique deleted fixture path matches
+W1's test. Sleeps may expire naturally; persistent server remediation is not claimed.
+
+Claude Code auto-mode classifier denied the targeted group-kill command with full reason:
+"Permission for this action was denied by the Claude Code auto mode classifier. Reason:
+[Interfere With Workloads]." The exact denied command and attribution are in the handoff sent to CEO;
+no other agent/process/command may proxy around that rejection. Supported manual approval path was
+requested from W1, not assumed. New injection/browser runs are held; only read-only attribution and
+unrelated pure analysis/tests continue. Corrected failure fixtures must use independent captured-own
+cleanup in finally rather than the cleanup function being deliberately broken.
