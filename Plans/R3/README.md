@@ -177,8 +177,9 @@ logout/revocation, CSRF, trusted-proxy behavior and multi-user isolation are par
 Team Settings and matching CLI commands provide user management. The normal **Add user** form asks
 for one value only: GitHub username. Normal Team login uses GitHub OAuth. mdhouse resolves the
 supplied username to GitHub's immutable numeric user ID and stores provider + ID as the account
-identity; the current username is display/routing metadata and may be refreshed after a GitHub rename
-without losing grants or allowing the old name to inherit them. Status and project grants are edited
+identity; the pinned username is display/routing metadata. An admin-confirmed GitHub lookup/preview
+and confirmation may update it after a rename for the same immutable ID; login/profile sync cannot
+overwrite it or transfer grants to another principal. Status and project grants are edited
 afterward; adding from a project's access panel grants that project as RW by default.
 
 Local username/password accounts are secondary compatibility and recovery accounts. They live under

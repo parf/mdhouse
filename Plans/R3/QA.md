@@ -3,6 +3,15 @@
 CTO owns this matrix. Worker evidence names exact revision, scratch root/config/port, browser/device,
 action, expected/actual result and retained artifact. Unrun checks remain open. Never test on live :7777.
 
+## Current evidence checkpoint — 2026-11-06
+
+Immutable references and fallback browser author are accepted integrated scopes (`ea7ebda` independent
+cohort identity PASS; mount `052eaf8`, content `4de0d3`, author `b11e47f`). Copy/touch implementation
+has recorded Chromium checks; cross-browser/real-device parents remain open. MW.8 is integrated with
+latest controlled 703/0 + tsc and final independent CEO PASS; dormant classification is integrated.
+MW.0d.1 `b9986d2` is ready under independent review, not acceptance. Detailed reports below retain
+historical failures/pending states; later confirmed cleanup/verdicts supersede those states.
+
 ## Required checks
 
 | Surface | Required journey/check | Evidence / state |
@@ -13,10 +22,10 @@ action, expected/actual result and retained artifact. Unrun checks remain open. 
 | Firefox | safe documented Copy fallback; authored text and controls remain usable | planned; availability unverified |
 | iPad Safari portrait + landscape | remote Personal admission, project/agent/flow, touch heading add, full edit with virtual keyboard, stale draft, Copy, diff/commit | planned; real device required |
 | Phone Safari + Chrome | same compact primary journey, visible touch equivalents, no hover-only action | planned; real device checks open |
-| Scratch responsive Chromium | light/dark and ≤720px navigation, agent/editor panels, Copy, visible controls/focus | planned; supplements device checks |
+| Scratch responsive Chromium | light/dark and ≤720px navigation, agent/editor panels, Copy, visible controls/focus | Copy/touch/passive slices verified; complete journey open, supplements devices |
 | All profiles | personal/open-viewer/private-viewer/team; trusted/untrusted networks, project RO/RW/none, active/revoked users, profile switch | planned |
 | Every mutation family | document, Git, flow, control, settings, roots, users/grants/profiles, external sends; allowed/direct/stale/cross-origin/Reader/non-admin denial | planned |
-| Immutable references | packed content; explicit/duplicate/alias roots, autoRw, remove/promote, Git overlap, symlink/direct writes | planned |
+| Immutable references | packed content; explicit/duplicate/alias roots, autoRw, remove/promote, Git overlap, symlink/direct writes | verified integrated scope; see MW.0f evidence below |
 | Artifact/migration | actual tarball license/copyright/metadata, fresh install, safe repeated upgrade/downgrade, unknown config | planned |
 | Failure recovery | stale source, denied/missing agent/source/route, rewritten baseline, disconnected browser, failed/partial external action | planned |
 

@@ -24,8 +24,9 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: regression check inspects packed contents; no version/tag rewrites or third-party notice changes
   - Verified: integrated `e9c1b77`; actual tarball/full 317 tests/tsc pass at `80c17e65017c5a4febf14502c1ac52348aea2e62`
 
-- [ ] MW.0f Make the installed reference root immutable <a id="MW.0f"></a>
+- [x] MW.0f Make the installed reference root immutable <a id="MW.0f"></a>
   - Builds: immutable reference root kind, canonical registration and installed reference auto-mount with plan/markup/syntax/shareable skills
+  - Verified: primitive `be776cf`/`6bd2300`, mount `052eaf8`, content `4de0d3`/pointers `b5e81a3`; independent integrated identity PASS `ea7ebda`, packed install and guard evidence in [QA](../QA.md)
   - [x] MW.0f.1 Root-kind/addReference primitive, write/remove/promotion and Agent Bus dispatch guards; no auto-mount/default flip <a id="MW.0f.1"></a>
     - Verified: integrated `be776cf` + `6bd2300`; independent PASS and 317 tests/tsc at `80c17e65017c5a4febf14502c1ac52348aea2e62`
   - Acceptance: reference or overlapping paths cannot dispatch an Agent Bus action/note that delegates mutation; validate before external send
@@ -70,8 +71,9 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: help, onboarding, settings, README, package description and release notes describe one mode model consistently
   - Home: [Next release](README.md#next-release)
 
-- [ ] MW.0a Add a cookie-based author name for shared editing <a id="MW.0a"></a>
-  - Why: one mdhouse instance is opened to a team; today every browser signs replies with the same server-wide `prefs.settings.me`
+- [x] MW.0a Add a cookie-based author name for shared editing <a id="MW.0a"></a>
+  - Verified: approved `78344d9`, integrated `b11e47f`; two-browser route/signature/no-rights coverage and independent cohort PASS `ea7ebda`. Authenticated Team identity remains [№MW.0d](#MW.0d), not this fallback slice
+  - Why: the legacy server-wide `prefs.settings.me` could not distinguish browser attribution
   - Builds: a user-name control in the web UI; a persistent per-browser cookie; the cookie identity passed through every signed Q&A and document-edit action
   - Acceptance: two browsers using the same mdhouse instance can set different names and their signed replies carry different `👤<name>` badges
   - Acceptance: this layer supplies fallback attribution only; authenticated GitHub precedence is verified with [№MW.0d](#MW.0d), not a dependency of this slice
@@ -111,6 +113,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
   - [ ] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
+  - State: ready `b9986d2`, W1; independent Review in progress, not integrated or done
   - Slice owner: W1; exact canonical IPs, no new session cap/purge/absolute TTL; cached/current geo observations refresh lastSeen without a new lookup; separate city/state/country MRUs; provider region may map honestly to state
   - Acceptance: web user management is Personal-owner/Team-configured-admin only; Editor/project RW cannot add or manage users, including direct/stale requests
   - Builds: Settings UI, matching CLI and protected APIs to add users by GitHub username, edit status/grants, disable and remove them; GitHub OAuth login; instance `ACCESS`; per-canonical-root `RO` / `RW` grants; known-users-only admission; optional trusted localhost/CIDRs
@@ -120,7 +123,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: nonexistent account differs from provider/network/rate-limit failure; cancel/failure/duplicate ID are tested, email may be hidden and private email is not requested for another person
   - Acceptance: normal Add user has one required field, GitHub username; an authorized owner can inspect its resolved GitHub identity, edit status/grants, disable or remove the user and inspect effective access
   - Acceptance: adding a user from one project's access UI gives that project an RW grant by default; adding from global user management creates ACCESS and leaves project grants to the project-grant control
-  - Acceptance: grants and audit identity use provider + immutable GitHub user ID; the current username can refresh after rename without losing/transferring access
+  - Acceptance: grants and audit identity use provider + immutable GitHub user ID; a username rename is applied only by admin-confirmed GitHub lookup/preview/confirmation for the same immutable ID, without losing/transferring access
   - Acceptance: web and CLI operate on the same user/grant model and never expose OAuth client secrets, access tokens or session secrets
   - Acceptance: local username/password accounts remain available only as an explicit Advanced compatibility/recovery path and are never silently created by Add user or Team setup
   - Acceptance: local and GitHub identities cannot collide or inherit one another's grants when their visible usernames match
@@ -348,6 +351,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
 - [ ] MW.5b Keep mdhouse controls out of copied document text <a id="MW.5b"></a>
+  - [x] MW.5b.1 Copy-exclusion implementation and scratch Chrome verification; integrated `d7b0ef7` <a id="MW.5b.1"></a>
+  - Remaining: supported Safari/Edge/context-menu and Firefox fallback verification; parent acceptance stays open ([QA](../QA.md))
   - Why: selecting a rendered heading currently copies injected controls such as `#`, `✎`, `↓` and `⇊` together with the authored title
   - Builds: one copy-exclusion contract for mdhouse-injected heading links, edit/add actions, badges and other document controls
   - Acceptance: normal selection and Copy produce the authored document text without mdhouse UI chrome
@@ -365,7 +370,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: the owner can open a remote Personal Workspace, authenticate when configured, ask an agent, edit/save Markdown, inspect the diff and commit from an iPad
   - Acceptance: a phone can perform the same primary journey with an intentionally compact layout; large diffs/documents may use progressive disclosure without removing actions
   - Acceptance: desktop shortcuts remain enhancements and every shortcut-only action gains a visible touch control
-  - Acceptance: <a id="MW.5c.1"></a> heading add/edit, selection, Copy, Agent Bus and shortcut-equivalent controls are visible and touch-usable without hover
+  - [x] MW.5c.1 Touch-visible heading/actions and 44px controls; integrated `f434fd5`/`80c17e6`, responsive Chromium light/dark evidence in [QA](../QA.md) <a id="MW.5c.1"></a>
+  - Remaining: real-device virtual keyboard, long-press Copy and complete mobile journey; parent stays open
   - Acceptance: responsive UI tests and a documented manual device matrix in `Plans/R3/QA.md` cover iPad landscape/portrait and representative phone widths
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 

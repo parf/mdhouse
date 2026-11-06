@@ -4,6 +4,17 @@ Owner-authorized complete R3 implementation/testing; CTO owns shared plan edits/
 Base implementation revision: `c1fb27f35cbd82270c754e4dfc6a562d36e0924d`; launcher-only main update:
 `3af3ca0c939c7d5830685bbe175cad654eac5d00`. Target: `main`.
 
+## Current checkpoint — 2026-11-06
+
+Done/integrated: [№MW.0f](workspaces/TODO.md#MW.0f) immutable references, [№MW.0a](workspaces/TODO.md#MW.0a)
+fallback author, license/scheme/Copy-touch implementation slices, 39 authoring packages and pure-run
+core, [№MW.8](workspaces/TODO.md#MW.8) passive content (`3b044d5`) and dormant classification
+(`484a277`). Latest controlled full: `fdb4098`, 703/0 + tsc; no new suite for documentation changes.
+[№MW.0d.1](workspaces/TODO.md#MW.0d.1): W1 ready `b9986d2`, independent Review in progress, not integrated.
+Admin/OAuth/access wiring, materialization, RAG runtime and cross-browser/real-device release QA stay
+open. Country/identity rules are current in [DECISIONS](workspaces/DECISIONS.md); historical pending
+reports below are chronological evidence, not current blockers.
+
 ## States
 
 Planned → assigned → working → ready → reviewed → integrated → done.
@@ -648,3 +659,18 @@ newer history/UA. Idle checks remain per session before touch; admin TTLs are in
 implementation is bounded per slice and independently security-reviewed before integration.
 
 Owner clarification supersedes the county coverage gap above: «yes, i meant city,country (for use city,state,country)». [№USER-W6](workspaces/DECISIONS.md#USER-W6) now uses city/state/country, with provider region mapped honestly to state. County is not required; the gap is closed without a third provider.
+
+## Plan accountability audit
+
+Owner: «http://localhost:7777/mdhouse/Plans/R3/workspaces/TODO.md << точно up 2 date; CTO must take care about keeping todo lists & docs real
+minimize testing after minor changes
+try to close simple tasks first».
+
+Closed stale MW.0f and MW.0a parents only after checking integration ancestry, independent cohort
+identity evidence and existing route/package/browser checks. Team authenticated precedence remains
+MW.0d work, not a fallback-cookie dependency. Restored explicit done Copy/touch implementation
+checkpoints; their cross-browser/device parents remain partial. Corrected automatic username refresh
+wording across current release/workspace plans to USER-W7 admin-confirmed same-principal changes.
+Shared rules now require checkpoint accuracy and risk-sized verification; no heavy check was run.
+Next: finish the already-ready pure model's independent review; close small approved documentation
+and implementation checkpoints first, without starting wider runtime scope.

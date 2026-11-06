@@ -52,7 +52,9 @@ remain Reader until authenticated. Effective write access requires both an RW ro
 For a known user it also requires that user's RW grant for the project.
 
 Normal Team login is GitHub OAuth. Add user asks only for a GitHub username; mdhouse binds grants to
-the immutable GitHub user ID and displays the current username. Adding from a project's access panel
+the immutable GitHub user ID and displays the pinned username; after it is set, only a configured
+admin may update it through verified lookup/preview/confirmation for that same principal. Profile
+sync and name edits cannot sign or log in as another person. Adding from a project's access panel
 grants that project RW by default; RO and removal are explicit alternatives. Local username/password
 accounts are secondary Advanced compatibility/recovery configuration. An instance may require known
 users, optionally also admitting explicitly trusted localhost/CIDRs.

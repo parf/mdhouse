@@ -9,6 +9,14 @@ part of the complete product journey.
 
 Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outcomes are planned.
 
+## Current delivery checkpoint
+
+Integrated: immutable reference root/package, fallback browser author, license, editor scheme,
+Copy/touch implementation slices, 39 flow authoring packages, pure run core, passive content boundary
+and dormant route classification. [Owning checkpoints](workspaces/TODO.md).
+MW.0d.1 is ready for independent review, not integrated. Access/OAuth/admin wiring, materialization,
+RAG integration and complete desktop/mobile journeys remain open; release parents below stay open.
+
 ## [№R3a](#R3a) — Product identity {#r3a-product-identity}
 
 - [ ] R3a Establish mdhouse as a Markdown-native work environment <a id="R3a"></a>
@@ -167,8 +175,8 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     are secondary Advanced compatibility/recovery configuration
   - Acceptance: teammates authenticate through GitHub and sign work as their GitHub username without
     identity itself granting project permission
-  - Acceptance: grants bind to immutable GitHub user ID; a username rename refreshes display identity
-    without losing grants or transferring access to a later owner of the old username
+  - Acceptance: grants bind to immutable GitHub user ID; an admin-confirmed GitHub lookup/preview/confirmation
+    updates a renamed username for the same principal, without profile-sync overwrite or access transfer
   - Acceptance: no grant hides/refuses the project; RO grants cannot mutate; RW grants remain subject
     to Workspace mode, root RW and stale-write checks
   - Acceptance: the instance can admit known users only, optionally also admitting trusted localhost

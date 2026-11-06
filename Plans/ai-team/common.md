@@ -52,6 +52,8 @@ Keep unresolved questions in place and retain the questions file.
   discard or reset them.
 - Preserve task IDs, human answers and quoted history. CTO owns shared plan status and marks
   checkpoints done; workers supply implementation evidence without closing shared checkpoints.
+- Keep owning/release TODO, EXECUTION, QA and decisions current at each checkpoint; close accepted integrated parents, keep partial work open, preserve history. Prefer small independent approved tasks first.
+- Scale verification to risk: minor docs/format/identity changes need diff/link or focused checks; do not mechanically repeat full suites, tsc or browsers. Independent security review gates remain mandatory.
 - Follow mdhouse verification rules: focused tests, `bun test`, `npx tsc --noEmit -p .`, and browser
   checks for UI. Browser tests use a scratch instance, never the live `:7777` service.
 - Scratch startup: busy port → abort; capture own PID and verify bind/roots. Cleanup only that PID;
