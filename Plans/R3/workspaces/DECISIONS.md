@@ -33,6 +33,8 @@
   After login fetch authenticated `/user`; name/avatar/email are optional display metadata, never grants.
   No email/key requirement or silent account merge.
   Markdown: current GitHub username; grants/audit: immutable provider ID. Browser author cookie: anonymous fallback only.
+- 📌 USER-W5 With >1 configured user, Team answers/comments and their edits require the authenticated respondent’s name; shared Git author is not attribution. <a id="USER-W5"></a>
+  Personal signature preference and existing Team/admin thresholds remain separate. [History](resolved.md#USER-W5).
 - 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](resolved.md#Q-W1).
   No protected-path list; canonical root = grant; realpath jail = boundary; automatic references stay RO.
 - 📌 Q-W2 Roots: one `prefs.json` model; CLI + Settings Add directory; shared canonical registration. [History](resolved.md#Q-W2).

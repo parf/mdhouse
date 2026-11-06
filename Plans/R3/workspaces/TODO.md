@@ -101,6 +101,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: GitHub OAuth validates callback state and immutable provider identity server-side; session cookies are Secure on HTTPS, HttpOnly, SameSite and revocable
   - Acceptance: Reader UI removes edit/Q&A/task/git mutation actions and shows a Login to edit action; successful login upgrades the live page without losing location or drafts
   - Acceptance: the author-name cookie remains attribution only and cannot grant Editor; authentication and displayed author are tested independently
+  - Acceptance: with >1 configured user, every answer/comment creation and edit is signed with the authenticated respondent’s name; shared Git author never substitutes for attribution ([№USER-W5](DECISIONS.md#USER-W5))
+  - Acceptance: test multiple authenticated users across answer/comment/edit flows, forged body/cookie names, stale sessions and revocation; Personal signature preference stays separate, and >1 does not relax existing Team/admin thresholds
   - Acceptance: route tests cover Reader, login Editor, trusted-CIDR Editor, RO root, Viewer override, logout/revocation, CSRF and multiple users
   - Home: [Next release](README.md#next-release)
 

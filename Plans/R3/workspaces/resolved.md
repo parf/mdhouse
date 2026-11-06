@@ -233,3 +233,8 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   >
   > 💬👾 → [№USER-W1](DECISIONS.md#USER-W1): global add creates ACCESS only; project-context add
   > grants only that explicit project (default RW). Lookup/cancel/failure creates no account/grant.
+
+- ✅ USER-W5 Require authenticated answer signatures with >1 user. <a id="USER-W5"></a>
+  > 💬 👤parf Важно - когда включен team mode (>1 user); надо включать режим подписи имени под ответами (тк commit идут все равно от одного пользователя)
+  >
+  > 💬👾 → [№USER-W5](DECISIONS.md#USER-W5): >1 is the mandatory-signature condition, not a replacement Team/admin threshold. All answer/comment/edit flows use spoof-resistant authenticated attribution; Personal preference is separate.
