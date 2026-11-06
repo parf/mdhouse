@@ -8,8 +8,10 @@
 
 import { sep, resolve as resolvePath, relative } from 'node:path';
 import type { Registry, Root } from './roots';
-import { loadRootRules, type IgnoreRules } from './ignore';
-import { scanRoot, type MdFile, type ScanResult } from './scan';
+import { stat } from 'node:fs/promises';
+import { join } from 'node:path';
+import { isExplicitlyDenied, loadRootRules, type IgnoreRules } from './ignore';
+import { LIST_CAP, scanRoot, type MdFile, type ScanResult } from './scan';
 import {
   recentChanges,
   repoHead,
@@ -45,6 +47,35 @@ export interface TreePayload {
    * otherwise flood the list with a hundred entries the user never picked individually.
    */
   marks: { favorite: string[]; muted: string[]; ignored: string[] };
+  /** The root has Markdown that git ignores and "show ignored" would list. */
+  hasIgnored: boolean;
+  /** The revealed scopes applied, as root-relative directories; a refused one is absent. */
+  revealed: string[];
+  /** Revealed scopes cut at `REVEAL.files`. */
+  capped: string[];
+}
+
+/** Bounds of the `reveal` scopes of one tree request. */
+export const REVEAL = Object.freeze({ scopes: 32, bytes: 1024, totalBytes: 16 * 1024, files: LIST_CAP, cached: 64 });
+
+/**
+ * The `reveal` values of a request, each a root-relative directory without trailing slashes;
+ * a string naming the problem when one is malformed (empty, absolute, NUL, `.`/`..`/empty
+ * segments) or a bound is passed. Traversal is refused, never normalized.
+ */
+export function parseReveal(values: readonly string[]): string[] | string {
+  if (values.length > REVEAL.scopes) return `at most ${REVEAL.scopes} reveal scopes`;
+  let total = 0;
+  const out: string[] = [];
+  for (const v of values) {
+    const bytes = Buffer.byteLength(v);
+    total += bytes;
+    if (bytes > REVEAL.bytes || total > REVEAL.totalBytes) return 'reveal scope too long';
+    const rel = v.replace(/\/+$/, '');
+    if (!rel || rel.startsWith('/') || rel.includes('\0') || rel.split('/').some((seg) => !seg || seg === '.' || seg === '..')) return 'malformed reveal scope';
+    out.push(rel);
+  }
+  return out;
 }
 
 export interface RecentEntry {
@@ -89,6 +120,8 @@ interface RootState {
   /** The root's `.mdhouseignore` and the deny list; reloaded with the scans. */
   rules?: IgnoreRules;
   scans: Map<boolean, ScanResult>;
+  /** Revealed scopes by root-relative directory, least recently used first; at most `REVEAL.cached`. */
+  scopes: Map<string, ScanResult>;
   status?: Map<string, FileStatus>;
   changes?: GitChange[];
   head?: (RepoHead & { repo: string }) | null;
@@ -114,7 +147,7 @@ export class Store {
   private async stateFor(root: Root): Promise<RootState> {
     let s = this.state.get(root.id);
     if (!s) {
-      s = { scans: new Map() };
+      s = { scans: new Map(), scopes: new Map() };
       this.state.set(root.id, s);
     }
     return s;
@@ -135,8 +168,16 @@ export class Store {
     delete s.authors;
     if (!gitOnly) {
       s.scans.clear();
+      s.scopes.clear();
       delete s.rules;
     }
+  }
+
+  /** The root's deny rules: built-in, the CLI's extra names and its `.mdhouseignore`. */
+  async rules(root: Root): Promise<IgnoreRules> {
+    const s = await this.stateFor(root);
+    s.rules ??= await loadRootRules(root.path, this.opts.extraDeny);
+    return s.rules;
   }
 
   async scan(root: Root, includeIgnored: boolean): Promise<ScanResult> {
@@ -144,10 +185,52 @@ export class Store {
     const cached = s.scans.get(includeIgnored);
     if (cached) return cached;
 
-    s.rules ??= await loadRootRules(root.path, this.opts.extraDeny);
-    const result = await scanRoot(root, s.rules, { includeIgnored, noGit: this.opts.noGit });
+    const allow = async (rel: string) => (await this.allowedRel(root, rel))?.abs ?? null;
+    const result = await scanRoot(root, await this.rules(root), { includeIgnored, noGit: this.opts.noGit, allow });
     s.scans.set(includeIgnored, result);
     return result;
+  }
+
+  /**
+   * The served location of the root-relative `rel` as a canonical root-relative path, or null
+   * when it is outside the root, the root itself, or under `.git` or an explicit exclusion —
+   * checked on both the requested and the resolved path.
+   */
+  async allowedRel(root: Root, rel: string): Promise<{ rel: string; abs: string } | null> {
+    const rules = await this.rules(root);
+    if (isExplicitlyDenied(rules, rel)) return null;
+    const loc = await this.registry.resolve(`${root.id}/${rel}`);
+    if (!loc || loc.root.id !== root.id || isExplicitlyDenied(rules, loc.rel)) return null;
+    return { rel: loc.rel, abs: loc.abs };
+  }
+
+  /**
+   * A revealed scope: what a scan of the directory as its own root lists with ignored files on.
+   * Built-in defaults are lifted for the scope's own path only; inside it every rule holds. Each
+   * file must resolve inside the root and outside `.git` and explicit exclusions before its
+   * metadata is read.
+   */
+  private async scope(root: Root, rel: string): Promise<ScanResult> {
+    const s = await this.stateFor(root);
+    const hit = s.scopes.get(rel);
+    if (hit) {
+      s.scopes.delete(rel);
+      s.scopes.set(rel, hit);
+      return hit;
+    }
+    const rules = await this.rules(root);
+    const res = await scanRoot({ path: join(root.path, rel) } as Root, rules, {
+      includeIgnored: true,
+      noGit: this.opts.noGit,
+      limit: REVEAL.files,
+      markBlind: true,
+      allow: async (f) => (await this.allowedRel(root, `${rel}/${f}`))?.abs ?? null,
+    });
+    const files = res.files.map((f) => ({ ...f, rel: `${rel}/${f.rel}`, dir: f.dir ? `${rel}/${f.dir}` : rel }));
+    const out = { ...res, files };
+    s.scopes.set(rel, out);
+    while (s.scopes.size > REVEAL.cached) s.scopes.delete(s.scopes.keys().next().value!);
+    return out;
   }
 
   private async status(root: Root, scan: ScanResult): Promise<Map<string, FileStatus>> {
@@ -189,7 +272,11 @@ export class Store {
     return s.scans.get(false) ?? s.scans.get(true) ?? this.scan(root, false);
   }
 
-  async tree(root: Root, includeIgnored: boolean): Promise<TreePayload> {
+  /**
+   * The tree: the scan (with ignored files when asked) and the files of each revealed scope.
+   * `reveal` holds parsed scopes (`parseReveal`); one that is not an allowed directory is left out.
+   */
+  async tree(root: Root, includeIgnored: boolean, reveal: readonly string[] = []): Promise<TreePayload> {
     const scan = await this.scan(root, includeIgnored);
     const status = await this.status(root, scan);
     const s = await this.stateFor(root);
@@ -198,11 +285,25 @@ export class Store {
       s.user = this.opts.noGit || !scan.repos.length ? null : await currentUser(scan.repos[0]!);
     }
 
-    const files: FileEntry[] = scan.files.map((f) => {
+    const entry = (f: MdFile): FileEntry => {
       const marks = this.prefs.marksFor(root.path, f.rel);
       const st = status.get(f.rel);
       return { ...f, ...(st ? { status: st } : {}), ...(marks.length ? { marks } : {}) };
-    });
+    };
+    const files: FileEntry[] = scan.files.map(entry);
+
+    const revealed: string[] = [];
+    const capped: string[] = [];
+    const seen = new Set(files.map((f) => f.rel));
+    for (const want of reveal) {
+      const loc = await this.allowedRel(root, want);
+      if (!loc || !loc.rel || revealed.includes(loc.rel) || !(await stat(loc.abs).catch(() => null))?.isDirectory()) continue;
+      revealed.push(loc.rel);
+      const sc = await this.scope(root, loc.rel);
+      if (sc.capped) capped.push(loc.rel);
+      for (const f of sc.files) if (!seen.has(f.rel)) (seen.add(f.rel), files.push(entry(f)));
+    }
+    if (revealed.length) files.sort((a, b) => a.rel.localeCompare(b.rel, undefined, { numeric: true, sensitivity: 'base' }));
 
     return {
       root: { id: root.id, name: root.name, path: root.path, writable: root.writable },
@@ -213,6 +314,9 @@ export class Store {
       user: s.user,
       scannedAt: scan.scannedAt,
       marks: this.prefs.get(root.path),
+      hasIgnored: scan.hasIgnored,
+      revealed: revealed.sort(),
+      capped: capped.sort(),
     };
   }
 

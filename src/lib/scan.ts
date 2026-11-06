@@ -12,7 +12,7 @@ import { stat } from 'node:fs/promises';
 import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import type { Root } from './roots';
-import { isDenied, type IgnoreRules } from './ignore';
+import { isDenied, isExplicitlyDenied, type IgnoreRules } from './ignore';
 import { MD_EXT } from './filetypes';
 
 export interface MdFile {
@@ -25,7 +25,7 @@ export interface MdFile {
   size: number;
   /** Absolute toplevel of the repo owning this file, if any. */
   repo?: string;
-  /** True when the file is only visible because "show ignored" is on. */
+  /** True when git ignores the file: it is listed only with "show ignored" on or in a revealed scope. */
   ignored?: boolean;
 }
 
@@ -36,6 +36,10 @@ export interface ScanResult {
   scannedAt: number;
   /** Set when git was unavailable and everything came from the glob fallback. */
   degraded: boolean;
+  /** Set when more than `limit` files were found: `files` holds the first `limit`, sorted. */
+  capped?: boolean;
+  /** Git ignores Markdown here that `includeIgnored` would list; with `includeIgnored`, whether it did. */
+  hasIgnored: boolean;
 }
 
 export interface ScanOptions {
@@ -45,6 +49,27 @@ export interface ScanOptions {
   noGit?: boolean;
   /** Directory depth searched for nested repos when the root is not itself in one. */
   maxDepth?: number;
+  /** At most this many files; past it the walk stops and the result is `capped`. */
+  limit?: number;
+  /**
+   * Marks every file `ignored` when the root's own repository ignores the root — a revealed
+   * scope inside an ignored folder. A root served on purpose keeps its files unmarked.
+   */
+  markBlind?: boolean;
+  /**
+   * Where a listed root-relative path may be read: its real location, or null when it is outside
+   * the root or in an excluded folder. Asked before any metadata of the path is read; without it
+   * a path is read where it lies.
+   */
+  allow?: (rel: string) => Promise<string | null>;
+}
+
+/** True when `allow` passes at least one of `rels`; asks a few at a time, stops at the first. */
+async function anyAllowed(rels: readonly string[], allow: (rel: string) => Promise<string | null>): Promise<boolean> {
+  for (let i = 0; i < rels.length; i += 32) {
+    if ((await Promise.all(rels.slice(i, i + 32).map(allow))).some((at) => at !== null)) return true;
+  }
+  return false;
 }
 
 async function git(cwd: string, args: string[]): Promise<string | null> {
@@ -88,7 +113,7 @@ function passesDeny(rel: string, rules: IgnoreRules): boolean {
  * One process, no pathspec arithmetic. `-s` marks submodules: a cached entry carries its mode,
  * 160000 for a gitlink. An embedded repository comes back as `name/`. Both go to `nested`.
  */
-async function listViaGit(dir: string, includeIgnored: boolean): Promise<{ md: string[]; nested: string[] } | null> {
+async function listViaGit(dir: string, includeIgnored: boolean): Promise<{ md: string[]; ignored: string[]; nested: string[] } | null> {
   const listed = await git(dir, ['ls-files', '-co', '-s', '--exclude-standard', '-z']);
   if (listed === null) return null;
 
@@ -102,11 +127,18 @@ async function listViaGit(dir: string, includeIgnored: boolean): Promise<{ md: s
     else if (!staged && path.endsWith('/')) nested.push(path.slice(0, -1));
     else if (MD_EXT.test(path)) md.push(path);
   }
+  const ignored: string[] = [];
   if (includeIgnored) {
-    const ignored = await git(dir, ['ls-files', '-o', '-i', '--exclude-standard', '-z']);
-    if (ignored) md.push(...ignored.split('\0').filter((p) => MD_EXT.test(p)));
+    const out = await git(dir, ['ls-files', '-o', '-i', '--exclude-standard', '-z']);
+    if (out) ignored.push(...out.split('\0').filter((p) => MD_EXT.test(p)));
   }
-  return { md, nested };
+  return { md, ignored, nested };
+}
+
+/** A listed file's owning repository, and whether that repository ignores it. */
+interface Found {
+  repo?: string;
+  ignored: boolean;
 }
 
 /** A cached `ls-files -s` entry: mode, object, stage, tab, path. */
@@ -122,11 +154,18 @@ async function listRepo(
   repo: string,
   dir: string,
   prefix: string,
-  ctx: { rules: IgnoreRules; includeIgnored: boolean; maxDepth: number; out: Map<string, string | undefined>; repos: string[] },
+  ctx: { rules: IgnoreRules; includeIgnored: boolean; maxDepth: number; out: Map<string, Found>; repos: string[]; ignored: string[] },
 ): Promise<boolean> {
-  const listed = await listViaGit(dir, ctx.includeIgnored);
+  // the ignored listing is always asked for: without `includeIgnored` only to know it is there
+  const listed = await listViaGit(dir, true);
   if (!listed) return false;
-  for (const p of listed.md) ctx.out.set(prefix ? `${prefix}/${p}` : p, repo);
+  for (const p of listed.md) ctx.out.set(prefix ? `${prefix}/${p}` : p, { repo, ignored: false });
+  for (const p of listed.ignored) {
+    const rel = prefix ? `${prefix}/${p}` : p;
+    if (!passesDeny(rel, ctx.rules)) continue;
+    if (ctx.includeIgnored) ctx.out.set(rel, { repo, ignored: true });
+    else ctx.ignored.push(rel);
+  }
 
   await Promise.all(
     listed.nested.map(async (p) => {
@@ -151,8 +190,9 @@ async function walk(
   rules: IgnoreRules,
   depth: number,
   maxDepth: number,
-  found: { files: string[]; repos: string[] },
+  found: { files: string[]; repos: string[]; limit: number },
 ): Promise<void> {
+  if (found.files.length > found.limit) return;
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -179,9 +219,9 @@ async function walk(
 }
 
 export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions = {}): Promise<ScanResult> {
-  const { includeIgnored = false, noGit = false, maxDepth = 12 } = opts;
+  const { includeIgnored = false, noGit = false, maxDepth = 12, limit = Infinity, markBlind = false } = opts;
 
-  const relPaths = new Map<string, string | undefined>(); // root-relative path -> owning repo
+  const relPaths = new Map<string, Found>(); // root-relative path -> owning repo, ignored
   const repos: string[] = [];
   let degraded = false;
 
@@ -193,17 +233,18 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
   // filesystem walk and show what is actually in it.
   const gitBlind = ownRepo !== null && (await isIgnoredByGit(root.path));
 
-  const ctx = { rules, includeIgnored, maxDepth, out: relPaths, repos };
+  const ctx = { rules, includeIgnored, maxDepth, out: relPaths, repos, ignored: [] as string[] };
   if (ownRepo && !gitBlind) {
     // The root is inside a repository: one listing covers the whole subtree.
     repos.push(ownRepo);
     if (!(await listRepo(ownRepo, root.path, '', ctx))) degraded = true;
   } else {
     // Not a repo: walk for loose files and for repositories nested below.
-    const found = { files: [] as string[], repos: [] as string[] };
+    const found = { files: [] as string[], repos: [] as string[], limit };
     await walk(root.path, rules, 0, maxDepth, found);
 
-    for (const abs of found.files) relPaths.set(relative(root.path, abs).split(sep).join('/'), undefined);
+    const blind = gitBlind && markBlind;
+    for (const abs of found.files) relPaths.set(relative(root.path, abs).split(sep).join('/'), { ignored: blind });
 
     for (const repo of found.repos) {
       repos.push(repo);
@@ -214,7 +255,8 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
         degraded = true;
         const glob = new Bun.Glob('**/*.{md,mdx,MD}');
         for await (const p of glob.scan({ cwd: repo, onlyFiles: true, dot: false })) {
-          relPaths.set(prefix ? `${prefix}/${p}` : p, repo);
+          relPaths.set(prefix ? `${prefix}/${p}` : p, { repo, ignored: false });
+          if (relPaths.size > limit) break;
         }
       }
     }
@@ -222,9 +264,10 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
 
   const files: MdFile[] = [];
   await Promise.all(
-    [...relPaths].map(async ([rel, repo]) => {
+    [...relPaths].map(async ([rel, { repo, ignored }]) => {
       if (!passesDeny(rel, rules)) return;
-      const info = await stat(join(root.path, rel)).catch(() => null);
+      const at = opts.allow ? await opts.allow(rel) : join(root.path, rel);
+      const info = at === null ? null : await stat(at).catch(() => null);
       if (!info || !info.isFile()) return;
 
       const slash = rel.lastIndexOf('/');
@@ -235,12 +278,19 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
         mtime: info.mtimeMs,
         size: info.size,
         repo,
+        ...(ignored ? { ignored } : {}),
       });
     }),
   );
 
   files.sort((a, b) => a.rel.localeCompare(b.rel, undefined, { numeric: true, sensitivity: 'base' }));
-  return { files, repos: [...new Set(repos)], scannedAt: Date.now(), degraded };
+  const capped = files.length > limit || relPaths.size > limit;
+  const hasIgnored = includeIgnored
+    ? files.some((f) => f.ignored)
+    : opts.allow
+      ? await anyAllowed(ctx.ignored, opts.allow)
+      : ctx.ignored.length > 0;
+  return { files: capped ? files.slice(0, limit) : files, repos: [...new Set(repos)], scannedAt: Date.now(), degraded, hasIgnored, ...(capped ? { capped } : {}) };
 }
 
 /** A file of any type under a folder — the folder page's ALL view. */
@@ -258,27 +308,37 @@ export const LIST_CAP = 5000;
 /**
  * Every file under `abs` (a folder inside the root at `rootPath`), root-relative: in a repository
  * what git lists (tracked plus untracked-not-ignored, so `.gitignore` holds), elsewhere — and in a
- * folder its repository ignores, as `scanRoot` does — a walk that skips dot-folders and `node_modules`. `capped` says the list was cut at LIST_CAP.
+ * folder its repository ignores, as `scanRoot` does — a walk that skips dot-folders and `node_modules`.
+ * A path under `.git` or an explicit exclusion of `rules` is never listed, and `resolve` gives
+ * the location each listed path may be read from — null leaves it out (outside the root, or an
+ * alias into an excluded folder). `capped` says the list was cut at LIST_CAP.
  */
-export async function listFiles(rootPath: string, abs: string, opts: { noGit?: boolean } = {}): Promise<{ files: AnyFile[]; capped: boolean }> {
+export async function listFiles(
+  rootPath: string,
+  abs: string,
+  opts: { noGit?: boolean; rules: IgnoreRules; resolve: (rel: string) => Promise<string | null> },
+): Promise<{ files: AnyFile[]; capped: boolean }> {
+  const prefix = relative(rootPath, abs).split(sep).join('/');
+  const rootRel = (p: string) => (prefix ? `${prefix}/${p}` : p);
+  const shown = (p: string) => !isExplicitlyDenied(opts.rules, rootRel(p));
   const viaGit = !opts.noGit && (await repoToplevel(abs)) !== null && !(await isIgnoredByGit(abs));
-  let paths = viaGit ? ((await git(abs, ['ls-files', '-co', '--exclude-standard', '-z']))?.split('\0').filter(Boolean) ?? null) : null;
+  let paths = viaGit ? ((await git(abs, ['ls-files', '-co', '--exclude-standard', '-z']))?.split('\0').filter((p) => p && shown(p)) ?? null) : null;
   if (!paths) {
     paths = [];
     for await (const p of new Bun.Glob('**/*').scan({ cwd: abs, onlyFiles: true, dot: false })) {
-      if (p.split('/').some((seg) => seg === 'node_modules')) continue;
+      if (p.split('/').some((seg) => seg === 'node_modules') || !shown(p)) continue;
       paths.push(p);
       if (paths.length > LIST_CAP) break;
     }
   }
   const capped = paths.length > LIST_CAP;
-  const prefix = relative(rootPath, abs).split(sep).join('/');
   const files: AnyFile[] = [];
   await Promise.all(
     paths.slice(0, LIST_CAP).map(async (p) => {
-      const info = await stat(join(abs, p)).catch(() => null);
+      const rel = rootRel(p);
+      const at = await opts.resolve(rel);
+      const info = at ? await stat(at).catch(() => null) : null;
       if (!info?.isFile()) return;
-      const rel = prefix ? `${prefix}/${p}` : p;
       const slash = rel.lastIndexOf('/');
       files.push({ rel, name: rel.slice(slash + 1), dir: slash === -1 ? '' : rel.slice(0, slash), mtime: info.mtimeMs, size: info.size });
     }),

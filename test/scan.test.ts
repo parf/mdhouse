@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { listFiles, scanRoot } from '../src/lib/scan';
-import { loadRootRules } from '../src/lib/ignore';
+import { defaultRules, loadRootRules } from '../src/lib/ignore';
 import type { Root } from '../src/lib/roots';
 
 let repo: string;
@@ -47,8 +47,9 @@ describe('scanning', () => {
 
   test('the ALL view of a folder its repository ignores lists its files', async () => {
     const dir = join(repo, 'tmp');
-    expect((await listFiles(dir, dir)).files.map((f) => f.rel).sort()).toEqual(['notes/deep.md', 'scratch.md']);
-    expect((await listFiles(repo, join(dir, 'notes'))).files.map((f) => f.rel)).toEqual(['tmp/notes/deep.md']);
+    const all = (rootPath: string, abs: string) => listFiles(rootPath, abs, { rules: defaultRules(), resolve: async (rel) => join(rootPath, rel) });
+    expect((await all(dir, dir)).files.map((f) => f.rel).sort()).toEqual(['notes/deep.md', 'scratch.md']);
+    expect((await all(repo, join(dir, 'notes'))).files.map((f) => f.rel)).toEqual(['tmp/notes/deep.md']);
   });
 });
 

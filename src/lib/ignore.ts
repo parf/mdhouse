@@ -34,19 +34,33 @@ export const DEFAULT_DENY = [
 export interface IgnoreRules {
   /** Directory basenames never descended into. */
   deny: Set<string>;
+  /**
+   * The names a deliberate scope never lifts: `.git`, the CLI's extra names and the root's
+   * `.mdhouseignore` names. The rest of `deny` is the built-in default list.
+   */
+  explicit: Set<string>;
 }
 
+/** Never shown, whatever a `.mdhouseignore` or a scope says. */
+export const HARD_DENY = '.git';
+
 export function defaultRules(extra: string[] = []): IgnoreRules {
-  return { deny: new Set([...DEFAULT_DENY, ...extra]) };
+  return { deny: new Set([...DEFAULT_DENY, ...extra]), explicit: new Set([HARD_DENY, ...extra]) };
 }
 
 export function isDenied(rules: IgnoreRules, dirName: string): boolean {
   return rules.deny.has(dirName);
 }
 
+/** True when a segment of the root-relative `rel` is `.git` or an explicit exclusion. */
+export function isExplicitlyDenied(rules: IgnoreRules, rel: string): boolean {
+  return rel.split('/').some((seg) => seg === HARD_DENY || rules.explicit.has(seg));
+}
+
 /**
  * A root's own `.mdhouseignore`: one directory basename per line, `#` comments.
- * Deliberately not a glob language — this only ever suppresses directory names.
+ * Deliberately not a glob language — this only ever suppresses directory names. `!name` shows a
+ * name again, except `.git`.
  */
 export async function loadRootRules(rootPath: string, extra: string[] = []): Promise<IgnoreRules> {
   const rules = defaultRules(extra);
@@ -56,8 +70,16 @@ export async function loadRootRules(rootPath: string, extra: string[] = []): Pro
   for (const raw of (await file.text()).split('\n')) {
     const line = raw.trim();
     if (!line || line.startsWith('#')) continue;
-    if (line.startsWith('!')) rules.deny.delete(line.slice(1).trim());
-    else rules.deny.add(line.replace(/\/+$/, ''));
+    if (line.startsWith('!')) {
+      const name = line.slice(1).trim();
+      if (name === HARD_DENY) continue;
+      rules.deny.delete(name);
+      rules.explicit.delete(name);
+    } else {
+      const name = line.replace(/\/+$/, '');
+      rules.deny.add(name);
+      rules.explicit.add(name);
+    }
   }
   return rules;
 }

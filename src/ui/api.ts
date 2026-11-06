@@ -1,6 +1,17 @@
 /** Server calls and the live-update socket. */
 
 import type { TreePayload, RecentEntry, Digest } from '../lib/store';
+
+/** What the server adds to a tree for ignored browsing; optional until every server sends it. */
+export interface TreeReveal {
+  /** Eligible gitignored Markdown exists under the root. */
+  hasIgnored?: boolean;
+  /** The requested folders the server accepted. */
+  revealed?: string[];
+  /** Folders cut at the server's file limit. */
+  capped?: string[];
+}
+export type UiTree = TreePayload & TreeReveal;
 import type { AnyFile } from '../lib/scan';
 import type { SearchResult } from '../lib/search';
 import type { Heading } from '../lib/render';
@@ -109,10 +120,12 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return got;
 }
 
-async function get<T>(path: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<T> {
+/** An array value is a repeated parameter (`k=a&k=b`) — a value may itself contain a comma. */
+async function get<T>(path: string, params: Record<string, string | number | boolean | string[] | undefined> = {}): Promise<T> {
   const url = new URL(path, location.origin);
   for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
+    if (Array.isArray(v)) for (const one of v) url.searchParams.append(k, one);
+    else if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
   }
   const res = await fetch(url);
   if (!res.ok) {
@@ -193,7 +206,8 @@ export const api = {
 
   roots: () => get<{ roots: RootInfo[]; single: boolean; home?: string }>('/api/roots'),
 
-  tree: (root: string, ignored: boolean) => get<TreePayload>('/api/tree', { root, ignored: ignored ? 1 : 0 }),
+  /** `reveal`: folders whose gitignored Markdown is listed too, without the global `ignored` switch. */
+  tree: (root: string, ignored: boolean, reveal: string[] = []) => get<UiTree>('/api/tree', { root, ignored: ignored ? 1 : 0, reveal }),
   /** Every file under a folder (`p` = `<root>/<dir>`), not only Markdown. */
   files: (p: string) => get<{ files: AnyFile[]; capped: boolean }>('/api/files', { p }),
 

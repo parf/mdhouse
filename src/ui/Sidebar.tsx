@@ -1,7 +1,8 @@
 import { useMemo } from 'preact/hooks';
-import { inView, VIEW_IDS, type RootViews, type ViewId } from './views';
+import { inViewTab, VIEW_IDS, type RootViews, type ViewId } from './views';
 import type { RootInfo } from './api';
-import type { TreePayload, RecentEntry } from '../lib/store';
+import type { RecentEntry } from '../lib/store';
+import type { UiTree } from './api';
 import type { SearchResult } from '../lib/search';
 import type { Mark } from '../lib/prefs';
 import { SizeMark, sizeClass } from './Tree';
@@ -46,7 +47,7 @@ export interface SidebarProps {
   state: SidebarState;
   roots: RootInfo[];
   rootId: string;
-  tree: TreePayload | null;
+  tree: UiTree | null;
   tab: Tab;
   query: string;
   search: SearchResult | null;
@@ -67,6 +68,8 @@ export interface SidebarProps {
   onSearchIn: (key: keyof SearchIn) => void;
   onSearchScope: (scope: SearchScope) => void;
   onAuthor: (author: string) => void;
+  /** Why the ignored folders listed are incomplete; null when they are complete. */
+  revealNote: string | null;
   onToggleIgnored: () => void;
   onToggleDir: (path: string) => void;
   onOpenDirPage: (path: string) => void;
@@ -97,8 +100,8 @@ export function Sidebar(props: SidebarProps) {
   // a view's tab: the tree narrowed to its folders and files, muted ones left out
   const entries = props.tab === 'V1' || props.tab === 'V2' ? props.views[props.tab] : null;
   const shown = useMemo(
-    () => (tree?.files ?? []).filter((f) => f.size > 0 && (!entries || (inView(f.rel, entries) && !f.marks?.includes('muted')))),
-    [tree, entries],
+    () => (tree?.files ?? []).filter((f) => f.size > 0 && (!entries || (inViewTab(f, entries, props.showIgnored) && !f.marks?.includes('muted')))),
+    [tree, entries, props.showIgnored],
   );
   const nodes = useMemo<Node[]>(() => buildTree(shown), [shown]);
 
@@ -278,9 +281,11 @@ export function Sidebar(props: SidebarProps) {
                       ))}
                   </select>
                 )}
-                <button class="chip" aria-pressed={props.showIgnored} onClick={props.onToggleIgnored} title="Show files git ignores">
-                  <IconEyeOff size={11} /> ignored
-                </button>
+                {(tree?.hasIgnored || props.showIgnored) && (
+                  <button class="chip" aria-pressed={props.showIgnored} onClick={props.onToggleIgnored} title="Show Markdown files git ignores, in every folder">
+                    <IconEyeOff size={11} /> {props.showIgnored ? 'Hide ignored' : 'Show ignored'}
+                  </button>
+                )}
               </div>
             )}
           </>
@@ -291,7 +296,9 @@ export function Sidebar(props: SidebarProps) {
         {query ? (
           <SearchResults {...props} sizes={sizes} nameHits={nameHits} />
         ) : props.tab === 'files' || entries ? (
-          entries && !nodes.length ? (
+          <>
+          {props.revealNote && <p class="empty reveal-note" role="status">⚠️ {props.revealNote}</p>}
+          {entries && !nodes.length ? (
             <p class="empty">View {props.tab} is empty — add folders and files with +{props.tab} on a page's title or its breadcrumbs.</p>
           ) : tree ? (
             <Tree
@@ -307,7 +314,8 @@ export function Sidebar(props: SidebarProps) {
             />
           ) : (
             <p class="empty">Scanning…</p>
-          )
+          )}
+          </>
         ) : props.tab === 'favorites' ? (
           <Favorites {...props} sizes={sizes} favorites={favorites} />
         ) : (

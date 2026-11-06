@@ -15,7 +15,8 @@ import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
-import { Store } from './lib/store';
+import { parseReveal, Store } from './lib/store';
+import { isExplicitlyDenied } from './lib/ignore';
 import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
 import { applyQa, badgeSource, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
 import { authorCookieName, authorSetCookie, normalizeAuthorName, readAuthorCookie, type AuthorIdentity } from './lib/author';
@@ -871,7 +872,9 @@ export async function serve(opts: ServeOptions) {
         const url = new URL(req.url);
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
-        return json(await store.tree(root, flag(url, 'ignored', opts.includeIgnoredDefault)));
+        const reveal = parseReveal(url.searchParams.getAll('reveal'));
+        if (typeof reveal === 'string') return fail(400, reveal);
+        return json(await store.tree(root, flag(url, 'ignored', opts.includeIgnoredDefault), reveal));
       }),
 
       /**
@@ -945,10 +948,17 @@ export async function serve(opts: ServeOptions) {
       /** Every file under a folder, not only Markdown — the folder page's ALL view. */
       '/api/files': read(async (req) => {
         const url = new URL(req.url);
-        const loc = await registry.resolve((url.searchParams.get('p') ?? '').replace(/\/+$/, ''));
+        const p = (url.searchParams.get('p') ?? '').replace(/\/+$/, '');
+        const loc = await registry.resolve(p);
         if (!loc) return fail(403, 'path outside any root');
+        // `.git` and explicit exclusions, on the requested and on the resolved path
+        const asked = p.includes('/') ? p.slice(p.indexOf('/') + 1) : '';
+        if (asked && !(await store.allowedRel(loc.root, asked))) return fail(404, 'no such folder');
+        const rules = await store.rules(loc.root);
+        if (isExplicitlyDenied(rules, loc.rel)) return fail(404, 'no such folder');
         if (!(await stat(loc.abs).catch(() => null))?.isDirectory()) return fail(404, 'no such folder');
-        return json(await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit }));
+        const resolve = async (rel: string) => (await store.allowedRel(loc.root, rel))?.abs ?? null;
+        return json(await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit, rules, resolve }));
       }),
 
       '/api/search': read(async (req) => {
