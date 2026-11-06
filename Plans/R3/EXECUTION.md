@@ -1186,3 +1186,11 @@ W2 account 2 5h 65% (~1h37m), weekly 60% (~5d13h). Codex shared weekly 8%, reset
 (screen timezone unspecified), short-window unavailable: reserve W3 and Codex for coordination/fallback.
 Review GLM-5.3 reports short-window 94% used, reset 21:12 (~2h), weekly 44% used. Keep one frozen review
 and use non-author fallback only if actual unavailability blocks it; do not run duplicate reviews.
+
+
+W1 and W2 acknowledged [№MW.0g.2b](workspaces/TODO.md#MW.0g.2b) and started the named isolated
+worktrees (Agent Bus `r3-admin/implementation-20261106`). State: working, not ready/reviewed/integrated.
+Consumed CTO restart handoff retired after main/bus identity and prior checkpoint verification.
+Compatibility report about retired top-level Agent Bus `personal` was disproved on current main:
+`src/lib/agent-bus.ts` uses canonical tags and no manage payload; existing implementation/live evidence
+in the earlier registration checkpoints remains current. No duplicate fix or reconnect/ACL change.
