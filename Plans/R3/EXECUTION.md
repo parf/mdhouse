@@ -565,3 +565,10 @@ without Chrome and final safety verdict. Do not rerun unsafe old-code fail-first
 is independent and stays until the common procedure is accepted. W2 consolidates its lifecycle on
 `startSmoke` meanwhile; no second launcher. This is the concrete remaining verification gate, not
 missing implementation scope or an unresolved permission to continue pure/static work.
+
+W2 consolidation target `38270421a3dcb449503e036f0992b4866ecf674d` imports common `startSmoke`;
+server/Chrome lifecycle is removed from passive-lib. Its copied helper is still old `8df1d5e` and
+must not be used dynamically. W2 is assigned a separate sync to final `814c10a` plus adapter cleanup
+that closes its own probe/staging even when helper stop fails, propagating failure. Review must verify
+exact helper identity and exclude obsolete helper snapshots during candidate assembly. No browser
+run from this consolidation target has occurred; helper safety gate remains pending.
