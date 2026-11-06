@@ -66,6 +66,30 @@
       "family": "incoming-change",
       "manifest": "incoming-change-review/flow.json",
       "example": "incoming-change-review/example.md"
+    },
+    {
+      "id": "engineering-release-readiness",
+      "family": "engineering",
+      "manifest": "engineering-release-readiness/flow.json",
+      "example": "engineering-release-readiness/example.md"
+    },
+    {
+      "id": "engineering-architecture-ownership",
+      "family": "engineering",
+      "manifest": "engineering-architecture-ownership/flow.json",
+      "example": "engineering-architecture-ownership/example.md"
+    },
+    {
+      "id": "engineering-project-health",
+      "family": "engineering",
+      "manifest": "engineering-project-health/flow.json",
+      "example": "engineering-project-health/example.md"
+    },
+    {
+      "id": "engineering-onboarding-handoff",
+      "family": "engineering",
+      "manifest": "engineering-onboarding-handoff/flow.json",
+      "example": "engineering-onboarding-handoff/example.md"
     }
   ]
 }

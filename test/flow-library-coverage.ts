@@ -49,7 +49,35 @@ export const CHANGE_REVIEW_COVERAGE = [
   },
 ] as const;
 
+export const ENGINEERING_COVERAGE = [
+  {
+    id: 'engineering-release-readiness', audience: 'operations', output: 'release-readiness',
+    stages: ['inventory', 'assess', 'readiness', 'report'],
+    sources: ['version and change inventory', 'checks breaking changes and migrations', 'rollout observability and rollback evidence'],
+    exampleFacts: ['rollback: missing', 'readiness.blocked', 'No deployment'],
+  },
+  {
+    id: 'engineering-architecture-ownership', audience: 'development', output: 'architecture-map',
+    stages: ['inventory', 'map', 'ownership', 'report'],
+    sources: ['subsystem code configuration and interfaces', 'dependencies and data flow', 'owner registry or explicit unknown'],
+    exampleFacts: ['shared-cache', 'owner: unknown', 'ADR proposal', 'No routing message'],
+  },
+  {
+    id: 'engineering-project-health', audience: 'development', output: 'project-health',
+    stages: ['inventory', 'assess', 'prioritize', 'report'],
+    sources: ['dependency and configuration inventory', 'security and license evidence or explicit unavailable', 'test CI and deprecation records'],
+    exampleFacts: ['security: unknown', 'license: unknown', 'not verified', 'No safe verdict'],
+  },
+  {
+    id: 'engineering-onboarding-handoff', audience: 'development', output: 'onboarding-guide',
+    stages: ['prerequisites', 'clean-setup', 'role-handoff', 'report'],
+    sources: ['setup prerequisites and documentation', 'clean-account commands results and environment', 'role ownership and contact map or explicit unknown'],
+    exampleFacts: ['CONFIG_PROFILE', 'clean-setup.blocked', 'not a successful setup', 'first-task guide'],
+  },
+] as const;
+
 export const EXPECTED_PACKAGE_IDS: readonly string[] = [
   ...FEATURE_PACKAGE_IDS, ...DOCUMENTATION_COVERAGE.map((row) => row.id),
   ...CHANGE_REVIEW_COVERAGE.map((row) => row.id),
+  ...ENGINEERING_COVERAGE.map((row) => row.id),
 ];
