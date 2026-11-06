@@ -15,7 +15,7 @@ import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
-import { parseReveal, Store } from './lib/store';
+import { gitStateIn, parseReveal, Store } from './lib/store';
 import { isExplicitlyDenied } from './lib/ignore';
 import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
 import { applyQa, badgeSource, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
@@ -897,6 +897,7 @@ export async function serve(opts: ServeOptions) {
         // Cheap — the status map is built once per root and invalidated by the watcher. It is
         // here because it decides whether the page opens on the diff or on the document.
         const status = await store.statusOf(loc.root, loc.rel).catch(() => undefined);
+        const gitState = await store.gitStateOf(loc.root, loc.rel);
         const common = {
           kind,
           root: loc.root.id,
@@ -909,6 +910,7 @@ export async function serve(opts: ServeOptions) {
           size: info.size,
           marks: prefs.marksFor(loc.root.path, loc.rel),
           ...(status ? { status } : {}),
+          ...(gitState ? { gitState } : {}),
         };
 
         if (kind !== 'md') {
@@ -958,7 +960,13 @@ export async function serve(opts: ServeOptions) {
         if (isExplicitlyDenied(rules, loc.rel)) return fail(404, 'no such folder');
         if (!(await stat(loc.abs).catch(() => null))?.isDirectory()) return fail(404, 'no such folder');
         const resolve = async (rel: string) => (await store.allowedRel(loc.root, rel))?.abs ?? null;
-        return json(await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit, rules, resolve }));
+        const all = await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit, rules, resolve });
+        const git = await store.gitPaths(loc.root);
+        const files = all.files.map((f) => {
+          const gitState = gitStateIn(git, f.rel);
+          return gitState ? { ...f, gitState } : f;
+        });
+        return json({ ...all, files });
       }),
 
       '/api/search': read(async (req) => {
