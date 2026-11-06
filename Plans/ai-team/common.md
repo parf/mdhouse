@@ -65,6 +65,7 @@ Keep unresolved questions in place and retain the questions file.
 - Review names its base and target revisions and returns concrete findings/verdict bound to the
   target SHA. Author self-checks are not independent review. If the reviewer is unavailable, CTO
   reviews worker-authored work; CTO-authored work gets another non-author reviewer.
+- Prefer OpenCode Review; if it stalls and blocks work, check status and stop duplicate review before non-author fallback: CTO for worker-authored work, CEO/another non-author for CTO-authored or material integration deltas. Keep exact frozen SHA/evidence; never self-approve or run parallel duplicate checks.
 - Do not mistake an acknowledgement for completion. Report blockers and continue independent work;
   do not flood peers with repeated messages.
 
