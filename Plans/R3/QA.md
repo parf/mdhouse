@@ -189,3 +189,12 @@ Safari/Firefox and verified raw link/form click landing remain release QA. Raw s
 negatives and passive-page compatibility have Chrome evidence; best-effort clicks do not prove
 landing. Admin wiring, authenticated attribution enforcement and whole-workspace acceptance remain
 separate open work; closing [№MW.8](workspaces/TODO.md#MW.8) does not close them.
+
+## Retired Review scratch servers cleaned
+
+Review receipt `2665f2e93227048a` attributes all six orphan Bun processes to its old ad-hoc
+subshell launcher: 3403526/3585699/3588771/3749502/4066681/4133645, ports 7841/7843–7847.
+Review reports exact-PID cleanup after argv/cwd attribution; CTO independently verified all six
+PIDs absent and all six ports without listeners on 2026-11-06. No current job depended on these
+retired checks. The subshell pattern is retired; future launches use the reviewed safe-smoke helper.
+This closes this orphan audit, not the separate unknown early 7794 kill identities.
