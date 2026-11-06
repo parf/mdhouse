@@ -420,3 +420,20 @@ SHA and sent independent architecture review under `flow-run-core-8fe2df3`. That
 unchanged until verdict; author branch is separate. Target is not integrated. Review covers bounded
 public-data/state replay, fresh snapshots, event-order/retry semantics, unsupported boundaries and
 inert preview/provenance claims. Materialization and live runtime remain outside this checkpoint.
+
+## Combined browser/security review handoff
+
+[№MW.8b](workspaces/TODO.md#MW.8b) browser target
+`31e4992b26e5d11d6e9f02c1c2b43f202fb205aa` is based on final server
+`09b3cd7461044fec0a02443bdcbe9689384379f0`. Dedicated detached checkout
+`.scratch/worktrees/r3-passive-combined-review` is pinned to that target until verdict; review route
+`mw8-combined-31e4992`. Author reports hostile/style corpus, real-click action cases, draft/live/doc
+switch checks and full/tsc green. Passive classes/styles and Mermaid image behavior are included.
+No whole-boundary verdict or source integration is claimed.
+
+Remaining browser gap: raw `.html` iframe lacks an actual browser fixture; W2 owns a separate test-only
+followup with active negative/passive positive evidence. CTO also found `markedAt()` using
+`closest('[data-act]')` despite the exact-clicked-node handoff. W2/Review must reproduce unmarked
+nested descendants at the real action sink, assess source-reparent applicability and fix or justify
+the precise rule without silently weakening the provenance acceptance. Pinned review target stays
+unchanged while author followups use new commits. Whole content/admin gate remains on hold.

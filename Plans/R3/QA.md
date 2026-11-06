@@ -64,3 +64,16 @@ root; cleanup only captured own PID. Negative test against W1's own busy `:7841`
 its listener. Separate repeat on own `:7840` verified packed reference README/plans/skills payloads and
 DOM/screenshot. Review confirmed these results for author target `c4a18e3`. Incident receipts:
 `251912e9bbb99c81` (owner/impact) and `e2f03b7933a47668` (containment/repeat).
+
+## W2 scratch port incident — impact pending
+
+W2 reports starts on `:7794` without preflight, and earlier restarts using kill-by-listener without
+recorded PID ownership verification. The final PID was checked against W2's scratch args and stopped;
+earlier cleanup ownership/impact is not yet established. Do not claim absence of impact or restore a
+process by guessed args. Review was asked to confirm ownership and affected checks.
+
+A start on busy `:7795` failed; a subsequent corpus attempt made GET/404 requests against foreign
+`/tmp/opencode/mdhouse-0f2/repo`. W2 reports no mutation or stop of that process. That attempt is failed
+and supplies no valid acceptance evidence; record valid owned-server reruns separately. W2 must ensure
+start/cleanup harnesses enforce busy-port abort, captured own PID/listener/root verification and no
+foreign-process cleanup before further smoke runs. Incident receipt `2494a0954841b148`.
