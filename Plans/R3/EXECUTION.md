@@ -625,3 +625,24 @@ statuses and guards are unchanged; Actor is dormant and does not read author coo
 `/api/git/remote?fresh` retains its documented network/cache effect; declared read is not effect-free.
 Current main docs and dirty launcher were preserved. [№MW.0g](workspaces/TODO.md#MW.0g), admin wiring,
 project authorization and [№Q-R3-ADMIN1](workspaces/QUESTIONS.md#Q-R3-ADMIN1) remain open.
+
+## User-session history technical planning
+
+[№USER-W6](workspaces/DECISIONS.md#USER-W6) / [№MW.0d](workspaces/TODO.md#MW.0d): W1 completed a
+read-only plan; no code, OAuth activation or real-IP lookup. Proposed GeoIP pair is ipwho.is primary
+→ free.freeipapi.com secondary, sequential on failure only. Official docs checked 2026-11-06:
+[ipwho.is API](https://ipwhois.io/documentation), [FreeIPAPI](https://freeipapi.com/),
+[FreeIPAPI docs](https://freeipapi.com/docs/get-started/introduction). Primary advertises HTTPS,
+no key, commercial use and 1,000 requests/day per client IP; secondary advertises HTTPS public use,
+commercial use and 60 requests/minute. Provider limits/terms must be current at implementation.
+
+Neither documented response supplies county: preserve a distinct unavailable field, never substitute
+region/country or claim complete county coverage. Secondary error semantics need strict validation.
+No live wiring is approved by the pair proposal. Authenticated user/OAuth substrate is absent.
+
+Plan review requires: pure model separated from persistent-store filesystem work; no arbitrary
+session-history cap or deletion on user removal without a retention decision; trusted-proxy config
+and new endpoints remain proposals. Async GeoIP must bind the requested canonical IP and observation
+time, recheck current user/access before applying, and never resurrect removed users or overwrite
+newer history/UA. Idle checks remain per session before touch; admin TTLs are independent. Future
+implementation is bounded per slice and independently security-reviewed before integration.
