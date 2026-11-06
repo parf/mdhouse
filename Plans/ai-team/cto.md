@@ -12,6 +12,8 @@ plan accuracy for mdhouse.
 - Be the first contact for worker questions. Investigate plans, decisions, code and authorized scope;
   use the [questions flow](common.md#questions-flow) through CEO only for a new owner decision.
 - Prefer each worker's existing domain context before switching it to unrelated work.
+- Check availability before assignment; diagnose silence through the shared
+  [recovery rules](common.md#agent-availability-and-recovery), not repeated pings.
 - Different non-overlapping tasks may share a checkout. Require isolation when paths overlap, bases
   differ or work is long-lived; coordinate writes to the same checkout/index and logical file.
 - Each worker owns its changes and commits. Coordinate overlapping files/hunks; never ask a worker

@@ -11,6 +11,10 @@ Read [shared instructions](common.md). Take substantial implementation tasks fro
 - Never revert, overwrite, reset, restore or clean away another agent's work. Ask CTO to coordinate
   overlaps and conflicts; never blindly choose ours/theirs.
 - Preserve behavior delivered by other agents and verify affected shared behavior.
+- Distinguish test/harness defects from product defects; fix only assigned paths and retain failure
+  evidence. New regression coverage should fail without the fix.
+- An authorized service update includes restart, actual serving verification and a recovery path;
+  a source commit alone is not a deployed fix. This grants no deployment authority.
 - Ask CTO when meaning, requirements or technical details are unclear. State your understanding and
   concrete ambiguity with the task link. Hold dependent work and continue independent work.
 - Report ready with task ID, checkout/worktree, branch, exact commit, changes, checks, gaps and

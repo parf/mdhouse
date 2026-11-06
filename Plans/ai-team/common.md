@@ -56,10 +56,18 @@ Keep unresolved questions in place and retain the questions file.
   overlap with CTO. The same preservation rule applies when CEO/CTO implements a simple task.
 - Commit authorized work before handoff. Report unfamiliar dirty files; never silently commit,
   discard or reset them.
+- Record owner team instructions in the relevant role/shared rules in the same turn. Keep shared
+  knowledge in `lessons.local.md`: one fact per entry, with links to details; no duplicate manuals.
+- Include task/plan evidence with the implementation commit; avoid separate bookkeeping commits
+  when the facts are already known. Record later review/integration/live evidence when it exists.
 - Preserve task IDs, human answers and quoted history. CTO owns shared plan status and marks
   checkpoints done; workers supply implementation evidence without closing shared checkpoints.
 - Keep owning/release TODO, EXECUTION, QA and decisions current at each checkpoint; close accepted integrated parents, keep partial work open, preserve history. Prefer small independent approved tasks first.
 - Scale verification to risk: minor docs/format/identity changes need diff/link or focused checks; do not mechanically repeat full suites, tsc or browsers. Independent security review gates remain mandatory.
+- Prioritize reproduced user-visible failures and security gaps. A finding needs concrete impact;
+  keep cosmetic suggestions in one owning-plan list and handle them when that file changes.
+- Never silently rerun a flaky failure into a pass. Retain the first failure and any explicitly
+  assigned diagnostic rerun; track the flaky check separately rather than claiming a clean pass.
 - Follow mdhouse verification rules: focused tests, `bun test`, `npx tsc --noEmit -p .`, and browser
   checks for UI. Browser tests use a scratch instance, never the live `:7777` service.
 - Scratch startup: busy port → abort; capture own PID and verify bind/roots. Cleanup only that PID;
@@ -100,5 +108,24 @@ no task was assigned. Do not start unrelated work merely because the team launch
 - `done`: acceptance and required checks pass on the integrated HEAD, CTO has recorded the final SHA
   and marked the plan checkpoint done. A WIP or preservation commit is never `ready` or `done`.
 
-Before a pause, reassignment or handoff, report: task and plan link; owner; checkout/worktree and
-branch; last commit; uncommitted owned changes; checks; remaining work; blocker; and next step.
+Before a pause, context reset, restart, reassignment or usage limit, write your role directory's
+`HANDOFF.md`: task/plan, owner, checkout/branch, last commit, owned uncommitted changes, checks,
+remaining work, blocker and next step. Commit owned work at a safe boundary; exclude secrets.
+Tell your coordinator where it is. On resume, read it first, verify current state, then retire the
+consumed handoff. A handoff is not completion and grants no restart authority.
+
+## Agent availability and recovery
+
+CEO/CTO check availability before assigning work. When a peer is silent, inspect its actual Kitty
+screen first: working, prompt, usage limit or stuck. Use `kitty @ --to "$KITTY_LISTEN_ON" ls` to
+identify the exact mdhouse tab; `get-text --match 'id:<window-id>'` reads it. Do not infer identity
+from a similar title or expose credentials from scrollback. Record unavailable diagnostics honestly.
+
+Only CEO/CTO may press Escape in a verified mdhouse session waiting on a question/permission prompt:
+`kitty @ --to "$KITTY_LISTEN_ON" send-key --match 'id:<window-id>' escape`.
+Then tell the agent to route the unresolved question to its coordinator. Never type an answer,
+approve the prompt or bypass an approval refusal. Never control another team's session.
+
+At a usage limit, stop sending work until reset; record the reset and continue independent work.
+Otherwise allow about ten minutes before one reminder, then record a blocker rather than pinging
+repeatedly. Session restarts remain with the owner unless separately authorized.

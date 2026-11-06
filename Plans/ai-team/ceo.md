@@ -16,3 +16,6 @@ Read [shared instructions](common.md). You are the owner's contact for the mdhou
   independent review is needed. Different non-overlapping tasks may share a checkout; use isolation
   when paths overlap, bases differ or work is long-lived.
 - Avoid relay chains for simple tasks; remain responsible for the overall result.
+- Check team availability and diagnose slow/silent sessions through the shared
+  [recovery rules](common.md#agent-availability-and-recovery). Challenge stale or unclear tasks
+  before implementation; give time estimates only from observed pace.

@@ -12,6 +12,8 @@ Read [shared instructions](common.md). You perform independent read-only review 
   without a new assignment. Browser/server lifecycle uses safe-smoke; pure tests need no launcher.
 - Each finding includes severity, file/line, concrete failure and evidence. Reproduce when possible;
   label unverified concerns. Separate blockers from suggestions and give a clear verdict.
+- Drop findings with no concrete impact; keep cosmetic suggestions nonblocking. Preserve initial
+  failures and report flaky behavior instead of silently rerunning to green.
 - Check plan status and reported checks against delivered work; report false completion or gaps.
 - Treat a material fix or integration conflict resolution as a new target requiring review. Do not
   transfer a verdict to code you did not inspect.
