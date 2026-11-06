@@ -31,7 +31,7 @@ Existing conversations resume through ab-*; live names are never taken over.
 Active team roles are kept; --run opens tabs only for missing roles.
 
   --run              Open tabs for missing team roles; each new session is told
-                     to read its role and its one-line answer is printed
+                     to read its role (sent, not waited for)
   --roles            Tell every active team session to read its role again
   --to KITTY_SOCKET  Target a Kitty remote-control socket
   -h, --help         Show this help and current team status
@@ -95,7 +95,7 @@ expected_names=(
 is_active() {
     local name=$1
     jq -e --arg name "$name" \
-        'any(.[]; (.name == $name) or (.name | startswith($name + "@")))' \
+        'any(.[]; ((.readers // 0) > 0) and ((.name == $name) or (.name | startswith($name + "@"))))' \
         <<< "$agents" >/dev/null
 }
 
@@ -103,42 +103,36 @@ is_active() {
 # its bus name is live.
 role_message() {
     local role=$1
-    printf 'Read your role now: Plans/ai-team/%s/AGENTS.md, then the role file it links (Plans/ai-team/%s.md) and every shared rule it links (Plans/ai-team/common.md, README.md). Follow them from now on. Reply with one line: your role and its first duty. Do not start a task because of this message.' "$role" "$role"
+    printf 'Read your role now: Plans/ai-team/%s/AGENTS.md, then the role file it links (Plans/ai-team/%s.md) and every shared rule it links (Plans/ai-team/common.md, README.md). Follow them from now on. No reply is needed. Do not start a task because of this message.' "$role" "$role"
 }
 
 tell_role() {
-    local role=$1 name=$2 answer
-    # One tag per session: parallel calls sharing a tag can take each other's answers.
-    if answer=$(agent-bus call --wait=120s --topic=role --tag="mdhouse-role-$role" "$name" "$(role_message "$role")" 2>&1); then
-        printf '%s\n' "$(jq -r '"\(.from // "?"): \(.body // .)"' <<< "$answer" 2>/dev/null || printf '%s: %s' "$name" "$answer")"
+    local role=$1 name=$2 out
+    # Fire and forget: the message waits in the name's inbox until the session reads it.
+    if out=$(agent-bus send --topic=role --tag="mdhouse-role-$role" "$name" "$(role_message "$role")" 2>&1); then
+        printf 'told %s to read its role\n' "$name"
     else
-        printf 'start-agents: %s did not confirm its role: %s\n' "$name" "$answer" >&2
+        printf 'start-agents: could not send to %s: %s\n' "$name" "$out" >&2
         return 1
     fi
 }
 
-# Wait until each started session is live, then have it read its role and
-# print its one-line answer.
+# Send each role message at once; a name with no record yet (a first start) is retried for 30 s.
 tell_roles() {
-    local pending=("$@") waiting deadline=$((SECONDS + 120)) entry pids=() failed=0
-    while ((${#pending[@]})) && ((SECONDS < deadline)); do
-        agents=$(agent-bus ls --tag mdhouse)
-        waiting=()
+    local pending=("$@") retry deadline=$((SECONDS + 30)) entry failed=0
+    while ((${#pending[@]})); do
+        retry=()
         for entry in "${pending[@]}"; do
-            if is_active "${entry#*:}"; then
-                tell_role "${entry%%:*}" "${entry#*:}" & pids+=($!)
-            else
-                waiting+=("$entry")
-            fi
+            tell_role "${entry%%:*}" "${entry#*:}" 2>/dev/null || retry+=("$entry")
         done
-        pending=("${waiting[@]}")
-        ((${#pending[@]})) && sleep 3
+        pending=("${retry[@]}")
+        ((${#pending[@]})) || break
+        ((SECONDS < deadline)) || break
+        sleep 3
     done
     for entry in "${pending[@]}"; do
-        printf 'start-agents: %s not live after 120s; run start-agents.sh --roles once it is.\n' "${entry#*:}" >&2
-        failed=1
+        tell_role "${entry%%:*}" "${entry#*:}" || failed=1
     done
-    for pid in "${pids[@]}"; do wait "$pid" || failed=1; done
     return "$failed"
 }
 
@@ -150,10 +144,10 @@ for name in "${expected_names[@]}"; do
 done
 
 if jq -e 'length > 0' <<< "$agents" >/dev/null; then
-    echo 'Active mdhouse-tagged agents:'
-    jq -r '.[] | "\(.name) — \(.descr // "")"' <<< "$agents"
+    echo 'Registered mdhouse-tagged agents (readers 0 = not running):'
+    jq -r '.[] | "\(.name) — \(.descr // "") [readers=\(.readers // "?")]"' <<< "$agents"
 else
-    echo 'No active mdhouse-tagged agents.'
+    echo 'No registered mdhouse-tagged agents.'
 fi
 
 printf 'Team roles: %d active, %d missing.\n' "$(( ${#expected_names[@]} - missing ))" "$missing"
