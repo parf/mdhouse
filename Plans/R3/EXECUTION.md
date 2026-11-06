@@ -549,3 +549,19 @@ Review was told not to rerun until owner-mediated cleanup resolves the classifie
 is not the final target: per-row attribution, spawn errors, removal failure and non-green leftovers
 remain required CTO fixes. W1 may continue static edits while injection/browser HOLD persists; one
 clean final-target rerun and safety verdict follow cleanup. No proxy termination is authorized.
+
+## Final common-launcher static gate
+
+W1 final corrected target `814c10a36b120842ae5e0c9ca95de6d34af8594a` follows `8df1d5e` → `96cdfcc`.
+It adds per-row listener ownership, handled spawn errors, best-effort all-owned cleanup with explicit
+failure for survivors/removal errors, all-settled signal cleanup, independent test-finally cleanup and
+a wrapper-orphan regression. Author tsc/pure ownership check passed; full/injection tests are unrun
+under HOLD. Dedicated pinned checkout `.scratch/worktrees/r3-safe-smoke-final-review`; priority static
+safety review `safe-smoke-final-814c10a` requested. CTO inspected the final delta and typecheck.
+
+Owner-mediated fixture cleanup is confirmed in [QA](QA.md#owner-mediated-fixture-cleanup-confirmed).
+Next step: static safety verdict for corrected target, then one scoped clean procedure-fixture run
+without Chrome and final safety verdict. Do not rerun unsafe old-code fail-first cases. Browser HOLD
+is independent and stays until the common procedure is accepted. W2 consolidates its lifecycle on
+`startSmoke` meanwhile; no second launcher. This is the concrete remaining verification gate, not
+missing implementation scope or an unresolved permission to continue pure/static work.

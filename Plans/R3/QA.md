@@ -140,3 +140,11 @@ owner-managed permission rules or stopping to explain; W1 has asked the owner an
 owner cleanup in its session. No permissions/mode were changed and no proxy retry was attempted.
 Both sleep fixtures expired naturally; W1 reports only fixture-server group 250110 still holding
 61741. Cleanup completion remains pending owner action/approved path; injection/browser HOLD continues.
+
+### Owner-mediated fixture cleanup confirmed
+
+Owner reply, verbatim: «done». CEO receipt `9c053f95c199c924` independently verified fixture PIDs
+250110/250118/250141 and listener 61741 absent. CTO repeated read-only checks with the same result.
+W1 confirms the verified own group was stopped after owner approval. The classifier-denied action
+was not proxied through another agent/command. Cleanup blocker is removed; injection/browser HOLD
+remains until corrected helper review. No old-code fail-first run is to be repeated.
