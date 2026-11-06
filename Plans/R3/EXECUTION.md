@@ -515,3 +515,16 @@ Dedicated pinned review checkout `.scratch/worktrees/r3-safe-smoke-guard-review`
 `safe-smoke-96cdfcc`. Review must still examine mixed visible/hidden listener identity and spawn/
 cleanup failure paths. No helper approval/browser-HOLD lift yet. Existing CLI test path parsing may
 misread a checkout name containing `stop`; W1 renamed its worktree, without changing that unrelated test.
+
+Independent helper receipt `eed9ddf803e42ce5`: old `8df1d5e` NEEDS FIX. Review reproduced two
+own-listener hidden-PID failures (17/19), plus ESRCH cleanup and run-after-stop defects. Followup
+`96cdfcc` addresses these and is under fresh review. CTO also requires per-row listener attribution
+for mixed visible/hidden sets and a handled async spawn-error path; W1 owns another separate
+followup atop `96cdfcc`, with fail-first non-browser fixtures. No helper PASS/browser-HOLD lift.
+
+Review reports in `e14f34b3675470fa` that its old combined browser runs finished before receiving
+owner HOLD, with no subsequent browser run. This is retained as reviewer-confirmed chronology;
+clean final acceptance will still use the reviewed common helper. Its repeated empty-port explanation
+for `:7795` remains contradicted by live listener/API evidence; a separate narrow current-PID ownership
+query was sent. Active Review-check impact is confirmed separately, not used to infer unknown cleanup
+ownership or a stopped `:7795` process.
