@@ -423,6 +423,8 @@ export async function serve(opts: ServeOptions) {
             path: r.path,
             kind: r.kind ?? 'project',
             writable: r.writable,
+            // why it is writable: `--rw` asked for it, else an auto-rw path covers it
+            ...(r.writable ? { writableBy: r.rwAsked ? 'rw' : 'auto' } : {}),
             saved: prefs.isSaved(r.path),
           })),
           single: registry.single,
