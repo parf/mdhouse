@@ -46,6 +46,8 @@ export interface RootInfo {
   name: string;
   path: string;
   writable: boolean;
+  /** Why it is writable, only while it is: `rw` — `--rw` asked for it; `auto` — an auto-rw path covers it. */
+  writableBy?: 'rw' | 'auto';
   /** In the saved list: served on every start, not just this session. */
   saved?: boolean;
   /** `reference`: mdhouse's own read-only material — never removed, written or sent to agents. */
