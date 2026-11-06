@@ -1,5 +1,5 @@
 import { render as mount } from 'preact';
-import { fetchesHistory, gitStateOf, heldFor, holdAnswer, showsHistory, type Held, type HistoryAsk } from './git-state';
+import { fetchesHistory, gitStateOf, heldConfirmed, heldFor, holdAnswer, showsHistory, type Held, type HistoryAsk } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { safeHtml } from './safe-html';
@@ -206,8 +206,12 @@ export function Doc({
 
   const log = heldFor(held, docPath);
   const docGitState = gitStateOf(doc);
+  const currentAsk: HistoryAsk | null = docPath ? { path: docPath, revision: metadataRevision, state: docGitState } : null;
   const askNow = useRef<HistoryAsk | null>(null);
-  askNow.current = docPath ? { path: docPath, revision: metadataRevision, state: docGitState } : null;
+  askNow.current = currentAsk;
+  // An untracked file's history counts only when asked for this very revision and state; a tracked one keeps
+  // the previous answer on screen while the fresh one is on its way.
+  const historyShown = showsHistory(docGitState, docGitState === 'untracked' ? heldConfirmed(held, currentAsk) : log);
 
   useEffect(() => {
     setLogFailed(false);
@@ -243,7 +247,7 @@ export function Doc({
   const diffOn = view !== 'doc';
   // The header's compare-with-previous-revision buttons need a history to compare with or work to show;
   // while a diff is on screen they stay, as the way back to the document.
-  const diffButtons = dirty || showsHistory(docGitState, log) || diffOn;
+  const diffButtons = dirty || historyShown || diffOn;
 
   // A new document opens as the document — not again when its status changes while it is open.
   const viewDecidedFor = useRef<string | null>(null);
@@ -1247,7 +1251,7 @@ export function Doc({
           </details>
         )}
         <History
-          shown={showsHistory(docGitState, log)}
+          shown={historyShown}
           log={log}
           failed={logFailed}
           activeRev={diffOn ? diffRev : null}
