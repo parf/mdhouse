@@ -108,6 +108,7 @@ RAG integration and complete desktop/mobile journeys remain open; release parent
   - Home: [Agent collaboration and control](README.md#r3e-agent-collaboration-and-control)
 
 - [ ] R3f Integrate the Agent Bus RAG agent lifecycle <a id="R3f"></a>
+  - Implementation includes the separate mdhouse RAG sync bin; on-demand execution only, no implicit background sync ([№MW.2a.1](workspaces/TODO.md#MW.2a.1))
   - Depends: [№R3e](#R3e)
   - Why: the Agent Bus RAG agent already provides ingestion, embeddings, indexing and retrieval; R3
     should expose the complete capability instead of treating RAG as future work

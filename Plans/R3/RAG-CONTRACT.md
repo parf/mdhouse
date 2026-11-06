@@ -8,6 +8,20 @@ Scope: [release](README.md#r3f-rag-through-the-agent-bus-rag-agent),
 API names below describe capabilities, not agreed method names. Provider answers are recorded below;
 RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning and end-to-end acceptance remain open; FileScan typed docs/fixture are delivered with the limitations below.
 
+## Execution boundary — separate on-demand bin
+
+[№RAG-W1](workspaces/DECISIONS.md#RAG-W1): mdhouse owns implementation of a separate executable
+RAG sync bin; it remains in R3 prioritization, but runs only on explicit owner demand. No unsolicited
+provider status sync, background sync or service calls from normal cohorts. Existing contract
+requirements below do not authorize live provisioning, subscriptions, paid calls or a permanent
+watcher. One FileScan per folder: owner/AB-CEO provision roots, record/Configuration.dir, token/reload
+and caller grants; only afterward does our bin configure agreed endpoint/namespace/table subscription
+and inspect status/sub list. Watch/poll execution lifetime is an open design decision, not silent
+background activation. Official setup input: `/usr/local/src/ai-agent-bus/docs/agents/filescan.md`.
+
+Reference-only #ab-ceo message `bd5eaa2868d8cedc` reports FileScan deployed/not running and those setup
+steps; its old pack 1.0.1 label is not new verified deployment evidence. It is not an execution task.
+
 ## Owner direction
 
 > we can make instances of rag; each one have own namespace

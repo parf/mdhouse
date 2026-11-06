@@ -221,6 +221,9 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle <a id="MW.2a"></a>
+  - [ ] MW.2a.1 Implement separate on-demand RAG sync bin; owned by mdhouse, not removed from R3 implementation <a id="MW.2a.1"></a>
+  - Contract: [№RAG-W1](DECISIONS.md#RAG-W1); no automatic/background execution or unsolicited provider status calls. Planning/implementation continue under ordinary cohort prioritization; paid/live/provisioning authority remains separate
+  - Builds: consume one FileScan per owner-provisioned folder; after root/record/Configuration.dir/token/reload/grants setup, configure explicit RAG endpoint/namespace/table subscription and inspect status/sub list; on-demand versus watch/poll is [№Q-R3-RAGSYNC1](QUESTIONS.md#Q-R3-RAGSYNC1)
   - Blocker: dedicated endpoint [№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) / FileScan roots [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) decisions and lifecycle/recovery acceptance remain open. Provider reports paid-replay sink fixed/deployed `0f5340c3`; T-45 typed docs/fixture delivered, not end-to-end acceptance ([contract](../RAG-CONTRACT.md))
   - State: free 0.3.0 discovery verified; provider reports 0.4.1 deployed at `#rag@parf.us` (no new mdhouse calls); proposed final `#rag/mdhouse@parf.us` provisioning pending owner Q353 in Agent Bus R1.1 QUESTIONS; typed FileScan/recovery fixture T-45 delivered with lifecycle gaps. A4 end-to-end/A7 dedup remain open; no paid calls or live wiring
   - Why: RAG 0.3 supplies namespaced retrieval/embeddings; FileScan owns source ingestion/refresh/progress. mdhouse orchestrates them without a second retrieval backend
@@ -230,7 +233,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: the UI starts and monitors ingestion/indexing, shows progress/failure/freshness, and can refresh/reindex or remove a source through the RAG agent
   - Acceptance: unavailable, failed or unauthorized sources/jobs are visible and never silently fall back to a different source
   - Acceptance: user project grants and Agent Bus RAG authorization are checked independently; a source grants no mdhouse filesystem access beyond explicit project permissions
-  - Acceptance: manual requests and scheduled flows use the same selection contract and record effective source IDs, index version/freshness and citations/provenance in run history/output
+  - Acceptance: manual retrieval and otherwise-authorized scheduled flows share source selection/provenance; they never implicitly start RAG sync. The separate bin runs only on explicit owner demand
   - Acceptance: RAG storage, embeddings, indexes, retrieval execution and credentials stay owned by Agent Bus and do not enter browser state or project prefs
   - Home: [Agent Bus control](README.md#agent-bus-control)
 

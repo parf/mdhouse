@@ -322,3 +322,14 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬👾 Per-project instances are the intended routing/isolation model. Namespace labels alone are
   > still not authorization. Exact provider schemas/grants remain open as RAG-Q1–RAG-Q12; MW.2a stays
   > pending their handoff. No provider repository changes or functional/paid calls are authorized here.
+
+- ✅ RAG-W1 Keep RAG sync as our separate on-demand executable. <a id="RAG-W1"></a>
+  > 💬 📡 CEO Owner clarification: RAG sync is a separate task run only on explicit owner demand. Exclude it from normal R3 execution cohorts/automatic syncing; do not initiate provider status sync or calls as background work.
+  >
+  > 💬 👤parf не так - rag sync is separate bin module; still yours
+  >
+  > 💬👾 Correction supersedes the earlier exclusion of planning/implementation: RAG sync stays in our R3 ownership and normal prioritization as a separate bin module. Execution is on demand; no implicit background sync, provisioning, paid/live authority or status polling is authorized by planning work.
+  >
+  > 💬 📡 CEO Owner reminds us to use #ab-ceo setup instructions: one FileScan per folder; owner/AB-CEO authorize root, record/Configuration.dir, token/reload and caller grants; after provisioning our module configures the agreed RAG endpoint/namespace/table subscription and reads status/sub list.
+  >
+  > 💬👾 Watch/poll versus bounded on-demand behavior remains [№Q-R3-RAGSYNC1](QUESTIONS.md#Q-R3-RAGSYNC1). Existing endpoint/root questions are linked, not asked again; no live provisioning or paid call was performed.

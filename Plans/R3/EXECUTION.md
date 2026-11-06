@@ -798,3 +798,17 @@ Provider receipt `5a254e80e274e4b8`: `#rag@parf.us` 0.4.1 deployed 11:20 EST, bu
 off unless configured. Current contract records this as provider report; mdhouse has not made new
 capabilities/data/paid calls or expanded its integration scope. Dedicated endpoint/access Q353 still
 requires owner decision; no grant or provider configuration changed.
+
+## Separate RAG sync bin ownership and setup plan
+
+Owner correction: «не так - rag sync is separate bin module; still yours». [№MW.2a.1](workspaces/TODO.md#MW.2a.1)
+remains our implementation task in normal R3 prioritization; the earlier instruction to exclude all
+work was incorrect and is superseded. Execution only on explicit owner demand; no unsolicited
+provider status/calls, automatic subscriptions, provisioning or paid/live calls. Reference FileScan
+setup message `bd5eaa2868d8cedc` is retained as input, not a new execution assignment or verified
+pack/deploy status. Owner/AB-CEO provision one instance per folder with roots/record/config/token/
+grants; our future bin configures subscription and reads status/sub list only after that setup.
+
+Next bounded work: W3 read-only bin/adapter plan from existing official local docs/contracts; no
+provider contacts, tests or source edits. Reuse open endpoint/root questions, record watch/poll
+lifetime/cleanup in owning QUESTIONS; no guessed background-sync behavior.

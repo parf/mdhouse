@@ -60,6 +60,9 @@
   Page agent-chat is separate; sender/root/user authorization and the path jail still apply.
   No pairing/broadcast. Unknown/disconnected client → canonical URL, `opened: false`. [History](resolved.md#Q-W7).
 
+- 📌 RAG-W1 RAG sync is a separate mdhouse bin module, implemented by our team and executed only on explicit owner demand; no implicit/background sync or provider-status calls. <a id="RAG-W1"></a>
+  FileScan: one provisioned instance per folder; owner/AB-CEO handle roots/record/config/token/grants, our bin handles the agreed subscription/status. Paid/live authority is separate. [History](resolved.md#RAG-W1).
+
 ## Directory controls
 
 - 📌 DIR-W1 Saved: no badge. Session: `[unsaved]` → confirm → persist canonical path + current mode.
