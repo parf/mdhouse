@@ -16,7 +16,7 @@ Usage: start-agents.sh [--run] [--roles] [--to KITTY_SOCKET]
 Without --run, show help, Kitty availability and current team status only.
 
 Open six Kitty tabs, each in its own Plans/ai-team/<role>/ starting directory:
-  MDH-CEO     #md/ceo       ab-codex
+  MDH-CEO md/ceo  #md/ceo   ab-codex
   MDH-CTO     #md/cto       ab-codex
   MDH-W1      #md/w1        ab-claude
   MDH-W2      #md/w2        ab-claude -2
@@ -224,7 +224,7 @@ launch_agent() {
 
 started=()
 
-launch_agent ceo MDH-CEO '#md/ceo' 'mdhouse CEO — product and coordination' ab-codex
+launch_agent ceo 'MDH-CEO md/ceo' '#md/ceo' 'mdhouse CEO — product and coordination' ab-codex
 launch_agent cto MDH-CTO '#md/cto' 'mdhouse CTO — technical direction' ab-codex
 launch_agent w1 MDH-W1 '#md/w1' 'mdhouse worker 1 — server, access and security' ab-claude
 launch_agent w2 MDH-W2 '#md/w2' 'mdhouse worker 2 — UI, editing and mobile, Claude account 2' ab-claude -2
