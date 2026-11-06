@@ -408,3 +408,15 @@ packages, sources and access. Evidence keys bind to declared package requirement
 entries or invalid references are rejected. Preview keeps supplied payloads in collision-safe inert
 JSON fences, never dynamic Markdown controls or fabricated human approvals. No additional paths or
 materialization scope is authorized by this accepted sketch.
+
+## Run-core architecture review handoff
+
+[№MW.3.2](workspaces/TODO.md#MW.3.2) target `8fe2df3d4ff671c320a3fe210a05cac69b70e54b`
+(base `06a980c`) is ready/frozen, exactly six assigned paths. Author reports focused/full/tsc OK,
+project-review and generic Legal fixtures, replay/idempotency/hold/limit/accessor/cycle tests and
+hostile-preview rendering negatives. No schema/assets/dependency/lock/Plans change is in the target.
+CTO prepared dedicated detached checkout `.scratch/worktrees/r3-flow-run-core-review` pinned to that
+SHA and sent independent architecture review under `flow-run-core-8fe2df3`. That checkout remains
+unchanged until verdict; author branch is separate. Target is not integrated. Review covers bounded
+public-data/state replay, fresh snapshots, event-order/retry semantics, unsupported boundaries and
+inert preview/provenance claims. Materialization and live runtime remain outside this checkpoint.
