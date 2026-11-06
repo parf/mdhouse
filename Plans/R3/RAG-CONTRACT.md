@@ -8,6 +8,20 @@ Scope: [release](README.md#r3f-rag-through-the-agent-bus-rag-agent),
 API names below describe capabilities, not agreed method names. Provider answers are recorded below;
 RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning and end-to-end acceptance remain open; FileScan typed docs/fixture are delivered with the limitations below.
 
+## Technical handoff routing
+
+Confirmed AB-DVP CTO is `#ab-dir` (CEO receipt `efcbca36dfc3bdd6`, AB-CEO confirmation
+`ddd9cabf1b108f19`). Technical RAG/FileScan/T-48/T-49 work is mdhouse CTO ↔ #ab-dir directly;
+owner choices go #ab-dir → #ab-ceo. No AB worker/lead/QA contact or duplicate requests.
+
+#Ab-dir receipt `ab68c17627ef4f09`: T-48 is plans-only pending owner approval. Large Markdown plan
+`Plans/R1.0-Release/rag/large-files.md` on `ab-w1a/T-48` (`bbc5fcf4`) is in review; chunking stays
+RAG-owned, with Q368–Q371 for transport/read grant/TTL/size-cost cap. Finite FileScan sync plan is
+`Plans/R1.1/filescan.md`; completion counts whole files confirmed by RAG, never capped scans as
+success. T-49 is an external-user setup step list for dedicated records on #runner/parf-user,
+with parf-only steps and gaps explicit. Await delivered lists/approved contract and exact live
+readiness; ETA and draft review are not deployment or execution authorization.
+
 ## Execution boundary — separate on-demand bin
 
 [№RAG-W1](workspaces/DECISIONS.md#RAG-W1): mdhouse owns implementation of a separate executable

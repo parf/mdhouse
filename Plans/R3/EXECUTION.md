@@ -839,3 +839,13 @@ and mdhouse/docs are specified; #mdhouse identity is unregistered and its regist
 is still an owner decision. Await exact records/grants and T-48 contract before starting sync.
 No subscription, ingestion, grant mutation, reset or paid call was performed; worker/wildcard grants
 and destructive replay are not implied by Maintainer capability.
+
+## Confirmed AB-DVP CTO technical route
+
+AB-CEO confirmation `ddd9cabf1b108f19` and direct #ab-dir receipt `ab68c17627ef4f09`: technical
+RAG/FileScan integration now routes directly CTO↔CTO through `#ab-dir`, owner choices through
+#ab-dir→#ab-ceo. Shared init/common and owning contract record the exact alias. No duplicate
+T-48/T-49 requests or AB worker/lead contacts. T-48 large-text and finite-sync plans await owner
+approval; T-49 setup lists are pending delivery, not live readiness. W3 read-only bin plan is ready;
+next bounded implementation may cover pure/mock planning before provider-dependent execution,
+without claiming dry-run as complete indexing/search or inventing a permanent watcher.

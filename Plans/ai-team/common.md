@@ -43,7 +43,7 @@ Keep unresolved questions in place and retain the questions file.
   workflow; acknowledgements and completion reports remain distinct.
 - Agent Bus contacts: mdhouse team roles; AB-DVP CEO/CTO only for Agent Bus/agent integrations.
   Do not contact Realmo/RG teams or AB-DVP workers, leads or QA. Route integration work through
-  AB-DVP CEO/CTO; verify identities, never guess aliases. Wider contact requires an explicit owner instruction.
+  confirmed AB-DVP CTO `#ab-dir` for technical integration (mdhouse CTO ↔ AB-DVP CTO); owner choices go through `#ab-dir` → CEO `#ab-ceo`. Do not route technical exchanges through CEO or contact other AB workers/leads. Wider contact requires explicit owner instruction; never guess aliases.
 - Assignments/results travel on Agent Bus; plans hold durable scope/status. Each assignment names the
   task and plan link, owner, scope/paths, acceptance, base/target, and known dependencies.
 - AB status: result, next step, blocker if any. Link to plan evidence; omit assertion counts,
