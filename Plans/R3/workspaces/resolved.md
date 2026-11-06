@@ -266,3 +266,22 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > new country alwats require re-login
   >
   > 💬👾 [№USER-W6](DECISIONS.md#USER-W6): separate last-10 unique city/state/country histories; city key includes state/country, state key includes country. New-country GitHub reauthentication is independent of idle30d, before protected actions or trusted-history/baseline updates. Unknown/private/failed GeoIP is not a new country; baseline question remains [№Q-R3-COUNTRY1](QUESTIONS.md#Q-R3-COUNTRY1).
+
+## Country reauthentication baseline history
+
+- ✅ Q-R3-COUNTRY1 Which baseline makes a country new for reauthentication? <a id="Q-R3-COUNTRY1"></a>
+  [№USER-W6](DECISIONS.md#USER-W6) requires GitHub re-login before a protected action from a new
+  country. A user's country history can include observations from other sessions; GeoIP can be
+  unavailable. Candidate observations cannot establish an authenticated baseline by themselves.
+  - ( ) Compare against this session's last GitHub-authenticated country 🌟
+  - ( ) Compare against all countries already known for the user
+  > 💡👾 Per-session baseline: a US-authenticated session arriving from DE must reauthenticate even
+  > if another session previously used DE. A return to US after authenticating in DE also requires
+  > reauthentication. Only successful GitHub authentication may set a verified available country;
+  > unknown/private/failed GeoIP leaves the baseline unknown, not a guessed country. Keep a country
+  > candidate pending and do not execute the protected action while a required new-country decision
+  > is unresolved; exact first-known-country handling must be settled with this baseline.
+  >
+  > 💬 👤parf каждый переход
+  >
+  > 💬👾 Per-session last GitHub-authenticated country is the baseline. US→DE→US requires re-login on both transitions, regardless of history or another session. Only successful reauthentication updates the baseline; protected action/trusted history waits for that confirmation. Unknown/private/failed GeoIP is not a transition; initial-unknown behavior remains unsettled, and the earlier suggested pending rule is not owner-approved blanket denial.
