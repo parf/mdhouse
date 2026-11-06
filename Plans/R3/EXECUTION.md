@@ -167,3 +167,17 @@ SVG images. Diagram labels become non-selectable; callbacks stay inactive. Repea
 browser corpus is approved without adding a DOM test runtime. Shiki/table styles must survive the client
 filter; element counts alone do not prove that. W1 coordinates any direct sanitizer dependency/lock
 followup. Whole boundary and admin wiring remain open pending combined exact-SHA review and tests.
+
+Server-only Review receipt `7832e89cdff448e6`: PASS bound to frozen `d9f4290`; independent full
+528/528, 2604 assertions and tsc, plus additional live adversarial URL/CSS/namespace/raw-header checks.
+No whole-boundary/admin-wiring approval. Integration waits for the provenance followup and fresh review.
+
+Provenance implementation choice for [№MW.8a](workspaces/TODO.md#MW.8a): generated HTML tokens are
+tracked by identity; authored raw HTML start tags lose class/role/renderer data attributes before final
+passive sanitization. Markdown attribute syntax accepts authored IDs only, not classes: `{.tgt}` can
+otherwise impersonate a genuine control. Preserve anchors and source Copy; update syntax/Markdown docs
+and CHANGELOG with the implementation. Test malformed/cross-token fragments, exact nested list forgery
+and genuine controls. Direct DOMPurify dependency is pinned to 3.4.17, with Mermaid deduplication only
+inside its declared compatible range; W1 owns the manifest/lock followup, W2 consumes the shared version.
+Official [release notes](https://github.com/cure53/DOMPurify/releases/tag/3.4.17) confirm the maintained
+version's security fixes. A directly imported HTML parser must also be a declared dependency.
