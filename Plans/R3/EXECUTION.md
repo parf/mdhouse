@@ -490,3 +490,9 @@ Combined browser receipt `76991e96b77086a3` gives PASS only to old `31e4992`, wi
 `1f4e475` still outside that verdict. Timing of Review browser checks versus owner HOLD is being
 confirmed; do not count disputed runs as clean acceptance. Raw-file and exact-node followups must run
 through the reviewed helper after the procedure gate. Final combined source remains unintegrated.
+
+[№MW.3.2](workspaces/TODO.md#MW.3.2) closed for checkpoint A: independent integrated receipt
+`5b3cf2a135e5e49d` PASS bound exactly to `d10524ea413e94ef946ddaec9bc56b4d5a089c76`.
+Source/tests/flow README match approved `8fe2df3`; focused 85/85 and tsc passed. CTO full-suite
+evidence remains 598/598 on the unchanged integrated code. Materialization B/live runtime stays
+unassigned; W3 pauses implementation at this verified boundary while other gates complete.

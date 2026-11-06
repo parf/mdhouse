@@ -93,3 +93,14 @@ and one own temp directory. W1 reports they were removed using verified captured
 cleanup is claimed. These are failed guard-test attempts, distinct from later green procedure tests.
 The helper still has source-found stop/start lifecycle defects pending fixture reproduction/fix and
 independent safety review. Browser HOLD remains in effect.
+
+Incident clarification: W1 receipt `3560768638530e0d` confirms no process/check on `:7794` during
+19:32–20:05 local. Review confirms its active combined-check ports were different and unaffected.
+Early W2 listener-stop PID identities remain undocumented, so overall absence of impact is not claimed.
+
+The `:7795` listener is still present: PID 3167577, start 18:41:26, cwd `r3-reference-install`, serving
+`/tmp/opencode/mdhouse-0f2/repo`. This is distinct from the older `:7796` PID 3199274 incident.
+W2 receipt `4e9f68e1a19b67e6` identifies failed start 20:12:37 in `srv9.log` and the invalid
+`final-corpus.out` (40 failures, foreign GET/404 requests), followed by separate own-server
+`final-corpus2.out`. Review's earlier empty-port explanation is contradicted by current listener and
+API evidence; owner-log reconciliation/cleanup is pending. CTO made no mutation/stop of that process.
