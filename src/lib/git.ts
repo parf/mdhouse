@@ -508,6 +508,12 @@ export async function gitDirs(dir: string): Promise<string[]> {
   return [...new Set(out.split('\n').filter(Boolean).map((d) => resolve(dir, d)))];
 }
 
+/** The full hash of the commit HEAD points at; null for an unborn HEAD or outside a repository. */
+export async function headCommit(repo: string): Promise<string | null> {
+  const out = await git(repo, ['rev-parse', '--verify', '--quiet', 'HEAD^{commit}']);
+  return out?.trim() || null;
+}
+
 export async function repoHead(repo: string): Promise<RepoHead | null> {
   const [refs, commit] = await Promise.all([
     git(repo, ['rev-parse', '--abbrev-ref', 'HEAD', '--absolute-git-dir', '--git-common-dir']),

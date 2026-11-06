@@ -33,6 +33,7 @@ import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMe
 import { repoHead } from './lib/git';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, validTarget, type AbAction } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 
 export interface ServeOptions {
   registry: Registry;
@@ -881,9 +882,18 @@ export async function serve(opts: ServeOptions) {
        * A file's page: every kind (`kindOf`) — Markdown rendered, code and text highlighted with
        * line numbers (`#L<n>`), the rest described for the page to show from `/api/raw`. Nothing
        * under a `.git` folder.
+       *
+       * `meta=1` answers the metadata alone (`meta: true`): nothing read past the head, no render.
+       * `ifContent=<contentHash>` answers `unchanged: true` without a render when the text the page
+       * would render still hashes so. `contentHash` covers the file's text only: link existence and
+       * agent targets come from other files and prefs, so only a full answer refreshes them.
        */
       '/api/doc': read(async (req) => {
         const url = new URL(req.url);
+        const meta = flag(url, 'meta');
+        const ifContent = url.searchParams.get('ifContent');
+        if (ifContent !== null && !/^[0-9a-f]{64}$/.test(ifContent)) return fail(400, 'ifContent is not a content hash');
+        if (meta && ifContent !== null) return fail(400, 'meta and ifContent do not go together');
         const p = url.searchParams.get('p');
         const loc = p ? await registry.resolve(p) : await registry.fromDocUrl(url.searchParams.get('d') ?? '');
         if (!loc) return fail(403, 'path outside any root');
@@ -911,16 +921,26 @@ export async function serve(opts: ServeOptions) {
           marks: prefs.marksFor(loc.root.path, loc.rel),
           ...(status ? { status } : {}),
           ...(gitState ? { gitState } : {}),
+          gitRevision: await store.gitRevision(loc.root, loc.rel),
         };
+        if (meta) return json({ ...common, meta: true });
+
+        /** The hash of the text a render takes; the same hash means the same page. */
+        const hashOf = (text: string) => createHash('sha256').update(text).digest('hex');
 
         if (kind !== 'md') {
           const shown = kind === 'code' || kind === 'text' || kind === 'html';
           const tooBig = shown && info.size > SHOW_MAX;
-          const html = shown && !tooBig ? await highlightFile(await Bun.file(loc.abs).text(), kind === 'text' ? null : (langOf(loc.rel) ?? 'html')) : '';
-          return json({ ...common, frontmatter: null, lineOffset: 0, html, headings: [], hasMermaid: false, tasks: { done: 0, total: 0 }, ...(tooBig ? { tooBig } : {}) });
+          const text = shown && !tooBig ? await Bun.file(loc.abs).text() : null;
+          const contentHash = text === null ? null : hashOf(text);
+          if (contentHash !== null && contentHash === ifContent) return json({ ...common, contentHash, unchanged: true });
+          const html = text === null ? '' : await highlightFile(text, kind === 'text' ? null : (langOf(loc.rel) ?? 'html'));
+          return json({ ...common, frontmatter: null, lineOffset: 0, html, headings: [], hasMermaid: false, tasks: { done: 0, total: 0 }, ...(tooBig ? { tooBig } : {}), ...(contentHash ? { contentHash } : {}) });
         }
 
         const src = await readDoc(loc.abs);
+        const contentHash = hashOf(src);
+        if (contentHash === ifContent) return json({ ...common, contentHash, unchanged: true });
         const { frontmatter, body, offset } = splitFrontmatter(src);
         const rendered = await render(body, {
           rootId: loc.root.id,
@@ -940,7 +960,7 @@ export async function serve(opts: ServeOptions) {
 
         // the agents the document asks — sent only while the integration is on
         const ab = prefs.agentBus.enabled ? { ab: abTargets(src) } : {};
-        return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab });
+        return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab, contentHash });
       }),
 
       /** A file's bytes, with its type — `rawHeaders`. `/api/asset` is the old name. */
