@@ -238,3 +238,10 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > 💬 👤parf Важно - когда включен team mode (>1 user); надо включать режим подписи имени под ответами (тк commit идут все равно от одного пользователя)
   >
   > 💬👾 → [№USER-W5](DECISIONS.md#USER-W5): >1 is the mandatory-signature condition, not a replacement Team/admin threshold. All answer/comment/edit flows use spoof-resistant authenticated attribution; Personal preference is separate.
+
+- ✅ USER-W6 Keep private user-session history and require idle-session GitHub re-login. <a id="USER-W6"></a>
+  > 💬 👤parf for every user keep its sessions; keep last 10 ips and last 10 unique city, county; 10 unique countries with last date; & last browser agent used
+  > show to user and admin only
+  > when session was not used for more than 30 days; require re-login via github
+  >
+  > 💬👾 → [№USER-W6](DECISIONS.md#USER-W6): self/admin authorization applies server-side to list/details/direct requests. Idle is per session, checked before updating last-used; neighboring active sessions never renew it. County stays distinct from country. Geo source/availability and trusted client-IP extraction require analysis before implementation; no arbitrary external/paid lookup or spoofable XFF trust. Short-lived admin TTLs are unchanged.

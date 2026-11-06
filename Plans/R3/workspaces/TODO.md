@@ -130,6 +130,11 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: trusted-source admission has an explicit project policy and never inherits the server owner/admin project grants implicitly
   - Acceptance: forwarded addresses are ignored unless supplied by a separately configured trusted proxy; CIDRs use the existing strict parser
   - Acceptance: disabling/removing a user revokes active sessions; changing/removing a grant updates open tabs and blocks direct/stale requests immediately
+  - Acceptance: retain each user’s sessions, last 10 IPs, last 10 unique city/county locations, last 10 unique countries with last-seen date and latest browser User-Agent ([№USER-W6](DECISIONS.md#USER-W6)); county is a separate field from country
+  - Acceptance: session/history list and details are visible only to self or configured admin; server-side checks deny another user’s direct/list/detail requests without leaking metadata
+  - Acceptance: idle >30 days on the specific user session requires GitHub reauthentication before refreshing last-used; test boundary, rejected/expired requests and a neighboring active session; admin proof/session TTLs remain separate
+  - Planning gate: verify trusted client-IP extraction and geo source/availability, bounded history ordering/dedup and storage before implementation; missing geo stays unavailable, no invented location, arbitrary external/paid lookup or untrusted XFF
+  - Review gate: bounded worker plan then exact-SHA independent security review; no premature Team-auth activation
   - Acceptance: removing a user or grant never rewrites/deletes their earlier Markdown attribution or audit records
   - Acceptance: user names and project names are display metadata; grants are keyed by stable user ID and canonical root identity
   - Acceptance: tests cover OAuth state/callback failure, unknown GitHub user, username rename, multiple users, duplicate display names, session revocation, every grant transition, trusted/untrusted sources, Viewer, root RO and project removal
