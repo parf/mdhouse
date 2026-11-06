@@ -110,6 +110,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
+  - [ ] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
+  - Slice owner: W1; exact canonical IPs, no new session cap/purge/absolute TTL; cached/current geo observations refresh lastSeen without a new lookup; county remains a coverage gap
   - Acceptance: web user management is Personal-owner/Team-configured-admin only; Editor/project RW cannot add or manage users, including direct/stale requests
   - Builds: Settings UI, matching CLI and protected APIs to add users by GitHub username, edit status/grants, disable and remove them; GitHub OAuth login; instance `ACCESS`; per-canonical-root `RO` / `RW` grants; known-users-only admission; optional trusted localhost/CIDRs
   - Depends: [№MW.0g](#MW.0g), [№MW.0c](#MW.0c), [№Q-W8](QUESTIONS.md#Q-W8)
