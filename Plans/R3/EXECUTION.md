@@ -295,3 +295,18 @@ unanswered questions remain; project handoff is inert metadata, not creation/con
 Business and Ideas authoring are represented; parent/runtime/manual/scheduled acceptance remains open.
 Next W3 batch: five Finance packages under [№MW.3f](workspaces/TODO.md#MW.3f), assets/catalog/
 independent coverage/tarball tests/CHANGELOG only; no source/schema/Plans, provider calls or financial actions.
+
+## Independent server provenance verdict
+
+Review receipt `64916c558e64eefb`: PASS bound exactly to
+`c6a1965f61b0891e36a6e7ac0340b5643af67c4d`, full 537/537, 2744 assertions, tsc clean,
+plus independent authored-fragment and live metadata/class-preservation checks. This covers the
+server stack only. Shared-style `09b3cd7` is excluded from that verdict and remains in the final
+combined-review scope. Passive authored control classes remain in the DOM intentionally; client
+exact-node action checks must prove they are inert before whole-boundary completion.
+
+Process correction: CTO allowed the next separate author commit while the same checkout was under
+review. Review reproduced the exact target in a detached checkout; the target commit itself was not
+changed. Final combined security review will use a dedicated checkout pinned to its exact SHA until
+verdict; author worktrees stay separate. No content-boundary integration/admin-wiring approval follows
+from this server-only PASS.
