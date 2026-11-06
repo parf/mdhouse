@@ -241,6 +241,9 @@ export function Doc({
   const [diff, setDiff] = useState<FileDiff | null>(null);
   const dirty = doc?.status === 'modified' || doc?.status === 'staged' || doc?.status === 'untracked';
   const diffOn = view !== 'doc';
+  // The header's compare-with-previous-revision buttons need a history to compare with or work to show;
+  // while a diff is on screen they stay, as the way back to the document.
+  const diffButtons = dirty || showsHistory(docGitState, log) || diffOn;
 
   // A new document opens as the document — not again when its status changes while it is open.
   const viewDecidedFor = useRef<string | null>(null);
@@ -1129,23 +1132,27 @@ export function Doc({
             </button>
             {/* Two ways to look at the same change: the patch, and the document with the
                 change marked on it. Either one toggles back to the plain document. */}
-            <button
-              class="icon-btn"
-              aria-pressed={view === 'patch'}
-              title={view === 'patch' ? 'Show the document' : whatDiff(dirty, 'as a patch')}
-              onClick={() => pick('patch')}
-            >
-              <IconDiff size={15} />
-            </button>
-            {md && (
-              <button
-                class="icon-btn"
-                aria-pressed={view === 'marked'}
-                title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
-                onClick={() => pick('marked')}
-              >
-                <IconDiffDoc size={15} />
-              </button>
+            {diffButtons && (
+              <>
+                <button
+                  class="icon-btn"
+                  aria-pressed={view === 'patch'}
+                  title={view === 'patch' ? 'Show the document' : whatDiff(dirty, 'as a patch')}
+                  onClick={() => pick('patch')}
+                >
+                  <IconDiff size={15} />
+                </button>
+                {md && (
+                  <button
+                    class="icon-btn"
+                    aria-pressed={view === 'marked'}
+                    title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
+                    onClick={() => pick('marked')}
+                  >
+                    <IconDiffDoc size={15} />
+                  </button>
+                )}
+              </>
             )}
             {doc.kind === 'html' && (
               <button
