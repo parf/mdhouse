@@ -81,32 +81,50 @@ interface Props {
 const MERMAID_URL = '/vendor/mermaid/mermaid.esm.min.mjs';
 let mermaidModule: Promise<typeof import('mermaid')> | null = null;
 
-async function renderMermaid(container: HTMLElement): Promise<void> {
+let mermaidRenderId = 0;
+
+/** Renders only blocks still owned by this live body generation after every async boundary. */
+async function renderMermaid(container: HTMLElement, current: () => boolean): Promise<void> {
   const blocks = container.querySelectorAll<HTMLElement>('pre.mermaid:not([data-rendered])');
-  if (!blocks.length) return;
+  const belongs = (block: HTMLElement) => current() && container.isConnected && block.isConnected && container.contains(block);
+  if (!blocks.length || !current()) return;
+  const renderId = ++mermaidRenderId;
+  const fail = (block: HTMLElement, source: string, error: unknown) => {
+    if (!belongs(block)) return;
+    block.dataset.rendered = 'error';
+    block.title = String(error);
+    block.textContent = `Unable to render diagram.\n${source}`;
+  };
 
-  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-  mermaidModule ??= import(/* @vite-ignore */ MERMAID_URL) as Promise<typeof import('mermaid')>;
-  const { default: mermaid } = await mermaidModule;
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: dark ? 'dark' : 'default',
-    securityLevel: 'strict',
-    // Directives in a diagram cannot change these.
-    secure: ['secure', 'securityLevel', 'startOnLoad', 'maxTextSize', 'suppressErrorRendering', 'maxEdges', 'theme', 'themeCSS', 'themeVariables', 'fontFamily', 'altFontFamily', 'dompurifyConfig'],
-  });
+  try {
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaidModule ??= import(/* @vite-ignore */ MERMAID_URL) as Promise<typeof import('mermaid')>;
+    const { default: mermaid } = await mermaidModule;
+    if (!current() || !container.isConnected) return;
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: dark ? 'dark' : 'default',
+      securityLevel: 'strict',
+      // Directives in a diagram cannot change these.
+      secure: ['secure', 'securityLevel', 'startOnLoad', 'maxTextSize', 'suppressErrorRendering', 'maxEdges', 'theme', 'themeCSS', 'themeVariables', 'fontFamily', 'altFontFamily', 'dompurifyConfig'],
+    });
 
-  for (const [i, block] of blocks.entries()) {
-    const source = block.textContent ?? '';
-    block.dataset.rendered = '1';
-    try {
-      const { svg } = await mermaid.render(`mmd-${Date.now()}-${i}`, source);
-      block.replaceChildren(await mermaidImage(svg));
-    } catch (err) {
-      block.dataset.rendered = 'error';
-      block.title = String(err);
-      block.textContent = `Unable to render diagram.\n${source}`;
+    for (const [i, block] of blocks.entries()) {
+      if (!belongs(block)) continue;
+      const source = block.textContent ?? '';
+      try {
+        const { svg } = await mermaid.render(`mmd-${renderId}-${i}`, source);
+        if (!belongs(block)) continue;
+        const image = await mermaidImage(svg);
+        if (!belongs(block)) continue;
+        block.replaceChildren(image);
+        block.dataset.rendered = '1';
+      } catch (err) {
+        fail(block, source, err);
+      }
     }
+  } catch (err) {
+    for (const block of blocks) fail(block, block.textContent ?? '', err);
   }
 }
 
@@ -306,8 +324,12 @@ export function Doc({
   }, [onNavigate]);
 
   useEffect(() => {
-    if (doc?.hasMermaid && body.current) void renderMermaid(body.current);
-  }, [doc?.url, doc?.hasMermaid]);
+    const container = body.current;
+    if (!doc?.hasMermaid || !container) return;
+    let live = true;
+    void renderMermaid(container, () => live && body.current === container);
+    return () => { live = false; };
+  }, [doc?.url, doc?.hasMermaid, safeBody, actToken]);
 
   /**
    * Checkboxes you can tick, on a writable folder and in the plain document view (a diff view
