@@ -354,6 +354,22 @@ freeipapi.com only on any primary failure (timeout, network, non-200, 429 back-o
 non-JSON, `success:false`, wrong echoed IP, bad country). Fixed HTTPS hosts, `redirect: 'error'`,
 no credentials. Geo: city, state, country, ISP, org, ASN + label — null when the provider omits it.
 
+## Session-history snapshot foundations
+
+`lib/user-session-codec.ts` encodes/decodes strict version-1 `{version,revision,model}` snapshots as
+canonical deterministic JSON. Unknown/newer/corrupt input is rejected whole, including duplicate JSON
+keys and resource-budget violations; no reset, truncation, session cap or purge. Independent MRU
+lists and all retained sessions survive roundtrip. Validation proves consistency, not authentication.
+
+`lib/user-session-store.ts` is inert until a trusted caller supplies an explicit protected absolute
+directory. It stores only the history model in `sessions.json`, not cookie secrets. Owner-only real
+dir/file, no-follow handles, bounded reads, same-directory atomic replacement and byte-hash CAS
+protect snapshots; each successful write increments revision. An exclusive protected lock serializes
+writers, times out without stealing, and is released only for the owned inode. Unknown/corrupt state
+is refused without reset; errors after rename report unknown outcome and require load before retry.
+Node lacks openat: directory identity checks narrow, but do not eliminate, path replacement races.
+No default config path, routes, OAuth, live GeoIP or new permission is activated by these modules.
+
 ## Browser author attribution
 
 `lib/author.ts` normalizes browser names and the host/port-scoped `mdhouse_author_<port>` cookie.
