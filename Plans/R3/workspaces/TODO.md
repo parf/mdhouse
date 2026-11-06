@@ -457,14 +457,16 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: strict Mermaid config, passive action boundary and inert img-only SVG remain; no active inline SVG fallback, new authority/dependency or source-content mutation
   - One combined proportional gate/security review and owned scratch browser proof; no full/version bump/live7777 checks
 
-- [ ] MW.9b Hide misleading Git history for ignored/untracked files <a id="MW.9b"></a>
+- [x] MW.9b Hide misleading Git history for ignored/untracked files <a id="MW.9b"></a>
+  - Verified: exact `ca538e6` independent PASS, integrated `c568e3b`; CEO actual ignored-file history absent and roots preserved (`693b4d284727048e`)
   - Contract: [№GIT-W2](DECISIONS.md#GIT-W2); W2 owns narrow Doc/history presentation followup using existing gitState
   - Acceptance: Gitignored has no file history action/panel or history request; Untracked stays hidden while history unknown/empty and shows history only if real current-file commits exist
   - Acceptance: tracked (including force-tracked paths matching ignore rules) keeps history; no inference from badge text, prefs marks, missing Git data or synthesized untracked status
   - Acceptance: prior-file/stale async history cannot flash or reopen a hidden panel; useful commit/current-change behavior and passive Mermaid/markup boundary remain
   - Proportional focused check + nonauthor exact delta review; no full/types/browser blanket rerun, CEO-coordinated local reload after integration
 
-- [ ] MW.8d Preserve unchanged Mermaid diagrams across token/refetch updates <a id="MW.8d"></a>
+- [x] MW.8d Preserve unchanged Mermaid diagrams across token/refetch updates <a id="MW.8d"></a>
+  - Verified: exact `ca538e6` PASS, integrated `c568e3b`; CEO live 15s samePre/sameImg true, childMutations0/gapFrames0, decoded261x150 (`693b4d284727048e`)
   - Evidence: CEO observed 42 live child mutations in 15 seconds and advancing Mermaid IDs for unchanged source; no source edits
   - Cohort: W3 narrow rendering stability followup with [№MW.9b](#MW.9b); separate Doc render/history hunks, same base and one proportional gate
   - Contract: [№RENDER-W1](DECISIONS.md#RENDER-W1); remove root cause before caching: generic Git events update metadata/history, not full document body
@@ -472,6 +474,15 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: current authored HTML and fresh renderer control provenance continue updating; never freeze whole body or keep stale action tokens merely to avoid flicker
   - Acceptance: any optional cache/reuse is bounded, source/theme-bound and generated-img-only, never a substitute for stopping redundant full rendering; stale async work cannot replace current nodes, no active SVG fallback
   - Meaningful native unchanged-refetch stability and changed-source positives; exact independent review, no full or blanket checks, CEO-only coordinated live reload
+
+- [ ] MW.10 Projects naming and current per-project Settings organization <a id="MW.10"></a>
+  - Owner priority: rename Directories to Projects and put current per-project settings inside Settings; no OAuth/RAG wait or unsupported overrides
+  - Cohort: W2 Settings project selection/grouping/current controls; W1 current project config/API mapping and safe scoped read support; W3 user-facing Project terminology/docs outside Settings paths
+  - Acceptance: Settings clearly selects/groups projects, shows canonical path and current supported configuration, separates browser/instance settings; reference root remains immutable
+  - Acceptance: user-facing served-root terminology is Projects; filesystem subdirectories, IDs, paths, API/storage keys retain semantics
+  - Acceptance: reuse existing authorized controls only; no new web config mutations without required admin authority, no inference from author cookie/project RW/Editor
+  - Dependent editing of new name/RW/persistence/AB overrides remains owning admin-gated work; current organization/copy ships independently
+  - One proportional focused/copy/UI gate and exact review as needed; no full after minor changes, CEO-only coordinated reload
 
 ## Gate
 

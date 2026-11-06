@@ -1126,3 +1126,12 @@ Owner steering [№RENDER-W1](workspaces/DECISIONS.md#RENDER-W1) supersedes a ca
 unchanged file bodies/tokens must stay stable, generic Git changes refresh metadata/history only.
 W3 re-evaluates before edits; W1 investigates minimal existing-route metadata/conditional-render seam,
 W2 history hunk remains independent. No guessed polling cause or hidden whole-body reset accepted.
+
+
+## Unchanged-body/history accepted; Projects cohort assigned
+
+[№MW.8d](workspaces/TODO.md#MW.8d) and [№MW.9b](workspaces/TODO.md#MW.9b) accepted on `c568e3b`
+after exact review, inspectable focused/native proof and CEO actual15s stability/history verification.
+[№MW.10](workspaces/TODO.md#MW.10) selected before edits: W2 Settings project grouping, W1 safe
+current config/read mapping, W3 terminology/docs. Concrete current controls and honest inherited
+settings ship independently of new admin-gated mutations; no RAG/OAuth foundation detour or full gate.

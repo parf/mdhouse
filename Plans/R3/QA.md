@@ -342,3 +342,14 @@ CEO verified owner-authorized reload on actual `http://md/realty/.ai-team/README
 all nine roots/RW preserved, initial no-image regression gone. User may refresh. CEO subsequently confirmed repeat navigation/reload PASS
 (`76e2e7a98e14c732`): image261x150 displayed, viewBox `4 4 1669.7158203125 960`, XML parsererror false,
 source labels include #r/cto. No additional checks were run by CTO.
+
+
+## Unchanged-body and history live acceptance
+
+Exact `ca538e6` independent PASS `eba835700b0b53f3`, integrated `c568e3b`, production/test identity
+unchanged. Inspectable gate32/0+types0 and finalhistory12/0; native `.scratch/cto/doc-stability/`
+proves metadata3/conditional1 with body mutations0/gapframes0, samePre/img/token and fullBodies0;
+real changed source produces new body/token/decoded valid IMG. Untracked empty/past history and
+tracked preservation covered. Reviewer corrected unrelated inherited RAG/session probes out of scope.
+CEO actual15s observation (`693b4d284727048e`): samePre/sameImg true, childMutations0/gapFrames0,
+261x150 decoded; ignored history/actions absent, nine roots/RW retained. No realty edits/paid calls.
