@@ -163,3 +163,29 @@ page/source modes confirmed. X06 shows passive text/table/details and green comp
 old `b11e47f` detects execution/probes/navigation; X03 did not fire there and X06 only fails the old
 sandbox attribute assertion, so neither is claimed as a positive exploit control. Link/form click
 landing is not asserted. Real Safari/Firefox/device checks remain open in release QA.
+
+## MW.8 final integration
+
+Independent CEO verdict `778af26a90369eae`: PASS on exact `fdb4098a5a99c6b7d8a0172fc022d3f2529cb87a`,
+base `964ade7`, including the `e8f5ccd` → `fdb4098` script-only fixes. Exceptional entrypoint cleanup
+and complete positive-check key sets are covered by no-process fake regressions. No additional
+production blocker was found in the inspected delta.
+
+Latest controlled verification: isolated frozen checkout, lock-matched dependencies, shared flock,
+nice 19 and CPUs 22/23; start 2026-11-06 04:37:34 UTC at load1 8.26, full 703 pass / 0 fail,
+tsc exit 0. Completed 04:38:32 UTC; pre/post inventory has no new mdhouse processes. Full logs,
+exit codes and inventories: `.scratch/cto/final-verification/`. Earlier W2 full run on `093550f`
+reported 24 failures / 6 errors after output truncation; names/errors are lost and its historical
+cause remains unknown. Missing/mismatched inherited dependencies were subsequently observed; they
+are not proof of every historical failure. The controlled latest green run replaces indefinite
+waiting for that lost evidence, not the incident history.
+
+Integrated main `3b044d53c85e24b33dcc7e89eef289f2827cfcc3` preserves RAG and authenticated-signature
+decisions. Production, scripts, package/lock and tests are byte-identical to the approved target;
+focused render/harness checks pass 65/65. Dirty launcher bytes were preserved. No new full/browser
+run, live reload, push or deployment was performed during integration.
+
+Safari/Firefox and verified raw link/form click landing remain release QA. Raw sandbox execution
+negatives and passive-page compatibility have Chrome evidence; best-effort clicks do not prove
+landing. Admin wiring, authenticated attribution enforcement and whole-workspace acceptance remain
+separate open work; closing [№MW.8](workspaces/TODO.md#MW.8) does not close them.

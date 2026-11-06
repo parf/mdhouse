@@ -598,3 +598,16 @@ gaps. Cleanup after each owned run was checked clear.
 Final combined exact-SHA review still gates integration. Main stays on the pre-security source until
 that verdict; admin wiring and materialization remain unassigned. Early undocumented 7794 PID
 ownership is preserved as incident uncertainty, separate from the accepted common procedure.
+
+## Passive content boundary integrated
+
+[№MW.8](workspaces/TODO.md#MW.8), [№MW.8a](workspaces/TODO.md#MW.8a) and
+[№MW.8b](workspaces/TODO.md#MW.8b) are integrated at `3b044d53c85e24b33dcc7e89eef289f2827cfcc3`.
+Independent CEO final PASS binds to `fdb4098a5a99c6b7d8a0172fc022d3f2529cb87a`; merge introduced no
+production/helper/dependency/test delta. Latest isolated full 703/0 + tsc exit 0, followed by focused
+integrated 65/0; no repeated full or browser run. RAG decisions, signature policy and dirty launcher
+were preserved. [QA evidence and limitations](QA.md#mw8-final-integration).
+
+Historical W2 24-failure/6-error run remains unexplained; its output was lost, not silently waived.
+The authorized single controlled run supplies the latest result. Safari/Firefox and raw click landing
+remain release QA; admin wiring is not implemented. W2 receives no assignment during its quota pause.

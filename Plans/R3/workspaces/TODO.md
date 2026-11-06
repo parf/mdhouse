@@ -368,10 +368,11 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 ## W6 — Passive document content
 
-- [ ] MW.8 Prohibit document-supplied active content <a id="MW.8"></a>
+- [x] MW.8 Prohibit document-supplied active content <a id="MW.8"></a>
   - Contract: [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1); preserve passive HTML, source/edit/Copy and normal app behavior
-  - [ ] MW.8a Server content policy, raw response boundaries and defense headers <a id="MW.8a"></a>
-  - [ ] MW.8b Browser sinks and constrained app-controlled Mermaid rendering <a id="MW.8b"></a>
+  - Checkpoint: integrated `3b044d5`, exact reviewed target `fdb4098`; controlled full 703/0 + tsc, integrated focused 65/0. [Evidence](../QA.md#mw8-final-integration). Safari/Firefox and raw click landing remain release QA; admin wiring is separate.
+  - [x] MW.8a Server content policy, raw response boundaries and defense headers <a id="MW.8a"></a>
+  - [x] MW.8b Browser sinks and constrained app-controlled Mermaid rendering <a id="MW.8b"></a>
   - Acceptance: authored HTML cannot impersonate generated Q&A/task controls, even with exact current line/hash and matching list structure; genuine target/tick/pick/verdict/answer controls still work
   - Acceptance: preserve arbitrary passive authored classes in raw HTML and `{#id .class}` syntax; action authorization depends on generated-control provenance, not authored class/structure selectors
   - Acceptance: client filtering preserves Shiki themes, table alignment and passive formatting; Mermaid uses constrained app-controlled rendering with inert image output, no callbacks or app-level CSS/request authority
