@@ -255,3 +255,8 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > 💬 👤parf yes, i meant city,country (for use city,state,country)
   >
   > 💬👾 Clarification supersedes county in [№USER-W6](DECISIONS.md#USER-W6): fields and unique location key are city/state/country; provider region may map to state with its meaning preserved. County was a typo and is not required; no third provider search. Last 10 unique countries with lastSeen remain separate; other session policy is unchanged.
+
+  >
+  > 💬 👤parf keep isp, org, asn!!
+  >
+  > 💬👾 Required additions to [№USER-W6](DECISIONS.md#USER-W6) are ISP, organization and ASN alongside IP/GeoIP observations, with unchanged self/admin visibility. Preserve ASN number and label if supplied; missing metadata is unavailable. The owner’s AntiSpider example is context, not a requirement for hostname, hosting, counters or allow-policy. Verify the provisional pair’s official schemas before wiring; do not research by looking up the example IP.
