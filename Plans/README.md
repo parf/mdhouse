@@ -308,6 +308,29 @@ Cookie helpers use separate port-scoped names, host-only HttpOnly/SameSite flags
 The module has no production callers or HTTP/control endpoints; bootstrap and authorization wiring
 remain R3 work. Port-specific names prevent accidental overwrites, not a browser origin boundary.
 
+## Mutation classification
+
+`lib/authz.ts`: every route in `serve()` is `read(handler)` (bare, answers every method), `bundle(index)`
+or a method map whose writes are `mutation(family, handler)`; `guard()` runs `inventory()` and `serve()`
+refuses to start on an untagged bare handler or object, a malformed method map, an unclassified write,
+a family on a read or bare handler, conflicting tags, a duplicate mutation or an unknown family.
+GET/HEAD/OPTIONS and `read()` are declared non-mutating, not effect-free: `GET /api/git/remote?fresh`
+fetches from the network. `serve()` returns `routes`; `test/authz.test.ts` pins the full list.
+Dormant — no status, guard or grant changes. `Actor` (`admin`, `via`, optional immutable `user`) has
+no builder; the author cookie is never identity.
+
+| Family | Routes (POST) |
+|---|---|
+| `doc-write` | `/api/task`, `/api/qa`, `/api/insert` |
+| `git-write` | `/api/git/commit`, `/commit-file`, `/reset` |
+| `git-sync` | `/api/git/pull`, `/push` |
+| `instance-config` | `/api/settings`, `/api/ab/default`, `/api/ab/filter` |
+| `attribution` | `/api/author` |
+| `external-send` | `/api/ab/send` |
+| `root-admin` | `/api/roots/remove` |
+| `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
+| `flow`, `control` | no HTTP route |
+
 ## Browser author attribution
 
 `lib/author.ts` normalizes browser names and the host/port-scoped `mdhouse_author_<port>` cookie.

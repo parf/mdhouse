@@ -27,6 +27,7 @@ import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
 import { allowedAddress, Users } from './lib/access';
+import { bundle, inventory, isMethodMap, mutation, read, type RouteEntry } from './lib/authz';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, validTarget, type AbAction } from './lib/agent-bus';
@@ -363,17 +364,14 @@ export async function serve(opts: ServeOptions) {
     return page(req);
   };
 
-  function guard<R extends string>(routes: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
+  /** Every route and its mutation family — filled by `guard`, which refuses an unclassified write. */
+  let routes: RouteEntry[] = [];
+  function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
+    routes = inventory(table);
     const out: Record<string, unknown> = {};
-    for (const [path, route] of Object.entries(routes)) {
+    for (const [path, route] of Object.entries(table)) {
       if (typeof route === 'function') out[path] = check(route as Handler);
-      // A method map — `{ GET, POST }` — not the HTML bundle, which is an object too.
-      else if (
-        route &&
-        typeof route === 'object' &&
-        Object.keys(route).length > 0 &&
-        Object.entries(route).every(([m, v]) => /^[A-Z]+$/.test(m) && typeof v === 'function')
-      ) {
+      else if (isMethodMap(route)) {
         out[path] = Object.fromEntries(Object.entries(route).map(([m, h]) => [m, check(h as Handler)]));
       } else out[path] = route;
     }
@@ -390,18 +388,18 @@ export async function serve(opts: ServeOptions) {
     reusePort: false,
 
     routes: guard({
-      '/__app/': index,
-      '/': page,
+      '/__app/': bundle(index),
+      '/': read(page),
       // Pages under a root are served by `fetch` (rootPage); `/d/…` is the old address.
-      '/d': legacyPage,
-      '/d/*': legacyPage,
-      '/settings': page,
+      '/d': read(legacyPage),
+      '/d/*': read(legacyPage),
+      '/settings': read(page),
 
       /**
        * Mermaid's own ESM build, served straight from node_modules so it stays out of the app
        * bundle. Its chunks are imported relatively, so the whole dist directory is published.
        */
-      '/vendor/mermaid/*': async (req) => {
+      '/vendor/mermaid/*': read(async (req) => {
         const rel = new URL(req.url).pathname.slice('/vendor/mermaid/'.length);
         if (!/^[\w./-]+$/.test(rel) || rel.includes('..')) return fail(400, 'bad asset path');
 
@@ -413,9 +411,9 @@ export async function serve(opts: ServeOptions) {
             'cache-control': 'public, max-age=604800',
           },
         });
-      },
+      }),
 
-      '/api/roots': () =>
+      '/api/roots': read(() =>
         json({
           roots: registry.list().map((r) => ({
             id: r.id,
@@ -428,7 +426,7 @@ export async function serve(opts: ServeOptions) {
           single: registry.single,
           // So the top bar can write paths under it as `~/…`.
           home: homedir(),
-        }),
+        })),
 
       /**
        * Tick or untick one task checkbox.
@@ -439,7 +437,7 @@ export async function serve(opts: ServeOptions) {
        * `Registry.writeFile()`, and the watcher then tells every open tab.
        */
       '/api/task': {
-        POST: async (req) => {
+        POST: mutation('doc-write', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as { p?: string; line?: number; hash?: string } | null;
           if (!body?.p || !Number.isInteger(body.line) || typeof body.hash !== 'string') {
@@ -462,7 +460,7 @@ export async function serve(opts: ServeOptions) {
             );
           }
           return json({ checked: result.checked });
-        },
+        }),
       },
 
       /**
@@ -486,7 +484,7 @@ export async function serve(opts: ServeOptions) {
           if (text === null) return json({ error: 'the file changed since this page was loaded', reason: 'stale' }, 409);
           return json({ me, text });
         },
-        POST: async (req) => {
+        POST: mutation('doc-write', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = qaRequestOf(await req.json().catch(() => null));
           if (!body) return fail(400, 'expected {p, line, hash, op, …}');
@@ -515,7 +513,7 @@ export async function serve(opts: ServeOptions) {
             return json({ error: message[result.error], reason: result.error }, result.error === 'empty' || result.error === 'needs-who' ? 400 : 409);
           }
           return json({ ok: true });
-        },
+        }),
       },
 
       /**
@@ -525,7 +523,7 @@ export async function serve(opts: ServeOptions) {
        * fingerprint.
        */
       '/api/insert': {
-        POST: async (req) => {
+        POST: mutation('doc-write', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as (Partial<AddRequest> & { p?: string }) | null;
           if (
@@ -569,13 +567,13 @@ export async function serve(opts: ServeOptions) {
             return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
           }
           return json({ ok: true, line: result.line });
-        },
+        }),
       },
 
       /** The settings page's options. Changing one is held to the same same-origin rule. */
       '/api/settings': {
         GET: () => json(settingsPayload()),
-        POST: async (req) => {
+        POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
           if (!body) return fail(400, 'expected a JSON object');
@@ -587,7 +585,7 @@ export async function serve(opts: ServeOptions) {
             server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
           }
           return json(settingsPayload());
-        },
+        }),
       },
 
       /**
@@ -603,7 +601,7 @@ export async function serve(opts: ServeOptions) {
           const author = await authorOf(req, loc ?? { root: registry.defaultRoot(), rel: '' });
           return authorPayload(author, readAuthorCookie(req.headers.get('cookie'), cookiePort()));
         },
-        POST: async (req) => {
+        POST: mutation('attribution', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as { name?: unknown } | null;
           if (!body || typeof body.name !== 'string') return fail(400, 'expected {name}');
@@ -615,34 +613,34 @@ export async function serve(opts: ServeOptions) {
           const res = authorPayload(await authorOf(next, { root: registry.defaultRoot(), rel: '' }), name);
           res.headers.append('set-cookie', authorSetCookie(cookiePort(), name, secure));
           return res;
-        },
+        }),
       },
 
       /** The Agent Bus integration: on or off, connected or why not, the agents and the default ones. */
-      '/api/ab': async () => {
+      '/api/ab': read(async () => {
         const ab = prefs.agentBus;
         if (!ab.enabled) return json({ enabled: false });
         const st = await bus.status();
         // the filter narrows the lists; a default agent stays, whatever its name
         const agents = (st.connected ? await bus.agents().catch(() => []) : []).filter((a) => passes(a.name, ab.filter) || ab.default.includes(a.name));
         return json({ enabled: true, me: bus.me, socket: ab.socket || defaultSocket(), ...st, default: ab.default, filter: ab.filter, agents });
-      },
+      }),
 
       /** The settings page's default agents — asked by a page that names none. */
       '/api/ab/default': {
-        POST: async (req) => {
+        POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
           const body = (await req.json().catch(() => null)) as { names?: unknown } | null;
           if (!Array.isArray(body?.names) || !body.names.every(validTarget)) return fail(400, 'expected {names: [bus name]}');
           const ab = await prefs.setAgentBus({ default: [...new Set(body.names as string[])] });
           return json({ default: ab.default });
-        },
+        }),
       },
 
       /** The settings page's names filter: a regex per line. */
       '/api/ab/filter': {
-        POST: async (req) => {
+        POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
           const body = (await req.json().catch(() => null)) as { lines?: unknown } | null;
@@ -654,12 +652,12 @@ export async function serve(opts: ServeOptions) {
           if (bad.length) return fail(400, `not a regex: ${bad.join(', ')}`);
           const ab = await prefs.setAgentBus({ filter: lines });
           return json({ filter: ab.filter });
-        },
+        }),
       },
 
       /** Ask agents about a document: the job id at once, its events over the WebSocket (`ab`). */
       '/api/ab/send': {
-        POST: async (req) => {
+        POST: mutation('external-send', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
           const body = (await req.json().catch(() => null)) as { p?: unknown; targets?: unknown; action?: unknown; note?: unknown } | null;
@@ -689,14 +687,14 @@ export async function serve(opts: ServeOptions) {
           } catch (err) {
             return fail(503, (err as Error).message);
           }
-        },
+        }),
       },
 
       /** A job's events so far — for a page that reconnected and missed some. */
-      '/api/ab/job': (req) => {
+      '/api/ab/job': read((req) => {
         const events = bus.job(new URL(req.url).searchParams.get('id') ?? '');
         return events ? json({ events }) : fail(404, 'no such job');
-      },
+      }),
 
       /**
        * The settings page's delete button: forget a directory and stop serving it.
@@ -707,21 +705,21 @@ export async function serve(opts: ServeOptions) {
        * non-browser caller sends neither and is let through — it could edit prefs.json itself.
        */
       '/api/roots/remove': {
-        POST: async (req) => {
+        POST: mutation('root-admin', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as { id?: string } | null;
           const root = body?.id ? registry.get(body.id) : undefined;
           if (!root) return fail(404, 'unknown root');
           if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be removed`);
           return json(await removeRoots([root.path]));
-        },
+        }),
       },
 
       /**
        * The git view of a folder — see `lib/gitpage.ts`. 404 for a folder in no repo: the git
        * link shows only on folders inside one.
        */
-      '/api/git': async (req) => {
+      '/api/git': read(async (req) => {
         const at = await gitAt(new URL(req.url));
         if ('error' in at) return at.error;
         const [head, dirty] = await Promise.all([repoHead(at.repo), dirtyFiles(at.repo)]);
@@ -745,20 +743,20 @@ export async function serve(opts: ServeOptions) {
           me: await currentUser(at.repo),
           writable: at.root.writable,
         });
-      },
-      '/api/git/commits': async (req) => {
+      }),
+      '/api/git/commits': read(async (req) => {
         const url = new URL(req.url);
         const at = await gitAt(url);
         if ('error' in at) return at.error;
         const skip = Math.max(0, Number(url.searchParams.get('skip')) || 0);
         return json({ commits: await folderLog(at.repo, at.dir, skip, 50) });
-      },
-      '/api/git/files': async (req) => {
+      }),
+      '/api/git/files': read(async (req) => {
         const at = await gitAt(new URL(req.url));
         if ('error' in at) return at.error;
         return json(await trackedFiles(at.repo, at.dir));
-      },
-      '/api/git/remote': async (req) => {
+      }),
+      '/api/git/remote': read(async (req) => {
         const url = new URL(req.url);
         const at = await gitAt(url);
         if ('error' in at) return at.error;
@@ -772,7 +770,7 @@ export async function serve(opts: ServeOptions) {
         remoteCache.set(key, { at: Date.now(), state });
         if (remoteCache.size > 50) remoteCache.delete(remoteCache.keys().next().value!);
         return json({ ...(await state), cachedAt: null });
-      },
+      }),
       /**
        * Commit, pull, push — a writable folder only, same origin, one at a time per repo.
        * `git commit -a`: the page shows the files it takes, and a non-Markdown one has to be
@@ -781,7 +779,7 @@ export async function serve(opts: ServeOptions) {
        * the repo holds a read-only root or files outside the root.
        */
       '/api/git/commit': {
-        POST: async (req) => {
+        POST: mutation('git-write', async (req) => {
           const body = (await req.json().catch(() => null)) as { p?: string; message?: string; files?: string[]; nonMd?: boolean } | null;
           const at = await gitWrite(req, body?.p);
           if ('error' in at) return at.error;
@@ -802,7 +800,7 @@ export async function serve(opts: ServeOptions) {
             const r = await run(at.repo, ['commit', '-a', '-m', message]);
             return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
           });
-        },
+        }),
       },
       /**
        * One file, from its own page: `git commit -- <file>`, which takes that path from the
@@ -811,7 +809,7 @@ export async function serve(opts: ServeOptions) {
        * looked at, and this is the file on screen.
        */
       '/api/git/commit-file': {
-        POST: async (req) => {
+        POST: mutation('git-write', async (req) => {
           const body = (await req.json().catch(() => null)) as { p?: string; message?: string } | null;
           // The file's folder: same origin, git on, in a repo, writable.
           const at = await gitWrite(req, body?.p?.replace(/\/[^/]*$/, ''));
@@ -837,11 +835,11 @@ export async function serve(opts: ServeOptions) {
             const r = await run(repo, ['commit', '-m', message, '--', literal(rel)]);
             return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
           }));
-        },
+        }),
       },
       /** One document back to its last commit — its uncommitted changes thrown away. */
       '/api/git/reset': {
-        POST: async (req) => {
+        POST: mutation('git-write', async (req) => {
           const body = (await req.json().catch(() => null)) as { p?: string; hash?: string } | null;
           // The document's folder: same origin, git on, in a repo, writable.
           const at = await gitWrite(req, body?.p?.replace(/\/[^/]*$/, ''));
@@ -864,24 +862,24 @@ export async function serve(opts: ServeOptions) {
             const r = await run(repo, ['checkout', 'HEAD', '--', literal(rel)]);
             return r.code === 0 ? json({ ok: true }) : fail(500, (r.err || r.out).trim());
           }));
-        },
+        }),
       },
-      '/api/git/pull': { POST: (req) => syncRepo(req, ['pull', '--ff-only']) },
-      '/api/git/push': { POST: (req) => syncRepo(req, ['push']) },
+      '/api/git/pull': { POST: mutation('git-sync', (req) => syncRepo(req, ['pull', '--ff-only'])) },
+      '/api/git/push': { POST: mutation('git-sync', (req) => syncRepo(req, ['push'])) },
 
-      '/api/tree': async (req) => {
+      '/api/tree': read(async (req) => {
         const url = new URL(req.url);
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
         return json(await store.tree(root, flag(url, 'ignored', opts.includeIgnoredDefault)));
-      },
+      }),
 
       /**
        * A file's page: every kind (`kindOf`) — Markdown rendered, code and text highlighted with
        * line numbers (`#L<n>`), the rest described for the page to show from `/api/raw`. Nothing
        * under a `.git` folder.
        */
-      '/api/doc': async (req) => {
+      '/api/doc': read(async (req) => {
         const url = new URL(req.url);
         const p = url.searchParams.get('p');
         const loc = p ? await registry.resolve(p) : await registry.fromDocUrl(url.searchParams.get('d') ?? '');
@@ -938,22 +936,22 @@ export async function serve(opts: ServeOptions) {
         // the agents the document asks — sent only while the integration is on
         const ab = prefs.agentBus.enabled ? { ab: abTargets(src) } : {};
         return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab });
-      },
+      }),
 
       /** A file's bytes, with its type — `rawHeaders`. `/api/asset` is the old name. */
-      '/api/raw': (req) => raw(req),
-      '/api/asset': (req) => raw(req),
+      '/api/raw': read((req) => raw(req)),
+      '/api/asset': read((req) => raw(req)),
 
       /** Every file under a folder, not only Markdown — the folder page's ALL view. */
-      '/api/files': async (req) => {
+      '/api/files': read(async (req) => {
         const url = new URL(req.url);
         const loc = await registry.resolve((url.searchParams.get('p') ?? '').replace(/\/+$/, ''));
         if (!loc) return fail(403, 'path outside any root');
         if (!(await stat(loc.abs).catch(() => null))?.isDirectory()) return fail(404, 'no such folder');
         return json(await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit }));
-      },
+      }),
 
-      '/api/search': async (req) => {
+      '/api/search': read(async (req) => {
         const url = new URL(req.url);
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
@@ -967,9 +965,9 @@ export async function serve(opts: ServeOptions) {
           maxHits: limitOf(url, 500, 500),
         });
         return json(result);
-      },
+      }),
 
-      '/api/recents': async (req) => {
+      '/api/recents': read(async (req) => {
         const url = new URL(req.url);
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
@@ -978,18 +976,18 @@ export async function serve(opts: ServeOptions) {
         const includeIgnored = flag(url, 'ignored', opts.includeIgnoredDefault);
 
         return json({ entries: await store.recents(root, limit, includeIgnored) });
-      },
+      }),
 
-      '/api/digest': async (req) => {
+      '/api/digest': read(async (req) => {
         const url = new URL(req.url);
         const root = rootOf(url);
         if (!root) return fail(404, 'unknown root');
 
         const limit = limitOf(url, 60, 300);
         return json(await store.digest(root, limit, flag(url, 'ignored', opts.includeIgnoredDefault)));
-      },
+      }),
 
-      '/api/git/log': async (req) => {
+      '/api/git/log': read(async (req) => {
         const url = new URL(req.url);
         const loc = await registry.resolve(url.searchParams.get('p') ?? '');
         if (!loc) return fail(403, 'path outside any root');
@@ -1016,7 +1014,7 @@ export async function serve(opts: ServeOptions) {
               }
             : null,
         });
-      },
+      }),
 
       /**
        * What changed in one file: the working tree against HEAD when there is something
@@ -1025,7 +1023,7 @@ export async function serve(opts: ServeOptions) {
        * has edited. `rev` asks for a particular commit instead, which is what clicking a row
        * in the history panel does.
        */
-      '/api/git/diff': async (req) => {
+      '/api/git/diff': read(async (req) => {
         const url = new URL(req.url);
         const loc = await registry.resolve(url.searchParams.get('p') ?? '');
         if (!loc) return fail(403, 'path outside any root');
@@ -1076,7 +1074,7 @@ export async function serve(opts: ServeOptions) {
         if (!by?.last) return json(none);
         const last = await commitDiff(where.repo, where.repoRel, by.last);
         return last ? served(last, committed) : json(none);
-      },
+      }),
 
       '/api/marks': {
         GET: async (req) => {
@@ -1085,7 +1083,7 @@ export async function serve(opts: ServeOptions) {
           if (!root) return fail(404, 'unknown root');
           return json(prefs.get(root.path));
         },
-        POST: async (req) => {
+        POST: mutation('shared-prefs', async (req) => {
           // Bun parses the body whatever its content-type, so a cross-site `text/plain` form
           // post would otherwise land here.
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
@@ -1105,7 +1103,7 @@ export async function serve(opts: ServeOptions) {
           // An ignore rule changes what the tree contains.
           if (body.mark === 'ignored') store.invalidate(root.id);
           return json(marks);
-        },
+        }),
       },
     }),
 
@@ -1270,5 +1268,5 @@ export async function serve(opts: ServeOptions) {
     exit: shutdown,
   });
 
-  return { server, store, watcher, control, shutdown };
+  return { server, store, watcher, control, shutdown, routes };
 }
