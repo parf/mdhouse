@@ -383,3 +383,11 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬 👤parf http://md/realty/.ai-team/README.md если gitignored - зачем git history показывать
   >
   > 💬👾 CEO handoff `32e3b6d9c39e4039`: hide action/panel for authoritative gitignored and untracked with no history; tracked including ignore-pattern matches preserve history. Existing authoritative gitState only; no unrelated UI expansion.
+
+
+## Unchanged document rendering — 2026-11-06
+
+- ✅ RENDER-W1 Do not refresh unchanged file bodies <a id="RENDER-W1"></a>
+  > 💬 👤parf если файл не меняется - зачем ?
+  >
+  > 💬👾 CEO steering `7fc318b1241e4cd8`: generic root Git events must not rerender unchanged documents; refresh Git status/history separately or check content identity, retaining valid body/token. Changed content refreshes normally; cache/restore alone is insufficient.

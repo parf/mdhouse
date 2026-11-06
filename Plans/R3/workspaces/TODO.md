@@ -467,9 +467,10 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.8d Preserve unchanged Mermaid diagrams across token/refetch updates <a id="MW.8d"></a>
   - Evidence: CEO observed 42 live child mutations in 15 seconds and advancing Mermaid IDs for unchanged source; no source edits
   - Cohort: W3 narrow rendering stability followup with [№MW.9b](#MW.9b); separate Doc render/history hunks, same base and one proportional gate
-  - Acceptance: unchanged diagram source/theme preserves decoded inert image across refetch/token changes without visible gaps or repeated Mermaid render; actual source/theme changes still update correctly
+  - Contract: [№RENDER-W1](DECISIONS.md#RENDER-W1); remove root cause before caching: generic Git events update metadata/history, not full document body
+  - Acceptance: unchanged file identity retains rendered body/valid token with no diagram work or visible gap; actual content changes refresh body/provenance and diagram normally
   - Acceptance: current authored HTML and fresh renderer control provenance continue updating; never freeze whole body or keep stale action tokens merely to avoid flicker
-  - Acceptance: cache/reuse is bounded, source/theme-bound and generated-img-only; stale async work cannot replace current nodes, no active SVG fallback
+  - Acceptance: any optional cache/reuse is bounded, source/theme-bound and generated-img-only, never a substitute for stopping redundant full rendering; stale async work cannot replace current nodes, no active SVG fallback
   - Meaningful native unchanged-refetch stability and changed-source positives; exact independent review, no full or blanket checks, CEO-only coordinated live reload
 
 ## Gate

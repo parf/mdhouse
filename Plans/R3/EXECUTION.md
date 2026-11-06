@@ -1120,3 +1120,9 @@ CEO actual live read-only observer confirmed unchanged diagrams repeatedly repla
 advancing render IDs). safeBody/actToken fixes must retain real HTML/provenance updates while avoiding
 new Mermaid work and visible image gaps for unchanged source/theme. W2 history hunk, W3 rendering
 hunk; one bounded cohort/proportional gate, no parallel restart, no full/types/browser blanket rerun.
+
+
+Owner steering [№RENDER-W1](workspaces/DECISIONS.md#RENDER-W1) supersedes a cache-only design:
+unchanged file bodies/tokens must stay stable, generic Git changes refresh metadata/history only.
+W3 re-evaluates before edits; W1 investigates minimal existing-route metadata/conditional-render seam,
+W2 history hunk remains independent. No guessed polling cause or hidden whole-body reset accepted.

@@ -129,3 +129,8 @@
 - 📌 GIT-W2 Hide file Git history for authoritative Gitignored and Untracked without confirmed history. <a id="GIT-W2"></a>
   Tracked paths keep history, including force-tracked ignore matches. Do not infer from badges,
   no-repo or synthesized status. [History](resolved.md#GIT-W2).
+
+
+- 📌 RENDER-W1 Unchanged file content must not trigger document-body/token replacement or new diagram work. <a id="RENDER-W1"></a>
+  Refresh Git metadata separately; actual content changes refresh body/provenance normally. Image cache
+  is defense, not a substitute for eliminating redundant full rendering. [History](resolved.md#RENDER-W1).
