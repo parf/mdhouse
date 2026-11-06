@@ -6,8 +6,8 @@ Bun + Preact Markdown workspace for every `.md` under a folder. npm package `mdh
 - Project knowledge (modules, URLs, invariants, prefs, security rules): `Plans/README.md`
 - Open items `TODO.md` · choices `DECISIONS.md` · engineering record `DONE.md` (same folder)
 - User-facing history: `CHANGELOG.md`
-- Planning and document syntax: read [markup](.claude/skills/markup.md),
-  [glyphs](.claude/skills/glyphs.md), [Q&A states](.claude/skills/qa-states.md) and
+- Planning and document syntax: read [markup](doc/skills/markup.md),
+  [glyphs](doc/skills/glyphs.md), [Q&A states](doc/skills/qa-states.md) and
   [agent authoring rules](doc/agent-markup.md) before writing plans, questions, decisions or reports.
 - File presentation and planning flow: [syntax](doc/syntax.md), [Q&A](doc/qa.md),
   [Markdown](doc/markdown.md). Team initialization: [shared rules](Plans/ai-team/common.md#planning-and-document-syntax).
