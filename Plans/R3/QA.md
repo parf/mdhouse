@@ -134,3 +134,9 @@ no other agent/process/command may proxy around that rejection. Supported manual
 requested from W1, not assumed. New injection/browser runs are held; only read-only attribution and
 unrelated pure analysis/tests continue. Corrected failure fixtures must use independent captured-own
 cleanup in finally rather than the cleanup function being deliberately broken.
+
+W1 followup `6706fde76053127c`: no manual approval prompt was offered. The rejection text names
+owner-managed permission rules or stopping to explain; W1 has asked the owner and proposed a manual
+owner cleanup in its session. No permissions/mode were changed and no proxy retry was attempted.
+Both sleep fixtures expired naturally; W1 reports only fixture-server group 250110 still holding
+61741. Cleanup completion remains pending owner action/approved path; injection/browser HOLD continues.
