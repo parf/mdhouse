@@ -52,6 +52,9 @@ steps; its old pack 1.0.1 label is not new verified deployment evidence. It is n
 
 ## Current provider checkpoint — 2026-11-06
 
+Provider also reports J122 Python reply delivery fixed (`on_reply`; `call()` refuses `wait`).
+This is deployment information, not mdhouse end-to-end or paid-sync evidence.
+
 
 
 T-48 first-build limitation (provider receipt `990f468334f46a9e`): the Python client cannot yet
@@ -64,8 +67,9 @@ inconclusive check stays unknown. A client improvement is filed, not scheduled/d
 
 Source-selection blocker J124 is provider-reproduced: include matching ancestors made *.md include
 x.md/secret.txt. Provider fix applies includes to the regular file's whole path, leaves exclude
-narrowing on ancestors, and tests Markdown root/nested cases. Fix/redeploy and read-only audit of
-previous tracked keys are pending; no first sync until that evidence. CTO also narrowed config to
+narrowing on ancestors, and tests Markdown root/nested cases. Provider reports fix deployed on
+bus 1.0.52 / agent pack 1.0.4 (`3ddc7678bc9f8cc8`); FileScan restarted in demand with 195 tracked.
+Read-only audit of those keys is still pending; no first sync until that evidence. CTO also narrowed config to
 exclude bower_components/jspm_packages with provider-approved patterns, preserving demand/root/all
 other settings; targeted restart applied. Effective selection normalization must use the fixed
 known mapping, not ignore unknown rules or silently widen source disclosure.
