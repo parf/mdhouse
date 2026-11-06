@@ -34,6 +34,22 @@ export const DOCUMENTATION_COVERAGE = [
   },
 ] as const;
 
+export const CHANGE_REVIEW_COVERAGE = [
+  {
+    id: 'recent-commits-review', family: 'commit-review', scope: 'selected-project',
+    audience: 'development', output: 'commit-review',
+    stages: ['scope', 'summaries', 'risks', 'delivery-sync', 'report'],
+    sources: ['explicit commit range and selected filters', 'diffs and reproduction evidence', 'linked plans documentation and task state'],
+  },
+  {
+    id: 'incoming-change-review', family: 'incoming-change', scope: 'selected-document',
+    audience: 'development', output: 'merge-readiness',
+    stages: ['intake', 'review', 'feedback', 're-review', 'readiness', 'merge', 'post-merge', 'report'],
+    sources: ['PR or incoming patch with exact base and target', 'checks reviews conflicts and threads', 'ownership plans migration release and rollback evidence'],
+  },
+] as const;
+
 export const EXPECTED_PACKAGE_IDS: readonly string[] = [
   ...FEATURE_PACKAGE_IDS, ...DOCUMENTATION_COVERAGE.map((row) => row.id),
+  ...CHANGE_REVIEW_COVERAGE.map((row) => row.id),
 ];

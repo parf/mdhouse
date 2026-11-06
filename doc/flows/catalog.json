@@ -54,6 +54,18 @@
       "family": "documentation",
       "manifest": "docs-trust-report/flow.json",
       "example": "docs-trust-report/example.md"
+    },
+    {
+      "id": "recent-commits-review",
+      "family": "commit-review",
+      "manifest": "recent-commits-review/flow.json",
+      "example": "recent-commits-review/example.md"
+    },
+    {
+      "id": "incoming-change-review",
+      "family": "incoming-change",
+      "manifest": "incoming-change-review/flow.json",
+      "example": "incoming-change-review/example.md"
     }
   ]
 }

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Recent-commits and incoming-change authoring packages include factual summaries, risk/task reports, PR feedback/readiness and separate merge-approval declarations; execution remains future work
 - Settings → Your name: each browser signs its Q&A replies and quotes with its own name (a cookie, attribution only — no access); with none set, signing works as before
 - Five Documentation authoring packages cover deep subsystem docs, refresh/verify, audience overviews, documentation architecture and trust reports, with synthetic examples; execution remains future work
 - Shared flow-package validation and loading, with four Feature/delivery authoring packages and synthetic examples; flow execution is not included
