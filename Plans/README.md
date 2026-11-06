@@ -463,3 +463,16 @@ busy/live ports, captures detached own groups, verifies listener ownership and e
 cleans only its captured groups/temp directories. Stop failures are non-green; no listener-derived
 kill or foreign endpoint reuse. `scripts/passive-lib.ts` stages fixtures and its own probe, delegates
 server/Chrome lifecycle to that helper, and propagates cleanup failures.
+
+
+## Projects in Settings
+
+Settings groups served Projects as Saved, This session and immutable Reference, with its own
+selection/details pane. Selecting details does not change the app's current project/document.
+Current canonical path, effective RW/RO and persistence are visible; existing removal keeps the
+last-project and reference protections. `/api/roots` optionally reports writableBy `rw | auto`
+only when effectively writable, describing the existing cause rather than granting authority.
+Browser author settings stay browser-only; Documents and Agent Bus instance settings are labelled
+all projects. No per-project overrides or new config mutation authority is implied. Display-name,
+RW/save and AB override editors remain their explicit admin-gated owning tasks. IDs/paths/CLI flags,
+API/storage keys and physical directory/subfolder semantics are unchanged.
