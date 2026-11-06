@@ -24,11 +24,12 @@ RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning and 
 
 ## Current provider checkpoint — 2026-11-06
 
-Provider-reported Q353/Q355 are not verified owner-question links. CEO inspected the owner-linked
-`ai-agent-bus/Plans/R1.0-Release/QUESTIONS.md` and DECISIONS: those IDs/instance are absent. CTO has
-requested current exact file/anchor links or an authoritative provisioning status from #ab-ceo.
-Until answered, describe the dependency as provider provisioning/contract confirmation, not an
-available owner-answerable question at an assumed location. No external files were edited.
+Owner-question locations verified read-only in Agent Bus `Plans/R1.1/QUESTIONS.md` (not R1.0):
+[№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) — endpoint choice, open, commit `d75b1da7`;
+[№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) — FileScan roots, open, commit `47bfb0a0`
+(warning `ee15f008`, subsequently fixed/deployed per provider). The recommended dedicated endpoint
+and per-project roots are not owner-approved until those questions settle; no provisioning/grant
+change is implied. Provider RAG 0.4.1 is reported landed, pending live status, not a capability claim.
 
 FileScan paid-replay defect: provider receipt `e6f9c7a3de48dd99` reports fix `0f5340c3` deployed
 2026-11-06 02:07 EST, verified upstream against real RAG core with fake providers. Acknowledgment now
@@ -58,7 +59,7 @@ call and does not prove backend readiness or data-path isolation; no paid lookup
 Local official reference: `/usr/local/src/ai-agent-bus/docs/agents/rag.md`.
 
 Provider recommends a separate `#rag/mdhouse@parf.us` instance/collection, pending owner provisioning
-(provider previously called this Q353; exact current owner-question link is unverified);
+([№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse), open);
 `#rag@parf.us` is not the final mdhouse endpoint. Intended initial caller is production
 `#mdhouse@parf.us`, without manager role. No CTO/CEO/workers/Review or wildcard FileScan grants;
 FileScan identities are added only per provisioned exact project name. mdhouse project grants and

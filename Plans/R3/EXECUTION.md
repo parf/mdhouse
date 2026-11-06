@@ -781,3 +781,12 @@ provider-reported Q353/Q355. Those historical references are not verified curren
 CTO requested exact file/anchor/status from #ab-ceo via authorized integration contact. Current
 RAG-CONTRACT and owning TODO/QUESTION now describe pending provider provisioning confirmation,
 without presenting missing IDs as owner-answerable blockers. External files/services were untouched.
+
+## Verified RAG owner-question locations
+
+Provider receipt `1993e0637c2f4caa` supplies current R1.1 links, not the previously checked R1.0 file.
+CTO verified local `Plans/R1.1/QUESTIONS.md` and commit descriptions read-only: [№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse)
+endpoint choice is open (`d75b1da7`); [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) roots is open
+(`47bfb0a0`, warning `ee15f008`). Current contract/TODO/QUESTION links are corrected; no external
+files, grants or services changed. RAG 0.4.1 is provider-reported landed but no live capability
+claim or paid call was made; awaiting provider deployment status.
