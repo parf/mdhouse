@@ -528,3 +528,11 @@ clean final acceptance will still use the reviewed common helper. Its repeated e
 for `:7795` remains contradicted by live listener/API evidence; a separate narrow current-PID ownership
 query was sent. Active Review-check impact is confirmed separately, not used to infer unknown cleanup
 ownership or a stopped `:7795` process.
+
+Consolidated old-helper receipt `e843c7825f57f552` adds cleanup failure semantics: temporary-directory
+removal errors must not skip other owned cleanup/bookkeeping, and surviving groups cannot yield a
+green result. W1 is assigned best-effort cleanup with explicit final failure for survivors or failed
+own-temp removal, robust signal/finally handling, and non-browser injected fixtures for these paths.
+ESRCH alone is treated as already gone; other failures remain diagnostics/failure. Mixed listener
+identity is checked per row, not by assuming one PID per line. Fresh final target/review is still
+required; browser HOLD remains in force.
