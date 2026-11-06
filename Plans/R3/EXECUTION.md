@@ -139,3 +139,15 @@ remain separate. Future web/admin/profile wiring must implement these checks and
 W1 default Claude: 5h 94% remaining/reset 4h09m; 7d 99%/6d21h. W2 account 2:
 5h 99%/4h49m; 7d 97%/6d12h. Shared Codex weekly 41% remaining; short-window/reset unavailable.
 No fresh Review quota available. Continue bounded worker slices; serialize tests/review/integration.
+
+## Engineering authoring checkpoint
+
+[№MW.3d](workspaces/TODO.md#MW.3d), first four packages: CTO reviewed target
+`a9318cfe8a90abb057c1761fa9cccb8e8bb6e4b1` from `ea7ebda`; integrated without conflict as
+`25cb68a9ad4288604e68d8495b99eda1cbc378f1`. Assets/catalog/coverage/tests are byte-identical to
+that target; source/schema unchanged. Exact integrated HEAD: full 497/497, 2753 assertions, tsc clean.
+The library now ships 15 authoring packages. Missing rollback/setup evidence blocks dependent claims;
+unknown ownership/security/license remains unknown. No execution or permissions are implemented.
+Second Engineering batch approved: incident/regression, delivery sync, API/schema impact, maintenance/debt;
+W3 owns assets/catalog/coverage/tarball tests/CHANGELOG only, preserving the first 15 packages.
+Parent and manual/scheduled runtime acceptance remain open.
