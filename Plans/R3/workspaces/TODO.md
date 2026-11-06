@@ -36,8 +36,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 - [ ] MW.0g Establish authenticated instance administration and authorization seams <a id="MW.0g"></a>
   - Builds: common request actor and explicit instance-administrator capability, distinct from project Reader/Editor and trusted-source admission
   - [x] MW.0g.1 Memory-only proof/session primitive; no endpoints or grants <a id="MW.0g.1"></a>
-  - [ ] MW.0g.2a Classify mutation families and add dormant actor types; no authorization activation or grant endpoints <a id="MW.0g.2a"></a>
-  - Slice owner: W1; isolated branch from integrated `8b3b781`; focused pure tests only during heavy HOLD
+  - [x] MW.0g.2a Classify mutation families and add dormant actor types; no authorization activation or grant endpoints <a id="MW.0g.2a"></a>
+  - Slice verified: integrated `484a277`, approved `da05ea9`; source identity + focused pure 14/0, live inventory excluded. No admin activation; [evidence](../EXECUTION.md#dormant-route-classification-integrated)
   - Slice acceptance: complete registered POST-family inventory, unknown/duplicate classification rejection, current route behavior unchanged; marks policy remains [№Q-R3-ADMIN1](QUESTIONS.md#Q-R3-ADMIN1), actor identity excludes author cookies
   - Wiring prerequisite: [№MW.8](#MW.8) content isolation reviewed and verified under [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1)
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection

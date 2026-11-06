@@ -611,3 +611,17 @@ were preserved. [QA evidence and limitations](QA.md#mw8-final-integration).
 Historical W2 24-failure/6-error run remains unexplained; its output was lost, not silently waived.
 The authorized single controlled run supplies the latest result. Safari/Firefox and raw click landing
 remain release QA; admin wiring is not implemented. W2 receives no assignment during its quota pause.
+
+## Dormant route classification integrated
+
+[№MW.0g.2a](workspaces/TODO.md#MW.0g.2a) integrated at `484a277e00a7d87f81bd4ef51291c18689237e05`.
+Independent CEO PASS `45e8e665e03490e3` binds to exact `da05ea90587953248639bb0c3caede5d36a39a6b`
+(base `8b3b781`). Initial `437b4c4` NEEDS FIX accepted unknown bare/opaque routes as reads; explicit
+same-value read/bundle tags now reject unclassified registrations, conflicts and duplicate mutations.
+
+Integrated source and authz test are byte-identical to the approved target. Focused pure checks:
+14 pass / 0 fail; live route-inventory test excluded, no full/browser run. Existing handlers, method
+statuses and guards are unchanged; Actor is dormant and does not read author cookies. GET
+`/api/git/remote?fresh` retains its documented network/cache effect; declared read is not effect-free.
+Current main docs and dirty launcher were preserved. [№MW.0g](workspaces/TODO.md#MW.0g), admin wiring,
+project authorization and [№Q-R3-ADMIN1](workspaces/QUESTIONS.md#Q-R3-ADMIN1) remain open.
