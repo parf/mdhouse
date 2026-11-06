@@ -200,6 +200,53 @@ describe('tree — show ignored and revealed scopes', () => {
   });
 });
 
+describe('base scan — every file checked against the jail and exclusions before its metadata', () => {
+  let home: string;
+  let repo: string;
+  beforeAll(async () => {
+    home = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-reveal-base-')));
+    repo = join(home, 'repo');
+    await mkdir(join(home, 'outside'), { recursive: true });
+    await writeFile(join(home, 'outside', 'o.md'), '# outside, 21 bytes\n');
+    await mkdir(join(repo, 'docs'), { recursive: true });
+    await mkdir(join(repo, 'secret'));
+    git(repo, 'init', '-q');
+    await writeFile(join(repo, '.gitignore'), 'tmp/\n');
+    await writeFile(join(repo, '.mdhouseignore'), 'secret\n');
+    await writeFile(join(repo, 'a.md'), '# a\n');
+    await writeFile(join(repo, 'secret', 's.md'), '# s\n');
+    await symlink(join(home, 'outside', 'o.md'), join(repo, 'docs', 'out.md'));
+    await symlink(join(repo, 'secret', 's.md'), join(repo, 'docs', 'ln.md'));
+    await symlink(join(repo, 'a.md'), join(repo, 'docs', 'in.md'));
+    // the only ignored Markdown: a link out of the root and a link into the explicit folder
+    await mkdir(join(repo, 'tmp'));
+    await symlink(join(home, 'outside', 'o.md'), join(repo, 'tmp', 'o.md'));
+    await symlink(join(repo, 'secret', 's.md'), join(repo, 'tmp', 's.md'));
+  });
+  afterAll(async () => {
+    await rm(home, { recursive: true, force: true });
+  });
+  const open = async () => {
+    const registry = await Registry.create([repo]);
+    return { store: new Store(registry, await Prefs.load(join(home, `p-${Math.random()}.json`))), root: registry.list()[0]! };
+  };
+
+  test('a link out of the root or into an excluded folder is not listed; a link inside the root is', async () => {
+    const { store, root } = await open();
+    const t = await store.tree(root, false);
+    expect(rels(t.files)).toEqual(['a.md', 'docs/in.md']);
+    expect(t.files.find((f) => f.rel === 'docs/in.md')!.size).toBe(4);
+  });
+
+  test('ignored Markdown that only links out or into an excluded folder is not available', async () => {
+    const { store, root } = await open();
+    expect((await store.tree(root, false)).hasIgnored).toBe(false);
+    const on = await store.tree(root, true);
+    expect(on.hasIgnored).toBe(false);
+    expect(ignoredRels(on.files)).toEqual([]);
+  });
+});
+
 test('scanRoot: a limit caps the list and says so', async () => {
   const r = await scanRoot({ path: dir } as Root, await loadRootRules(dir), { includeIgnored: true, limit: 2 });
   expect(r.files).toHaveLength(2);

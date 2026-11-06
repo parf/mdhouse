@@ -56,6 +56,20 @@ export interface ScanOptions {
    * scope inside an ignored folder. A root served on purpose keeps its files unmarked.
    */
   markBlind?: boolean;
+  /**
+   * Where a listed root-relative path may be read: its real location, or null when it is outside
+   * the root or in an excluded folder. Asked before any metadata of the path is read; without it
+   * a path is read where it lies.
+   */
+  allow?: (rel: string) => Promise<string | null>;
+}
+
+/** True when `allow` passes at least one of `rels`; asks a few at a time, stops at the first. */
+async function anyAllowed(rels: readonly string[], allow: (rel: string) => Promise<string | null>): Promise<boolean> {
+  for (let i = 0; i < rels.length; i += 32) {
+    if ((await Promise.all(rels.slice(i, i + 32).map(allow))).some((at) => at !== null)) return true;
+  }
+  return false;
 }
 
 async function git(cwd: string, args: string[]): Promise<string | null> {
@@ -140,7 +154,7 @@ async function listRepo(
   repo: string,
   dir: string,
   prefix: string,
-  ctx: { rules: IgnoreRules; includeIgnored: boolean; maxDepth: number; out: Map<string, Found>; repos: string[]; hasIgnored: boolean },
+  ctx: { rules: IgnoreRules; includeIgnored: boolean; maxDepth: number; out: Map<string, Found>; repos: string[]; ignored: string[] },
 ): Promise<boolean> {
   // the ignored listing is always asked for: without `includeIgnored` only to know it is there
   const listed = await listViaGit(dir, true);
@@ -149,8 +163,8 @@ async function listRepo(
   for (const p of listed.ignored) {
     const rel = prefix ? `${prefix}/${p}` : p;
     if (!passesDeny(rel, ctx.rules)) continue;
-    ctx.hasIgnored = true;
     if (ctx.includeIgnored) ctx.out.set(rel, { repo, ignored: true });
+    else ctx.ignored.push(rel);
   }
 
   await Promise.all(
@@ -219,7 +233,7 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
   // filesystem walk and show what is actually in it.
   const gitBlind = ownRepo !== null && (await isIgnoredByGit(root.path));
 
-  const ctx = { rules, includeIgnored, maxDepth, out: relPaths, repos, hasIgnored: false };
+  const ctx = { rules, includeIgnored, maxDepth, out: relPaths, repos, ignored: [] as string[] };
   if (ownRepo && !gitBlind) {
     // The root is inside a repository: one listing covers the whole subtree.
     repos.push(ownRepo);
@@ -252,7 +266,8 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
   await Promise.all(
     [...relPaths].map(async ([rel, { repo, ignored }]) => {
       if (!passesDeny(rel, rules)) return;
-      const info = await stat(join(root.path, rel)).catch(() => null);
+      const at = opts.allow ? await opts.allow(rel) : join(root.path, rel);
+      const info = at === null ? null : await stat(at).catch(() => null);
       if (!info || !info.isFile()) return;
 
       const slash = rel.lastIndexOf('/');
@@ -270,7 +285,11 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
 
   files.sort((a, b) => a.rel.localeCompare(b.rel, undefined, { numeric: true, sensitivity: 'base' }));
   const capped = files.length > limit || relPaths.size > limit;
-  const hasIgnored = includeIgnored ? files.some((f) => f.ignored) : ctx.hasIgnored;
+  const hasIgnored = includeIgnored
+    ? files.some((f) => f.ignored)
+    : opts.allow
+      ? await anyAllowed(ctx.ignored, opts.allow)
+      : ctx.ignored.length > 0;
   return { files: capped ? files.slice(0, limit) : files, repos: [...new Set(repos)], scannedAt: Date.now(), degraded, hasIgnored, ...(capped ? { capped } : {}) };
 }
 
