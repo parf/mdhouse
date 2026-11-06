@@ -961,3 +961,18 @@ an arbitrary filter guess. Authorized dependency exclusions for bower/jspm were 
 patterns, demand/root/other config preserved, exact FileScan instance restarted/status checked without
 sync. Runtime normalization accepts only the fixed known-equivalence selection, rejects unknowns.
 No paid provider test or background RAG sync was started.
+
+
+## Connected-bin candidate ready for independent review
+
+[№MW.2a.1b](workspaces/TODO.md#MW.2a.1b): base `53fbe64` → frozen `8f3d134` on
+`r3/rag-connected-cohort`; pinned detached `r3-rag-connected-review`. W3 runtime `aa84206`,
+W1 transport/CLI/topic-scoped reconnect cleanup `2b6ee3c`, CTO inventory/packaged-module checks.
+Independent security review requested; candidate not integrated and checkpoint remains open.
+
+One combined focused/package gate found only a stale packed-help assertion (`plan --root` versus
+new `plan <target>`). All other focused tests passed. Corrected assertion; package-only rerun and
+types passed, production unchanged after the focused run. Disk logs:
+`.scratch/cto/rag-connected-741a97f/` (`focused.out`, `package-fixed.out`, `types.out`, exit files).
+Own frozen-lock modules, no full/browser/live/provider/production-AI calls. J124 fix is provider-reported
+in review; first sync still waits deploy/tracked-key audit plus private key/runtime readiness.
