@@ -2006,7 +2006,13 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 
 /* Git state: one colour per state on every surface — the badge, a row's name and the file panel. */
 .git-badge { font-size: 10.5px; flex: none; padding: 0 4px; border-radius: 3px; font-weight: 600; border: 1px solid currentColor; }
-.git-badge.git-ignored, .git-ignored > .label, .git-ignored .hit-name { color: var(--git-ignored); }
-.git-badge.git-untracked, .git-untracked > .label, .git-untracked .hit-name { color: var(--git-untracked); }
+.git-badge.git-ignored,
+.row.file.git-ignored > .label,
+.sidebar .hit.git-ignored .hit-name,
+.home-table tr.git-ignored td.name .link { color: var(--git-ignored); }
+.git-badge.git-untracked,
+.row.file.git-untracked > .label,
+.sidebar .hit.git-untracked .hit-name,
+.home-table tr.git-untracked td.name .link { color: var(--git-untracked); }
 .doc-git { margin: 0 0 8px; }
 .doc-git .git-badge { font-size: 12px; padding: 1px 7px; }
