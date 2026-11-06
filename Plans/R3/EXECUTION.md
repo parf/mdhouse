@@ -363,3 +363,32 @@ Use existing schema/packages and explicit source selection; cover hold/failure/h
 preview/approval seams, effective access and stale writes without inventing grants or new policy.
 Map dependencies and owned paths, acceptance/fail-first tests, then return a concrete CTO-reviewable
 proposal before any implementation/worktree. No HTTP/admin/schedule/external-action code is assigned yet.
+
+## Pure run-core assignment
+
+[№MW.3.2](workspaces/TODO.md#MW.3.2), owner W3: checkpoint A approved from exact
+`06a980ce8296bf114d31ccb852ac97e602830f6d` in isolated `r3/flow-run-core`.
+Owned paths: `src/lib/flow-run.ts`, `src/lib/flow-run-markdown.ts`, their two tests,
+`doc/flows/README.md`, CHANGELOG. Pure validated run state/transitions and deterministic preview only;
+no filesystem/provider/HTTP/UI, permissions or real approval/materialization. Existing package schema
+and loader stay unchanged. Caller supplies structured results and source declarations; this headless
+harness is not a manual UI or AI executor.
+
+Before editing W3 posts concrete exported input/state/event/result types and limits. Public unknown
+inputs are validated into fresh no-alias state; deterministic run ID/time are supplied. Package/source
+snapshots and exact revision declarations are bound to the run. Evidence/question statuses are caller
+assertions, not verified semantic truth or authenticated owner approval. Honor package missing-evidence
+block/report policy; unanswered required questions hold dependent completion. A hold is distinct from an
+explicit graph blocked terminal. Consequential nodes and live handoffs stop as unsupported boundaries.
+
+Events carry expected version and ID: exact duplicate delivery is idempotent; same ID with changed
+payload, stale/out-of-order or invalid outcomes are rejected without mutation. Terminal runs stay
+terminal; a new run may reference its predecessor. Preview uses canonical stable IDs/threads and
+preserves supplied words as data, without inventing human approval/decisions or accepting active
+Markdown control injection. Bound collections/journal/output sizes. Test existing project-review and
+one unrelated generic package, malformed/duplicate/stale events, holds, outcomes and inert boundaries.
+Focused/full/tsc and independent exact-SHA architecture review gate integration.
+
+Checkpoint B remains unassigned: jailed writes, actor/access/stale rechecks, apply confirmation,
+saved history/marker transactions wait for the required access/content gates and separate approval.
+No core-preview result claims a saved document or advanced marker.
