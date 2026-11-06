@@ -437,8 +437,9 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Scope correction: W1 reproduced pre-existing ALL listing bypass of explicit .mdhouseignore exclusions; same cohort fixes /api/files filtering/jail with focused negative fixtures. Built-in vendor visibility remains distinct from explicit denies
   - No full/version bump/live7777 checks or reload; ready is not integrated/done
 
-- [ ] MW.9a Direct file reveal and distinct Git file-state presentation <a id="MW.9a"></a>
+- [x] MW.9a Direct file reveal and distinct Git file-state presentation <a id="MW.9a"></a>
   - Contract: [№GIT-W1](DECISIONS.md#GIT-W1); builds on accepted [№MW.9](#MW.9), not a duplicate browsing implementation
+  - Verified: exact `1436b33` independent PASS, integrated `8fa40e1`, source/test identity unchanged; focused/types and owned scratch direct-file/badge proof. Mermaid refresh followup remains [№MW.8c](#MW.8c)
   - Cohort: W1 authoritative cached Git state/payloads, W2 direct-file/sidebar/list/right-panel shared presentation; exact interface agreed before code
   - Acceptance: direct `.ai-team/README.md` navigation requests its deliberate jailed parent scope, expands exact ancestor path and highlights the exact file; no global toggle mutation or V1/V2 cross-view reveal
   - Acceptance: Gitignored orange and Untracked blue use shared semantic CSS/classes across sidebar, lists and distinct right file-panel badges in light/dark; tracked files have neither new badge
@@ -447,9 +448,11 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - One combined focused/types gate, owned scratch UI proof and independent exact review as needed; no full/version bump/live restart by workers
 
 - [ ] MW.8c Serialize Mermaid output as valid standalone SVG XML <a id="MW.8c"></a>
+  - State: XML serializer reviewed/integrated `8fa40e1`, initial owner-copy scratch decode passed; CEO actual live reload exposed same-URL HTML refresh gap. W3 narrow lifecycle followup from `8fa40e1` working; task remains open
   - Owner-reported evidence: `.ai-team/README.md` diagram image complete but natural dimensions zero; SVG XML rejects HTML br inside foreignObject despite valid Mermaid source
   - Cohort: W3 native inert serialization in Mermaid image helper/render block; combined with [№MW.9a](#MW.9a), W2 owns separate Doc badge hunk
   - Acceptance: ordinary/text/br-label diagrams including failing-shaped cto/rg/tester labels load with nonzero image dimensions and valid SVG XML; invalid conversion fails visibly
+  - Acceptance: same-URL HTML/actToken refresh rerenders current diagram, stale async work cannot mark/replace/error on detached or superseded nodes
   - Acceptance: strict Mermaid config, passive action boundary and inert img-only SVG remain; no active inline SVG fallback, new authority/dependency or source-content mutation
   - One combined proportional gate/security review and owned scratch browser proof; no full/version bump/live7777 checks
 

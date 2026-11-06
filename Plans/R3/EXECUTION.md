@@ -1083,3 +1083,13 @@ feeds the original string to img despite failed XML parsing. [№MW.8c](workspac
 assigned to W3 before code, with native inert XML serialization design first. Same cohort as
 [№MW.9a](workspaces/TODO.md#MW.9a); Doc badge and render hunks have separate owners. One combined
 gate/review, preserve img-only/strict configuration; no live source mutation, full gate or deploy.
+
+
+## File UI cohort integrated; Mermaid refresh followup open
+
+Exact `1436b33` unconditional independent PASS, integrated `8fa40e1`; source/test identity unchanged.
+[№MW.9a](workspaces/TODO.md#MW.9a) accepted after combined focused/types and owned scratch proof;
+[№MW.8c](workspaces/TODO.md#MW.8c) stays open despite initial XML success. CEO actual page verification
+and CTO watcher-based regression reproduced same-URL safeBody replacement without Mermaid rerender.
+W3 owns a narrow new followup from `8fa40e1`, no duplicate restart/full gate; CEO retains live reload.
+Review unassigned full/tail-only evidence is recorded in QA and excluded from acceptance; no rerun.

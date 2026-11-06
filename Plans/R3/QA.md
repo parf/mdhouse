@@ -300,3 +300,25 @@ verification remains pending with CEO, no parallel CTO restart.
 Canonical registration runtime followup: CEO verified enabled/connected true, identity #mdhouse@parf.us,
 error null and all nine roots/path/RW intact after targeted local reload (`ab8cbd08d366ed48`). No test
 message, paid/provider call or parallel CTO restart. This supersedes the pending-runtime note above.
+
+
+## File Git state and Mermaid XML cohort
+
+Exact `1436b33` reviewed PASS `e445c303801b82c4`, integrated `8fa40e1` with source/test/package/docs
+identity unchanged. W1 actual Git metadata, W2 shared palette/direct selection, W3 XML serializer;
+CTO inventory/cohort. Inspectable gate `.scratch/cto/file-ui/gate/`: focused119/0, types0, own frozen
+install; integrated pure15/0. Owned safe-smoke browser: initial full owner-copy diagram and ordinary/br
+labels decode, XML valid, IMG-only; native malformed/namespace/hostile fixture passed with probe0.
+Direct ignored file selected/expanded, ignored/untracked distinct right badges, tracked neutral;
+shared ignored name/badge/right colors light/dark. Opened desktop/phone screenshots. No source edits
+or live checks by CTO; cleanup completed.
+
+Review additionally reported an unassigned full992 run despite no-full request. Its command piped to
+tail, no disk log/original exit retained, time approximate; this is a process deviation, not acceptance
+evidence. No repeat authorized. Review instructions now require explicit paths and disk/original exit.
+
+CEO's owner-authorized local reload exposed a NEW same-URL lifecycle gap: safeBody changes on refetch,
+but Mermaid effect depended only on URL/hasMermaid. Source pre replaces the image without a new render.
+CTO independently reproduced via fixture FS watcher (`refresh-baseline.out/.json`): initial decoded
+owner-copy image → same-URL HTML refetch → rendered null/images0. [№MW.8c](workspaces/TODO.md#MW.8c)
+remains open; initial XML proof does not establish refreshed/live completion. Narrow followup pending.

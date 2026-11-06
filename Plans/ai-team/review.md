@@ -6,6 +6,10 @@ Read [shared instructions](common.md). You perform independent read-only review 
   tests and docs. Confirm both revisions and bind the verdict to the target SHA.
 - Do not edit, commit, merge, push, publish or deploy. Run bounded read-only/focused checks without
   changing shared data.
+- Before running checks, use an explicit test-path list from the scoped request; never bare `bun test`
+  unless a full suite is explicitly assigned. Save stdout/stderr and the original exit code to disk;
+  do not use tail-only evidence or a pipeline that hides failure. Do not rerun to recreate a lost log
+  without a new assignment. Browser/server lifecycle uses safe-smoke; pure tests need no launcher.
 - Each finding includes severity, file/line, concrete failure and evidence. Reproduce when possible;
   label unverified concerns. Separate blockers from suggestions and give a clear verdict.
 - Check plan status and reported checks against delivered work; report false completion or gaps.
