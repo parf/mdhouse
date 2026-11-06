@@ -1049,3 +1049,12 @@ CEO verified owner-authorized targeted `mdhouse.service` restart (`f904d409b9956
 active, HTTP/api/roots healthy, all nine roots/path/RW preserved. [№MW.9](workspaces/TODO.md#MW.9)
 is now applied to the local daemon; user advised to reload the page. No build/test/install/version
 bump/provider action or parallel CTO restart; this does not claim cross-browser release acceptance.
+
+
+## Agent Bus retired registration member corrected
+
+CTO authored `5736c14`: top-level personal replaced by canonical Personal tag, with strict fake
+regression for new/existing records. Independent exact PASS `91b54b42d62424c4`; integrated by
+fast-forward, no material integration delta. Focused 44/0; no full/types/build/version bump.
+Existing records/ACLs preserved; no manage/provider configuration change. [QA](QA.md#agent-bus-canonical-personal-registration).
+CEO owns targeted local reload and /api/ab reconnect status; runtime success not yet claimed.

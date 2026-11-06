@@ -280,3 +280,18 @@ base-scan metadata leaks were reproduced and regressed within this cohort. Regis
 preserves the existing jail seam; it does not claim elimination of same-OS-owner filesystem races.
 Cost: one realpath per listed path per invalidation plus ignored-list discovery; caching retained.
 Safari/Firefox and broader release/device journeys remain open. No live7777/provider/paid calls.
+
+
+## Agent Bus canonical Personal registration
+
+CTO-authored compatibility fix `5736c14`, base `2b0485e`, integrated by fast-forward with exact
+source/test/doc identity. Independent Review PASS `91b54b42d62424c4`; the report's W1 attribution
+was incorrect (W1 neither authored nor tested this task), correction requested. CTO reproduced 400
+on a strict fake with the old `personal:true` member; replacement `tags:["personal"]` passes the
+focused agent-bus/rag-sync-bus 44/0 gate (`.scratch/cto/bus-personal-tag/focused.out`).
+
+Create-only If-None-Match/412 and allow @owner stay unchanged; existing records are not retagged,
+managed or widened. No other register/manage retired member was found in src. Official local AB
+record docs and strict decoder inspected, provider CTO confirmed canonical creation contract.
+No full/types/browser/provider rerun for this one-field compatibility fix; local reload/reconnect
+verification remains pending with CEO, no parallel CTO restart.

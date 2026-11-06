@@ -203,6 +203,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2 Make Agent Bus work out of the box <a id="MW.2"></a>
+  - Compatibility checkpoint: canonical Personal tag fix `5736c14` integrated after independent PASS; create-only/owner-only registration preserved. Local reload/reconnect verification pending ([QA](../QA.md#agent-bus-canonical-personal-registration))
   - Builds: install-time Agent Bus setup; a connected mdhouse project ready to ask an agent; optional Agent Bus endpoint and default agents per space/root
   - Depends: [№MW.1](#MW.1), [№MW.1a](#MW.1a)
   - Acceptance: the installed project page can open Agent Bus, send a request and receive its reply without a separate integration pass
