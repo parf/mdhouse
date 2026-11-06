@@ -260,3 +260,9 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > 💬 👤parf keep isp, org, asn!!
   >
   > 💬👾 Required additions to [№USER-W6](DECISIONS.md#USER-W6) are ISP, organization and ASN alongside IP/GeoIP observations, with unchanged self/admin visibility. Preserve ASN number and label if supplied; missing metadata is unavailable. The owner’s AntiSpider example is context, not a requirement for hostname, hosting, counters or allow-policy. Verify the provisional pair’s official schemas before wiring; do not research by looking up the example IP.
+
+  >
+  > 💬 👤parf sequence; city level, state level, country-level
+  > new country alwats require re-login
+  >
+  > 💬👾 [№USER-W6](DECISIONS.md#USER-W6): separate last-10 unique city/state/country histories; city key includes state/country, state key includes country. New-country GitHub reauthentication is independent of idle30d, before protected actions or trusted-history/baseline updates. Unknown/private/failed GeoIP is not a new country; baseline question remains [№Q-R3-COUNTRY1](QUESTIONS.md#Q-R3-COUNTRY1).
