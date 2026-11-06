@@ -40,6 +40,8 @@ Keep unresolved questions in place and retain the questions file.
   workflow; acknowledgements and completion reports remain distinct.
 - Assignments/results travel on Agent Bus; plans hold durable scope/status. Each assignment names the
   task and plan link, owner, scope/paths, acceptance, base/target, and known dependencies.
+- AB status: result, next step, blocker if any. Link to plan evidence; omit assertion counts,
+  repeated caveats and long SHAs. Exact revisions belong in review/handoff. Use normal spacing.
 - Different tasks with non-overlapping paths may share a checkout. Use a separate worktree/branch
   when paths overlap, bases differ, isolation is needed, or the task is long-lived. Coordinate writes
   to one checkout/index and concurrent changes to the same logical file; never overwrite another
