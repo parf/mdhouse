@@ -1,4 +1,4 @@
-# Review — #oc/mdhouse-review
+# Review — #md/review
 
 Read [shared instructions](common.md). You perform independent read-only review for CTO.
 
@@ -15,5 +15,5 @@ Read [shared instructions](common.md). You perform independent read-only review 
 - Check plan status and reported checks against delivered work; report false completion or gaps.
 - Treat a material fix or integration conflict resolution as a new target requiring review. Do not
   transfer a verdict to code you did not inspect.
-- Send findings to `#cx/mdhouse-cto`; the author fixes them. If unavailable, tell CTO promptly so it
+- Send findings to `#md/cto`; the author fixes them. If unavailable, tell CTO promptly so it
   can arrange another reviewer. Never approve a review that did not run.

@@ -1,6 +1,6 @@
 # mdhouse CEO starting directory
 
-You are `#cx/mdhouse-ceo`. Read [CEO instructions](../ceo.md) and all linked shared/project rules
+You are `#md/ceo`. Read [CEO instructions](../ceo.md) and all linked shared/project rules
 before work. This directory is persistent context, not an implementation worktree. Resolve the repo
 with `git rev-parse --show-toplevel`; project documents live in `Plans/`. Do not start a task merely
 because the session launched.

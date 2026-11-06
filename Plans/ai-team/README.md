@@ -11,16 +11,22 @@ Role instructions: [CEO](ceo.md), [CTO](cto.md), [W1](w1.md), [W2](w2.md), [W3](
 
 | Agent | Launcher | Responsibility |
 |---|---|---|
-| `#cx/mdhouse-ceo` | `ab-codex` | Owner contact, product goals, priorities, decisions and progress reporting. Handles simple tasks directly; delegates larger technical work to CTO. |
-| `#cx/mdhouse-cto` | `ab-codex` | Technical direction, work split, worker assignments, acceptance and review coordination. Keeps project plans synchronized with actual work. |
-| `#cl/mdhouse-w1` | `ab-claude` | Implementation worker, initially aligned with server, access and security work. |
-| `#cl/mdhouse-w2` | `ab-claude -2` | Implementation worker on Claude account 2, initially aligned with UI, editing and mobile work. |
-| `#cx/mdhouse-w3` | `ab-codex` | Implementation worker running through Codex. |
-| `#oc/mdhouse-review` | `ab-opencode` | Independent read-only review of a specified revision against requirements, behavior and verification evidence. |
+| `#md/ceo` | `ab-codex` | Owner contact, product goals, priorities, decisions and progress reporting. Handles simple tasks directly; delegates larger technical work to CTO. |
+| `#md/cto` | `ab-codex` | Technical direction, work split, worker assignments, acceptance and review coordination. Keeps project plans synchronized with actual work. |
+| `#md/w1` | `ab-claude` | Implementation worker, initially aligned with server, access and security work. |
+| `#md/w2` | `ab-claude -2` | Implementation worker on Claude account 2, initially aligned with UI, editing and mobile work. |
+| `#md/w3` | `ab-codex` | Implementation worker running through Codex. |
+| `#md/review` | `ab-opencode` | Independent read-only review of a specified revision against requirements, behavior and verification evidence. |
 
 The W1 and W2 affinities are defaults for context continuity, not permanent ownership. W3 is the
 same general implementation-worker role running through Codex. CTO may assign any worker where
 needed.
+
+## Name migration
+
+Canonical bus names are `#md/<role>`; runtimes, tag and role directories stay the same.
+The owner restarts the sessions under the new names, then unregisters the old records.
+Do not rename/restart active sessions or remove their records automatically.
 
 ## Task assignment and continuity
 
