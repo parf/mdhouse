@@ -29,6 +29,9 @@ Keep unresolved questions in place and retain the questions file.
 
 ## Shared work rules
 
+- Group compatible approved small/medium tasks into one integration branch/cohort and one combined gate run; preserve independent author/review ownership and exact frozen security targets. Simple-first within the cohort; no duplicate full gates per task.
+- No version bump per landing. Only an owner-authorized deploy raises PATCH once, with one combined deploy changelog entry; preserve Unreleased facts until release. This grants no push/publish/deploy authority.
+
 - Repository: resolve with `git rev-parse --show-toplevel` from this starting directory. Run git from
   the repository/worktree root.
 - Project knowledge: [`../README.md`](../README.md), [`../DECISIONS.md`](../DECISIONS.md),

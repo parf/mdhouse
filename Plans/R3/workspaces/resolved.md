@@ -295,3 +295,30 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > 💬 👤parf pretty obvious - can;t sign/login under other person
   >
   > 💬👾 [№USER-W7](DECISIONS.md#USER-W7): admin profile edits are not login-as or permission to replace another principal. Signature comes only from authenticated actor; reject body/cookie spoof and silent OAuth different-ID rebinding. Existing name/realm wording remains history, but no missing realm schema blocks username/name protection or authorizes a new field.
+
+## Original RAG discovery question — historical wording
+
+The current handoff question remains open in [QUESTIONS](QUESTIONS.md#Q-R3-RAG1); the v0.2 discovery
+below is historical, superseded by verified 0.3 capabilities and the current RAG contract.
+
+- ❓ Q-R3-RAG1 Which Agent Bus contract supplies the approved R3 source/job lifecycle? <a id="Q-R3-RAG1"></a>
+  > 💬👾 Verified 2026-11-05 through `#rag@parf.us` help/help-json v0.2.0 and local
+  > `/usr/local/src/ai-agent-bus/docs/agents/rag.md`: available methods are `upsert`, `get`,
+  > `list`, keyword/BM25 `search`, `keyword_index`, `delete`, `prompts`. No source registry,
+  > asynchronous job/progress, semantic retrieval or source refresh lifecycle is advertised.
+  > Namespace/table filters are labels, not authorization boundaries; admitted callers can access
+  > all namespaces. No data mutations or paid provider calls were performed in this discovery.
+  >
+  > 💬👾 R3f/MW.2a assumes those capabilities already exist. Options: identify another approved
+  > existing endpoint/version with that contract, coordinate missing Agent Bus capabilities under
+  > separately approved ownership, or explicitly revise the R3 requirement to the available API.
+  > Recommend identifying the intended provider/version first. Do not invent endpoints or silently
+  > reduce release scope. Independent R3 work continues; only dependent MW.2a implementation waits.
+  >
+  > 💬 📡 CEO relayed owner direction: "we can make instances of rag; each one have own namespace #rag/project1".
+  > Owner will add the missing provider capabilities. Questions and wishes are now collected separately
+  > in [`../RAG-CONTRACT.md`](../RAG-CONTRACT.md), including the verbatim owner wording.
+  >
+  > 💬👾 Per-project instances are the intended routing/isolation model. Namespace labels alone are
+  > still not authorization. Exact provider schemas/grants remain open as RAG-Q1–RAG-Q12; MW.2a stays
+  > pending their handoff. No provider repository changes or functional/paid calls are authorized here.

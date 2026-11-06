@@ -12,27 +12,13 @@
 - <a id="Q-W7"></a>[№Q-W7](DECISIONS.md#Q-W7)
 - <a id="Q-W8"></a>[№Q-W8](DECISIONS.md#Q-W8)
 
-- ❓ Q-R3-RAG1 Which Agent Bus contract supplies the approved R3 source/job lifecycle? <a id="Q-R3-RAG1"></a>
-  > 💬👾 Verified 2026-11-05 through `#rag@parf.us` help/help-json v0.2.0 and local
-  > `/usr/local/src/ai-agent-bus/docs/agents/rag.md`: available methods are `upsert`, `get`,
-  > `list`, keyword/BM25 `search`, `keyword_index`, `delete`, `prompts`. No source registry,
-  > asynchronous job/progress, semantic retrieval or source refresh lifecycle is advertised.
-  > Namespace/table filters are labels, not authorization boundaries; admitted callers can access
-  > all namespaces. No data mutations or paid provider calls were performed in this discovery.
-  >
-  > 💬👾 R3f/MW.2a assumes those capabilities already exist. Options: identify another approved
-  > existing endpoint/version with that contract, coordinate missing Agent Bus capabilities under
-  > separately approved ownership, or explicitly revise the R3 requirement to the available API.
-  > Recommend identifying the intended provider/version first. Do not invent endpoints or silently
-  > reduce release scope. Independent R3 work continues; only dependent MW.2a implementation waits.
-  >
-  > 💬 📡 CEO relayed owner direction: "we can make instances of rag; each one have own namespace #rag/project1".
-  > Owner will add the missing provider capabilities. Questions and wishes are now collected separately
-  > in [`../RAG-CONTRACT.md`](../RAG-CONTRACT.md), including the verbatim owner wording.
-  >
-  > 💬👾 Per-project instances are the intended routing/isolation model. Namespace labels alone are
-  > still not authorization. Exact provider schemas/grants remain open as RAG-Q1–RAG-Q12; MW.2a stays
-  > pending their handoff. No provider repository changes or functional/paid calls are authorized here.
+- ❓ Q-R3-RAG1 Which typed FileScan handoff completes the R3 source lifecycle? <a id="Q-R3-RAG1"></a>
+  RAG 0.3.0 free capabilities are verified; retrieval is no longer blocked on v0.2 discovery.
+  Dedicated `#rag/mdhouse@parf.us` provisioning Q353 and FileScan typed source/progress/event/snapshot
+  fixture T-45 remain pending. A4 end-to-end and A7 dedup are still unmet.
+  > 💡👾 Use the explicit dedicated endpoint/stored project namespace after provisioning; complete
+  > FileScan/recovery fixture acceptance without inventing jobs, history or automatic paid retries.
+  > [Current contract](../RAG-CONTRACT.md); [original question/history](resolved.md#Q-R3-RAG1).
 
 - [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1) <a id="Q-R3-HTML1"></a>
 
@@ -61,3 +47,14 @@
   another label? Its meaning and source must be specified before adding a user-schema field; this question does not
   block username/name protection or authenticated-actor-only login/signatures.
   > 💡👾 Keep the established username/name lock; leave realm unmodeled until its meaning is explicit.
+
+## Initial unknown country — 2026-11-06
+
+- ❓ Q-R3-COUNTRY2 What should the first known country do when GitHub login had no GeoIP country? <a id="Q-R3-COUNTRY2"></a>
+  [№USER-W6](DECISIONS.md#USER-W6) uses each session's authenticated country; unknown/private/failed
+  GeoIP is not a transition. The pure model reports unbound and does not trust that observation.
+  - ( ) Require GitHub reauthentication when a verified country first becomes available 🌟
+  - ( ) Enroll the first verified country automatically without reauthentication
+  > 💡👾 Authenticate the first known country before a protected action and baseline/history trust.
+  > While GeoIP is unavailable, do not invent a country-change denial; ordinary identity/access
+  > rules still apply. This recommendation is not an approved blanket deny for unknown geography.

@@ -698,3 +698,26 @@ records proposed separate `#rag/mdhouse@parf.us` (Q353, pending), production cal
 without manager privilege and exact-project FileScan grants only after provisioning. T-45 supplies
 FileScan typed docs/fixture and unknown-outcome guidance; [№MW.2a](workspaces/TODO.md#MW.2a), A4/A7
 and release RAG acceptance remain open. Discovery is not a backend-readiness/data-path test.
+
+## Overnight workflow cohort — session-history persistence foundation
+
+Owner direction: «do what u can, going sleep; put questions into questions».
+
+> No bump per landing. Landings stop raising the version, and I raise PATCH once per deploy with one changelog entry covering everything in that deploy.
+> Tasks land together. The leads group small and medium tasks into one branch and one gate run, so they're tested together. That starts now, before the code change.
+> yes - makes bumps more significant; combine small/medium tasks into one make => test together
+
+[№MW.0d.2](workspaces/TODO.md#MW.0d.2) is one bounded cohort: W3 owns a strict versioned pure
+session-history snapshot codec; W1 owns a protected atomic snapshot store consuming that codec.
+Separate author branches/files, one CTO integration branch `r3/session-persistence-cohort`, one exact
+combined security review via OpenCode, one proportional combined gate. Local author checks are
+focused; no separate full gates or version bumps. The gate covers codec/model invariants and store
+filesystem failure/permissions/concurrency behavior; no browser/provider/network test.
+
+No routes, OAuth/session-cookie authentication, trusted-proxy config, live GeoIP, session truncation,
+purge or new TTL. Persistence is of the approved history model, not a claim that authenticated user
+sessions exist. Unknown versions/corrupt data refuse writes without resetting records; isolation,
+restrictive owner permissions, atomic replace and concurrent/stale snapshot safety require review.
+New material decisions remain in QUESTIONS; [№Q-R3-COUNTRY2](workspaces/QUESTIONS.md#Q-R3-COUNTRY2),
+marks and realm do not block independent snapshot foundations. RAG provisioning/FileScan handoff
+remain provider-owned per [contract](RAG-CONTRACT.md). This is not publish/push/deploy authorization.

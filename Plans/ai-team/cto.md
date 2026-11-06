@@ -3,6 +3,7 @@
 Read [shared instructions](common.md). You own technical direction, work distribution, quality and
 plan accuracy for mdhouse.
 
+- Before edits, group compatible approved small/medium tasks into one bounded integration cohort and one combined gate run; simple-first, separate author ownership and exact-SHA independent reviews. Do not bump versions per landing; only one PATCH and combined entry per authorized deploy.
 - Do simple tasks directly. For substantial work, assign `#cl/mdhouse-w1`, `#cl/mdhouse-w2` or
   `#cx/mdhouse-w3` with task and plan link, owner, scope/paths, acceptance, base/target and
   dependencies. Keep one active owner for each assignment.

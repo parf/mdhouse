@@ -35,6 +35,9 @@ Bun + Preact Markdown workspace for every `.md` under a folder. npm package `mdh
 
 ## Conventions
 
+- **Batch landings:** group compatible approved small/medium tasks in one integration branch and one combined gate run; preserve independent author/review ownership. No per-task full reruns or per-landing version bumps.
+- **Release version:** raise PATCH once per owner-authorized deploy, with one combined changelog entry for everything deployed; retain Unreleased facts until then. No implied push/publish/deploy.
+
 - Answer in Russian (code, commits, docs in English).
 - **Docs: my wording, verbatim.** No added explanations or asides; short — bullets, glyphs,
   one line where one will do. Offer improvements in one line instead of making them. Never
@@ -183,10 +186,9 @@ pgrep -af "^/usr/bin/bun .*bin/mdhouse"'
 Only on "publish".
 
 - [ ] Clean tree except my own files; on `main`
-- [ ] `bun test` green, `npx tsc --noEmit -p .` clean
-- [ ] Bump semver version in `package.json`, from the one on npm (`npm view mdhouse version`):
-      +0.0.1 — minor feature, +0.1 otherwise, +1 — breaking: URL, prefs key, CLI flag removed or
-      renamed; then changelog
+- [ ] One combined cohort/release gate: tests and types green on the exact target; do not repeat a full gate for each landing
+- [ ] Raise PATCH once in `package.json` for this owner-authorized deploy, based on the published
+      version (`npm view mdhouse version`); no per-landing bump. Use one combined deploy changelog entry.
 - [ ] `CHANGELOG.md`: `## Unreleased` → `## X.Y.Z — YYYY-MM-DD`; covers every commit since the
       last release (`git log $(git describe --tags --abbrev=0)..`); drop no-change entries; a
       `## X.Y.Z` with no tag (never published) folds into it
