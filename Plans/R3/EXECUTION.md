@@ -1093,3 +1093,13 @@ Exact `1436b33` unconditional independent PASS, integrated `8fa40e1`; source/tes
 and CTO watcher-based regression reproduced same-URL safeBody replacement without Mermaid rerender.
 W3 owns a narrow new followup from `8fa40e1`, no duplicate restart/full gate; CEO retains live reload.
 Review unassigned full/tail-only evidence is recorded in QA and excluded from acceptance; no rerun.
+
+
+## Mermaid refresh followup integrated and live accepted
+
+[№MW.8c](workspaces/TODO.md#MW.8c): W3 frozen `4f8dd03` independently PASS; integrated `4ccd007`,
+identity unchanged. Existing meaningful scratch watcher regression reproduced on baseline and passed
+on fixed target, no repeated broad gate. CEO actual-page reload confirmed decoded visible image,
+valid XML and no inline SVG (`c86638049f8af01f`), roots/RW preserved. [QA](QA.md#mermaid-same-url-followup-and-live-result).
+User can refresh; realty source unchanged. Repeat page-reload verification remained in progress at
+that report. [№MW.9a](workspaces/TODO.md#MW.9a) remains accepted in the earlier coherent cohort.

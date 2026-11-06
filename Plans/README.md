@@ -235,6 +235,8 @@ contents list, so a heading link and its contents entry cannot disagree.
 - Mermaid output remains an inert SVG image: detached template normalization + XMLSerializer, strict
   SVG namespace/XML/viewBox validation, decoded natural dimensions before replacement. Native helper
   `ui/mermaid-image.ts` bounds input/output and decode wait; errors are visible text, no active SVG fallback.
+  Mermaid effect follows actual safeBody/actToken changes, including same-URL refetch; stale async
+  generations cannot replace or mark detached/currently superseded blocks.
 
 - **File list** — `git ls-files -co -s --exclude-standard` per repository, so `.gitignore` is
   honoured with no configuration; a nested repo (`name/`) or submodule (mode 160000) is listed

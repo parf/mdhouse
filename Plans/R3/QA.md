@@ -322,3 +322,22 @@ but Mermaid effect depended only on URL/hasMermaid. Source pre replaces the imag
 CTO independently reproduced via fixture FS watcher (`refresh-baseline.out/.json`): initial decoded
 owner-copy image → same-URL HTML refetch → rendered null/images0. [№MW.8c](workspaces/TODO.md#MW.8c)
 remains open; initial XML proof does not establish refreshed/live completion. Narrow followup pending.
+
+
+## Mermaid same-URL followup and live result
+
+W3-authored exact `4f8dd03` independent PASS `91743b8a207ebe15` / `3551fd6e01d9861d`, integrated
+`4ccd007` with unchanged source/test identity. One Doc.tsx delta: safeBody/actToken trigger, cleanup
+live-generation/connected-container guards around awaits, marker after decoded img insert and unique
+render IDs. Serializer/strict config/CSP/action boundary unchanged. No repeated full/types/cohort gate.
+
+Meaningful native watcher regression: initial decoded owner-copy diagram → write same fixture file →
+SAME URL HTML refetch. Baseline `1436b33`/`8fa40e1` leaves rendered null/images0; fixed target decodes
+NEW target text, XML valid, no live SVG, URL unchanged. Logs/json/exit in `.scratch/cto/file-ui/refresh-*`;
+owned safe-smoke/probe cleaned, no realty source edits. The reset bug was effect dependency mismatch,
+not a failure of the initial XML serializer; initial fresh-load proof alone was insufficient.
+
+CEO verified owner-authorized reload on actual `http://md/realty/.ai-team/README.md`
+(`c86638049f8af01f`): pre rendered1, complete image natural261x150, decoded SVG XML valid, inlineSVG0;
+all nine roots/RW preserved, initial no-image regression gone. User may refresh. Repeat full page
+reload was still being checked in that report; no claim of additional unreported verification.
