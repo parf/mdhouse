@@ -218,9 +218,10 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle <a id="MW.2a"></a>
-  - Why: the Agent Bus RAG agent already provides source ingestion, embeddings, indexing, refresh and retrieval; mdhouse should expose the full R3 capability instead of building a second backend
+  - State: free 0.3.0 discovery verified at `#rag@parf.us`; proposed final `#rag/mdhouse@parf.us` provisioning Q353 and typed FileScan/recovery fixture T-45 pending. A4 end-to-end/A7 dedup remain open; no paid calls or live wiring
+  - Why: RAG 0.3 supplies namespaced retrieval/embeddings; FileScan owns source ingestion/refresh/progress. mdhouse orchestrates them without a second retrieval backend
   - Builds: per-space/project source configuration; add/select/remove; ingestion; embedding/index jobs; refresh/reindex; progress/errors/freshness; retrieval test; request/flow source selection; citations/provenance in generated Markdown
-  - Depends: [№MW.2](#MW.2) and owner-delivered [RAG contract](../RAG-CONTRACT.md); project-specific instances with independent provider grants, no namespace-label security assumption
+  - Depends: [№MW.2](#MW.2) and owner-delivered [RAG contract](../RAG-CONTRACT.md); dedicated mdhouse instance with stored per-project namespaces and independent provider/user grants
   - Acceptance: mdhouse sends stable source/job IDs rather than source credentials or copied backend configuration
   - Acceptance: the UI starts and monitors ingestion/indexing, shows progress/failure/freshness, and can refresh/reindex or remove a source through the RAG agent
   - Acceptance: unavailable, failed or unauthorized sources/jobs are visible and never silently fall back to a different source

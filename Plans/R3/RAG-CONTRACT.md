@@ -6,7 +6,7 @@ For the owner implementing the Agent Bus RAG agent. mdhouse integration: [№R3f
 Scope: [release](README.md#r3f-rag-through-the-agent-bus-rag-agent),
 [implementation](workspaces/TODO.md), [№Q-R3-RAG1](workspaces/QUESTIONS.md#Q-R3-RAG1).
 API names below describe capabilities, not agreed method names. Provider answers are recorded below;
-RAG 0.3 deployment, typed schemas and acceptance remain unverified.
+RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning, FileScan handoff and end-to-end acceptance remain open.
 
 ## Owner direction
 
@@ -21,6 +21,27 @@ RAG 0.3 deployment, typed schemas and acceptance remain unverified.
 - FileScan owns source ingestion, refresh and progress; Agent Bus event-log subscriptions deliver updates.
 - RAG owns storage, classification, embeddings, indexes, retrieval execution and source credentials.
 - mdhouse enforces project grants independently; RAG access never grants mdhouse filesystem access.
+
+## Current provider checkpoint — 2026-11-06
+
+Provider reports RAG 0.3.0 live at `#rag@parf.us`. CTO help and free `capabilities` returned version
+0.3.0, keyword/semantic/hybrid modes, voyage-3.5 with 1024 dimensions, and methods upsert/get/list/
+search/keyword_index/delete/prompts/capabilities/namespaces/drop_namespace. Limits include 32 KiB
+record data, eight chunks, 16 records/page and 128 namespaces. Discovery makes no paid/provider-storage
+call and does not prove backend readiness or data-path isolation; no paid lookup or mutation was run.
+Local official reference: `/usr/local/src/ai-agent-bus/docs/agents/rag.md`.
+
+Provider recommends a separate `#rag/mdhouse@parf.us` instance/collection, pending owner provisioning
+(Q353); `#rag@parf.us` is not the final mdhouse endpoint. Intended initial caller is production
+`#mdhouse@parf.us`, without manager role. No CTO/CEO/workers/Review or wildcard FileScan grants;
+FileScan identities are added only per provisioned exact project name. mdhouse project grants and
+stored namespace mapping remain independent access boundaries. No grant change was performed here.
+
+Provider followup T-45 is docs/fixture-only: exact typed FileScan source/progress/event/snapshot
+contract and replayable fixture; free get/content_hash inspection guidance for unknown upsert
+outcomes; explicit A4/history/generation limitations. A7 request-id dedup remains unmet; a replayed
+upsert may pay twice. Do not infer safe automatic retry from same record ID. A4 end-to-end and the
+remaining lifecycle/history/recovery acceptance remain open; current evidence does not close them.
 
 ## Verified baseline — 2026-11-05
 

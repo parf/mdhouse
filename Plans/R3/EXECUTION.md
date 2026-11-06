@@ -688,3 +688,13 @@ This closes only the pure model and mock adapter slice. Caller-declared auth is 
 route enforcement; pending/unbound is not action permission. Initial-unknown country policy remains
 undecided. Persistent store, OAuth/GitHub reauthentication, self/admin APIs/UI, trusted-proxy config,
 identity/signature enforcement and live provider wiring remain open under [№MW.0d](workspaces/TODO.md#MW.0d).
+
+## RAG 0.3 free discovery and provisioning handoff
+
+Provider receipts `253c17898b1ded0d` and `8b998ed0ce663e26`; CTO help/free capabilities verified
+0.3.0 at `#rag@parf.us`, voyage-3.5/1024 and advertised modes/methods/limits. No paid embed, classify,
+mutation, load test or grant change. [Current contract](RAG-CONTRACT.md)
+records proposed separate `#rag/mdhouse@parf.us` (Q353, pending), production caller `#mdhouse@parf.us`
+without manager privilege and exact-project FileScan grants only after provisioning. T-45 supplies
+FileScan typed docs/fixture and unknown-outcome guidance; [№MW.2a](workspaces/TODO.md#MW.2a), A4/A7
+and release RAG acceptance remain open. Discovery is not a backend-readiness/data-path test.
