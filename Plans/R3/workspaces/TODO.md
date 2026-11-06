@@ -220,6 +220,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle <a id="MW.2a"></a>
+  - 🔴 Blocker: FileScan RAG sink resends successful paid upserts due to wrong acknowledgment; no wiring until matching-record confirmation, real-core regression and deployed fix are confirmed ([contract](../RAG-CONTRACT.md))
   - State: free 0.3.0 discovery verified at `#rag@parf.us`; proposed final `#rag/mdhouse@parf.us` provisioning Q353 and typed FileScan/recovery fixture T-45 pending. A4 end-to-end/A7 dedup remain open; no paid calls or live wiring
   - Why: RAG 0.3 supplies namespaced retrieval/embeddings; FileScan owns source ingestion/refresh/progress. mdhouse orchestrates them without a second retrieval backend
   - Builds: per-space/project source configuration; add/select/remove; ingestion; embedding/index jobs; refresh/reindex; progress/errors/freshness; retrieval test; request/flow source selection; citations/provenance in generated Markdown

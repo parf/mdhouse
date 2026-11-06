@@ -24,6 +24,15 @@ RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning, Fil
 
 ## Current provider checkpoint — 2026-11-06
 
+🔴 FileScan→RAG wiring blocked: provider receipt `33de2bc2e7a56822` reports a sink expecting
+`status:ok`, which real upsert does not return. Successful writes stay pending and are resent,
+repeating paid embeddings/classification. Provider reports no live FileScan root/process here;
+mdhouse has not enabled this path. Do not connect FileScan until corrected confirmation matches
+namespace/table/id/content_hash, real-core regression passes and provider confirms deployment.
+Direct RAG calls are not affected by this sink defect; this is not authorization for paid calls.
+ETA is not deployment evidence. T-45 docs/fixture must retain the warning until resolved.
+
+
 Provider reports RAG 0.3.0 live at `#rag@parf.us`. CTO help and free `capabilities` returned version
 0.3.0, keyword/semantic/hybrid modes, voyage-3.5 with 1024 dimensions, and methods upsert/get/list/
 search/keyword_index/delete/prompts/capabilities/namespaces/drop_namespace. Limits include 32 KiB

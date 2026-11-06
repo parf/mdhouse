@@ -721,3 +721,11 @@ restrictive owner permissions, atomic replace and concurrent/stale snapshot safe
 New material decisions remain in QUESTIONS; [№Q-R3-COUNTRY2](workspaces/QUESTIONS.md#Q-R3-COUNTRY2),
 marks and realm do not block independent snapshot foundations. RAG provisioning/FileScan handoff
 remain provider-owned per [contract](RAG-CONTRACT.md). This is not publish/push/deploy authorization.
+
+## FileScan paid-replay safety hold
+
+Provider receipt `33de2bc2e7a56822` reports a HIGH FileScan RAG-sink acknowledgment defect causing
+successful paid upserts to remain pending and repeat. No FileScan wiring is authorized until the
+provider confirms corrected record-identity/hash matching, real-core verification and deployment.
+Provider reports no FileScan root or running instance here; no live impact is claimed by mdhouse.
+This does not affect the independent session-persistence cohort or authorize direct paid RAG calls.
