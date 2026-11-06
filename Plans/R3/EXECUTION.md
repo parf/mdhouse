@@ -193,3 +193,21 @@ are insufficient. Strip/isolate authored provenance attributes; guessed/copied/s
 The design is under analysis, not an implemented guarantee. Require arbitrary-passive-class positive
 fixtures and real-click forgery negatives alongside genuine control positives; any remaining necessary
 compatibility loss goes to CEO before integration. Whole content boundary/admin wiring remain on hold.
+
+## Engineering authoring coverage complete
+
+[№MW.3d](workspaces/TODO.md#MW.3d) second batch target `b5ef918d14f4fe26d31b1621d90ffffeac6e924f`
+(base `c2178e8`) received CTO asset/coverage review and integrated without conflict as
+`7fb4fbba58057a2a03a48c66c659bce3e2b5fcbd`. Catalog/assets/tests are byte-identical to that target;
+first-four defaults/semantic assertions and all prior 15 packages are preserved. Exact integrated HEAD:
+full 510/510, 2998 assertions, tsc clean. All eight Engineering authoring packages now ship; parent
+manual/scheduled/runtime acceptance remains open. Next W3 batch: five Business authoring packages under
+[№MW.3e](workspaces/TODO.md#MW.3e), assets/catalog/independent coverage/tarball tests/CHANGELOG only.
+
+Provenance implementation handoff: W1/W2 coordinate `actToken` in the trusted document payload and
+`data-act` on generated action/context nodes only. Fresh per-render randomness; authored provenance
+attributes stripped; exact action and context checks, no ancestor fallback. This design is approved
+for implementation/testing, not yet verified. Preserve passive classes/styles and explicit IDs.
+Require raw/attrs forgery, current line/hash/context, nested control/DOM-repair, guessed/stale-token
+negatives at real click sinks plus genuine-action positives. Client sanitization must retain generated
+provenance and the approved server passive-style contract. Whole boundary/admin wiring remains open.

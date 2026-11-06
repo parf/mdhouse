@@ -260,7 +260,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 - [ ] MW.3d Add all Engineering and operations flow packages <a id="MW.3d"></a>
   - Builds: Release readiness; Architecture and ownership; Project health; Onboarding and handoff; Incident/regression investigation; Requirements and delivery sync; API/schema impact; Maintenance/debt sweep
-  - Checkpoint: first four authoring packages integrated `25cb68a`; full 497/497 + tsc; remaining four and manual/scheduled runtime acceptance stay open
+  - Checkpoint: all eight Engineering authoring packages integrated `25cb68a` + `7fb4fbb`; library contains 19 packages; full 510/510 + tsc on `7fb4fbb`; manual/scheduled runtime acceptance stays open
   - Depends: [№MW.3](#MW.3)
   - Acceptance: every flow has useful default scope/output, evidence requirements, approval boundaries and a small example; each can run manually or on an optional schedule
   - Home: [Engineering and operations flows](README.md#engineering-and-operations-flows)
