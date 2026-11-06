@@ -19,6 +19,7 @@ import type { Mark } from '../lib/prefs';
 import type { FileDiff, FileHistory, FileStatus } from '../lib/git';
 import type { QaChange } from '../lib/qa';
 import type { Kind } from '../lib/filetypes';
+import type { GitState } from './git-state';
 import { routeOf } from '../lib/urls';
 
 export interface AuthorInfo {
@@ -64,6 +65,11 @@ export interface HistoryPayload extends FileHistory {
 export interface DocPayload {
   /** How the page shows the file; every field below but `html` applies to every kind. */
   kind: Kind;
+  /** Identity of the complete normalized source text, including frontmatter, not rendered HTML. */
+  contentHash?: string;
+  /** Owning repository HEAD, cached per invalidation; null without a known HEAD. */
+  gitRevision?: string | null;
+  gitState?: GitState;
   root: string;
   rel: string;
   url: string;
@@ -90,6 +96,12 @@ export interface DocPayload {
   /** The agents the document names (`<!-- AB: … -->`); present only while the Agent Bus integration is on. */
   ab?: string[];
 }
+
+/** Metadata replies carry no rendered body or renderer control token. */
+export type DocMetadataFields = Pick<DocPayload, 'kind' | 'root' | 'rel' | 'url' | 'raw' | 'writable' | 'reference' | 'mtime' | 'size' | 'marks' | 'status' | 'gitState'> & { gitRevision: string | null };
+export type DocMetadata = DocMetadataFields & { meta: true };
+export type DocUnchanged = DocMetadataFields & { unchanged: true; contentHash: string };
+export type DocRefreshPayload = DocPayload | DocMetadata | DocUnchanged;
 
 export interface BusAgent {
   name: string;
@@ -214,6 +226,8 @@ export const api = {
   /** `d` is the page's pathname, `/<rootId>/<rel>` — the server maps it back to a root and path. */
   /** A file's payload — or, for a folder named without its slash, the folder page's address. */
   doc: (docPath: string) => get<DocPayload | { folder: string }>('/api/doc', { d: docPath }),
+  docMeta: (docPath: string) => get<DocMetadata | { folder: string }>('/api/doc', { d: docPath, meta: 1 }),
+  docConditional: (docPath: string, contentHash: string) => get<DocPayload | DocUnchanged | { folder: string }>('/api/doc', { d: docPath, ifContent: contentHash }),
 
   search: (root: string, q: string, ignored: boolean, regex = false) =>
     get<SearchResult>('/api/search', { root, q, ignored: ignored ? 1 : 0, regex: regex ? 1 : 0 }),
