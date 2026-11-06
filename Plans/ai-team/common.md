@@ -41,6 +41,9 @@ Keep unresolved questions in place and retain the questions file.
   product scope, writes outside the repository, external sends, push, publish or deployment.
   Internal messages to the named mdhouse team roles on Agent Bus are part of the authorized team
   workflow; acknowledgements and completion reports remain distinct.
+- Agent Bus contacts: mdhouse team roles; AB-DVP CEO/CTO only for Agent Bus/agent integrations.
+  Do not contact Realmo/RG teams or AB-DVP workers, leads or QA. Route integration work through
+  AB-DVP CEO/CTO; verify identities, never guess aliases. Wider contact requires an explicit owner instruction.
 - Assignments/results travel on Agent Bus; plans hold durable scope/status. Each assignment names the
   task and plan link, owner, scope/paths, acceptance, base/target, and known dependencies.
 - AB status: result, next step, blocker if any. Link to plan evidence; omit assertion counts,
