@@ -14,7 +14,7 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
 Integrated: immutable reference root/package, fallback browser author, license, editor scheme,
 Copy/touch implementation slices, 39 flow authoring packages, pure run core, passive content boundary
 and dormant route classification. [Owning checkpoints](workspaces/TODO.md).
-MW.0d.1 pure session/history/mock GeoIP (`e5382e1`) and MW.0d.2 codec/store foundations (`c529bf1`) are integrated. Standalone RAG local-plan bin (`ae04901`) is integrated; connected sync/index/search is not. Access/OAuth/admin wiring, materialization,
+MW.0d.1 pure session/history/mock GeoIP (`e5382e1`) and MW.0d.2 codec/store foundations (`c529bf1`) are integrated. Standalone RAG local-plan bin (`ae04901`) and connected finite bin (`1fd503a`) are integrated; actual provider indexing/search remains unproven. Ignored Markdown browsing (`9b90362`) is integrated. Access/OAuth/admin wiring, materialization,
 RAG integration and complete desktop/mobile journeys remain open; release parents below stay open.
 
 ## [№R3a](#R3a) — Product identity {#r3a-product-identity}
@@ -88,7 +88,7 @@ RAG integration and complete desktop/mobile journeys remain open; release parent
     and `⇊`, while identical source-authored glyphs remain content
   - Acceptance: the primary agent/document/edit/review journey is responsive and touch-usable on
     iPad and phone; no critical action is hover-only or keyboard-only
-  - Tracks: [№MW.5](workspaces/TODO.md#MW.5), [№MW.5a](workspaces/TODO.md#MW.5a), [№MW.5b](workspaces/TODO.md#MW.5b), [№MW.5c](workspaces/TODO.md#MW.5c)
+  - Tracks: [№MW.5](workspaces/TODO.md#MW.5), [№MW.5a](workspaces/TODO.md#MW.5a), [№MW.5b](workspaces/TODO.md#MW.5b), [№MW.5c](workspaces/TODO.md#MW.5c), [№MW.9](workspaces/TODO.md#MW.9)
   - Home: [Complete Markdown interaction and editing](README.md#r3d-complete-markdown-interaction-and-editing)
 
 ## [№R3e](#R3e) — Agent collaboration {#r3e-agent-collaboration}

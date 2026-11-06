@@ -423,14 +423,15 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 ## W7 — Ignored Markdown browsing
 
-- [ ] MW.9 Reveal deliberately selected gitignored Markdown <a id="MW.9"></a>
+- [x] MW.9 Reveal deliberately selected gitignored Markdown <a id="MW.9"></a>
   - Contract: [№BROWSE-W1](DECISIONS.md#BROWSE-W1); generated temporary reports, no new access authority
   - Cohort: W1 scanner/store/API, W2 app/sidebar visibility; one combined focused/types gate, owned scratch browser check, independent exact security review
   - Acceptance: left browse panel offers Show ignored when eligible gitignored Markdown exists; toggle off preserves default visibility elsewhere
   - Acceptance: direct ignored-directory navigation lists its eligible contents without changing the global toggle; `.ai-team/` and deliberate vendor scope covered
   - Acceptance: ignored directories selected in either V1 or V2 are included with contents in main/default; each V tab contains only its own selected entries
   - Acceptance: `.git`, explicit `.mdhouseignore`/CLI exclusions and Registry path jail remain enforced for every reveal input, including escape/symlink/direct requests
-  - State: frozen candidate `2dce337` on `r3/ignored-browse-cohort`, base `a3e096e`; combined focused/types and owned scratch browser proof complete, independent exact security review pending. Not integrated
+  - Verified: exact `2dce337` independent PASS, integrated `9b90362` with source/test/package/docs identity unchanged; combined focused/types, owned scratch browser proof and integrated views check passed ([QA](../QA.md#ignored-markdown-browsing-checkpoint))
+  - Runtime: source integrated; this cohort was not separately applied to the live service or published. Safari/Firefox remain release QA
   - API: hasIgnored/revealed/capped and bounded repeated reveal directory parameters. Main uses selected-folder union; each V tab only its own entries
   - Scope correction: W1 reproduced pre-existing ALL listing bypass of explicit .mdhouseignore exclusions; same cohort fixes /api/files filtering/jail with focused negative fixtures. Built-in vendor visibility remains distinct from explicit denies
   - No full/version bump/live7777 checks or reload; ready is not integrated/done

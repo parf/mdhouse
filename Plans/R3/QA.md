@@ -257,3 +257,26 @@ apply/paid intent, owner-config/root binding, scoped correlation and topic-only 
 are accepted in fake/local scope. Live key/collection readiness, J124 deploy/tracked-key audit and
 operator-authorized upgrade of the old running app remain separate. No live indexing/search proof,
 provider call, production AI test, automatic resend, background sync or app reload was performed.
+
+
+## Ignored Markdown browsing checkpoint
+
+[№MW.9](workspaces/TODO.md#MW.9): independent exact-target PASS `16f57421c7b2d3d9` on
+`2dce337`, integrated `9b90362` without conflicts or source/test/package/cohort-doc delta.
+Combined focused 108/0 and types exit 0 with own frozen-lock modules; evidence `.scratch/cto/mw9/gate/`.
+Review checked the exact cohort checkout and focused subset. Integrated views check 9/0; no duplicate
+full/types/browser gate for the identity merge, no version bump or live reload.
+
+Scratch browser via reviewed safe-smoke/finally+flock: toggle show/hide, direct `.ai-team/` content
+without changing the global toggle, selected `.ai-team/` + vendor scope in main, V1/V2 strict own
+entries, return to default union, explicit ALL denial. Opened desktop light and phone dark screenshots.
+First attempt stopped on an incorrect text selector for SVG V buttons; next targeted attempt stopped
+on harness reload/localStorage timing; both cleaned own processes. Corrected targeted views smoke
+passed. Logs/results/screenshots under `.scratch/cto/mw9/`; final owned groups verified absent.
+
+Focused temp-Git negatives cover explicit `.mdhouseignore`/extraDeny, hard `.git`, malformed scopes,
+inside/outside symlinks and aliases into excluded paths. Pre-existing ALL explicit-exclusion and
+base-scan metadata leaks were reproduced and regressed within this cohort. Registry-before-stat
+preserves the existing jail seam; it does not claim elimination of same-OS-owner filesystem races.
+Cost: one realpath per listed path per invalidation plus ignored-list discovery; caching retained.
+Safari/Firefox and broader release/device journeys remain open. No live7777/provider/paid calls.

@@ -1031,3 +1031,13 @@ Both failed attempts cleaned their own processes; corrected targeted views run p
 unchanged. Logs `.scratch/cto/mw9/browser*.out`, results JSON and opened light/dark screenshots;
 final owned mdhouse/Chrome PIDs verified absent. No full/live7777/provider checks or reload.
 Independent exact security review pending; checkpoint remains open until reviewed integration.
+
+
+## Ignored-browsing checkpoint integrated
+
+[№MW.9](workspaces/TODO.md#MW.9) accepted after independent exact PASS `16f57421c7b2d3d9`
+on `2dce337`; integrated `9b90362` with byte-identical source/test/package/cohort docs and preserved
+current Plans. Integrated pure views check passed. [Evidence and limits](QA.md#ignored-markdown-browsing-checkpoint).
+Show ignored, direct ignored/vendor scope and main selected-folder visibility are implemented;
+V1/V2 remain their own selections. No full/types/browser landing rerun, version bump, publish or
+live service action. Owner/CEO controls any subsequent targeted runtime reload.
