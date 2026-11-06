@@ -471,3 +471,22 @@ W2's new `passive-lib` process helper must consolidate with W1's common safe-smo
 than creating a second independent launcher. Fixture/CDP helpers may remain separate. After the
 procedure passes review, run clean baseline/fixed corpora through the common helper; retain failed
 attempts separately. Whole content boundary and browser smoke remain on hold until the respective gates.
+
+## Common safe-smoke review
+
+W1 helper target `8df1d5e22c8b55bf38926fde814d1c9402db6571` from `4399dd6` is ready/frozen;
+exactly `scripts/safe-smoke.ts` and `test/safe-smoke.test.ts`. Shared CLI/import lifecycle preflights
+ports, starts detached owned groups, verifies listener/root identity and tears down captured groups.
+Author reports focus/full/tsc green with non-browser fixtures. Dedicated pinned checkout
+`.scratch/worktrees/r3-safe-smoke-review`; independent safety review `safe-smoke-8df1d5e` requested.
+
+Source findings: run-after-stop can start an untracked-for-cleanup group; startup continuation may
+spawn after stop begins. W1 is assigned fixture reproduction and a separate guarded followup branch/
+commit, leaving pinned target unchanged. Review also examines signal/ESRCH cleanup races, hidden
+listener identity and startup errors. These are not yet cleared; no procedure PASS or browser-HOLD
+lift. W2's corpus lifecycle must reuse the common helper once accepted.
+
+Combined browser receipt `76991e96b77086a3` gives PASS only to old `31e4992`, with author-followup
+`1f4e475` still outside that verdict. Timing of Review browser checks versus owner HOLD is being
+confirmed; do not count disputed runs as clean acceptance. Raw-file and exact-node followups must run
+through the reviewed helper after the procedure gate. Final combined source remains unintegrated.

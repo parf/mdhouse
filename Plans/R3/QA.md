@@ -87,3 +87,9 @@ W2 followup receipt `a78361e47714210c`: earlier `:7794` starts/restarts were app
 local on 2026-11-05. Final stop used a checked captured PID; earlier listener-based stops still lack
 ownership proof. W2 reports no remaining own server/Chrome/probe listeners. The new raw/nested-action
 fixtures and corrected launcher are unrun during owner HOLD; no browser fix has been verified from them.
+
+Safe-smoke author mutation tests deliberately broke cleanup and left three own test process groups
+and one own temp directory. W1 reports they were removed using verified captured IDs/path; no foreign
+cleanup is claimed. These are failed guard-test attempts, distinct from later green procedure tests.
+The helper still has source-found stop/start lifecycle defects pending fixture reproduction/fix and
+independent safety review. Browser HOLD remains in effect.
