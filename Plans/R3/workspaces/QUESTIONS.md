@@ -50,3 +50,10 @@
   > 💡👾 Choose the intended content/privilege contract before implementation. Keep
   > [№MW.0g](TODO.md#MW.0g) admin wiring on hold; attribution, reference content and flow packages
   > continue independently. A partial CSP patch is not an accepted isolation guarantee.
+  >
+  > 💬 👤parf we can check referer on admin forms and never accept incorrect one
+  >
+  > 💬👾 This proposes an additional check, not a changed HTML/CSP/origin contract. W1 is verifying
+  > whether active same-origin document code can supply the exact expected admin/settings URL through
+  > Fetch `referrer`, with actual Referer/Origin/Sec-Fetch headers and a harmless scratch state change.
+  > Missing-header behavior and legitimate Settings requests will be recorded separately.
