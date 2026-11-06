@@ -10,7 +10,7 @@ Done/integrated: [№MW.0f](workspaces/TODO.md#MW.0f) immutable references, [№
 fallback author, license/scheme/Copy-touch implementation slices, 39 authoring packages and pure-run
 core, [№MW.8](workspaces/TODO.md#MW.8) passive content (`3b044d5`) and dormant classification
 (`484a277`). Latest controlled full: `fdb4098`, 703/0 + tsc; no new suite for documentation changes.
-[№MW.0d.1](workspaces/TODO.md#MW.0d.1): W1 ready `b9986d2`, independent Review in progress, not integrated.
+[№MW.0d.1](workspaces/TODO.md#MW.0d.1): approved `b9986d2`, integrated `e5382e1`, pure/mock scope done.
 Admin/OAuth/access wiring, materialization, RAG runtime and cross-browser/real-device release QA stay
 open. Country/identity rules are current in [DECISIONS](workspaces/DECISIONS.md); historical pending
 reports below are chronological evidence, not current blockers.
@@ -674,3 +674,17 @@ wording across current release/workspace plans to USER-W7 admin-confirmed same-p
 Shared rules now require checkpoint accuracy and risk-sized verification; no heavy check was run.
 Next: finish the already-ready pure model's independent review; close small approved documentation
 and implementation checkpoints first, without starting wider runtime scope.
+
+## Pure session history and mock GeoIP integrated
+
+[№MW.0d.1](workspaces/TODO.md#MW.0d.1): independent Review receipt `d9af66a698d50342` PASS exact
+`b9986d20614b69794d46587c1ee5d9aeb3c2658c`, base `fce2bfa`. Integrated
+`e5382e166b09c48aaafea02d79471ba3fc8ee33e` with source/tests/package/lock byte-identical to target,
+current owner decisions and dirty launcher preserved. Integrated pure/mock checks 65/65; no new
+full/tsc/browser/provider calls. Review separately covered adversarial country transitions and async
+bindings. GeoIP transport is required injection, without live wiring.
+
+This closes only the pure model and mock adapter slice. Caller-declared auth is not authenticated
+route enforcement; pending/unbound is not action permission. Initial-unknown country policy remains
+undecided. Persistent store, OAuth/GitHub reauthentication, self/admin APIs/UI, trusted-proxy config,
+identity/signature enforcement and live provider wiring remain open under [№MW.0d](workspaces/TODO.md#MW.0d).

@@ -14,7 +14,7 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
 Integrated: immutable reference root/package, fallback browser author, license, editor scheme,
 Copy/touch implementation slices, 39 flow authoring packages, pure run core, passive content boundary
 and dormant route classification. [Owning checkpoints](workspaces/TODO.md).
-MW.0d.1 is ready for independent review, not integrated. Access/OAuth/admin wiring, materialization,
+MW.0d.1 pure session/history and mock GeoIP is integrated (`e5382e1`). Access/OAuth/admin wiring, materialization,
 RAG integration and complete desktop/mobile journeys remain open; release parents below stay open.
 
 ## [№R3a](#R3a) — Product identity {#r3a-product-identity}

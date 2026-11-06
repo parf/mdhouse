@@ -9,7 +9,7 @@ Immutable references and fallback browser author are accepted integrated scopes 
 cohort identity PASS; mount `052eaf8`, content `4de0d3`, author `b11e47f`). Copy/touch implementation
 has recorded Chromium checks; cross-browser/real-device parents remain open. MW.8 is integrated with
 latest controlled 703/0 + tsc and final independent CEO PASS; dormant classification is integrated.
-MW.0d.1 `b9986d2` is ready under independent review, not acceptance. Detailed reports below retain
+MW.0d.1 `b9986d2` is reviewed and integrated as `e5382e1` for pure/mock scope only. Detailed reports below retain
 historical failures/pending states; later confirmed cleanup/verdicts supersede those states.
 
 ## Required checks
@@ -207,3 +207,13 @@ Review reports exact-PID cleanup after argv/cwd attribution; CTO independently v
 PIDs absent and all six ports without listeners on 2026-11-06. No current job depended on these
 retired checks. The subshell pattern is retired; future launches use the reviewed safe-smoke helper.
 This closes this orphan audit, not the separate unknown early 7794 kill identities.
+
+## Pure session history and mock GeoIP checkpoint
+
+Independent Review PASS `d9af66a698d50342` binds to exact `b9986d2`; integrated `e5382e1` has identical
+source/tests/dependencies. Focused integrated user-session-model + geoip: 65/65, no real lookup or
+process launch. LastSeen/MRU, idle >30d, per-session every-country-transition, pending/unbound states,
+async observedAt/IP/session binding and mock sequential provider failure handling are covered.
+No full/tsc/browser rerun for the identity merge. Pure historyView consumes caller declarations;
+this is not self/admin route authorization. Persistence, OAuth/routes/UI/live GeoIP and initial-unknown
+policy are outside the accepted slice and remain open.
