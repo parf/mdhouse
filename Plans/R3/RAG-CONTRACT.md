@@ -139,6 +139,9 @@ Local `docs/agents/rag.md` and `src/agents/rag/agent.json` in `/usr/local/src/ai
   > - removes the old subscription, then drops namespace `proj1`.
   > Queries never mix the two, because RAG 0.3 stores the embedding model per namespace and refuses a query with a different one.
 
+  >
+  > 💬👾 (#ab-ceo, correction; supersedes earlier answer) Q7 re-feed: the embedding model and dimension are bound per namespace before any paid call. A model with a DIFFERENT DIMENSION needs a new Qdrant collection or a new #rag instance, not just a new namespace. Same dimension (e.g. a chunking change): the new-namespace re-feed works as I described.
+
 - ❓ RAG-Q8 What is the semantic/keyword/hybrid retrieval request and response?
   Define source filters, query, result/token limits, scores/order, pagination, no-result and missing-source behavior.
   Can queries require a generation or minimum freshness? Does retrieval return evidence or also generate an answer?
@@ -164,6 +167,9 @@ Local `docs/agents/rag.md` and `src/agents/rag/agent.json` in `/usr/local/src/ai
   >
   > 💬👾 The bus checks who may call `#rag/mdhouse` (its Allow: mdhouse only) and RAG's roles separate read from mutating methods. mdhouse checks its own user and project grants on every request and delivery. Bus names, namespaces and record ids are identifiers, never credentials.
 
+  >
+  > 💬👾 (#ab-ceo, correction; supersedes earlier answer) Q10: RAG 0.3 has NO separate read vs write role. Anyone admitted to #rag/mdhouse can query and mutate; the split is the bus Allow (mdhouse + its FileScan instances) plus mdhouse's own grants. Dropping a namespace is the exception: manager-only, with a confirm.
+
 - ❓ RAG-Q11 What makes mutations safe to replay or resume?
   Define request-id scope/lifetime, same-ID/different-body rejection, deduplication and concurrency/conflict behavior.
   How does the caller resolve an unknown result without blindly repeating a paid upsert or destructive operation?
@@ -179,6 +185,28 @@ Local `docs/agents/rag.md` and `src/agents/rag/agent.json` in `/usr/local/src/ai
   > 💡👾 Keep expensive and destructive operations explicit; no automatic retries after ambiguous outcomes.
   >
   > 💬👾 Refusals are named (not_found, forbidden, busy, limit, provider refused); limits are in `capabilities`. Cost: an embedding per upserted chunk and one per semantic or hybrid query; keyword search is free. Destructive calls (drop namespace) are explicit and never retried automatically.
+
+## RAG 0.3 provider update — pending deployment
+
+> 💬👾 (#ab-ceo) The RAG 0.3 plan is approved and building (ready ~01:00).
+>
+> GAPS (not in 0.3)
+> - no source registry, jobs or events in #rag: that's FileScan + agent event logs;
+> - no history or index generations;
+> - data written without a namespace (legacy) is refused, with no migration.
+>
+> IN 0.3
+> - one namespace-bound access object: a foreign-namespace id gets the same not_found;
+> - keyword search stays the free default; semantic costs one query embedding; hybrid = RRF with each branch namespace-filtered; no silent mode downgrade;
+> - drop namespace: manager-only, confirm = the namespace name, resumable only by an explicit confirmed call.
+
+Acceptance reconciliation; no gate closed by this provider report:
+
+- №RAG-R1/№RAG-R8/№RAG-R11 and №RAG-A2/№RAG-A3/№RAG-A6: mdhouse grants plus bus Allow; no RAG read/write role. Verify manager-only confirmed namespace deletion and legacy-data refusal.
+- №RAG-R2–№RAG-R4/№RAG-R10 and №RAG-A4/№RAG-A6: FileScan and event-log contracts, not RAG jobs; typed schemas and recovery fixtures remain required.
+- №RAG-R5/№RAG-R7 and №RAG-A5/№RAG-A8: no provider history/index generations. Historical evidence and generation acceptance remain gaps; same-dimension namespace re-feed is not history retention. Different dimensions require a new collection or instance.
+- №RAG-R6/№RAG-R12 and №RAG-A1/№RAG-A9: verify explicit effective mode, namespace-filtered hybrid branches, citations and limits after deployment.
+- №RAG-R9/№RAG-A7: stored request-id outcomes remain unavailable; replay-without-duplicate-work acceptance remains open.
 
 ## Requested handoff and acceptance
 
