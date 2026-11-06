@@ -20,7 +20,7 @@ committing: [qa-states.md](../qa-states.md) (shipped: `../qa-states.md`). Never 
 
 `Plans/subsystems.md` maps paths to subsystems, first match wins, each with what its reviewer checks —
 a table `| Letter | Path prefix | Subsystem | Check |`, one row per subsystem; this repo's
-[`Plans/subsystems.md`](../../../Plans/subsystems.md) is a live example.
+`Plans/subsystems.md` is a live example.
 
 - **Missing** → build it before the first review: from the tree (top-level folders, the second level
   under `src/`), the README and CLAUDE.md; a handful of rows, not one per file.

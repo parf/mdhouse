@@ -42,6 +42,8 @@ is the **first symbol of the line** — status first, then severity
 | 💡 | a suggested answer — proposed, not yet the answer | `💡👾 …` under a ❓; **✓ agree** → `✅ 💡` + `💬 👤parf agree — …`; **✗ cancel** → `🚫 💡` + `💬 👤parf cancel — …`, the question `🚫`; **💬 reply** just replies — the text optional; on an issue **✓ accept** / **✗ ignore** (it auto-ignores the issue: `🚫`) | blue block, yes / no / reply (accept / ignore); decided: muted |
 | 💬 ⚠️ | partial answer — "need more" | the line after it says what is missing; the item stays ❓ | amber block |
 
+<a id="badges--a-glyph-glued-to-a-name"></a>
+
 ## Badges — a glyph glued to a name
 
 A badge glyph with the name right after it, **no space**, becomes a chip: `👤parf`. With a space

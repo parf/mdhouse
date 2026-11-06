@@ -75,4 +75,4 @@ Always append at the end of the file — never rewrite an existing section:
 - Blocking questions first. Plain GFM — it must read well on GitHub.
 - Commit the file alone: `docs: questions — <topic>`.
 
-Report per [qa-states.md](qa-states.md#report); tail: `🟥🟥🟥 <n> questions in <file> — answer on the page`.
+Report per [qa-states.md](../qa-states.md#report); tail: `🟥🟥🟥 <n> questions in <file> — answer on the page`.
