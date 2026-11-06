@@ -5,7 +5,8 @@
   "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "bin": {
-    "mdhouse": "./bin/mdhouse"
+    "mdhouse": "./bin/mdhouse",
+    "mdhouse-rag-sync": "./bin/mdhouse-rag-sync"
   },
   "homepage": "https://github.com/parf/mdhouse#readme",
   "repository": {
