@@ -849,3 +849,20 @@ T-48/T-49 requests or AB worker/lead contacts. T-48 large-text and finite-sync p
 approval; T-49 setup lists are pending delivery, not live readiness. W3 read-only bin plan is ready;
 next bounded implementation may cover pure/mock planning before provider-dependent execution,
 without claiming dry-run as complete indexing/search or inventing a permanent watcher.
+
+## T-49 authorized record preparation and bin cohort selection
+
+Provider #ab-dir confirms FileScan running with 194 tracked, empty subscribers, approved config;
+Q376–Q378 are settled as own Qdrant proxy to existing store, shared Voyage/AI, no separate provider
+keys/instances. CTO acted as parf via protected account socket: verified existing mdhouse record and
+preserved it; additively admitted it to FileScan; created RAG/Qdrant records, nonsecret configs and
+exact caller/maintainer grants; handed only the dedicated RAG credential to protected runner token
+file without disclosure. No root-runner secret read. Owner/AB-CEO must install the store key privately;
+no runtime create/start/reload/collection/index/subscription/scan/ingestion or provider spend here.
+
+[№MW.2a.1a](workspaces/TODO.md#MW.2a.1a) next coherent cohort: W3 pure bounded sync-plan metadata,
+W1 separate executable with real jailed local Markdown inventory/help/preview. No provider transport,
+OAuth/agent registration on bin invocation or guessed T-48 calls. One integration branch, combined
+focused/package-export/types gate and exact security review; no per-task full/version bump. Connected
+index/search remains an explicit later acceptance after actual provider readiness/T-48 deployment,
+not claimed complete by this preview foundation. Shared technical route is #ab-dir only.

@@ -52,6 +52,35 @@ steps; its old pack 1.0.1 label is not new verified deployment evidence. It is n
 
 ## Current provider checkpoint — 2026-11-06
 
+
+### T-49 actual setup checkpoint
+
+FileScan live status is provider-confirmed: Owner parf, Maintainer CTO, account runner, expected
+root/mask/exclusions, tracked 194, paused null, subscribers empty (receipt `8d1e090322ae8fd8`).
+Owner says mdhouse provisions its subagents as parf. Account-socket identity check returned parf;
+`#mdhouse@parf.us` already existed, Owner parf/active, and was preserved rather than re-registered.
+CTO additively admitted it to FileScan. No FileScan sub add/scan/ingestion was performed.
+
+CTO registered/configured `#rag/mdhouse@parf.us` (Owner parf, Maintainer CTO; Allow @owner, exact
+FileScan and mdhouse) and `#qdrant/mdhouse@parf.us` (own proxy, Allow @owner + RAG(write)). RAG uses
+shared `#voyage@parf.us`/`#ai@parf.us`, own collection rag_mdhouse, voyage-3.5/1024, classify false;
+rerank unset. Its own credential was handed only to the protected runner token file (0600), never
+printed/committed. No separate Voyage/AI instances or keys: owner settled Q377/Q378. Shared AI is
+production, only real app use, never tests/probes. Voyage visibility was clarified by provider: RAG
+is admitted even though parf's unadmitted ls could not see the record.
+
+Q376 is settled: own Qdrant proxy to existing `http://127.0.0.1:6333`. The existing-store key must
+be installed privately by owner/AB-CEO (0600 user-runner env), not copied from root-runner secrets.
+Runtime enable/start/reload, collection/index and all ingestion remain waiting for that handoff;
+no such operation was run here. No grant to workers/wildcards or runtime mdhouse manager role.
+
+T-48 owner options Q368–Q375 are provider-reported approved; build starts with light whole-file
+get/check and finite FileScan sync. Code/deploy/frozen shape are not yet delivered. After deployment
+CTO must switch FileScan to the documented on-demand configuration (Q375), not leave implicit watch.
+Provider accepted no automatic paid resend without free check (sync resend caller-only; watch only
+incomplete within J116 bound), and duplicate-sibling/fenced-heading chunk identity tests. Physical
+old-chunk cleanup remains unproven, not a new dedup guarantee.
+
 ### Authorized first setup target
 
 Owner authorizes starting setup for `/home/parf/src/mdhouse/**/*.md`. CEO already requested dedicated
@@ -59,9 +88,8 @@ RAG/FileScan prerequisites from #ab-ceo; do not duplicate provisioning or capabi
 FileScan include/exclude arrays exist; `include: ["*.md"]` matches root and recursive Markdown per
 provider test evidence relayed by CEO. Keep default dotfile exclusions and exclude node_modules /
 dependency trees; no .git/.scratch ingestion. Proposed namespace `mdhouse`, table `docs`, production
-caller `#mdhouse@parf.us` remains unregistered; its registration ownership is a separate owner
-decision. Provider reports Q353/Q355 approved with scoped CTO Maintainer changes; T-49 provisioning
-is in progress, not verified live readiness.
+production caller `#mdhouse@parf.us` was found already registered as parf-owned and preserved.
+Dedicated record/grant setup is recorded above; runtime readiness is still partial.
 
 CTO read-only local estimate: 194 visible nonignored Markdown files, five over 32 KiB (EXECUTION,
 workspace TODO, `Plans/issues/2026-10/2026-10-07.md`, R3 README, CHANGELOG). This is not a FileScan scan
@@ -81,8 +109,8 @@ Owner-question locations verified read-only in Agent Bus `Plans/R1.1/QUESTIONS.m
 [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) — FileScan roots, provider-reported approved via T-49, original commit `47bfb0a0`
 (warning `ee15f008`, subsequently fixed/deployed per provider). Provider relay `af433a09927c623d` (CEO receipt `9ab6320591fda0db`) reports approval: parf stays
 record Owner; `#cx/mdhouse-cto` becomes Maintainer on `#rag/mdhouse@parf.us` and
-`#filescan/mdhouse@parf.us` for scoped config/access/subscriptions/scan/reset. T-49 registration is
-in progress; wait for exact live records/grants and T-48 bounded/large-text contract. Maintainer
+`#filescan/mdhouse@parf.us` for scoped config/access/subscriptions/scan/reset. T-49 record/config/grant setup is recorded above; wait for owner key handoff, verified runtime and
+T-48 bounded/large-text deployment before ingestion. Maintainer
 status is not permission for destructive reset/replay, worker/wildcard grants or unrelated work. Provider receipt `5a254e80e274e4b8` reports RAG 0.4.1 deployed at `#rag@parf.us`,
 2026-11-06 11:20 EST, bus 1.0.50 / agent pack 1.0.2. Advertised methods add count/similar/complete/
 classify to the earlier ten; complete prefix index exists, classify is off unless configured.
@@ -119,7 +147,7 @@ Local official reference: `/usr/local/src/ai-agent-bus/docs/agents/rag.md`.
 Provider recommends a separate `#rag/mdhouse@parf.us` instance/collection, pending owner provisioning
 ([№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse), provider-reported approved);
 `#rag@parf.us` is not the final mdhouse endpoint. Intended initial caller is production
-`#mdhouse@parf.us` is not yet registered. Earlier no-CTO-grant assumptions are superseded by owner-approved
+`#mdhouse@parf.us` already exists and was preserved. Earlier no-CTO-grant assumptions are superseded by owner-approved
 Maintainer authority for `#cx/mdhouse-cto` on the two dedicated records, within the explicit sync scope.
 No CEO/workers/Review or wildcard grants are authorized; exact live grants still require confirmation. mdhouse project grants and
 stored namespace mapping remain independent access boundaries. No grant change was performed here.
