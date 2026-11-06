@@ -199,6 +199,39 @@ export const FINANCE_COVERAGE = [
   },
 ] as const;
 
+export const LEGAL_COVERAGE = [
+  {
+    id: 'legal-contract-review', output: 'contract-review',
+    stages: ['intake', 'extract', 'issues', 'report'],
+    sources: ['supplied contract versions and clause references', 'parties dates money obligations and missing terms', 'confidentiality jurisdiction and counsel review scope'],
+    exampleFacts: ['conflicting notice clauses', 'jurisdiction: unknown', 'not an enforceability conclusion', 'issues.blocked'],
+  },
+  {
+    id: 'legal-obligation-renewal', output: 'obligation-register',
+    stages: ['scope', 'extract', 'windows', 'register'],
+    sources: ['supplied commitments and renewal clauses', 'owners trigger dates notice windows and source locations', 'date timezone and confidentiality limits or explicit unknown'],
+    exampleFacts: ['trigger date: missing', 'deadline: unknown', 'windows.blocked', 'No reminder'],
+  },
+  {
+    id: 'legal-policy-compliance', output: 'compliance-review',
+    stages: ['scope', 'map', 'gaps', 'report'],
+    sources: ['supplied policy or implementation evidence', 'supplied requirement set version jurisdiction and date', 'source mappings exceptions and interpretation uncertainties'],
+    exampleFacts: ['requirement set is stale', 'applicability: unconfirmed', 'not a compliance certification', 'map.blocked'],
+  },
+  {
+    id: 'legal-change-impact', output: 'legal-impact-map',
+    stages: ['intake', 'applicability', 'impact', 'remediation', 'report'],
+    sources: ['supplied regulatory or contractual change and baseline', 'effective date jurisdiction and version evidence', 'affected products processes documents and owners'],
+    exampleFacts: ['effective date: unknown', 'conditional impact', 'applicability.blocked', 'No remediation task was filed'],
+  },
+  {
+    id: 'legal-request-brief', output: 'counsel-request-brief',
+    stages: ['intake', 'timeline', 'questions', 'brief'],
+    sources: ['supplied facts timeline and document references', 'desired outcome and questions for qualified counsel', 'confidentiality disclosure limits and contradictory evidence'],
+    exampleFacts: ['contradictory timeline', 'privilege: unconfirmed', 'not legal advice', 'No brief was sent'],
+  },
+] as const;
+
 export const EXPECTED_PACKAGE_IDS: readonly string[] = [
   ...FEATURE_PACKAGE_IDS, ...DOCUMENTATION_COVERAGE.map((row) => row.id),
   ...CHANGE_REVIEW_COVERAGE.map((row) => row.id),
@@ -206,4 +239,5 @@ export const EXPECTED_PACKAGE_IDS: readonly string[] = [
   ...BUSINESS_COVERAGE.map((row) => row.id),
   ...IDEAS_COVERAGE.map((row) => row.id),
   ...FINANCE_COVERAGE.map((row) => row.id),
+  ...LEGAL_COVERAGE.map((row) => row.id),
 ];

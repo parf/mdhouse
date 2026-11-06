@@ -204,6 +204,36 @@
       "family": "finance",
       "manifest": "finance-document-review/flow.json",
       "example": "finance-document-review/example.md"
+    },
+    {
+      "id": "legal-contract-review",
+      "family": "legal",
+      "manifest": "legal-contract-review/flow.json",
+      "example": "legal-contract-review/example.md"
+    },
+    {
+      "id": "legal-obligation-renewal",
+      "family": "legal",
+      "manifest": "legal-obligation-renewal/flow.json",
+      "example": "legal-obligation-renewal/example.md"
+    },
+    {
+      "id": "legal-policy-compliance",
+      "family": "legal",
+      "manifest": "legal-policy-compliance/flow.json",
+      "example": "legal-policy-compliance/example.md"
+    },
+    {
+      "id": "legal-change-impact",
+      "family": "legal",
+      "manifest": "legal-change-impact/flow.json",
+      "example": "legal-change-impact/example.md"
+    },
+    {
+      "id": "legal-request-brief",
+      "family": "legal",
+      "manifest": "legal-request-brief/flow.json",
+      "example": "legal-request-brief/example.md"
     }
   ]
 }
