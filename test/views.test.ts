@@ -25,7 +25,7 @@ describe('ignored browsing scopes', () => {
   test('scopeOf: folders only, no root, absolute or `..`', () => {
     expect(scopeOf('a/b/')).toBe('a/b');
     expect(scopeOf('.ai-team/')).toBe('.ai-team');
-    for (const bad of ['a.md', '/', '', '/abs/', '../x/', 'a/../b/', 'a//b/']) expect(scopeOf(bad)).toBeNull();
+    for (const bad of ['a.md', '/', '', '/abs/', '../x/', 'a/../b/', 'a//b/', './', 'a/./b/']) expect(scopeOf(bad)).toBeNull();
   });
 
   test('revealScopes: the union of V1 and V2 folders, files left out, duplicates once, open folder first', () => {

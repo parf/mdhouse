@@ -49,7 +49,7 @@ const bytes = (s: string): number => new TextEncoder().encode(s).length;
 export function scopeOf(entry: string): string | null {
   if (!entry.endsWith('/')) return null;
   const dir = entry.replace(/\/+$/, '');
-  if (!dir || dir.startsWith('/') || dir.split('/').some((seg) => seg === '..' || seg === '')) return null;
+  if (!dir || dir.startsWith('/') || dir.split('/').some((seg) => seg === '..' || seg === '.' || seg === '')) return null;
   return dir;
 }
 
