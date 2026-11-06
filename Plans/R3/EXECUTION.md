@@ -790,3 +790,11 @@ endpoint choice is open (`d75b1da7`); [№Q355](http://localhost:7777/ai-agent-b
 (`47bfb0a0`, warning `ee15f008`). Current contract/TODO/QUESTION links are corrected; no external
 files, grants or services changed. RAG 0.4.1 is provider-reported landed but no live capability
 claim or paid call was made; awaiting provider deployment status.
+
+## RAG 0.4.1 provider deployment report
+
+Provider receipt `5a254e80e274e4b8`: `#rag@parf.us` 0.4.1 deployed 11:20 EST, bus 1.0.50 / agent pack
+1.0.2; 14 advertised methods include count/similar/complete/classify, prefix index present, classify
+off unless configured. Current contract records this as provider report; mdhouse has not made new
+capabilities/data/paid calls or expanded its integration scope. Dedicated endpoint/access Q353 still
+requires owner decision; no grant or provider configuration changed.

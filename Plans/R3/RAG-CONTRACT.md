@@ -29,7 +29,11 @@ Owner-question locations verified read-only in Agent Bus `Plans/R1.1/QUESTIONS.m
 [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) — FileScan roots, open, commit `47bfb0a0`
 (warning `ee15f008`, subsequently fixed/deployed per provider). The recommended dedicated endpoint
 and per-project roots are not owner-approved until those questions settle; no provisioning/grant
-change is implied. Provider RAG 0.4.1 is reported landed, pending live status, not a capability claim.
+change is implied. Provider receipt `5a254e80e274e4b8` reports RAG 0.4.1 deployed at `#rag@parf.us`,
+2026-11-06 11:20 EST, bus 1.0.50 / agent pack 1.0.2. Advertised methods add count/similar/complete/
+classify to the earlier ten; complete prefix index exists, classify is off unless configured.
+This is provider deployment evidence, not new mdhouse discovery or adopted feature scope. Q353
+access remains pending; no calls or grants were performed here.
 
 FileScan paid-replay defect: provider receipt `e6f9c7a3de48dd99` reports fix `0f5340c3` deployed
 2026-11-06 02:07 EST, verified upstream against real RAG core with fake providers. Acknowledgment now
