@@ -773,3 +773,11 @@ temp removal may leave inert 0600 temporary data, without replacing the old snap
 OAuth/cookie authentication, self/admin APIs/UI, live GeoIP and initial-unknown policy remain open.
 No version bump, publish, push, deploy or provider call. Unreleased facts are unchanged for this inert
 foundation; future owner-authorized deployment groups product changes in one entry.
+
+## RAG owner-question link audit
+
+CEO receipt `a58845f469baf657`: owner-linked Agent Bus R1.0 QUESTIONS/DECISIONS do not contain the
+provider-reported Q353/Q355. Those historical references are not verified current owner links.
+CTO requested exact file/anchor/status from #ab-ceo via authorized integration contact. Current
+RAG-CONTRACT and owning TODO/QUESTION now describe pending provider provisioning confirmation,
+without presenting missing IDs as owner-answerable blockers. External files/services were untouched.

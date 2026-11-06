@@ -24,11 +24,17 @@ RAG 0.3.0 static capabilities are verified; dedicated-instance provisioning and 
 
 ## Current provider checkpoint — 2026-11-06
 
+Provider-reported Q353/Q355 are not verified owner-question links. CEO inspected the owner-linked
+`ai-agent-bus/Plans/R1.0-Release/QUESTIONS.md` and DECISIONS: those IDs/instance are absent. CTO has
+requested current exact file/anchor links or an authoritative provisioning status from #ab-ceo.
+Until answered, describe the dependency as provider provisioning/contract confirmation, not an
+available owner-answerable question at an assumed location. No external files were edited.
+
 FileScan paid-replay defect: provider receipt `e6f9c7a3de48dd99` reports fix `0f5340c3` deployed
 2026-11-06 02:07 EST, verified upstream against real RAG core with fake providers. Acknowledgment now
 requires matching namespace/table/id/source/content_hash; not_found settles deletes only. CTO read
 local source/docs revision descriptions and fixture, without running providers or verifying live
-roots. The earlier HIGH warning is historical below; provisioning Q353/Q355 still blocks live wiring.
+roots. The earlier HIGH warning is historical below; dedicated-instance/root provisioning confirmation still blocks live wiring.
 
 T-45 docs `7a26cf1b` and replay fixture are delivered: local official
 `docs/agents/filescan.md#reference-for-a-consumer`, `docs/agents/rag.md#troubleshooting`,
@@ -52,7 +58,8 @@ call and does not prove backend readiness or data-path isolation; no paid lookup
 Local official reference: `/usr/local/src/ai-agent-bus/docs/agents/rag.md`.
 
 Provider recommends a separate `#rag/mdhouse@parf.us` instance/collection, pending owner provisioning
-(Q353); `#rag@parf.us` is not the final mdhouse endpoint. Intended initial caller is production
+(provider previously called this Q353; exact current owner-question link is unverified);
+`#rag@parf.us` is not the final mdhouse endpoint. Intended initial caller is production
 `#mdhouse@parf.us`, without manager role. No CTO/CEO/workers/Review or wildcard FileScan grants;
 FileScan identities are added only per provisioned exact project name. mdhouse project grants and
 stored namespace mapping remain independent access boundaries. No grant change was performed here.

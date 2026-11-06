@@ -221,8 +221,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle <a id="MW.2a"></a>
-  - Blocker: dedicated RAG/FileScan provisioning Q353/Q355 and lifecycle/recovery acceptance remain open. Provider reports paid-replay sink fixed/deployed `0f5340c3`; T-45 typed docs/fixture delivered, not end-to-end acceptance ([contract](../RAG-CONTRACT.md))
-  - State: free 0.3.0 discovery verified at `#rag@parf.us`; proposed final `#rag/mdhouse@parf.us` provisioning Q353 pending; typed FileScan/recovery fixture T-45 delivered with lifecycle gaps. A4 end-to-end/A7 dedup remain open; no paid calls or live wiring
+  - Blocker: dedicated RAG/FileScan provisioning confirmation and lifecycle/recovery acceptance remain open. Provider reports paid-replay sink fixed/deployed `0f5340c3`; T-45 typed docs/fixture delivered, not end-to-end acceptance ([contract](../RAG-CONTRACT.md))
+  - State: free 0.3.0 discovery verified at `#rag@parf.us`; proposed final `#rag/mdhouse@parf.us` provisioning pending provider confirmation (current owner-question link unverified); typed FileScan/recovery fixture T-45 delivered with lifecycle gaps. A4 end-to-end/A7 dedup remain open; no paid calls or live wiring
   - Why: RAG 0.3 supplies namespaced retrieval/embeddings; FileScan owns source ingestion/refresh/progress. mdhouse orchestrates them without a second retrieval backend
   - Builds: per-space/project source configuration; add/select/remove; ingestion; embedding/index jobs; refresh/reindex; progress/errors/freshness; retrieval test; request/flow source selection; citations/provenance in generated Markdown
   - Depends: [№MW.2](#MW.2) and owner-delivered [RAG contract](../RAG-CONTRACT.md); dedicated mdhouse instance with stored per-project namespaces and independent provider/user grants

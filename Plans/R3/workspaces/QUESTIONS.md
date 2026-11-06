@@ -14,7 +14,8 @@
 
 - ❓ Q-R3-RAG1 Which typed FileScan handoff completes the R3 source lifecycle? <a id="Q-R3-RAG1"></a>
   RAG 0.3.0 free capabilities are verified; retrieval is no longer blocked on v0.2 discovery.
-  Dedicated `#rag/mdhouse@parf.us` provisioning Q353 and FileScan roots Q355 remain pending.
+  Dedicated `#rag/mdhouse@parf.us` provisioning and FileScan roots await provider confirmation;
+  exact current owner-question links are requested, not assumed from previously reported Q353/Q355.
   T-45 typed docs/fixture are delivered: subscriber change messages and status snapshots, but no
   source registry, job API/history or event stream. A4 end-to-end and A7 dedup remain unmet.
   > 💡👾 Use the explicit dedicated endpoint/stored project namespace after provisioning; complete
