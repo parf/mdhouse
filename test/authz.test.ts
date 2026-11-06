@@ -2,33 +2,49 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FAMILIES, inventory, mutation, type Family } from '../src/lib/authz';
+import { bundle, FAMILIES, inventory, mutation, read, type Family } from '../src/lib/authz';
 
 const h = () => () => new Response('');
 
-describe('mutation', () => {
-  test('returns the same handler', () => {
+describe('tags', () => {
+  test('mutation, read and bundle return the same value', () => {
     const fn = h();
     expect(mutation('doc-write', fn)).toBe(fn);
+    const r = h();
+    expect(read(r)).toBe(r);
+    const b = { index: 'x' };
+    expect(bundle(b)).toBe(b);
   });
 
   test('an unknown family is refused', () => {
     expect(() => mutation('admin' as Family, h())).toThrow('unknown mutation family: admin');
   });
 
-  test('a handler classified twice is refused', () => {
-    const fn = mutation('doc-write', h());
-    expect(() => mutation('root-admin', fn)).toThrow('classified twice');
+  test('conflicting tags are refused; one read or bundle may be tagged again', () => {
+    const m = mutation('doc-write', h());
+    expect(() => mutation('root-admin', m)).toThrow('route already classified as doc-write, not root-admin');
+    expect(() => mutation('doc-write', m)).toThrow('route already classified as doc-write, not doc-write');
+    expect(() => read(m)).toThrow('route already classified as doc-write, not read');
+    const r = read(h());
+    expect(read(r)).toBe(r);
+    expect(() => mutation('doc-write', r)).toThrow('route already classified as read, not doc-write');
+    const b = bundle({ index: 'x' });
+    expect(bundle(b)).toBe(b);
+  });
+
+  test('read takes a handler; bundle takes an object', () => {
+    expect(() => read({} as never)).toThrow('read() takes a handler');
+    expect(() => bundle(h() as never)).toThrow('bundle() takes an HTML import');
   });
 });
 
 describe('inventory', () => {
   test('every route method with its family; reads are null, bare handlers and bundles answer every method', () => {
-    const read = h();
+    const r = read(h());
     const routes = {
-      '/a': read,
-      '/b': read, // one read handler at two paths is fine
-      '/bundle': { index: 'x' },
+      '/a': r,
+      '/b': r, // one read handler at two paths is fine
+      '/bundle': bundle({ index: 'x' }),
       '/c': { GET: h(), POST: mutation('instance-config', h()) },
       '/d': { HEAD: h(), OPTIONS: h(), PUT: mutation('root-admin', h()), DELETE: mutation('root-admin', h()) },
     };
@@ -45,6 +61,20 @@ describe('inventory', () => {
     ]);
   });
 
+  test('an untagged bare handler is refused — it answers POST too', () => {
+    const writes = (req: Request) => new Response(req.method === 'POST' ? 'written' : 'read');
+    expect(() => inventory({ '/x': writes })).toThrow('/x: unclassified route — read() or a method map');
+  });
+
+  test('an untagged or malformed object is refused', () => {
+    expect(() => inventory({ '/x': { POST: h(), extra: 1 } })).toThrow('/x: unclassified route');
+    expect(() => inventory({ '/x': { POST: mutation('doc-write', h()), extra: 1 } })).toThrow('/x: unclassified route');
+    expect(() => inventory({ '/x': { index: 'x' } })).toThrow('/x: unclassified route');
+    expect(() => inventory({ '/x': {} })).toThrow('/x: unclassified route');
+    expect(() => inventory({ '/x': new Response('') })).toThrow('/x: unclassified route');
+    expect(() => inventory({ '/x': 'text' })).toThrow('/x: unclassified route');
+  });
+
   test('an unclassified write method is refused, whatever the method', () => {
     for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
       expect(() => inventory({ '/x': { GET: h(), [method]: h() } })).toThrow(`${method} /x: unclassified write method`);
@@ -55,8 +85,13 @@ describe('inventory', () => {
     expect(() => inventory({ '/x': { GET: mutation('doc-write', h()) } })).toThrow('GET /x: a read method cannot be a mutation');
   });
 
+  test('read() inside a method map is refused, on any method', () => {
+    expect(() => inventory({ '/x': { POST: read(h()) } })).toThrow('POST /x: read() belongs on a bare route');
+    expect(() => inventory({ '/x': { GET: read(h()) } })).toThrow('GET /x: read() belongs on a bare route');
+  });
+
   test('a mutation as a bare handler is refused — it would answer GET too', () => {
-    expect(() => inventory({ '/x': mutation('doc-write', h()) })).toThrow('/x: a mutation must be a method');
+    expect(() => inventory({ '/x': mutation('doc-write', h()) })).toThrow('/x: a doc-write mutation must be a method');
   });
 
   test('one mutation registered at two places is refused', () => {

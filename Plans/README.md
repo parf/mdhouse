@@ -310,9 +310,12 @@ remain R3 work. Port-specific names prevent accidental overwrites, not a browser
 
 ## Mutation classification
 
-`lib/authz.ts`: every write method in `serve()` is `mutation(family, handler)`; `guard()` runs `inventory()`
-and `serve()` refuses to start on an unclassified write, a family on a read or bare handler, a duplicate
-registration or an unknown family. `serve()` returns `routes`; `test/authz.test.ts` pins the full list.
+`lib/authz.ts`: every route in `serve()` is `read(handler)` (bare, answers every method), `bundle(index)`
+or a method map whose writes are `mutation(family, handler)`; `guard()` runs `inventory()` and `serve()`
+refuses to start on an untagged bare handler or object, a malformed method map, an unclassified write,
+a family on a read or bare handler, conflicting tags, a duplicate mutation or an unknown family.
+GET/HEAD/OPTIONS and `read()` are declared non-mutating, not effect-free: `GET /api/git/remote?fresh`
+fetches from the network. `serve()` returns `routes`; `test/authz.test.ts` pins the full list.
 Dormant — no status, guard or grant changes. `Actor` (`admin`, `via`, optional immutable `user`) has
 no builder; the author cookie is never identity.
 
