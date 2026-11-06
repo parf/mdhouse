@@ -47,3 +47,18 @@
   > 💬👾 Verified `src/server.ts` marks route and `src/lib/prefs.ts`: all browsers share the same
   > root-keyed arrays; ignored changes invalidate the shared tree. Recommend treating these existing
   > global marks as instance configuration. A per-user marks store is a separate scope, not inferred.
+
+## Country reauthentication baseline — 2026-11-06
+
+- ❓ Q-R3-COUNTRY1 Which baseline makes a country new for reauthentication? <a id="Q-R3-COUNTRY1"></a>
+  [№USER-W6](DECISIONS.md#USER-W6) requires GitHub re-login before a protected action from a new
+  country. A user's country history can include observations from other sessions; GeoIP can be
+  unavailable. Candidate observations cannot establish an authenticated baseline by themselves.
+  - ( ) Compare against this session's last GitHub-authenticated country 🌟
+  - ( ) Compare against all countries already known for the user
+  > 💡👾 Per-session baseline: a US-authenticated session arriving from DE must reauthenticate even
+  > if another session previously used DE. A return to US after authenticating in DE also requires
+  > reauthentication. Only successful GitHub authentication may set a verified available country;
+  > unknown/private/failed GeoIP leaves the baseline unknown, not a guessed country. Keep a country
+  > candidate pending and do not execute the protected action while a required new-country decision
+  > is unresolved; exact first-known-country handling must be settled with this baseline.
