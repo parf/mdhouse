@@ -339,5 +339,6 @@ not a failure of the initial XML serializer; initial fresh-load proof alone was 
 
 CEO verified owner-authorized reload on actual `http://md/realty/.ai-team/README.md`
 (`c86638049f8af01f`): pre rendered1, complete image natural261x150, decoded SVG XML valid, inlineSVG0;
-all nine roots/RW preserved, initial no-image regression gone. User may refresh. Repeat full page
-reload was still being checked in that report; no claim of additional unreported verification.
+all nine roots/RW preserved, initial no-image regression gone. User may refresh. CEO subsequently confirmed repeat navigation/reload PASS
+(`76e2e7a98e14c732`): image261x150 displayed, viewBox `4 4 1669.7158203125 960`, XML parsererror false,
+source labels include #r/cto. No additional checks were run by CTO.

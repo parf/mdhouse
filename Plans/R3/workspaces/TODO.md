@@ -449,7 +449,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 - [x] MW.8c Serialize Mermaid output as valid standalone SVG XML <a id="MW.8c"></a>
   - Verified: XML serializer integrated `8fa40e1`; same-URL lifecycle followup exact `4f8dd03` independently PASS, integrated `4ccd007` unchanged. Baseline/fixed watcher regression and CEO actual page verify passed ([QA](../QA.md#mermaid-same-url-followup-and-live-result))
-  - Runtime: CEO confirmed actual README rendered1, decoded img natural261x150, valid XML, inlineSVG0 after authorized reload; roots/RW preserved. Repeat full page reload verification was still in progress at that report; no source edits
+  - Runtime: CEO confirmed actual README rendered1, decoded img natural261x150, valid XML, inlineSVG0 after authorized reload; roots/RW preserved. Repeat navigation/reload PASS confirmed by CEO (`76e2e7a98e14c732`), displayed image and #r/cto label preserved; no source edits
   - Owner-reported evidence: `.ai-team/README.md` diagram image complete but natural dimensions zero; SVG XML rejects HTML br inside foreignObject despite valid Mermaid source
   - Cohort: W3 native inert serialization in Mermaid image helper/render block; combined with [№MW.9a](#MW.9a), W2 owns separate Doc badge hunk
   - Acceptance: ordinary/text/br-label diagrams including failing-shaped cto/rg/tester labels load with nonzero image dimensions and valid SVG XML; invalid conversion fails visibly
