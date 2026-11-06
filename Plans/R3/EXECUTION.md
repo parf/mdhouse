@@ -437,3 +437,23 @@ followup with active negative/passive positive evidence. CTO also found `markedA
 nested descendants at the real action sink, assess source-reparent applicability and fix or justify
 the precise rule without silently weakening the provenance acceptance. Pinned review target stays
 unchanged while author followups use new commits. Whole content/admin gate remains on hold.
+
+## Pure core integration and smoke-procedure hold
+
+Independent receipt `9c6c21f4f63f3bdc` approved [№MW.3.2](workspaces/TODO.md#MW.3.2) exactly at
+`8fe2df3`; integrated as `d10524ea413e94ef946ddaec9bc56b4d5a089c76`. Source, tests and flow README
+are byte-identical; integration adds Plans/README module/boundary documentation and preserves the
+CHANGELOG. Full 598/598 and tsc passed; the documentation amendment changes no tested source.
+Exact-HEAD identity/focused recheck requested under `flow-core-d10524e`, in dedicated pinned checkout
+`.scratch/worktrees/r3-flow-run-integrated-review`. Checkpoint closure waits for that verdict.
+Materialization/live runtime stays unassigned; keep caller-assertion disclaimers in later output.
+
+Owner now holds all new browser smoke until a common reusable startup/cleanup procedure is verified.
+Pure tests/static analysis continue. W1 owns `scripts/safe-smoke.ts` and `test/safe-smoke.test.ts` in
+`r3/safe-smoke`, base `4399dd6`; no browser is needed for the allowed procedure tests. Preflight all
+ports; reject live/invalid/duplicate ports; never reuse a foreign endpoint. Capture spawned own PIDs/
+process groups, verify binding and expected canonical roots, and abort on startup/identity failure.
+Cleanup only captured owned processes/groups, never a listener-derived PID; temporary cleanup only
+own mkdtemp paths. Test busy foreign fixture stays alive, normal own start/cleanup and failure paths,
+then focused/tsc and independent safety review before lifting browser HOLD. CEO's CLI/common docs
+fix `4399dd6` has been read. Impact/ownership of earlier W2 cleanup is still pending.

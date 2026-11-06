@@ -77,3 +77,8 @@ A start on busy `:7795` failed; a subsequent corpus attempt made GET/404 request
 and supplies no valid acceptance evidence; record valid owned-server reruns separately. W2 must ensure
 start/cleanup harnesses enforce busy-port abort, captured own PID/listener/root verification and no
 foreign-process cleanup before further smoke runs. Incident receipt `2494a0954841b148`.
+
+Owner procedure gate: all new browser smoke is on hold until the common safe launcher passes its
+busy-port negative, owned startup/bind/root and cleanup checks plus independent safety review.
+W1 owns the helper/test implementation; pure tests and analysis may continue. Failed foreign-endpoint
+attempts are not acceptance evidence. Early PID impact/recovery remains unconfirmed.
