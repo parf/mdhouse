@@ -504,3 +504,14 @@ Bun.spawn server/Chrome and kill-loop lifecycle are present. Review was asked to
 This does not invalidate the separately inspected exact-node handler delta, but no launcher safety
 approval follows from that report. W2 must replace duplicate lifecycle with the common reviewed
 safe-smoke helper before clean browser acceptance.
+
+Safe-smoke followup `96cdfccef50f6a388e19d7b96521a920604be440` follows frozen `8df1d5e`;
+only helper and its tests change. W1 reproduced old failures without Chrome: signal during startup
+continued into command/fake-Chrome with wrong exit status, run-after-stop launched a group, and ESRCH
+aborted cleanup leaving own temp data. New guards reject start/run after stop begins and tolerate
+ESRCH; signal exit status is preserved. Brief PID-hidden startup state is bounded to two seconds,
+then refuses use. Author reports focus 22/22 twice, full/tsc green and no remaining own fixtures.
+Dedicated pinned review checkout `.scratch/worktrees/r3-safe-smoke-guard-review`, safety review
+`safe-smoke-96cdfcc`. Review must still examine mixed visible/hidden listener identity and spawn/
+cleanup failure paths. No helper approval/browser-HOLD lift yet. Existing CLI test path parsing may
+misread a checkout name containing `stop`; W1 renamed its worktree, without changing that unrelated test.
