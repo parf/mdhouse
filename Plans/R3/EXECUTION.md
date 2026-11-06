@@ -310,3 +310,12 @@ review. Review reproduced the exact target in a detached checkout; the target co
 changed. Final combined security review will use a dedicated checkout pinned to its exact SHA until
 verdict; author worktrees stay separate. No content-boundary integration/admin-wiring approval follows
 from this server-only PASS.
+
+Review receipt `c462f6c137cde2ba`: final server target
+`09b3cd7461044fec0a02443bdcbe9689384379f0` PASS, superseding `c6a1965` for server integration.
+Independent passive/render 115/115, full 538/538, 2751 assertions, tsc clean; extraction has no policy
+delta. Direct edge probes confirm exact custom-property casing, property-key case sensitivity,
+comment/entity handling, duplicates, mixed filtering and allowed `!important`. CTO retains the existing
+passive `!important` behavior on whitelisted properties; W2 must test parser consistency with the shared
+policy or explicitly report conservative differences. Final server target remains frozen/unintegrated;
+client action gate and combined review still block whole [№MW.8](workspaces/TODO.md#MW.8)/admin wiring.
