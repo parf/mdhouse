@@ -104,3 +104,17 @@ W2 receipt `4e9f68e1a19b67e6` identifies failed start 20:12:37 in `srv9.log` and
 `final-corpus.out` (40 failures, foreign GET/404 requests), followed by separate own-server
 `final-corpus2.out`. Review's earlier empty-port explanation is contradicted by current listener and
 API evidence; owner-log reconciliation/cleanup is pending. CTO made no mutation/stop of that process.
+
+### Confirmed cleanup of the separate 7795 leak
+
+Review receipts `d6e57885cef3af4e` and `c80566f8c777187a` establish ownership of PID 3167577 from
+live argv, cwd and port: its completed MW.0f.2 scratch leaked after cleanup killed a captured subshell
+wrapper rather than Bun. Scratch/log deletion had hidden the error; the port was not rechecked.
+W2's invalid GET/404 run therefore reached a live retired instance, not an empty port. Review's earlier
+empty-port explanation was wrong and is superseded by this attribution.
+
+Review stopped only the confirmed own PID. CTO independently verified no listener on 7794/7795,
+PID 3167577 absent and old PGID 3167572 absent. No restoration is required for that retired scratch;
+active Review checks used other ports and are confirmed unaffected. This does not establish ownership
+of earlier W2 listener-selected stops on 7794; that uncertainty stays separate. Common launcher tests
+must cover wrapper/child group cleanup and post-cleanup verification before clean browser reruns.

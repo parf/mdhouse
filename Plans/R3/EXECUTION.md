@@ -536,3 +536,8 @@ own-temp removal, robust signal/finally handling, and non-browser injected fixtu
 ESRCH alone is treated as already gone; other failures remain diagnostics/failure. Mixed listener
 identity is checked per row, not by assuming one PID per line. Fresh final target/review is still
 required; browser HOLD remains in force.
+
+Port 7795 attribution/cleanup is now confirmed in [QA](QA.md#confirmed-cleanup-of-the-separate-7795-leak):
+Review's completed scratch leaked through subshell-PID capture, was stopped by its verified owner,
+and CTO independently checked listener/PID/group absence. No restoration is needed for that retired
+scratch. Earlier 7794 PID uncertainty and the common-launcher/browser HOLD remain separate gates.
