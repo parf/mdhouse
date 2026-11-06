@@ -113,3 +113,9 @@
 
 - 📌 Q-R3-RAGSYNC1 Use the finite on-demand FileScan sync; no subscription/watch/timer remains, unknown paid outcomes never auto-resend. <a id="Q-R3-RAGSYNC1"></a>
   Bind the delivered approved provider contract after deployment; standing-watch retry authority is separate. [History](resolved.md#Q-R3-RAGSYNC1).
+
+
+- 📌 BROWSE-W1 Gitignore is a visibility default, not access control. <a id="BROWSE-W1"></a>
+  Show ignored when eligible ignored files exist; direct ignored-folder navigation lists its contents.
+  Folders selected in either V1/V2 also appear in main/default; each V tab keeps only its own selection.
+  Preserve explicit exclusions, `.git` protection and path jail. [History](resolved.md#BROWSE-W1).

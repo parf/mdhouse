@@ -987,3 +987,14 @@ current Plans retained. Integrated pure runtime check passed; no repeated full/t
 [QA limitations](QA.md#connected-rag-bin-checkpoint) preserve separate provider/readiness and old
 running-app gates. Parent [№MW.2a.1](workspaces/TODO.md#MW.2a.1) remains open for actual indexing/search;
 no version bump, deployment, live app reload or paid/provider call.
+
+
+## Ignored browsing cohort selected before code
+
+[№MW.9](workspaces/TODO.md#MW.9) implements the owner-approved browsing rule and correction:
+V1/V2 remain isolated selections; their selected ignored folders also appear in main/default.
+Current Sidebar always renders an ignored chip; normal Store.tree excludes gitignored Markdown,
+so the tree-fed DirPage and V tabs cannot reveal missing files. `listFiles` already falls back for
+an ignored folder's ALL listing. Built-in vendor deny is separate from gitignore; explicit exclusions
+and `.git`/Registry security remain boundaries. One coherent backend/UI cohort with focused gate,
+owned scratch browser check and exact independent review; no live app checks or version bump.

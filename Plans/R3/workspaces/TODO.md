@@ -421,6 +421,18 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: Mermaid labels, links/callbacks/config directives and SVG output are constrained; renderer code may execute, diagram source may not gain arbitrary authority
   - Acceptance: owned scratch browser attack/passive compatibility corpus, full tests/tsc and exact-SHA independent security verdict before integration; Referer is not a substitute
 
+## W7 — Ignored Markdown browsing
+
+- [ ] MW.9 Reveal deliberately selected gitignored Markdown <a id="MW.9"></a>
+  - Contract: [№BROWSE-W1](DECISIONS.md#BROWSE-W1); generated temporary reports, no new access authority
+  - Cohort: W1 scanner/store/API, W2 app/sidebar visibility; one combined focused/types gate, owned scratch browser check, independent exact security review
+  - Acceptance: left browse panel offers Show ignored when eligible gitignored Markdown exists; toggle off preserves default visibility elsewhere
+  - Acceptance: direct ignored-directory navigation lists its eligible contents without changing the global toggle; `.ai-team/` and deliberate vendor scope covered
+  - Acceptance: ignored directories selected in either V1 or V2 are included with contents in main/default; each V tab contains only its own selected entries
+  - Acceptance: `.git`, explicit `.mdhouseignore`/CLI exclusions and Registry path jail remain enforced for every reveal input, including escape/symlink/direct requests
+  - State: inspected V1/V2 per-browser file/folder selections, ignored toggle and git scanner; hidden-file availability is not currently exposed. Vendor is also in built-in browsing defaults, distinct from explicit exclusions
+  - No full/version bump/live7777 checks or reload; ready is not integrated/done
+
 ## Gate
 
 - [ ] MW.6 Review the complete workspace flow <a id="MW.6"></a>

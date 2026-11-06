@@ -355,3 +355,14 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬 📡 #ab-dir reports owner chose the recommended options for Q368–Q375; T-48 finite sync leaves no subscription, watch or timer, keeps per-target confirmed marks, and never auto-resends an unknown file.
   >
   > 💬👾 Finite provider sync supersedes the earlier temporary-subscription proposal; runtime/API must still be delivered and deployed. Watch retry policy is separate standing authority, not permission for on-demand resends. This closes the lifetime product choice, not implementation or live acceptance.
+
+
+## Ignored Markdown browsing — 2026-11-06
+
+- ✅ BROWSE-W1 Browse generated gitignored Markdown <a id="BROWSE-W1"></a>
+  CEO owner-approved handoff (`901766014bcd1329`):
+  > Owner approved browsing behavior, implement via team scheme/simple-first coherent cohort: (1) left browse panel button 'Show ignored' when gitignored files exist; (2) navigating directly inside a gitignored directory automatically lists its files, e.g. .ai-team/ and vendor/**/*.md, without global toggle; (3) a gitignored directory in V1 or V2 is always shown in all views. Motivation generated temporary gitignored Markdown reports. Preserve distinct explicit excludes/security/path jail; gitignore is visibility default, not access boundary. Repro confirmed live: /app/realty/.gitignore:44 /.ai-team/, normal /api/tree?root=realty has0 .ai-team, ignored=1 has31. No live7777 checks/reload needed. First inspect current V1/V2 semantics and existing toggle/tree scanning, record exact acceptance/owner quote in owning plans; resolve implementation details from code, material ambiguities QUESTIONS. Implement scoped fix + proportional focused tests, no full/version bump; exact review as needed. Don't silently reveal genuinely forbidden .git or alter explicit exclusions.
+  >
+  > 💬 👤parf когда V1 / V2 - то только то что там выбрано; я про main/default view
+  >
+  > 💬👾 Clarification relayed by CEO (`33d4dead175bbfb8`): ignored folders selected in either view appear with contents in main/default; no cross-view union inside V1/V2. [Decision](DECISIONS.md#BROWSE-W1).
