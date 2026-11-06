@@ -58,5 +58,6 @@
   [№USER-W7](DECISIONS.md#USER-W7) makes established GitHub username and name/realm admin-edit-only.
   Current code has only the Basic challenge realm `mdhouse` and the Agent Bus host-derived realm;
   neither is an authenticated-user field. Is realm an existing external identity component or
-  another label? Its meaning and source must be specified before adding a user-schema field.
+  another label? Its meaning and source must be specified before adding a user-schema field; this question does not
+  block username/name protection or authenticated-actor-only login/signatures.
   > 💡👾 Keep the established username/name lock; leave realm unmodeled until its meaning is explicit.

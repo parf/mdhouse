@@ -41,6 +41,7 @@
   Every country transition requires GitHub re-login before protected actions/trusted history; unknown/private/failed GeoIP is not a transition. [№Q-R3-COUNTRY1](#Q-R3-COUNTRY1).
   Each session idle >30 days requires GitHub re-login before last-used updates; other sessions do not renew it. Admin proof/session TTLs stay separate. [History](resolved.md#USER-W6).
 - 📌 USER-W7 Once set, Team GitHub username and name/realm are configured-admin-edit-only; self-edit and automatic profile-sync overwrite are forbidden. <a id="USER-W7"></a>
+  Login/signature always uses the authenticated immutable principal; body/cookie spoof, different-ID OAuth rebinding and admin login-as are forbidden.
   Immutable GitHub principal and grants stay unchanged; username correction requires GitHub lookup/preview/confirm. Realm meaning: [№Q-R3-REALM1](QUESTIONS.md#Q-R3-REALM1). [History](resolved.md#USER-W7).
 - 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](resolved.md#Q-W1).
   No protected-path list; canonical root = grant; realpath jail = boundary; automatic references stay RO.

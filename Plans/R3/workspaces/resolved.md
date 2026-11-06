@@ -290,3 +290,8 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > 💬 👤parf user can not change his github username and his name/realm after they set, only admin can
   >
   > 💬👾 → [№USER-W7](DECISIONS.md#USER-W7): server-side direct/stale/API checks enforce the lock, including automatic login/profile synchronization. Preserve immutable GitHub numeric principal; admin username corrections require existence/public preview/confirmation and cannot silently bind another account or transfer grants. Name/realm changes confer no grants. Personal author attribution is separate. No authenticated-user realm field currently exists; [№Q-R3-REALM1](QUESTIONS.md#Q-R3-REALM1) asks its meaning before introducing schema.
+
+  >
+  > 💬 👤parf pretty obvious - can;t sign/login under other person
+  >
+  > 💬👾 [№USER-W7](DECISIONS.md#USER-W7): admin profile edits are not login-as or permission to replace another principal. Signature comes only from authenticated actor; reject body/cookie spoof and silent OAuth different-ID rebinding. Existing name/realm wording remains history, but no missing realm schema blocks username/name protection or authorizes a new field.

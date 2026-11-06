@@ -144,8 +144,9 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: removing a user or grant never rewrites/deletes their earlier Markdown attribution or audit records
   - Acceptance: user names and project names are display metadata; grants are keyed by stable user ID and canonical root identity
   - Acceptance: once set, Team GitHub username and name/realm cannot be self-edited; only configured admin can change them, enforced on API/direct/stale requests ([№USER-W7](DECISIONS.md#USER-W7)); login/profile sync cannot overwrite pinned identity fields
+  - Acceptance: login and signatures derive only from authenticated immutable actor; reject body/cookie name spoof, admin login-as and silent OAuth different-ID rebinding. Admin profile edits never substitute another principal or grant impersonation
   - Acceptance: test self/other-user/spoofed-admin/stale or revoked-admin requests and profile-sync drift; admin username correction requires verified GitHub existence/public preview/confirmation, immutable numeric principal unchanged, no silent account rebind or grant changes
-  - Planning gate: realm has no authenticated-user field in the current model; settle [№Q-R3-REALM1](QUESTIONS.md#Q-R3-REALM1) before adding schema. Personal author cookie remains separate attribution, not Team identity editing
+  - Planning gate: realm has no authenticated-user field in the current model; do not invent a realm field; [№Q-R3-REALM1](QUESTIONS.md#Q-R3-REALM1) does not block username/name or impersonation protection. Personal author cookie remains separate attribution, not Team identity editing
   - Acceptance: tests cover OAuth state/callback failure, unknown GitHub user, username rename, multiple users, duplicate display names, session revocation, every grant transition, trusted/untrusted sources, Viewer, root RO and project removal
   - Home: [Next release](README.md#next-release)
 
