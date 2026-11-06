@@ -53,6 +53,14 @@ steps; its old pack 1.0.1 label is not new verified deployment evidence. It is n
 ## Current provider checkpoint — 2026-11-06
 
 
+
+T-48 first-build limitation (provider receipt `990f468334f46a9e`): the Python client cannot yet
+carry the inline reply to a long upsert, so large-file confirmation uses free RAG check. A refusal
+may remain unknown/incomplete until the sender deadline/wait ends, unlike small files. The bin
+must show that latency/uncertainty, not success on delivery or timeout, and no automatic on-demand
+paid resend. Only complete:true plus matching identity/source/hash confirms; an unavailable or
+inconclusive check stays unknown. A client improvement is filed, not scheduled/deployed evidence.
+
 ### T-49 actual setup checkpoint
 
 Latest Q376–Q378 choices are settled through #ab-dir: shared Voyage/production AI, own Qdrant proxy

@@ -885,3 +885,11 @@ Bin foundation API is agreed by W3/W1: pure full-metadata plan/digest, root dev/
 10,000-source bound, explicit complete/issues, fixed dependency exclusions, actual jailed local
 metadata CLI inventory, zero transport on import/help/plan, sync/search explicitly not-wired. One
 cohort gate/review follows frozen author outputs, with no source-version bump or per-task full run.
+
+## First-build large-file confirmation limitation
+
+Provider receipt `990f468334f46a9e`: first T-48 uses free completeness check for large-file upserts
+because the Python client cannot return their long inline reply yet. A refusal can stay unknown/
+incomplete through the wait/deadline; the future bin must report that, never success on timeout or
+automatic paid resend. Small-file handling is unchanged; followup client fix is only filed. Current
+planner/bin foundation still has no live adapter and made no provider call/test.
