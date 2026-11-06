@@ -52,6 +52,8 @@ export function showsHistory(state: GitState | null, log: { commits: readonly un
 export interface Held<T> {
   path: string;
   value: T;
+  /** What it was asked for; absent on a value that was not requested for a revision and state. */
+  ask?: HistoryAsk;
 }
 
 /** The held answer, only for the path now shown — a previous file's never stands in for this one. */
@@ -68,4 +70,12 @@ export const sameAsk = (a: HistoryAsk, b: HistoryAsk): boolean => a.path === b.p
 
 /** The answer held after `value` arrives for `ask`: replaced only while `ask` is still what is shown, else `held` stays. */
 export const holdAnswer = <T>(held: Held<T> | null, ask: HistoryAsk, now: HistoryAsk, value: T): Held<T> | null =>
-  sameAsk(ask, now) ? { path: ask.path, value } : held;
+  sameAsk(ask, now) ? { path: ask.path, value, ask } : held;
+
+/**
+ * The held answer only when it was asked for exactly `now` — path, revision and Git state. An
+ * untracked file's history is confirmed only by such an answer; one from before a change of
+ * revision or state confirms nothing.
+ */
+export const heldConfirmed = <T>(held: Held<T> | null, now: HistoryAsk | null): T | null =>
+  held && now && held.ask && sameAsk(held.ask, now) ? held.value : null;
