@@ -185,7 +185,8 @@ export class Store {
     const cached = s.scans.get(includeIgnored);
     if (cached) return cached;
 
-    const result = await scanRoot(root, await this.rules(root), { includeIgnored, noGit: this.opts.noGit });
+    const allow = async (rel: string) => (await this.allowedRel(root, rel))?.abs ?? null;
+    const result = await scanRoot(root, await this.rules(root), { includeIgnored, noGit: this.opts.noGit, allow });
     s.scans.set(includeIgnored, result);
     return result;
   }
@@ -206,7 +207,8 @@ export class Store {
   /**
    * A revealed scope: what a scan of the directory as its own root lists with ignored files on.
    * Built-in defaults are lifted for the scope's own path only; inside it every rule holds. Each
-   * file must resolve inside the root and outside `.git` and explicit exclusions.
+   * file must resolve inside the root and outside `.git` and explicit exclusions before its
+   * metadata is read.
    */
   private async scope(root: Root, rel: string): Promise<ScanResult> {
     const s = await this.stateFor(root);
@@ -222,13 +224,9 @@ export class Store {
       noGit: this.opts.noGit,
       limit: REVEAL.files,
       markBlind: true,
+      allow: async (f) => (await this.allowedRel(root, `${rel}/${f}`))?.abs ?? null,
     });
-    const files: MdFile[] = [];
-    for (const f of res.files) {
-      const fileRel = `${rel}/${f.rel}`;
-      if (!(await this.allowedRel(root, fileRel))) continue;
-      files.push({ ...f, rel: fileRel, dir: f.dir ? `${rel}/${f.dir}` : rel });
-    }
+    const files = res.files.map((f) => ({ ...f, rel: `${rel}/${f.rel}`, dir: f.dir ? `${rel}/${f.dir}` : rel }));
     const out = { ...res, files };
     s.scopes.set(rel, out);
     while (s.scopes.size > REVEAL.cached) s.scopes.delete(s.scopes.keys().next().value!);
