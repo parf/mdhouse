@@ -70,3 +70,44 @@ export async function startEnv(opts: { fixtures?: string; src?: string; rw?: boo
     throw e;
   }
 }
+
+/**
+ * Runs `body` and always runs `env.stop()` afterwards, whether `body` returned or threw. Returns the process exit
+ * code: `body`'s own on success, 2 when `body` threw or the cleanup failed. A failure of either is printed; when both
+ * fail the body's error comes first. Nothing is reported green while something it started may still be there.
+ */
+export async function guarded(env: { stop(): Promise<void> }, body: () => Promise<number>): Promise<number> {
+  let code = 0;
+  let failure: Error | undefined;
+  try {
+    code = await body();
+  } catch (e) {
+    failure = e instanceof Error ? e : new Error(String(e));
+  }
+  try {
+    await env.stop();
+  } catch (e) {
+    const cleanup = e instanceof Error ? e : new Error(String(e));
+    failure = failure ? new AggregateError([failure, cleanup], `${failure.message}; ${cleanup.message}`) : cleanup;
+  }
+  if (failure) {
+    console.error(`run failed: ${failure.message}`);
+    return 2;
+  }
+  return code;
+}
+
+/** The checks P01 and P03 must report, each `true`: a missing check is a failure, not a pass. */
+export const KEPT_KEYS = ['red', 'bold', 'bg', 'cls', 'fixedDropped', 'rgb', 'centre', 'urlDropped', 'italicUnderline'];
+export const EDGE_KEYS = [
+  'upperPropDropped', 'commentStripped', 'duplicateLastWins', 'importantKept', 'spacesKept', 'escapedPropDropped', 'escapedValueDropped',
+  'mixedKeepsColour', 'hiddenDeclarationDropped', 'lastInvalidDropped', 'customCaseDropped', 'entityDecoded', 'upperValueKept',
+];
+
+/** Keys of `expected` that `actual` does not hold as exactly `true`, plus keys it holds that were not expected. A missing or non-object `actual` fails every key. */
+export function unmet(actual: unknown, expected: string[]): string[] {
+  const got = actual && typeof actual === 'object' && !Array.isArray(actual) ? (actual as Record<string, unknown>) : {};
+  const missing = expected.filter((k) => got[k] !== true);
+  const extra = Object.keys(got).filter((k) => !expected.includes(k));
+  return [...missing, ...extra.map((k) => `unexpected:${k}`)];
+}
