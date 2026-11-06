@@ -1041,3 +1041,11 @@ current Plans. Integrated pure views check passed. [Evidence and limits](QA.md#i
 Show ignored, direct ignored/vendor scope and main selected-folder visibility are implemented;
 V1/V2 remain their own selections. No full/types/browser landing rerun, version bump, publish or
 live service action. Owner/CEO controls any subsequent targeted runtime reload.
+
+
+## Ignored-browsing local runtime applied
+
+CEO verified owner-authorized targeted `mdhouse.service` restart (`f904d409b9956a79`): PID2572183
+active, HTTP/api/roots healthy, all nine roots/path/RW preserved. [№MW.9](workspaces/TODO.md#MW.9)
+is now applied to the local daemon; user advised to reload the page. No build/test/install/version
+bump/provider action or parallel CTO restart; this does not claim cross-browser release acceptance.

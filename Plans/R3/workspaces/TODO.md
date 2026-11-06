@@ -431,7 +431,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: ignored directories selected in either V1 or V2 are included with contents in main/default; each V tab contains only its own selected entries
   - Acceptance: `.git`, explicit `.mdhouseignore`/CLI exclusions and Registry path jail remain enforced for every reveal input, including escape/symlink/direct requests
   - Verified: exact `2dce337` independent PASS, integrated `9b90362` with source/test/package/docs identity unchanged; combined focused/types, owned scratch browser proof and integrated views check passed ([QA](../QA.md#ignored-markdown-browsing-checkpoint))
-  - Runtime: source integrated; this cohort was not separately applied to the live service or published. Safari/Firefox remain release QA
+  - Runtime: CEO verified owner-authorized local reload (`f904d409b9956a79`), active PID2572183, HTTP/roots healthy and all nine roots/path/RW preserved; user page reload required. Not published; Safari/Firefox remain release QA
   - API: hasIgnored/revealed/capped and bounded repeated reveal directory parameters. Main uses selected-folder union; each V tab only its own entries
   - Scope correction: W1 reproduced pre-existing ALL listing bypass of explicit .mdhouseignore exclusions; same cohort fixes /api/files filtering/jail with focused negative fixtures. Built-in vendor visibility remains distinct from explicit denies
   - No full/version bump/live7777 checks or reload; ready is not integrated/done
