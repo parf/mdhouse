@@ -1,5 +1,6 @@
 import { render as mount } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { safeHtml } from './safe-html';
 import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
@@ -10,7 +11,7 @@ import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
 import { markChanges } from './mark-changes';
 import { QaEditor } from './QaEditor';
-import { formFor, markFolded, openTarget, wireQa, type QaTarget } from './qa-page';
+import { actOf, formFor, itemsOf, markFolded, openTarget, wireQa, type QaTarget } from './qa-page';
 import type { QaAction, QaChange } from '../lib/qa';
 import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
@@ -77,6 +78,20 @@ interface Props {
 const MERMAID_URL = '/vendor/mermaid/mermaid.esm.min.mjs';
 let mermaidModule: Promise<typeof import('mermaid')> | null = null;
 
+/** The diagram as an image: an SVG in an `<img>` runs no script, loads nothing and answers no events. */
+function svgImage(svg: string): HTMLImageElement {
+  const vb = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement.getAttribute('viewBox')?.split(/[\s,]+/).map(Number) ?? [];
+  const img = new Image();
+  img.alt = 'diagram';
+  img.className = 'mermaid-img';
+  if (vb.length === 4 && vb[2]! > 0 && vb[3]! > 0) {
+    img.width = Math.ceil(vb[2]!);
+    img.height = Math.ceil(vb[3]!);
+  }
+  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  return img;
+}
+
 async function renderMermaid(container: HTMLElement): Promise<void> {
   const blocks = container.querySelectorAll<HTMLElement>('pre.mermaid:not([data-rendered])');
   if (!blocks.length) return;
@@ -84,13 +99,19 @@ async function renderMermaid(container: HTMLElement): Promise<void> {
   const dark = matchMedia('(prefers-color-scheme: dark)').matches;
   mermaidModule ??= import(/* @vite-ignore */ MERMAID_URL) as Promise<typeof import('mermaid')>;
   const { default: mermaid } = await mermaidModule;
-  mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default', securityLevel: 'strict' });
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: dark ? 'dark' : 'default',
+    securityLevel: 'strict',
+    // Directives in a diagram cannot change these.
+    secure: ['secure', 'securityLevel', 'startOnLoad', 'maxTextSize', 'suppressErrorRendering', 'maxEdges', 'theme', 'themeCSS', 'themeVariables', 'fontFamily', 'altFontFamily', 'dompurifyConfig'],
+  });
 
   for (const [i, block] of blocks.entries()) {
     block.dataset.rendered = '1';
     try {
       const { svg } = await mermaid.render(`mmd-${Date.now()}-${i}`, block.textContent ?? '');
-      block.innerHTML = svg;
+      block.replaceChildren(svgImage(svg));
     } catch (err) {
       block.dataset.rendered = 'error';
       block.title = String(err);
@@ -123,6 +144,9 @@ export function Doc({
   crumbChips,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
+  /** The token of the render on the page: html and token come in one payload, and change together. */
+  const actToken = doc?.actToken ?? '';
+  const safeBody = useMemo(() => (doc ? safeHtml(doc.html) : ''), [doc?.html]);
   /** The file line the page landed on (`#L<n>`) — the ✎ link opens the file there. */
   const [atLine, setAtLine] = useState<number | null>(null);
   /** An HTML file: its source instead of the page it renders. */
@@ -306,16 +330,17 @@ export function Doc({
     const el = body.current;
     if (!el || !doc) return;
     const editable = doc.writable && view === 'doc' && doc.kind === 'md';
-    for (const box of el.querySelectorAll<HTMLInputElement>('.task-checkbox')) box.disabled = !editable;
+    for (const box of el.querySelectorAll<HTMLInputElement>('.task-checkbox')) box.disabled = !editable || !actOf(box, actToken);
     if (!editable) return;
 
     const onChange = async (e: Event) => {
       const box = e.target as HTMLInputElement;
-      if (!box.classList?.contains('task-checkbox')) return;
+      const own = box.classList?.contains('task-checkbox') ? actOf(box, actToken) : null;
+      if (!own) return;
       box.disabled = true;
       try {
         const d = docNow.current ?? doc;
-        await api.toggleTask(`${d.root}/${d.rel}`, Number(box.dataset.line), box.dataset.hash ?? '');
+        await api.toggleTask(`${d.root}/${d.rel}`, own.line, own.hash);
         setTaskNote(null);
       } catch (err) {
         // Put the box back as it was. The reload below may bring identical HTML (nothing was
@@ -420,7 +445,7 @@ export function Doc({
       open: (t) => void openForm(t),
       act: (line, hash, change) => void act(line, hash, change),
       close: () => setEditing(null),
-    });
+    }, actToken);
     return () => {
       unfold();
       unwire();
@@ -498,12 +523,13 @@ export function Doc({
     if (!el || !spot || !editing || !doc || !answerable) return;
     // The item by its fingerprint and line; else the same fingerprint nearest its old line —
     // lines added above move it, and two items may read alike; else whatever is on its line.
-    const all = [...el.querySelectorAll<HTMLElement>('[data-qa][data-hash]')];
-    const alike = all.filter((b) => b.dataset.hash === editing.hash);
-    const item =
-      alike.find((b) => Number(b.dataset.line) === editing.line) ??
-      alike.sort((a, b) => Math.abs(Number(a.dataset.line) - editing.line) - Math.abs(Number(b.dataset.line) - editing.line))[0] ??
-      all.find((b) => Number(b.dataset.line) === editing.line);
+    const all = itemsOf(el, actToken).map(({ li, act }) => ({ li, line: act.line, hash: act.hash }));
+    const alike = all.filter((b) => b.hash === editing.hash);
+    const found =
+      alike.find((b) => b.line === editing.line) ??
+      alike.sort((a, b) => Math.abs(a.line - editing.line) - Math.abs(b.line - editing.line))[0] ??
+      all.find((b) => b.line === editing.line);
+    const item = found?.li;
     const refocus = () => {
       const area = spot.querySelector('textarea');
       if (!area) return;
@@ -523,8 +549,8 @@ export function Doc({
       return;
     }
     // Follow the item to its new line; if it changed, take it as it now is but say so.
-    const line = Number(item.dataset.line);
-    const hash = item.dataset.hash ?? '';
+    const line = found!.line;
+    const hash = found!.hash;
     if (line !== editing.line || hash !== editing.hash) {
       const id = editing.id;
       setEditing((e) =>
@@ -569,10 +595,10 @@ export function Doc({
     const after = nextAfter.current;
     if (!el || !after || !doc || !answerable || after.url !== doc.url) return;
     nextAfter.current = null;
-    const item = [...el.querySelectorAll<HTMLElement>('li.item:is(.wait-me, .finding)')].find((b) => Number(b.dataset.line) > after.line);
-    if (item) {
-      item.scrollIntoView({ block: 'center' });
-      void openForm(formFor(item));
+    const next = itemsOf(el, actToken).find(({ li, act }) => li.matches('.wait-me, .finding') && act.line > after.line);
+    if (next) {
+      next.li.scrollIntoView({ block: 'center' });
+      void openForm(formFor(next.act));
     } else setTaskNote('No open question below.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.html, answerable]);
@@ -682,11 +708,16 @@ export function Doc({
     if (!el) return;
     for (const old of el.querySelectorAll('.heading-actions')) old.remove();
     if (!answerable || !doc) return;
-    for (const h of el.querySelectorAll<HTMLElement>(':is(h1, h2, h3, h4, h5, h6)[data-hash]')) {
+    // The add buttons this page made, each with the heading it was made for: a click acts on what is
+    // recorded here, never on what the clicked node or its neighbours say.
+    const made = new WeakMap<HTMLElement, { line: number; hash: string }>();
+    for (const h of el.querySelectorAll<HTMLElement>(':is(h1, h2, h3, h4, h5, h6)[data-act]')) {
+      const own = actOf(h, actToken);
+      if (!own) continue;
       const actions = document.createElement('span');
       actions.className = 'heading-actions';
       if (editHref) {
-        const line = Number(h.dataset.line) + (doc.lineOffset ?? 0);
+        const line = own.line + (doc.lineOffset ?? 0);
         const edit = document.createElement('a');
         edit.className = 'heading-act heading-edit';
         edit.href = `${editHref}:${line}`;
@@ -702,6 +733,7 @@ export function Doc({
         b.type = 'button';
         b.className = 'heading-act heading-add';
         b.dataset.where = where;
+        made.set(b, { line: own.line, hash: own.hash });
         b.textContent = glyph;
         b.title = title;
         actions.append(b);
@@ -710,10 +742,10 @@ export function Doc({
     }
     const click = (e: Event) => {
       const b = (e.target as HTMLElement).closest<HTMLElement>('.heading-add');
-      const h = b?.closest<HTMLElement>('[data-hash]');
-      if (!b || !h) return;
+      const own = b && made.get(b);
+      if (!b || !own) return;
       e.preventDefault();
-      const line = Number(h.dataset.line);
+      const line = own.line;
       const where = b.dataset.where === 'end' ? 'end' : 'below';
       // The same button again, while its editor is open: closes it, as Cancel does.
       const open = addingNow.current;
@@ -722,11 +754,11 @@ export function Doc({
         return;
       }
       addDraft.current = '';
-      setAdding({ id: ++opened.current, line, hash: h.dataset.hash ?? '', where, note: null, saving: false });
+      setAdding({ id: ++opened.current, line, hash: own.hash, where, note: null, saving: false });
     };
     el.addEventListener('click', click);
     return () => el.removeEventListener('click', click);
-  }, [doc?.html, answerable, editHref, doc?.lineOffset]);
+  }, [doc?.html, answerable, editHref, doc?.lineOffset, actToken]);
 
   // The add editor's element: made once per opened editor and moved on re-render, like the
   // answer editor's.
@@ -754,22 +786,27 @@ export function Doc({
     const el = body.current;
     const spot = addHost.current;
     if (!el || !spot || !adding || !answerable) return;
-    const all = [...el.querySelectorAll<HTMLElement>(':is(h1, h2, h3, h4, h5, h6)[data-hash]')];
-    const alike = all.filter((h) => h.dataset.hash === adding.hash);
-    const h =
-      alike.find((x) => Number(x.dataset.line) === adding.line) ??
-      alike.sort((a, b) => Math.abs(Number(a.dataset.line) - adding.line) - Math.abs(Number(b.dataset.line) - adding.line))[0] ??
-      all.find((x) => Number(x.dataset.line) === adding.line);
-    if (h && h.dataset.hash !== adding.hash) {
+    // The heading by its own marked identity: fingerprint and line, else the same fingerprint nearest its old line.
+    const all = [...el.querySelectorAll<HTMLElement>(':is(h1, h2, h3, h4, h5, h6)[data-act]')].flatMap((el) => {
+      const own = actOf(el, actToken);
+      return own ? [{ el, line: own.line, hash: own.hash }] : [];
+    });
+    const alike = all.filter((x) => x.hash === adding.hash);
+    const found =
+      alike.find((x) => x.line === adding.line) ??
+      alike.sort((a, b) => Math.abs(a.line - adding.line) - Math.abs(b.line - adding.line))[0] ??
+      all.find((x) => x.line === adding.line);
+    const h = found?.el;
+    if (found && found.hash !== adding.hash) {
       // Edited in place: take it as it now is, and say so before anything is added under it.
-      const hash = h.dataset.hash ?? '';
+      const hash = found.hash;
       setAdding((a) => (a && a.id === adding.id ? { ...a, hash, note: 'The heading was changed in the file meanwhile — have a look; your text is kept.' } : a));
     }
     if (!h) {
       el.prepend(spot);
       setAdding((a) => (a && !a.note ? { ...a, note: 'That heading is no longer in the file — your text is kept.' } : a));
     } else {
-      const line = Number(h.dataset.line);
+      const line = found!.line;
       if (line !== adding.line) setAdding((a) => (a && a.id === adding.id ? { ...a, line } : a));
       if (adding.where === 'below') h.after(spot);
       else {
@@ -1217,7 +1254,7 @@ export function Doc({
         ref={body}
         class={md ? `md${overlaid ? ' marked' : ''}${answerable ? ' qa-rw' : ''}` : 'code-file'}
         hidden={view === 'patch' || (view === 'marked' && diff?.current === false) || (!md && (!byLines || !!doc.tooBig))}
-        dangerouslySetInnerHTML={{ __html: doc.html }}
+        dangerouslySetInnerHTML={{ __html: safeBody }}
       />
     </article>
   );
@@ -1245,8 +1282,8 @@ function FileView({ doc }: { doc: DocPayload }) {
     case 'pdf':
       return <iframe class="file-frame" src={doc.raw} title={name} />;
     case 'html':
-      // Sandboxed twice: here, and by the server's CSP — its scripts run in an opaque origin.
-      return <iframe class="file-frame" src={doc.raw} title={name} sandbox="allow-scripts" />;
+      // Passive: no script runs in it. Sandboxed here, and by the server's CSP.
+      return <iframe class="file-frame" src={doc.raw} title={name} sandbox="" />;
     case 'video':
       return <video class="file-media" src={doc.raw} controls preload="metadata" />;
     case 'audio':

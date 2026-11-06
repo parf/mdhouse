@@ -71,7 +71,7 @@ Every daemon start mounts installed `<pkg>/doc` as `_mdhouse` (`mdhouse referenc
 roots. Naming that directory or its alias is refused; a saved copy is skipped without rewriting prefs.
 `/api/doc` reports `writable: Registry.writableAt(loc)` and `reference: true` for reference paths,
 including overlap addressing; UI hides write controls, external editing and Agent Bus dispatch there.
-Plan convention/shareable skill content remains R3 work.
+The reference ships the plan convention, Markdown/markup guides and canonical shareable skills under `doc/skills`.
 
 ### A Q&A change touches its item, or nothing
 
@@ -183,10 +183,9 @@ contents list, so a heading link and its contents entry cannot disagree.
   over 300 kB, no body over 5 MB (`tooBig`). Write routes stay Markdown-only (`docAt`).
 - **`.git` never:** a path with a `.git` segment is 404 on `/api/doc` and `/api/raw` (remote URLs,
   credentials).
-- `/api/raw` — any file, its type: `Content-Security-Policy: sandbox` on everything (an SVG or text
-  opened on its own runs no script); HTML `sandbox allow-scripts` — an opaque origin, its requests
-  back cross-site: writes refused, reads unreadable; PDF none (the browser's viewer); unknown binary
-  `attachment`. `nosniff` on all.
+- `/api/raw` — `Content-Security-Policy: sandbox` without scripts on HTML, SVG/media, code/text and
+  unknown binary; HTML iframe also has empty `sandbox`. Code is text/plain; PDF uses the browser's
+  viewer without that header; unknown binary is `attachment`. `nosniff` on all.
 - Rendered links: every file in the root → its page (`localHref`); `<img src>` → `/api/raw`.
 - `/api/git/diff`: Markdown lines rendered (`markupHunks`); any other file's as typed.
 - The CLI goes over the `0600` unix socket instead, which a browser cannot reach at all.
@@ -316,3 +315,30 @@ GET/POST `/api/author` reads/sets/clears attribution without changing prefs or p
 my-quotes prefer the trusted session-author hook, then browser fallback; without either, legacy
 prefs/git/login attribution remains. The cookie is HttpOnly, host-only, SameSite=Lax and HTTPS Secure
 when the trusted request transport is HTTPS. It authenticates nobody and grants no access.
+
+## Passive document content and generated actions
+
+`lib/passive.ts` applies the sanitize-html allowlist after server document/image rewriting, file
+highlighting and diff-line markup. `authored()` strips renderer data attributes from raw HTML tokens
+and makes unfinished fragments inert; authored classes and `{#id .class}` remain supported.
+`lib/passive-style.ts` is pure shared CSS allowlist data for server and client filters.
+`ui/safe-html.ts` filters HTML at document/diff DOM sinks with DOMPurify and rebuilds allowed styles.
+Source text, line hashes and source Copy are unchanged. Passive tables/details/formatting, Shiki,
+anchors and genuine Q&A/task controls remain; scripts/handlers, frames/forms/base/meta/link/style tags,
+inline SVG/MathML and unlisted URL schemes are removed. Page CSP is defense in depth.
+
+Each top-level render returns a fresh `actToken`; generated action nodes carry matching `data-act`
+and their own line/hash/state/option/reply metadata. Client write handlers accept exact generated
+controls, not authored class/ancestor context; heading actions use trusted per-render WeakMap entries.
+This is DOM provenance, not route authorization. Existing root/actor/stale checks remain independent.
+Question/reply body clicks may open their own form; double-click selection is on marked glyph/row.
+Mermaid uses locked strict app configuration and inert SVG images; labels are not selectable and
+link/callback directives are inactive. Diagram source grants no privileged request or script capability.
+
+## Scratch smoke lifecycle
+
+`scripts/safe-smoke.ts` supplies the common CLI/import startup/cleanup for browser corpora. It refuses
+busy/live ports, captures detached own groups, verifies listener ownership and expected roots, and
+cleans only its captured groups/temp directories. Stop failures are non-green; no listener-derived
+kill or foreign endpoint reuse. `scripts/passive-lib.ts` stages fixtures and its own probe, delegates
+server/Chrome lifecycle to that helper, and propagates cleanup failures.

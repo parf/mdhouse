@@ -728,7 +728,7 @@ describe('request limits', () => {
 });
 
 describe('/api/raw', () => {
-  test('every file with its type: sandboxed except a PDF; HTML runs scripts in an opaque origin; an unknown binary a download; .git never', async () => {
+  test('every file with its type: sandboxed except a PDF; HTML with no scripts; code as text; an unknown binary a download; .git never', async () => {
     const { mkdtemp, rm, writeFile, mkdir } = await import('node:fs/promises');
     const { tmpdir } = await import('node:os');
     const { join } = await import('node:path');
@@ -737,7 +737,7 @@ describe('/api/raw', () => {
     const { serve } = await import('../src/server');
 
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-raw-'));
-    for (const f of ['a.html', 'a.css', 'a.txt', 'a.ts', 'a.md', 'a.png', 'a.pdf', 'a.mp4']) await writeFile(join(dir, f), 'x');
+    for (const f of ['a.html', 'a.css', 'a.txt', 'a.ts', 'a.js', 'a.mjs', 'a.md', 'a.png', 'a.pdf', 'a.mp4']) await writeFile(join(dir, f), 'x');
     await writeFile(join(dir, 'a.exe'), new Uint8Array([77, 90, 0, 1]));
     await writeFile(join(dir, 'notes'), 'plain words\n');
     await mkdir(join(dir, '.git'));
@@ -756,12 +756,13 @@ describe('/api/raw', () => {
       const html = await raw('a.html');
       expect(html.status).toBe(200);
       expect(html.headers.get('content-type')).toStartWith('text/html');
-      expect(html.headers.get('content-security-policy')).toBe('sandbox allow-scripts');
-      for (const f of ['a.css', 'a.txt', 'a.ts', 'a.md', 'notes']) {
+      expect(html.headers.get('content-security-policy')).toBe('sandbox');
+      for (const f of ['a.css', 'a.txt', 'a.ts', 'a.js', 'a.mjs', 'a.md', 'notes']) {
         const r = await raw(f);
         expect(r.status).toBe(200);
         expect(r.headers.get('content-type')).toStartWith('text/plain');
         expect(r.headers.get('content-security-policy')).toBe('sandbox');
+        expect(r.headers.get('x-content-type-options')).toBe('nosniff');
       }
       for (const [f, type] of [['a.png', 'image/png'], ['a.mp4', 'video/mp4']] as const) {
         const r = await raw(f);

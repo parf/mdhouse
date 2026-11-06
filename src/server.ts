@@ -101,20 +101,34 @@ export function sameOrigin(req: Request): boolean {
   }
 }
 
+/** HTML is shown sandboxed, as passive as a rendered document: an opaque origin, and no scripts run. */
+const SANDBOXED_HTML = { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': 'sandbox' };
+
 /**
- * HTML is rendered, sandboxed: its scripts run, but in an opaque origin — no cookies, and every
- * request it makes back here is cross-site, so the write routes refuse it and reads stay unreadable.
+ * The app page's CSP — defense in depth behind `passive()`, never the control itself. Scripts and
+ * connections only from mdhouse; images from anywhere a document may link; inline styles for
+ * Mermaid's SVG and Shiki.
  */
-const SANDBOXED_HTML = { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': 'sandbox allow-scripts' };
+const PAGE_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' https: http: data: blob:",
+  "media-src 'self' https: http:",
+  "connect-src 'self'",
+  "frame-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ');
 
 /** A file's page: highlighted up to here; past it, no body — "too big, download". */
 const SHOW_MAX = 5_000_000;
 
 /**
  * The headers `/api/raw` serves a file with, by kind. Everything is sandboxed — opened on its
- * own, an SVG's or a text file's scripts never run in mdhouse's origin — except a PDF, which the
- * browser's own viewer needs to show; HTML runs its scripts in an opaque origin; an unknown
- * binary is a download.
+ * own, no HTML's, SVG's or text file's script runs — except a PDF, which the browser's own viewer
+ * needs to show; code is text; an unknown binary is a download.
  */
 function rawHeaders(kind: Kind, rel: string, type: string): Record<string, string> {
   const common = { 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff' };
@@ -301,7 +315,7 @@ export async function serve(opts: ServeOptions) {
   const page: Handler = async () => {
     appHtml ??= fetch(new URL('/__app/', server.url)).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`app page: ${r.status}`))));
     try {
-      return new Response(await appHtml, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      return new Response(await appHtml, { headers: { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': PAGE_CSP } });
     } catch (err) {
       appHtml = null;
       return fail(500, (err as Error).message);

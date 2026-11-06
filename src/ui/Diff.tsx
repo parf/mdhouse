@@ -1,3 +1,4 @@
+import { safeHtml } from './safe-html';
 import type { FileDiff } from '../lib/git';
 import { Ago } from './Ago';
 
@@ -45,7 +46,7 @@ export function Diff({ diff, loading, actions }: { diff: FileDiff | null; loadin
                     uses. The gutters and the sign column stay as they are — they are the
                     patch, not the text. An empty line still has to occupy one. */}
                 {line.html ? (
-                  <td class="code md-line" dangerouslySetInnerHTML={{ __html: line.html }} />
+                  <td class="code md-line" dangerouslySetInnerHTML={{ __html: safeHtml(line.html) }} />
                 ) : (
                   <td class="code">{line.text || '\u00a0'}</td>
                 )}

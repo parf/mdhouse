@@ -1994,3 +1994,4 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .tabs:not(.icons) button > span:not(.n) { display: none; }
   .tabs:not(.icons) button { display: flex; align-items: center; justify-content: center; }
 }
+.md .mermaid-img { max-width: 100%; height: auto; }

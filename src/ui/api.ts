@@ -71,6 +71,8 @@ export interface DocPayload {
   html: string;
   headings: Heading[];
   hasMermaid: boolean;
+  /** This render's token: every control the renderer made carries it, a document's own markup cannot. Markdown only. */
+  actToken?: string;
   tasks: { done: number; total: number };
   /** Working-tree status, when git has something to say: `modified`, `staged`, `untracked`. */
   status?: FileStatus;
