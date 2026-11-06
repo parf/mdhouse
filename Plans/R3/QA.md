@@ -82,3 +82,8 @@ Owner procedure gate: all new browser smoke is on hold until the common safe lau
 busy-port negative, owned startup/bind/root and cleanup checks plus independent safety review.
 W1 owns the helper/test implementation; pure tests and analysis may continue. Failed foreign-endpoint
 attempts are not acceptance evidence. Early PID impact/recovery remains unconfirmed.
+
+W2 followup receipt `a78361e47714210c`: earlier `:7794` starts/restarts were approximately 19:32–20:05
+local on 2026-11-05. Final stop used a checked captured PID; earlier listener-based stops still lack
+ownership proof. W2 reports no remaining own server/Chrome/probe listeners. The new raw/nested-action
+fixtures and corrected launcher are unrun during owner HOLD; no browser fix has been verified from them.

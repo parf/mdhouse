@@ -457,3 +457,17 @@ Cleanup only captured owned processes/groups, never a listener-derived PID; temp
 own mkdtemp paths. Test busy foreign fixture stays alive, normal own start/cleanup and failure paths,
 then focused/tsc and independent safety review before lifting browser HOLD. CEO's CLI/common docs
 fix `4399dd6` has been read. Impact/ownership of earlier W2 cleanup is still pending.
+
+Browser followups above frozen `31e4992`: test-only
+`b165a2d4251ae085f93b00779a3b8bef7d9a7798`, then fix
+`1f4e47502155387a3512a5b8750985a01e6e6b33`. W2 confirms ancestor fallback by source inspection;
+new browser reproduction remains unrun during HOLD. Fix restricts writes/form buttons to the exact
+marked event target; item/reply containers may open their own form only. Double-click selection is
+limited to marked glyph/row, with the UX change in CHANGELOG. New tests cover nested planted children,
+raw HTML active/passive iframe fixtures and baseline/fixed behavior, but are not yet acceptance evidence.
+Static delta review was requested; pinned `31e4992` remains unchanged.
+
+W2's new `passive-lib` process helper must consolidate with W1's common safe-smoke lifecycle rather
+than creating a second independent launcher. Fixture/CDP helpers may remain separate. After the
+procedure passes review, run clean baseline/fixed corpora through the common helper; retain failed
+attempts separately. Whole content boundary and browser smoke remain on hold until the respective gates.
