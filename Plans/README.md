@@ -132,6 +132,10 @@ string onto a root path.
   muted files left out; its count on the tab, an empty one says how to fill it. `ViewChips` on a
   document's and a folder's title, and on a document's breadcrumbs (its folder), adds (`+V1`, on
   hover) and takes out (`V1`).
+- Ignored browsing: Show ignored/Hide ignored appears when eligible gitignored Markdown exists
+  (or the switch is on). Direct folder navigation reveals its eligible files without changing the
+  switch. Folders selected in either V1/V2 also appear in main/default; each V tab keeps only its
+  own entries. Explicit exclusions and `.git` protection still apply.
 
 ### Git is batched
 
@@ -174,7 +178,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   a cross-site form post and the handler.
 - `/api/files?p=<root>/<dir>` lists every file under a folder (the folder page's ALL view): git's list
   in a repo (`.gitignore` holds), else (or in a folder its repo ignores) a walk without dot-folders and `node_modules`; at most 5000.
-  `src/lib/scan.ts` `listFiles()`.
+  `src/lib/scan.ts` `listFiles()` preserves explicit root exclusions and resolves each result through
+  Registry before stat; `.git`, canonical aliases into exclusions and outside symlinks are refused.
 - Every file has a page. `src/lib/filetypes.ts` `kindOf()`: `md | code | text | image | pdf | html |
   video | audio | binary` — by name; `langOf()` (Shiki ids + aliases + `Dockerfile`, `.h`, `.conf` …)
   → `code`; an unknown name: no NUL in its first 8 kB → `text`, else `binary`.
@@ -225,6 +230,13 @@ contents list, so a heading link and its contents entry cannot disagree.
   honoured with no configuration; a nested repo (`name/`) or submodule (mode 160000) is listed
   the same way; a directory walk with a deny list covers ground that is not in
   any repo, or that its repo ignores. `src/lib/scan.ts`.
+  `GET /api/tree` adds hasIgnored/revealed/capped and accepts repeated root-relative reveal scopes:
+  max 32, 1024 UTF-8 bytes each, 16 KiB total. Malformed scopes return 400; denied/missing scopes
+  are omitted. A selected scope lifts built-in defaults only along its own path, not explicit
+  `.mdhouseignore`/extraDeny or `.git`. Base/scope results pass Registry before stat; ignored
+  availability uses eligible jailed paths. Scopes cache in a 64-entry per-root LRU until invalidate;
+  each is capped at 5000 files, with a visible incomplete warning. Registry checks cost one realpath
+  per listed path per invalidation.
 - **Git history, status, HEAD** — `git log --name-status`, `git status --porcelain`, and
   `rev-parse` plus `FETCH_HEAD`'s mtime for the front page's branch and last pull. `src/lib/git.ts`.
   A path goes to git as `:(literal)<path>` (`literal()`); a folder's Markdown as `./<dir, glob

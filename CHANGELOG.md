@@ -2,7 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- Tree metadata and folder ALL listings preserve explicit exclusions, `.git` protection and Registry path jail, including symlink aliases
+
 ### Added
+
+- Browse gitignored Markdown with Show ignored, direct folder navigation, or folders selected in V1/V2; selected folders also appear in main/default while each V tab keeps its own selection
 
 - Standalone `mdhouse-rag-sync` previews local Markdown coverage, explicitly applies finite owner-configured sync and runs scoped searches; paid queries and unknown-file resends require explicit flags, with no background sync
 
