@@ -541,3 +541,11 @@ Port 7795 attribution/cleanup is now confirmed in [QA](QA.md#confirmed-cleanup-o
 Review's completed scratch leaked through subshell-PID capture, was stopped by its verified owner,
 and CTO independently checked listener/PID/group absence. No restoration is needed for that retired
 scratch. Earlier 7794 PID uncertainty and the common-launcher/browser HOLD remain separate gates.
+
+Helper `96cdfcc` review receipt `5a44e21b3e20e1a3` confirms F1/F2/F3/F6 fixes by code and a
+run-after-stop probe; focused-suite verdict is blocked by confirmed W1 fixture PID 250110 on 61741.
+Repeated failures against that occupied fixture port are environmental, not a clean acceptance run.
+Review was told not to rerun until owner-mediated cleanup resolves the classifier denial. `96cdfcc`
+is not the final target: per-row attribution, spawn errors, removal failure and non-green leftovers
+remain required CTO fixes. W1 may continue static edits while injection/browser HOLD persists; one
+clean final-target rerun and safety verdict follow cleanup. No proxy termination is authorized.
