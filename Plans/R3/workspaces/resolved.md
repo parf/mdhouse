@@ -245,3 +245,8 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > when session was not used for more than 30 days; require re-login via github
   >
   > 💬👾 → [№USER-W6](DECISIONS.md#USER-W6): self/admin authorization applies server-side to list/details/direct requests. Idle is per session, checked before updating last-used; neighboring active sessions never renew it. County stays distinct from country. Geo source/availability and trusted client-IP extraction require analysis before implementation; no arbitrary external/paid lookup or spoofable XFF trust. Short-lived admin TTLs are unchanged.
+
+  >
+  > 💬 👤parf use some 2 public service for IP resolve (try one, only on fail try second)
+  >
+  > 💬👾 Public-service selection/use is authorized for this feature; official API docs and mocks suffice for research, with no real user-IP lookup. Select HTTPS/free public services without implied paid/signup credentials; report exact pair, fields/limits/terms and county gaps before live wiring. Secondary follows primary failure only; trusted client-IP validation and private/loopback exclusion remain mandatory.

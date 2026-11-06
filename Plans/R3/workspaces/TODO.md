@@ -133,7 +133,9 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: retain each user’s sessions, last 10 IPs, last 10 unique city/county locations, last 10 unique countries with last-seen date and latest browser User-Agent ([№USER-W6](DECISIONS.md#USER-W6)); county is a separate field from country
   - Acceptance: session/history list and details are visible only to self or configured admin; server-side checks deny another user’s direct/list/detail requests without leaking metadata
   - Acceptance: idle >30 days on the specific user session requires GitHub reauthentication before refreshing last-used; test boundary, rejected/expired requests and a neighboring active session; admin proof/session TTLs remain separate
-  - Planning gate: verify trusted client-IP extraction and geo source/availability, bounded history ordering/dedup and storage before implementation; missing geo stays unavailable, no invented location, arbitrary external/paid lookup or untrusted XFF
+  - Acceptance: GeoIP uses two public HTTPS services sequentially, primary first and secondary only on failure; no fan-out, private/loopback IP disclosure, guessed county or untrusted XFF
+  - Planning gate: select the exact provider pair from official API docs; report city/county/country availability, free limits/terms and timeout/invalid-response/429/5xx fallback before live wiring. Research uses docs/mocks, no real user-IP lookups or implied paid/signup credentials
+  - Planning gate: verify trusted client-IP extraction, bounded history ordering/dedup and storage; missing geo/county remains unavailable
   - Review gate: bounded worker plan then exact-SHA independent security review; no premature Team-auth activation
   - Acceptance: removing a user or grant never rewrites/deletes their earlier Markdown attribution or audit records
   - Acceptance: user names and project names are display metadata; grants are keyed by stable user ID and canonical root identity

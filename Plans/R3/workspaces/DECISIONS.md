@@ -36,6 +36,7 @@
 - 📌 USER-W5 With >1 configured user, Team answers/comments and their edits require the authenticated respondent’s name; shared Git author is not attribution. <a id="USER-W5"></a>
   Personal signature preference and existing Team/admin thresholds remain separate. [History](resolved.md#USER-W5).
 - 📌 USER-W6 Keep per-user sessions, last 10 IPs, last 10 unique city/county locations, last 10 unique countries with last-seen date, latest browser User-Agent; self/admin only. <a id="USER-W6"></a>
+  GeoIP: two public services, primary first, secondary only on failure; no parallel fan-out, private/loopback IP disclosure or guessed county.
   Each session idle >30 days requires GitHub re-login before last-used updates; other sessions do not renew it. Admin proof/session TTLs stay separate. [History](resolved.md#USER-W6).
 - 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](resolved.md#Q-W1).
   No protected-path list; canonical root = grant; realpath jail = boundary; automatic references stay RO.
