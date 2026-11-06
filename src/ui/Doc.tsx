@@ -1,5 +1,5 @@
 import { render as mount } from 'preact';
-import { gitStateOf } from './git-state';
+import { fetchesHistory, gitStateOf, heldFor, showsHistory, type Held } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { safeHtml } from './safe-html';
@@ -182,7 +182,8 @@ export function Doc({
    * repository. That used to be inside `/api/doc`, so every document waited on it before a
    * word was rendered. Now the page paints first and the two names arrive a moment later.
    */
-  const [log, setLog] = useState<HistoryPayload | null>(null);
+  // The answer is held with its file, so the previous file's commits never show for this one.
+  const [held, setHeld] = useState<Held<HistoryPayload> | null>(null);
   const docRootId = doc?.root;
   const [rootInRepo, setRootInRepo] = useState(false);
   useEffect(() => {
@@ -200,23 +201,26 @@ export function Doc({
   const [logFailed, setLogFailed] = useState(false);
   const docPath = doc ? `${doc.root}/${doc.rel}` : null;
 
+  const log = heldFor(held, docPath);
+  const docGitState = gitStateOf(doc);
+
   useEffect(() => {
-    setLog(null);
     setLogFailed(false);
   }, [docPath]);
-  // Asked again when the file's git status changes — a commit adds to its history — without
-  // clearing the panel first.
+  // Asked again when the file's git status or state changes — a commit adds to its history — without
+  // clearing the panel first. A Gitignored file is not asked at all; a change of file or state
+  // drops the answer still in flight.
   useEffect(() => {
-    if (!docPath) return;
+    if (!docPath || !fetchesHistory(docGitState)) return;
     let live = true;
     api
       .history(docPath)
-      .then((h) => live && setLog(h))
+      .then((h) => live && setHeld({ path: docPath, value: h }))
       .catch(() => live && setLogFailed(true));
     return () => {
       live = false;
     };
-  }, [docPath, doc?.status]);
+  }, [docPath, doc?.status, docGitState]);
 
   /**
    * Diff mode: the same document shown as what changed rather than as text.
@@ -1230,6 +1234,7 @@ export function Doc({
           </details>
         )}
         <History
+          shown={showsHistory(docGitState, log)}
           log={log}
           failed={logFailed}
           activeRev={diffOn ? diffRev : null}
@@ -1371,6 +1376,7 @@ const saveHistoryOpen = (open: boolean) => {
  * document until shown again.
  */
 function History({
+  shown,
   log,
   failed,
   activeRev,
@@ -1379,6 +1385,8 @@ function History({
   localOn,
   onPickLocal,
 }: {
+  /** The history part is shown; the uncommitted-changes row is not part of it. */
+  shown: boolean;
   /** Uncommitted changes to the file: always shown, even with the panel hidden. */
   local: { added: number; removed: number; loading: boolean; at: number; isNew: boolean } | null;
   localOn: boolean;
@@ -1392,16 +1400,21 @@ function History({
   const [open, setOpen] = useState(loadHistoryOpen);
   useEffect(() => saveHistoryOpen(open), [open]);
 
+  // Without a file history to show, only the uncommitted-changes row can remain.
+  if (!shown && !local) return null;
+
   return (
     <section class="gitlog">
-      <div class="summary" role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen(!open)}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(!open))}>
-        <IconGit size={12} /> History
-        {/* Its state, at a glance: a closed panel otherwise reads as an empty one. */}
-        <span class="gitlog-state" title={open ? 'Shown — click to hide' : 'Hidden — click to show'}>
-          {open ? <IconEye size={13} /> : <IconEyeOff size={13} />}
-        </span>
-      </div>
+      {shown && (
+        <div class="summary" role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen(!open)}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(!open))}>
+          <IconGit size={12} /> History
+          {/* Its state, at a glance: a closed panel otherwise reads as an empty one. */}
+          <span class="gitlog-state" title={open ? 'Shown — click to hide' : 'Hidden — click to show'}>
+            {open ? <IconEye size={13} /> : <IconEyeOff size={13} />}
+          </span>
+        </div>
+      )}
       {/* Outside the folding part: the panel's hide never hides work not yet committed. */}
       {local && (
         <button class="commit local" aria-pressed={localOn} title="Your uncommitted changes to this file" onClick={onPickLocal}>
@@ -1420,7 +1433,7 @@ function History({
         </button>
       )}
 
-      {open && (
+      {shown && open && (
         <>
       {!log && !failed && <div class="spinner" />}
       {failed && <p class="empty">git is unavailable here.</p>}

@@ -33,3 +33,26 @@ export function parentScope(rel: string): string | null {
   const at = rel.lastIndexOf('/');
   return at > 0 ? rel.slice(0, at) : null;
 }
+
+/** Is the file's history asked for: never for a Gitignored file; an untracked one is asked to find out whether it has any. */
+export const fetchesHistory = (state: GitState | null): boolean => state !== 'ignored';
+
+/**
+ * Is the History panel shown. Gitignored: never. Untracked: only once the current file has
+ * commits — hidden while the answer is unknown, empty or failed. Anything else (tracked, no
+ * repository, unknown) keeps the panel as it was.
+ */
+export function showsHistory(state: GitState | null, log: { commits: readonly unknown[] } | null): boolean {
+  if (state === 'ignored') return false;
+  if (state === 'untracked') return !!log && log.commits.length > 0;
+  return true;
+}
+
+/** An answer held with the path it was asked for. */
+export interface Held<T> {
+  path: string;
+  value: T;
+}
+
+/** The held answer, only for the path now shown — a previous file's never stands in for this one. */
+export const heldFor = <T>(held: Held<T> | null, path: string | null): T | null => (held && path !== null && held.path === path ? held.value : null);

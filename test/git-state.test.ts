@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { gitStateClass, gitStateOf, GIT_STATE, parentScope, shownStatus } from '../src/ui/git-state';
+import { fetchesHistory, gitStateClass, gitStateOf, GIT_STATE, heldFor, parentScope, showsHistory, shownStatus } from '../src/ui/git-state';
 import { revealScopes } from '../src/ui/views';
 
 describe('git state', () => {
@@ -43,5 +43,42 @@ describe('git state', () => {
     expect(shownStatus('untracked')).toBeUndefined();
     expect(shownStatus(undefined)).toBeUndefined();
     for (const st of ['modified', 'staged', 'deleted'] as const) expect(shownStatus(st)).toBe(st);
+  });
+});
+
+describe('file history visibility', () => {
+  const none = { commits: [] };
+  const some = { commits: [{}] };
+
+  test('a Gitignored file is never asked for history and never shows the panel', () => {
+    expect(fetchesHistory('ignored')).toBe(false);
+    expect(showsHistory('ignored', null)).toBe(false);
+    expect(showsHistory('ignored', some)).toBe(false);
+  });
+
+  test('an untracked file is asked, and shows history only once the current file has commits', () => {
+    expect(fetchesHistory('untracked')).toBe(true);
+    expect(showsHistory('untracked', null)).toBe(false);
+    expect(showsHistory('untracked', none)).toBe(false);
+    expect(showsHistory('untracked', some)).toBe(true);
+  });
+
+  test('tracked, no repository and unknown keep the panel as it was, whatever the log', () => {
+    for (const state of [null]) {
+      expect(fetchesHistory(state)).toBe(true);
+      expect(showsHistory(state, null)).toBe(true);
+      expect(showsHistory(state, none)).toBe(true);
+      expect(showsHistory(state, some)).toBe(true);
+    }
+    // nothing but the server's gitState decides: status, marks and the ignored flag do not
+    expect(showsHistory(gitStateOf({ status: 'untracked', marks: ['ignored'], ignored: true }), none)).toBe(true);
+  });
+
+  test('an answer is held for its file: another file, none, or a moved path gets nothing', () => {
+    const held = { path: 'r/a.md', value: 'A-commits' };
+    expect(heldFor(held, 'r/a.md')).toBe('A-commits');
+    expect(heldFor(held, 'r/b.md')).toBeNull();
+    expect(heldFor(held, null)).toBeNull();
+    expect(heldFor(null, 'r/a.md')).toBeNull();
   });
 });
