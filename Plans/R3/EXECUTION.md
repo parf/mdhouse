@@ -496,3 +496,11 @@ through the reviewed helper after the procedure gate. Final combined source rema
 Source/tests/flow README match approved `8fe2df3`; focused 85/85 and tsc passed. CTO full-suite
 evidence remains 598/598 on the unchanged integrated code. Materialization B/live runtime stays
 unassigned; W3 pauses implementation at this verified boundary while other gates complete.
+
+Static followup receipt `36f9eae8dec1006d` accepts exact-node production fix `1f4e475`, with
+full/tsc green; dynamic tests remain unrun during HOLD. Its claim that `b165a2d` contains no launcher
+was disproved by CTO reading the exact `scripts/passive-lib.ts` blob: Bun.serve probe/free-port,
+Bun.spawn server/Chrome and kill-loop lifecycle are present. Review was asked to correct the scope.
+This does not invalidate the separately inspected exact-node handler delta, but no launcher safety
+approval follows from that report. W2 must replace duplicate lifecycle with the common reviewed
+safe-smoke helper before clean browser acceptance.
