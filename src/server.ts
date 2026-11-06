@@ -27,6 +27,7 @@ import { Watcher } from './lib/watch';
 import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
 import { allowedAddress, Users } from './lib/access';
+import { inventory, isMethodMap, mutation, type RouteEntry } from './lib/authz';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, validTarget, type AbAction } from './lib/agent-bus';
@@ -363,17 +364,14 @@ export async function serve(opts: ServeOptions) {
     return page(req);
   };
 
-  function guard<R extends string>(routes: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
+  /** Every route and its mutation family — filled by `guard`, which refuses an unclassified write. */
+  let routes: RouteEntry[] = [];
+  function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
+    routes = inventory(table);
     const out: Record<string, unknown> = {};
-    for (const [path, route] of Object.entries(routes)) {
+    for (const [path, route] of Object.entries(table)) {
       if (typeof route === 'function') out[path] = check(route as Handler);
-      // A method map — `{ GET, POST }` — not the HTML bundle, which is an object too.
-      else if (
-        route &&
-        typeof route === 'object' &&
-        Object.keys(route).length > 0 &&
-        Object.entries(route).every(([m, v]) => /^[A-Z]+$/.test(m) && typeof v === 'function')
-      ) {
+      else if (isMethodMap(route)) {
         out[path] = Object.fromEntries(Object.entries(route).map(([m, h]) => [m, check(h as Handler)]));
       } else out[path] = route;
     }
@@ -439,7 +437,7 @@ export async function serve(opts: ServeOptions) {
        * `Registry.writeFile()`, and the watcher then tells every open tab.
        */
       '/api/task': {
-        POST: async (req) => {
+        POST: mutation('doc-write', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as { p?: string; line?: number; hash?: string } | null;
           if (!body?.p || !Number.isInteger(body.line) || typeof body.hash !== 'string') {
@@ -462,7 +460,7 @@ export async function serve(opts: ServeOptions) {
             );
           }
           return json({ checked: result.checked });
-        },
+        }),
       },
 
       /**
@@ -486,7 +484,7 @@ export async function serve(opts: ServeOptions) {
           if (text === null) return json({ error: 'the file changed since this page was loaded', reason: 'stale' }, 409);
           return json({ me, text });
         },
-        POST: async (req) => {
+        POST: mutation('doc-write', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = qaRequestOf(await req.json().catch(() => null));
           if (!body) return fail(400, 'expected {p, line, hash, op, …}');
@@ -515,7 +513,7 @@ export async function serve(opts: ServeOptions) {
             return json({ error: message[result.error], reason: result.error }, result.error === 'empty' || result.error === 'needs-who' ? 400 : 409);
           }
           return json({ ok: true });
-        },
+        }),
       },
 
       /**
@@ -525,7 +523,7 @@ export async function serve(opts: ServeOptions) {
        * fingerprint.
        */
       '/api/insert': {
-        POST: async (req) => {
+        POST: mutation('doc-write', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as (Partial<AddRequest> & { p?: string }) | null;
           if (
@@ -569,13 +567,13 @@ export async function serve(opts: ServeOptions) {
             return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
           }
           return json({ ok: true, line: result.line });
-        },
+        }),
       },
 
       /** The settings page's options. Changing one is held to the same same-origin rule. */
       '/api/settings': {
         GET: () => json(settingsPayload()),
-        POST: async (req) => {
+        POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
           if (!body) return fail(400, 'expected a JSON object');
@@ -587,7 +585,7 @@ export async function serve(opts: ServeOptions) {
             server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
           }
           return json(settingsPayload());
-        },
+        }),
       },
 
       /**
@@ -603,7 +601,7 @@ export async function serve(opts: ServeOptions) {
           const author = await authorOf(req, loc ?? { root: registry.defaultRoot(), rel: '' });
           return authorPayload(author, readAuthorCookie(req.headers.get('cookie'), cookiePort()));
         },
-        POST: async (req) => {
+        POST: mutation('attribution', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as { name?: unknown } | null;
           if (!body || typeof body.name !== 'string') return fail(400, 'expected {name}');
@@ -615,7 +613,7 @@ export async function serve(opts: ServeOptions) {
           const res = authorPayload(await authorOf(next, { root: registry.defaultRoot(), rel: '' }), name);
           res.headers.append('set-cookie', authorSetCookie(cookiePort(), name, secure));
           return res;
-        },
+        }),
       },
 
       /** The Agent Bus integration: on or off, connected or why not, the agents and the default ones. */
@@ -630,19 +628,19 @@ export async function serve(opts: ServeOptions) {
 
       /** The settings page's default agents — asked by a page that names none. */
       '/api/ab/default': {
-        POST: async (req) => {
+        POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
           const body = (await req.json().catch(() => null)) as { names?: unknown } | null;
           if (!Array.isArray(body?.names) || !body.names.every(validTarget)) return fail(400, 'expected {names: [bus name]}');
           const ab = await prefs.setAgentBus({ default: [...new Set(body.names as string[])] });
           return json({ default: ab.default });
-        },
+        }),
       },
 
       /** The settings page's names filter: a regex per line. */
       '/api/ab/filter': {
-        POST: async (req) => {
+        POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
           const body = (await req.json().catch(() => null)) as { lines?: unknown } | null;
@@ -654,12 +652,12 @@ export async function serve(opts: ServeOptions) {
           if (bad.length) return fail(400, `not a regex: ${bad.join(', ')}`);
           const ab = await prefs.setAgentBus({ filter: lines });
           return json({ filter: ab.filter });
-        },
+        }),
       },
 
       /** Ask agents about a document: the job id at once, its events over the WebSocket (`ab`). */
       '/api/ab/send': {
-        POST: async (req) => {
+        POST: mutation('external-send', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
           const body = (await req.json().catch(() => null)) as { p?: unknown; targets?: unknown; action?: unknown; note?: unknown } | null;
@@ -689,7 +687,7 @@ export async function serve(opts: ServeOptions) {
           } catch (err) {
             return fail(503, (err as Error).message);
           }
-        },
+        }),
       },
 
       /** A job's events so far — for a page that reconnected and missed some. */
@@ -707,14 +705,14 @@ export async function serve(opts: ServeOptions) {
        * non-browser caller sends neither and is let through — it could edit prefs.json itself.
        */
       '/api/roots/remove': {
-        POST: async (req) => {
+        POST: mutation('root-admin', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as { id?: string } | null;
           const root = body?.id ? registry.get(body.id) : undefined;
           if (!root) return fail(404, 'unknown root');
           if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be removed`);
           return json(await removeRoots([root.path]));
-        },
+        }),
       },
 
       /**
@@ -781,7 +779,7 @@ export async function serve(opts: ServeOptions) {
        * the repo holds a read-only root or files outside the root.
        */
       '/api/git/commit': {
-        POST: async (req) => {
+        POST: mutation('git-write', async (req) => {
           const body = (await req.json().catch(() => null)) as { p?: string; message?: string; files?: string[]; nonMd?: boolean } | null;
           const at = await gitWrite(req, body?.p);
           if ('error' in at) return at.error;
@@ -802,7 +800,7 @@ export async function serve(opts: ServeOptions) {
             const r = await run(at.repo, ['commit', '-a', '-m', message]);
             return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
           });
-        },
+        }),
       },
       /**
        * One file, from its own page: `git commit -- <file>`, which takes that path from the
@@ -811,7 +809,7 @@ export async function serve(opts: ServeOptions) {
        * looked at, and this is the file on screen.
        */
       '/api/git/commit-file': {
-        POST: async (req) => {
+        POST: mutation('git-write', async (req) => {
           const body = (await req.json().catch(() => null)) as { p?: string; message?: string } | null;
           // The file's folder: same origin, git on, in a repo, writable.
           const at = await gitWrite(req, body?.p?.replace(/\/[^/]*$/, ''));
@@ -837,11 +835,11 @@ export async function serve(opts: ServeOptions) {
             const r = await run(repo, ['commit', '-m', message, '--', literal(rel)]);
             return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
           }));
-        },
+        }),
       },
       /** One document back to its last commit — its uncommitted changes thrown away. */
       '/api/git/reset': {
-        POST: async (req) => {
+        POST: mutation('git-write', async (req) => {
           const body = (await req.json().catch(() => null)) as { p?: string; hash?: string } | null;
           // The document's folder: same origin, git on, in a repo, writable.
           const at = await gitWrite(req, body?.p?.replace(/\/[^/]*$/, ''));
@@ -864,10 +862,10 @@ export async function serve(opts: ServeOptions) {
             const r = await run(repo, ['checkout', 'HEAD', '--', literal(rel)]);
             return r.code === 0 ? json({ ok: true }) : fail(500, (r.err || r.out).trim());
           }));
-        },
+        }),
       },
-      '/api/git/pull': { POST: (req) => syncRepo(req, ['pull', '--ff-only']) },
-      '/api/git/push': { POST: (req) => syncRepo(req, ['push']) },
+      '/api/git/pull': { POST: mutation('git-sync', (req) => syncRepo(req, ['pull', '--ff-only'])) },
+      '/api/git/push': { POST: mutation('git-sync', (req) => syncRepo(req, ['push'])) },
 
       '/api/tree': async (req) => {
         const url = new URL(req.url);
@@ -1085,7 +1083,7 @@ export async function serve(opts: ServeOptions) {
           if (!root) return fail(404, 'unknown root');
           return json(prefs.get(root.path));
         },
-        POST: async (req) => {
+        POST: mutation('shared-prefs', async (req) => {
           // Bun parses the body whatever its content-type, so a cross-site `text/plain` form
           // post would otherwise land here.
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
@@ -1105,7 +1103,7 @@ export async function serve(opts: ServeOptions) {
           // An ignore rule changes what the tree contains.
           if (body.mark === 'ignored') store.invalidate(root.id);
           return json(marks);
-        },
+        }),
       },
     }),
 
@@ -1270,5 +1268,5 @@ export async function serve(opts: ServeOptions) {
     exit: shutdown,
   });
 
-  return { server, store, watcher, control, shutdown };
+  return { server, store, watcher, control, shutdown, routes };
 }
