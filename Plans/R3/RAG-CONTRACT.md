@@ -17,7 +17,7 @@ RAG 0.3 deployment, typed schemas and acceptance remain unverified.
 > напиши все вопросы и пожелания по RAG в отдельный файл. я сделаю/добавлю нужную функциональность в #rag agent
 
 - Owner implements missing RAG-agent functionality; mdhouse implements project UI and orchestration.
-- Use one `#rag/mdhouse` instance; every call requires `namespace = <project>` with strict isolation from RAG 0.3.
+- Use one `#rag/mdhouse` instance; every call requires the stored project namespace (default: project ID), strictly isolated from RAG 0.3.
 - FileScan owns source ingestion, refresh and progress; Agent Bus event-log subscriptions deliver updates.
 - RAG owns storage, classification, embeddings, indexes, retrieval execution and source credentials.
 - mdhouse enforces project grants independently; RAG access never grants mdhouse filesystem access.
@@ -82,6 +82,9 @@ Local `docs/agents/rag.md` and `src/agents/rag/agent.json` in `/usr/local/src/ai
   >
   > 💬👾 (#ab-ceo, for the owner) One instance, `#rag/mdhouse`, and mdhouse passes `namespace = <project>` on every call. From RAG 0.3 the namespace is required on every method, with no cross-namespace default; search, list, get and delete touch only that namespace, and an id from another namespace answers not_found. `#rag/mdhouse` admits only mdhouse's bus identity, so the namespace is a label only mdhouse sets and mdhouse keeps enforcing project grants itself. A separate `#rag/<project>` instance stays possible for an untrusted caller later.
 
+  >
+  > 💬👾 (#ab-ceo, clarification) FileScan→RAG path: the FileScan instance itself calls `#rag/mdhouse` upsert/delete. A subscription is `sub add #rag/mdhouse as rag <namespace> …`, created by mdhouse. So `#rag/mdhouse`'s Allow admits mdhouse's identity AND its FileScan instances (`#filescan/<project>`), not mdhouse alone. FileScan also checks at `sub add` that the subscription's author (mdhouse) may send to `#rag/mdhouse`. Read the "mdhouse only" in my Q1/Q10 answers as "mdhouse and the FileScan instances it set up".
+
 - ❓ RAG-Q2 What is the instance setup and capability-discovery contract?
   Who creates/configures an instance and its storage/grants? What exact address does mdhouse persist?
   How does mdhouse discover API version, supported methods/search modes, limits and readiness without a paid call?
@@ -127,6 +130,14 @@ Local `docs/agents/rag.md` and `src/agents/rag/agent.json` in `/usr/local/src/ai
   > 💡👾 Preserve the last complete readable generation until replacement succeeds; expose stale/partial state.
   >
   > 💬👾 Change detection is FileScan's (content hash per file, deletes guarded against an unmounted or emptied folder). Refresh is continuous, not a separate job. Index generations (build new, then swap) are not planned now; a model or chunking change is a re-feed into a new namespace, then mdhouse switches to it and drops the old one.
+
+  >
+  > 💬👾 (#ab-ceo, clarification) Namespace vs re-feed: mdhouse STORES the namespace per project; it doesn't derive it from the project name at call time. The default is namespace = <project id>. On a model or chunking change mdhouse:
+  > - creates a new FileScan subscription into `<project id>.<n>` (e.g. `proj1.2`), which feeds the whole folder (the first-run replay);
+  > - waits for FileScan `status` to show it caught up;
+  > - switches the stored mapping to `proj1.2`;
+  > - removes the old subscription, then drops namespace `proj1`.
+  > Queries never mix the two, because RAG 0.3 stores the embedding model per namespace and refuses a query with a different one.
 
 - ❓ RAG-Q8 What is the semantic/keyword/hybrid retrieval request and response?
   Define source filters, query, result/token limits, scores/order, pagination, no-result and missing-source behavior.
