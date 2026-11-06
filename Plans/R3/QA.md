@@ -44,3 +44,23 @@ no horizontal overflow or target/text overlap; CTO inspected light/dark 390 px e
 
 Repository baseline focused roots/access tests: CEO reports
 34 passed at `c1fb27f35cbd82270c754e4dfc6a562d36e0924d`; this is not R3 acceptance.
+
+## Later integrated evidence
+
+Exact `ea7ebda946f10059bf2f67a3f5d1e2b1d175fa4d`: CTO 483/483, 2525 assertions, tsc clean;
+independent Review PASS `c1669691ad2979a6`, focused 180/180. Reference content/mount, author fallback,
+scheme/inline UI, dormant admin primitive and eleven flow authoring packages are integrated.
+[№MW.8](workspaces/TODO.md#MW.8) passive content, admin wiring and full runtime/profile journeys remain open.
+
+## Scratch incident and corrected smoke
+
+Failed attempt: W1 packed smoke selected busy `:7796` and stopped foreign PID `3199274`; that attempt
+provides no valid smoke evidence. Review confirmed ownership: completed scheme-review scratch, no pending
+check dependency, PID absent/port free/temp directory removed; no restoration required. W2 unaffected.
+The live `:7777` instance was not involved.
+
+Correction: busy port aborts before start; capture own PID; verify listener ownership and expected scratch
+root; cleanup only captured own PID. Negative test against W1's own busy `:7841` aborted without touching
+its listener. Separate repeat on own `:7840` verified packed reference README/plans/skills payloads and
+DOM/screenshot. Review confirmed these results for author target `c4a18e3`. Incident receipts:
+`251912e9bbb99c81` (owner/impact) and `e2f03b7933a47668` (containment/repeat).

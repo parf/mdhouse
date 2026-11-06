@@ -282,13 +282,11 @@ right-click or a hardware keyboard; desktop shortcuts remain optional accelerato
 
 ## Agent Bus control
 
-Agent Bus can drive a small typed mdhouse control API. mdhouse reports available root and connected
-browser/tab IDs; an open command names the IDs and a specific Markdown path, so Agent Bus decides
-exactly where the page opens. It can also add a project directory and supply that
-project's allowed configuration, so an agent can create or connect a workspace and take the user
-straight to its starting document. Root registration and document paths keep the same canonical
-path and jail rules as CLI, Settings and HTTP routes; privileged control senders are explicitly
-authorized and every command is auditable.
+Agent Bus control provides read-only inventory/query and explicitly targeted browser page opening.
+Requests name root and browser/tab IDs plus a jailed Markdown path; sender/root/user authorization
+is independent of those IDs. Unknown/disconnected targets return the canonical URL with `opened: false`;
+there is no broadcast fallback. Root/config/user/grant/RW mutations are outside the approved AB scope.
+Page agent-chat remains a separate feature.
 
 ## Delivery order
 
@@ -299,5 +297,15 @@ authorized and every command is auditable.
 5. Existing-project flows.
 6. New-project creation from the web UI.
 7. Full Markdown editor.
-8. Agent Bus control: add/configure projects and open a specific Markdown document.
+8. Agent Bus control: read-only inventory/query and targeted Markdown page opening.
 9. Agent teams and automation from [`FUTURE.md`](FUTURE.md).
+
+## Administration boundaries
+
+Personal with no configured users permits owner management without mandatory GitHub login.
+Configured users require Team and `admin=username`, resolved to an existing immutable provider ID.
+First-user/admin setup is atomic; missing/unknown admin and profile conflicts fail closed.
+Team web user management, external-root add and project properties (including RW/RO) are admin-only;
+Editor/project RW grants document editing, not administration. No additional permission inside
+`~/mdhouse` is inferred. CLI/control always uses process OS-owner authority over protected local
+transport, without GitHub/web-admin checks. See [№ADMIN-W1](DECISIONS.md#ADMIN-W1).

@@ -465,18 +465,14 @@ An authorized Agent Bus sender can use a small versioned typed control API to:
 
 - list available project `rootId` values and connected browser/tab `clientId` values with useful
   labels and state;
-- add a saved or session project directory with RW/RO selection;
-- set an allowlisted subset of that project's configuration;
 - open one specific jailed Markdown path in one explicitly selected connected browser/tab.
 
 There is no pairing workflow and no broadcast fallback. The caller supplies `rootId`, `clientId` and
 path. An unknown/disconnected client still receives the canonical URL with `opened: false`.
 
-Control IDs are identifiers, not credentials. Authorization is checked separately, privileged
-configuration is allowlisted, operations are idempotent by request ID, and commands produce an audit
-record. Add + configure + open is atomic from the caller's point of view and reports the exact failed
-step without leaving a half-configured project. All root and document paths reuse the same canonical
-registration and resolution boundaries as CLI, Settings and HTTP.
+Control IDs are identifiers, not credentials. Inventory/query and targeted opening independently
+check sender/root/user authorization; paths use the existing jail. AB root/config/user/grant/RW
+mutations are outside the current scope. Page agent-chat remains separate.
 
 ### [№R3f](TODO.md#R3f) — RAG through the Agent Bus RAG agent {#r3f-rag-through-the-agent-bus-rag-agent}
 
@@ -571,7 +567,7 @@ Agent Bus clients.
 6. Ship the first version of every existing-project flow family.
 7. Create new AI projects from the web UI using the same primitives.
 8. Add full-document editing and configurable external-editor links.
-9. Add the Agent Bus control API for project setup and targeted document opening.
+9. Add read-only Agent Bus inventory/query and targeted document opening.
 10. Run the complete release gate across fresh install, personal, team, Viewer, RO and failure paths.
 
 The order is architectural, not necessarily a single serial implementation plan. Flow templates can
@@ -624,3 +620,10 @@ expand the R3 gate unless explicitly promoted.
 
 - R3 is intentionally broad. Scheduling should be based on vertical release slices and the complete
   gate, not on marking isolated UI controls or template files complete.
+
+Administration follows [№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1): Personal/no users preserves
+owner management without mandatory GitHub login; users require Team with valid configured
+`admin=username` bound to an existing immutable provider ID. First-user/admin transition is atomic;
+invalid profile/admin combinations fail closed. Team web user management, external-root add and
+project-property changes (including RW/RO) are admin-only. Editor/RW is not administrative authority.
+CLI/control always uses the process OS owner's protected local authority, without web/GitHub checks.

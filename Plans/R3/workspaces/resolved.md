@@ -146,6 +146,20 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
 ## Administration contract history
 
 - ✅ ADMIN-W1 Instance administration is distinct from project Reader/Editor and trusted-network admission.
+  > 💬 👤parf cli - там только admin; там не может быть проверки. - менять может только тот user от кого запущен процесс - всегда ab - вообще под вопросом пока я хочу только read-only api + открытие страницы в browser
+  >
+  > 💬 👤parf если режим personal - то можно ; как только появились пользователи - team режим - должны знать кто admin добавление users - тоже admin only
+  >
+  > 💬 👤parf само собой редактирование свойств project - тоже admin (enable/disable rw)
+  >
+  > 💬👾 → [№ADMIN-W1](DECISIONS.md#ADMIN-W1), [№PROFILE-W1](DECISIONS.md#PROFILE-W1),
+  > [№USER-W1](DECISIONS.md#USER-W1), [№DIR-W2](DECISIONS.md#DIR-W2),
+  > [№CTRL-W1](DECISIONS.md#CTRL-W1): CLI/control stays OS-owner administration;
+  > Team web admin is configured explicitly and bound to an existing immutable provider ID.
+  > Personal/no users preserves owner management; first-user/admin transition is atomic and fails
+  > closed on missing admin/profile conflicts. AB control is read-only query plus targeted page open,
+  > with separate sender/root/user authorization. No AB root/config/user/grant/RW mutation is approved.
+
   A project RW grant, localhost/CIDR, first visitor or author cookie grants no admin power. The
   existing OS-owner-protected CLI/control socket may bootstrap a revocable browser admin session
   without GitHub/account onboarding, preserving local Personal optional login. Remote administrator

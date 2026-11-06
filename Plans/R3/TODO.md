@@ -94,7 +94,7 @@ Execution states and assignments: [`EXECUTION.md`](EXECUTION.md). Unchecked outc
     opening Claude Code or another AI CLI directly
   - Acceptance: explicit panel target → document `<!-- AB: name -->` → space default → instance
     default, with no silent fallback from an unavailable higher-priority target
-  - Acceptance: an authorized command can add/configure a project and open one jailed Markdown path
+  - Acceptance: an authorized read-only control API lists/query IDs and opens one jailed Markdown path
     in one named connected browser, idempotently and auditably
   - Tracks: [№MW.2](workspaces/TODO.md#MW.2), [№MW.2a](workspaces/TODO.md#MW.2a), [№MW.7](workspaces/TODO.md#MW.7)
   - Home: [Agent collaboration and control](README.md#r3e-agent-collaboration-and-control)

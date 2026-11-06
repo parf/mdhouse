@@ -36,9 +36,9 @@ by owned roots/test diffs in the assigned worktree (23:22 UTC), following acknow
 | Task | Owner | State | Base / checkout / branch | Scope / acceptance |
 | --- | --- | --- | --- | --- |
 | [№MW.5c.1](workspaces/TODO.md#MW.5c.1) | W2 | done (touch-control slice) | `d7b0ef7c193b19d873c53ce6e160c5fb82afd343`; r3-copy / r3/touch-actions | touch/focus visibility and 44px controls; light/dark phone/tablet tap/overflow checks; real devices still open |
-| [№MW.3.1](workspaces/TODO.md#MW.3.1) | W3 | working | `4a3472a564106cfd9ad411aad7f6f9cae9766dd3`; `.scratch/worktrees/r3-flows` / r3/flow-packages | approved pure schema/loader, catalog and four Feature/delivery authoring packages/examples, strict graph/asset validation and actual tarball tests; independent architecture/path review required; no executor |
-| [№MW.0f.2](workspaces/TODO.md#MW.0f.2) | W1 | working | `a9b331f6ab411cd590a771db4cc36efe94adb776`; `.scratch/worktrees/r3-reference-install` / r3/reference-install | installed doc auto-mount, conservative duplicate/ref-only handling, read-only UI identity and no agent-send; independent exact-SHA review + actual packed install/browser checks |
-| [№MW.5a](workspaces/TODO.md#MW.5a) | W2 | working | `80c17e65017c5a4febf14502c1ac52348aea2e62`; `.scratch/worktrees/r3-edit-scheme` / r3/edit-scheme | configurable custom editor scheme, reject browser/executable schemes, atomic config validation, encoded links and Settings UI; independent URI/config review |
+| [№MW.3.1](workspaces/TODO.md#MW.3.1) | W3 | done (authoring/schema only) | `4a3472a564106cfd9ad411aad7f6f9cae9766dd3`; `.scratch/worktrees/r3-flows` / r3/flow-packages | approved pure schema/loader, catalog and four Feature/delivery authoring packages/examples, strict graph/asset validation and actual tarball tests; independent architecture/path review required; no executor |
+| [№MW.0f.2](workspaces/TODO.md#MW.0f.2) | W1 | done (mount/UI slice) | `a9b331f6ab411cd590a771db4cc36efe94adb776`; `.scratch/worktrees/r3-reference-install` / r3/reference-install | installed doc auto-mount, conservative duplicate/ref-only handling, read-only UI identity and no agent-send; independent exact-SHA review + actual packed install/browser checks |
+| [№MW.5a](workspaces/TODO.md#MW.5a) | W2 | done (scheme + inline layout) | `80c17e65017c5a4febf14502c1ac52348aea2e62`; `.scratch/worktrees/r3-edit-scheme` / r3/edit-scheme | configurable custom editor scheme, reject browser/executable schemes, atomic config validation, encoded links and Settings UI; independent URI/config review |
 
 ## Next dependency slices
 
@@ -46,7 +46,7 @@ by owned roots/test diffs in the assigned worktree (23:22 UTC), following acknow
 - [№MW.0g](workspaces/TODO.md#MW.0g): actor/admin enforcement and explicit bootstrap; no Editor/trusted-source administration.
 - [№MW.0h](workspaces/TODO.md#MW.0h): migration/Viewer caps; [№MW.0c](workspaces/TODO.md#MW.0c) → [№MW.0d](workspaces/TODO.md#MW.0d) → [№MW.0e](workspaces/TODO.md#MW.0e) dormant access primitives, then [№MW.0](workspaces/TODO.md#MW.0) activation.
 - [№MW.0a](workspaces/TODO.md#MW.0a) attribution and [№MW.3a](workspaces/TODO.md#MW.3a)–[№MW.3h](workspaces/TODO.md#MW.3h) package authoring may proceed independently; runtime checks still gate completion.
-- [№MW.1](workspaces/TODO.md#MW.1)/[№MW.7](workspaces/TODO.md#MW.7) root/config controls wait for [№MW.0g](workspaces/TODO.md#MW.0g); full editor/flow/RAG work follows owned foundations.
+- [№MW.1](workspaces/TODO.md#MW.1) web root/config controls wait for [№MW.0g](workspaces/TODO.md#MW.0g); [№MW.7](workspaces/TODO.md#MW.7) is read-only query + targeted open, no AB mutations; full editor/flow/RAG work follows owned foundations.
 
 ## Capacity — 2026-11-05 23:16 UTC
 
@@ -97,3 +97,45 @@ W3 saw C1/C4 concurrently. Evidence names a fixed-port collision, not a license/
 All workers now serialize route/CLI/full suites using `flock /tmp/mdhouse-r3-tests.lock bun test`.
 W3 locked CLI rerun: 10 pass / 0 fail (C1/C4 included); full suite pending. Typecheck on docs-only
 main passed. Integrated HEAD still requires its own tests.
+
+## Integrated cohort — exact `ea7ebda946f10059bf2f67a3f5d1e2b1d175fa4d`
+
+CTO full suite: 483 pass, 0 fail, 2525 assertions; tsc clean. Independent Review receipt
+`c1669691ad2979a6`: exact-HEAD PASS, focused 180/180 and tsc; source identity with approved targets.
+This verifies the integrated scopes, not content isolation or admin wiring.
+
+| Scope | Author target / integration | Actual checkpoint |
+| --- | --- | --- |
+| [№MW.0f.2](workspaces/TODO.md#MW.0f.2) | `bfee754` / `052eaf8` | mount/UI complete; reference editor/AB/write controls absent |
+| [№MW.0f](workspaces/TODO.md#MW.0f) content | `c4a18e3` / `4de0d3`; CEO pointer update `b5e81a3` | packaged skills, plans/index, canonical symlink and rendered links verified |
+| [№MW.0g.1](workspaces/TODO.md#MW.0g.1) | `0fed9cf` / `27f6800` | dormant proof/session primitive complete; no production wiring |
+| [№MW.0a](workspaces/TODO.md#MW.0a) | `78344d9` / `b11e47f` | fallback author attribution implemented; real authenticated precedence remains future OAuth acceptance |
+| [№MW.5a](workspaces/TODO.md#MW.5a) | `5b944b4` / `6721a90`; inline `744febc` / `282a98d` | scheme complete; reference gate retained |
+| [№MW.3.1](workspaces/TODO.md#MW.3.1) | `6f7e023` / `bf4d205` + `0fc6aec` | schema/loader + four initial packages complete; no runner |
+| [№MW.3a](workspaces/TODO.md#MW.3a) | `368499e` / `6fa8afe` | five documentation authoring packages shipped; runtime acceptance open |
+| [№MW.3b](workspaces/TODO.md#MW.3b), [№MW.3c](workspaces/TODO.md#MW.3c) | `cee699b` / `ea7ebda` | commit/incoming authoring assets shipped; execution acceptance open |
+
+[№MW.8a](workspaces/TODO.md#MW.8a): W1 passive server HTML/raw/CSP work in isolated
+`r3/passive-server`, base `b11e47f`. [№MW.8b](workspaces/TODO.md#MW.8b): W2 browser/Mermaid
+work in `r3/passive-browser`, same base. Both await exact-target security review and combined browser
+acceptance. Admin wiring stays on hold. Current main still uses trusted HTML.
+[№MW.3d](workspaces/TODO.md#MW.3d): first four Engineering assets ready at `a9318cfe8a90abb057c1761fa9cccb8e8bb6e4b1`,
+base `ea7ebda`; CTO review/integration pending. No source/runtime scope claimed.
+
+## Updated administration contract
+
+[№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1): CLI/control uses protected local process-OS-owner
+administration, without GitHub/web-admin/project grants. Personal/no users keeps owner management;
+users require Team with valid configured admin bound to immutable provider ID. First-user/admin setup
+is atomic; invalid mode/profile/admin combinations fail closed. Team web user management, external-root
+add and project properties (RW/RO included) require configured admin. No broader inside-workspace grant
+is inferred. [№MW.7](workspaces/TODO.md#MW.7) AB scope is read-only query/inventory plus authorized,
+jailed targeted page opening; root/config/user/grant mutations removed from implementation acceptance.
+Current source has no new AB control mutation implementation to remove; CLI/control and page agent-chat
+remain separate. Future web/admin/profile wiring must implement these checks and negative transition tests.
+
+## Capacity — 2026-11-06 00:00 UTC
+
+W1 default Claude: 5h 94% remaining/reset 4h09m; 7d 99%/6d21h. W2 account 2:
+5h 99%/4h49m; 7d 97%/6d12h. Shared Codex weekly 41% remaining; short-window/reset unavailable.
+No fresh Review quota available. Continue bounded worker slices; serialize tests/review/integration.

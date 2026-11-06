@@ -9,7 +9,9 @@
   Workspace: default RW, explicit root modes. Viewer: hard RO, no write controls; retain stored modes.
   Upgrade: preserve existing access.
 - 📌 PROFILE-W1 Profiles: `personal`, `open-viewer`, `private-viewer`, `team`. <a id="Q-W6"></a>
-  Personal: one owner, optional login, default RW. Open Viewer: admitted network, RO.
+  Personal: no configured users, owner management without mandatory GitHub login, default RW.
+  Configured users require Team and `admin=username`, bound to an existing immutable provider ID.
+  First-user/admin setup is atomic; mode/profile conflicts fail closed. Open Viewer: admitted network, RO.
   Private Viewer: approved GitHub users, granted projects, RO. Team: approved users, per-project RO/RW.
   Shared enforcement; visible trusted-network modifier + project policy; preview/confirm profile switches.
   Viewer preserves root modes/user grants; caps RO.
@@ -21,7 +23,7 @@
 - 📌 USER-W1 Add user: GitHub lookup → public profile preview → explicit confirmation; login: GitHub OAuth. <a id="Q-W8"></a>
   Identity = provider + immutable GitHub ID; username = refreshable display/routing; renames never transfer grants.
   No writes before confirmation; bind it to the verified numeric ID, reject changed/stale identity.
-  Owner manages status/grants/disable/remove. ACCESS = sign-in; project grant = content; new grant = RW; absent = hidden/denied.
+  Web user management: Personal owner; Team configured administrator only. ACCESS = sign-in; project grant = content; new grant = RW; absent = hidden/denied.
   Local/password/Basic: Advanced recovery only; local/GitHub identities separate. [History](resolved.md#Q-W8).
 - 📌 USER-W2 Write = Workspace ∩ root RW ∩ project RW ∩ Editor.
   Viewer/root RO/user RO cap access. User/grant changes apply immediately; no jail/reference override.
@@ -44,12 +46,15 @@
 - 📌 AB-W3 Per-space configuration: directory-row `[AB]`, always visible; show value only when configured.
   Beside access badge; opens editor; legend explains controls. Empty field removes override; all empty removes entry.
 - 📌 CTRL-W1 Control API: inventory IDs; open = `rootId` + Markdown path + destination `clientId`. <a id="Q-W7"></a>
+  AB control is read-only inventory/query plus authorized targeted page opening; no root/config/user/grant writes.
+  Page agent-chat is separate; sender/root/user authorization and the path jail still apply.
   No pairing/broadcast. Unknown/disconnected client → canonical URL, `opened: false`. [History](resolved.md#Q-W7).
 
 ## Directory controls
 
 - 📌 DIR-W1 Saved: no badge. Session: `[unsaved]` → confirm → persist canonical path + current mode.
 - 📌 DIR-W2 `[RW]`/`[RO]` → confirm → toggle immediately, both directions.
+  Web project properties, including RW/RO: Personal owner or Team configured admin only; Editor/RW is insufficient.
   Saved: persist. Session: until saved. Workspace: explicit mode wins; Viewer: RO, no toggle, stored mode retained.
 - 📌 DIR-W3 Optional name keyed by canonical path; display only; empty resets.
   No path/ID/URL/jail change; default = directory label.
@@ -72,6 +77,10 @@
 ## Administration
 
 - 📌 ADMIN-W1 Instance admin ≠ project Editor/RW, trusted address, first visitor or author cookie.
+  CLI/control authority always comes from the process OS owner and protected local transport; no GitHub/web-admin checks.
+  Team web administration requires configured `admin=username`, resolved to an existing immutable provider ID.
+  Personal owner needs no Team admin configuration; first-user creation establishes Team/admin atomically.
+  Team web external-root add and project-property changes are admin-only; no inferred inside-workspace grants.
   Local bootstrap: OS-owner CLI/0600 control → revocable browser admin session; no mandatory GitHub/account setup.
   Remote admin explicit. Proof: random, short-lived, single-use, memory-only; URL fragment removed before content renders.
   Exchange: trusted-host + admission + same-origin; expiring HttpOnly host-only cookie, appropriate HTTPS/SameSite.

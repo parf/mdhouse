@@ -12,7 +12,8 @@ Foundation DAG: [№MW.0f](#MW.0f) + [№MW.0g](#MW.0g) → [№MW.0h](#MW.0h) �
 [№MW.0a](#MW.0a) attribution can proceed independently; [№MW.0b](#MW.0b) assembles the completed access foundations.
 [№MW.0c](#MW.0c)/[№MW.0d](#MW.0d)/[№MW.0e](#MW.0e) may implement dormant primitives in order without requiring [№MW.0](#MW.0) default activation.
 Each integrated slice must preserve or reduce current access; no temporary permissive policy.
-[№MW.1](#MW.1) and [№MW.7](#MW.7) root/config controls wait for administrator authorization; project Editor is insufficient.
+[№MW.1](#MW.1) web root/config controls wait for administrator authorization; project Editor is insufficient.
+[№MW.7](#MW.7) permits only read-only queries and authorized targeted browser opening; no AB mutations.
 Independent Copy, license and flow-package authoring may proceed before default activation.
 
 ## W0 — Workspace by default
@@ -28,17 +29,18 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - [x] MW.0f.1 Root-kind/addReference primitive, write/remove/promotion and Agent Bus dispatch guards; no auto-mount/default flip <a id="MW.0f.1"></a>
     - Verified: integrated `be776cf` + `6bd2300`; independent PASS and 317 tests/tsc at `80c17e65017c5a4febf14502c1ac52348aea2e62`
   - Acceptance: reference or overlapping paths cannot dispatch an Agent Bus action/note that delegates mutation; validate before external send
-  - [ ] MW.0f.2 Slice: package content, installed auto-mount and UI identity; preserve project root IDs/default selection <a id="MW.0f.2"></a>
+  - [x] MW.0f.2 Slice: package content, installed auto-mount and UI identity; preserve project root IDs/default selection <a id="MW.0f.2"></a>
   - Acceptance: CLI/control, prefs/autoRw, web and direct writes cannot promote/remove or mutate reference files; symlink/overlapping-root and Git mutations preserve the boundary
   - Acceptance: reference material ships and is readable on fresh packed install without an explicit user grant
 
 - [ ] MW.0g Establish authenticated instance administration and authorization seams <a id="MW.0g"></a>
   - Builds: common request actor and explicit instance-administrator capability, distinct from project Reader/Editor and trusted-source admission
-  - [ ] MW.0g.1 Memory-only proof/session primitive; no endpoints or grants <a id="MW.0g.1"></a>
+  - [x] MW.0g.1 Memory-only proof/session primitive; no endpoints or grants <a id="MW.0g.1"></a>
   - Wiring prerequisite: [№MW.8](#MW.8) content isolation reviewed and verified under [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1)
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
   - Contract: [№ADMIN-W1](DECISIONS.md#ADMIN-W1); short-lived single-use OS-control proof, fragment cleanup, revocable HttpOnly session, no secret in journal/history/query/config
   - Acceptance: trusted localhost/CIDR or project RW alone never grants administrator; existing OS-protected CLI/control remains an explicit administration path
+  - Acceptance: CLI/control always authorizes the process OS owner through protected local transport, with no GitHub/web-admin/project-grant requirement
   - Acceptance: local Personal administration uses OS-owner-protected CLI/control bootstrap into a browser session without GitHub/account onboarding; remote admin designation remains explicit
   - Acceptance: bootstrap/recovery never trusts first visitor, localhost/CIDR or arbitrary Basic/GitHub login; single-use proof/session expiry/revocation and secret handling are tested
   - Acceptance: classify document/Git/flow/control/config/marks/external-send mutations; direct/stale requests deny missing authority; no new privilege-granting endpoint before checks exist
@@ -75,6 +77,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0b Add an explicit Team workspace setup <a id="MW.0b"></a>
+  - Acceptance: no users permits Personal owner management without mandatory GitHub login; configured users require Team and an existing designated `admin=username` bound to immutable provider ID
+  - Acceptance: first-user confirmation and designated-admin setup commit atomically; failure/cancel leaves no user/grant/Team transition; missing admin, unknown admin and mode/profile conflicts fail closed without first-visitor takeover
   - Builds: Personal as the zero-config default; a Team setup flow combining network exposure, GitHub OAuth configuration, known users and per-browser fallback identity
   - Depends: [№MW.0a](#MW.0a), [№MW.0c](#MW.0c), [№MW.0d](#MW.0d), [№MW.0e](#MW.0e), [№Q-W6](QUESTIONS.md#Q-W6)
   - Acceptance: a personal install still starts locally without onboarding or account setup
@@ -101,6 +105,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
+  - Acceptance: web user management is Personal-owner/Team-configured-admin only; Editor/project RW cannot add or manage users, including direct/stale requests
   - Builds: Settings UI, matching CLI and protected APIs to add users by GitHub username, edit status/grants, disable and remove them; GitHub OAuth login; instance `ACCESS`; per-canonical-root `RO` / `RW` grants; known-users-only admission; optional trusted localhost/CIDRs
   - Depends: [№MW.0g](#MW.0g), [№MW.0c](#MW.0c), [№Q-W8](QUESTIONS.md#Q-W8)
   - Acceptance: final effective write requires Workspace + root RW + project grant RW + Editor, with authenticated GitHub attribution overriding cookie fallback
@@ -126,6 +131,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0e Add the four supported access profiles <a id="MW.0e"></a>
+  - Acceptance: users imply Team with valid designated admin; conflicting stored profile/mode/user/admin combinations fail closed; Viewer still caps effective content access
   - Builds: first-class persisted `personal`, `open-viewer`, `private-viewer` and `team` profiles in onboarding, Settings and CLI; one shared enforcement model beneath them
   - Depends: [№MW.0h](#MW.0h), [№MW.0c](#MW.0c), [№MW.0d](#MW.0d), [№Q-W6](QUESTIONS.md#Q-W6)
   - Acceptance: **Personal Workspace** is single-owner with optional login and uses root RW by default while preserving explicit root RO and immutable references
@@ -145,6 +151,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 ## W1 — Install and connect
 
 - [ ] MW.1 Add the AI installation runbook and managed workspace convention <a id="MW.1"></a>
+  - Acceptance: Team web add outside `~/mdhouse` and all project-property changes (RW/RO, name/default/endpoint where applicable) require configured admin, not Editor/RW; no broader inside-workspace permission is inferred
+  - Acceptance: project-property APIs use an explicit allowlist/schema; direct/stale non-admin calls fail, effective access updates immediately and stored/effective modes remain distinct; Personal owner management and OS-owner CLI remain available
   - Builds: `install.md`; `~/mdhouse/<project>` as the standard always-RW development workspace
   - Depends: [№MW.0](#MW.0), [№MW.0f](#MW.0f), [№MW.0g](#MW.0g), [№Q-W1](DECISIONS.md#Q-W1), [№Q-W2](DECISIONS.md#Q-W2)
   - Acceptance: from a clean account, an AI follows `install.md`, creates one project workspace and opens it writable in mdhouse
@@ -208,7 +216,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 
 - [ ] MW.3 Build the shared flow runtime for existing projects <a id="MW.3"></a>
-  - [ ] MW.3.1 Slice: strict package schema/loader and four Feature/delivery authoring packages; no execution/manual/schedule completion claim <a id="MW.3.1"></a>
+  - [x] MW.3.1 Slice: strict package schema/loader and four Feature/delivery authoring packages; no execution/manual/schedule completion claim <a id="MW.3.1"></a>
   - Builds: discoverable packages of Markdown documents plus routing; common scope, change range, audience, output and destination controls; optional schedules; run history
   - Depends: [№MW.2](#MW.2)
   - Acceptance: every flow leaves its inputs, plan, source evidence, findings, checks and outcome in project Markdown
@@ -300,7 +308,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: a writable document can be edited end to end; a concurrent file change is refused without losing the draft; a read-only root cannot save
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
-- [ ] MW.5a Make the external edit-link scheme configurable <a id="MW.5a"></a>
+- [x] MW.5a Make the external edit-link scheme configurable <a id="MW.5a"></a>
   - Why: `edit:` can keep opening the user's common editor while a separate scheme such as `mdedit:` opens Markdown files in Typora
   - Builds: `settings.editScheme`, default `edit`; an inline Settings field next to the existing Edit link switch; generated `<scheme>:/full/path:line` links everywhere
   - Acceptance: an existing prefs file with no scheme continues to generate `edit:/full/path:line`
@@ -339,16 +347,13 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 - [ ] MW.7 Let Agent Bus control a mdhouse workspace <a id="MW.7"></a>
   - Main goal: an Agent Bus command opens one specific Markdown file in mdhouse
-  - Builds: a small versioned, typed Agent Bus control API; list control IDs; add project/directory; set its allowed config; open document; structured reply and errors
+  - Builds: a small versioned, typed read-only Agent Bus inventory/query API plus targeted document opening; structured replies and errors
   - Depends: [№MW.0](#MW.0), [№MW.0g](#MW.0g), [№MW.0b](#MW.0b), [№MW.2](#MW.2), [№Q-W7](QUESTIONS.md#Q-W7)
   - Acceptance: the inventory response gives Agent Bus the available `rootId` values and connected `clientId` values with enough labels/current state to choose them
   - Acceptance: an authorized AB sender supplies `rootId`, Markdown `path` and destination `clientId`; mdhouse resolves the document through `Registry.resolve()`, returns its canonical page URL and directs only that browser/tab to it
   - Acceptance: there is no pairing step and no broadcast fallback; an unknown or disconnected `clientId` returns the URL with `opened: false`
-  - Acceptance: one command can add a new project directory, choose saved/session and RW/RO, apply its per-space Agent Bus endpoint/defaults, then open a named Markdown file in it
-  - Acceptance: project add uses the same canonical registration path as CLI and Settings; symlinks and document paths cannot escape the added root
-  - Acceptance: config is a documented allowlisted schema, not an arbitrary prefs patch; unknown keys and invalid combinations are refused without partial changes
-  - Acceptance: control senders are explicitly authorized; ordinary agents cannot add filesystem roots, grant RW or change instance access config merely because they can answer a page request
-  - Acceptance: add + configure + open is atomic from the caller's view: failure reports the exact step and does not leave a half-configured project
+  - Acceptance: all AB control senders are refused root add/configure, user/grant, RW and filesystem/config mutations; page agent-chat does not confer control authority
+  - Acceptance: inventory/query and browser opening independently check sender/root/user authorization; document paths remain jailed
   - Acceptance: control IDs are opaque identifiers, not credentials; authorization is checked independently on inventory and command requests
   - Acceptance: commands are idempotent by request id, produce an audit record, and have integration tests for replay, denial, path escape, stale client IDs, multiple roots and multiple browsers
   - Home: [Agent Bus control](README.md#agent-bus-control)
