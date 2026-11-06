@@ -339,3 +339,27 @@ W2 second account 5h 96%/3h48m, 7d 97%/6d11h. Shared Codex weekly 38% remaining;
 short-window/reset unavailable. Review shows GLM session context, no fresh provider quota.
 Continue bounded independent slices and serialized test/review/integration; reserve shared Codex
 capacity for final security checkpoint and handoff. Recheck roughly hourly during active work.
+
+## Legal and full authoring-library checkpoint
+
+[№MW.3g](workspaces/TODO.md#MW.3g) target `345fee13f1d27a689ea5be220400ac6635b8521f`
+(base `8df08f5`) received CTO asset/coverage review and integrated without conflict as
+`c76a512947d46ff9ed2317fe923148c6ef15a61a`. Assets/catalog/matrix/tests match the author target;
+all prior 34 packages/defaults/checks remain. Exact integrated HEAD: full 580/580, 4346 assertions,
+tsc clean. Source citations, date/jurisdiction uncertainty, confidentiality and qualified-review stops
+are explicit; there are no filings/signatures/sends/reminders or provider calls.
+
+W3 read-only coverage audit found no missing named authoring package: Documentation 5, commits 1,
+incoming 1, Engineering 8, Business/Ideas 10, Finance 5, Legal 5; with Feature/delivery 4, catalog 39.
+The independent expected-ID matrix and real tarball cover the complete library. This closes the
+asset-delivery checkpoints only. [№MW.3a](workspaces/TODO.md#MW.3a)–[№MW.3g](workspaces/TODO.md#MW.3g)
+and parent/runtime acceptance stay open for the runner, source controls, permissions/stale checks,
+materialization/history/markers, live routing/approvals, manual/schedules and end-to-end checks.
+
+Next W3 assignment is read-only runtime architecture under [№MW.3](workspaces/TODO.md#MW.3) and
+[№MW.3h](workspaces/TODO.md#MW.3h): propose the smallest shared manual analysis-run vertical slice,
+separating pure transition/state handling from jailed materialization and external-action executors.
+Use existing schema/packages and explicit source selection; cover hold/failure/history/marker semantics,
+preview/approval seams, effective access and stale writes without inventing grants or new policy.
+Map dependencies and owned paths, acceptance/fail-first tests, then return a concrete CTO-reviewable
+proposal before any implementation/worktree. No HTTP/admin/schedule/external-action code is assigned yet.

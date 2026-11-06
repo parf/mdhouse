@@ -281,6 +281,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Home: [Finance flows](README.md#finance-flows)
 
 - [ ] MW.3g Add Legal flow packages <a id="MW.3g"></a>
+  - Checkpoint: five Legal authoring packages integrated `c76a512`; full 580/580 + tsc on that exact HEAD; catalog 39 covers all named authoring packages, runtime/manual/schedule acceptance stays open
   - Builds: Contract review; Obligation/renewal register; Policy/compliance review; Legal change impact; Legal request brief
   - Depends: [№MW.3](#MW.3)
   - Acceptance: outputs preserve source references, confidentiality boundaries and uncertainty; interpretation and external actions require a qualified human
