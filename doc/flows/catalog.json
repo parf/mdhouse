@@ -114,6 +114,36 @@
       "family": "engineering",
       "manifest": "engineering-maintenance-debt/flow.json",
       "example": "engineering-maintenance-debt/example.md"
+    },
+    {
+      "id": "business-overview",
+      "family": "business",
+      "manifest": "business-overview/flow.json",
+      "example": "business-overview/example.md"
+    },
+    {
+      "id": "business-strategy-planning",
+      "family": "business",
+      "manifest": "business-strategy-planning/flow.json",
+      "example": "business-strategy-planning/example.md"
+    },
+    {
+      "id": "business-market-customer",
+      "family": "business",
+      "manifest": "business-market-customer/flow.json",
+      "example": "business-market-customer/example.md"
+    },
+    {
+      "id": "business-kpi-review",
+      "family": "business",
+      "manifest": "business-kpi-review/flow.json",
+      "example": "business-kpi-review/example.md"
+    },
+    {
+      "id": "business-decision-memo",
+      "family": "business",
+      "manifest": "business-decision-memo/flow.json",
+      "example": "business-decision-memo/example.md"
     }
   ]
 }

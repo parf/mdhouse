@@ -100,8 +100,42 @@ export const ENGINEERING_COVERAGE = [
   },
 ] as const;
 
+export const BUSINESS_COVERAGE = [
+  {
+    id: 'business-overview', scope: 'selected-project', audience: 'executive', output: 'business-overview',
+    stages: ['scope', 'evidence', 'synthesize', 'report'],
+    sources: ['product customers value and channels', 'revenue and cost evidence or explicit unknown', 'risks priorities period and owners'],
+    exampleFacts: ['revenue: unknown', 'not a verified business model', 'No product copy'],
+  },
+  {
+    id: 'business-strategy-planning', scope: 'selected-project', audience: 'product', output: 'strategy-plan',
+    stages: ['frame', 'options', 'milestones', 'report'],
+    sources: ['goals constraints and decision criteria', 'option evidence costs and assumptions', 'owners milestones and measurable outcomes'],
+    exampleFacts: ['10 staff-days', '6 staff-days', '12 staff-days', 'proposal, not an approved plan'],
+  },
+  {
+    id: 'business-market-customer', scope: 'selected-document', audience: 'product', output: 'market-customer-brief',
+    stages: ['scope', 'source-review', 'synthesize', 'report'],
+    sources: ['market segment customer and competitor sources', 'source dates population and method', 'contradictions assumptions and unanswered questions'],
+    exampleFacts: ['SMB interviews', 'enterprise survey', 'not a representative market estimate', 'No live research'],
+  },
+  {
+    id: 'business-kpi-review', scope: 'selected-document', audience: 'executive', output: 'kpi-review',
+    stages: ['define', 'validate', 'interpret', 'report'],
+    sources: ['metric definitions targets and actual inputs', 'period population units and source freshness', 'driver evidence risks and decision owners'],
+    exampleFacts: ['8 / 10 = 80%', 'not comparable', 'not a demonstrated driver', 'No target'],
+  },
+  {
+    id: 'business-decision-memo', scope: 'selected-document', audience: 'executive', output: 'decision-memo',
+    stages: ['frame', 'compare', 'recommend', 'record', 'report'],
+    sources: ['decision problem alternatives and evidence', 'cost risk reversibility and constraints', 'decision authority and actual answer or explicit pending'],
+    exampleFacts: ['recommendation only', 'owner decision: pending', 'No decision was approved', 'resolved.md'],
+  },
+] as const;
+
 export const EXPECTED_PACKAGE_IDS: readonly string[] = [
   ...FEATURE_PACKAGE_IDS, ...DOCUMENTATION_COVERAGE.map((row) => row.id),
   ...CHANGE_REVIEW_COVERAGE.map((row) => row.id),
   ...ENGINEERING_COVERAGE.map((row) => row.id),
+  ...BUSINESS_COVERAGE.map((row) => row.id),
 ];
