@@ -34,6 +34,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 
 - [ ] MW.0g Establish authenticated instance administration and authorization seams <a id="MW.0g"></a>
   - Builds: common request actor and explicit instance-administrator capability, distinct from project Reader/Editor and trusted-source admission
+  - [ ] MW.0g.1 Memory-only proof/session primitive; no endpoints or grants <a id="MW.0g.1"></a>
+  - Wiring prerequisite: owner decision [№Q-R3-HTML1](QUESTIONS.md#Q-R3-HTML1); no silent change to trusted HTML
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
   - Contract: [№ADMIN-W1](DECISIONS.md#ADMIN-W1); short-lived single-use OS-control proof, fragment cleanup, revocable HttpOnly session, no secret in journal/history/query/config
   - Acceptance: trusted localhost/CIDR or project RW alone never grants administrator; existing OS-protected CLI/control remains an explicit administration path
