@@ -35,8 +35,14 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     // Pins the unchanged official text from https://polyformproject.org/licenses/strict/1.0.0.txt.
     expect(createHash('sha256').update(license.slice(0, -notice.length)).digest('hex'))
       .toBe('e2361f52ad5be22b937a6e983c824a534c5cffa454b6c34af2f8ce0c2cdf7c1a');
-    const metadata = JSON.parse(await read('package.json')) as { license: string };
+    const metadata = JSON.parse(await read('package.json')) as { license: string; bin: Record<string, string> };
     expect(metadata.license).toBe('SEE LICENSE IN LICENSE.md');
+    expect(metadata.bin.mdhouse).toBe('./bin/mdhouse');
+    expect(metadata.bin['mdhouse-rag-sync']).toBe('./bin/mdhouse-rag-sync');
+    expect(entries).toContain('package/bin/mdhouse-rag-sync');
+    expect(entries).toContain('package/src/rag-sync-cli.ts');
+    expect(entries).toContain('package/src/lib/rag-sync-plan.ts');
+    expect(entries).toContain('package/doc/rag-sync.md');
     const readme = await read('README.md');
     expect(readme).toContain('PolyForm Strict License 1.0.0');
     expect(readme).toContain('[`LICENSE.md`](LICENSE.md)');
@@ -49,6 +55,9 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     const extracted = join(dir, 'extracted');
     await mkdir(extracted);
     await run(['tar', '-xzf', archive, '-C', extracted]);
+    const help = await run([join(extracted, 'package/bin/mdhouse-rag-sync'), '--help']);
+    expect(help).toContain('mdhouse-rag-sync');
+    expect(help).toContain('plan --root');
     const shipped = await loadFlowCatalog(join(extracted, 'package/doc/flows'));
     const source = await loadFlowCatalog(join(root, 'doc/flows'));
     expect(shipped.map((flow) => flow.manifest.id)).toEqual([...EXPECTED_PACKAGE_IDS]);
