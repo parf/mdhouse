@@ -214,7 +214,7 @@ export class AgentBus {
     this.agentSocket = key;
     const owner = new Daemon(socket, token);
     this.agent = (async () => {
-      const rec = { name: this.me, kind: 'agent', descr: 'mdhouse — pages ask agents', personal: true, allow: ['@owner'] };
+      const rec = { name: this.me, kind: 'agent', descr: 'mdhouse — pages ask agents', tags: ['personal'], allow: ['@owner'] };
       // create only: an existing record keeps what its owner set on it
       await owner.call('POST', '/register', rec, { 'if-none-match': '*' }).catch((err: unknown) => {
         if (!(err instanceof BusError && err.status === 412)) throw err;

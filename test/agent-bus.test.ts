@@ -13,14 +13,19 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: n
   const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-'));
   const socket = join(dir, 'user-test.sock');
   const calls: string[] = [];
+  const registrations: Record<string, unknown>[] = [];
   const queued = new Map<string, Partial<Envelope>[]>();
   const handler = async (req: Request): Promise<Response> => {
       const url = new URL(req.url);
       const token = req.headers.get('x-agent-bus-token') ?? '';
       calls.push(`${req.method} ${url.pathname}${token === 'tok' ? ' +token' : token ? ` +${token}` : ''}`);
       if (url.pathname === '/register') {
+        const record = await req.json() as Record<string, unknown>;
+        registrations.push(record);
+        if (Object.hasOwn(record, 'personal') || Object.hasOwn(record, 'reading'))
+          return new Response('bad json: retired record member', { status: 400 });
         if (opts.exists && req.headers.get('if-none-match') === '*') return new Response('exists', { status: 412 });
-        return Response.json(await req.json());
+        return Response.json(record);
       }
       if (url.pathname === '/token') return Response.json({ token: 'tok' });
       if (url.pathname === '/ls') return Response.json(opts.agents ?? []);
@@ -46,6 +51,7 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: n
   return {
     socket,
     calls,
+    registrations,
     stop: async () => {
       server.stop(true);
       tcp?.stop(true);
@@ -114,6 +120,24 @@ describe('agent bus — helpers', () => {
 });
 
 describe('agent bus — the service, against a fake daemon', () => {
+  test('canonical Personal registration connects on a strict daemon without changing existing records', async () => {
+    for (const exists of [false, true]) {
+      const d = await fakeDaemon({ exists });
+      try {
+        const bus = new AgentBus(() => ({ addr: d.socket, token: '' }), () => {}, { me: '#mdhouse@h' });
+        expect(await bus.agents()).toEqual([]);
+        expect(d.registrations).toEqual([{
+          name: '#mdhouse@h', kind: 'agent', descr: 'mdhouse — pages ask agents',
+          tags: ['personal'], allow: ['@owner'],
+        }]);
+        expect(d.calls.some((call) => call.includes('/manage'))).toBe(false);
+        expect(d.calls.filter((call) => call.includes('/register'))).toHaveLength(1);
+      } finally {
+        await d.stop();
+      }
+    }
+  });
+
   test('a reconnect drains only the mdhouse topic: a reply waiting for another reader stays', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-'));
     const socket = join(dir, 'user-test.sock');
