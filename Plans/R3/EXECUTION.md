@@ -1111,3 +1111,12 @@ User can refresh; realty source unchanged. CEO subsequently verified repeat navi
 file history action/panel; Untracked requires confirmed current-file history, tracked behavior kept.
 W2 owns small Doc/helper/tests cohort, focused check and nonauthor delta review only; no broad gate,
 version bump or worker restart. CEO coordinates actual local update.
+
+
+## History and Mermaid stability UI cohort selected
+
+[№MW.9b](workspaces/TODO.md#MW.9b) and [№MW.8d](workspaces/TODO.md#MW.8d) grouped before new code.
+CEO actual live read-only observer confirmed unchanged diagrams repeatedly replaced (42 mutations/15s,
+advancing render IDs). safeBody/actToken fixes must retain real HTML/provenance updates while avoiding
+new Mermaid work and visible image gaps for unchanged source/theme. W2 history hunk, W3 rendering
+hunk; one bounded cohort/proportional gate, no parallel restart, no full/types/browser blanket rerun.
