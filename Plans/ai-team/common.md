@@ -54,6 +54,8 @@ Keep unresolved questions in place and retain the questions file.
   checkpoints done; workers supply implementation evidence without closing shared checkpoints.
 - Follow mdhouse verification rules: focused tests, `bun test`, `npx tsc --noEmit -p .`, and browser
   checks for UI. Browser tests use a scratch instance, never the live `:7777` service.
+- Scratch startup: busy port → abort; capture own PID and verify bind/roots. Cleanup only that PID;
+  never kill a listener to free a port or test against another worker's instance.
 - Simple tasks can be completed directly by CEO/CTO. Larger tasks go to a worker. Prefer successive
   tasks from one plan/domain to preserve context.
 - CTO checks short-window and weekly provider usage roughly hourly during active work and reduces or

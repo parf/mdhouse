@@ -130,7 +130,9 @@ XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
 
 - the page bundle is built at start — `bun --hot` reloads server code only: restart after a UI edit;
   `./bin/mdhouse` → restart after every `src/` edit
-- stop it by pid (`ss -ltnpH 'sport = :7792'`), not `pkill -f`
+- abort if the scratch port is busy; never stop its listener to free it
+- capture the PID when starting your process; verify startup/bind and expected scratch roots before testing
+- cleanup only that captured own PID; never choose a PID by port/listener or use `pkill -f`
 - look at it in light + dark, and ≤720px
 - headless Chrome — an SPA needs the time budget, without it the DOM is empty:
   `google-chrome --headless=new --disable-gpu --window-size=1280,900 --virtual-time-budget=3000 --screenshot=$S/a.png <url>`
@@ -199,7 +201,7 @@ Only on "publish".
       npm install -g --prefix $T/prefix $T/mdhouse-X.Y.Z.tgz
       XDG_CONFIG_HOME=$T/cfg $T/prefix/bin/mdhouse $T/notes --port 7791 --fg
       ```
-      load `/` and a doc in headless Chrome — renders, no 500; stop it by pid
+      load `/` and a doc in headless Chrome — renders, no 500; stop only its captured own PID
 - [ ] `npm whoami` → the right account
 - [ ] `npm publish` (`prepublishOnly` runs the tests and tsc again) — before the push, so a failed
       publish costs a local amend, not a public commit
