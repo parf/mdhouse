@@ -331,6 +331,29 @@ no builder; the author cookie is never identity.
 | `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
 
+## User session history (pure model)
+
+`lib/user-session-model.ts` — pure transitions, caller-supplied `now`, no storage, routes or
+callers yet. Users are `github:<numeric ID>`; status `enabled | disabled | removed` (final,
+history kept). Sessions: no cap, purge or absolute TTL; an id is never reused.
+
+- `touch()` order: user enabled → session is this user's → not revoked → idle ≤ 30 days
+  (else revoked `reauth`) → a resolved address in the session's login country (else revoked
+  `country-change`) → the caller's route decision. A refusal touches nothing.
+- Then `lastUsedAt`, the exact canonical address (MRU 10), the UA (latest, plain text ≤ 512),
+  and on `match` cities (city+state+country), states (state+country) and countries — each MRU 10
+  with `lastSeen`. `country`: `match | unbound | pending | unavailable`; `unbound` (login had no
+  country) is undecided policy — neither trusted nor refused.
+- `applyGeo()` lands only on the same pending address of a live, non-idle session of an enabled
+  user; a candidate country is never recorded; it never reorders addresses or changes UA/`lastUsedAt`.
+- `historyView()` — self or a caller-declared admin; the admin bit and session validity are the
+  caller's declarations, not authorization.
+
+`lib/geoip.ts` `GeoLookup` — injected `fetch` only; public unicast addresses only; ipwho.is, then
+freeipapi.com only on any primary failure (timeout, network, non-200, 429 back-off, oversize,
+non-JSON, `success:false`, wrong echoed IP, bad country). Fixed HTTPS hosts, `redirect: 'error'`,
+no credentials. Geo: city, state, country, ISP, org, ASN + label — null when the provider omits it.
+
 ## Browser author attribution
 
 `lib/author.ts` normalizes browser names and the host/port-scoped `mdhouse_author_<port>` cookie.
