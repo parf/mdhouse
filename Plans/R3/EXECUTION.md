@@ -729,3 +729,18 @@ successful paid upserts to remain pending and repeat. No FileScan wiring is auth
 provider confirms corrected record-identity/hash matching, real-core verification and deployment.
 Provider reports no FileScan root or running instance here; no live impact is claimed by mdhouse.
 This does not affect the independent session-persistence cohort or authorize direct paid RAG calls.
+
+## Session persistence cohort ready for security review
+
+[№MW.0d.2](workspaces/TODO.md#MW.0d.2): exact base `43d3408` → frozen cohort
+`3dd661e8b3ba53145e51f87fe0761753fe3bf237`. W3 codec `ec5115a`; W1 store `55ac7d7` plus snapshot
+consistency fix `1a653bd`; CTO module inventory only. Five paths, dependencies/version unchanged.
+CTO pre-gate temp-FS probes found save-result aliasing and in-place update false no-op; author fix
+returns snapshots decoded from persisted bytes and validates/copies input before async queue work.
+Regressions are included in the single combined model/GeoIP/codec/store gate: 108/0 + types exit 0,
+logs `.scratch/cto/session-cohort-gate/`. No full/browser/provider/server run.
+
+Independent combined review `session-cohort-3dd661e` is assigned to OpenCode with a dedicated pinned
+checkout `r3-session-persistence-review`. Author and candidate checkouts stay frozen. Ready is not
+integrated or done; filesystem permissions/concurrency/outcome boundaries and documented no-openat
+race limitation are part of the review. No new author task is started while findings are pending.
