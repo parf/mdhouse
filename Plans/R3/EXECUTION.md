@@ -258,3 +258,20 @@ Client payload/DOM pairing uses the trusted Preact body ref with `data-act-root`
 ancestor/ID/class selector; authored root-marker attributes are stripped. Action metadata must be
 validated on the generated control itself. Final real-click forgery/genuine-action and live-draft
 checks await W1's exact server metadata commit. Whole content boundary/admin wiring stays open.
+
+## Server token target sent for fresh review
+
+[№MW.8a](workspaces/TODO.md#MW.8a) exact target
+`c6a1965f61b0891e36a6e7ac0340b5643af67c4d` is frozen on `r3/passive-server`, clean, from
+`b11e47f` through `d9f4290` and `2947f56`. New commit marks generated actionable nodes with per-render
+`actToken` and their own qa/line/hash/k/severity/option/reply metadata. Authored `data-act*` is removed;
+passive allowlist adds exactly eight generated provenance names, not arbitrary root-marker attributes.
+Nested renders/file highlighting/diff lines receive no action token. Classes and syntax remain supported.
+W1 reports full 537/537 and tsc, plus normal Q&A/Shiki/Mermaid scratch checks; independent server-stack
+review requested under `mw8a-c6a1965-server-stack`. W2 has the exact server target/API for client tests.
+
+No client gate is connected in that server target; it does not yet stop action forgery or close the
+whole boundary. Require final operation dispatch to use trusted generated action metadata and reject
+class/role/ancestor confusion, alongside token/context checks and stale guards. Client real-click
+negative/positive/lifecycle corpus and combined exact-SHA security review still gate integration.
+Shared style policy extraction, if needed, is a separate followup; frozen targets stay unchanged.
