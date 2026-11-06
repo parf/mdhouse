@@ -135,7 +135,13 @@ string onto a root path.
 - Ignored browsing: Show ignored/Hide ignored appears when eligible gitignored Markdown exists
   (or the switch is on). Direct folder navigation reveals its eligible files without changing the
   switch. Folders selected in either V1/V2 also appear in main/default; each V tab keeps only its
-  own entries. Explicit exclusions and `.git` protection still apply.
+  own entries. Explicit exclusions and `.git` protection still apply. Direct file navigation also
+  reveals its parent scope and expands/selects the exact file without changing the global switch.
+- File Git state is server-supplied `gitState: ignored | untracked`: shared orange/blue row names
+  and distinct Gitignored/Untracked badges in sidebar, lists and right file panel, light/dark.
+  Missing/no-repo/noGit is neutral; prefs ignored marks and synthesized local status confer no Git state.
+  Store caches collapsed ignored/untracked path sets (two Git calls per repo per invalidation),
+  longest owning repository wins; tracked files have neither new badge.
 
 ### Git is batched
 
@@ -225,6 +231,10 @@ contents list, so a heading link and its contents entry cannot disagree.
 - `src/lib/qa.ts` `stateOf` and `.claude/skills/qa-states.md` say the same states — change both together
 
 ## Data sources
+
+- Mermaid output remains an inert SVG image: detached template normalization + XMLSerializer, strict
+  SVG namespace/XML/viewBox validation, decoded natural dimensions before replacement. Native helper
+  `ui/mermaid-image.ts` bounds input/output and decode wait; errors are visible text, no active SVG fallback.
 
 - **File list** — `git ls-files -co -s --exclude-standard` per repository, so `.gitignore` is
   honoured with no configuration; a nested repo (`name/`) or submodule (mode 160000) is listed

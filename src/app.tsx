@@ -2,6 +2,7 @@ import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
+import { parentScope } from './ui/git-state';
 import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
 import { ViewChips } from './ui/ViewChips';
 import type { RecentEntry } from './lib/store';
@@ -391,9 +392,15 @@ function App() {
   const [views, setViews] = useState(loadViews);
   useEffect(() => saveViews(views), [views]);
   // Ignored folders selected in V1 or V2 are listed in the default tree — a view's tab asks for its own only —
-  // and so is the folder page shown (a deliberate request: it does not depend on what the root holds). The global
+  // and so is the folder page shown, or the open document's folder (a deliberate request: it does not depend on what the root holds). The global
   // Show ignored switch is not touched. A changed set reloads the tree (a root switch already does).
-  const openDir = dirTarget && (!dirTarget.rootId || dirTarget.rootId === rootId) ? dirTarget.dir : null;
+  const openDir = dirTarget
+    ? !dirTarget.rootId || dirTarget.rootId === rootId
+      ? dirTarget.dir
+      : null
+    : docPath && doc && doc.root === rootId
+      ? parentScope(doc.rel)
+      : null;
   const revealPlan = revealScopes(views[rootId] ?? noViews(), openDir, tab === 'V1' || tab === 'V2' ? tab : null);
   reveal.current = revealPlan.scopes;
   const revealKey = JSON.stringify([rootId, revealPlan.scopes]);

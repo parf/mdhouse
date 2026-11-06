@@ -1,6 +1,9 @@
 import { render as mount } from 'preact';
+import { gitStateOf } from './git-state';
+import { GitStateBadge } from './GitStateBadge';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { safeHtml } from './safe-html';
+import { mermaidImage } from './mermaid-image';
 import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
@@ -78,20 +81,6 @@ interface Props {
 const MERMAID_URL = '/vendor/mermaid/mermaid.esm.min.mjs';
 let mermaidModule: Promise<typeof import('mermaid')> | null = null;
 
-/** The diagram as an image: an SVG in an `<img>` runs no script, loads nothing and answers no events. */
-function svgImage(svg: string): HTMLImageElement {
-  const vb = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement.getAttribute('viewBox')?.split(/[\s,]+/).map(Number) ?? [];
-  const img = new Image();
-  img.alt = 'diagram';
-  img.className = 'mermaid-img';
-  if (vb.length === 4 && vb[2]! > 0 && vb[3]! > 0) {
-    img.width = Math.ceil(vb[2]!);
-    img.height = Math.ceil(vb[3]!);
-  }
-  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  return img;
-}
-
 async function renderMermaid(container: HTMLElement): Promise<void> {
   const blocks = container.querySelectorAll<HTMLElement>('pre.mermaid:not([data-rendered])');
   if (!blocks.length) return;
@@ -108,13 +97,15 @@ async function renderMermaid(container: HTMLElement): Promise<void> {
   });
 
   for (const [i, block] of blocks.entries()) {
+    const source = block.textContent ?? '';
     block.dataset.rendered = '1';
     try {
-      const { svg } = await mermaid.render(`mmd-${Date.now()}-${i}`, block.textContent ?? '');
-      block.replaceChildren(svgImage(svg));
+      const { svg } = await mermaid.render(`mmd-${Date.now()}-${i}`, source);
+      block.replaceChildren(await mermaidImage(svg));
     } catch (err) {
       block.dataset.rendered = 'error';
       block.title = String(err);
+      block.textContent = `Unable to render diagram.\n${source}`;
     }
   }
 }
@@ -1182,6 +1173,11 @@ export function Doc({
       )}
 
       <div class="doc-aside">
+        {gitStateOf(doc) && (
+          <div class="doc-git">
+            <GitStateBadge item={doc} full />
+          </div>
+        )}
         {doc.headings.filter((h) => h.level <= 3).length > 1 && (
           <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
             <summary>

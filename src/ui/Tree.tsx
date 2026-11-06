@@ -4,6 +4,8 @@ import { IconChevron, IconFolder, IconStar, IconMute } from './icons';
 import { docName, fileSize, shortAgo } from './format';
 import { Ago, RecentHeat } from './Ago';
 import { follow } from './PageHead';
+import { gitStateClass, shownStatus } from './git-state';
+import { GitStateBadge } from './GitStateBadge';
 
 interface Props {
   nodes: Node[];
@@ -118,13 +120,13 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
   const marks = file.file.marks ?? [];
   const isFav = marks.includes('favorite');
   const isMuted = marks.includes('muted');
-  const status = file.file.status;
+  const status = shownStatus(file.file.status);
   const size = file.file.size;
   const small = sizeClass(size);
 
   return (
     <a
-      class={`row file${isMuted ? ' muted' : ''}${isFav ? ' fav' : ''}${small ? ` ${small}` : ''}`}
+      class={`row file${gitStateClass(file.file)}${isMuted ? ' muted' : ''}${isFav ? ' fav' : ''}${small ? ` ${small}` : ''}`}
       style={{ '--indent': `${indent}px` }}
       aria-current={p.current === file.path ? 'true' : undefined}
       href={p.fileUrl(file.path)}
@@ -143,6 +145,8 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       {small === 'tiny' && <SizeMark size={size} end />}
 
       <RecentHeat at={file.file.mtime} />
+
+      <GitStateBadge item={file.file} />
 
       {status && (
         <span class={`badge ${status}`} title={status}>

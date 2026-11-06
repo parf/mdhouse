@@ -9,6 +9,8 @@ import { sizeClass, SizeMark } from './Tree';
 import { PageHead, follow, inLink } from './PageHead';
 import { loadWide } from './wide';
 import { MD_EXT } from '../lib/filetypes';
+import { gitStateClass } from './git-state';
+import { GitStateBadge } from './GitStateBadge';
 
 type Sort = 'new' | 'az';
 
@@ -249,7 +251,7 @@ export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear,
               return (
                 <tr
                   key={f.rel}
-                  class={`file${small ? ` ${small}` : ''}${muted ? ' muted' : ''}`}
+                  class={`file${gitStateClass(f)}${small ? ` ${small}` : ''}${muted ? ' muted' : ''}`}
                   onClick={(e) => !inLink(e) && onOpen(f.rel)}
                   title={f.rel}
                 >
@@ -276,6 +278,7 @@ export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear,
                       {md ? docName(f.name) : f.name}
                     </a>
                     {small === 'tiny' && <SizeMark size={f.size} />}
+                    <GitStateBadge item={f} />
                   </td>
                   <td class="when">
                     <Ago at={f.mtime} />

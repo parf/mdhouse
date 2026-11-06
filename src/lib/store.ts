@@ -11,12 +11,13 @@ import type { Registry, Root } from './roots';
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isExplicitlyDenied, loadRootRules, type IgnoreRules } from './ignore';
-import { LIST_CAP, scanRoot, type MdFile, type ScanResult } from './scan';
+import { LIST_CAP, repoToplevel, scanRoot, type MdFile, type ScanResult } from './scan';
 import {
   recentChanges,
   repoHead,
   type RepoHead,
   workingStatus,
+  untrackedPaths,
   currentUser,
   authorship,
   type FileStatus,
@@ -28,9 +29,43 @@ import {
 export type Authorship = { created: Commit | null; last: Commit | null };
 import type { Prefs, Mark } from './prefs';
 
+/** What git says of a file it does not track; absent for a tracked file or without git evidence. */
+export type GitState = 'ignored' | 'untracked';
+
 export interface FileEntry extends MdFile {
   status?: FileStatus;
   marks?: Mark[];
+  gitState?: GitState;
+}
+
+/** One repository's untracked paths, relative to the root; directories end with `/`, `''` is the whole prefix. */
+interface RepoPaths {
+  prefix: string;
+  ignored: Set<string>;
+  untracked: Set<string>;
+}
+
+/**
+ * The state of the root-relative `rel` (a file or a folder): the repository with the longest
+ * prefix owning it decides, from the path itself or the nearest listed directory above it.
+ */
+/** The rows, each with `gitState` when git does not track it; new objects, cached rows stay as they are. */
+function withGitState<T extends { rel: string; gitState?: GitState }>(repos: readonly RepoPaths[], rows: readonly T[]): T[] {
+  return rows.map((r) => {
+    const gs = gitStateIn(repos, r.rel);
+    return gs ? { ...r, gitState: gs } : r;
+  });
+}
+
+export function gitStateIn(repos: readonly RepoPaths[], rel: string): GitState | undefined {
+  const own = repos.find((r) => !r.prefix || rel === r.prefix || rel.startsWith(`${r.prefix}/`));
+  if (!own) return undefined;
+  const inner = own.prefix ? rel.slice(own.prefix.length + 1) : rel;
+  const keys = [inner, ''];
+  for (let i = inner.indexOf('/'); i !== -1; i = inner.indexOf('/', i + 1)) keys.push(inner.slice(0, i + 1));
+  if (keys.some((k) => own.ignored.has(k))) return 'ignored';
+  if (keys.some((k) => own.untracked.has(k))) return 'untracked';
+  return undefined;
 }
 
 export interface TreePayload {
@@ -91,6 +126,7 @@ export interface RecentEntry {
   status?: string;
   /** Changed in the working tree and not committed. Always counted as the user's own. */
   uncommitted?: boolean;
+  gitState?: GitState;
 }
 
 /** One commit and the Markdown it is the newest change to. */
@@ -100,7 +136,7 @@ export interface CommitGroup {
   email: string;
   date: number;
   subject: string;
-  files: Array<{ rel: string; name: string; dir: string; status: string }>;
+  files: Array<{ rel: string; name: string; dir: string; status: string; gitState?: GitState }>;
 }
 
 export interface Digest {
@@ -123,6 +159,8 @@ interface RootState {
   /** Revealed scopes by root-relative directory, least recently used first; at most `REVEAL.cached`. */
   scopes: Map<string, ScanResult>;
   status?: Map<string, FileStatus>;
+  /** Every repository's untracked paths, longest prefix first; dropped with any invalidate. */
+  gitPaths?: RepoPaths[];
   changes?: GitChange[];
   head?: (RepoHead & { repo: string }) | null;
   authors?: Map<string, Authorship>;
@@ -163,6 +201,7 @@ export class Store {
     const s = this.state.get(rootId);
     if (!s) return;
     delete s.status;
+    delete s.gitPaths;
     delete s.changes;
     delete s.head;
     delete s.authors;
@@ -266,6 +305,37 @@ export class Store {
     return (await this.status(root, await this.anyScan(root))).get(rel);
   }
 
+  /**
+   * Every repository's untracked paths under the root, built once per invalidation: two `git
+   * ls-files` per repository — the root's own, listed from the root, and each one nested below it.
+   * Empty without git.
+   */
+  async gitPaths(root: Root): Promise<RepoPaths[]> {
+    const s = await this.stateFor(root);
+    if (s.gitPaths) return s.gitPaths;
+    if (this.opts.noGit) return (s.gitPaths = []);
+    const own = await repoToplevel(root.path);
+    const nested = (await this.anyScan(root)).repos.filter((r) => r.startsWith(`${root.path}${sep}`));
+    const where = [...(own ? [{ cwd: root.path, prefix: '' }] : []), ...nested.map((r) => ({ cwd: r, prefix: relative(root.path, r).split(sep).join('/') }))];
+    const repos: RepoPaths[] = [];
+    await Promise.all(
+      where.map(async ({ cwd, prefix }) => {
+        const listed = await untrackedPaths(cwd);
+        // `./` is the listed directory itself
+        const set = (paths: string[]) => new Set(paths.map((p) => (p === './' ? '' : p)));
+        if (listed) repos.push({ prefix, ignored: set(listed.ignored), untracked: set(listed.untracked) });
+      }),
+    );
+    repos.sort((a, b) => b.prefix.length - a.prefix.length);
+    s.gitPaths = repos;
+    return repos;
+  }
+
+  /** What git says of the root-relative `rel` when it does not track it; see `gitStateIn`. */
+  async gitStateOf(root: Root, rel: string): Promise<GitState | undefined> {
+    return gitStateIn(await this.gitPaths(root), rel);
+  }
+
   /** A cached scan, either setting — the repos are the same — else the scan without ignored files. */
   private async anyScan(root: Root): Promise<ScanResult> {
     const s = await this.stateFor(root);
@@ -285,10 +355,12 @@ export class Store {
       s.user = this.opts.noGit || !scan.repos.length ? null : await currentUser(scan.repos[0]!);
     }
 
+    const git = await this.gitPaths(root);
     const entry = (f: MdFile): FileEntry => {
       const marks = this.prefs.marksFor(root.path, f.rel);
       const st = status.get(f.rel);
-      return { ...f, ...(st ? { status: st } : {}), ...(marks.length ? { marks } : {}) };
+      const gs = gitStateIn(git, f.rel);
+      return { ...f, ...(st ? { status: st } : {}), ...(marks.length ? { marks } : {}), ...(gs ? { gitState: gs } : {}) };
     };
     const files: FileEntry[] = scan.files.map(entry);
 
@@ -399,7 +471,7 @@ export class Store {
         });
       }
     }
-    return out.slice(0, limit);
+    return withGitState(await this.gitPaths(root), out.slice(0, limit));
   }
 
   /**
@@ -464,7 +536,13 @@ export class Store {
             .slice(0, 20)
             .map((f) => ({ rel: f.rel, name: f.name, dir: f.dir, at: f.mtime }));
 
-    return { uncommitted, commits, recent, head: await this.head(root, scan) };
+    const git = await this.gitPaths(root);
+    return {
+      uncommitted: withGitState(git, uncommitted),
+      commits: commits.map((c) => ({ ...c, files: withGitState(git, c.files) })),
+      recent: withGitState(git, recent),
+      head: await this.head(root, scan),
+    };
   }
 
   /**

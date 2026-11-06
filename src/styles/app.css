@@ -17,6 +17,8 @@
   --danger: #c0392b;
   --uncommitted: #c2410c; /* dark orange: work not committed yet */
   --ok: #2f855a;
+  --git-ignored: #c2570c;
+  --git-untracked: #1d63d8;
   --mark-fav: #d99100;
   --dir: #6b4226;
   --doc-title: #2b6e3f; /* mid-dark green */
@@ -96,6 +98,8 @@
     --danger: #e57373;
     --uncommitted: #fb923c;
     --ok: #68c496;
+    --git-ignored: #f0913a;
+    --git-untracked: #6aa9ff;
     --mark-fav: #e0b341;
     --dir: #c9a07a;
     --doc-title: #7cc48d;
@@ -156,6 +160,8 @@
   --danger: #e57373;
   --uncommitted: #fb923c;
   --ok: #68c496;
+  --git-ignored: #f0913a;
+  --git-untracked: #6aa9ff;
   --mark-fav: #e0b341;
   --dir: #c9a07a;
   --doc-title: #7cc48d;
@@ -1997,3 +2003,16 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .md .mermaid-img { max-width: 100%; height: auto; }
 
 .reveal-note { padding: 6px 12px; }
+
+/* Git state: one colour per state on every surface — the badge, a row's name and the file panel. */
+.git-badge { font-size: 10.5px; flex: none; padding: 0 4px; border-radius: 3px; font-weight: 600; border: 1px solid currentColor; }
+.git-badge.git-ignored,
+.row.file.git-ignored > .label,
+.sidebar .hit.git-ignored .hit-name,
+.home-table tr.git-ignored td.name .link { color: var(--git-ignored); }
+.git-badge.git-untracked,
+.row.file.git-untracked > .label,
+.sidebar .hit.git-untracked .hit-name,
+.home-table tr.git-untracked td.name .link { color: var(--git-untracked); }
+.doc-git { margin: 0 0 8px; }
+.doc-git .git-badge { font-size: 12px; padding: 1px 7px; }

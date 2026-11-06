@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Mermaid diagrams with HTML line breaks in labels are serialized as valid standalone SVG images; failed rendering is shown visibly while diagrams remain inert
+- Direct opening of ignored Markdown reveals its parent and selects the file in the left tree; Gitignored and Untracked have distinct orange/blue colors and right-panel badges, while tracked and no-repo files stay neutral
+
 - Agent Bus connection uses the canonical Personal tag instead of the retired record field, preserving create-only registration and existing owner settings
 
 - Tree metadata and folder ALL listings preserve explicit exclusions, `.git` protection and Registry path jail, including symlink aliases
