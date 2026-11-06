@@ -119,3 +119,8 @@
   Show ignored when eligible ignored files exist; direct ignored-folder navigation lists its contents.
   Folders selected in either V1/V2 also appear in main/default; each V tab keeps only its own selection.
   Preserve explicit exclusions, `.git` protection and path jail. [History](resolved.md#BROWSE-W1).
+
+
+- 📌 GIT-W1 Distinguish Gitignored (orange) and Untracked (blue) across file surfaces. <a id="GIT-W1"></a>
+  Separate right file-panel badges; tracked/no-repo files have neither. Direct file navigation reveals
+  its exact path/selection without changing strict V1/V2 or exclusions/jail. [History](resolved.md#GIT-W1).

@@ -366,3 +366,12 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬 👤parf когда V1 / V2 - то только то что там выбрано; я про main/default view
   >
   > 💬👾 Clarification relayed by CEO (`33d4dead175bbfb8`): ignored folders selected in either view appear with contents in main/default; no cross-view union inside V1/V2. [Decision](DECISIONS.md#BROWSE-W1).
+
+
+## Git file states and direct reveal — 2026-11-06
+
+- ✅ GIT-W1 Distinct file states after ignored browsing <a id="GIT-W1"></a>
+  CEO owner-approved handoff (`f34120e4877ce419`):
+  > Owner approved proposed UI: direct open realty/.ai-team/README.md expands/reveals exact path and selected file in left tree; distinct Gitignored (orange) vs Untracked (blue) file colors + two distinct right file-view badges. Shared semantic CSS/classes everywhere (sidebar/list/file right panel, light/dark), tracked files neither badge; do not conflate no-repo with untracked. User said «да - так намного лучше» after corrected two-badge preview. Please record scope/quote and implement as one small approved cohort via team scheme with focused checks, preserve strict V1/V2 own selections and explicit exclusions/jail. Avoid duplicating MW.9; build on it.
+  >
+  > 💬 👤parf да - так намного лучше

@@ -203,7 +203,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2 Make Agent Bus work out of the box <a id="MW.2"></a>
-  - Compatibility checkpoint: canonical Personal tag fix `5736c14` integrated after independent PASS; create-only/owner-only registration preserved. Local reload/reconnect verification pending ([QA](../QA.md#agent-bus-canonical-personal-registration))
+  - Compatibility checkpoint: canonical Personal tag fix `5736c14` integrated after independent PASS; create-only/owner-only registration preserved. CEO verified local reload/reconnect connected:true,error:null (`ab8cbd08d366ed48`), all roots preserved ([QA](../QA.md#agent-bus-canonical-personal-registration))
   - Builds: install-time Agent Bus setup; a connected mdhouse project ready to ask an agent; optional Agent Bus endpoint and default agents per space/root
   - Depends: [№MW.1](#MW.1), [№MW.1a](#MW.1a)
   - Acceptance: the installed project page can open Agent Bus, send a request and receive its reply without a separate integration pass
@@ -436,6 +436,15 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - API: hasIgnored/revealed/capped and bounded repeated reveal directory parameters. Main uses selected-folder union; each V tab only its own entries
   - Scope correction: W1 reproduced pre-existing ALL listing bypass of explicit .mdhouseignore exclusions; same cohort fixes /api/files filtering/jail with focused negative fixtures. Built-in vendor visibility remains distinct from explicit denies
   - No full/version bump/live7777 checks or reload; ready is not integrated/done
+
+- [ ] MW.9a Direct file reveal and distinct Git file-state presentation <a id="MW.9a"></a>
+  - Contract: [№GIT-W1](DECISIONS.md#GIT-W1); builds on accepted [№MW.9](#MW.9), not a duplicate browsing implementation
+  - Cohort: W1 authoritative cached Git state/payloads, W2 direct-file/sidebar/list/right-panel shared presentation; exact interface agreed before code
+  - Acceptance: direct `.ai-team/README.md` navigation requests its deliberate jailed parent scope, expands exact ancestor path and highlights the exact file; no global toggle mutation or V1/V2 cross-view reveal
+  - Acceptance: Gitignored orange and Untracked blue use shared semantic CSS/classes across sidebar, lists and distinct right file-panel badges in light/dark; tracked files have neither new badge
+  - Acceptance: no repository/noGit/unknown does not imply Untracked; use actual Git evidence, not ignored prefs marks or missing metadata
+  - Acceptance: preserve explicit exclusions, hard `.git`, Registry jail and source/passive-content boundary; no per-row Git subprocesses
+  - One combined focused/types gate, owned scratch UI proof and independent exact review as needed; no full/version bump/live restart by workers
 
 ## Gate
 

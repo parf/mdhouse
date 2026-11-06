@@ -295,3 +295,8 @@ managed or widened. No other register/manage retired member was found in src. Of
 record docs and strict decoder inspected, provider CTO confirmed canonical creation contract.
 No full/types/browser/provider rerun for this one-field compatibility fix; local reload/reconnect
 verification remains pending with CEO, no parallel CTO restart.
+
+
+Canonical registration runtime followup: CEO verified enabled/connected true, identity #mdhouse@parf.us,
+error null and all nine roots/path/RW intact after targeted local reload (`ab8cbd08d366ed48`). No test
+message, paid/provider call or parallel CTO restart. This supersedes the pending-runtime note above.

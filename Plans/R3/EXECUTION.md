@@ -1058,3 +1058,18 @@ regression for new/existing records. Independent exact PASS `91b54b42d62424c4`; 
 fast-forward, no material integration delta. Focused 44/0; no full/types/build/version bump.
 Existing records/ACLs preserved; no manage/provider configuration change. [QA](QA.md#agent-bus-canonical-personal-registration).
 CEO owns targeted local reload and /api/ab reconnect status; runtime success not yet claimed.
+
+
+## Canonical Agent Bus registration live verified
+
+CEO owner-authorized reload confirmed (`ab8cbd08d366ed48`): /api/ab enabled true, identity
+#mdhouse@parf.us, connected true, error null; all nine roots/path/RW preserved and HTTP healthy.
+No test messages/provider/paid calls. CTO did not restart in parallel.
+
+## File Git-state followup selected before code
+
+[№MW.9a](workspaces/TODO.md#MW.9a) extends accepted ignored browsing with authoritative Gitignored
+versus Untracked semantics and direct-file ancestor reveal/selection. W1 owns cached metadata/payloads,
+W2 shared semantic UI/classes and navigation. Existing recents synthesize untracked for loose non-repo
+files; that must not become a Git badge. Interface agreement precedes code, one coherent gate/review;
+no duplicate [№MW.9](workspaces/TODO.md#MW.9), full suite, version bump or worker live restart.
