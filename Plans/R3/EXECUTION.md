@@ -866,3 +866,22 @@ OAuth/agent registration on bin invocation or guessed T-48 calls. One integratio
 focused/package-export/types gate and exact security review; no per-task full/version bump. Connected
 index/search remains an explicit later acceptance after actual provider readiness/T-48 deployment,
 not claimed complete by this preview foundation. Shared technical route is #ab-dir only.
+
+## T-49 partial setup and finite-sync contract clarified
+
+Owner choices relayed by #ab-dir settle shared Voyage/AI and existing-store Qdrant proxy; URL is
+127.0.0.1:6333, key install remains a private owner-side handoff, not a remaining product choice.
+CTO has not enabled/started RAG/Qdrant or created collection/index before that handoff. Existing
+parf-owned mdhouse identity and explicit FileScan Allow were verified; credential values were never
+printed or committed. No subscription/scan/ingestion/provider spend occurred.
+
+T-48 approved finite sync closes [№Q-R3-RAGSYNC1](workspaces/DECISIONS.md#Q-R3-RAGSYNC1): no watcher/
+subscription/timer survives, unknown on-demand outcomes never auto-resend. Provider check shape
+`b0b435f4` is fixed and read; whole-file confirmation needs complete:true and all identity/hash/source
+fields. Code/deploy still pending. Retry-bound label J116 was corrected by provider: existing shared
+confirmed-delivery resend/FileScan S1, applicable only to standing watch, not this bin's on-demand run.
+
+Bin foundation API is agreed by W3/W1: pure full-metadata plan/digest, root dev/ino binding,
+10,000-source bound, explicit complete/issues, fixed dependency exclusions, actual jailed local
+metadata CLI inventory, zero transport on import/help/plan, sync/search explicitly not-wired. One
+cohort gate/review follows frozen author outputs, with no source-version bump or per-task full run.

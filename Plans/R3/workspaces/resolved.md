@@ -338,3 +338,20 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬 📡 CEO AB-CEO af433a09927c623d reports owner approved Q353/Q355 with CHANGE: parf remains record Owner; #cx/mdhouse-cto gets Maintainer on #rag/mdhouse@parf.us and #filescan/mdhouse@parf.us (config/access/subscriptions/scan/reset). T-49 registration in progress, wait exact live records/grants.
   >
   > 💬👾 This supersedes earlier no-CTO-grants assumptions for the explicit mdhouse sync scope only. FileScan uses parf's account runner, approved root/mask/exclusions and mdhouse/docs; #mdhouse registration ownership remains an owner decision. No subscription/ingestion has started, T-48 remains pending, reset/destructive replay and worker/wildcard grants are not implied.
+
+## On-demand sync lifetime history
+
+- ✅ Q-R3-RAGSYNC1 How does the separate bin finish an on-demand sync when FileScan watches/polls? <a id="Q-R3-RAGSYNC1"></a>
+  [№RAG-W1](DECISIONS.md#RAG-W1) requires explicit owner-demand execution. FileScan uses persistent
+  subscriptions and can resend pending work; leaving one connected may continue paid RAG writes
+  after the bin exits. Endpoint/root decisions already live in [№Q-R3-RAG1](#Q-R3-RAG1).
+  - ( ) Bounded one-shot sync with only an explicitly owned temporary subscription; no persistent sync after exit 🌟
+  - ( ) Explicit owner-selected watch mode, with visible lifetime/stop controls and separate authorization
+  > 💡👾 Default to a previewable one-shot plan that names exact folder/instance/endpoint/namespace/table,
+  > catches up only within the requested run, and tears down only its owned subscription. Preserve
+  > unknown/in-flight paid outcomes as diagnostics; do not claim cancellation or retry safety. Add
+  > persistent watch behavior only when explicitly selected and authorized, never by default.
+  >
+  > 💬 📡 #ab-dir reports owner chose the recommended options for Q368–Q375; T-48 finite sync leaves no subscription, watch or timer, keeps per-target confirmed marks, and never auto-resends an unknown file.
+  >
+  > 💬👾 Finite provider sync supersedes the earlier temporary-subscription proposal; runtime/API must still be delivered and deployed. Watch retry policy is separate standing authority, not permission for on-demand resends. This closes the lifetime product choice, not implementation or live acceptance.

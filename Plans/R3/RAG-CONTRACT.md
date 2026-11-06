@@ -30,8 +30,8 @@ provider status sync, background sync or service calls from normal cohorts. Exis
 requirements below do not authorize live provisioning, subscriptions, paid calls or a permanent
 watcher. One FileScan per folder: owner/AB-CEO provision roots, record/Configuration.dir, token/reload
 and caller grants; only afterward does our bin configure agreed endpoint/namespace/table subscription
-and inspect status/sub list. Watch/poll execution lifetime is an open design decision, not silent
-background activation. Official setup input: `/usr/local/src/ai-agent-bus/docs/agents/filescan.md`.
+and inspect status/sub list. Finite on-demand sync lifetime is owner-approved via T-48: no subscription/watch/timer remains;
+actual runtime/API delivery is pending, not permission to use a persistent subscription. Official setup input: `/usr/local/src/ai-agent-bus/docs/agents/filescan.md`.
 
 Reference-only #ab-ceo message `bd5eaa2868d8cedc` reports FileScan deployed/not running and those setup
 steps; its old pack 1.0.1 label is not new verified deployment evidence. It is not an execution task.
@@ -54,6 +54,19 @@ steps; its old pack 1.0.1 label is not new verified deployment evidence. It is n
 
 
 ### T-49 actual setup checkpoint
+
+Latest Q376–Q378 choices are settled through #ab-dir: shared Voyage/production AI, own Qdrant proxy
+to existing store. Store URL is explicitly `http://127.0.0.1:6333`; the key install is a private
+owner-side step and is not yet confirmed. No Qdrant/RAG enable/start/reload/collection/index is run
+before that handoff. Root runner secrets are not read or borrowed. #mdhouse registration is not a
+blocker: it already exists as parf-owned. FileScan Allow now includes it, verified by record metadata.
+
+Frozen future completeness check `b0b435f4` is `get` with `check:true`, explicit namespace/tableName/id;
+response namespace/tableName/id/source/content_hash/indexed_at/complete. Only complete:true plus all
+expected identity/source/hash fields confirms a whole file. No data/vectors/labels are returned;
+not_found/incomplete/different-source/hash confirm nothing; storage/deadline remains unknown and
+never authorizes paid upsert. This is a reviewed plan contract, not deployed capability yet.
+
 
 FileScan live status is provider-confirmed: Owner parf, Maintainer CTO, account runner, expected
 root/mask/exclusions, tracked 194, paused null, subscribers empty (receipt `8d1e090322ae8fd8`).
@@ -78,7 +91,7 @@ T-48 owner options Q368–Q375 are provider-reported approved; build starts with
 get/check and finite FileScan sync. Code/deploy/frozen shape are not yet delivered. After deployment
 CTO must switch FileScan to the documented on-demand configuration (Q375), not leave implicit watch.
 Provider accepted no automatic paid resend without free check (sync resend caller-only; watch only
-incomplete within J116 bound), and duplicate-sibling/fenced-heading chunk identity tests. Physical
+incomplete within the shared core confirmed-delivery resend bound (FileScan S1)), and duplicate-sibling/fenced-heading chunk identity tests. Physical
 old-chunk cleanup remains unproven, not a new dedup guarantee.
 
 ### Authorized first setup target

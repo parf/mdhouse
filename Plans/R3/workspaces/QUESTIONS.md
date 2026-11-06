@@ -17,7 +17,7 @@
   blocked on v0.2 discovery, but actual T-49 live records/grants still await confirmation.
   Dedicated endpoint [№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) and FileScan roots
   [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) are provider-reported approved with CTO Maintainer changes; T-49 live records/grants and T-48
-  bounded/large-text contract remain pending. #mdhouse caller registration ownership is not settled.
+  bounded/large-text deployment remain pending. #mdhouse caller already exists as parf-owned; no re-registration.
   T-45 typed docs/fixture are delivered: subscriber change messages and status snapshots, but no
   source registry, job API/history or event stream. A4 end-to-end and A7 dedup remain unmet.
   > 💡👾 Use the explicit dedicated endpoint/stored project namespace after provisioning; complete
@@ -66,13 +66,4 @@
 
 ## On-demand RAG sync lifetime — 2026-11-06
 
-- ❓ Q-R3-RAGSYNC1 How does the separate bin finish an on-demand sync when FileScan watches/polls? <a id="Q-R3-RAGSYNC1"></a>
-  [№RAG-W1](DECISIONS.md#RAG-W1) requires explicit owner-demand execution. FileScan uses persistent
-  subscriptions and can resend pending work; leaving one connected may continue paid RAG writes
-  after the bin exits. Endpoint/root decisions already live in [№Q-R3-RAG1](#Q-R3-RAG1).
-  - ( ) Bounded one-shot sync with only an explicitly owned temporary subscription; no persistent sync after exit 🌟
-  - ( ) Explicit owner-selected watch mode, with visible lifetime/stop controls and separate authorization
-  > 💡👾 Default to a previewable one-shot plan that names exact folder/instance/endpoint/namespace/table,
-  > catches up only within the requested run, and tears down only its owned subscription. Preserve
-  > unknown/in-flight paid outcomes as diagnostics; do not claim cancellation or retry safety. Add
-  > persistent watch behavior only when explicitly selected and authorized, never by default.
+- [№Q-R3-RAGSYNC1](DECISIONS.md#Q-R3-RAGSYNC1) <a id="Q-R3-RAGSYNC1"></a>
