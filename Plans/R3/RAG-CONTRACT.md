@@ -81,6 +81,10 @@ cohort must narrow app cleanup to its own topic and test interleaved bin replies
 a substitute for that source fix. No live :7777 restart is authorized/performed here; source identity
 does not prove the old process upgraded. Live acceptance must distinguish provider/operator proof
 from connected-bin/shared-reader behavior rather than claim all reply-loss races eliminated.
+CEO subsequently verified the owner-authorized local mdhouse reload (`95ff0d32e65091bd`):
+HTTP/root readiness and preserved original roots plus immutable reference; topic-scoped drain is
+now applied. Missing runtime dependencies were installed with frozen lock; package/lock unchanged.
+No provider sync/index/search was performed by that local reload.
 
 ### T-49 actual setup checkpoint
 

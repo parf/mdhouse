@@ -998,3 +998,18 @@ so the tree-fed DirPage and V tabs cannot reveal missing files. `listFiles` alre
 an ignored folder's ALL listing. Built-in vendor deny is separate from gitignore; explicit exclusions
 and `.git`/Registry security remain boundaries. One coherent backend/UI cohort with focused gate,
 owned scratch browser check and exact independent review; no live app checks or version bump.
+
+
+## Ignored-browsing API and explicit ALL boundary
+
+[№MW.9](workspaces/TODO.md#MW.9): W1/W2 designs agreed before implementation. Tree response gains
+hasIgnored/revealed/capped; repeated reveal parameters carry at most 32 scopes, 1024 UTF-8 bytes each,
+16 KiB total. Scope visibility never overrides explicit exclusions, `.git` or canonical path jail;
+main selected-folder union is separate from each V tab's own selection. No global toggle mutation.
+W1 reproduced a pre-existing folder ALL bypass in a temporary tracked Git fixture: tree excluded
+secret/x.md via `.mdhouseignore`, but listFiles returned it. CTO expanded the same backend cohort to
+preserve explicit excludes/jail in ALL, with focused negative coverage; no unrelated listing expansion.
+
+CEO independently completed owner-authorized live app reload (`95ff0d32e65091bd`) after frozen-lock
+runtime dependency installation. HTTP/roots verified; topic-only drain now applied. This is not
+[№MW.9](workspaces/TODO.md#MW.9) implementation evidence or live RAG indexing proof.

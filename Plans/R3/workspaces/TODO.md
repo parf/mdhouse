@@ -232,7 +232,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Boundary: explicit sync apply, keyword search default, paid modes/resend separately explicit; no auto reset/drop/grants/config/watch/subscription, no tests against production AI or live providers
   - Compatibility safety: app reconnect cleanup must consume only its own topic, never bin replies; wrong-service targets refused. J124 deploy and 195/195 tracked-key audit are provider-confirmed, no cleanup needed; live first sync still waits exact runtime readiness
   - Verified: exact `8f3d134` independent PASS, integrated `1fd503a` with source/bin/package/test identity unchanged; focused/package/types gate and integrated runtime check passed ([QA](../QA.md#connected-rag-bin-checkpoint)). No full/browser/provider gate repeated
-  - Live state: FileScan demand/195 tracked/no subscribers; dedicated RAG/Qdrant records/config/grants prepared. Owner private key/runtime/collection/index and old live-app reconnect behavior remain separate gates; provider-confirmed J124 deploy/audit is complete; parent indexing/search acceptance stays open
+  - Live state: FileScan demand/195 tracked/no subscribers; dedicated RAG/Qdrant records/config/grants prepared. Owner private key/runtime/collection/index remain separate gates; provider-confirmed J124 deploy/audit is complete, and CEO verified the owner-authorized local app reload; parent indexing/search acceptance stays open
   - Authority: parf Owner, CTO Maintainer scoped to sync; shared Voyage/AI owner-selected, production AI never tests. No worker/wildcard grants, reset/destructive replay or runtime mdhouse manager role ([contract](../RAG-CONTRACT.md))
   - Why: RAG 0.3 supplies namespaced retrieval/embeddings; FileScan owns source ingestion/refresh/progress. mdhouse orchestrates them without a second retrieval backend
   - Builds: per-space/project source configuration; add/select/remove; ingestion; embedding/index jobs; refresh/reindex; progress/errors/freshness; retrieval test; request/flow source selection; citations/provenance in generated Markdown
@@ -430,7 +430,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: direct ignored-directory navigation lists its eligible contents without changing the global toggle; `.ai-team/` and deliberate vendor scope covered
   - Acceptance: ignored directories selected in either V1 or V2 are included with contents in main/default; each V tab contains only its own selected entries
   - Acceptance: `.git`, explicit `.mdhouseignore`/CLI exclusions and Registry path jail remain enforced for every reveal input, including escape/symlink/direct requests
-  - State: inspected V1/V2 per-browser file/folder selections, ignored toggle and git scanner; hidden-file availability is not currently exposed. Vendor is also in built-in browsing defaults, distinct from explicit exclusions
+  - State: W1 backend and W2 UI working on base `a3e096e`, integration `r3/ignored-browse-cohort`; agreed hasIgnored/revealed/capped and bounded repeated reveal directory parameters. Main uses selected-folder union; each V tab only its own entries
+  - Scope correction: W1 reproduced pre-existing ALL listing bypass of explicit .mdhouseignore exclusions; same cohort fixes /api/files filtering/jail with focused negative fixtures. Built-in vendor visibility remains distinct from explicit denies
   - No full/version bump/live7777 checks or reload; ready is not integrated/done
 
 ## Gate
