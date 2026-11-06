@@ -166,10 +166,44 @@ export const IDEAS_COVERAGE = [
   },
 ] as const;
 
+export const FINANCE_COVERAGE = [
+  {
+    id: 'finance-budget-forecast', output: 'budget-forecast',
+    stages: ['scope', 'assumptions', 'scenarios', 'cash-plan', 'report'],
+    sources: ['supplied budget and financial records', 'currency period units and opening cash or explicit missing', 'scenario assumptions estimates and owners'],
+    exampleFacts: ['opening cash: unknown', 'ending cash: unknown', 'cash-plan.blocked', 'not an approved budget'],
+  },
+  {
+    id: 'finance-variance-report', output: 'variance-report',
+    stages: ['scope', 'align', 'calculate', 'interpret', 'report'],
+    sources: ['plan and actual records for selected period or business unit', 'currency units definitions and comparison basis', 'material driver evidence and explicit uncertainty'],
+    exampleFacts: ['not comparable', 'zero baseline', 'percentage: undefined', 'No budget'],
+  },
+  {
+    id: 'finance-unit-economics-pricing', output: 'unit-economics',
+    stages: ['scope', 'model', 'sensitivity', 'report'],
+    sources: ['revenue and variable or fixed cost assumptions', 'unit currency period and volume definitions', 'scenario evidence and unknown cost limits'],
+    exampleFacts: ['nonpositive contribution', 'break-even: undefined', 'not a pricing recommendation', 'No price'],
+  },
+  {
+    id: 'finance-cash-runway', output: 'cash-runway',
+    stages: ['scope', 'reconcile', 'scenarios', 'report'],
+    sources: ['supplied balances restrictions and commitments', 'cash inflows outflows and same-period burn', 'scenario assumptions freshness and unknowns'],
+    exampleFacts: ['restricted cash', 'zero burn', 'negative burn', 'not unlimited funding', 'No payment'],
+  },
+  {
+    id: 'finance-document-review', output: 'financial-review-checklist',
+    stages: ['intake', 'extract', 'compare', 'checklist', 'report'],
+    sources: ['supplied invoices statements or models', 'terms dates amounts currency and line evidence', 'tax fee and reconciliation basis or explicit missing'],
+    exampleFacts: ['unexplained difference', 'tax/fees: unknown', 'not a confirmed invoice error', 'compare.blocked'],
+  },
+] as const;
+
 export const EXPECTED_PACKAGE_IDS: readonly string[] = [
   ...FEATURE_PACKAGE_IDS, ...DOCUMENTATION_COVERAGE.map((row) => row.id),
   ...CHANGE_REVIEW_COVERAGE.map((row) => row.id),
   ...ENGINEERING_COVERAGE.map((row) => row.id),
   ...BUSINESS_COVERAGE.map((row) => row.id),
   ...IDEAS_COVERAGE.map((row) => row.id),
+  ...FINANCE_COVERAGE.map((row) => row.id),
 ];

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Five Finance authoring packages cover budget/forecast, variance, unit economics, cash/runway and document review with inspectable scenario formulas and evidence gaps; no financial actions or execution are included
 - Five Ideas authoring packages cover clarification, research/synthesis, prioritization, experiment design and project proposals while retaining source history, assumptions and unresolved questions; execution remains future work
 - Five Business authoring packages cover overview, strategy, market/customer evidence, KPI review and decision memos, separating evidence, assumptions and pending decisions; execution remains future work
 - Engineering authoring packages now also cover incident/regression, delivery sync, API/schema impact and maintenance/debt, with evidence-limited synthetic examples and no execution
