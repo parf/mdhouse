@@ -4,6 +4,7 @@
 
 ### Added
 
+- Five Ideas authoring packages cover clarification, research/synthesis, prioritization, experiment design and project proposals while retaining source history, assumptions and unresolved questions; execution remains future work
 - Five Business authoring packages cover overview, strategy, market/customer evidence, KPI review and decision memos, separating evidence, assumptions and pending decisions; execution remains future work
 - Engineering authoring packages now also cover incident/regression, delivery sync, API/schema impact and maintenance/debt, with evidence-limited synthetic examples and no execution
 - Four Engineering authoring packages cover release readiness, architecture/ownership, project health and onboarding/handoff, preserving missing evidence and unknown status; execution remains future work

@@ -144,6 +144,36 @@
       "family": "business",
       "manifest": "business-decision-memo/flow.json",
       "example": "business-decision-memo/example.md"
+    },
+    {
+      "id": "ideas-capture",
+      "family": "ideas",
+      "manifest": "ideas-capture/flow.json",
+      "example": "ideas-capture/example.md"
+    },
+    {
+      "id": "ideas-research-synthesis",
+      "family": "ideas",
+      "manifest": "ideas-research-synthesis/flow.json",
+      "example": "ideas-research-synthesis/example.md"
+    },
+    {
+      "id": "ideas-prioritization",
+      "family": "ideas",
+      "manifest": "ideas-prioritization/flow.json",
+      "example": "ideas-prioritization/example.md"
+    },
+    {
+      "id": "ideas-experiment-design",
+      "family": "ideas",
+      "manifest": "ideas-experiment-design/flow.json",
+      "example": "ideas-experiment-design/example.md"
+    },
+    {
+      "id": "ideas-to-project",
+      "family": "ideas",
+      "manifest": "ideas-to-project/flow.json",
+      "example": "ideas-to-project/example.md"
     }
   ]
 }

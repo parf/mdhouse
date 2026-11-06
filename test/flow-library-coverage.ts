@@ -133,9 +133,43 @@ export const BUSINESS_COVERAGE = [
   },
 ] as const;
 
+export const IDEAS_COVERAGE = [
+  {
+    id: 'ideas-capture', output: 'idea-brief', handoff: false,
+    stages: ['capture', 'clarify', 'report'],
+    sources: ['original note and provenance', 'problem audience outcome and constraints or explicit unknown', 'owner and unanswered questions'],
+    exampleFacts: ['Build a chatbot', 'problem: unknown', 'not a prescribed solution'],
+  },
+  {
+    id: 'ideas-research-synthesis', output: 'opportunity-brief', handoff: false,
+    stages: ['scope', 'sources', 'cluster', 'synthesize', 'report'],
+    sources: ['original ideas and source references', 'related work evidence dates and objections', 'duplicate boundaries and provenance or explicit unknown'],
+    exampleFacts: ['different audiences', 'source provenance', 'not consensus', 'No live research'],
+  },
+  {
+    id: 'ideas-prioritization', output: 'idea-prioritization', handoff: false,
+    stages: ['scope', 'compare', 'assumptions', 'report'],
+    sources: ['candidate ideas and goal links', 'impact confidence and effort evidence or assumptions', 'urgency strategic fit reversibility and decision criteria'],
+    exampleFacts: ['confidence: unknown', 'No numerical score', 'not an approved priority'],
+  },
+  {
+    id: 'ideas-experiment-design', output: 'experiment-plan', handoff: false,
+    stages: ['hypothesis', 'design', 'measurement', 'decision-rule', 'report'],
+    sources: ['hypothesis evidence and intended audience', 'success guardrail definitions baseline and denominator', 'duration decision rule and owner'],
+    exampleFacts: ['baseline: missing', 'denominator: undefined', 'measurement.blocked', 'No experiment'],
+  },
+  {
+    id: 'ideas-to-project', output: 'project-proposal', handoff: true,
+    stages: ['collect', 'proposal', 'handoff'],
+    sources: ['selected idea and actual selection record', 'original evidence rejected alternatives and unresolved questions', 'intended owner and project plan or feature destination'],
+    exampleFacts: ['original IDs', 'rejected alternative', 'unresolved question', 'No project was created'],
+  },
+] as const;
+
 export const EXPECTED_PACKAGE_IDS: readonly string[] = [
   ...FEATURE_PACKAGE_IDS, ...DOCUMENTATION_COVERAGE.map((row) => row.id),
   ...CHANGE_REVIEW_COVERAGE.map((row) => row.id),
   ...ENGINEERING_COVERAGE.map((row) => row.id),
   ...BUSINESS_COVERAGE.map((row) => row.id),
+  ...IDEAS_COVERAGE.map((row) => row.id),
 ];

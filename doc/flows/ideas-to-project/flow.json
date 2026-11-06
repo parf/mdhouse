@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "ideas-to-project",
+  "title": "Carry a selected idea into a project proposal",
+  "family": "ideas",
+  "entry": "collect",
+  "defaults": {
+    "scope": "selected-document",
+    "range": "explicit-baseline",
+    "audience": "product",
+    "output": "project-proposal",
+    "destination": "Plans/flows/ideas-to-project.md"
+  },
+  "evidence": {
+    "required": [
+      "selected idea and actual selection record",
+      "original evidence rejected alternatives and unresolved questions",
+      "intended owner and project plan or feature destination"
+    ],
+    "missing": "block"
+  },
+  "example": "example.md",
+  "steps": [
+    {
+      "id": "collect",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "proposal"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "proposal",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "step",
+          "id": "handoff"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "id": "handoff",
+      "document": "workflow.md",
+      "effect": "analysis",
+      "approval": "none",
+      "on": {
+        "complete": {
+          "kind": "handoff",
+          "to": "person",
+          "target": "project-owner"
+        },
+        "blocked": {
+          "kind": "end",
+          "status": "blocked"
+        },
+        "failed": {
+          "kind": "end",
+          "status": "failed"
+        }
+      }
+    }
+  ]
+}
