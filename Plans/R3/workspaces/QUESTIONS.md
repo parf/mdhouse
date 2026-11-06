@@ -14,9 +14,10 @@
 
 - ❓ Q-R3-RAG1 Which typed FileScan handoff completes the R3 source lifecycle? <a id="Q-R3-RAG1"></a>
   RAG 0.3.0 free capabilities are verified; provider reports 0.4.1 live. Retrieval is no longer
-  blocked on v0.2 discovery, but mdhouse access still awaits Q353.
+  blocked on v0.2 discovery, but actual T-49 live records/grants still await confirmation.
   Dedicated endpoint [№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) and FileScan roots
-  [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) are open owner decisions in Agent Bus R1.1 QUESTIONS, verified read-only.
+  [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) are provider-reported approved with CTO Maintainer changes; T-49 live records/grants and T-48
+  bounded/large-text contract remain pending. #mdhouse caller registration ownership is not settled.
   T-45 typed docs/fixture are delivered: subscriber change messages and status snapshots, but no
   source registry, job API/history or event stream. A4 end-to-end and A7 dedup remain unmet.
   > 💡👾 Use the explicit dedicated endpoint/stored project namespace after provisioning; complete

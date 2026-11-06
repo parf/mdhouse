@@ -61,6 +61,7 @@
   No pairing/broadcast. Unknown/disconnected client → canonical URL, `opened: false`. [History](resolved.md#Q-W7).
 
 - 📌 RAG-W1 RAG sync is a separate mdhouse bin module, implemented by our team and executed only on explicit owner demand; no implicit/background sync or provider-status calls. <a id="RAG-W1"></a>
+  For the approved mdhouse sync scope, parf stays Owner and CTO is Maintainer on the dedicated RAG/FileScan records only after live confirmation; no worker/wildcard grants or implied destructive reset/replay.
   FileScan: one provisioned instance per folder; owner/AB-CEO handle roots/record/config/token/grants, our bin handles the agreed subscription/status. Paid/live authority is separate. [History](resolved.md#RAG-W1).
 
 ## Directory controls

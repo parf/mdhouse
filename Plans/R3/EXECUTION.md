@@ -828,3 +828,14 @@ skips large texts, so index/search acceptance cannot claim full Markdown coverag
 AB-CEO to evaluate/plan reasonable provider changes for bounded on-demand scan/completion and large
 Markdown ingestion; do not duplicate those requests. W3 receives this concrete target for bin/index/
 search planning. No subscription/watch/ingestion, provisioning or paid call was performed by CTO.
+
+## Provider-reported owner approval for dedicated sync setup
+
+CEO receipt `9ab6320591fda0db` relays AB-CEO `af433a09927c623d`: Q353/Q355 approved with a change to
+initial access assumptions. parf remains record Owner; CTO becomes Maintainer on dedicated
+`#rag/mdhouse@parf.us` and `#filescan/mdhouse@parf.us` within approved sync setup scope. T-49
+registration is in progress, not verified readiness. FileScan account runner/root/mask/exclusions
+and mdhouse/docs are specified; #mdhouse identity is unregistered and its registration ownership
+is still an owner decision. Await exact records/grants and T-48 contract before starting sync.
+No subscription, ingestion, grant mutation, reset or paid call was performed; worker/wildcard grants
+and destructive replay are not implied by Maintainer capability.

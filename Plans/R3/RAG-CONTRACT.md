@@ -45,7 +45,9 @@ RAG/FileScan prerequisites from #ab-ceo; do not duplicate provisioning or capabi
 FileScan include/exclude arrays exist; `include: ["*.md"]` matches root and recursive Markdown per
 provider test evidence relayed by CEO. Keep default dotfile exclusions and exclude node_modules /
 dependency trees; no .git/.scratch ingestion. Proposed namespace `mdhouse`, table `docs`, production
-caller `#mdhouse@parf.us`; endpoint/root approval/provisioning remains with owner/AB-CEO.
+caller `#mdhouse@parf.us` remains unregistered; its registration ownership is a separate owner
+decision. Provider reports Q353/Q355 approved with scoped CTO Maintainer changes; T-49 provisioning
+is in progress, not verified live readiness.
 
 CTO read-only local estimate: 194 visible nonignored Markdown files, five over 32 KiB (EXECUTION,
 workspace TODO, `Plans/issues/2026-10/2026-10-07.md`, R3 README, CHANGELOG). This is not a FileScan scan
@@ -61,15 +63,17 @@ behavior, and setup authorization does not silently authorize arbitrary paid/pro
 
 
 Owner-question locations verified read-only in Agent Bus `Plans/R1.1/QUESTIONS.md` (not R1.0):
-[№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) — endpoint choice, open, commit `d75b1da7`;
-[№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) — FileScan roots, open, commit `47bfb0a0`
-(warning `ee15f008`, subsequently fixed/deployed per provider). The recommended dedicated endpoint
-and per-project roots are not owner-approved until those questions settle; no provisioning/grant
-change is implied. Provider receipt `5a254e80e274e4b8` reports RAG 0.4.1 deployed at `#rag@parf.us`,
+[№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) — endpoint choice, provider-reported approved via T-49, original commit `d75b1da7`;
+[№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) — FileScan roots, provider-reported approved via T-49, original commit `47bfb0a0`
+(warning `ee15f008`, subsequently fixed/deployed per provider). Provider relay `af433a09927c623d` (CEO receipt `9ab6320591fda0db`) reports approval: parf stays
+record Owner; `#cx/mdhouse-cto` becomes Maintainer on `#rag/mdhouse@parf.us` and
+`#filescan/mdhouse@parf.us` for scoped config/access/subscriptions/scan/reset. T-49 registration is
+in progress; wait for exact live records/grants and T-48 bounded/large-text contract. Maintainer
+status is not permission for destructive reset/replay, worker/wildcard grants or unrelated work. Provider receipt `5a254e80e274e4b8` reports RAG 0.4.1 deployed at `#rag@parf.us`,
 2026-11-06 11:20 EST, bus 1.0.50 / agent pack 1.0.2. Advertised methods add count/similar/complete/
 classify to the earlier ten; complete prefix index exists, classify is off unless configured.
-This is provider deployment evidence, not new mdhouse discovery or adopted feature scope. Q353
-access remains pending; no calls or grants were performed here.
+This is provider deployment evidence, not new mdhouse discovery or adopted feature scope. T-49
+live readiness remains pending; no calls or grants were performed here.
 
 FileScan paid-replay defect: provider receipt `e6f9c7a3de48dd99` reports fix `0f5340c3` deployed
 2026-11-06 02:07 EST, verified upstream against real RAG core with fake providers. Acknowledgment now
@@ -99,10 +103,11 @@ call and does not prove backend readiness or data-path isolation; no paid lookup
 Local official reference: `/usr/local/src/ai-agent-bus/docs/agents/rag.md`.
 
 Provider recommends a separate `#rag/mdhouse@parf.us` instance/collection, pending owner provisioning
-([№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse), open);
+([№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse), provider-reported approved);
 `#rag@parf.us` is not the final mdhouse endpoint. Intended initial caller is production
-`#mdhouse@parf.us`, without manager role. No CTO/CEO/workers/Review or wildcard FileScan grants;
-FileScan identities are added only per provisioned exact project name. mdhouse project grants and
+`#mdhouse@parf.us` is not yet registered. Earlier no-CTO-grant assumptions are superseded by owner-approved
+Maintainer authority for `#cx/mdhouse-cto` on the two dedicated records, within the explicit sync scope.
+No CEO/workers/Review or wildcard grants are authorized; exact live grants still require confirmation. mdhouse project grants and
 stored namespace mapping remain independent access boundaries. No grant change was performed here.
 
 Delivered provider followup T-45 is docs/fixture-only: exact typed FileScan source/progress/event/snapshot

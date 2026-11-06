@@ -333,3 +333,8 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬 📡 CEO Owner reminds us to use #ab-ceo setup instructions: one FileScan per folder; owner/AB-CEO authorize root, record/Configuration.dir, token/reload and caller grants; after provisioning our module configures the agreed RAG endpoint/namespace/table subscription and reads status/sub list.
   >
   > 💬👾 Watch/poll versus bounded on-demand behavior remains [№Q-R3-RAGSYNC1](QUESTIONS.md#Q-R3-RAGSYNC1). Existing endpoint/root questions are linked, not asked again; no live provisioning or paid call was performed.
+
+  >
+  > 💬 📡 CEO AB-CEO af433a09927c623d reports owner approved Q353/Q355 with CHANGE: parf remains record Owner; #cx/mdhouse-cto gets Maintainer on #rag/mdhouse@parf.us and #filescan/mdhouse@parf.us (config/access/subscriptions/scan/reset). T-49 registration in progress, wait exact live records/grants.
+  >
+  > 💬👾 This supersedes earlier no-CTO-grants assumptions for the explicit mdhouse sync scope only. FileScan uses parf's account runner, approved root/mask/exclusions and mdhouse/docs; #mdhouse registration ownership remains an owner decision. No subscription/ingestion has started, T-48 remains pending, reset/destructive replay and worker/wildcard grants are not implied.
