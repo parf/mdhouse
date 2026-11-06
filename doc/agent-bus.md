@@ -48,5 +48,5 @@ mdhouse --agent-bus /tmp/ab-rdvp.sock
 ```
 
 - You join as your login on that host — sshd runs as you; no token
-- The remote agents read the path mdhouse sends — the same tree must be there (a shared mount, the same checkout)
+- The remote agents read the project file path mdhouse sends — the same project directory must be there (a shared mount, the same checkout)
 - The tunnel is down → settings say *not connected*

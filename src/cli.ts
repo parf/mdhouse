@@ -33,10 +33,10 @@ const USAGE = `mdhouse — a Markdown workspace on your own machine
   mdhouse users                   list users and allowed networks
 
 Options
-  -p, --perm           save the folders (and any --port/--host given): used on every start
-      --rw             the folders named may be written (checkbox ticks, answers, notes
+  -p, --perm           save the projects (and any --port/--host given): used on every start
+      --rw             the named projects may be written (checkbox ticks, answers, notes
                        under headings); with -p, saved writable
-      --rm             forget the folders and stop serving them
+      --rm             forget the projects and stop serving them
       --host <addr>    address to bind              (default 127.0.0.1)
       --port <n>       port to listen on            (default 7777)
       --allow <cidr,…> only these networks (and this machine) get in; saved
@@ -44,7 +44,7 @@ Options
       --host-name <n,…> only these Host names get in (a reverse proxy's);
                        localhost and IP addresses are refused; saved
                        --host-name reset: localhost and IP addresses again
-      --auto-rw <p,…>  folders under these are writable (switch in settings); saved
+      --auto-rw <p,…>  projects under these paths are writable (switch in settings); saved
                        --auto-rw reset: no such paths
       --agent-bus [on|off|<x.sock>|<http://host:port>]  the Agent Bus integration:
                        a page asks an AI session to read it and reply; saved. A remote
@@ -57,7 +57,7 @@ Options
       --no-git         skip git entirely; filesystem recents only
       --help           show this
 
-No folder passed - serves saved from ~/.config/mdhouse/prefs.json
+No directory passed - serves saved projects from ~/.config/mdhouse/prefs.json
 
 Full CLI reference: https://github.com/parf/mdhouse/blob/main/doc/cli.md
 `;
@@ -218,7 +218,7 @@ const printRoots = (
 /** What mdhouse may write, said once under the root list, which marks each writable one `[RW]`. */
 const writeNote = (roots: Array<{ writable: boolean }>): string =>
   roots.some((r) => r.writable)
-    ? '\n  Folders marked [RW]: ticking a checkbox saves the file. The rest are read-only.'
+    ? '\n  Projects marked [RW]: ticking a checkbox saves the file. The rest are read-only.'
     : '\n  Read-only — mdhouse does not write to the trees it serves.';
 
 /** A directory as the config stores it: absolute and symlink-resolved, or as written if gone. */
@@ -447,7 +447,7 @@ if (opts.rm) {
       const what = r.removed
         ? `removed${r.unsaved ? ' and forgotten' : ''}`
         : r.kept
-          ? `forgotten, but still served until exit — it is the last directory`
+          ? `forgotten, but still served until exit — it is the last project`
           : r.unsaved
             ? 'forgotten (it was not being served)'
             : 'not saved, and not served — nothing to do';
@@ -521,14 +521,14 @@ const saved = prefs.savedDirs().filter((dir) => {
 if (!dirs.length && !saved.length) {
   if (process.env.MDHOUSE_SERVICE === '1') {
     // Nothing to serve. Exit cleanly rather than fail, so the unit is not restarted in a loop.
-    console.error('mdhouse: no saved directories — nothing to serve. Save one with:  mdhouse <dir> -p');
+    console.error('mdhouse: no saved projects — nothing to serve. Save one with:  mdhouse <dir> -p');
     process.exit(0);
   } else if (!opts.fg && (await running())) {
     // One is running already (with folders added for the session): say what it serves.
     await handOver(await askDaemon(opts.port, { dirs: [], rw: false, save: false }));
   } else {
     // Nothing named, nothing saved: ask for a folder rather than guess one.
-    console.error('mdhouse: which folder? Name one, and -p saves it for every later start:');
+    console.error('mdhouse: which project directory? Name one, and -p saves it for every later start:');
     console.error('           mdhouse <dir> -p');
     process.exit(1);
   }
@@ -682,7 +682,7 @@ if (!opts.fg) {
   }
   console.log(writeNote(live.roots));
   console.log(`\n  Running in the background (pid ${live.pid}).  Stop it with:  ${stopHint}`);
-  console.log(`  Point it at more directories any time:  mdhouse <dir>`);
+  console.log(`  Add more projects any time:  mdhouse <dir>`);
   console.log(LOG ? `  Watch what it does:  ${LOG.follow}` : `  Its output is not kept on this system — ${FG_HINT}`);
 
   if (opts.open) openBrowser(live.url);

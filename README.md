@@ -36,12 +36,13 @@ bun install -g mdhouse      #  bun 1.4+ required
 ## ▸ Start
 
 ```bash
-mdhouse ~/notes ~/src -p     # serve folders, -p = save them for every later start, start in background
-mdhouse service install      # starts now and at every login, serving the saved folders
+mdhouse ~/notes ~/src -p     # serve projects, -p = save them for every later start, start in background
+mdhouse service install      # starts now and at every login, serving the saved projects
 ```
 
 - Open <http://127.0.0.1:7777>
-- `mdhouse --rw <folder>` - add new folder and allow to [edit and answer on the page](#-working-on-docs--with-you-and-your-agents)
+- Each served folder is a project; use the project chooser to switch between them.
+- `mdhouse --rw <folder>` - add a project and allow to [edit and answer on the page](#-working-on-docs--with-you-and-your-agents)
 - More in [Running it](#-running-it)
 
 ---
@@ -67,7 +68,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 
 ## ✎ Working on docs — with you and your agents
 
-Writes need a folder served with `--rw`: `mdhouse -p --rw folder(s)`. The markup is plain GFM —
+Writes need a project served with `--rw`: `mdhouse -p --rw folder(s)`. The markup is plain GFM —
 [Questions and answers](doc/qa.md); try every form on the [Q&A playground](doc/qa-playground.md). Every syntax on one page: [Syntax](doc/syntax.md). For your agents: [Markup for agents](doc/agent-markup.md) — give it and say "do like this".
 
 **Edit while reading**
@@ -134,7 +135,7 @@ text is kept
 - 📖 **Read-only by default.** Write access - cli only `mdhouse -p --rw dir` (-p = save)
 - ✏️ **Small, checked writes** — a tick, an answer, a block under a heading, a commit
 - 🏠 **Local.** Binds `127.0.0.1` unless you pass `--host`; users and allowed networks — [Access](doc/access.md)
-- ⚙ Your settings live in `~/.config/mdhouse/`, never inside a served folder
+- ⚙ Your settings live in `~/.config/mdhouse/`, never inside a project directory
 
 ---
 
@@ -156,10 +157,10 @@ text is kept
 ## ▸ Running it
 
 ```bash
-mdhouse                          # serve the saved folders
-mdhouse ~/src                    # add a folder to the running one — never a second server
-mdhouse ~/notes -p --port 8080   # save folders, and the port / host, for every later start
-mdhouse --rm ~/notes             # forget a folder and stop serving it
+mdhouse                          # serve the saved projects
+mdhouse ~/src                    # add a project to the running one — never a second server
+mdhouse ~/notes -p --port 8080   # save projects, and the port / host, for every later start
+mdhouse --rm ~/notes             # forget a project and stop serving it
 mdhouse exit                     # stop it (--all: every port)
 mdhouse service install          # systemd: now and at every login; also status, uninstall
 ```
@@ -172,16 +173,16 @@ Log: `journalctl -t mdhouse -f` · Config: `~/.config/mdhouse/prefs.json`
 
 | Flag | |
 | --- | --- |
-| `-p, --perm` | save the folders, and any `--port` / `--host` given, for every later start |
+| `-p, --perm` | save the projects, and any `--port` / `--host` given, for every later start |
 | `--rw <folder(s)>` | allow editing |
-| `--rm <folder(s)>` | forget the folders and stop serving them |
-| `--auto-rw <path,…>` | every folder served from under these is writable |
+| `--rm <folder(s)>` | forget the projects and stop serving them |
+| `--auto-rw <path,…>` | every project served from under these paths is writable |
 | `--host-name <name,…>` | behind a reverse proxy: only these names get in, not localhost or IPs — [access](doc/access.md#behind-a-reverse-proxy) |
 | `--host <addr>` | address to bind — default `127.0.0.1`; `0.0.0.0` to share on your LAN |
 | `--port <n>` | default 7777 |
 | `--fg` | stay in the foreground |
 
-Full commands and options: [CLI reference](doc/cli.md). A root may carry a **`.mdhouseignore`**: one directory name per
+Full commands and options: [CLI reference](doc/cli.md). A project may carry a **`.mdhouseignore`**: one directory name per
 line, `#` for comments, `!name` to bring back a directory the built-in deny list hides
 (`node_modules`, `vendor`, build output and the like)
 
