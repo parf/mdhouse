@@ -365,6 +365,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Contract: [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1); preserve passive HTML, source/edit/Copy and normal app behavior
   - [ ] MW.8a Server content policy, raw response boundaries and defense headers <a id="MW.8a"></a>
   - [ ] MW.8b Browser sinks and constrained app-controlled Mermaid rendering <a id="MW.8b"></a>
+  - Acceptance: authored HTML cannot impersonate generated Q&A/task controls, even with exact current line/hash and matching list structure; genuine target/tick/pick/verdict/answer controls still work
+  - Acceptance: client filtering preserves Shiki themes, table alignment and passive formatting; Mermaid uses constrained app-controlled rendering with inert image output, no callbacks or app-level CSS/request authority
   - Acceptance: inline handlers, scripts, srcdoc/frames, javascript URLs, forms/base, raw script MIME and SVG/HTML embedding cannot gain app-script or privileged-request capability
   - Acceptance: document/diff/preview and stale/direct surfaces share the boundary; Q&A actions, line hashes, passive tables/details/formatting and source text remain usable
   - Acceptance: Mermaid labels, links/callbacks/config directives and SVG output are constrained; renderer code may execute, diagram source may not gain arbitrary authority

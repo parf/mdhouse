@@ -151,3 +151,19 @@ unknown ownership/security/license remains unknown. No execution or permissions 
 Second Engineering batch approved: incident/regression, delivery sync, API/schema impact, maintenance/debt;
 W3 owns assets/catalog/coverage/tarball tests/CHANGELOG only, preserving the first 15 packages.
 Parent and manual/scheduled runtime acceptance remain open.
+
+## Passive-content review handoff
+
+[№MW.8a](workspaces/TODO.md#MW.8a) target `d9f4290c8facf8681d84d7fa0a0ed22e86525a46`
+(base `b11e47f`) is frozen for independent security review; it is not integrated. W1 reports server
+sanitizer/raw/CSP positive and negative browser evidence, full 528/528 and tsc; independent verdict pending.
+
+[№MW.8b](workspaces/TODO.md#MW.8b) prototype found a material control-forgery gap: authored HTML with
+renderer classes and exact current data-line/data-hash caused a real target write after one decoy click.
+This is a blocker for the combined boundary. W1 owns a separate provenance followup commit, including
+exact list-shaped forgery negatives and genuine control positives; current reviewed target stays frozen.
+W2 owns client HTML sinks, empty raw-HTML iframe sandbox and locked strict Mermaid rendered as inert
+SVG images. Diagram labels become non-selectable; callbacks stay inactive. Repeatable baseline/fixed
+browser corpus is approved without adding a DOM test runtime. Shiki/table styles must survive the client
+filter; element counts alone do not prove that. W1 coordinates any direct sanitizer dependency/lock
+followup. Whole boundary and admin wiring remain open pending combined exact-SHA review and tests.
