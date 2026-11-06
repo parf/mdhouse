@@ -1,10 +1,10 @@
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options } from './ui/api';
+import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
-import { loadViews, noViews, saveViews, toggle, type ViewId } from './ui/views';
+import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
 import { ViewChips } from './ui/ViewChips';
-import type { TreePayload, RecentEntry } from './lib/store';
+import type { RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
 import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
@@ -56,7 +56,9 @@ function App() {
     [],
   );
   const [rootId, setRootId] = useState('');
-  const [tree, setTree] = useState<TreePayload | null>(null);
+  const [tree, setTree] = useState<UiTree | null>(null);
+  // The folders the tree request reveals (see `revealScopes`), kept in a ref so a reload always sends the latest.
+  const reveal = useRef<string[]>([]);
   const [doc, setDoc] = useState<DocPayload | null>(null);
   const [docError, setDocError] = useState<string | null>(null);
   const [loadingDoc, setLoadingDoc] = useState(false);
@@ -143,7 +145,7 @@ function App() {
   const reloadTree = useCallback(async () => {
     if (!rootId) return;
     const seq = ++treeSeq.current;
-    const next = await api.tree(rootId, showIgnored).catch(() => null);
+    const next = await api.tree(rootId, showIgnored, reveal.current).catch(() => null);
     if (seq === treeSeq.current) setTree(next);
   }, [rootId, showIgnored]);
 
@@ -388,6 +390,17 @@ function App() {
   // Views V1 / V2, per root: what each holds; their sidebar tabs show the tree narrowed to it.
   const [views, setViews] = useState(loadViews);
   useEffect(() => saveViews(views), [views]);
+  // Ignored folders selected in V1 or V2, and the folder page shown (only when something is ignored), are listed
+  // in the default tree; the global Show ignored switch is not touched. A changed set reloads the tree (a root switch already does).
+  const openDir = dirTarget && (!dirTarget.rootId || dirTarget.rootId === rootId) && tree?.hasIgnored ? dirTarget.dir : null;
+  const revealPlan = revealScopes(views[rootId] ?? noViews(), openDir);
+  reveal.current = revealPlan.scopes;
+  const revealKey = revealPlan.scopes.join('\n');
+  const revealFirst = useRef(true);
+  useEffect(() => {
+    if (revealFirst.current) revealFirst.current = false;
+    else void reloadTree();
+  }, [revealKey]);
   const toggleView = (root: string, id: ViewId, item: string) =>
     setViews((all) => {
       const mine = all[root] ?? noViews();
@@ -534,6 +547,7 @@ function App() {
           }
           onSearchScope={(scope) => setSearchScope((prev) => (prev === scope ? 'all' : scope))}
           onAuthor={setAuthorFilter}
+          revealNote={revealNote(revealPlan.omitted, tree?.capped)}
           onToggleIgnored={() => setShowIgnored((v) => !v)}
           onToggleDir={toggleDir}
           onOpenDirPage={openDirPage}
