@@ -70,7 +70,9 @@ describe('inventory', () => {
     const root = tree({
       'a.md': '# a',
       'b.txt': 'x',
-      'sub/c.MD': 'cc',
+      'sub/c.md': 'cc',
+      'sub/C.MD': 'upper',
+      'b.Md': 'mixed',
       '.hidden.md': 'h',
       '.git/x.md': 'g',
       'node_modules/p/r.md': 'n',
@@ -80,7 +82,7 @@ describe('inventory', () => {
     const inv = await inventory(root);
     expect(inv.complete).toBe(true);
     expect(inv.issues).toEqual([]);
-    expect(inv.sources.map((s) => s.path)).toEqual(['a.md', 'sub/c.MD']);
+    expect(inv.sources.map((s) => s.path)).toEqual(['a.md', 'sub/c.md']);
     expect(inv.sources[0]).toEqual({ path: 'a.md', size: 3, mtimeMs: statSync(join(root, 'a.md')).mtimeMs });
     const rst = statSync(root, { bigint: true });
     expect(inv.root).toEqual({ path: root, dev: String(rst.dev), ino: String(rst.ino) });
@@ -202,6 +204,15 @@ describe('main', () => {
     expect(await main(['plan', '--root', root, ...TARGET], b.io)).toBe(EXIT.runtime);
     expect(JSON.parse(b.out.join('')).coverage).toMatchObject({ status: 'partial', issues: 1 });
     expect(b.err.join('')).toContain('incomplete');
+  });
+
+  test('only lowercase *.md matches, as the planner include does: .MD is ignored, not a refusal', async () => {
+    const root = tree({ 'a.md': 'a', 'UPPER.MD': 'b' });
+    const a = io();
+    expect(await main(['plan', '--root', root, ...TARGET], a.io)).toBe(EXIT.ok);
+    const plan = JSON.parse(a.out.join(''));
+    expect(plan.sources.map((s: { path: string }) => s.path)).toEqual(['a.md']);
+    expect(plan.inventory.issues).toEqual([]);
   });
 
   test('plan never reads file content', async () => {

@@ -162,7 +162,7 @@ export async function inventory(rootArg: string, limits: { files: number; dirs: 
         if (!(await walk(path, depth + 1))) return false;
       } else if (st.isSymbolicLink() || !st.isFile()) {
         issues.push({ path, reason: 'unsupported' });
-      } else if (e.name.toLowerCase().endsWith('.md')) {
+      } else if (e.name.endsWith('.md')) {
         const loc = await registry.resolve(`${id}/${path}`);
         if (!loc || loc.abs !== join(real, path)) {
           issues.push({ path, reason: 'unsupported' });
