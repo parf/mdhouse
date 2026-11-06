@@ -17,7 +17,8 @@ import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
 import { Prefs, MARKS, type Mark } from './lib/prefs';
 import { Store } from './lib/store';
 import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
-import { applyQa, badgeName, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
+import { applyQa, badgeSource, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
+import { authorCookieName, authorSetCookie, normalizeAuthorName, readAuthorCookie, type AuthorIdentity } from './lib/author';
 import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
@@ -39,12 +40,21 @@ export interface ServeOptions {
   noGit?: boolean;
   gitLogLimit?: number;
   includeIgnoredDefault?: boolean;
+  /** The authenticated author of a request, when there is one; it wins over the browser's cookie. */
+  sessionAuthor?: (req: Request) => AuthorIdentity | null;
 }
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
 const fail = (status: number, message: string) => json({ error: message }, status);
+
+/** What GET /api/author says: the name that signs, where it comes from, and the browser's own cookie. */
+const authorPayload = (author: AuthorIdentity, cookie: string | null) => {
+  const res = json({ name: author.name, source: author.source, cookie });
+  res.headers.set('cache-control', 'private, no-store');
+  return res;
+};
 
 const moved = (location: string) => new Response(null, { status: 301, headers: { location } });
 
@@ -166,11 +176,22 @@ export async function serve(opts: ServeOptions) {
     return convertLegacy(raw, splitFrontmatter(raw).offset);
   };
 
-  /** Who a signed reply is from: prefs `me`, else the git identity of the file's repository, else the login. */
-  const signer = async (loc: { root: Root; rel: string }): Promise<string> => {
-    const where = opts.noGit ? null : await store.repoFor(loc.root, loc.rel);
-    return badgeName(prefs.settings.me, where ? await currentUser(where.repo) : null, userInfo().username);
+  /**
+   * Who a signed reply is from: an authenticated session, else this browser's author cookie, else
+   * prefs `me`, else the git identity of the file's repository, else the login. The cookie is
+   * attribution only.
+   */
+  /** The port the author cookie is named for: the one actually listening. */
+  const cookiePort = (): number => server.port ?? opts.port;
+  const authorOf = async (req: Request, loc: { root: Root; rel: string } | null): Promise<AuthorIdentity> => {
+    const session = opts.sessionAuthor?.(req);
+    if (session) return session;
+    const cookie = readAuthorCookie(req.headers.get('cookie'), cookiePort());
+    if (cookie) return { name: cookie, source: 'cookie' };
+    const where = loc && !opts.noGit ? await store.repoFor(loc.root, loc.rel) : null;
+    return badgeSource(prefs.settings.me, where ? await currentUser(where.repo) : null, userInfo().username);
   };
+  const signer = async (req: Request, loc: { root: Root; rel: string }): Promise<string> => (await authorOf(req, loc)).name;
 
   const queueWrite = <T>(abs: string, write: () => Promise<T>): Promise<T> => {
     const run = (fileWrites.get(abs) ?? Promise.resolve()).then(write);
@@ -441,7 +462,7 @@ export async function serve(opts: ServeOptions) {
           const url = new URL(req.url);
           const loc = await docAt(url.searchParams.get('p') ?? '');
           if (!loc) return fail(404, 'not a document');
-          const me = await signer(loc);
+          const me = await signer(req, loc);
           const reply = url.searchParams.get('reply');
           if (reply === null) return json({ me });
           const line = Number(url.searchParams.get('line'));
@@ -461,7 +482,7 @@ export async function serve(opts: ServeOptions) {
           if (!loc) return fail(404, 'not a document');
           if (!registry.writableAt(loc)) return readOnly(loc, 'answer');
 
-          const me = await signer(loc);
+          const me = await signer(req, loc);
           const result = await queueWrite(loc.abs, async () => {
             const src = await readDoc(loc.abs);
             const result = applyQa(src, splitFrontmatter(src).offset, body, me);
@@ -508,11 +529,15 @@ export async function serve(opts: ServeOptions) {
           if (!loc) return fail(404, 'not a document');
           if (!registry.writableAt(loc)) return readOnly(loc, 'add to it');
 
-          // Who signs a "my quote": the git identity of the file's repository, else the login.
+          // Who signs a "my quote": this browser's author, else the git identity of the file's repository, else the login.
           let who = '';
           if (body.kind === 'my-quote') {
-            const where = opts.noGit ? null : await store.repoFor(loc.root, loc.rel);
-            who = (where && (await currentUser(where.repo))?.name) || userInfo().username;
+            const author = await authorOf(req, null);
+            if (author.source === 'cookie' || author.source === 'github') who = author.name;
+            else {
+              const where = opts.noGit ? null : await store.repoFor(loc.root, loc.rel);
+              who = (where && (await currentUser(where.repo))?.name) || userInfo().username;
+            }
           }
           const result = await queueWrite(loc.abs, async () => {
             const src = await readDoc(loc.abs);
@@ -548,6 +573,34 @@ export async function serve(opts: ServeOptions) {
             server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
           }
           return json(settingsPayload());
+        },
+      },
+
+      /**
+       * This browser's author name — what its signed replies carry. The cookie is attribution only:
+       * it grants no access and `prefs.json` is never written. GET says who signs here and where
+       * the name comes from (`cookie` is the browser's own); POST sets it, or clears it with an empty
+       * name. The same-origin rule applies; a name with nothing usable is 400.
+       */
+      '/api/author': {
+        GET: async (req) => {
+          const p = new URL(req.url).searchParams.get('p');
+          const loc = p ? await docAt(p) : null;
+          const author = await authorOf(req, loc ?? { root: registry.defaultRoot(), rel: '' });
+          return authorPayload(author, readAuthorCookie(req.headers.get('cookie'), cookiePort()));
+        },
+        POST: async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as { name?: unknown } | null;
+          if (!body || typeof body.name !== 'string') return fail(400, 'expected {name}');
+          const name = body.name.trim() === '' ? null : normalizeAuthorName(body.name);
+          if (name === null && body.name.trim() !== '') return fail(400, 'name: no usable characters');
+          const secure = new URL(req.url).protocol === 'https:';
+          // Answer as the page's next request will be seen: with the new cookie.
+          const next = new Request(req.url, { headers: name ? { cookie: `${authorCookieName(cookiePort())}=${encodeURIComponent(name)}` } : {} });
+          const res = authorPayload(await authorOf(next, { root: registry.defaultRoot(), rel: '' }), name);
+          res.headers.append('set-cookie', authorSetCookie(cookiePort(), name, secure));
+          return res;
         },
       },
 

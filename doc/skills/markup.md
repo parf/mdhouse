@@ -35,8 +35,8 @@ turns so GitHub keeps them apart:
   person — a reply from 👾 / 📡 asks me again
 - every editor: 💬 (save — the glyph alone), the actions that fit (below), ESC, and `[ ] 👤` at the far right (sign as me — the name in its tooltip) —
   set, the reply starts with my badge
-  (`💬 👤parf …`); remembered per browser. The name: `"me"` in prefs.json settings overrides;
-  default from git — the local part of `user.email` (a badge name is one word), else `user.name`
+  (`💬 👤parf …`); remembered per browser. The name: this browser's own (Settings → Your name; a cookie, attribution only — it gives no
+  access), else `"me"` in prefs.json settings; default from git — the local part of `user.email` (a badge name is one word), else `user.name`
   without spaces
 - "need more" = my `💬 ⚠️` while the glyph stays `❓`
 

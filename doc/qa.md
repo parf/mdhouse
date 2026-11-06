@@ -177,8 +177,9 @@ the right of a line comments on it; a click on a reply edits it.
 Every form: 💬 (save — Ctrl+Enter; Ctrl+Shift+Enter saves and opens the next open question), the
 actions that fit, ESC, and `[ ] 👤` at the far right (sign as me — the name in its tooltip). The
 microphone or Ctrl+Shift+Space starts voice input; press it again to accept, or Esc to cancel and
-restore the draft. The name: `"me"` in prefs.json settings overrides; default from git — the local
-part of `user.email`, else `user.name` without spaces. The form's ✎ (or Alt+E) opens the file at the
+restore the draft. The name: this browser's own (Settings → Your name; a cookie, attribution only — it gives no
+access), else `"me"` in prefs.json settings; default from git — the local part of `user.email`,
+else `user.name` without spaces. The form's ✎ (or Alt+E) opens the file at the
 item in your editor.
 
 Each action has one number, the same in every form; **Alt+number** presses it.

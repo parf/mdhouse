@@ -409,11 +409,21 @@ export function parseQa(src: string, offset: number): { lines: string[]; items: 
   return { lines, items: qaItems(tokens, lines).map((f) => f.item) };
 }
 
-/** A badge name from prefs `me`, else git — the local part of `user.email`, else `user.name` — else the login. */
-export function badgeName(me: string | undefined, git: { name?: string; email?: string } | null, login: string): string {
+/** A badge name from prefs `me`, else git — the local part of `user.email`, else `user.name` — else the login; and which of them it was. */
+export function badgeSource(
+  me: string | undefined,
+  git: { name?: string; email?: string } | null,
+  login: string,
+): { name: string; source: 'prefs' | 'git' | 'login' } {
   const clean = (s: string | undefined) => (s ?? '').replace(/[\s<>:,;.!?)&*]+/g, '');
-  return clean(me) || clean(git?.email?.split('@')[0]) || clean(git?.name) || clean(login) || 'me';
+  const fromGit = clean(git?.email?.split('@')[0]) || clean(git?.name);
+  if (clean(me)) return { name: clean(me), source: 'prefs' };
+  if (fromGit) return { name: fromGit, source: 'git' };
+  return { name: clean(login) || 'me', source: 'login' };
 }
+
+export const badgeName = (me: string | undefined, git: { name?: string; email?: string } | null, login: string): string =>
+  badgeSource(me, git, login).name;
 
 /* ── writing ── */
 

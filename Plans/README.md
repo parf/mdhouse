@@ -303,3 +303,11 @@ The four Feature/delivery packages are authoring assets. Runtime, schedules and 
 Cookie helpers use separate port-scoped names, host-only HttpOnly/SameSite flags and explicit HTTPS.
 The module has no production callers or HTTP/control endpoints; bootstrap and authorization wiring
 remain R3 work. Port-specific names prevent accidental overwrites, not a browser origin boundary.
+
+## Browser author attribution
+
+`lib/author.ts` normalizes browser names and the host/port-scoped `mdhouse_author_<port>` cookie.
+GET/POST `/api/author` reads/sets/clears attribution without changing prefs or permission. Q&A and
+my-quotes prefer the trusted session-author hook, then browser fallback; without either, legacy
+prefs/git/login attribution remains. The cookie is HttpOnly, host-only, SameSite=Lax and HTTPS Secure
+when the trusted request transport is HTTPS. It authenticates nobody and grants no access.

@@ -10,6 +10,13 @@ import type { QaChange } from '../lib/qa';
 import type { Kind } from '../lib/filetypes';
 import { routeOf } from '../lib/urls';
 
+export interface AuthorInfo {
+  name: string;
+  source: 'github' | 'cookie' | 'prefs' | 'git' | 'login';
+  /** What this browser's cookie holds; null: none. */
+  cookie: string | null;
+}
+
 export interface Settings {
   editLink: boolean;
   /** The ✎ link's URL scheme, no `:`. */
@@ -267,6 +274,22 @@ export const api = {
     const body = (await res.json().catch(() => null)) as { checked?: boolean; error?: string } | null;
     if (!res.ok) throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
     return { checked: body?.checked === true };
+  },
+
+  /** This browser's author name: the one that signs, where it comes from, and its own cookie. */
+  author: () => get<AuthorInfo>('/api/author'),
+
+  async setAuthor(name: string): Promise<AuthorInfo> {
+    const res = await fetch('/api/author', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
+    }
+    return res.json() as Promise<AuthorInfo>;
   },
 
   async setSettings(patch: Partial<Settings>): Promise<Settings> {

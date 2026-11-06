@@ -41,7 +41,8 @@
     "editScheme": "edit",
     // Folders under the autoRw paths are writable
     "autoRw": true,
-    // The name a signed Q&A reply carries (💬 👤me …); "" — from git, else the login
+    // The name a signed Q&A reply carries (💬 👤me …) when a browser has set none of its own
+    // (Settings → Your name, a cookie); "" — from git, else the login
     "me": ""
   },
 

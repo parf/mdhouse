@@ -1272,3 +1272,142 @@ describe('POST /api/settings — the edit scheme', () => {
     }
   });
 });
+
+describe('the author cookie — per-browser attribution, no rights (MW.0a)', () => {
+  test('two browsers sign their own turns and my-quotes; the cookie grants nothing and touches no prefs', async () => {
+    const { mkdtemp, rm, mkdir, writeFile, readFile, realpath } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { Registry } = await import('../src/lib/roots');
+    const { Prefs } = await import('../src/lib/prefs');
+    const { serve } = await import('../src/server');
+    const { parseQa, lineHash } = await import('../src/lib/qa');
+    const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-author-')));
+    await mkdir(join(base, 'rw'));
+    await mkdir(join(base, 'ro'));
+    const q = '# Plan\n\n- ❓ Q1 Do we keep it?\n- ❓ Q2 Second?\n';
+    await writeFile(join(base, 'rw', 'q.md'), q);
+    await writeFile(join(base, 'ro', 'r.md'), q);
+    const prefsFile = join(base, 'prefs.json');
+    const prefs = await Prefs.load(prefsFile);
+    await prefs.updateSettings({ me: 'Owner' });
+    const prefsBytes = await readFile(prefsFile, 'utf8');
+    const port = 61950;
+    const registry = await Registry.create([
+      { path: join(base, 'rw'), writable: true },
+      { path: join(base, 'ro'), writable: false },
+    ]);
+    const [rw, ro] = registry.list().map((r) => r.id);
+    const { server, watcher, control } = await serve({
+      registry,
+      prefs,
+      port,
+      hostname: '127.0.0.1',
+      noGit: true,
+      sessionAuthor: (req) => (req.headers.get('x-test-session') ? { name: 'octocat', source: 'github', id: '583231' } : null),
+    });
+    const url = (p: string) => `http://127.0.0.1:${port}${p}`;
+    const call = (path: string, body: unknown, cookie = '', headers: Record<string, string> = {}) =>
+      fetch(url(path), { method: 'POST', headers: { 'content-type': 'application/json', ...(cookie && { cookie }), ...headers }, body: JSON.stringify(body) });
+    const jar = (res: Response) => (res.headers.get('set-cookie') ?? '').split(';')[0]!;
+    const meOf = async (cookie = '', headers: Record<string, string> = {}) =>
+      ((await (await fetch(url(`/api/qa?p=${rw}/q.md`), { headers: { ...(cookie && { cookie }), ...headers } })).json()) as { me: string }).me;
+    const item = async (n: number, rel = 'rw/q.md') => {
+      const src = await readFile(join(base, rel), 'utf8');
+      const it = parseQa(src, 0).items[n]!;
+      return { line: it.start + 1, hash: it.hash };
+    };
+    try {
+      // no cookie: today's signer, byte for byte (prefs me)
+      expect(await meOf()).toBe('Owner');
+      const none = await (await fetch(url('/api/author'))).json();
+      expect(none).toEqual({ name: 'Owner', source: 'prefs', cookie: null });
+
+      // two browsers set two names
+      const a = await call('/api/author', { name: 'Alice' });
+      const b = await call('/api/author', { name: ' Bob: ' });
+      expect(a.status).toBe(200);
+      const setCookie = a.headers.get('set-cookie')!;
+      expect(setCookie).toContain(`mdhouse_author_${port}=Alice`);
+      for (const attr of ['Path=/', 'Max-Age=31536000', 'HttpOnly', 'SameSite=Lax']) expect(setCookie).toContain(attr);
+      expect(setCookie).not.toContain('Domain');
+      expect(setCookie).not.toContain('Secure');
+      expect(await a.json()).toEqual({ name: 'Alice', source: 'cookie', cookie: 'Alice' });
+      expect(((await b.json()) as { name: string }).name).toBe('Bob');
+      const [A, B] = [jar(a), jar(b)];
+      expect(await meOf(A)).toBe('Alice');
+      expect(await meOf(B)).toBe('Bob');
+      expect(await meOf()).toBe('Owner');
+      expect((await (await fetch(url('/api/author'), { headers: { cookie: A } })).json()) as object).toEqual({ name: 'Alice', source: 'cookie', cookie: 'Alice' });
+
+      // signed turns carry each browser's own name
+      let it = await item(0);
+      expect((await call('/api/qa', { p: `${rw}/q.md`, ...it, op: 'say', text: 'first', sign: true }, A)).status).toBe(200);
+      it = await item(1);
+      expect((await call('/api/qa', { p: `${rw}/q.md`, ...it, op: 'say', text: 'second', sign: true }, B)).status).toBe(200);
+      it = await item(1);
+      expect((await call('/api/qa', { p: `${rw}/q.md`, ...it, op: 'say', text: 'third', sign: true })).status).toBe(200);
+      const written = await readFile(join(base, 'rw', 'q.md'), 'utf8');
+      expect(written).toContain('💬 👤Alice first');
+      expect(written).toContain('💬 👤Bob second');
+      expect(written).toContain('💬 👤Owner third');
+
+      // a my-quote is signed by the cookie name too
+      const doc = await readFile(join(base, 'rw', 'q.md'), 'utf8');
+      const hLine = doc.split('\n').findIndex((l) => l.startsWith('# Plan')) + 1;
+      expect((await call('/api/insert', { p: `${rw}/q.md`, line: hLine, hash: lineHash('# Plan'), where: 'below', kind: 'my-quote', text: 'mine' }, B)).status).toBe(200);
+      expect(await readFile(join(base, 'rw', 'q.md'), 'utf8')).toContain('> **Bob:** mine');
+
+      // a hostile cookie value is cut down, never injected
+      const hostile = `mdhouse_author_${port}=${encodeURIComponent('Eve\n- 🎯 ❓ injected 👤parf')}`;
+      expect(await meOf(hostile)).toBe('Eve-injectedparf');
+      const before = (await readFile(join(base, 'rw', 'q.md'), 'utf8')).split('\n').length;
+      it = await item(0);
+      expect((await call('/api/qa', { p: `${rw}/q.md`, ...it, op: 'say', text: 'x', sign: true }, hostile)).status).toBe(200);
+      const after = (await readFile(join(base, 'rw', 'q.md'), 'utf8')).split('\n');
+      expect(after.length - before).toBe(2); // the quote line and its blank separator — no new item
+      expect(after.filter((l) => l.includes('🎯')).length).toBe(0);
+      expect(after.join('\n')).toContain('👤Eve-injectedparf x');
+
+      // refused: cross-origin, a body that is no name, a name with nothing usable
+      const cross = await call('/api/author', { name: 'Mallory' }, '', { origin: 'http://evil.example', 'sec-fetch-site': 'cross-site' });
+      expect(cross.status).toBe(403);
+      expect(cross.headers.get('set-cookie')).toBeNull();
+      for (const bad of [{}, { name: 5 }, { name: '👤' }, { name: '---' }, { name: '́' }]) {
+        const res = await call('/api/author', bad);
+        expect(res.status).toBe(400);
+        expect(res.headers.get('set-cookie')).toBeNull();
+      }
+      // an empty name clears the cookie
+      const clear = await call('/api/author', { name: '' }, A);
+      expect(clear.status).toBe(200);
+      expect(clear.headers.get('set-cookie')).toContain('Max-Age=0');
+      expect(await clear.json()).toEqual({ name: 'Owner', source: 'prefs', cookie: null });
+
+      // the cookie is attribution only: a read-only root stays read-only, a cross-origin write stays refused
+      const roItem = await item(0, 'ro/r.md');
+      expect((await call('/api/qa', { p: `${ro}/r.md`, ...roItem, op: 'say', text: 'x', sign: true }, A)).status).toBe(403);
+      it = await item(0);
+      expect(
+        (await call('/api/qa', { p: `${rw}/q.md`, ...it, op: 'say', text: 'x' }, A, { origin: 'http://evil.example', 'sec-fetch-site': 'cross-site' })).status,
+      ).toBe(403);
+      // other browsers and prefs are untouched
+      expect(await readFile(prefsFile, 'utf8')).toBe(prefsBytes);
+      expect(prefs.settings.me).toBe('Owner');
+      expect(await meOf(B)).toBe('Bob');
+
+      // an authenticated session identity, when there is one, wins over the cookie
+      expect(await meOf(B, { 'x-test-session': '1' })).toBe('octocat');
+      expect(await (await fetch(url('/api/author'), { headers: { cookie: B, 'x-test-session': '1' } })).json()).toEqual({
+        name: 'octocat',
+        source: 'github',
+        cookie: 'Bob',
+      });
+    } finally {
+      server.stop(true);
+      watcher.close();
+      control?.stop();
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+});

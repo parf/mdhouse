@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'preact/hooks';
-import { api, type AbInfo, type RootInfo, type Settings as Options } from './api';
+import { api, type AbInfo, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import { IconTrash } from './icons';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
   'linux xdg configure edit protocol to open files in my editor',
 )}`;
+
+/** Where a name comes from, for the hint under the name field. */
+const AUTHOR_FROM: Record<AuthorInfo['source'], string> = { github: 'your GitHub login', cookie: 'this browser', prefs: 'settings', git: 'git', login: 'your login' };
 
 interface Props {
   roots: RootInfo[];
@@ -32,6 +35,36 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   const [scheme, setScheme] = useState(options.editScheme);
   const [schemeError, setSchemeError] = useState<string | null>(null);
   useEffect(() => setScheme(options.editScheme), [options.editScheme]);
+  // This browser's author name: saved on Enter or leaving the field; empty clears it.
+  const [author, setAuthor] = useState<AuthorInfo | null>(null);
+  const [authorDraft, setAuthorDraft] = useState('');
+  const [authorError, setAuthorError] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    api.author().then(
+      (a) => {
+        if (!live) return;
+        setAuthor(a);
+        setAuthorDraft(a.cookie ?? '');
+      },
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, []);
+  const saveAuthor = async () => {
+    setAuthorError(null);
+    if (!author || authorDraft.trim() === (author.cookie ?? '')) return setAuthorDraft(author?.cookie ?? '');
+    try {
+      const a = await api.setAuthor(authorDraft);
+      setAuthor(a);
+      setAuthorDraft(a.cookie ?? '');
+    } catch (err) {
+      setAuthorDraft(author.cookie ?? '');
+      setAuthorError((err as Error).message);
+    }
+  };
   const saveScheme = async () => {
     setSchemeError(null);
     if (scheme.trim().replace(/:+$/, '').toLowerCase() === options.editScheme) return setScheme(options.editScheme);
@@ -184,6 +217,32 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           </span>
           {options.editLink && schemeError && <span class="settings-error">{schemeError}</span>}
         </div>
+        {author && (
+          <div class="settings-option">
+            <label class="settings-scheme-field">
+              <b>Your name</b>
+              <input
+                class="settings-scheme"
+                type="text"
+                value={authorDraft}
+                placeholder={author.cookie ? '' : author.name}
+                maxLength={64}
+                spellcheck={false}
+                autocomplete="off"
+                aria-label="Your author name in this browser"
+                onInput={(e) => setAuthorDraft((e.target as HTMLInputElement).value)}
+                onBlur={saveAuthor}
+                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+              />
+            </label>
+            <span class="settings-hint">
+              Signs your replies and quotes as <code>👤{author.name}</code> in this browser only
+              {author.cookie ? ' (set here)' : ` — now from ${AUTHOR_FROM[author.source]}`}. It is a name, not a login: it gives no access. Empty
+              clears it.
+            </span>
+            {authorError && <span class="settings-error">{authorError}</span>}
+          </div>
+        )}
         {/* The paths are set from the CLI; here only the switch. */}
         {!!options.autoRwPaths?.length && (
           <div class="settings-option">
