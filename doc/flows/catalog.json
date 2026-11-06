@@ -90,6 +90,30 @@
       "family": "engineering",
       "manifest": "engineering-onboarding-handoff/flow.json",
       "example": "engineering-onboarding-handoff/example.md"
+    },
+    {
+      "id": "engineering-incident-regression",
+      "family": "engineering",
+      "manifest": "engineering-incident-regression/flow.json",
+      "example": "engineering-incident-regression/example.md"
+    },
+    {
+      "id": "engineering-delivery-sync",
+      "family": "engineering",
+      "manifest": "engineering-delivery-sync/flow.json",
+      "example": "engineering-delivery-sync/example.md"
+    },
+    {
+      "id": "engineering-api-schema-impact",
+      "family": "engineering",
+      "manifest": "engineering-api-schema-impact/flow.json",
+      "example": "engineering-api-schema-impact/example.md"
+    },
+    {
+      "id": "engineering-maintenance-debt",
+      "family": "engineering",
+      "manifest": "engineering-maintenance-debt/flow.json",
+      "example": "engineering-maintenance-debt/example.md"
     }
   ]
 }

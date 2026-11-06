@@ -51,28 +51,52 @@ export const CHANGE_REVIEW_COVERAGE = [
 
 export const ENGINEERING_COVERAGE = [
   {
-    id: 'engineering-release-readiness', audience: 'operations', output: 'release-readiness',
+    id: 'engineering-release-readiness', scope: 'selected-project', audience: 'operations', output: 'release-readiness',
     stages: ['inventory', 'assess', 'readiness', 'report'],
     sources: ['version and change inventory', 'checks breaking changes and migrations', 'rollout observability and rollback evidence'],
     exampleFacts: ['rollback: missing', 'readiness.blocked', 'No deployment'],
   },
   {
-    id: 'engineering-architecture-ownership', audience: 'development', output: 'architecture-map',
+    id: 'engineering-architecture-ownership', scope: 'selected-project', audience: 'development', output: 'architecture-map',
     stages: ['inventory', 'map', 'ownership', 'report'],
     sources: ['subsystem code configuration and interfaces', 'dependencies and data flow', 'owner registry or explicit unknown'],
     exampleFacts: ['shared-cache', 'owner: unknown', 'ADR proposal', 'No routing message'],
   },
   {
-    id: 'engineering-project-health', audience: 'development', output: 'project-health',
+    id: 'engineering-project-health', scope: 'selected-project', audience: 'development', output: 'project-health',
     stages: ['inventory', 'assess', 'prioritize', 'report'],
     sources: ['dependency and configuration inventory', 'security and license evidence or explicit unavailable', 'test CI and deprecation records'],
     exampleFacts: ['security: unknown', 'license: unknown', 'not verified', 'No safe verdict'],
   },
   {
-    id: 'engineering-onboarding-handoff', audience: 'development', output: 'onboarding-guide',
+    id: 'engineering-onboarding-handoff', scope: 'selected-project', audience: 'development', output: 'onboarding-guide',
     stages: ['prerequisites', 'clean-setup', 'role-handoff', 'report'],
     sources: ['setup prerequisites and documentation', 'clean-account commands results and environment', 'role ownership and contact map or explicit unknown'],
     exampleFacts: ['CONFIG_PROFILE', 'clean-setup.blocked', 'not a successful setup', 'first-task guide'],
+  },
+  {
+    id: 'engineering-incident-regression', scope: 'selected-subsystem', audience: 'operations', output: 'incident-brief',
+    stages: ['intake', 'correlate', 'reproduce', 'recovery-options', 'report'],
+    sources: ['symptoms logs and timestamps', 'selected code and configuration changes', 'reproduction and check records or explicit unavailable'],
+    exampleFacts: ['correlation, not proven root cause', 'reproduce.blocked', 'No rollback'],
+  },
+  {
+    id: 'engineering-delivery-sync', scope: 'selected-project', audience: 'product', output: 'delivery-sync',
+    stages: ['inventory', 'compare', 'acceptance-gaps', 'report'],
+    sources: ['same-range plans tickets code tests and documentation', 'acceptance requirements and observed results', 'ownership and current task state'],
+    exampleFacts: ['plan says done', 'migration check: missing', 'partially delivered', 'No checkpoint'],
+  },
+  {
+    id: 'engineering-api-schema-impact', scope: 'selected-subsystem', audience: 'development', output: 'compatibility-impact',
+    stages: ['scope', 'contract-diff', 'consumer-impact', 'migration-proposal', 'report'],
+    sources: ['exact base and target endpoint event database and config schemas', 'consumer and compatibility evidence', 'migration constraints and owners or explicit unknown'],
+    exampleFacts: ['removed field', 'compatibility: unknown', 'migration proposal', 'No database'],
+  },
+  {
+    id: 'engineering-maintenance-debt', scope: 'selected-project', audience: 'development', output: 'maintenance-backlog',
+    stages: ['inventory', 'verify-candidates', 'prioritize', 'report'],
+    sources: ['code configuration and usage checks', 'flag deprecation ownership and decision history', 'documentation and source-linked TODO or FIXME records'],
+    exampleFacts: ['dynamic registry', 'not dead code', 'expired flag', 'No deletion'],
   },
 ] as const;
 

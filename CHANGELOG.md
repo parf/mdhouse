@@ -4,6 +4,7 @@
 
 ### Added
 
+- Engineering authoring packages now also cover incident/regression, delivery sync, API/schema impact and maintenance/debt, with evidence-limited synthetic examples and no execution
 - Four Engineering authoring packages cover release readiness, architecture/ownership, project health and onboarding/handoff, preserving missing evidence and unknown status; execution remains future work
 - Recent-commits and incoming-change authoring packages include factual summaries, risk/task reports, PR feedback/readiness and separate merge-approval declarations; execution remains future work
 - Settings → Your name: each browser signs its Q&A replies and quotes with its own name (a cookie, attribution only — no access); with none set, signing works as before

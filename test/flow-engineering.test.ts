@@ -7,17 +7,23 @@ import { ENGINEERING_COVERAGE, EXPECTED_PACKAGE_IDS } from './flow-library-cover
 
 const directory = resolve(import.meta.dir, '../doc/flows');
 
-test('first Engineering batch preserves all prior packages and exact approved coverage', async () => {
+test('both Engineering batches preserve prior families and exact approved coverage', async () => {
   const library = await loadFlowCatalog(directory);
   expect(library.map((entry) => entry.manifest.id)).toEqual([...EXPECTED_PACKAGE_IDS]);
-  expect(library.filter((entry) => entry.manifest.family === 'engineering')).toHaveLength(4);
+  expect(library.filter((entry) => entry.manifest.family === 'engineering')).toHaveLength(8);
+  expect(ENGINEERING_COVERAGE.slice(0, 4).map((row) => [row.id, row.scope])).toEqual([
+    ['engineering-release-readiness', 'selected-project'],
+    ['engineering-architecture-ownership', 'selected-project'],
+    ['engineering-project-health', 'selected-project'],
+    ['engineering-onboarding-handoff', 'selected-project'],
+  ]);
 });
 
 for (const row of ENGINEERING_COVERAGE) test(`${row.id}: evidence, honest unknowns and recoverable report routes`, async () => {
   const flow = (await loadFlowCatalog(directory)).find((entry) => entry.manifest.id === row.id)!;
   expect(flow).toBeDefined();
   expect(flow.manifest.family).toBe('engineering');
-  expect(flow.manifest.defaults).toEqual({ scope: 'selected-project', range: 'explicit-baseline',
+  expect(flow.manifest.defaults).toEqual({ scope: row.scope, range: 'explicit-baseline',
     audience: row.audience, output: row.output, destination: `Plans/flows/${row.id}.md` });
   expect(flow.manifest.evidence).toEqual({ required: [...row.sources], missing: 'block' });
   expect(flow.manifest.entry).toBe(row.stages[0]);
@@ -49,6 +55,19 @@ for (const row of ENGINEERING_COVERAGE) test(`${row.id}: evidence, honest unknow
     for (const [, id] of text.matchAll(/(?<!\[)№([A-Z][A-Z.-]*\d+[a-z]?(?:\.\d+)?)/g)) expect(out.html).toContain(`id="${id}"`);
     expect(text).not.toMatch(/^  > (?:💬|💡)(?!👾)/m);
     expect(text).not.toMatch(/^  > (?:💬|💡)👾.*\n  > (?:💬|💡)👾/m);
+  }
+});
+
+test('second Engineering batch preserves evidence limits and requires deliberate follow-up actions', async () => {
+  const library = await loadFlowCatalog(directory);
+  const text = (id: string) => library.find((entry) => entry.manifest.id === id)!.documents.get('workflow.md')!;
+  for (const field of ['timeline', 'symptoms', 'correlation', 'reproduction', 'rollback', 'runbook', 'remediation']) expect(text('engineering-incident-regression')).toContain(field);
+  for (const field of ['plans', 'tickets', 'code', 'tests', 'documentation', 'completed', 'unplanned', 'partially delivered', 'stale', 'acceptance']) expect(text('engineering-delivery-sync')).toContain(field);
+  for (const field of ['endpoints', 'events', 'database', 'configuration', 'downstream', 'compatibility', 'migration', 'unknown']) expect(text('engineering-api-schema-impact')).toContain(field);
+  for (const field of ['dead code', 'expired flags', 'TODO/FIXME', 'duplication', 'abandoned docs', 'dynamic', 'independently reviewable']) expect(text('engineering-maintenance-debt')).toContain(field);
+  for (const id of ENGINEERING_COVERAGE.slice(4).map((row) => row.id)) {
+    expect(text(id)).toContain('AB control');
+    expect(text(id)).toContain('does not grant');
   }
 });
 
