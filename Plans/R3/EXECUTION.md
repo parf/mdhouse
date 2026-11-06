@@ -946,3 +946,18 @@ paid effects. No AgentBus.connect/drain/registration, no implicit reset/drop/con
 Explicit sync apply is needed; keyword search is default, paid query modes and unknown resend require
 separate explicit intent. This does not authorize a live test against production AI/Voyage. Actual
 first sync waits for reviewed code and runtime readiness; its results are app proof, not test upserts.
+
+## Connected-cohort selector and shared-inbox safety
+
+W1 design exposed known-safe selection string differences and the app's unfiltered reconnect drain.
+CTO extended the same coherent cohort by a narrow AgentBus app-topic-only cleanup/test compatibility
+fix; bin correlation alone cannot prevent another reader discarding replies. No live app reload or
+new identity is guessed. Wrong-service record names must be rejected before data RPC.
+
+FileScan include-prefix source widening was reported through #ab-dir and reproduced as J124:
+*.md selected x.md/secret.txt. Provider fixes whole-file include semantics, audits other sites and
+will redeploy/audit tracked keys. First real sync is blocked until that confirmation, not hidden by
+an arbitrary filter guess. Authorized dependency exclusions for bower/jspm were added as narrowing
+patterns, demand/root/other config preserved, exact FileScan instance restarted/status checked without
+sync. Runtime normalization accepts only the fixed known-equivalence selection, rejects unknowns.
+No paid provider test or background RAG sync was started.

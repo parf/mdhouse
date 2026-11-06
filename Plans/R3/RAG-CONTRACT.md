@@ -61,6 +61,21 @@ must show that latency/uncertainty, not success on delivery or timeout, and no a
 paid resend. Only complete:true plus matching identity/source/hash confirms; an unavailable or
 inconclusive check stays unknown. A client improvement is filed, not scheduled/deployed evidence.
 
+
+Source-selection blocker J124 is provider-reproduced: include matching ancestors made *.md include
+x.md/secret.txt. Provider fix applies includes to the regular file's whole path, leaves exclude
+narrowing on ancestors, and tests Markdown root/nested cases. Fix/redeploy and read-only audit of
+previous tracked keys are pending; no first sync until that evidence. CTO also narrowed config to
+exclude bower_components/jspm_packages with provider-approved patterns, preserving demand/root/all
+other settings; targeted restart applied. Effective selection normalization must use the fixed
+known mapping, not ignore unknown rules or silently widen source disclosure.
+
+The app's old unfiltered reconnect drain shares #mdhouse's inbox with the separate bin. The connected
+cohort must narrow app cleanup to its own topic and test interleaved bin replies; uncertainty is not
+a substitute for that source fix. No live :7777 restart is authorized/performed here; source identity
+does not prove the old process upgraded. Live acceptance must distinguish provider/operator proof
+from connected-bin/shared-reader behavior rather than claim all reply-loss races eliminated.
+
 ### T-49 actual setup checkpoint
 
 T-48 is provider-reported deployed (bus 1.0.51 / pack 1.0.3, 14:22). CTO applied the authorized
