@@ -69,7 +69,9 @@ Source-selection blocker J124 is provider-reproduced: include matching ancestors
 x.md/secret.txt. Provider fix applies includes to the regular file's whole path, leaves exclude
 narrowing on ancestors, and tests Markdown root/nested cases. Provider reports fix deployed on
 bus 1.0.52 / agent pack 1.0.4 (`3ddc7678bc9f8cc8`); FileScan restarted in demand with 195 tracked.
-Read-only audit of those keys is still pending; no first sync until that evidence. CTO also narrowed config to
+Provider read-only state.json audit (`d3b60e465f10c17d`) confirms 195/195 keys remain selected;
+no residue cleanup is needed. The selector/audit gate is satisfied by provider evidence; actual
+indexing remains unproven and still waits Qdrant key/runtime readiness. CTO also narrowed config to
 exclude bower_components/jspm_packages with provider-approved patterns, preserving demand/root/all
 other settings; targeted restart applied. Effective selection normalization must use the fixed
 known mapping, not ignore unknown rules or silently widen source disclosure.
