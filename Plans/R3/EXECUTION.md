@@ -812,3 +812,19 @@ grants; our future bin configures subscription and reads status/sub list only af
 Next bounded work: W3 read-only bin/adapter plan from existing official local docs/contracts; no
 provider contacts, tests or source edits. Reuse open endpoint/root questions, record watch/poll
 lifetime/cleanup in owning QUESTIONS; no guessed background-sync behavior.
+
+## First Markdown search setup scope and provider ownership
+
+Owner authorizes setup for mdhouse/**/*.md. CEO receipts `b0455044ed3f51a6` and
+`955e7dcd269bafb4` cover the single existing AB-CEO prerequisite request: dedicated RAG/FileScan,
+root `/home/parf/src/mdhouse`, recursive Markdown include mask, default dotfile/node_modules
+exclusions, production caller only, proposed namespace mdhouse/table docs. Include/exclude arrays
+already work; no provider feature request for masks. Owner/AB-CEO handle approvals/account-runner
+provisioning; our bin/integration ownership remains intact.
+
+CTO read-only `rg --files`/byte-size estimate: 194 visible nonignored .md files, five >32 KiB;
+`.scratch/cto/rag-markdown-scope.json` is not an actual scan/completeness record. Current RAG sink
+skips large texts, so index/search acceptance cannot claim full Markdown coverage. CEO already asked
+AB-CEO to evaluate/plan reasonable provider changes for bounded on-demand scan/completion and large
+Markdown ingestion; do not duplicate those requests. W3 receives this concrete target for bin/index/
+search planning. No subscription/watch/ingestion, provisioning or paid call was performed by CTO.

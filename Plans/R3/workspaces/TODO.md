@@ -222,6 +222,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle <a id="MW.2a"></a>
   - [ ] MW.2a.1 Implement separate on-demand RAG sync bin; owned by mdhouse, not removed from R3 implementation <a id="MW.2a.1"></a>
+  - Current scope: owner-authorized first setup `/home/parf/src/mdhouse` with recursive `include:["*.md"]`, dotfile/dependency exclusions, proposed `mdhouse/docs`; W3 bin plan, owner/AB-CEO provisioning/provider gaps, no duplicate requests or implicit watch/paid run
+  - Coverage gap: local estimate 194 Markdown files, five >32 KiB skipped by current RAG sink; AB-CEO already asked about larger-text ingestion and bounded on-demand completion. Partial coverage must be explicit
   - Contract: [№RAG-W1](DECISIONS.md#RAG-W1); no automatic/background execution or unsolicited provider status calls. Planning/implementation continue under ordinary cohort prioritization; paid/live/provisioning authority remains separate
   - Builds: consume one FileScan per owner-provisioned folder; after root/record/Configuration.dir/token/reload/grants setup, configure explicit RAG endpoint/namespace/table subscription and inspect status/sub list; on-demand versus watch/poll is [№Q-R3-RAGSYNC1](QUESTIONS.md#Q-R3-RAGSYNC1)
   - Blocker: dedicated endpoint [№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) / FileScan roots [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) decisions and lifecycle/recovery acceptance remain open. Provider reports paid-replay sink fixed/deployed `0f5340c3`; T-45 typed docs/fixture delivered, not end-to-end acceptance ([contract](../RAG-CONTRACT.md))

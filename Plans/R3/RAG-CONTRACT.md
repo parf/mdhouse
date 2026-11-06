@@ -38,6 +38,28 @@ steps; its old pack 1.0.1 label is not new verified deployment evidence. It is n
 
 ## Current provider checkpoint — 2026-11-06
 
+### Authorized first setup target
+
+Owner authorizes starting setup for `/home/parf/src/mdhouse/**/*.md`. CEO already requested dedicated
+RAG/FileScan prerequisites from #ab-ceo; do not duplicate provisioning or capability requests.
+FileScan include/exclude arrays exist; `include: ["*.md"]` matches root and recursive Markdown per
+provider test evidence relayed by CEO. Keep default dotfile exclusions and exclude node_modules /
+dependency trees; no .git/.scratch ingestion. Proposed namespace `mdhouse`, table `docs`, production
+caller `#mdhouse@parf.us`; endpoint/root approval/provisioning remains with owner/AB-CEO.
+
+CTO read-only local estimate: 194 visible nonignored Markdown files, five over 32 KiB (EXECUTION,
+workspace TODO, `Plans/issues/2026-10/2026-10-07.md`, R3 README, CHANGELOG). This is not a FileScan scan
+or completeness proof. Current `as rag` skips >32 KiB texts (and may delete an older indexed record);
+never report full Markdown coverage or silently cut/chunk files. Full estimate is retained at
+`.scratch/cto/rag-markdown-scope.json`.
+
+CEO has already requested provider evaluation/planning for bounded on-demand scan/completion and
+>32 KiB Markdown ingestion. Provider changes are AB-CEO-owned; our separate bin/index/search
+integration remains mdhouse-owned. Mask arrays require no provider change. No subscription/watch/
+ingestion has been started here; on-demand versus watch lifetime must be settled before persistent
+behavior, and setup authorization does not silently authorize arbitrary paid/provider calls.
+
+
 Owner-question locations verified read-only in Agent Bus `Plans/R1.1/QUESTIONS.md` (not R1.0):
 [№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) — endpoint choice, open, commit `d75b1da7`;
 [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) — FileScan roots, open, commit `47bfb0a0`
