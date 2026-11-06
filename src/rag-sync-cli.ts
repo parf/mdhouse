@@ -2,20 +2,23 @@ import type { Dirent, Stats } from 'node:fs';
 import { lstat, readdir, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ownName, validTarget } from './lib/agent-bus';
-import { planRagSync, RagSyncPlanError, type RagSyncPlan } from './lib/rag-sync-plan';
+import { planRagSync, RagSyncPlanError, type RagSyncPlan, type RagSyncPlanInput } from './lib/rag-sync-plan';
+import { openBus, RagBusError, type BusOptions, type RagBus } from './lib/rag-sync-bus';
+import { runSearch, runSync, RagSyncRuntimeError } from './lib/rag-sync-runtime';
 import { Registry } from './lib/roots';
 
 /**
  * `mdhouse-rag-sync` — the separate, on-demand RAG sync bin.
  *
- * Today it plans only: `plan` lists a root's Markdown files by metadata (path, size, mtime) and
- * prints what a sync would send where. It reads no file content, makes no network or Agent Bus
- * call, reads no credential and starts nothing. `sync` and `search` are not wired yet and say so.
- * Importing this module does nothing; the bin calls `main`.
+ * `plan` lists a root's Markdown files by metadata (path, size, mtime) and prints what a sync would
+ * send where; it reads no file content, credential or network. `sync --apply` asks the owner-
+ * provisioned FileScan for one finite sync; `search` asks the RAG once. Both go through the
+ * account socket as `#mdhouse@<host>` and only for a complete listing. Importing this module does
+ * nothing; the bin calls `main`.
  */
 
-/** Files above this size are skipped by the current RAG sink — listed, never dropped silently. */
-export const OVERSIZE_BYTES = 32 * 1024;
+/** Files above this size need the RAG's large-file support; the plan lists them, never drops them. */
+export const OVERSIZE_BYTES = 32_768;
 /** Walk bounds; reaching one stops the walk and marks the listing incomplete. */
 export const LIMITS = { files: 10_000, dirs: 5_000, depth: 32 } as const;
 /** Names never walked into or listed, at any depth, besides dot entries (`.git`, `.scratch`, dotfiles). */
@@ -23,7 +26,7 @@ export const EXCLUDED_NAMES = ['node_modules', 'bower_components', 'jspm_package
 /** The same exclusions in the planner's grammar. */
 export const EXCLUDE_GLOBS = ['**/.*', ...EXCLUDED_NAMES.map((n) => `**/${n}/**`)];
 
-export const EXIT = { ok: 0, runtime: 1, usage: 2, notWired: 3 } as const;
+export const EXIT = { ok: 0, runtime: 1, usage: 2, unknown: 4, incomplete: 5 } as const;
 
 export interface Io {
   out(text: string): void;
@@ -35,53 +38,114 @@ const stdio: Io = {
   err: (t) => process.stderr.write(t),
 };
 
-export const HELP = `mdhouse-rag-sync — plan a RAG sync of one folder's Markdown files
+export const HELP = `mdhouse-rag-sync — sync one folder's Markdown files to RAG, on demand
 
 Usage:
-  mdhouse-rag-sync plan --root <dir> --filescan <agent> --rag <agent> --namespace <ns> --table <name>
-  mdhouse-rag-sync sync …     not wired yet: exits 3, does nothing
-  mdhouse-rag-sync search …   not wired yet: exits 3, does nothing
+  mdhouse-rag-sync plan   <target>
+  mdhouse-rag-sync sync   <target> --apply [--resend-unknown]
+  mdhouse-rag-sync search <target> --query <text> [--mode keyword|semantic|hybrid] [--paid] [--limit 1-16]
   mdhouse-rag-sync --help
 
-plan prints a JSON sync plan: the root's *.md files (path, size, mtime — never their content),
-files over ${OVERSIZE_BYTES / 1024} KiB that the RAG sink skips today, entries it could not list and why, and the
-target it would sync to. It makes no network or Agent Bus call and reads no credential. Dot
-entries (.git, .scratch, dotfiles) and ${EXCLUDED_NAMES.join(', ')} are not walked; symlinks and
-special files are never followed. The plan is a local preview: nothing is synced or verified.
+  <target>  --root <dir> --filescan #filescan/<instance>@<realm> --rag #rag/<instance>@<realm>
+            --namespace <ns> --table <name>
 
-Exit: 0 ok · 1 error or incomplete listing (the plan is still printed) · 2 usage · 3 not wired
+plan prints a JSON sync plan: the root's *.md files (path, size, mtime — never their content),
+files over ${OVERSIZE_BYTES / 1024} KiB (they need the RAG's large-file support, checked before a sync), entries it
+could not list and why, and the target. It makes no network or Agent Bus call and reads no credential. Dot entries (.git,
+.scratch, dotfiles) and ${EXCLUDED_NAMES.join(', ')} are not walked; symlinks and special files
+are never followed.
+
+sync asks the FileScan for one finite sync and prints its answer. It sends only with --apply and
+a complete listing; a file whose outcome is unknown is sent again only with --resend-unknown, and
+each send is paid. search asks the RAG once; keyword is free, semantic and hybrid need --paid.
+Both talk as #mdhouse@<host> through the local account socket.
+
+Exit: 0 ok · 1 error, refused or failed · 2 usage · 4 outcome unknown · 5 sync incomplete
 `;
 
 /** Thrown for a bad command line; the message never repeats an argument's value. */
 class UsageError extends Error {}
 
-const FLAGS = ['root', 'filescan', 'rag', 'namespace', 'table'] as const;
-type Flag = (typeof FLAGS)[number];
+const TARGET = ['root', 'filescan', 'rag', 'namespace', 'table'] as const;
+const SPEC = {
+  plan: { values: TARGET, bools: [] },
+  sync: { values: TARGET, bools: ['apply', 'resend-unknown'] },
+  search: { values: [...TARGET, 'query', 'mode', 'limit'], bools: ['paid'] },
+} as const satisfies Record<string, { values: readonly string[]; bools: readonly string[] }>;
+export type Command = keyof typeof SPEC;
 const NAME = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+/** The exact provisioned instances: never a root `#rag`, `#ai` or another service. */
+const FILESCAN = /^#filescan\/[a-z0-9][a-z0-9._-]*@[a-z0-9][a-z0-9.-]*$/;
+const RAG = /^#rag\/[a-z0-9][a-z0-9._-]*@[a-z0-9][a-z0-9.-]*$/;
+export const MODES = ['keyword', 'semantic', 'hybrid'] as const;
+export type Mode = (typeof MODES)[number];
 
-/** `--flag value` and `--flag=value` for the five plan flags, each exactly once. */
-export function parsePlanArgs(args: readonly string[]): Record<Flag, string> {
-  const got: Partial<Record<Flag, string>> = {};
+export interface Args {
+  root: string;
+  filescan: string;
+  rag: string;
+  namespace: string;
+  table: string;
+  query?: string;
+  mode?: Mode;
+  limit?: number;
+  apply: boolean;
+  resendUnknown: boolean;
+  paid: boolean;
+}
+
+/** `--flag value` / `--flag=value` and bare `--switch`, each at most once; the command's flags only. */
+export function parseArgs(cmd: Command, args: readonly string[]): Args {
+  const spec: { values: readonly string[]; bools: readonly string[] } = SPEC[cmd];
+  const vals: Record<string, string> = {};
+  const bools = new Set<string>();
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
-    const m = /^--([a-z]+)(?:=(.*))?$/s.exec(a);
-    const flag = m && (FLAGS as readonly string[]).includes(m[1]!) ? (m[1] as Flag) : null;
-    if (!flag) {
-      const named = /^--[a-z][a-z-]{0,31}$/.test(a.split('=')[0]!) ? `unknown option ${a.split('=')[0]}` : `unexpected argument ${i + 1}`;
-      throw new UsageError(named);
+    const m = /^--([a-z][a-z-]{0,31})(?:=(.*))?$/s.exec(a);
+    const name = m?.[1];
+    if (!name || (!spec.values.includes(name) && !spec.bools.includes(name))) {
+      throw new UsageError(m ? `unknown option --${name}` : /^--[a-z][a-z-]{0,31}=/.test(a) ? `unknown option ${a.split('=')[0]}` : `unexpected argument ${i + 1}`);
     }
-    if (flag in got) throw new UsageError(`--${flag} given twice`);
+    if (name in vals || bools.has(name)) throw new UsageError(`--${name} given twice`);
+    if (spec.bools.includes(name)) {
+      if (m![2] !== undefined) throw new UsageError(`--${name} takes no value`);
+      bools.add(name);
+      continue;
+    }
     const value = m![2] ?? args[++i];
-    if (value === undefined || value === '') throw new UsageError(`--${flag} needs a value`);
-    got[flag] = value;
+    if (value === undefined || value === '') throw new UsageError(`--${name} needs a value`);
+    vals[name] = value;
   }
-  for (const f of FLAGS) if (got[f] === undefined) throw new UsageError(`--${f} is required`);
-  const v = got as Record<Flag, string>;
-  if (!validTarget(v.filescan)) throw new UsageError('--filescan is not an agent name');
-  if (!validTarget(v.rag)) throw new UsageError('--rag is not an agent name');
-  if (!NAME.test(v.namespace)) throw new UsageError('--namespace must be 1–64 of a-z 0-9 _ -, starting with a letter or digit');
-  if (!NAME.test(v.table)) throw new UsageError('--table must be 1–64 of a-z 0-9 _ -, starting with a letter or digit');
-  return v;
+  for (const f of TARGET) if (vals[f] === undefined) throw new UsageError(`--${f} is required`);
+  if (!validTarget(vals.filescan) || !FILESCAN.test(vals.filescan!)) throw new UsageError('--filescan must be a #filescan/<instance>@<realm> agent');
+  if (!validTarget(vals.rag) || !RAG.test(vals.rag!)) throw new UsageError('--rag must be a #rag/<instance>@<realm> agent');
+  if (!NAME.test(vals.namespace!)) throw new UsageError('--namespace must be 1–64 of a-z 0-9 _ -, starting with a letter or digit');
+  if (!NAME.test(vals.table!)) throw new UsageError('--table must be 1–64 of a-z 0-9 _ -, starting with a letter or digit');
+  const out: Args = {
+    root: vals.root!,
+    filescan: vals.filescan!,
+    rag: vals.rag!,
+    namespace: vals.namespace!,
+    table: vals.table!,
+    apply: bools.has('apply'),
+    resendUnknown: bools.has('resend-unknown'),
+    paid: bools.has('paid'),
+  };
+  if (cmd === 'sync' && !out.apply) throw new UsageError('sync sends paid work: add --apply (see plan first)');
+  if (cmd === 'search') {
+    if (vals.query === undefined) throw new UsageError('--query is required');
+    out.query = vals.query;
+    if (vals.mode !== undefined) {
+      if (!(MODES as readonly string[]).includes(vals.mode)) throw new UsageError(`--mode must be one of ${MODES.join(', ')}`);
+      out.mode = vals.mode as Mode;
+    }
+    if ((out.mode ?? 'keyword') !== 'keyword' && !out.paid) throw new UsageError(`--mode ${out.mode} is paid: add --paid`);
+    if (vals.limit !== undefined) {
+      if (!/^(?:[1-9]|1[0-6])$/.test(vals.limit)) throw new UsageError('--limit must be 1–16');
+      out.limit = Number(vals.limit);
+    }
+  }
+  return out;
 }
 
 export interface Source {
@@ -159,7 +223,9 @@ export async function inventory(rootArg: string, limits: { files: number; dirs: 
         continue;
       }
       if (st.isDirectory()) {
-        if (!(await walk(path, depth + 1))) return false;
+        // FileScan's include also matches a path's directories: every file under it would be sent
+        if (e.name.endsWith('.md')) issues.push({ path, reason: 'unsupported' });
+        else if (!(await walk(path, depth + 1))) return false;
       } else if (st.isSymbolicLink() || !st.isFile()) {
         issues.push({ path, reason: 'unsupported' });
       } else if (e.name.endsWith('.md')) {
@@ -182,62 +248,95 @@ export async function inventory(rootArg: string, limits: { files: number; dirs: 
 }
 
 /** The planner's input for one `plan` run. */
-export function planInput(args: Record<Flag, string>, inv: Inventory, caller: string) {
+export function planInput(args: Args, inv: Inventory, caller: string): RagSyncPlanInput {
   return {
     caller,
     target: { filescan: args.filescan, rag: args.rag, namespace: args.namespace, table: args.table },
     root: inv.root,
     include: ['*.md'],
     exclude: EXCLUDE_GLOBS,
-    inventory: { root: inv.root, complete: inv.complete, issues: inv.issues },
-    sources: inv.sources,
+    inventory: { root: inv.root, complete: inv.complete, issues: [...inv.issues] },
+    sources: [...inv.sources],
     oversizeLimit: OVERSIZE_BYTES,
   };
 }
 
+/** How long one request waits for its answer. */
+export const REPLY_MS = { sync: 120_000, search: 60_000 } as const;
+
+export interface Deps {
+  /** Opens the Agent Bus session; tests inject a fake daemon. */
+  openBus: (opts: BusOptions) => Promise<RagBus>;
+}
+
+/** 0 only for a confirmed sync or a reported search; an outcome that may have happened is 4. */
+export function resultExit(cmd: 'sync' | 'search', r: { effect: string; result: unknown }): number {
+  if (r.effect === 'unknown') return EXIT.unknown;
+  if (r.effect !== 'reported' || r.result === null) return EXIT.runtime;
+  if (cmd === 'search') return EXIT.ok;
+  return r.result === 'confirmed' ? EXIT.ok : r.result === 'incomplete' ? EXIT.incomplete : r.result === 'unknown' ? EXIT.unknown : EXIT.runtime;
+}
+
 /** Runs one command line; returns the exit code. */
-export async function main(argv: readonly string[], io: Io = stdio): Promise<number> {
+export async function main(argv: readonly string[], io: Io = stdio, deps: Deps = { openBus }): Promise<number> {
   const [cmd, ...rest] = argv;
   if (cmd === undefined || cmd === '--help' || cmd === '-h' || cmd === 'help') {
     io.out(HELP);
     return cmd === undefined ? EXIT.usage : EXIT.ok;
   }
-  if (cmd === 'sync' || cmd === 'search') {
-    io.err(`mdhouse-rag-sync: ${cmd} is not wired yet — nothing was done\n`);
-    io.out(`${JSON.stringify({ error: 'not-wired', command: cmd, effects: 'none' })}\n`);
-    return EXIT.notWired;
-  }
-  if (cmd !== 'plan') {
+  if (cmd !== 'plan' && cmd !== 'sync' && cmd !== 'search') {
     io.err(`mdhouse-rag-sync: unknown command — see --help\n`);
     return EXIT.usage;
   }
-  let args: Record<Flag, string>;
+  const fail = (msg: string, code: number = EXIT.runtime) => {
+    io.err(`mdhouse-rag-sync: ${msg}\n`);
+    return code;
+  };
+  let args: Args;
   try {
-    args = parsePlanArgs(rest);
+    args = parseArgs(cmd, rest);
   } catch (err) {
     if (!(err instanceof UsageError)) throw err;
-    io.err(`mdhouse-rag-sync: ${err.message}\n`);
-    return EXIT.usage;
+    return fail(err.message, EXIT.usage);
   }
   let inv: Inventory;
   try {
     inv = await inventory(args.root);
   } catch (err) {
-    io.err(`mdhouse-rag-sync: ${err instanceof InventoryError ? err.message : `cannot list the root: ${(err as NodeJS.ErrnoException).code ?? 'error'}`}\n`);
-    return EXIT.runtime;
+    return fail(err instanceof InventoryError ? err.message : `cannot list the root: ${(err as NodeJS.ErrnoException).code ?? 'error'}`);
   }
-  let plan: RagSyncPlan;
+  const input = planInput(args, inv, ownName());
+
+  if (cmd === 'plan') {
+    let plan: RagSyncPlan;
+    try {
+      plan = planRagSync(input);
+    } catch (err) {
+      if (!(err instanceof RagSyncPlanError)) throw err;
+      return fail(`the plan was refused: ${err.message}`);
+    }
+    io.out(`${JSON.stringify(plan, null, 2)}\n`);
+    return inv.complete ? EXIT.ok : fail('the listing is incomplete — see inventory issues');
+  }
+
+  // nothing reaches the bus for a listing that cannot be proven whole
+  if (!inv.complete) return fail('the listing is incomplete — run plan to see why; nothing was sent');
   try {
-    plan = planRagSync(planInput(args, inv, ownName()));
+    const bus = await deps.openBus({ replyMs: REPLY_MS[cmd], root: inv.root, targets: [args.filescan, args.rag] });
+    if (cmd === 'sync') {
+      const ownerConfig = await bus.ownerConfig(args.filescan);
+      const res = await runSync({ plan: input, ownerConfig, intent: { apply: args.apply, resendUnknown: args.resendUnknown } }, bus);
+      io.out(`${JSON.stringify(res, null, 2)}\n`);
+      return resultExit('sync', res);
+    }
+    const res = await runSearch(
+      { plan: input, query: args.query!, ...(args.mode ? { mode: args.mode } : {}), ...(args.limit ? { limit: args.limit } : {}), intent: { paid: args.paid } },
+      bus,
+    );
+    io.out(`${JSON.stringify(res, null, 2)}\n`);
+    return resultExit('search', res);
   } catch (err) {
-    if (!(err instanceof RagSyncPlanError)) throw err;
-    io.err(`mdhouse-rag-sync: the plan was refused: ${err.message}\n`);
-    return EXIT.runtime;
+    if (err instanceof RagBusError || err instanceof RagSyncRuntimeError) return fail(`${cmd} refused: ${err.message}; nothing was sent`);
+    throw err;
   }
-  io.out(`${JSON.stringify(plan, null, 2)}\n`);
-  if (!inv.complete) {
-    io.err(`mdhouse-rag-sync: the listing is incomplete — see inventory issues\n`);
-    return EXIT.runtime;
-  }
-  return EXIT.ok;
 }

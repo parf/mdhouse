@@ -31,7 +31,11 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: n
         return Response.json({ message_id: 'm1', ...m });
       }
       if (url.pathname === '/consume') {
-        if (!url.searchParams.get('tag')) return stale-- > 0 ? Response.json({ body: 'old reply' }) : new Response(null, { status: 204 });
+        if (!url.searchParams.get('tag')) {
+          // the reconnect drain: only its own topic, never the whole inbox
+          if (url.searchParams.get('topic') !== 'mdhouse') return new Response('unfiltered read', { status: 400 });
+          return stale-- > 0 ? Response.json({ body: 'old reply', topic: 'mdhouse' }) : new Response(null, { status: 204 });
+        }
         const next = queued.get(url.searchParams.get('tag') ?? '')?.shift();
         return next ? Response.json(next) : new Response(null, { status: 204 });
       }
@@ -110,6 +114,40 @@ describe('agent bus — helpers', () => {
 });
 
 describe('agent bus — the service, against a fake daemon', () => {
+  test('a reconnect drains only the mdhouse topic: a reply waiting for another reader stays', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-'));
+    const socket = join(dir, 'user-test.sock');
+    // the inbox: two stale app replies around a reply the rag-sync bin is waiting for
+    const inbox: Envelope[] = [
+      { message_id: 'a1', from: '#x@h', to: '#mdhouse@h', body: 'old', topic: 'mdhouse', tag: 'mdhouse-1' },
+      { message_id: 'b1', from: '#filescan/x@h', to: '#mdhouse@h', body: '{"result":"confirmed"}', topic: 'mdhouse-rag-t', tag: 'g' },
+      { message_id: 'a2', from: '#x@h', to: '#mdhouse@h', body: 'old', topic: 'mdhouse', tag: 'mdhouse-2' },
+    ];
+    const server = Bun.serve({
+      unix: socket,
+      fetch: (req) => {
+        const url = new URL(req.url);
+        if (url.pathname === '/register') return new Response('exists', { status: 412 });
+        if (url.pathname === '/token') return Response.json({ token: 'tok' });
+        if (url.pathname === '/ls') return Response.json([]);
+        if (url.pathname === '/consume') {
+          const want = (k: 'topic' | 'tag') => url.searchParams.get(k);
+          const i = inbox.findIndex((m) => (!want('topic') || m.topic === want('topic')) && (!want('tag') || m.tag === want('tag')));
+          return i < 0 ? new Response(null, { status: 204 }) : Response.json(inbox.splice(i, 1)[0]);
+        }
+        return new Response('not found', { status: 404 });
+      },
+    });
+    try {
+      const bus = new AgentBus(() => ({ addr: socket, token: '' }), () => {}, { me: '#mdhouse@h' });
+      await bus.agents();
+      expect(inbox.map((m) => m.message_id)).toEqual(['b1']);
+    } finally {
+      server.stop(true);
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test('connects as its own agent: registers (create only), mints a token, then talks with it', async () => {
     const d = await fakeDaemon({
       exists: true,
