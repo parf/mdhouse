@@ -6,9 +6,9 @@
 mdhouse [dir ...] [options]
 ```
 
-Start mdhouse, or add the directories to the mdhouse already running on the selected port. With
-no directory, serve the saved directories. A relative directory is resolved from the current
-working directory.
+Start mdhouse, or add the named directories as projects to the mdhouse already running on the
+selected port. With no directory, serve the saved projects. Relative paths resolve from the current
+working directory. The project chooser switches between served projects.
 
 ```text
 mdhouse exit [--port <n>]
@@ -42,14 +42,14 @@ asks for the password; on non-interactive stdin it reads the first line.
 
 | Option | Meaning |
 | --- | --- |
-| `-p`, `--perm` | Save the named directories and any explicit `--port` / `--host` for later starts. |
-| `--rw` | The named directories may be written; with `-p`, save them as writable. |
-| `--rm` | Forget the named directories and stop serving them. With no directory, use the current directory. |
+| `-p`, `--perm` | Save the named projects and any explicit `--port` / `--host` for later starts. |
+| `--rw` | The named project directories may be written; with `-p`, save them as writable. |
+| `--rm` | Forget the named projects and stop serving them. With no directory, use the current directory. |
 | `--host <addr>` | Address to bind; default `127.0.0.1`. |
 | `--port <n>` | Port to use; default `7777`. With `exit`, select which mdhouse to stop. |
 | `--allow <cidr,...>` | Allow only these networks and this machine; saved. `reset` allows every address again. |
 | `--host-name <name,...>` | Allow only these Host names; saved. `reset` allows localhost and IP addresses again. |
-| `--auto-rw <path,...>` | Make served directories under these paths writable when the settings switch is on; saved. `reset` clears the paths. |
+| `--auto-rw <path,...>` | Make projects served from under these paths writable when the settings switch is on; saved. `reset` clears the paths. |
 | `--agent-bus [on\|off\|<socket>\|<url>]` | Configure Agent Bus; saved. A remote HTTP(S) daemon asks for its token. |
 | `-o`, `--open` | Open the page in a browser after starting. |
 | `-a`, `--all` | Include gitignored Markdown while serving; with `exit`, stop every mdhouse. |
@@ -67,5 +67,5 @@ config, then `127.0.0.1:7777`. The config is
 `$XDG_CONFIG_HOME/mdhouse/prefs.json`, or `~/.config/mdhouse/prefs.json` when
 `XDG_CONFIG_HOME` is not set. Full example: [`prefs.json.dist`](prefs.json.dist).
 
-`-p` is the only way a start saves directories, port or host. Access, auto-rw and Agent Bus
+`-p` is the only way a start saves projects, port or host. Access, auto-rw and Agent Bus
 options save their own settings when used.
