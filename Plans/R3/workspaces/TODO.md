@@ -457,6 +457,13 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: strict Mermaid config, passive action boundary and inert img-only SVG remain; no active inline SVG fallback, new authority/dependency or source-content mutation
   - One combined proportional gate/security review and owned scratch browser proof; no full/version bump/live7777 checks
 
+- [ ] MW.9b Hide misleading Git history for ignored/untracked files <a id="MW.9b"></a>
+  - Contract: [№GIT-W2](DECISIONS.md#GIT-W2); W2 owns narrow Doc/history presentation followup using existing gitState
+  - Acceptance: Gitignored has no file history action/panel or history request; Untracked stays hidden while history unknown/empty and shows history only if real current-file commits exist
+  - Acceptance: tracked (including force-tracked paths matching ignore rules) keeps history; no inference from badge text, prefs marks, missing Git data or synthesized untracked status
+  - Acceptance: prior-file/stale async history cannot flash or reopen a hidden panel; useful commit/current-change behavior and passive Mermaid/markup boundary remain
+  - Proportional focused check + nonauthor exact delta review; no full/types/browser blanket rerun, CEO-coordinated local reload after integration
+
 ## Gate
 
 - [ ] MW.6 Review the complete workspace flow <a id="MW.6"></a>

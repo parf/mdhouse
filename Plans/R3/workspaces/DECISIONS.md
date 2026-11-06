@@ -124,3 +124,8 @@
 - 📌 GIT-W1 Distinguish Gitignored (orange) and Untracked (blue) across file surfaces. <a id="GIT-W1"></a>
   Separate right file-panel badges; tracked/no-repo files have neither. Direct file navigation reveals
   its exact path/selection without changing strict V1/V2 or exclusions/jail. [History](resolved.md#GIT-W1).
+
+
+- 📌 GIT-W2 Hide file Git history for authoritative Gitignored and Untracked without confirmed history. <a id="GIT-W2"></a>
+  Tracked paths keep history, including force-tracked ignore matches. Do not infer from badges,
+  no-repo or synthesized status. [History](resolved.md#GIT-W2).

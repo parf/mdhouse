@@ -375,3 +375,11 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > Owner approved proposed UI: direct open realty/.ai-team/README.md expands/reveals exact path and selected file in left tree; distinct Gitignored (orange) vs Untracked (blue) file colors + two distinct right file-view badges. Shared semantic CSS/classes everywhere (sidebar/list/file right panel, light/dark), tracked files neither badge; do not conflate no-repo with untracked. User said «да - так намного лучше» after corrected two-badge preview. Please record scope/quote and implement as one small approved cohort via team scheme with focused checks, preserve strict V1/V2 own selections and explicit exclusions/jail. Avoid duplicating MW.9; build on it.
   >
   > 💬 👤parf да - так намного лучше
+
+
+## Git history visibility — 2026-11-06
+
+- ✅ GIT-W2 Hide misleading file history <a id="GIT-W2"></a>
+  > 💬 👤parf http://md/realty/.ai-team/README.md если gitignored - зачем git history показывать
+  >
+  > 💬👾 CEO handoff `32e3b6d9c39e4039`: hide action/panel for authoritative gitignored and untracked with no history; tracked including ignore-pattern matches preserve history. Existing authoritative gitState only; no unrelated UI expansion.

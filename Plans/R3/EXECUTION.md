@@ -1103,3 +1103,11 @@ on fixed target, no repeated broad gate. CEO actual-page reload confirmed decode
 valid XML and no inline SVG (`c86638049f8af01f`), roots/RW preserved. [QA](QA.md#mermaid-same-url-followup-and-live-result).
 User can refresh; realty source unchanged. CEO subsequently verified repeat navigation/reload PASS
 (`76e2e7a98e14c732`), displayed image/XML/labels intact. [№MW.9a](workspaces/TODO.md#MW.9a) remains accepted in the earlier coherent cohort.
+
+
+## File history presentation followup selected
+
+[№MW.9b](workspaces/TODO.md#MW.9b) owner-approved before code: authoritative Gitignored hides
+file history action/panel; Untracked requires confirmed current-file history, tracked behavior kept.
+W2 owns small Doc/helper/tests cohort, focused check and nonauthor delta review only; no broad gate,
+version bump or worker restart. CEO coordinates actual local update.
