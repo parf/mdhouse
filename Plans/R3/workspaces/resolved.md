@@ -285,3 +285,8 @@ Decision history; current rules: [DECISIONS.md](DECISIONS.md).
   > 💬 👤parf каждый переход
   >
   > 💬👾 Per-session last GitHub-authenticated country is the baseline. US→DE→US requires re-login on both transitions, regardless of history or another session. Only successful reauthentication updates the baseline; protected action/trusted history waits for that confirmation. Unknown/private/failed GeoIP is not a transition; initial-unknown behavior remains unsettled, and the earlier suggested pending rule is not owner-approved blanket denial.
+
+- ✅ USER-W7 Restrict established Team identity changes to configured admin. <a id="USER-W7"></a>
+  > 💬 👤parf user can not change his github username and his name/realm after they set, only admin can
+  >
+  > 💬👾 → [№USER-W7](DECISIONS.md#USER-W7): server-side direct/stale/API checks enforce the lock, including automatic login/profile synchronization. Preserve immutable GitHub numeric principal; admin username corrections require existence/public preview/confirmation and cannot silently bind another account or transfer grants. Name/realm changes confer no grants. Personal author attribution is separate. No authenticated-user realm field currently exists; [№Q-R3-REALM1](QUESTIONS.md#Q-R3-REALM1) asks its meaning before introducing schema.

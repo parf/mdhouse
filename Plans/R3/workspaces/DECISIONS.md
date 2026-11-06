@@ -21,7 +21,7 @@
 ## Access
 
 - 📌 USER-W1 Add user: GitHub lookup → public profile preview → explicit confirmation; login: GitHub OAuth. <a id="Q-W8"></a>
-  Identity = provider + immutable GitHub ID; username = refreshable display/routing; renames never transfer grants.
+  Identity = provider + immutable GitHub ID; username = admin-controlled display/routing once set; renames never transfer grants.
   No writes before confirmation; bind it to the verified numeric ID, reject changed/stale identity.
   Web user management: Personal owner; Team configured administrator only. ACCESS = sign-in; project grant = content; new grant = RW; absent = hidden/denied.
   Local/password/Basic: Advanced recovery only; local/GitHub identities separate. [History](resolved.md#Q-W8).
@@ -40,6 +40,8 @@
   GeoIP: two public services, primary first, secondary only on failure; no parallel fan-out, private/loopback IP disclosure or guessed location.
   Every country transition requires GitHub re-login before protected actions/trusted history; unknown/private/failed GeoIP is not a transition. [№Q-R3-COUNTRY1](#Q-R3-COUNTRY1).
   Each session idle >30 days requires GitHub re-login before last-used updates; other sessions do not renew it. Admin proof/session TTLs stay separate. [History](resolved.md#USER-W6).
+- 📌 USER-W7 Once set, Team GitHub username and name/realm are configured-admin-edit-only; self-edit and automatic profile-sync overwrite are forbidden. <a id="USER-W7"></a>
+  Immutable GitHub principal and grants stay unchanged; username correction requires GitHub lookup/preview/confirm. Realm meaning: [№Q-R3-REALM1](QUESTIONS.md#Q-R3-REALM1). [History](resolved.md#USER-W7).
 - 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](resolved.md#Q-W1).
   No protected-path list; canonical root = grant; realpath jail = boundary; automatic references stay RO.
 - 📌 Q-W2 Roots: one `prefs.json` model; CLI + Settings Add directory; shared canonical registration. [History](resolved.md#Q-W2).
