@@ -131,7 +131,7 @@ export function Home(props: Props) {
   return (
     <div class={`home${loadWide() ? ' full' : ''}`}>
       <PageHead
-        rootName={root?.name ?? 'mdhouse'}
+        rootName={props.roots.find((r) => r.id === props.rootId)?.name ?? root?.name ?? 'mdhouse'}
         dir={props.dir}
         dirUrl={props.dirUrl}
         crumbUrl={props.crumbUrl}

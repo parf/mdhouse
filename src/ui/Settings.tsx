@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { api, isAdminDenial, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
-import { groupProjects, removable, selectedProject, writableVia } from './project-groups';
+import { customName, groupProjects, removable, selectedProject, writableVia } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
@@ -25,6 +25,9 @@ interface Props {
   /** What the latest `#admin=` sign-in link came to, if there was one. */
   entry: { outcome: AdminEntry };
 }
+
+/** A folder's own name: the last part of its path. */
+const folderName = (path: string) => path.split('/').filter(Boolean).pop() ?? path;
 
 /** How to become the administrator — said wherever a control needs it. */
 const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin in a terminal on this computer';
@@ -120,6 +123,25 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   // The project whose details show; kept by id, the first one when it is gone.
   const [picked, setPicked] = useState<string | null>(null);
   const project = selectedProject(roots, picked);
+
+  // The project's own name as typed, saved on Enter or leaving the field; a refusal keeps it to fix or retry.
+  const ownName = project ? (customName(project) ?? '') : '';
+  const [nameDraft, setNameDraft] = useState(ownName);
+  const [nameError, setNameError] = useState('');
+  useEffect(() => {
+    setNameDraft(ownName);
+    setNameError('');
+  }, [project?.id, ownName]);
+  const saveName = async () => {
+    if (!project || project.kind === 'reference' || nameDraft.trim() === ownName) return;
+    setNameError('');
+    try {
+      await api.setRootName(project.id, nameDraft);
+      onChanged();
+    } catch (err) {
+      setNameError(refused(err));
+    }
+  };
 
   const remove = async (root: RootInfo) => {
     const how = root.saved ? 'forget it and stop serving it' : 'stop serving it';
@@ -239,6 +261,33 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 </a>
               </h3>
               <dl class="project-facts">
+                {project.kind !== 'reference' && (
+                  <>
+                    <dt>Name</dt>
+                    <dd class="project-name-field">
+                      <input
+                        class="settings-scheme project-name"
+                        type="text"
+                        value={nameDraft}
+                        placeholder={folderName(project.path)}
+                        maxLength={80}
+                        spellcheck={false}
+                        autocomplete="off"
+                        aria-label={`Name of project ${project.name}`}
+                        disabled={!isAdmin}
+                        title={isAdmin ? undefined : NEEDS_ADMIN}
+                        onInput={(e) => setNameDraft((e.target as HTMLInputElement).value)}
+                        onBlur={() => void saveName()}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+                      />
+                      <span class="settings-hint">
+                        Shown instead of the folder's name; empty uses the folder's.
+                        {!project.saved && ' Lasts until mdhouse stops, like this project.'}
+                      </span>
+                      {nameError && <span class="settings-error">{nameError}</span>}
+                    </dd>
+                  </>
+                )}
                 <dt>Folder</dt>
                 <dd class="path" title={project.path}>
                   {project.path}

@@ -43,7 +43,10 @@ export interface Settings {
 
 export interface RootInfo {
   id: string;
+  /** What the project is called: its own name when one is set, else the folder's. */
   name: string;
+  /** The project's own name, only when one is set. */
+  customName?: string;
   path: string;
   writable: boolean;
   /** Why it is writable, only while it is: `rw` — `--rw` asked for it; `auto` — an auto-rw path covers it. */
@@ -385,6 +388,9 @@ export const api = {
   /** Ask agents about document `p` (a wire path): the job id; its events come over the live channel. */
   abSend: (req: { p: string; targets: string[]; action: AbAction; note: string }) => post<{ job: string }>('/api/ab/send', req),
   abJob: (id: string) => get<{ events: AbEvent[] }>('/api/ab/job', { id }),
+
+  /** Sets a project's own name; an empty one goes back to the folder's. Returns the served roots. */
+  setRootName: (id: string, name: string) => post<{ roots: RootInfo[] }>('/api/roots/name', { id, name }),
 
   /** Forget a directory and stop serving it. */
   async removeRoot(id: string): Promise<void> {

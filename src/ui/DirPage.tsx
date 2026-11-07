@@ -43,6 +43,8 @@ interface Props {
   onAbout?: () => void;
   gear?: preact.ComponentChildren;
   rootId: string;
+  /** The project's name, from the live root list. */
+  rootName: string;
 }
 
 const LS_KIND = 'mdhouse.dirKind';
@@ -65,7 +67,7 @@ const loadSort = (): Sort => {
  * Built from the tree the sidebar already holds, so it costs no request and follows live
  * changes with it.
  */
-export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear, rootId, chips }: Props) {
+export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear, rootId, rootName, chips }: Props) {
   const [inRepo, setInRepo] = useState(false);
   useEffect(() => {
     let live = true;
@@ -154,7 +156,7 @@ export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear,
   return (
     <div class={`home dir-page${loadWide() ? ' full' : ''}`}>
       <PageHead
-        rootName={tree?.root.name ?? ''}
+        rootName={rootName}
         dir={dir}
         dirUrl={dirUrl(dir)}
         crumbUrl={dirUrl}

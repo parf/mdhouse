@@ -152,7 +152,7 @@ export function Sidebar(props: SidebarProps) {
         <span class="brand">
           <button class="mark brand-mark" onClick={props.onAbout} title="About mdhouse" aria-label="About mdhouse" />
           <button class="home-link" onClick={props.onHome} title="What changed here lately">
-            {tree?.root.name ?? 'mdhouse'}
+            {(tree && (props.roots.find((r) => r.id === tree.root.id)?.name ?? tree.root.name)) || 'mdhouse'}
           </button>
           {/* Read-only is the normal state and says nothing; being able to write does. */}
           {tree?.root.writable && (

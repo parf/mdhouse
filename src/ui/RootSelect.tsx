@@ -1,10 +1,12 @@
 import type { RootInfo } from './api';
 import { rootLabel } from './format';
+import { chooserLabels } from './project-groups';
 
 /**
  * The project chooser, in every sidebar state. How much of each path it shows grows with the
  * room it has: the folder and its parent in the compact sidebar, two parents in the open one,
- * the whole path (home as `~`) in the full-width top bar left when the sidebar is off.
+ * the whole path (home as `~`) in the full-width top bar left when the sidebar is off. A project
+ * with its own name shows that name instead; the path stays in the tooltip.
  *
  * With one entry there is nothing to switch between and it renders nothing at all — the widget
  * appears exactly when it means something.
@@ -31,6 +33,7 @@ export function RootSelect({
   if (roots.length < 2) return null;
 
   const current = roots.find((r) => r.id === rootId);
+  const labels = chooserLabels(roots, (path) => rootLabel(path, { above, max, home }));
   return (
     <select
       class={`root-select${className ? ` ${className}` : ''}`}
@@ -41,7 +44,7 @@ export function RootSelect({
     >
       {roots.map((r) => (
         <option key={r.id} value={r.id} title={r.path}>
-          {rootLabel(r.path, { above, max, home })}
+          {labels.get(r.id)}
         </option>
       ))}
     </select>

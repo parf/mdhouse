@@ -4,6 +4,7 @@ import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
+import { customName } from './ui/project-groups';
 import { parentScope } from './ui/git-state';
 import { docMetadataRevision, docRefreshTicket, mergeDocRefresh } from './ui/doc-refresh';
 import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
@@ -477,10 +478,10 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
   // The tab's title follows the page shown — `pageTitle()`; set again when the roots arrive.
   useEffect(() => {
-    // the root's name as the switcher shows it
+    // the root's own name, else its path as the switcher shows it
     const rootName = (id: string) => {
       const r = roots.find((x) => x.id === id);
-      return r ? rootLabel(r.path) : '';
+      return r ? (customName(r) ?? rootLabel(r.path)) : '';
     };
     if (onSettings) document.title = pageTitle({ settings: true });
     else if (dirTarget) document.title = pageTitle({ rel: dirTarget.dir, folder: true, root: rootName(dirTarget.rootId) });
@@ -540,6 +541,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
   // The edit scheme plus the file's full path: the root's path is on disk, the document's is under it.
   // None for reference material: an editor would write it past every check.
   const docRoot = doc ? roots.find((r) => r.id === doc.root) : undefined;
+  // A root's name from the live root list, which a rename refreshes; the tree's copy is only a fallback.
+  const nameOf = (id: string, fallback: string) => roots.find((r) => r.id === id)?.name ?? fallback;
   // Each segment encoded on its own: `encodeURI` leaves `#` and `?` alone, which cut the path.
   const editHref =
     optionsLoaded && options.editLink && doc && docRoot && !doc.reference
@@ -555,7 +558,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
           </button>
           <span class="brand">
             <button class="mark brand-mark" onClick={() => setAboutOpen(true)} title="About mdhouse" aria-label="About mdhouse" />
-            {crumb || tree?.root.name || 'mdhouse'}
+            {crumb || (tree && nameOf(tree.root.id, tree.root.name)) || 'mdhouse'}
           </span>
           <button
             class="icon-btn"
@@ -662,6 +665,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
             onAbout={() => setAboutOpen(true)}
             gear={pageGear}
             rootId={dirTarget.rootId}
+            rootName={nameOf(dirTarget.rootId, tree?.root.name ?? '')}
           />
         ) : !docPath ? (
           <Home
