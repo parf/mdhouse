@@ -22,8 +22,8 @@ Reference/install discovery and the single external-AI start file: dependency [�
 | # | Journey | URL · action | Visible result |
 |---|---|---|---|
 | [01](images/01-home-recent-desktop-light.png) | J1/J2 | `/` → `/acme/?git` · first visit | Home = Git digest: branch card, raw `fatal: 'origin'…`, Commit/Pull/Push, unpushed list, changed files, commits. Sidebar compact. |
-| [02](images/02-doc-from-tree-desktop-light.png) | J1 | tree: `docs` › `guide` | Doc: crumbs, title + view chips, Edit, ✎, ⚙, age/author, `uncommitted file`, Commit / Commit + Push, 1/2 done, 6 icon actions, TOC, History. 20 controls in the page head. |
-| [03](images/03-search-dashboard-desktop-light.png) | J1 | press `/`, type `dashboard` | Sidebar widens to open. Names: none. Contents: one row per matching line (same file repeated). `plans/dashboard.md` (branch only) is not found. |
+| [02](images/02-doc-from-tree-desktop-light.png) | J1 | tree: `docs` › `guide` | Doc: crumbs, title + view chips, Edit, ✎, ⚙, age/author, `uncommitted file`, Commit / Commit + Push, 1/2 done, 6 icon actions, TOC, History. 20 interactive controls measured in the page head (all kinds, not only primary actions). |
+| [03](images/03-search-dashboard-desktop-light.png) | J1 | press `/`, type `dashboard` | Sidebar widens to open. Names: none. Contents: one row per matching line (same file repeated). `plans/dashboard.md` exists only on `feature/dashboard`; search covers the working tree, so it is out of scope, as expected. |
 | [04](images/04-doc-source-editor-desktop-dark.png) | J1 | Doc › Edit | Source editor under TOC/History; Save / Close / Discard, `saved`; Edit becomes Page. |
 | [05](images/05-git-commits-desktop-light.png) | J2 | `/acme/?git=commits` | Same branch card + actions; flat commit list, every row `unpushed`. Branch `feature/dashboard` is not shown anywhere. |
 | [06](images/06-doc-local-diff-desktop-light.png) | J2 | Doc › History › Uncommitted changes | Inline diff panel with Reset file; URL unchanged. |
@@ -36,7 +36,7 @@ Reference/install discovery and the single external-AI start file: dependency [�
 | [13](images/13-mobile-sidebar-overlay-light.png) | J7 | 390 · doc, sidebar compact | Sidebar overlays the doc with a scrim; the page behind is covered. |
 | [14](images/14-mobile-doc-topstrip-light.png) | J7 | Ctrl+B → off | Topstrip with the file path; doc full width; actions wrap to 3 rows above TOC/History. |
 | [15](images/15-mobile-git-recent-dark.png) | J7/J2 | 390 dark · `/acme/?git` | Tabs wrap to 2 rows; commit subjects truncated; full Git digest above the fold. |
-| [16](images/16-empty-project-all-carryover-mobile-dark.png) | state/J3 | 390 dark · `/empty/` after ALL in `acme` | ALL carried over from another project: lists `notes.txt`; no empty state. |
+| [16](images/16-empty-project-all-carryover-mobile-dark.png) | state/J3 | 390 dark · `/empty/` after ALL in `acme` ALL carried over from `acme`: a valid ALL result listing `notes.txt`; the scope came from another project. |
 | [17](images/17-empty-project-md-mobile-dark.png) | state | press MD | `0 files · 0`, "No Markdown files here." No next action. |
 | [18](images/18-error-missing-doc-desktop-dark.png) | state | `/acme/docs/missing.md` | "Can't open that / not found"; no link back; sidebar stayed off from the mobile run. |
 
@@ -51,9 +51,9 @@ Strengths:
 
 Risks (screenshot-backed; severity is a proposal):
 - 🟠 Content scope splits across surfaces: the sidebar tree is Markdown-only, ALL exists only on the folder page; two counts (`6 files` / `11 files`) without a scope label (07, 08).
-- 🟠 MD/ALL is per-browser state, not URL or project: it carries into another project and hides its empty state (16).
-- 🟠 Git axis is folder-scoped and branch-blind: no branch list/switch, the branch-only file is unsearchable, every commit `unpushed` without a remote (03, 05).
-- 🟠 Doc head carries 20 controls (Hick: ≤7 primary); the primary action is not dominant (02, 14).
+- 🟠 MD/ALL is a per-browser filter, not URL or project state: it carries into another project and the scope cannot be shared or bookmarked (07, 16).
+- 🟠 Git axis is folder-scoped; branch context and discovery are absent: nothing shows that `feature/dashboard` exists or what it holds (working-tree search excluding it is expected); every commit `unpushed` without a remote (03, 05). Branch switching is not implied or authorized.
+- 🟠 Doc head density: 20 interactive controls measured (all kinds); how many are primary actions is not established, so this is a density/progressive-disclosure concern, not a proven Hick violation (02, 14).
 - 🟠 Raw Git error text on Home without a remote (`fatal: 'origin'…`) next to Pull/Push that cannot work (01, 05, 15).
 - ⚪ Recent/Mine/Favs exist twice: sidebar tabs and Home Git tabs (01, 12).
 - ⚪ Doc panels (diff, editor) and folder ALL are not in the URL (06, 04, 07).
