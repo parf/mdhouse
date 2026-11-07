@@ -34,6 +34,6 @@ describe('project groups', () => {
     expect(writableVia({ ...root('a', { writable: true }), writableBy: 'auto' } as RootInfo)).toBe('auto');
     expect(writableVia(root('a', { writable: true }))).toBeNull();
     expect(writableVia({ ...root('a'), writableBy: 'rw' } as RootInfo)).toBeNull();
-    expect(writableVia({ ...root('a', { writable: true }), writableBy: 'x' } as RootInfo)).toBeNull();
+    expect(writableVia({ ...root('a', { writable: true }), writableBy: 'x' } as unknown as RootInfo)).toBeNull();
   });
 });
