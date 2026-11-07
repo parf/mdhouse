@@ -1174,7 +1174,8 @@ not blocked by RAG/OAuth and not falsely marked complete. Workers completed thei
   Acceptance: Settings clearly shows administrator state/logout/recovery, disables protected controls without authority,
   handles stale-session denial, preserves browser author attribution and read-only/reference behavior.
   Secret delivery must preserve memory-only proof and exclude argv, journal, startup output, query/config/project/temp files.
-  Proposed explicit owner-TTY-only fragment URL handoff is routed to CEO before implementing that dependent delivery.
+  CLI delivery: explicit `mdhouse admin` prints the fragment URL only to an interactive owner TTY;
+  redirected/non-TTY stdout refuses before minting. No auto-open; owner manually opens the URL.
   Marks policy [№Q-R3-ADMIN1](workspaces/QUESTIONS.md#Q-R3-ADMIN1) stays open and unchanged; doc/Git/send families,
   Team identity/OAuth, remote/headless bootstrap, new project properties and full mode migration remain outside this slice.
   Verification: author commits, one combined bounded focused/types gate, owned scratch browser light/dark/compact proof,
@@ -1194,3 +1195,10 @@ Consumed CTO restart handoff retired after main/bus identity and prior checkpoin
 Compatibility report about retired top-level Agent Bus `personal` was disproved on current main:
 `src/lib/agent-bus.ts` uses canonical tags and no manage payload; existing implementation/live evidence
 in the earlier registration checkpoints remains current. No duplicate fix or reconnect/ACL change.
+
+
+CEO confirmed owner-TTY-only delivery as the existing [№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1)
+contract interpretation (`r3-admin/assigned-20261106`): explicit owner CLI recovery is distinct from
+service startup output. W1 may implement delivery and `doc/cli.md`; positive actual PTY and negative
+redirected/non-TTY checks must prove no secret in refusal, argv or files. Pinned review includes delivery.
+Protected POST denial seam is `401 {error, reason: 'admin'}`; exchange failure is generic 403, success 204.
