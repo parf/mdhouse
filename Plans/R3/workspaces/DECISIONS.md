@@ -70,8 +70,9 @@
 - 📌 DIR-W2 `[RW]`/`[RO]` → confirm → toggle immediately, both directions.
   Web project properties, including RW/RO: Personal owner or Team configured admin only; Editor/RW is insufficient.
   Saved: persist. Session: until saved. Workspace: explicit mode wins; Viewer: RO, no toggle, stored mode retained.
-- 📌 Q-R3-MODE1 Implement scoped access migration/toggle; operator replaces old running instances before applying it. <a id="Q-R3-MODE1"></a>
-  Downgraded readers lose auto-RW; no automatic restart or global old-process revocation claim.
+- 📌 Q-R3-MODE1 Implement scoped access migration/toggle; one mdhouse process per machine. <a id="Q-R3-MODE1"></a>
+  Changes apply on reload. Multiple manually started instances are the user’s responsibility, not a development gate.
+  Downgraded readers lose auto-RW; no automatic restart.
   [History](resolved.md#Q-R3-MODE1).
 - 📌 DIR-W3 Optional name keyed by canonical path; display only; empty resets.
   No path/ID/URL/jail change; default = directory label.

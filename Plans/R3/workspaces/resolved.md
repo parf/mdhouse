@@ -431,3 +431,6 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   existing explicit RO must survive CLI `-p` without `--rw`; an explicit `--rw` remains an OS-owner grant.
   Returning to inherit is outside this bounded toggle slice, which chooses only explicit RW or RO.
   > 💬 👤parf A = но как это старый = у нас один BG process?
+  >
+  > 💬 👤parf у нас такого быть не может - у нас на машину - один процесс
+  > если пользователь как-то запустил много - то конечно до reload ничего не меняется (это его проблеммы)
