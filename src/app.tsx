@@ -321,11 +321,13 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const onLive = useRef<(msg: LiveMessage) => void>(() => {});
   onLive.current = (msg) => {
     for (const l of liveListeners) l(msg);
-    if (msg.t === 'hello' || msg.t === 'pong' || msg.t === 'ab') return;
+    if (msg.t === 'pong' || msg.t === 'ab') return;
 
-    // Another `mdhouse` handed this one a directory: pick up the new root list, but stay
-    // where the reader is — the tree they are looking at has not changed.
-    if (msg.t === 'roots') {
+    // Another `mdhouse` handed this one a directory, or a project was renamed: pick up the new
+    // root list, but stay where the reader is — the tree they are looking at has not changed.
+    // `hello` opens every connection, including the reconnect that follows each `roots` event;
+    // a change made while the socket was down reached no one here, so it re-reads too.
+    if (msg.t === 'roots' || msg.t === 'hello') {
       void reloadRoots();
       return;
     }
