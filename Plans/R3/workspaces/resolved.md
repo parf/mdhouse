@@ -434,3 +434,26 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   >
   > 💬 👤parf у нас такого быть не может - у нас на машину - один процесс
   > если пользователь как-то запустил много - то конечно до reload ничего не меняется (это его проблеммы)
+
+
+## Per-project Agent Bus configuration lifetime — 2026-11-07
+
+- ✅ Q-R3-AB1 How does per-project Agent Bus configuration behave for an unsaved project? <a id="Q-R3-AB1"></a>
+  [Directory management](../README.md#directory-management) says saved-root changes persist and
+  unsaved-root changes remain in the session until saved, immediately before the `[AB]` rule.
+  [№AB-W1](DECISIONS.md#AB-W1)/[№AB-W3](DECISIONS.md#AB-W3) define canonical keys, overrides and clearing,
+  but do not explicitly include AB configuration in the save operation. [№Q-R3-NAME1](DECISIONS.md#Q-R3-NAME1)
+  is specific to names. No per-project AB schema or implementation exists yet.
+  Tokens remain server-side only; this slice adds no token input or new credential CLI surface.
+  - ( ) Keep unsaved endpoint/default overrides in memory; explicit save carries them into canonical prefs 🌟
+  - ( ) Require saving the project before editing AB configuration; show `[AB]` read-only until then
+  - ( ) Persist canonical AB overrides independently of whether the project is saved
+  > 💡👾 Use the existing Directory management lifetime for AB endpoint/defaults; clarify that explicit save
+  > carries this metadata. Saved-root credentials can be provisioned in server-side prefs only.
+
+  > 💬👾 Verified-source clarification, not a new owner answer: CEO checked
+  > [Directory management](../README.md#directory-management), whose unconditional saved/session
+  > root-property lifetime immediately precedes `[AB]`. Apply it to endpoint/default overrides:
+  > unsaved memory-only, explicit save atomically carries AB metadata with mode/name; saved edits persist.
+  > Tokens remain server-only; endpoint changes discard the prior credential.
+  > Source: CEO `r3-project-ab / bounded-design-20261107`, 2026-11-07, message `0dc84fbd14ffd54c`.

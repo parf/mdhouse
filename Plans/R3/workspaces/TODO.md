@@ -217,6 +217,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2 Make Agent Bus work out of the box <a id="MW.2"></a>
+  - [ ] MW.2.1 Per-project Settings endpoint/default and root-aware routing; [bounded cohort](../EXECUTION.md#project-agent-bus-cohort) <a id="MW.2.1"></a>
+    Canonical saved/session lifetime, server-only credentials, no-connect config editor; full install/RAG/control scope remains open.
   - Compatibility checkpoint: canonical Personal tag fix `5736c14` integrated after independent PASS; create-only/owner-only registration preserved. CEO verified local reload/reconnect connected:true,error:null (`ab8cbd08d366ed48`), all roots preserved ([QA](../QA.md#agent-bus-canonical-personal-registration))
   - Builds: install-time Agent Bus setup; a connected mdhouse project ready to ask an agent; optional Agent Bus endpoint and default agents per space/root
   - Depends: [№MW.1](#MW.1), [№MW.1a](#MW.1a)

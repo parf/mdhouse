@@ -1554,3 +1554,74 @@ Deterministic canonical/policy staleness is route-tested, not claimed as native 
 [Evidence and limits](QA.md#settings-add-project). Parent [№MW.1](workspaces/TODO.md#MW.1) stays open:
 runbook/workspace defaults, profiles/Viewer/Team and AB endpoint remain outside this checkpoint.
 No live reload/service/session/provider/ACL/push/publish/deploy/version action. W3 idle; no new task started.
+
+
+## Per-project Agent Bus cohort — 2026-11-07 {#project-agent-bus-cohort}
+
+- [ ] MW.2.1 Settings endpoint/default overrides and root-aware document routing
+  Base `35cb4402247e94af216cb0dd010aada0126883cd`, target `main`; CTO owns checkpoint/integration.
+  Approved [№MW.2](workspaces/TODO.md#MW.2), [№AB-W1](workspaces/DECISIONS.md#AB-W1),
+  [№AB-W2](workspaces/DECISIONS.md#AB-W2), [№AB-W3](workspaces/DECISIONS.md#AB-W3),
+  [№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1). Admin/rootOps and scoped prefs v2 prerequisites are integrated.
+  [№Q-R3-AB1](workspaces/DECISIONS.md#Q-R3-AB1) is verified-source interpretation of the existing root model,
+  not a new owner answer: unsaved endpoint/default in memory, explicit save atomically carries AB metadata
+  with mode/name, saved edits persist. No lifetime-dependent edits preceded this recorded clarification.
+  Scope: canonical-root endpoint override then instance fallback; defaults independent, explicit panel choice
+  then document AB names then project defaults then instance defaults. An unavailable explicit/doc target is
+  visibly unavailable and refuses rather than silently selecting lower-priority targets.
+  No installation/RAG/provider lifecycle/control API, global defaults/profile/Viewer/Team activation or live checks.
+
+  W1 backend owner: `.scratch/worktrees/r3-project-ab-backend`, branch `r3/project-ab-backend`;
+  `src/lib/prefs.ts`, `src/lib/agent-bus.ts`, new bounded endpoint/resolver helper if useful,
+  `src/server.ts`, `doc/prefs.json.dist`, focused project-ab/prefs/bus/save/authz tests.
+  W2 UI owner: `.scratch/worktrees/r3-project-ab-ui`, branch `r3/project-ab-ui`;
+  `src/ui/Settings.tsx`, `src/ui/AgentBusPanel.tsx`, `src/ui/api.ts`, pure target resolver,
+  minimal styles and focused resolver tests; necessary Doc/app props only if required for root-aware metadata.
+  CTO owns shared Plans/QA/CHANGELOG; authors own code/test commits. Worktrees isolated; W3 idle.
+
+  Server-only additive canonical config (`agentBusSpaces` or equivalent top-level map preserving unknown keys),
+  plus memory overrides for session roots. Credentials provisioned in server prefs only: no web token field,
+  secret response, localStorage, query, raw provider body/error/log or new credential CLI flag.
+  Override endpoint never inherits the instance credential. An unchanged endpoint retains its server credential;
+  endpoint change/clear atomically discards the old credential. Empty endpoint/default clears that override;
+  all empty removes the entry. Malformed configuration is unavailable, not silently normalized/fallen back.
+  Validate bounded absolute unix socket or HTTP(S) endpoint; no userinfo/query/fragment/control characters.
+  Preserve existing supported transports; no new network/provider ACL or arbitrary HTTPS-only policy.
+  Public endpoint/source metadata is sanitized; `hasCredential` is a boolean, never secret content.
+
+  No-connect GET `/api/ab/config` (or equivalent explicit metadata seam) supplies Settings config/revisions.
+  GET `/api/ab?root=<id>` is explicit panel status, root-aware; no new connection from config read/save.
+  POST `/api/roots/ab` exactly `{id,endpoint,default,rev}`, root-admin + same-origin; reference immutable.
+  Final seam is agreed by authors before integration. Unknown fields/types fail; 401 admin, 403 reference,
+  404 missing root, 409 stale, IO/blocked failure preserves memory/disk/credentials and typed drafts.
+  Serialize root changes, recheck admin/revision/fresh policy under lock; saveRev includes AB metadata identity
+  without tokens, with atomically persisted mode/name/config and no partial grant/loss on stale/IO failure.
+  Root removal/unsave respects existing metadata lifetime, without changing root IDs, URLs, marks or body.
+
+  Pool effective endpoint+credential on the server; roots sharing a connection cannot drain one another's
+  active replies. Credential rotation/config edits do not reconnect/drain or lose existing jobs. Shared job index
+  preserves `/api/ab/job` and WS events after endpoint changes. No silent replacement of an unavailable endpoint.
+  No new one-credential-per-address product restriction; resolve shared identity/drain technically in the pool.
+  Config save never sends/registers/mints/connects. Explicit user send routes only to the document's effective bus.
+  Provider errors become bounded safe messages across HTTP/WS/logs; fake echo-token tests prove no leakage.
+
+  Settings rows always show `[AB]` beside access; only explicit config displays a value. Reference `[AB]`
+  disabled; off integration shows existing CLI hint with disabled editor, no enable switch. Legend explains controls.
+  Admin/busy/entry guards, explicit save/clear, draft retention and stale refresh without auto-retry.
+  Explicit panel selection is per-document in existing guarded storage and survives reopen/default changes;
+  all priority levels and unavailable targets tested independently from endpoint selection.
+
+  Verification: author focused/fail-first tests with original failures retained; one combined impacted gate/types
+  after exact candidate freeze, no repeated full suite. Meaningful native safe-smoke with local fake buses only:
+  two roots/two endpoints, same-endpoint simultaneous jobs, override change during active job, endpoint/default
+  clearing and fallback, all target priorities/unavailable refusal, echo-token responses/WS/log secrecy,
+  no network from config read/save, direct/stale/admin/revoke/ref/IO preservation, save/session lifetime,
+  light/dark and narrow screenshots. No live connectivity/provider actions or automatic sends.
+  One dedicated pinned nonauthor OpenCode security review with explicit allowed tests and complete logs/exits;
+  material fixes require new target/verdict. Close only this child after accepted integration; parent stays open.
+
+  Capacity 2026-11-07 17:49 UTC: actual Kitty W1 Claude 5h 90%, weekly 51% remaining;
+  W2 account 2 5h 92%, weekly 55% remaining. Workers' own usage readouts unavailable.
+  OpenCode API short 2% used, weekly 46% used, reserved for independent review.
+  Shared Codex screen 2% weekly remaining; short unavailable. Claude author work, W3 idle, coordination reserve.
+  No live reload/service/session/provider/ACL/push/publish/deploy/version actions.

@@ -145,3 +145,9 @@
 - 📌 PROJECTS-W1 Settings uses Projects with project selection/details, separate browser and instance scopes. <a id="PROJECTS-W1"></a>
   Filesystem directory/path and internal root/API/storage semantics stay unchanged; unsupported
   per-project mutations require their existing admin-gated owning work. [History](resolved.md#PROJECTS-W1).
+
+
+- 📌 Q-R3-AB1 AB endpoint/default overrides follow the existing saved/session root-property lifetime. <a id="Q-R3-AB1"></a>
+  Unsaved: memory until explicit save; save atomically carries AB metadata with mode/name. Saved edits persist.
+  Credentials stay server-only; endpoint change discards the old credential.
+  [Verified-source clarification](resolved.md#Q-R3-AB1).
