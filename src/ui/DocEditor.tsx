@@ -59,7 +59,9 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
     setProblem('');
     setLoaded({ src, base, disk });
     setDirty(isDraft);
-    view.current?.setState(stateFor(src));
+    // Made with the text, never before: nothing can be typed into an editor whose source is still on its way.
+    if (view.current) view.current.setState(stateFor(src));
+    else view.current = new EditorView({ parent: host.current!, state: stateFor(src) });
     return true;
   };
 
@@ -91,7 +93,6 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
   // The source: a draft kept for this document, else the file. Read once per document.
   useEffect(() => {
     let live = true;
-    view.current = new EditorView({ parent: host.current! });
     api.source(p).then(
       (s) => {
         if (!live) return;
