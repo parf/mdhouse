@@ -329,7 +329,7 @@ main {
   align-items: center;
 }
 /* Read and write is the default; only read-only, the exception, is worth a badge. */
-.side-head .ro {
+:is(.side-head, .topstrip) .ro {
   font-weight: 600;
   font-size: 10.5px;
   letter-spacing: 0.02em;

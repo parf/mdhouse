@@ -4,7 +4,7 @@ import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
-import { customName } from './ui/project-groups';
+import { accessBadge, customName } from './ui/project-groups';
 import { parentScope } from './ui/git-state';
 import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from './ui/doc-refresh';
 import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
@@ -561,6 +561,12 @@ function App({ entry: first }: { entry: AdminEntry }) {
           <span class="brand">
             <button class="mark brand-mark" onClick={() => setAboutOpen(true)} title="About mdhouse" aria-label="About mdhouse" />
             {crumb || (tree && nameOf(tree.root.id, tree.root.name)) || 'mdhouse'}
+            {/* The sidebar header's access badge, while the sidebar is off. */}
+            {tree && accessBadge(roots.find((r) => r.id === tree.root.id)) && (
+              <span class="ro" title="Read-only: mdhouse does not write to this project">
+                RO
+              </span>
+            )}
           </span>
           <button
             class="icon-btn"
