@@ -1388,8 +1388,69 @@ out of the legacy field and clears legacy auto grants so an older restarted read
 CTO executed an old-reader probe: an already-running Registry with boot-time explicit RW still writes after
 simulated stored v2 RO and prefs refresh. This corrects the initial overbroad claim that all old running readers
 would fail closed. No actual live instance, service, session, provider or grant was touched.
-[№Q-R3-MODE1](workspaces/QUESTIONS.md#Q-R3-MODE1) gates selection of the coherent implementation cohort;
-full paths/acceptance/owners/review will be recorded before author edits once the rollout/downgrade boundary is settled.
+[№Q-R3-MODE1](workspaces/DECISIONS.md#Q-R3-MODE1) is settled by owner A and clarification `35aa562`.
+One process per machine is supported; manually started multiple instances are the user’s responsibility.
+Changes apply through the normal coordinated reload; no coexistence proof, process stop or scanner is an implementation gate.
+The probe above was a compatibility scenario, not an observed multiple-process problem on this host.
+CEO read-only inspection confirmed one BG/service process; no restart is authorized here.
 No production coexistence scanner is assumed complete; no poison credentials or silent auto-policy changes.
 Capacity checked: W1 default Claude 5h 100% (~4h53m), weekly 54%; W2 account 2 5h 47% (~13m), weekly 57%;
 shared Codex 5%, OpenCode observed hard limit. W3 idle; reserve Codex for coordination and exact nonauthor review.
+
+
+## Scoped project access cohort — approved A {#scoped-project-access-cohort}
+
+- [ ] MW.0h.1 Tri-state access and conservative version-2 compatibility prerequisite
+- [ ] MW.1.2 Confirm explicit RW/RO for existing projects
+  Base `35aa562770cec35153aa8489ebf85edb83ccbded`, implementation code base `eec91ac`, target `main`.
+  Scope/acceptance recorded before author edits. [№DIR-W2](workspaces/DECISIONS.md#DIR-W2),
+  owner [№Q-R3-MODE1](workspaces/DECISIONS.md#Q-R3-MODE1) A and “go” authorize this bounded cohort.
+  W1 owns backend first: `.scratch/worktrees/r3-project-access-backend`, `r3/project-access-backend`;
+  `src/lib/roots.ts`, `src/lib/prefs.ts`, `src/server.ts`, necessary CLI startup/handoff mode mapping in
+  `src/cli.ts`/`src/lib/control.ts`, `doc/cli.md`, `doc/prefs.json.dist`, focused access/migration/route/CLI tests.
+  W2 owns bounded UI after the agreed seam: `.scratch/worktrees/r3-project-access-ui`, `r3/project-access-ui`;
+  `src/ui/Settings.tsx`, `src/ui/api.ts`, `src/app.tsx`, necessary `src/ui/Doc.tsx`/`Home.tsx` Git write-control
+  metadata updates and minimal styles/tests. CTO owns shared Plans/QA/CHANGELOG. W3 idle.
+  Registry mode is `inherit | rw | ro`; explicit RO beats auto-RW, explicit RW remains capped by immutable
+  reference protection and unsupported storage. No new-root RW default, Workspace/Viewer/profile/Team activation.
+  Version-1 migration preserves current configured/effective choices: legacy writable entries become explicit RW,
+  remaining entries inherit existing auto policy; no new grant. On the first successful prefs write, version 2
+  stores `readonly[]` for saved explicit RO and copies auto rules unchanged into `autoRwRules`, emptying legacy
+  `autoRw`. Migration is idempotent/atomic and does not happen as a destructive read side effect.
+  Older restarted readers lose automatic RW and newer-config writes; legacy explicit writable entries retain
+  their intentional grant. An already running prior implementation is replaced by the ordinary reload later;
+  manual multi-instance coexistence is not a development gate. No process scanner or auto-restart feature.
+  Unknown newer/invalid new-format data stays intact and fails closed for writes; do not normalize it into a
+  permissive supported file or reset it. Unknown extension keys remain preserved. Validate ambiguous RO/RW data
+  conservatively. A base-code old-reader fixture verifies downgrade never broadens effective root writes.
+  Saved mode edits persist atomically; session mode edits stay in memory until save/remove. Accepted explicit
+  save carries the current mode and name B without exposing partial state; update its snapshot for tri-state.
+  Existing explicit RO survives CLI `-p` without `--rw`; explicit `--rw` remains an OS-owner grant. Bare re-open
+  never clears RO. Preserve other existing flag semantics, no new inherit reset control or global defaults.
+  API POST `/api/roots/mode` accepts exactly `{id, mode: 'rw'|'ro', rev}`, `root-admin`; response `{roots}`.
+  `/api/roots` exposes read-only `mode` and full SHA-256 `accessRev`, separate from `saveRev`; bind canonical
+  identity, mode/effective/auto/reference-cap, saved status and fresh stored access state, not the name draft.
+  Same-origin + verified admin, reference/overlap cap, strict schema and stale revision checks apply. Recheck
+  admin/current policy at the serialized/locked commit; 401 admin, 403 reference, 409 stale, no partial changes
+  on IO/unknown format failure. Mode changes invalidate save snapshots; save changes invalidate access snapshots.
+  Review mutation commit points: a request queued while RW must recheck before a document/Git mutation executes;
+  current RO denies direct/stale calls and leaves file/repo unchanged. Do not invent process cancellation.
+  UI effective `[RW]`/`[RO]` asks before setting explicit opposite mode. State distinguishes inherited auto from
+  explicit choice, saved/session lifetime; no reference toggle. Stale errors refresh/reconfirm, no silent retry;
+  admin refusal preserves drafts. Name blur remains its existing independent operation; access revision excludes it.
+  Share pending state across save/mode/remove actions. Existing document/Git write controls follow fresh effective
+  root metadata across tabs without body/token replacement; metadata-only mode change must not cause Mermaid churn.
+  Acceptance: legacy saved/session × RW/inherit × auto on/off × reference matrix preserves access during upgrade;
+  explicit RO defeats auto across restart, explicit RW restores writes, mode/name lifetime B survives save.
+  Verify idempotence/downgrade, canonical aliases, unsupported/newer/corrupt input, stale/revoked/spoofed admin,
+  reference/unknown fields, fresh lock-policy changes, failed persistence and queued-write denial.
+  One combined proportional impacted/types gate, pinned independent exact-SHA migration/access review and native
+  scratch two-tab mode/write-denial/focus-ready proof with retained first failures; no duplicate full suite.
+  Parent [№MW.0h](workspaces/TODO.md#MW.0h) stays open for future default/profile/Viewer migration; parent
+  [№MW.1](workspaces/TODO.md#MW.1) stays open for other setup/property work. Previously accepted save is not repeated.
+  No live reload/service/session/provider/ACL/push/publish/deploy/version-release actions.
+
+Resume capacity 2026-11-07 16:54 UTC: W1 available, weekly 54%; W2 available, weekly 57%; both current
+short-window readouts unavailable after idle compaction, not guessed. Shared Codex weekly 4% reserved for CTO/CEO;
+W3 idle. Review freshly verified GLM API: short-window 1% used, weekly 45% used (55% remaining), available;
+old terminal limit message is stale. One independent review assignment after target freeze, no stopped review resume.
