@@ -15,6 +15,8 @@
 
 ### Added
 
+- Optional Project names through `--name` and administrator Settings, with live labels and reset; unsaved-project names stay temporary until the project is explicitly saved
+
 - Local browser administration through `mdhouse admin`: single-use terminal sign-in links, session logout/revocation, and administrator-only instance settings and project removal
 
 - Settings now groups Projects with selection/details, current access and persistence; browser and all-project options are clearly separate, and served-project terminology is consistent

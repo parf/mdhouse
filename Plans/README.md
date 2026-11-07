@@ -379,7 +379,7 @@ Other families retain existing behavior; marks policy remains open and no Team/g
 | `admin-session` | `/api/admin/session`, `/api/admin/logout` |
 | `attribution` | `/api/author` |
 | `external-send` | `/api/ab/send` |
-| `root-admin` | `/api/roots/remove` |
+| `root-admin` | `/api/roots/remove`, `/api/roots/name` |
 | `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
 
@@ -489,3 +489,23 @@ Browser author settings stay browser-only; Documents and Agent Bus instance sett
 all projects. No per-project overrides or new config mutation authority is implied. Display-name,
 RW/save and AB override editors remain their explicit admin-gated owning tasks. IDs/paths/CLI flags,
 API/storage keys and physical directory/subfolder semantics are unchanged.
+
+
+## Project display names
+
+`lib/project-name.ts` validates trimmed text up to 80 UTF-16 units, rejecting controls, bidi reordering
+and malformed text. Empty resets; duplicate names are allowed. CLI `--name <text>|reset` requires one
+explicit directory, refuses `--rm`, and passes optional `add.name` through private OS-owner control.
+The argument is validated before config/root mutation. Existing root IDs, paths, URLs, access and marks stay unchanged.
+
+POST `/api/roots/name` accepts exactly `{id,name}` behind the `root-admin` same-origin/session guard;
+unknown root is 404, reference is 403. Payload `name` is the effective label and `customName` is optional.
+Root/tree/control listings expose display labels; the tree label is overlaid during serialization.
+Saved names live in additive prefs `names`; session names stay in server memory until explicit save,
+which transfers the current name. Removing/forgetting saved status removes persisted name metadata;
+a last kept project retains its name in memory. No implicit root saving or write upgrade.
+
+Settings edits/resets names for administrators; name denial preserves the draft. Root events refresh
+labels across existing chooser, headings, Settings and tab titles without rebuilding document content.
+Duplicate chooser labels use path context, falling back to the full canonical path when needed.
+Agent Bus control inventory remains unimplemented work under [№MW.7](R3/workspaces/TODO.md#MW.7).

@@ -251,7 +251,8 @@ becomes RO. Viewer hides access toggles because its effective state is always RO
 
 A root may have an optional human display name keyed by its canonical path. It can be supplied in
 Settings or by CLI, for example `mdhouse ~/mdhouse -p --name "All MDHouse Projects"`. Empty/reset
-removes the override.
+removes the override. Unsaved project names stay in memory until the project is explicitly saved
+([№Q-R3-NAME1](workspaces/DECISIONS.md#Q-R3-NAME1)).
 
 Names appear in the root switcher, Settings, headings and Agent Bus inventory. They are display-only:
 renaming never changes the filesystem directory, root ID, document URLs, views, marks or per-space
