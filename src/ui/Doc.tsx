@@ -551,11 +551,12 @@ export function Doc({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing?.id]);
 
-  // Where the form stands: in its item, placed again whenever the HTML changes.
+  // Where the form stands: in its item, placed again whenever the HTML changes — whatever the access, so a
+  // form open when writing stopped keeps its text in view; the save is what gets refused.
   useEffect(() => {
     const el = body.current;
     const spot = host.current;
-    if (!el || !spot || !editing || !doc || !answerable) return;
+    if (!el || !spot || !editing || !doc) return;
     // The item by its fingerprint and line; else the same fingerprint nearest its old line —
     // lines added above move it, and two items may read alike; else whatever is on its line.
     const all = itemsOf(el, actToken).map(({ li, act }) => ({ li, line: act.line, hash: act.hash }));
@@ -619,7 +620,7 @@ export function Doc({
       if (hidden) hidden.hidden = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing?.id, editing?.line, editing?.hash, doc?.html, answerable, hostTick]);
+  }, [editing?.id, editing?.line, editing?.hash, doc?.html, hostTick]);
 
   // The form, rendered into its place on every change; Preact updates it in place.
   const saving = useRef(false);
@@ -829,7 +830,8 @@ export function Doc({
   useEffect(() => {
     const el = body.current;
     const spot = addHost.current;
-    if (!el || !spot || !adding || !answerable) return;
+    // Placed whatever the access, as the answer form is.
+    if (!el || !spot || !adding) return;
     // The heading by its own marked identity: fingerprint and line, else the same fingerprint nearest its old line.
     const all = [...el.querySelectorAll<HTMLElement>(':is(h1, h2, h3, h4, h5, h6)[data-act]')].flatMap((el) => {
       const own = actOf(el, actToken);
@@ -868,7 +870,7 @@ export function Doc({
       area.scrollIntoView({ block: 'nearest' });
     } else if (area && addFocused.current && !spot.contains(document.activeElement)) area.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adding?.id, adding?.line, adding?.hash, doc?.html, answerable, addTick]);
+  }, [adding?.id, adding?.line, adding?.hash, doc?.html, addTick]);
 
   const addSaving = useRef(false);
   useEffect(() => {
