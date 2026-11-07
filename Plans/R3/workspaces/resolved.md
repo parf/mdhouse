@@ -487,3 +487,8 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > deafults are either hidden or grey / and important / unusual stuff highlighted
   >
   > 💬 👤parf [Image #1] Settings project list with repeated RW badges.
+
+## Data placement
+
+- ✅ CONFIG-W1 Project-local configuration is versioned <a id="CONFIG-W1"></a>
+  > 💬 👤parf и вообще решить что должно куда идти.  $PROJECT_HOME/.mdhouse/ - git controlled

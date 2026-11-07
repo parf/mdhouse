@@ -167,3 +167,8 @@
   Workspace: hide RW, show RO. Viewer: hide RO, show configured RW; effective writes remain forbidden.
   Apply throughout the UI: hide defaults or render them gray; highlight important or unusual states.
   [Owner history](resolved.md#BADGE-W1).
+
+## Data placement
+
+- 📌 CONFIG-W1 `$PROJECT_HOME/.mdhouse/` is Git-controlled. <a id="CONFIG-W1"></a>
+  [Owner history](resolved.md#CONFIG-W1).

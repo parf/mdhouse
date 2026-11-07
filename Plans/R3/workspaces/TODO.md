@@ -546,6 +546,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 ## Configuration ownership
 
-- [ ] MW.14 Decide what belongs in user config versus project-local .mdhouse <a id="MW.14"></a>
-  Inventory current and planned data; define placement in `~/.config/mdhouse/` versus `$PROJECT_HOME/.mdhouse/`, including settings, project metadata, credentials, local state, flows and automation definitions.
-  Decide ownership, portability/version control, secret handling and migration before implementation.
+- [ ] MW.14 Decide where all mdhouse data belongs <a id="MW.14"></a>
+  Inventory all current and planned data; define its owner, scope and storage location: user config, project config, secrets, local state, caches, logs, generated artifacts, flows and automation definitions.
+  `$PROJECT_HOME/.mdhouse/` is Git-controlled; distinguish shared versioned project data from user/machine-local and secret data.
+  Decide placement, portability, secret handling and migration before implementation.
