@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { api, isAdminDenial, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
+import { ApiError, api, isAdminDenial, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
 import { customName, groupProjects, removable, selectedProject, writableVia } from './project-groups';
@@ -24,6 +24,15 @@ interface Props {
   go: (url: string) => void;
   /** What the latest `#admin=` sign-in link came to, if there was one. */
   entry: { outcome: AdminEntry };
+}
+
+const SAVE_STALE = 'This project changed since it was shown. Check it and save again.';
+
+/** The access a save keeps: what was asked for; auto-RW stays conditional and is never made explicit. */
+function savedAccess(root: RootInfo): string {
+  if (root.configuredWritable === true) return 'read and write — started with --rw';
+  if (root.writable) return 'read-only; writable only while an auto-RW path covers it';
+  return 'read-only';
 }
 
 /** A folder's own name: the last part of its path. */
@@ -140,6 +149,28 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       onChanged();
     } catch (err) {
       setNameError(refused(err));
+    }
+  };
+
+  // A save confirms the stored name; one still being typed would be saved by the blur the click causes, after the confirmation.
+  const nameDirty = nameDraft.trim() !== ownName;
+  const save = async (root: RootInfo) => {
+    const rev = (root as { saveRev?: unknown }).saveRev;
+    if (typeof rev !== 'string' || nameDirty) return;
+    const name = customName(root) ?? `the folder's — ${folderName(root.path)}`;
+    if (!confirm(`Save project ${root.name}?\n\nFolder: ${root.path}\nName: ${name}\nAccess: ${savedAccess(root)}\n\nmdhouse will serve it on every start. Project files stay unchanged.`)) return;
+    setBusy(root.id);
+    setError('');
+    try {
+      await api.saveRoot(root.id, rev);
+      onChanged();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.reason === 'stale') {
+        setError(SAVE_STALE);
+        onChanged();
+      } else setError(refused(err));
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -312,12 +343,20 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     <span class="tag saved" title="mdhouse's own documentation — served on every start, read-only">
                       reference — always served, cannot be changed
                     </span>
+                  ) : project.saved ? (
+                    'served on every start'
                   ) : (
-                    <span
-                      class={`tag ${project.saved ? 'saved' : 'session'}`}
-                      title={project.saved ? 'Served on every start' : 'Served until mdhouse stops'}
-                    >
-                      {project.saved ? 'saved — served on every start' : 'this session — served until mdhouse stops'}
+                    <span class="project-kept">
+                      <button
+                        type="button"
+                        class="tag session project-save"
+                        disabled={!isAdmin || nameDirty || busy !== null || typeof project.saveRev !== 'string'}
+                        onClick={() => void save(project)}
+                        title={!isAdmin ? NEEDS_ADMIN : nameDirty ? 'Finish editing the name first' : 'Save it: serve it on every start'}
+                      >
+                        [unsaved]
+                      </button>{' '}
+                      served until mdhouse stops
                     </span>
                   )}
                 </dd>
@@ -335,8 +374,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 </button>
               )}
               <p class="settings-note">
-                Name, access and whether it is kept are set when it is added: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start
-                (<code>--rw</code> for write access); without <code>-p</code> it lasts until mdhouse stops.
+                Access is set when it is added: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start (<code>--rw</code> for write
+                access); without <code>-p</code> it lasts until mdhouse stops, unless saved here.
               </p>
             </div>
           )}

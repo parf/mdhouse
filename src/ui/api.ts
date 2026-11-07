@@ -55,6 +55,10 @@ export interface RootInfo {
   saved?: boolean;
   /** `reference`: mdhouse's own read-only material — never removed, written or sent to agents. */
   kind?: 'project' | 'reference';
+  /** Asked for write access (`--rw`), whatever auto-RW adds on top. Read-only metadata for the save confirmation. */
+  configuredWritable?: boolean;
+  /** The fingerprint a save confirms: a staleness check, not an authority. Only on a project that can be saved. */
+  saveRev?: string;
 }
 
 /** Who created a file and who last committed it. Arrives with the history, not the document. */
@@ -391,6 +395,9 @@ export const api = {
 
   /** Sets a project's own name; an empty one goes back to the folder's. Returns the served roots. */
   setRootName: (id: string, name: string) => post<{ roots: RootInfo[] }>('/api/roots/name', { id, name }),
+
+  /** Saves a session project as confirmed at `rev`; 409 `stale` when it changed since. Returns the served roots. */
+  saveRoot: (id: string, rev: string) => post<{ roots: RootInfo[] }>('/api/roots/save', { id, rev }),
 
   /** Forget a directory and stop serving it. */
   async removeRoot(id: string): Promise<void> {
