@@ -1400,8 +1400,8 @@ shared Codex 5%, OpenCode observed hard limit. W3 idle; reserve Codex for coordi
 
 ## Scoped project access cohort — approved A {#scoped-project-access-cohort}
 
-- [ ] MW.0h.1 Tri-state access and conservative version-2 compatibility prerequisite
-- [ ] MW.1.2 Confirm explicit RW/RO for existing projects
+- [x] MW.0h.1 Tri-state access and conservative version-2 compatibility prerequisite
+- [x] MW.1.2 Confirm explicit RW/RO for existing projects
   Base `35aa562770cec35153aa8489ebf85edb83ccbded`, implementation code base `eec91ac`, target `main`.
   Scope/acceptance recorded before author edits. [№DIR-W2](workspaces/DECISIONS.md#DIR-W2),
   owner [№Q-R3-MODE1](workspaces/DECISIONS.md#Q-R3-MODE1) A and “go” authorize this bounded cohort.
@@ -1461,3 +1461,25 @@ necessary UI helper paths include `ui/Sidebar.tsx`, `ui/doc-refresh.ts`, `ui/pro
 `ui/qa-page.ts` alongside the named components, to derive effective access and preserve editor drafts/control
 provenance without body/Mermaid replacement. This is within the accepted live write-control boundary;
 no new authority or product scope. Author mock proof is retained, not mistaken for real write-denial acceptance.
+
+
+## Scoped project access accepted — 2026-11-07
+
+[№MW.0h.1](workspaces/TODO.md#MW.0h.1)/[№MW.1.2](workspaces/TODO.md#MW.1.2) done: exact independently
+reviewed `9957efe2bafaec42aed13a717229f2a1f9139bf2` fast-forward integrated into `main`; source/test/doc/script identity checked.
+W1 backend `0775b9c`; W2 UI `6f4b144`, native draft-placement fix `984d1a0`; no unreviewed material integration delta.
+Backend impacted gate 457/0 reused by exact source identity, combined UI contracts 23/0 and types exit 0;
+Doc-only fix types exit 0. Review executed only its allowed focused command (95/0) and saved-RO CLI case (1/0),
+original exits 0, full logs in `r3-project-access-fixed-review/.scratch/review/`; exact verdict on Agent Bus
+`r3-project-access-review/security-9957efe-20261107`. [QA and first-failure/evidence-gap record](QA.md#scoped-project-access).
+Native after-fix proof 18/0 on source-identical `13ae5ec`: RO beats auto, valid task/Q&A writes refuse 403
+without changing bytes and keep the visible draft; RW restores actual writes. Multiple tabs update controls,
+source text/token/Mermaid/body nodes stay stable across mode changes, control disabled attrs may change.
+Stale/revoked admin, cancel and session-mode/name B save verified; ready light/dark/390px screenshots inspected.
+Version-2 migration/invalid-format caps, old-reader downgrade and queued Git/document checks independently accepted.
+Owner A plus the final one-process clarification is applied: no proof of other processes, scanner or restart gate.
+The confirmed current host has one BG service; the compatibility probe was not an actual coexistence incident.
+No live reload/service/session/provider/ACL/push/publish/deploy or package-version actions occurred.
+Parent [№MW.0h](workspaces/TODO.md#MW.0h) remains open for future default/profile/Viewer migration;
+parent [№MW.1](workspaces/TODO.md#MW.1) remains open for other setup/properties. Team/OAuth and global defaults
+are not activated. Authors' scoped tasks completed; no further task started, W3 idle and Codex reserve preserved.

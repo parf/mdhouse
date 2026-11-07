@@ -53,8 +53,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: test every mutation family, cross-user/root isolation and denial; dormant foundations retain current RO defaults
 
 - [ ] MW.0h Implement safe mode and access migration before activation <a id="MW.0h"></a>
-  - [ ] MW.0h.1 Scoped tri-state/version-2 access prerequisite; [approved cohort](../EXECUTION.md#scoped-project-access-cohort) <a id="MW.0h.1"></a>
-    No new default/profile/Viewer activation; parent remains open.
+  - [x] MW.0h.1 Scoped tri-state/version-2 access prerequisite; [approved cohort](../EXECUTION.md#scoped-project-access-cohort) <a id="MW.0h.1"></a>
+    Accepted exact `9957efe`, independent PASS, impacted/combined types and native write-denial proof. [Evidence](../QA.md#scoped-project-access). No new default/profile/Viewer activation; parent remains open.
   - Depends: [№MW.0f](#MW.0f), [№MW.0g](#MW.0g)
   - Builds: explicit configured vs effective root access, Viewer hard cap, versioned compatible prefs migration and safe exposure defaults
   - Acceptance: migration is idempotent; old absent RW grants become explicit RO choices before any new-root default applies
@@ -181,7 +181,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 ## W1 — Install and connect
 
 - [ ] MW.1 Add the AI installation runbook and managed workspace convention <a id="MW.1"></a>
-  - [ ] MW.1.2 Explicit RW/RO confirmation with mode prerequisite; [approved cohort](../EXECUTION.md#scoped-project-access-cohort) <a id="MW.1.2"></a>
+  - [x] MW.1.2 Explicit RW/RO confirmation with mode prerequisite; [approved cohort](../EXECUTION.md#scoped-project-access-cohort) <a id="MW.1.2"></a>
+    Integrated `9957efe`; explicit RO beats auto, live controls/drafts and server write-denial verified. [Evidence](../QA.md#scoped-project-access).
   - [x] MW.1.1 Existing-session explicit save with admin confirmation; [scope/dependency check](../EXECUTION.md#existing-project-explicit-save) <a id="MW.1.1"></a>
     Integrated exact `ad7b5fc` after nonauthor PASS, combined focused/types and real-backend save/denial/live proof. [Evidence](../QA.md#existing-project-explicit-save). Configured/effective access and name lifetime preserved; no RW/default/profile migration activation.
   - Acceptance: Team web add outside `~/mdhouse` and all project-property changes (RW/RO, name/default/endpoint where applicable) require configured admin, not Editor/RW; no broader inside-workspace permission is inferred

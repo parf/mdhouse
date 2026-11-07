@@ -537,7 +537,7 @@ All own smoke groups stopped cleanly. Cross-browser/real-device release QA remai
 [№MW.1](workspaces/TODO.md#MW.1)/[№MW.0h](workspaces/TODO.md#MW.0h) mode and installation work.
 
 
-## Scoped project access — candidate {#scoped-project-access}
+## Scoped project access — integrated cohort {#scoped-project-access}
 
 [№MW.0h.1](workspaces/TODO.md#MW.0h.1)/[№MW.1.2](workspaces/TODO.md#MW.1.2), code candidate
 `7c1ac70dae0a2fcf585c8717de9c4658a7c9b163`: backend author `0775b9c`, UI author `6f4b144`, combined without conflicts.
@@ -573,5 +573,37 @@ required writable access. It was not counted as PASS. W2 author fix `984d1a0` ke
 placement independent of permission; server save denial remains authoritative and the draft stays visible.
 Initial failure: W2 scratch `mode-native-run2.log`, QA 403 with no visible note/form afterward.
 Combined fixed code `d9efade`: types exit 0, captured in `r3-project-access-final/.scratch/access-gate/draft-types.log/.exit`.
-Native after-fix proof and independent fixed-target review remain pending; original candidate/pinned HEADs
+Native after-fix proof and independent fixed-target review completed below; original candidate/pinned HEADs
 were not advanced during review/proof. No broad impacted gate was repeated for this Doc-only delta.
+
+
+Accepted scoped access cohort: independent Review PASS exact `9957efe2bafaec42aed13a717229f2a1f9139bf2`,
+base `35aa562`, pinned HEAD/tracked tree unchanged. Full source/behavior/format/CLI/UI diff inspected;
+allowed focused command 95/0 and saved-RO CLI test 1/0, original exits 0. Complete output/exits:
+`r3-project-access-fixed-review/.scratch/review/{focused-access,cli-saved-ro}.{log,exit}`.
+Source identity to native proof `13ae5ec` confirmed for src/test/doc/scripts. Exact reviewed commit fast-forward
+integrated into main; parent scopes remain open as stated above. No new root/default/profile/Team authority.
+
+True-backend native after-fix: 18 PASS, 0 FAIL, exit 0, own safe-smoke groups stopped cleanly. Inherit-auto→RO
+confirmation/cancel; explicit RO remains RO under auto; direct valid task and real Q&A Save return 403 with
+unchanged file hashes, visible draft and refusal note. The original detached-form failure is retained, not hidden.
+Stale accessRev refresh/reconfirm and revoked-admin 401 preserve user state. UI RW restores real task/Q&A writes;
+three mode changes retain source/body node/Mermaid img+src/data-act tokens/text, changing only genuine controls.
+Session RO plus name Auto B saves to canonical readonly[] with autoRwRules intact and legacy autoRw empty.
+Proof log and scripts under W2 scratchpad
+`/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`:
+`mode-native-proof-final.log`, `mode-native.ts`, `mode-native-proof/*.png`.
+Original product failures: `mode-native-a69b3c0.log`, `mode-native-run1.log`, `mode-native-run2.log`.
+Retained harness failures: old 403 matched a later RW wait; task lookup found a fenced code line;
+compact framing initially left the sidebar open. Final harness waits use the current action, actual task
+and ready focused page; broad backend gate was not repeated for these harness corrections.
+CTO inspected `5-narrow-dark.png` and `3-doc-ro.png`; light/dark wide/compact counterparts retained.
+Cross-browser/real-device release QA remains unverified; no actual live instance was reloaded.
+
+### Deferred cosmetic follow-ups
+
+- ⚪ ACCESS-F1 Remove the redundant accessRev cast when Settings next changes
+  Reviewer found no behavioral/security effect; no source-only cleanup added to the frozen target.
+- ⚪ ACCESS-F2 Clear an earlier administrator error after same-page re-sign-in
+  Existing [№MW.0g](workspaces/TODO.md#MW.0g) behavior reported by W2; it does not grant authority or
+  lose a draft. Handle in the owning admin flow, not this migration/access checkpoint.
