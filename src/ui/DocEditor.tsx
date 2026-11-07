@@ -38,10 +38,19 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingNow = useRef(false);
+  // Set together with their state, so an answer arriving before the next render reads them as they are.
   const loadedNow = useRef(loaded);
-  loadedNow.current = loaded;
+  const put = (l: Loaded) => {
+    loadedNow.current = l;
+    setLoaded(l);
+  };
   const dirtyNow = useRef(dirty);
-  dirtyNow.current = dirty;
+  const markDirty = (d: boolean) => {
+    dirtyNow.current = d;
+    setDirty(d);
+  };
+  // This editor's life for this document: an answer that arrives after it ended (closed, another document) is dropped.
+  const epoch = useRef(0);
   // The keymap's Save runs from the editor's own state: it reads the access as it is now.
   const writableNow = useRef(writable);
   writableNow.current = writable;
@@ -57,8 +66,8 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
       return false;
     }
     setProblem('');
-    setLoaded({ src, base, disk });
-    setDirty(isDraft);
+    put({ src, base, disk });
+    markDirty(isDraft);
     // Made with the text, never before: nothing can be typed into an editor whose source is still on its way.
     if (view.current) view.current.setState(stateFor(src));
     else view.current = new EditorView({ parent: host.current!, state: stateFor(src) });
@@ -84,7 +93,7 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
           if (!u.docChanged) return;
           const l = loadedNow.current;
           if (!l) return;
-          setDirty(true);
+          markDirty(true);
           saveDraft(p, { text: fromEditor(l.src, u.state.doc.toJSON().join(l.src.separator)), base: l.base });
         }),
       ],
@@ -92,10 +101,10 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
 
   // The source: a draft kept for this document, else the file. Read once per document.
   useEffect(() => {
-    let live = true;
+    const my = ++epoch.current;
     api.source(p).then(
       (s) => {
-        if (!live) return;
+        if (my !== epoch.current) return;
         const d = loadDraft(p);
         if (d && d.text !== s.text) {
           show(d.text, d.base, s.hash, true);
@@ -105,10 +114,10 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
           show(s.text, s.hash, s.hash, false);
         }
       },
-      (err: Error & { status?: number }) => live && setProblem(err.status === 413 ? 'This file is too large to edit here.' : err.status === 422 ? 'This file is not valid UTF-8 — it cannot be edited here.' : err.message),
+      (err: Error & { status?: number }) => my === epoch.current && setProblem(err.status === 413 ? 'This file is too large to edit here.' : err.status === 422 ? 'This file is not valid UTF-8 — it cannot be edited here.' : err.message),
     );
     return () => {
-      live = false;
+      epoch.current++;
       view.current?.destroy();
       view.current = null;
     };
@@ -123,14 +132,18 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
   useEffect(() => {
     const l = loadedNow.current;
     if (!l) return;
+    const my = epoch.current;
+    // Followed only if nothing was typed while the file was read.
+    const at = view.current?.state.doc;
     let live = true;
     api.source(p).then(
       (s) => {
-        if (!live || s.hash === l.disk) return;
-        if (!dirtyNow.current) show(s.text, s.hash, s.hash, false);
+        const now = loadedNow.current;
+        if (!live || my !== epoch.current || !now || s.hash === now.disk) return;
+        if (!dirtyNow.current && view.current?.state.doc === at) show(s.text, s.hash, s.hash, false);
         else {
-          setLoaded({ ...l, disk: s.hash });
-          setNote(STALE);
+          put({ ...now, disk: s.hash });
+          if (now.base !== s.hash) setNote(STALE);
         }
       },
       () => {},
@@ -148,21 +161,30 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
     return () => removeEventListener('beforeunload', warn);
   }, [dirty]);
 
+  // The editor stays editable while a save is on its way: what is typed meanwhile stays unsaved, kept on the new base.
   const save = async () => {
     const l = loadedNow.current;
-    if (!l || savingNow.current || !writableNow.current) return;
+    const sent = view.current?.state.doc;
+    if (!l || !sent || savingNow.current || !writableNow.current) return;
+    const my = epoch.current;
     savingNow.current = true;
     setSaving(true);
     setNote('');
-    const text = current(l.src);
     try {
-      const got = await api.saveSource(p, l.base, text);
-      dropDraft(p);
-      setLoaded({ ...l, base: got.hash, disk: got.hash });
-      setDirty(false);
+      const got = await api.saveSource(p, l.base, current(l.src));
+      if (my !== epoch.current) return;
+      const now = loadedNow.current ?? l;
+      put({ ...now, base: got.hash, disk: got.hash });
+      if (view.current?.state.doc === sent) {
+        dropDraft(p);
+        markDirty(false);
+      } else saveDraft(p, { text: current(now.src), base: got.hash });
       onSaved();
     } catch (err) {
-      saveDraft(p, { text, base: l.base });
+      if (my !== epoch.current) return;
+      // the text as it is now, which may be newer than what was sent
+      const now = loadedNow.current ?? l;
+      saveDraft(p, { text: current(now.src), base: now.base });
       setNote(err instanceof ApiError && err.status === 409 ? STALE : `Not saved — your text is kept: ${(err as Error).message}`);
     } finally {
       savingNow.current = false;
@@ -172,13 +194,18 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
 
   const discard = async () => {
     if (dirty && !confirm('Discard your unsaved changes to this document and load the file as it is now?')) return;
+    const my = epoch.current;
+    const at = view.current?.state.doc;
     dropDraft(p);
     setNote('');
     try {
       const s = await api.source(p);
+      if (my !== epoch.current) return;
+      // typed while the file was read: that text is newer than the decision to discard
+      if (view.current?.state.doc !== at) return setNote('You typed while the file was loading — nothing was discarded.');
       show(s.text, s.hash, s.hash, false);
     } catch (err) {
-      setProblem((err as Error).message);
+      if (my === epoch.current) setProblem((err as Error).message);
     }
   };
 
