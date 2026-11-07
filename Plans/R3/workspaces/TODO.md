@@ -559,6 +559,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 ## Header layout consistency
 
-- [ ] MW.15 Align page-header first rows with the sidebar header band <a id="MW.15"></a>
+- [x] MW.15 Align page-header first rows with the sidebar header band <a id="MW.15"></a>
+  Integrated CSS source `b4cdd00`; measured 90-cell matrix + 8 targeted empty cells accepted. [Evidence](../QA.md#page-header-top-alignment).
   [Scoped root-cause cohort](../EXECUTION.md#page-header-top-alignment): document/folder/Home/Git/diff/Settings,
   loading/error/empty, sidebar on/off and narrow; measured boxes/crops, no hierarchy/authority/layout redesign.

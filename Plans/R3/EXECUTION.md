@@ -1823,7 +1823,7 @@ No live reload/service/session/provider/ACL/push/publish/deploy/version action.
 
 ## Shared page-header top alignment — 2026-11-07 {#page-header-top-alignment}
 
-- [ ] MW.15 Align the first header row across page wrappers
+- [x] MW.15 Align the first header row across page wrappers
   Base `35575900c4c606f5928dc41de89dfe585de9aa65`, target `main`; CTO owns scope/integration,
   W2 author `.scratch/worktrees/r3-top-inset-ui`, branch `r3/top-inset-ui`; code path `src/styles/app.css` only.
   Explicit owner screenshots: live document `/ai-agent-bus/CHANGELOG.1.0.md` and folder `/ai-agent-bus/`.
@@ -1859,3 +1859,17 @@ No live reload/service/session/provider/ACL/push/publish/deploy/version action.
   No permission/data/source policy change, dependency/version bump, live/service/session reload, provider/ACL,
   push/publish/deploy. Live inspection read-only for owner URLs; other states scratch AB off to avoid old-settings connect.
   Availability: W2 confirmed available, actual Kitty 5h 68%, weekly 51% remaining (own readout unavailable); W3 idle.
+
+
+## Shared page-header alignment accepted — 2026-11-07
+
+[№MW.15](workspaces/TODO.md#MW.15) done: author/reviewed source `b4cdd006971c9fdf3f2011585cd79e081fc841f6`,
+integrated source checkpoint `edabbe30ef5ac8fcba2b746ca5cc41eee69ad24f`; exact runtime source identity confirmed.
+CSS-only, one shared 41px band; 90-cell before/after geometry gate + targeted 8 empty cells PASS;
+first loading-size measurement failure was a rotating-rectangle harness error, retained and corrected only there.
+CTO nonauthor diff review PASS and before/after crops inspected. First-row main-relative centre 20.5px;
+crumb-to-title box gap 4px, horizontal/bottom/max-width preserved; spinner 15px circle and gear aligned.
+No full/types/unit duplicate; no permission/source/controller or dependency change. [Evidence](QA.md#page-header-top-alignment).
+Live owner document/folder were inspected read-only, never patched/reloaded; old live badge/bundle not conflated.
+Owner broader navigation/UX/data-ownership backlog preserved, no implementation expansion or new owner question.
+No live reload/service/session/provider/ACL/push/publish/deploy/version action; workers idle after checkpoint.

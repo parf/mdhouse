@@ -829,3 +829,58 @@ no synthetic appBaseline or dormant production Viewer branch. Configured/effecti
 Parent [№MW.12](workspaces/TODO.md#MW.12) stays open; this is an accepted Workspace presentation checkpoint.
 [UX reference](../UX.md) retained without inferring permission to restyle brand/remove access/security confirms.
 No live reload/service/session/provider/ACL/push/publish/deploy/version action.
+
+
+## Shared page-header top alignment {#page-header-top-alignment}
+
+[№MW.15](workspaces/TODO.md#MW.15), base `35575900c4c606f5928dc41de89dfe585de9aa65`;
+W2 exact author source `b4cdd006971c9fdf3f2011585cd79e081fc841f6`, integrated source checkpoint
+`edabbe30ef5ac8fcba2b746ca5cc41eee69ad24f`. Source/test/scripts/package/lock identity verified;
+code delta is only `src/styles/app.css` (+17/−9). Backend/app/UI logic, policy, source, dependencies and version unchanged.
+Owner navigation brainstorm backlog retained; broad [№MW.13](workspaces/TODO.md#MW.13) is not claimed completed.
+
+### Reproduction and cause
+
+Read-only actual owner URLs: `http://md/ai-agent-bus/CHANGELOG.1.0.md` and `http://md/ai-agent-bus/`.
+CTO computed boxes: sidebar head y0/h41/padding7px8px; brand y9.5/h21, centre20;
+doc crumbs y22/h18, title y44/h33; folder h1 y24/h33, main y0. Viewport/scroll explicit in tool transcript.
+W2 live 1280/390 light/dark matched. Live old bundle/RW indicator is known; no live source change or reload performed.
+Root cause: independent wrapper padding 22/24/40, partial mobile 16 overrides, topstrip 38 vs sidebar 41;
+not a title-font or content problem. Fix centres each first row in existing sidebar's 41px band, rather than
+forcing breadcrumb and later title onto one line. Sidebar-off strip shares the same metric.
+
+### Proportional native geometry gate
+
+W2 artifacts under
+`/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`:
+
+- Initial audit: `pad-measure-run1.log`, `pad-measure/` live top 140px crops;
+  `pad-audit-run1.log`, `pad-audit/rows.json` and top 130px crops. No source edits during audit.
+- One before/after matrix on actual scratch smokes, AB off, scroll 0: 10 states × 1280/700/390 × compact/open/off = 90 cells.
+  `pad-before-run1.log`, `pad-after-run1.log`, `pad-before/rows.json`, `pad-after/rows.json`;
+  compare script/log `pad-compare-run1.log` retains original 9 failures: spinner's animated getBoundingClientRect
+  measured the rotated square (~20.5px) instead of intrinsic 15px. Centre already passed.
+  Only loading cells remeasured with offsetWidth/offsetHeight: `pad-before-loading-run2.log`,
+  `pad-after-loading-run2.log`; `pad-compare-run2.log` ALL PASS 90. No production fix hidden behind a rerun.
+- States: doc, nested doc, doc diff, root folder, subfolder, Git, Home, Settings, error, loading (9 cells each).
+  Before main-relative row centres 31/33.3/40.5/33/52.8/47.5 wide, varied 25/27.3/32.5/40.5/52.8 narrow;
+  after 20.5 in all fixture cells. Side header 41 / brand 20 unchanged; strip 38→41, brand 18→19.5–20,
+  sidebar-off main.top 41 and content centre 61.5. Difference against sidebar brand ≤1px.
+- Doc title centre 60.5→61.5 for one crumb (deliberate hierarchy), nested 65→61.5, narrow 54.5→61.5.
+  Crumb-to-title box gap 4→4, wrapper x/width/side and bottom padding/max-width/title x/gear x unchanged;
+  no horizontal scroll. Wrapping grows naturally, never clipped solely to enforce a centre.
+  Spinner intrinsic 15×15 / radius 50% remains intact, centre 20.5; notice gear centre 20.5.
+- Relevant crops: `pad-after/` includes 1280/390 light/dark, 700/open light; `pad-pairs/wide.png` before/after
+  doc-light/folder-dark/error-dark/subfolder-light, `pad-pairs/narrow.png` doc 390/off/dark and Settings 390/light.
+  CTO viewed both sheets and confirmed first-header alignment while title hierarchy remains separate.
+- Targeted empty states only, no 90-cell repeat: `pad-empty.ts`, `pad-empty-{before,after}-run1.log`,
+  `pad-empty-{before,after}/rows.json`, `pad-empty-compare-run1.log` ALL PASS 8.
+  Empty Favorites `/repo/?git=favs` and actual root with only notes.txt `/empty/`, widths 1280/390,
+  compact/off, light/dark crops. First h1 centre 40.5/32.5→20.5, horizontal geometry unchanged;
+  heading→metadata→empty order preserved, narrow wrapped header grows without overlap.
+  Transient `mdhouse / Pick a file` notice has no stable URL; no app-state injection was used.
+  Structural coverage is the same first h2 notice rule proved by error cases; do not claim native traversal of that transient state.
+
+CTO nonauthor exact-diff review PASS for the CSS-only cohort. No full suite/types/unit mirror tests were run;
+compiled real-page visual/native matrix is the proportional gate. No live Settings connection checks (scratch AB off).
+No new navigation/brand/source/access/control semantics, provider action, service/session/live reload, push/publish/deploy/version bump.
