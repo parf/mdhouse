@@ -1643,3 +1643,71 @@ No install/RAG/provider lifecycle/control API or live connectivity implied. No l
 provider/ACL/push/publish/deploy/version actions. W3 idle; retain frozen artifacts and Codex reserve.
 Next approved priority: fact-based ready-made Markdown editor selection, then bounded integration scope;
 RAG documents-only enduser and independent Dev/AI Code+Docs corpora remain design-only.
+
+
+## Ready-made full-source editor cohort — 2026-11-07 {#full-source-editor-cohort}
+
+- [ ] MW.5.1 Integrate CodeMirror 6 with atomic raw-source editing
+  Base `1e630e25a0f7b02202bb0dc5226c5459f23b6faf`, target `main`, owner CTO.
+  Approved [№MW.5](workspaces/TODO.md#MW.5)/[№EDIT-W2](workspaces/DECISIONS.md#EDIT-W2): integrate a ready-made
+  editor, no custom editor engine. Scope recorded before any code/dependency edits.
+  W2 primary-source selection: CodeMirror 6 ESM/MIT, native mobile editing, plain-text document model,
+  Bun/Preact DOM adapter, style injection compatible with current CSP. Exact-pin minimal state/view/commands/
+  language/lang-markdown packages; avoid all-in-one autocomplete/lint/WYSIWYG serializers and workers.
+  Current registry versions reported 2026-11-07: state 6.7.6, view 6.43.15, commands 6.11.1,
+  language 6.13.1, lang-markdown 6.5.2. Verify exact resolved versions and one state instance at installation.
+  Size reports from npm are unpacked package sizes, not browser bundle; measure actual built/minified delta.
+  Prefer a lazily imported editor chunk if the existing Bun HTML bundle serves it; measure rather than invent size.
+  License source: [CodeMirror](https://codemirror.net/), [MIT text](https://github.com/codemirror/dev/blob/main/LICENSE).
+  [Guide](https://codemirror.net/docs/guide/) describes DOM/ESM/styles; current upstream is
+  [Forgejo](https://code.haverbeke.berlin/codemirror), not archived GitHub mirrors:
+  [maintainer migration announcement](https://discuss.codemirror.net/t/codemirrors-migration-to-forgejo/9706).
+  W2 verified post-migration September/October releases and repository URLs from npm registry.
+  Alternatives: [Monaco FAQ](https://github.com/microsoft/monaco-editor#faq) explicitly excludes mobile browsers;
+  Ace is BSD-3-Clause but no comparable documented mobile fit was established. No package installed during selection.
+
+  W1 backend: `.scratch/worktrees/r3-full-editor-backend`, branch `r3/full-editor-backend`;
+  `src/server.ts`, new pure `src/lib/source.ts`, `test/doc-source.test.ts`, authz inventory test only as required.
+  W2 UI/dependencies: `.scratch/worktrees/r3-full-editor-ui`, branch `r3/full-editor-ui`;
+  `src/ui/DocEditor.tsx`, `src/ui/edit-source.ts`, `src/ui/Doc.tsx`, `src/ui/api.ts`, minimal app props/styles,
+  exact pinned dependency additions in `package.json`/`bun.lock`, focused source/draft helpers tests.
+  No version bump. CTO shared Plans/QA/CHANGELOG; each author owns code/test commits, W3 idle.
+
+  Critical verified code fact: existing doc.contentHash hashes legacy-converted readDoc text, not raw bytes.
+  It must not be the full-source stale key. GET `/api/source?p=<root>/<rel>` returns one atomic read snapshot
+  `{text,hash,writable,reference?}`, raw byte SHA-256, no-store; no legacy conversion or separate hash fetch.
+  Strict fatal UTF-8 decoder with ignoreBOM:true preserves BOM; valid replacement characters remain valid.
+  Invalid UTF-8 returns 422 reason encoding, over existing 5,000,000-byte cap returns 413.
+  Existing `.md`/jail/inGitDir checks, folder/non-Markdown/escape fail 404, admission unchanged.
+  POST `/api/source` accepts exactly `{p,hash,text}`, doc-write family; same-origin → strict body → resolve/.md →
+  RO/reference refusal → queueWrite(canonical abs) → re-read raw hash → 409 stale → Registry.writeFile verbatim.
+  Final Registry rechecks current writable/path/reference. No actToken needed for app-chrome Save;
+  authored source never creates action controls. IO errors generic, atomic writer keeps old bytes/mode on failure.
+  New source hash returned on success; no raw provider or external service. No current text/draft in 409 response.
+
+  UI: explicit in-app Edit only for Markdown/current live RW/non-reference. CodeMirror renders source as text;
+  no Markdown serializer/reformatting. Preserve LF/CRLF, BOM, final newline and legacy syntax; mixed endings must
+  be preserved or explicitly unsupported, never silently normalized. Unsupported encoding/size leaves reader usable.
+  Save/Ctrl+S, Close (keeps draft), explicit Discard with confirmation; memory + guarded localStorage per-document
+  draft/base hash, quota/unavailable storage never loses memory. Unsaved dirty beforeunload warning only while needed.
+  Navigation/reload restores draft. Clean editor follows file changes; dirty editor keeps text and shows changed-on-disk.
+  Stale/IO keeps draft; Copy and explicit Discard/load-current suffice, no new merge/draft-diff engine.
+  Live RW→RO/root removal disables editing/save while retaining text; RO/ref direct save still refuses server-side.
+  After successful save, existing watcher/WS and document diff/history/commit UI are reused; no new Git operation.
+
+  Acceptance: whole document edit/save and normal diff/history/commit journey on scratch; exact raw-source roundtrip
+  CRLF/LF/BOM/no-final-newline/legacy forms; invalid encoding/oversize handled without mutation; missing/wrong schema,
+  extra fields, cross-origin, configured admission, .git/symlink escape/non-Markdown/folder refusals; stale concurrent
+  edit and queued task/source competition with no lost update; IO refusal byte preservation; passive authored HTML.
+  Native real CodeMirror typing/selection, draft close/navigation/reload, stale draft retained, RW→RO and direct denial,
+  light/dark, narrow390 and touch/iPad viewport, emulated composition. Physical iOS/IME coverage limits explicit.
+  One combined proportional gate/types on frozen backend/UI/dependency cohort, author focused/fail-first artifacts retained;
+  meaningful native scratch proof and pinned exact-SHA independent security review with explicit allowed tests/exits.
+  No broad/full duplicates; material fixes get new target/verdict. Evaluate full parent acceptance honestly after integration.
+
+  Capacity current screens: W1 Claude 5h87%, weekly51% remaining; W2 account2 5h88%, weekly55% remaining.
+  Both available; their own usage readouts unavailable. OpenCode available after AB review; reserve one pinned review.
+  CTO screen now reports weekly100% (previous2% display changed; no provider-side cause inferred), short unavailable.
+  W3 stays idle per owner coordination. No live reload/service/session/provider/ACL/push/publish/deploy/release actions.
+  RAG remains design-only two independent corpora (enduser Docs, Dev/AI Code+Docs); no provisioning/ingestion/paid calls.
+  Automations remain AgentBus Cron/At backlog/design, no scheduler or live jobs.
