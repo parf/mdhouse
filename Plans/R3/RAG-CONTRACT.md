@@ -1,6 +1,7 @@
 # RAG — requirements and open questions
 
 Research and proposed two-corpus architecture: [RAG research](RAG-RESEARCH.md). Proposals remain design-only.
+Delivered static capabilities, integration gaps and proposed per-corpus pilots: [capability/pilot design](RAG-PILOTS.md). No execution authorized.
 
 Current owner direction: implementation deferred. Design two independent indexes: end-user documents only, and a shared developer/AI-agent code-and-documentation index. Preserve repository/revision identity and access boundaries. Historical provider setup below does not supersede this direction. See [№RAG-W2](workspaces/DECISIONS.md#RAG-W2).
 

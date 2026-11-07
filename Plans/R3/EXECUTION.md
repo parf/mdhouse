@@ -1732,7 +1732,7 @@ RAG stays design-only Docs and independent Dev/AI Code+Docs corpora; automations
 
 ## Two-corpus RAG capability/pilot design — 2026-11-07 {#rag-capability-pilot-design}
 
-- [ ] MW.2a.2 Compare delivered capabilities and propose independent corpus pilots
+- [x] MW.2a.2 Compare delivered capabilities and propose independent corpus pilots
   Base `f6cf6e0c29048b1b641b1eb91822b0da3f613333`, target `main`, CTO owns design document/status.
   Owner direction [№RAG-W2](workspaces/DECISIONS.md#RAG-W2), [research](RAG-RESEARCH.md): design only,
   independent end-user Docs and shared Dev/AI Code+Docs knowledge corpora; no custom symbol-engine prerequisite.
@@ -1749,3 +1749,17 @@ RAG stays design-only Docs and independent Dev/AI Code+Docs corpora; automations
   Cron/At job, custom scheduler, service/session/reload/push/publish/deploy/release action.
   Current Kitty: W1 default Claude 5h82%, weekly50%; W2 second account 5h82%, weekly54% remaining;
   both idle/available for bounded read-only work. W3 idle, Codex retained for coordination.
+
+
+## Two-corpus RAG design delivered — 2026-11-07
+
+[№MW.2a.2](workspaces/TODO.md#MW.2a.2) done: [capability matrix and pilot proposals](RAG-PILOTS.md).
+Source inspection mdhouse `f6cf6e0`, local provider `36777189` / RAG 0.4.2; historical receipts and unverified runtime
+kept separate. W1 read-only fact review corrected negative fixtures into a separate folder (whole-root preflight),
+exact preflight capabilities/health wording, strict exclusion sets and shared-model/limit implications.
+Two independent logical corpora retained: end-user Docs and shared Dev/AI Code+Docs, not a special symbol engine.
+Neither pilot was executed; proposed Code+Docs is blocked on the existing Markdown-only adapter/decoder.
+Separate instance isolation is a proposed option for untrusted callers, not a silently adopted deployment choice.
+No external source/provider/API/status calls, fixtures, code/dependencies, paid work or live schedules/actions.
+Only document/link/source-claim checks applied; no unnecessary test/security gate for prose. Parent RAG lifecycle
+remains open and implementation deferred. No new owner decision or provisioning request.
