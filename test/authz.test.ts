@@ -114,6 +114,8 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/api/qa', 'GET', null],
   ['/api/qa', 'POST', 'doc-write'],
   ['/api/insert', 'POST', 'doc-write'],
+  ['/api/source', 'GET', null],
+  ['/api/source', 'POST', 'doc-write'],
   ['/api/admin', '*', null],
   ['/api/admin/session', 'POST', 'admin-session'],
   ['/api/admin/logout', 'POST', 'admin-session'],

@@ -14,6 +14,7 @@ import { ProjectDirError, Registry, ReadOnlyError, type AccessMode, type Resolve
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
+import { SOURCE_MAX, sourceHash, sourceOf } from './lib/source';
 import { Prefs, MARKS, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
 import { gitStateIn, parseReveal, Store } from './lib/store';
 import { isExplicitlyDenied } from './lib/ignore';
@@ -772,6 +773,65 @@ export async function serve(opts: ServeOptions) {
             return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
           }
           return json({ ok: true, line: result.line });
+        }),
+      },
+
+      /**
+       * A Markdown document's whole source, for the editor. GET `?p=`: one read of its bytes — the text
+       * (strict UTF-8, a BOM kept) and their SHA-256; bytes that are not UTF-8 are 422 `encoding`, more
+       * than `SOURCE_MAX` 413. POST `{p, hash, text}` only: writes `text` verbatim — no legacy
+       * conversion — while the file's bytes still hash to `hash`, else 409 `stale`, the reason only.
+       * The final write rechecks the path and write access (`Registry.writeFile`).
+       */
+      '/api/source': {
+        GET: async (req) => {
+          const loc = await docAt(new URL(req.url).searchParams.get('p') ?? '');
+          if (!loc || inGitDir(loc.rel)) return fail(404, 'not a document');
+          // one read, of at most one byte past the cap
+          const raw = await Bun.file(loc.abs).slice(0, SOURCE_MAX + 1).bytes().catch(() => null);
+          if (!raw) return fail(404, 'not a document');
+          if (raw.length > SOURCE_MAX) return fail(413, 'the document is too large to edit here');
+          const src = sourceOf(raw);
+          if ('error' in src) return noStore(json({ error: 'the document is not UTF-8 — it cannot be edited here', reason: 'encoding' }, 422));
+          return noStore(json({ ...src, writable: registry.writableAt(loc), ...(registry.inReference(loc.abs) ? { reference: true } : {}) }));
+        },
+        POST: mutation('doc-write', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort() : [];
+          const { p, hash, text } = (body ?? {}) as { p?: unknown; hash?: unknown; text?: unknown };
+          if (
+            keys.join() !== 'hash,p,text' ||
+            typeof p !== 'string' ||
+            !p ||
+            typeof hash !== 'string' ||
+            !/^[0-9a-f]{64}$/.test(hash) ||
+            typeof text !== 'string' ||
+            !text.isWellFormed()
+          ) {
+            return fail(400, 'expected exactly {p, hash, text}');
+          }
+          const data = new TextEncoder().encode(text);
+          if (data.length > SOURCE_MAX) return fail(413, 'the text is too long');
+          const loc = await docAt(p);
+          if (!loc || inGitDir(loc.rel)) return fail(404, 'not a document');
+          if (!registry.writableAt(loc)) return readOnly(loc, 'edit it');
+          const stale = () => json({ error: 'the file changed since it was opened', reason: 'stale' }, 409);
+          try {
+            return await queueWrite(loc.abs, async () => {
+              // Read once, in the queue: still this document, still the bytes the editor started from.
+              const now = await docAt(p);
+              if (now?.abs !== loc.abs) return stale();
+              const current = await Bun.file(loc.abs).bytes().catch(() => null);
+              if (!current || sourceHash(current) !== hash) return stale();
+              await registry.writeFile(p, data);
+              return json({ hash: sourceHash(data) });
+            });
+          } catch (err) {
+            if (err instanceof ReadOnlyError) return readOnly(loc, 'edit it');
+            console.error(err);
+            return fail(500, 'the document could not be saved — it is unchanged');
+          }
         }),
       },
 
