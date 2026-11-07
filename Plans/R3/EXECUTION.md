@@ -1220,3 +1220,42 @@ Parent [№MW.0g](workspaces/TODO.md#MW.0g) stays open. Next dependent scope is 
 editing atop this boundary; Team/OAuth, remote/headless bootstrap, other mutation-family activation,
 mode migration and [№Q-R3-ADMIN1](workspaces/QUESTIONS.md#Q-R3-ADMIN1) remain separate.
 No live reload, push, publish, deployment, version bump, provider/ACL changes or full-suite rerun.
+
+
+## Optional Project name cohort — selected 2026-11-06 {#optional-project-name-cohort}
+
+- [ ] MW.1a.1 CLI, Settings and existing UI display names
+  Parent [№MW.1a](workspaces/TODO.md#MW.1a); contract [№DIR-W3](workspaces/DECISIONS.md#DIR-W3).
+  Base `34b4e9978f065ed0a7b381841e6152c888e4afd2`, target `main`; no version/deploy/live authority.
+  Product outcome: optional human labels configured by OS-owner CLI or browser administrator, with canonical path
+  still visible; identity, filesystem paths, root IDs, URLs, views, marks and effective access unchanged.
+  W1 owns backend/CLI/control/prefs in `.scratch/worktrees/r3-project-name-backend`, branch `r3/project-name-backend`:
+  `src/lib/project-name.ts`, `src/lib/prefs.ts`, `src/lib/roots.ts` only if necessary, `src/lib/control.ts`,
+  `src/server.ts`, `src/cli.ts`, focused backend tests, `doc/cli.md`, `doc/prefs.json.dist`.
+  W2 owns browser display/editor in `.scratch/worktrees/r3-project-name-ui`, branch `r3/project-name-ui`:
+  `src/app.tsx`, `src/ui/RootSelect.tsx`, `src/ui/Settings.tsx`, `src/ui/api.ts`, `src/ui/Sidebar.tsx`,
+  `src/ui/Home.tsx`, `src/ui/DirPage.tsx`, `src/ui/format.ts`/project helpers, necessary styles/focused tests.
+  CTO owns shared Plans, QA and CHANGELOG. Shared logical helpers/interfaces are coordinated before writes.
+  API seam: POST `/api/roots/name {id, name}` accepts only these fields, family `root-admin`, existing same-origin
+  and verified administrator guard; unknown root 404, immutable reference 403. Empty name resets. Response safe root data.
+  Root payload `name` is effective label, optional `customName` is the override, path and ID remain canonical/stable.
+  Names are trimmed, at most 80 UTF-16 units, rendered as text; reject non-string, control and bidi-override inputs
+  without saving or changing privileges. Duplicate labels are valid; chooser disambiguates them with visible path context.
+  CLI `--name` requires one explicit directory, works on cold start and running control handoff, `reset` clears;
+  zero/multiple directories and incompatible removal reject before config/root mutation. Renaming never implies RW/save.
+  Persistence dependency [№Q-R3-NAME1](workspaces/QUESTIONS.md#Q-R3-NAME1) is routed to CEO before implementation;
+  independent normalization/UI/identity work may proceed. No invented saved/session lifetime.
+  Acceptance: CLI set/reset and administrator Settings set/reset update existing chooser, project/home/document headings,
+  Settings and tab labels live across open tabs without new tree/content rendering; canonical path remains accessible.
+  Acceptance: absent old prefs, malformed metadata, duplicate labels, normalization/length, canonical symlink aliases,
+  saved/session lifetimes per the answered contract, missing/revoked/stale/spoofed admin, cross-origin and reference
+  requests preserve root identity, marks/views/access and refuse unknown config fields without partial mutation.
+  Dependencies: accepted [№MW.0g.2b](workspaces/TODO.md#MW.0g.2b); no RW/save/AB endpoint editing or mode changes.
+  Agent Bus control inventory is absent and remains [№MW.7](workspaces/TODO.md#MW.7); no fake inventory or full
+  [№MW.1a](workspaces/TODO.md#MW.1a) completion claim. Existing safe control root listings may show the label.
+  Verification: author commits, one combined proportional focused/types gate, real scratch browser light/dark/compact
+  label/identity/stale-denial proof and pinned exact-SHA nonauthor config/control security review before integration.
+
+Capacity verified from actual mdhouse screens: W1 default Claude 5h 66% (~55m), weekly 55% (~5d21h);
+W2 account 2 5h 57% (~1h15m), weekly 58% (~5d12h); both idle. Shared Codex weekly 7% per CEO:
+reserve W3/coordination capacity. OpenCode remains at an observed hard usage limit; no review retry before reset.
