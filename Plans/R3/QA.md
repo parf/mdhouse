@@ -483,7 +483,7 @@ Remaining: absent Agent Bus control inventory ([№MW.7](workspaces/TODO.md#MW.7
 [№MW.1a](workspaces/TODO.md#MW.1a) stays open. Cross-browser/real-device release QA remains unverified.
 
 
-## Existing-project explicit save — candidate {#existing-project-explicit-save}
+## Existing-project explicit save — integrated slice {#existing-project-explicit-save}
 
 [№MW.1.1](workspaces/TODO.md#MW.1.1), code candidate `533513a5dc41224c4f4121f0b98f3406a8815384`.
 W1 backend `2a2c5bc`, W2 UI `5f154b3`, combined without conflicts. Dependency check is in
@@ -507,6 +507,31 @@ pre-rename IO and future-version failures preserve disk, process memory, runtime
 No production test-only lock export. Saved mode never promotes automatic write access to an explicit grant.
 W2 author UI proof used mocked root/save routes (other admin paths real), 13/13 cases; it does not establish
 real-backend acceptance. Its initial input-after-dialog harness failures are retained in `save-ui-run*.log`.
-Native combined browser proof and pinned independent review remain pending. No live/service/session actions,
+Native combined browser proof and pinned independent review completed below. No live/service/session actions,
 full-suite duplicate, version bump, provider/ACL or publication action. Parent [№MW.1](workspaces/TODO.md#MW.1)
 and [№MW.0h](workspaces/TODO.md#MW.0h) remain open.
+
+
+Accepted [№MW.1.1](workspaces/TODO.md#MW.1.1): exact nonauthor CEO PASS on
+`ad7b5fc1abfceaa2c138ac950ab2d80e7b3fb61e`, base `b968f06`; three allowed project-save/prefs/authz paths
+53/0, original exit 0, full output/verdict in `r3-project-save-review/.scratch/ceo-save-review/`.
+EACCES/newer-version stack output is expected negative-path evidence, not a hidden test failure.
+Fast-forward integration into main preserves exact reviewed/tested source identity.
+
+Native proof on exact `ad7b5fc`: 20/20 PASS, true backend, no response mocks. Three RO/explicit RW/auto-only
+confirmations show canonical Folder/Name/Access; three cancels send no POST. Save transfers `Read Only Notes`,
+removes saveRev/unsaved badge, shows plain saved text and updates another Settings tab. Natural stale revision
+(created by blocking only the observing tab's roots GET while CLI renames) refuses 409 without saving;
+refresh and a new confirmation succeeds. Auto-only remains configured RO and conditionally writable by auto.
+Explicit RW stays explicit RW. CLI revoke before accept refuses 401, leaves the root unsaved and disables save.
+Document tab retains URL/title/body node, zero body mutations, identical metadata/body/views/marks and root IDs;
+only roots metadata is requested. Backend tests establish restart persistence and IO/future-version/lock behavior.
+
+Artifacts in W2 scratchpad
+`/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`:
+`save-native.log`, `save-native-run1.log`, `save-native-run2.log`, `save-native.ts`, `save-native/*.png`.
+Initial harness run1 could not capture a background target; bringToFront precedes capture. Run2 narrow framing
+missed Kept; final capture scrolls it into view. Both failed harness runs are retained, not counted as product PASS.
+CTO inspected ready `5-narrow-unsaved-light.png` and `5-narrow-saved-dark.png`; light/dark counterparts retained.
+All own smoke groups stopped cleanly. Cross-browser/real-device release QA remains open, as do the broader
+[№MW.1](workspaces/TODO.md#MW.1)/[№MW.0h](workspaces/TODO.md#MW.0h) mode and installation work.

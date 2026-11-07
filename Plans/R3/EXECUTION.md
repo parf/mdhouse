@@ -1295,7 +1295,7 @@ and preserve Codex for coordination/review; no further heavy assignment started.
 
 ## Existing-project explicit save — selected 2026-11-06 {#existing-project-explicit-save}
 
-- [ ] MW.1.1 Confirm and save an already served session project
+- [x] MW.1.1 Confirm and save an already served session project
   Base `b968f06ca1bb942661e6d6d16a2e38ab2b6433d3`, target `main`; parent [№MW.1](workspaces/TODO.md#MW.1).
   Contracts: [№DIR-W1](workspaces/DECISIONS.md#DIR-W1), [№Q-R3-NAME1](workspaces/DECISIONS.md#Q-R3-NAME1),
   accepted [№MW.0g.2b](workspaces/TODO.md#MW.0g.2b). Product outcome: administrator confirms `[unsaved]`
@@ -1354,3 +1354,23 @@ W2 may now implement the small Settings/API portion without a second heavy workl
 UI clarification: saved projects use plain descriptive text, no saved badge; Saved/This session list groups
 remain. Disable explicit save while the name draft differs from the current stored/session name, avoiding
 blur-save races. Confirmation says project files remain unchanged, not that prefs storage is untouched.
+
+
+## Existing-project explicit save accepted — 2026-11-06
+
+[№MW.1.1](workspaces/TODO.md#MW.1.1) done: exact reviewed
+`ad7b5fc1abfceaa2c138ac950ab2d80e7b3fb61e` fast-forward integrated into `main`; source/test/doc/script identity verified.
+W1 `2a2c5bc`, W2 `5f154b3`; shared scope/dependency check preceded implementation. No new owner choice was needed:
+save preserves the existing configured flag and conditional auto policy, not future mode/default behavior.
+Combined impacted gate 166/0 + types exit 0, nonauthor CEO exact security PASS with 53/0 on only the three
+assigned paths. Full review evidence: `.scratch/worktrees/r3-project-save-review/.scratch/ceo-save-review/`.
+W2 true-backend native acceptance 20/20 on the exact candidate, with no response mocks and clean safe-smoke
+teardown: confirm/cancel for RO/RW/auto-only, session name transfer, stale confirmation/reconfirm, revoked admin,
+multiple tabs, unchanged IDs/URL/title/body/node/metadata/marks/views, ready light/dark/390px. CTO inspected
+unsaved/saved compact screenshots and full logs. [Artifacts and initial failures](QA.md#existing-project-explicit-save).
+Private Prefs prerequisite now installs detached candidates only after successful durable write; no grants,
+marks policy, storage format or recovery-policy changes. Negative/mutation tests cover failure and fresh lock/admin guards.
+Parent [№MW.1](workspaces/TODO.md#MW.1), [№MW.0h](workspaces/TODO.md#MW.0h), RW toggles/defaults/profile/Viewer
+migration, root add, AB endpoint and Team/OAuth remain open. Existing CLI flag semantics retained.
+No live/service/session actions, push/publish/deploy, provider/ACL changes, version bump or duplicated full suite.
+Authors' scoped assignments completed; no new task started. Codex reserve preserved, W3 idle.
