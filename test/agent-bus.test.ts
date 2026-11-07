@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { adminLogin } from './admin-login';
 import { abTargets, AgentBus, badPatterns, isAlive, passes, ownName, requestText, validTarget, type AbEvent, type Envelope } from '../src/lib/agent-bus';
 
 /**
@@ -252,8 +253,9 @@ describe('agent bus — routes', () => {
     const port = 61796;
     const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
     const at = (path: string) => `http://127.0.0.1:${port}${path}`;
+    let cookie = '';
     const post = (path: string, body: unknown, origin = at('')) =>
-      fetch(at(path), { method: 'POST', headers: { 'content-type': 'application/json', origin }, body: JSON.stringify(body) });
+      fetch(at(path), { method: 'POST', headers: { 'content-type': 'application/json', origin, cookie }, body: JSON.stringify(body) });
     const send = { p: `${id}/a.md`, targets: ['#claude/a@h'], action: 'updated' };
     try {
       expect(await (await fetch(at('/api/ab'))).json()).toEqual({ enabled: false });
@@ -270,6 +272,11 @@ describe('agent bus — routes', () => {
       expect(typeof ((await ok.json()) as { job: string }).job).toBe('string');
       expect((await (await fetch(at(`/api/doc?p=${id}/a.md`))).json()).ab).toEqual(['#claude/a@h']);
 
+      // the settings writes need an administrator session; Agent Bus sends do not
+      const filterBefore = [...prefs.agentBus.filter];
+      expect(await (await post('/api/ab/filter', { lines: ['^x'] })).json()).toEqual({ error: 'administrator session required', reason: 'admin' });
+      expect(prefs.agentBus.filter).toEqual(filterBefore);
+      cookie = await adminLogin(port);
       expect((await post('/api/ab/filter', { lines: ['^claude', '('] })).status).toBe(400);
       expect((await post('/api/ab/filter', { lines: [' ^claude ', ''] })).status).toBe(200);
       expect(prefs.agentBus.filter).toEqual(['^claude']);

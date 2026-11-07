@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
+import { adminLogin } from './admin-login';
 
 let base: string;
 
@@ -53,9 +54,11 @@ test('/api/roots: the allowlisted project fields, with why a project is writable
     expect(off.auto!.writableBy).toBeUndefined();
     expect(off.rw).toMatchObject({ writable: true, writableBy: 'rw' });
 
-    // reading grants nothing: reference material still cannot be removed
-    const remove = await fetch(`http://127.0.0.1:${port}/api/roots/remove`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: '_ref' }) });
-    expect(remove.status).toBe(403);
+    // reading grants nothing: removal needs an administrator, and reference material stays even for one
+    const remove = (cookie = '') =>
+      fetch(`http://127.0.0.1:${port}/api/roots/remove`, { method: 'POST', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify({ id: '_ref' }) });
+    expect((await remove()).status).toBe(401);
+    expect((await remove(await adminLogin(port))).status).toBe(403);
     expect(Object.keys(await roots())).toContain('_ref');
   } finally {
     server.stop(true);

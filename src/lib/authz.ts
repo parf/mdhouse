@@ -1,9 +1,10 @@
 /**
- * Mutation families and the request actor — the classification a future authority check reads.
+ * Mutation families and the request actor.
  *
- * Dormant: nothing here grants, denies or changes a response. `serve()` registers every route
- * through `read()`, `bundle()` or a method map whose writes are `mutation()`, and refuses to start
- * on anything else, so no route can be added without a classification.
+ * `serve()` registers every route through `read()`, `bundle()` or a method map whose writes are
+ * `mutation()`, and refuses to start on anything else, so no route can be added without a
+ * classification. `instance-config` and `root-admin` writes require an administrator actor; the
+ * other families are classified only.
  */
 
 /** What a write changes. `flow` and `control` have no HTTP route yet; the control socket is OS-owner only. */
@@ -18,12 +19,17 @@ export const FAMILIES = [
   'shared-prefs', // per-root marks shared by every browser
   'flow', // flow runs
   'control', // process lifecycle and root changes over the control socket
+  'admin-session', // browser-administrator session exchange and logout
 ] as const;
 export type Family = (typeof FAMILIES)[number];
 
+/** Families whose every HTTP write requires an administrator actor. */
+export const ADMIN_FAMILIES: ReadonlySet<Family> = new Set<Family>(['instance-config', 'root-admin']);
+
 /**
- * Who makes a request. Nothing builds one yet. `user` is an immutable provider ID from an
- * authenticated session — never the author cookie, a body field or a display name.
+ * Who makes a request. `admin` comes only from a verified administrator session cookie — never
+ * Basic admission, an address, the author cookie, a body field or a display name. `user` is an
+ * immutable provider ID from an authenticated session; nothing sets it yet.
  */
 export interface Actor {
   readonly admin: boolean;

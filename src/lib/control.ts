@@ -10,8 +10,10 @@
  * endpoint simply do not exist here.
  */
 
-import { chmodSync, existsSync, readdirSync, unlinkSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, readdirSync, unlinkSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import type { AdminSessionInfo } from './admin-session';
 import { CONFIG_DIR } from './prefs';
 
 export interface AddRequest {
@@ -73,11 +75,28 @@ export interface PingReply {
   stop?: string;
 }
 
+/** A browser-administrator bootstrap: the proof and the local address that exchanges it. */
+export interface AdminMintReply {
+  proof: string;
+  expiresAt: number;
+  /** `http://<loopback>:<port>` — the only origin whose exchange the daemon accepts. */
+  url: string;
+}
+
+/** Browser-administrator operations. Served only while the control transport is private to its owner. */
+export interface AdminHandlers {
+  /** A proof, or `{error}` when this daemon cannot accept a local exchange. */
+  mint: () => AdminMintReply | { error: string };
+  revoke: () => { revoked: number };
+  list: () => AdminSessionInfo[];
+}
+
 export interface Handlers {
   add: (req: AddRequest) => Promise<AddReply>;
   remove: (req: RemoveRequest) => Promise<RemoveReply>;
   ping: () => PingReply;
   exit: () => void;
+  admin?: AdminHandlers;
 }
 
 export function controlPath(port: number): string {
@@ -95,6 +114,41 @@ export function knownPorts(): number[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * Returns why the control transport on `port` is not private to this OS user, or null when it is.
+ *
+ * Private means: the config directory is a real directory owned by this user with no group or
+ * other access; its parent cannot be renamed under it by anyone else (owned by this user or root,
+ * and not group/other-writable unless sticky); the socket, when `socket` is set, is a socket owned
+ * by this user with no group or other access. Without peer credentials, these file modes are what
+ * makes a control caller the daemon's OS owner.
+ */
+export function controlInsecurity(port: number, socket = true): string | null {
+  const uid = process.getuid?.();
+  if (uid === undefined) return 'no OS user ids on this platform';
+  const look = (path: string) => {
+    try {
+      return lstatSync(path);
+    } catch {
+      return null;
+    }
+  };
+  const dir = look(CONFIG_DIR);
+  if (!dir || dir.isSymbolicLink() || !dir.isDirectory()) return `${CONFIG_DIR} is not a directory`;
+  if (dir.uid !== uid) return `${CONFIG_DIR} is owned by another user`;
+  if (dir.mode & 0o077) return `${CONFIG_DIR} is open to other users (chmod 700 it)`;
+  const parent = look(dirname(CONFIG_DIR));
+  if (!parent || !parent.isDirectory()) return `${dirname(CONFIG_DIR)} is not a directory`;
+  if (parent.uid !== uid && parent.uid !== 0) return `${dirname(CONFIG_DIR)} is owned by another user`;
+  if (parent.mode & 0o022 && !(parent.mode & 0o1000)) return `${dirname(CONFIG_DIR)} is writable by other users`;
+  if (!socket) return null;
+  const sock = look(controlPath(port));
+  if (!sock || !sock.isSocket()) return `${controlPath(port)} is not a socket`;
+  if (sock.uid !== uid) return `${controlPath(port)} is owned by another user`;
+  if (sock.mode & 0o077) return `${controlPath(port)} is open to other users`;
+  return null;
 }
 
 /** How long a ping or an exit waits for an answer; an add or a remove may scan a large tree. */
@@ -169,6 +223,29 @@ export async function askRemove(port: number, req: RemoveRequest): Promise<Remov
   return call<RemoveReply>(port, '/remove', req, SLOW_MS);
 }
 
+/** Admin calls go only through a private transport: an impostor socket must not answer them. */
+async function adminCall<T>(port: number, path: string): Promise<T | { error: string } | null> {
+  if (!existsSync(controlPath(port))) return null;
+  const why = controlInsecurity(port);
+  if (why) return { error: `control socket is not private: ${why}` };
+  return call<T>(port, path);
+}
+
+/** A single-use browser-administrator proof from the daemon on `port`. */
+export async function askAdminMint(port: number): Promise<AdminMintReply | { error: string } | null> {
+  return adminCall<AdminMintReply>(port, '/admin/mint');
+}
+
+/** Ends every browser-administrator session and unexchanged proof on `port`. */
+export async function askAdminRevoke(port: number): Promise<{ revoked: number } | { error: string } | null> {
+  return adminCall<{ revoked: number }>(port, '/admin/revoke');
+}
+
+/** The live browser-administrator sessions on `port`, by safe id. */
+export async function askAdminList(port: number): Promise<{ sessions: AdminSessionInfo[] } | { error: string } | null> {
+  return adminCall<{ sessions: AdminSessionInfo[] }>(port, '/admin/list');
+}
+
 /**
  * Ask the daemon on `port` to stop, and wait for its socket to go.
  *
@@ -228,6 +305,17 @@ export async function serveControl(port: number, handlers: Handlers): Promise<{ 
             // problem — the caller is a terminal waiting for an answer, so say what happened.
             return Response.json({ error: (err as Error).message }, { status: 400 });
           }
+        }
+
+        if (pathname.startsWith('/admin/') && handlers.admin) {
+          const why = controlInsecurity(port);
+          if (why) return Response.json({ error: `control socket is not private: ${why}` }, { status: 403 });
+          if (pathname === '/admin/mint') {
+            const reply = handlers.admin.mint();
+            return Response.json(reply, { status: 'error' in reply ? 409 : 200 });
+          }
+          if (pathname === '/admin/revoke') return Response.json(handlers.admin.revoke());
+          if (pathname === '/admin/list') return Response.json({ sessions: handlers.admin.list() });
         }
 
         return Response.json({ error: 'not found' }, { status: 404 });

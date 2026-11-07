@@ -21,6 +21,24 @@ found in the config directory. A systemd service is not stopped through the cont
 command prints the exact `systemctl` command instead.
 
 ```text
+mdhouse admin [--port <n>]
+mdhouse admin --list [--port <n>]
+mdhouse admin --revoke [--port <n>]
+```
+
+Browser administration of the mdhouse on the selected port, over its control socket. Settings
+changes and project removal in the page require an administrator session; Basic users and allowed
+networks only admit.
+
+- `admin` prints a single-use link, valid 60 s, to open in a browser on this machine. Printed only
+  to an interactive terminal; redirected or piped output is refused before a link exists. Nothing
+  is opened, logged or saved. Needs a loopback or any-address `--host` and no `--host-name`.
+- `--list` prints the session ids and expiry times. `--revoke` ends every session and unused link.
+- Sessions live in memory: a restart ends them. Run `mdhouse admin` again.
+- The config directory and socket must be private to you (`chmod 700 ~/.config/mdhouse`), or these
+  commands are refused.
+
+```text
 mdhouse service install [--port <n>]
 mdhouse service uninstall [--port <n>]
 mdhouse service status [--port <n>]
@@ -46,7 +64,7 @@ asks for the password; on non-interactive stdin it reads the first line.
 | `--rw` | The named project directories may be written; with `-p`, save them as writable. |
 | `--rm` | Forget the named projects and stop serving them. With no directory, use the current directory. |
 | `--host <addr>` | Address to bind; default `127.0.0.1`. |
-| `--port <n>` | Port to use; default `7777`. With `exit`, select which mdhouse to stop. |
+| `--port <n>` | Port to use; default `7777`. With `exit` or `admin`, select which mdhouse. |
 | `--allow <cidr,...>` | Allow only these networks and this machine; saved. `reset` allows every address again. |
 | `--host-name <name,...>` | Allow only these Host names; saved. `reset` allows localhost and IP addresses again. |
 | `--auto-rw <path,...>` | Make projects served from under these paths writable when the settings switch is on; saved. `reset` clears the paths. |

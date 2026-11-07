@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * `mdhouse [dir ...] [options]`, `mdhouse exit`, `mdhouse service …` and the access commands.
+ * `mdhouse [dir ...] [options]`, `mdhouse exit`, `mdhouse admin`, `mdhouse service …` and the access commands.
  *
  * By default this process is only a launcher: it starts the real server detached, in its own
  * session, waits until it answers on the control socket, prints where it is, and returns the
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { Registry } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { pageUrl, serve } from './server';
-import { answered, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
+import { answered, askAdminList, askAdminMint, askAdminRevoke, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
 import { ownStopCommand, ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
@@ -24,6 +24,8 @@ const USAGE = `mdhouse — a Markdown workspace on your own machine
   mdhouse [dir ...] [options]     start it (in the background)
   mdhouse exit [--port <n>]       stop the one running  (also: stop)
   mdhouse exit --all              stop every mdhouse, whatever its port
+  mdhouse admin [--port <n>]      print a single-use browser administrator link (terminal only)
+  mdhouse admin --list|--revoke   list, or end every, browser administrator session
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
   mdhouse user-add <login>        ask for a login from then on (any user turns it on);
@@ -164,14 +166,17 @@ function parse(argv: string[]): Options {
 
 const argv = process.argv.slice(2);
 const USER_COMMANDS = ['user-add', 'user-rm', 'users'];
+const ADMIN_ACTIONS = ['--list', '--revoke'];
 const command =
   argv[0] === 'exit' || argv[0] === 'stop'
     ? 'exit'
-    : argv[0] === 'service'
-      ? 'service'
-      : USER_COMMANDS.includes(argv[0] ?? '')
-        ? 'access'
-        : 'serve';
+    : argv[0] === 'admin'
+      ? 'admin'
+      : argv[0] === 'service'
+        ? 'service'
+        : USER_COMMANDS.includes(argv[0] ?? '')
+          ? 'access'
+          : 'serve';
 // `mdhouse service install --port 8080` and `mdhouse service --port 8080 install` are the same
 // request: the action is whichever word names one, wherever it sits.
 const SERVICE_ACTIONS = ['install', 'uninstall', 'status'];
@@ -183,7 +188,9 @@ const opts = parse(
       ? argv.slice(1).filter((a) => a !== serviceAction)
       : command === 'access'
         ? argv.slice(2).filter((a) => a.startsWith('-'))
-        : argv.slice(1),
+        : command === 'admin'
+          ? argv.slice(1).filter((a) => !ADMIN_ACTIONS.includes(a))
+          : argv.slice(1),
 );
 
 const LOG = logHints({
@@ -268,6 +275,49 @@ const running = async (): Promise<PingReply | null> => {
   }
   return reply;
 };
+
+// ---------------------------------------------------------------- mdhouse admin
+
+/**
+ * Browser administration of the daemon on the port, over its private control socket. A link carries
+ * a single-use proof in its fragment, so it is printed only to an interactive terminal: redirected
+ * or piped output is refused before anything is minted. Nothing is opened, logged or written.
+ */
+if (command === 'admin') {
+  const actions = argv.slice(1).filter((a) => ADMIN_ACTIONS.includes(a));
+  if (opts.dirs.length || actions.length > 1) {
+    console.error('mdhouse: usage: mdhouse admin [--list | --revoke] [--port <n>]');
+    process.exit(2);
+  }
+  const action = actions[0];
+  if (!action && !(process.stdin.isTTY && process.stdout.isTTY)) {
+    console.error('mdhouse admin: prints a secret link, so only to an interactive terminal — run it without redirecting or piping');
+    process.exit(2);
+  }
+  const reply =
+    action === '--list' ? await askAdminList(opts.port) : action === '--revoke' ? await askAdminRevoke(opts.port) : await askAdminMint(opts.port);
+  if (!reply) {
+    console.error(`mdhouse: nothing running on port ${opts.port}.`);
+    process.exit(1);
+  }
+  if ('error' in reply) {
+    console.error(`mdhouse admin: ${reply.error}`);
+    process.exit(1);
+  }
+  if ('revoked' in reply) {
+    console.log(`mdhouse admin: ended ${reply.revoked} browser administrator session${reply.revoked === 1 ? '' : 's'}; unused links no longer work`);
+  } else if ('sessions' in reply) {
+    if (!reply.sessions.length) console.log('no browser administrator sessions');
+    for (const s of reply.sessions) {
+      console.log(`${s.id}  since ${new Date(s.createdAt).toISOString()}  until ${new Date(s.expiresAt).toISOString()}`);
+    }
+  } else {
+    const seconds = Math.max(1, Math.round((reply.expiresAt - Date.now()) / 1000));
+    console.log(`Open this link in a browser on this machine within ${seconds} s; it works once:\n\n  ${reply.url}/settings#admin=${reply.proof}\n`);
+    console.log(`End every administrator session:  mdhouse admin --revoke${portHint}`);
+  }
+  process.exit(0);
+}
 
 // ---------------------------------------------------------------- mdhouse exit
 

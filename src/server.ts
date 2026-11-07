@@ -25,10 +25,11 @@ import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, new
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
 import { Watcher } from './lib/watch';
-import { serveControl, type AddReply, type RemoveReply, type RootLine } from './lib/control';
+import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
-import { allowedAddress, Users } from './lib/access';
-import { bundle, inventory, isMethodMap, mutation, read, type RouteEntry } from './lib/authz';
+import { allowedAddress, ipBytes, isLoopback, Users } from './lib/access';
+import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, type Actor, type RouteEntry } from './lib/authz';
+import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, validTarget, type AbAction } from './lib/agent-bus';
@@ -102,6 +103,45 @@ export function sameOrigin(req: Request): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * The origin a local administrator exchange must come from: `http://<loopback name>:<port>` for a
+ * daemon bound to loopback or to every address, else null. The name is exact — `localhost`,
+ * `127.0.0.1` or `[::1]` — so no rebound or proxy name can stand in for it.
+ */
+export function localAdminOrigin(bound: string, port: number): string | null {
+  const host = bound.toLowerCase();
+  if (host === 'localhost') return `http://localhost:${port}`;
+  const ip = ipBytes(host);
+  if (!ip) return null;
+  if (ip.every((b) => b === 0)) return ip.length === 4 ? `http://127.0.0.1:${port}` : `http://[::1]:${port}`;
+  if (!isLoopback(ip)) return null;
+  return ip.length === 4 ? `http://${ip.join('.')}:${port}` : `http://[::1]:${port}`;
+}
+
+/** Local administrator exchange origins accepted for this daemon: the minted one and its loopback aliases. */
+function localOrigins(bound: string, port: number): Set<string> {
+  if (!localAdminOrigin(bound, port)) return new Set();
+  const all = [`http://localhost:${port}`, `http://127.0.0.1:${port}`, `http://[::1]:${port}`];
+  const ip = ipBytes(bound);
+  if (ip && ip.length === 4 && isLoopback(ip)) all.push(`http://${ip.join('.')}:${port}`);
+  return new Set(all);
+}
+
+/**
+ * Did this administrator exchange come from a browser on this machine, at a local origin of this
+ * daemon? The peer address must be loopback (forwarding headers are never read), `Host` and
+ * `Origin` must name the same exact local origin, and `Sec-Fetch-Site`, when sent, same-origin.
+ */
+export function localExchange(req: Request, peer: string | undefined, bound: string, port: number): boolean {
+  const ip = peer ? ipBytes(peer) : null;
+  if (!ip || !isLoopback(ip)) return false;
+  const host = req.headers.get('host')?.toLowerCase();
+  const origin = req.headers.get('origin')?.toLowerCase();
+  if (!host || !origin || origin !== `http://${host}` || !localOrigins(bound, port).has(origin)) return false;
+  const site = req.headers.get('sec-fetch-site');
+  return site === null || site === 'same-origin';
 }
 
 /** HTML is shown sandboxed, as passive as a rendered document: an opaque origin, and no scripts run. */
@@ -303,6 +343,27 @@ export async function serve(opts: ServeOptions) {
     return null;
   };
 
+  /**
+   * Browser administrators: memory-only sessions opened by a proof minted over the private control
+   * socket. Admission (address list, Basic users) lets a request in; only this cookie makes it admin.
+   */
+  const admins = new AdminSessions();
+  const adminScope = (): AdminCookieScope => ({ port: cookiePort(), secure: false });
+  const actorOf = (req: Request): Actor =>
+    admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope())).ok ? { admin: true, via: 'session' } : { admin: false, via: 'none' };
+  const noStore = (res: Response): Response => {
+    res.headers.set('cache-control', 'no-store');
+    res.headers.set('referrer-policy', 'no-referrer');
+    return res;
+  };
+  /** Mints a proof only when a browser on this machine can exchange it: loopback-bound, no proxy names. */
+  const mintAdmin = (): AdminMintReply | { error: string } => {
+    const url = localAdminOrigin(hostname, server.port ?? port);
+    if (!url) return { error: `bound to ${hostname}: a local administrator session needs a loopback or any-address bind` };
+    if (prefs.currentHostNames().length) return { error: '--host-name is set: localhost is refused, so no local administrator session' };
+    return { ...admins.mintProof(), url };
+  };
+
   /** Every handler behind the host check, then the access check. */
   type Handler = (req: Request) => Response | Promise<Response>;
   const check = (h: Handler): Handler => async (req) =>
@@ -368,13 +429,25 @@ export async function serve(opts: ServeOptions) {
 
   /** Every route and its mutation family — filled by `guard`, which refuses an unclassified write. */
   let routes: RouteEntry[] = [];
+  /** An administrator-family write: same-origin, then an administrator session, before the handler reads anything. */
+  const adminOnly = (h: Handler): Handler => (req) => {
+    if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+    if (!actorOf(req).admin) return noStore(json({ error: 'administrator session required', reason: 'admin' }, 401));
+    return h(req);
+  };
   function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
     routes = inventory(table);
+    const family = new Map(routes.map((r) => [`${r.method} ${r.path}`, r.family]));
     const out: Record<string, unknown> = {};
     for (const [path, route] of Object.entries(table)) {
       if (typeof route === 'function') out[path] = check(route as Handler);
       else if (isMethodMap(route)) {
-        out[path] = Object.fromEntries(Object.entries(route).map(([m, h]) => [m, check(h as Handler)]));
+        out[path] = Object.fromEntries(
+          Object.entries(route).map(([m, h]) => {
+            const f = family.get(`${m} ${path}`);
+            return [m, check(f && ADMIN_FAMILIES.has(f) ? adminOnly(h as Handler) : (h as Handler))];
+          }),
+        );
       } else out[path] = route;
     }
     return out as Bun.Serve.Routes<undefined, R>;
@@ -571,6 +644,42 @@ export async function serve(opts: ServeOptions) {
             return json({ error: message, reason: result.error }, result.error === 'empty' ? 400 : 409);
           }
           return json({ ok: true, line: result.line });
+        }),
+      },
+
+      /** Whether this browser holds an administrator session, and until when at most. No secret. */
+      '/api/admin': read((req) => {
+        const v = admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope()));
+        return noStore(json(v.ok ? { admin: true, expiresAt: v.expiresAt } : { admin: false }));
+      }),
+
+      /**
+       * Exchanges a proof minted over the control socket (`mdhouse admin`) for an administrator
+       * session cookie. Only from a browser on this machine at an exact local origin; a request
+       * refused on that check leaves the proof unused. Every refusal is the same 403.
+       */
+      '/api/admin/session': {
+        POST: mutation('admin-session', async (req) => {
+          const refused = () => noStore(fail(403, 'administrator proof refused'));
+          if (!localExchange(req, server.requestIP(req)?.address, hostname, server.port ?? port)) return refused();
+          const body = (await req.json().catch(() => null)) as { proof?: unknown } | null;
+          const opened = admins.exchange(body?.proof);
+          if (!opened.ok) return refused();
+          const res = noStore(new Response(null, { status: 204 }));
+          res.headers.append('set-cookie', adminCookie(opened.secret, admins.limits.absoluteMs, adminScope()));
+          return res;
+        }),
+      },
+
+      /** Ends this browser's administrator session, if any, and clears its cookie. */
+      '/api/admin/logout': {
+        POST: mutation('admin-session', (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const v = admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope()));
+          if (v.ok) admins.revoke(v.id);
+          const res = noStore(new Response(null, { status: 204 }));
+          res.headers.append('set-cookie', clearAdminCookie(adminScope()));
+          return res;
         }),
       },
 
@@ -1306,6 +1415,11 @@ export async function serve(opts: ServeOptions) {
     // `mdhouse exit`. The daemon runs detached with no terminal attached to it, so asking it
     // over the socket is the supported way to stop it — there is no Ctrl+C to press.
     exit: shutdown,
+    admin: {
+      mint: mintAdmin,
+      revoke: () => ({ revoked: admins.revokeAll() }),
+      list: () => admins.list(),
+    },
   });
 
   return { server, store, watcher, control, shutdown, routes };

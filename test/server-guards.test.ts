@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { pageUrl, sameOrigin, trustedHost } from '../src/server';
+import { adminLogin } from './admin-login';
 
 describe('trustedHost — the DNS-rebinding guard', () => {
   test('loopback names and IP literals are accepted', () => {
@@ -937,7 +938,12 @@ test('pull and commit refuse a repo that holds a read-only root or files outside
     expect((await post('/api/git/commit', { p: `${docs}/`, message: 'm', files: ['docs/d.md'] })).status).toBe(200);
 
     // The read-only root gone, the repo still holds files outside `docs`: pull is refused.
-    await post('/api/roots/remove', { id: notes });
+    const removed = await fetch(`http://127.0.0.1:${port}/api/roots/remove`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: await adminLogin(port) },
+      body: JSON.stringify({ id: notes }),
+    });
+    expect(removed.status).toBe(200);
     expect((await post('/api/git/pull', { p: `${docs}/` })).status).toBe(409);
     expect(await readFile(join(repo, 'notes', 'n.md'), 'utf8')).toBe('n\n');
   } finally {
@@ -1020,8 +1026,8 @@ test('--rw for a folder writable only by auto-rw sticks when auto-rw goes off (A
   const { server, watcher, control } = await serve({ registry: await Registry.create([base]), prefs, port, hostname: '127.0.0.1', noGit: true });
   const writable = async () =>
     ((await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()).roots as { path: string; writable: boolean }[]).find((r) => r.path === notes)?.writable;
-  const settings = (autoRw: boolean) =>
-    fetch(`http://127.0.0.1:${port}/api/settings`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ autoRw }) });
+  const settings = async (autoRw: boolean) =>
+    fetch(`http://127.0.0.1:${port}/api/settings`, { method: 'POST', headers: { 'content-type': 'application/json', cookie: await adminLogin(port) }, body: JSON.stringify({ autoRw }) });
   try {
     await askDaemon(port, { dirs: [notes] });
     expect(await writable()).toBe(true); // by auto-rw
@@ -1093,9 +1099,11 @@ test('POST /api/roots/remove refuses another site, an unknown root and the last 
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
   const [id, otherId] = registry.list().map((r) => r.id);
   const get = (path: string) => fetch(`http://127.0.0.1:${port}${path}`);
+  let cookie = '';
   const remove = (body: unknown, headers: Record<string, string> = {}) =>
-    fetch(`http://127.0.0.1:${port}/api/roots/remove`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+    fetch(`http://127.0.0.1:${port}/api/roots/remove`, { method: 'POST', headers: { 'content-type': 'application/json', cookie, ...headers }, body: JSON.stringify(body) });
   try {
+    cookie = await adminLogin(port);
     for (const q of [`doc?p=${id}/nope.md`, `raw?p=${id}/nope.txt`, `asset?p=${id}/nope.png`]) expect((await get(`/api/${q}`)).status).toBe(404);
     expect(await (await get(`/api/git/diff?p=${id}/nope.md`)).json()).toMatchObject({ kind: 'none', hunks: [] });
     expect(await (await get(`/api/git/log?p=${id}/nope.md`)).json()).toMatchObject({ commits: [] });
@@ -1180,8 +1188,9 @@ describe('a reference root on a running server (MW.0f.1)', () => {
     const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1' });
     const projId = registry.defaultRoot().id;
     const url = (path: string) => `http://127.0.0.1:${port}${path}`;
+    let cookie = '';
     const post = (path: string, body: unknown) =>
-      fetch(url(path), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      fetch(url(path), { method: 'POST', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify(body) });
     const unchanged = async () => expect(await readFile(join(ref, 'a.md'), 'utf8')).toBe(changed);
     try {
       // what the page is told
@@ -1215,6 +1224,7 @@ describe('a reference root on a running server (MW.0f.1)', () => {
       expect((await run(repo, ['status', '--porcelain'])).out).toContain('ref/a.md');
 
       // removal and promotion — the page, and the control socket a second `mdhouse` uses
+      cookie = await adminLogin(port);
       expect((await post('/api/roots/remove', { id: reference.id })).status).toBe(403);
       expect('error' in ((await askRemove(port, { dirs: [ref] })) ?? {})).toBe(true);
       expect('error' in ((await askDaemon(port, { dirs: [ref], rw: true, save: true })) ?? {})).toBe(true);
@@ -1249,10 +1259,12 @@ describe('POST /api/settings — the edit scheme', () => {
     const prefs = await Prefs.load(join(base, 'prefs.json'));
     const port = 61810;
     const { server, watcher, control } = await serve({ registry: await Registry.create([base]), prefs, port, hostname: '127.0.0.1', noGit: true });
+    let cookie = '';
     const post = (body: unknown) =>
-      fetch(`http://127.0.0.1:${port}/api/settings`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      fetch(`http://127.0.0.1:${port}/api/settings`, { method: 'POST', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify(body) });
     const get = async () => (await (await fetch(`http://127.0.0.1:${port}/api/settings`)).json()) as { editScheme: string; editLink: boolean };
     try {
+      cookie = await adminLogin(port);
       expect((await get()).editScheme).toBe('edit');
       for (const bad of ['javascript', 'JavaScript:', 'data', 'http', 'mailto', 'file', '', '1x', 'a b', 5, null]) {
         const res = await post({ editScheme: bad, editLink: false });
