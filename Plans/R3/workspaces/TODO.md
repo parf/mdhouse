@@ -552,3 +552,10 @@ No package is done before shared runner/permission checks pass; tracker-free out
   `$PROJECT_HOME/.mdhouse/` is Git-controlled; distinguish shared versioned project data from user/machine-local and secret data.
   Priority: resolve before further Teams, flows and automations persistence work; distinguish shared Git-controlled definitions from per-user/per-machine state, credentials and execution history.
   Decide placement, portability, secret handling and migration before implementation.
+
+
+## Header layout consistency
+
+- [ ] MW.15 Align page-header first rows with the sidebar header band <a id="MW.15"></a>
+  [Scoped root-cause cohort](../EXECUTION.md#page-header-top-alignment): document/folder/Home/Git/diff/Settings,
+  loading/error/empty, sidebar on/off and narrow; measured boxes/crops, no hierarchy/authority/layout redesign.

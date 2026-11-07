@@ -1705,7 +1705,7 @@ RAG documents-only enduser and independent Dev/AI Code+Docs corpora remain desig
   meaningful native scratch proof and pinned exact-SHA independent security review with explicit allowed tests/exits.
   No broad/full duplicates; material fixes get new target/verdict. Evaluate full parent acceptance honestly after integration.
 
-  Capacity current screens: W1 Claude 5h87%, weekly51% remaining; W2 account2 5h88%, weekly55% remaining.
+  Capacity current screens: W1 Claude 5h87%, weekly 51% remaining; W2 account2 5h88%, weekly55% remaining.
   Both available; their own usage readouts unavailable. OpenCode available after AB review; reserve one pinned review.
   CTO screen now reports weekly100% (previous2% display changed; no provider-side cause inferred), short unavailable.
   W3 stays idle per owner coordination. No live reload/service/session/provider/ACL/push/publish/deploy/release actions.
@@ -1819,3 +1819,43 @@ reference/saved status neutral, unsaved and configured override distinct. No pol
 Owner UX Golden Set and later Danger zone/expandable-options clarification preserved as future UX reference;
 no unrelated Settings rewrite, brand restyle or confirmation removal. No full/types mechanical repeat.
 No live reload/service/session/provider/ACL/push/publish/deploy/version action.
+
+
+## Shared page-header top alignment — 2026-11-07 {#page-header-top-alignment}
+
+- [ ] MW.15 Align the first header row across page wrappers
+  Base `35575900c4c606f5928dc41de89dfe585de9aa65`, target `main`; CTO owns scope/integration,
+  W2 author `.scratch/worktrees/r3-top-inset-ui`, branch `r3/top-inset-ui`; code path `src/styles/app.css` only.
+  Explicit owner screenshots: live document `/ai-agent-bus/CHANGELOG.1.0.md` and folder `/ai-agent-bus/`.
+  Scope before edits: one shared layout root cause across doc/root/folder/Home/Git/diff/Settings and relevant
+  loading/error/empty, sidebar compact/open/off, desktop and ≤720. No unrelated UX/layout/brand rewrite.
+  [UX reference](../UX.md); [№MW.13](workspaces/TODO.md#MW.13) comprehensive UX backlog stays separate.
+
+  Verified read-only live geometry: side-head y0/h41/padding7px8px, brand y9.5/h21/centre20;
+  doc wrapper top22, crumbs y22/h18, title y44/h33. Folder wrapper top24 and h1 y24/h33.
+  Current live old bundle/RW badge is known and not evidence against integrated badge source.
+  W2 scratch AB-off audit of current source: 10 states × 1280/700/390 × sidebar compact/off = 60 measurements,
+  plus light/dark crops. First-row centres31/33/40.5/47.5/52.8, mobile wrappers16/24/40, topstrip38 vs side-head41.
+  Original evidence W2 scratchpad `pad-measure-run1.log`, `pad-measure/`, `pad-audit-run1.log`,
+  `pad-audit/rows.json` and top crops. No source edits during audit.
+
+  Inferred intent from both screenshots and shared headers: align first content row with the sidebar header band,
+  rather than equating one arbitrary padding value. CSS shared head-band 41px, current sidebar outer height;
+  topstrip matches it, wrappers remove independent top padding at every width, each first header/crumb row
+  centres in the band. Preserve title/crumb order, fonts and existing title-after-crumb box gap; wrapped content
+  grows without clipping. A doc title need not coincide with the sidebar brand: it follows the breadcrumb band.
+  No side/bottom/max-width/horizontal geometry changes; no new Settings mobile padding.
+  Notice/error/empty first heading aligns too. Loading spinner remains 15×15/circular and is centred via spacing,
+  not min-height stretching; floated notice gear also aligns. Topstrip 41 implies main.top 41 when sidebar off.
+  Target normal one-row centre is main.top+20.5±1px; sidebar brand centre20±1, off/on brand no jump.
+
+  Acceptance: rerun the same measured matrix on isolated real scratch instance, keep scroll0/viewport/theme/state
+  explicit; compare before/after boxes and first-child margins/row gaps, horizontal values unchanged.
+  Doc and folder screenshots/crops at 1280/390 light/dark; Settings/error/loading/empty/Git/diff and subfolder coverage;
+  sidebar off topstrip/main-relative alignment, compact/open, no overlaps/gear/spinner regressions.
+  Multi-line headers may grow naturally; no clipping solely to force a centre number.
+  One proportional visual/native gate and CTO nonauthor exact-diff review; no blanket full/types/unit mirror test.
+  Original failures and corrected harness runs retained. Shared QA/CHANGELOG/Plans README/status owned by CTO.
+  No permission/data/source policy change, dependency/version bump, live/service/session reload, provider/ACL,
+  push/publish/deploy. Live inspection read-only for owner URLs; other states scratch AB off to avoid old-settings connect.
+  Availability: W2 confirmed available, actual Kitty 5h 68%, weekly 51% remaining (own readout unavailable); W3 idle.
