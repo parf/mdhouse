@@ -340,12 +340,22 @@ consistency, not authenticity or semantic truth. `lib/flow-run-markdown.ts` rend
 unsaved preview with supplied data in inert JSON fences. Both grant no authority and perform no
 filesystem/provider/HTTP work; materialization, actual approvals and marker updates are separate.
 
-## Administrator session primitives
+## Local browser administration
 
-`lib/admin-session.ts` holds bounded memory-only single-use proofs and expiring revocable sessions.
-Cookie helpers use separate port-scoped names, host-only HttpOnly/SameSite flags and explicit HTTPS.
-The module has no production callers or HTTP/control endpoints; bootstrap and authorization wiring
-remain R3 work. Port-specific names prevent accidental overwrites, not a browser origin boundary.
+`lib/admin-session.ts` holds memory-only single-use proofs and expiring revocable sessions.
+`mdhouse admin` requests a proof through private OS-owner control and prints a loopback fragment URL
+only to an interactive terminal; redirected output refuses before minting. No auto-open or saved secret.
+`--list` lists safe session metadata; `--revoke` ends all sessions and unused proofs. Restart ends them too.
+Control `/admin/mint|list|revoke` requires an owner-only real config directory and socket; existing CLI
+operations retain OS-owner authority. Remote/bootstrap-through-proxy and Team identity remain separate.
+
+`ui/admin-entry.ts` removes valid or malformed admin fragments synchronously, exchanges once before
+application startup and keeps the proof out of storage. POST `/api/admin/session` checks trusted Host,
+admission, actual loopback peer and exact local Host/Origin, then sets a host-only HttpOnly SameSite=Strict
+port-named cookie. GET `/api/admin` returns safe state; POST `/api/admin/logout` revokes and clears it.
+Admin responses are no-store/no-referrer. Basic login, trusted addresses, author cookies and project RW
+never confer admin. Local HTTP is the only exchange transport in this slice; no inferred proxy HTTPS.
+Port-specific cookie names prevent accidental overwrites, not a browser origin boundary.
 
 ## Mutation classification
 
@@ -355,8 +365,10 @@ refuses to start on an untagged bare handler or object, a malformed method map, 
 a family on a read or bare handler, conflicting tags, a duplicate mutation or an unknown family.
 GET/HEAD/OPTIONS and `read()` are declared non-mutating, not effect-free: `GET /api/git/remote?fresh`
 fetches from the network. `serve()` returns `routes`; `test/authz.test.ts` pins the full list.
-Dormant — no status, guard or grant changes. `Actor` (`admin`, `via`, optional immutable `user`) has
-no builder; the author cookie is never identity.
+`ADMIN_FAMILIES` gates `instance-config` and `root-admin` writes after Host/admission, with same-origin
+and a verified browser-admin session before body handling. Missing/expired/revoked authority is
+`401 {error, reason: 'admin'}`. `Actor` comes from the verified session; immutable `user` remains unset.
+Other families retain existing behavior; marks policy remains open and no Team/grant system is activated.
 
 | Family | Routes (POST) |
 |---|---|
@@ -364,6 +376,7 @@ no builder; the author cookie is never identity.
 | `git-write` | `/api/git/commit`, `/commit-file`, `/reset` |
 | `git-sync` | `/api/git/pull`, `/push` |
 | `instance-config` | `/api/settings`, `/api/ab/default`, `/api/ab/filter` |
+| `admin-session` | `/api/admin/session`, `/api/admin/logout` |
 | `attribution` | `/api/author` |
 | `external-send` | `/api/ab/send` |
 | `root-admin` | `/api/roots/remove` |

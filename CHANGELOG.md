@@ -15,6 +15,8 @@
 
 ### Added
 
+- Local browser administration through `mdhouse admin`: single-use terminal sign-in links, session logout/revocation, and administrator-only instance settings and project removal
+
 - Settings now groups Projects with selection/details, current access and persistence; browser and all-project options are clearly separate, and served-project terminology is consistent
 
 - Browse gitignored Markdown with Show ignored, direct folder navigation, or folders selected in V1/V2; selected folders also appear in main/default while each V tab keeps its own selection

@@ -374,3 +374,18 @@ CEO applied targeted local reload (`e061cd7d59e9822f`): actual Settings Projects
 canonical path/access/kept visible; browser and all-project scopes distinct, chooser Switch project.
 Nine roots/path/RW preserved, no build/provider call/version bump. Parent add/naming/per-space AB and
 admin gates remain open until their own complete acceptance; only this scoped checkpoint closes.
+
+
+## Local Personal administrator wiring — candidate {#local-personal-admin-wiring}
+
+[№MW.0g.2b](workspaces/TODO.md#MW.0g.2b), candidate `101fe1865ef6104ac393872497859bfcd48f2177`.
+W1 author `e897a53`, W2 author `9f4e2b6`; combined without conflicts. CTO malformed metadata fixture
+cast `a451b27` preserves the negative assertion and repairs the pre-existing type-check failure.
+Combined gate: 223 passed, 0 failed across 12 explicit impacted test files; `tsc` exit 0.
+Complete output and original exits: `.scratch/worktrees/r3-admin-local-cohort/.scratch/admin-gate/`.
+W1 retained initial seven expected failures in `.scratch/worktrees/r3-admin-local-backend/.scratch/first-run.log`;
+these were missing-session/inventory assertions updated for the intended boundary, not silently rerun flakes.
+W2 author browser checks used mocked admin routes; these do not establish real-backend acceptance.
+Native combined browser proof and pinned independent review remain pending. Main is not yet integrated.
+Proof/session primitive expiry uses deterministic unit checks; HTTP proof-expiry e2e is not yet exercised.
+Team/OAuth, remote bootstrap, new project properties and marks policy remain outside this accepted scope.
