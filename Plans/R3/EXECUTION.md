@@ -1243,8 +1243,9 @@ No live reload, push, publish, deployment, version bump, provider/ACL changes or
   without saving or changing privileges. Duplicate labels are valid; chooser disambiguates them with visible path context.
   CLI `--name` requires one explicit directory, works on cold start and running control handoff, `reset` clears;
   zero/multiple directories and incompatible removal reject before config/root mutation. Renaming never implies RW/save.
-  Persistence dependency [№Q-R3-NAME1](workspaces/QUESTIONS.md#Q-R3-NAME1) is routed to CEO before implementation;
-  independent normalization/UI/identity work may proceed. No invented saved/session lifetime.
+  Persistence [№Q-R3-NAME1](workspaces/DECISIONS.md#Q-R3-NAME1): owner answered “B”, recorded by CEO `46c7414`.
+  Session-root names stay in memory until explicit save; `--name` without `-p` never saves the name/root.
+  Explicit save transfers the current name; saved-root edits persist and empty/reset deletes the override.
   Acceptance: CLI set/reset and administrator Settings set/reset update existing chooser, project/home/document headings,
   Settings and tab labels live across open tabs without new tree/content rendering; canonical path remains accessible.
   Acceptance: absent old prefs, malformed metadata, duplicate labels, normalization/length, canonical symlink aliases,
@@ -1259,3 +1260,8 @@ No live reload, push, publish, deployment, version bump, provider/ACL changes or
 Capacity verified from actual mdhouse screens: W1 default Claude 5h 66% (~55m), weekly 55% (~5d21h);
 W2 account 2 5h 57% (~1h15m), weekly 58% (~5d12h); both idle. Shared Codex weekly 7% per CEO:
 reserve W3/coordination capacity. OpenCode remains at an observed hard usage limit; no review retry before reset.
+
+
+W1/W2 acknowledged [№MW.1a.1](workspaces/TODO.md#MW.1a.1) and began the scoped isolated worktrees.
+State: working. Persistence-dependent work was held until the owner's exact “B” answer; both authors
+received the committed lifetime decision before proceeding. No new owner choice remains for this slice.
