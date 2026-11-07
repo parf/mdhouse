@@ -565,3 +565,13 @@ mode/write-denial native proof and pinned independent security verdict remain pe
 Parent [№MW.0h](workspaces/TODO.md#MW.0h) stays open for default/profile/Viewer activation; parent
 [№MW.1](workspaces/TODO.md#MW.1) stays open for remaining setup/properties. No live/service/session/provider/
 ACL/push/publish/deploy actions or package-version bump. Storage version 2 is the explicitly authorized migration.
+
+
+Native material finding on `a69b3c0`: an open Q&A draft survived the mode flip but detached from the page
+after a real denied POST `/api/qa` (403), because reload installed new HTML/token while placement effects
+required writable access. It was not counted as PASS. W2 author fix `984d1a0` keeps answer/add form
+placement independent of permission; server save denial remains authoritative and the draft stays visible.
+Initial failure: W2 scratch `mode-native-run2.log`, QA 403 with no visible note/form afterward.
+Combined fixed code `d9efade`: types exit 0, captured in `r3-project-access-final/.scratch/access-gate/draft-types.log/.exit`.
+Native after-fix proof and independent fixed-target review remain pending; original candidate/pinned HEADs
+were not advanced during review/proof. No broad impacted gate was repeated for this Doc-only delta.
