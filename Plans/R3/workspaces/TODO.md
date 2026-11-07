@@ -179,6 +179,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 ## W1 — Install and connect
 
 - [ ] MW.1 Add the AI installation runbook and managed workspace convention <a id="MW.1"></a>
+  - [ ] MW.1.1 Existing-session explicit save with admin confirmation; [scope/dependency check](../EXECUTION.md#existing-project-explicit-save) <a id="MW.1.1"></a>
+    Preserve configured vs effective access and name lifetime; no RW/default/profile migration activation.
   - Acceptance: Team web add outside `~/mdhouse` and all project-property changes (RW/RO, name/default/endpoint where applicable) require configured admin, not Editor/RW; no broader inside-workspace permission is inferred
   - Acceptance: project-property APIs use an explicit allowlist/schema; direct/stale non-admin calls fail, effective access updates immediately and stored/effective modes remain distinct; Personal owner management and OS-owner CLI remain available
   - Builds: `install.md`; `~/mdhouse/<project>` as the standard always-RW development workspace

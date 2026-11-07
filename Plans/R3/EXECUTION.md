@@ -1291,3 +1291,57 @@ Capacity rechecked from actual screens 2026-11-07 00:56 UTC: W1 default Claude 5
 November 10 21:35 (timezone unspecified); short-window unavailable. OpenCode still displays hard 5h limit,
 reset `2026-11-07 10:12:12` (timezone unspecified). Decision: finish this accepted checkpoint, leave W3 idle
 and preserve Codex for coordination/review; no further heavy assignment started.
+
+
+## Existing-project explicit save — selected 2026-11-06 {#existing-project-explicit-save}
+
+- [ ] MW.1.1 Confirm and save an already served session project
+  Base `b968f06ca1bb942661e6d6d16a2e38ab2b6433d3`, target `main`; parent [№MW.1](workspaces/TODO.md#MW.1).
+  Contracts: [№DIR-W1](workspaces/DECISIONS.md#DIR-W1), [№Q-R3-NAME1](workspaces/DECISIONS.md#Q-R3-NAME1),
+  accepted [№MW.0g.2b](workspaces/TODO.md#MW.0g.2b). Product outcome: administrator confirms `[unsaved]`
+  in Settings; canonical root, existing configured mode and current session name become saved atomically;
+  unsaved badge disappears in open tabs without restart or document/tree rendering.
+  Dependency check before code: current registry already distinguishes `rwAsked` (configured) from effective
+  `writable` (auto-RW and immutable-reference cap). Save preserves `rwAsked`; auto-only RW never becomes an
+  explicit RW grant. Effective access remains conditional on the existing auto policy. No default/profile/mode
+  activation or persistent format change is needed. [№MW.0h](workspaces/TODO.md#MW.0h) stays required for
+  RW/default/Viewer/profile migration; this slice does not implement or bypass those behaviors.
+  W1 authors backend first in `.scratch/worktrees/r3-project-save-backend`, branch `r3/project-save-backend`:
+  `src/lib/prefs.ts`, `src/server.ts`, focused `test/project-save.test.ts`, `test/prefs.test.ts`,
+  `test/authz.test.ts` and existing root/name tests only where required. No implementation before this scope.
+  W2 authors bounded UI after the stable backend seam in `.scratch/worktrees/r3-project-save-ui`,
+  branch `r3/project-save-ui`: `src/ui/Settings.tsx`, `src/ui/api.ts`, minimal styles/focused tests if needed.
+  CTO owns shared Plans, QA and CHANGELOG; W3 idle. No heavy parallel start.
+  API: POST `/api/roots/save {id, rev}` only, `root-admin`, existing same-origin and verified-admin guard.
+  Root payload optional `saveRev` is full SHA-256 of the confirmed canonical root identity, kind, configured
+  mode, auto source/effective mode/reference cap, saved state and current name. It is a staleness check,
+  not authority. Server derives mode/name itself, never accepts path/access/save/name changes from the body.
+  Reject malformed/unknown fields 400, unknown root 404, immutable reference 403; already-saved or changed
+  confirmed metadata 409 `{error, reason:'stale'}`. Missing/revoked administrator follows existing 401 policy.
+  Root metadata top-level entrypoints (name/save/remove/control add/remove) serialize without nested same-queue
+  deadlock. Recheck runtime identity/name and fresh locked prefs policy before mutation; an intervening
+  auto-policy/external save changes the confirmed snapshot and refuses without partial mutation.
+  One Prefs transaction persists saved membership, configured writable membership and canonical name together;
+  session-name memory is removed and roots published only after success. No caller can promote auto/RO/reference.
+  Necessary prerequisite reproduced before edits: current Prefs installs candidate memory before durable write;
+  an injected EACCES left savedName memory changed with disk unchanged. Fix internal sequencing to write the
+  candidate before installing it in memory, with failure tests across existing mutation types. No format/grant/
+  marks-policy changes; no production lock-export/test-only API. Failure evidence from W1 scratch `wf/probe2.log`.
+  UI: `[unsaved]` is disabled without administrator; explicit confirm shows canonical path, name and existing
+  configured/effective mode. Auto-only RW explicitly remains conditional, configured RO. Cancel sends nothing.
+  Successful save refreshes roots metadata and removes the session badge; saved projects show no saved badge.
+  Acceptance: RO, explicit RW and auto-only RW saved/reloaded without access escalation; session name B persists;
+  canonical identity/URLs/marks/views/body remain unchanged; reference/nonadmin/spoofed/revoked/stale/unknown
+  fields and IO/future-version failures leave disk/memory/runtime/session name unchanged. Controlled lock/policy
+  and name/remove races verify fresh snapshots and no partial persistence. Existing CLI semantics are unchanged.
+  Existing CLI `-p` without `--rw` can save RO despite a running RW session; do not silently align this distinct
+  CLI flag contract with the web operation that saves the current configured choice.
+  Verification: author commits, one combined impacted focused/types gate, meaningful true-backend scratch
+  light/dark/compact save/cancel/stale/multi-tab/identity proof, pinned exact-SHA nonauthor review including
+  private Prefs commit ordering and concurrency. Preserve first failures; no repeated full suites.
+  No new root-add/RW toggle/default/profile/Viewer bypass/AB endpoint/Team/OAuth behavior, no live/service/session
+  actions, push/publish/deploy, provider/ACL changes or version bump. Parent [№MW.1](workspaces/TODO.md#MW.1) stays open.
+
+Capacity at design: W1 default Claude 5h 60% (~12m to reset), weekly 54%; W2 account 2 5h 51% (~32m),
+weekly 57%; shared Codex 6% at preceding checkpoint. OpenCode observed hard limit; reserve Codex for coordination
+and pinned nonauthor fallback. Author work fits available Claude capacity; start W1 only until API is stable.
