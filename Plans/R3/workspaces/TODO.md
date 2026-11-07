@@ -541,6 +541,9 @@ No package is done before shared runner/permission checks pass; tracker-free out
 ## UX review
 
 - [ ] MW.13 Schedule a comprehensive UX review of all pages and flows <a id="MW.13"></a>
+  - [ ] MW.13.1 Explore navigation and views for mdhouse as a project workspace beyond a Markdown viewer <a id="MW.13.1"></a>
+    Owner starting points: explicit MD view (default), All project files with highlighting and matching left-panel tree, and Git pages for branches/commits/authors.
+    Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.
   Cover desktop/mobile, light/dark, roles/access modes and loading/empty/error/success states; record screenshot-backed findings and prioritize the resulting implementation work.
 
