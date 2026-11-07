@@ -1483,3 +1483,59 @@ No live reload/service/session/provider/ACL/push/publish/deploy or package-versi
 Parent [№MW.0h](workspaces/TODO.md#MW.0h) remains open for future default/profile/Viewer migration;
 parent [№MW.1](workspaces/TODO.md#MW.1) remains open for other setup/properties. Team/OAuth and global defaults
 are not activated. Authors' scoped tasks completed; no further task started, W3 idle and Codex reserve preserved.
+
+
+## Settings Add project cohort — 2026-11-07 {#settings-add-project-cohort}
+
+- [ ] MW.1.3 Add an existing directory from Settings
+  Base `917f8c0cd54d0ab09933ce4a17bf222554cecfee`, target `main`; owner CTO, authors W1 backend and W2 UI.
+  Approved [№MW.1](workspaces/TODO.md#MW.1), [№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1),
+  accepted [№MW.0h.1](workspaces/TODO.md#MW.0h.1)/[№MW.1.2](workspaces/TODO.md#MW.1.2) supply the scoped prerequisite.
+  Add an existing absolute directory with an explicitly selected `rw` or `ro`; neither is preselected.
+  This activates no global new-root default, profile, Viewer, Workspace convention or Team setup.
+  New roots are session-only, with `[unsaved]`; the accepted explicit save persists current mode and name B.
+  No add-and-save, name field, directory creation/completion, AB endpoint or installation runbook in this slice.
+  POST `/api/roots/add` accepts exactly `{path, mode: 'rw' | 'ro'}` and returns `{roots, id}`.
+  Absolute path only, nonempty, no NUL, bounded length; no relative or tilde interpretation.
+  Same-origin and real administrator apply to every path, including inside the proposed workspace.
+  Canonical directory validation/registration is shared with Registry/CLI/control; preserve existing CLI modes,
+  persistence and reference-descendant compatibility. Web refuses reference roots and descendants in both modes.
+  Duplicate canonical roots return 409 `reason: served` plus existing id, with no access/name/save change.
+  Saved-but-not-served fresh policy returns 409 stale without writing; do not invent persisted re-add semantics.
+  There is no existing root revision to submit: queued canonical revalidation, fresh locked prefs and admin checks
+  reject changed-path/policy/revoked requests; the UI never retries a failed grant automatically.
+  Prepare canonical directory/git metadata detached; install Registry root with explicit mode and watchers
+  synchronously only after all fallible asynchronous work and final admin/policy checks, publish last.
+  Fresh-policy read never migrates, repairs, renames or writes prefs; invalid/newer data remains intact and refuses.
+  Failed input, IO, preparation, stale policy or revocation exposes no partial root/config/authority; no auto-RW window.
+  Unexpected synchronous installation failure removes only the new root/watchers before returning.
+  Existing CLI save/name partial-state behavior is outside this web-add slice; do not silently widen that repair.
+
+  W1: `.scratch/worktrees/r3-project-add-backend`, branch `r3/project-add-backend`;
+  `src/server.ts`, `src/lib/roots.ts`, `src/lib/prefs.ts`, necessary authz inventory and focused
+  `test/project-add.test.ts`, roots/control/CLI/prefs fixtures. Worker owns code/test commits.
+  W2: `.scratch/worktrees/r3-project-add-ui`, branch `r3/project-add-ui`;
+  `src/ui/Settings.tsx`, `src/ui/api.ts`, minimal `src/style.css`/existing style file and focused UI helpers/tests.
+  Form: absolute path, explicit mode choice, session lifetime; shared busy/admin gates, retained draft on refusal,
+  duplicate selects existing card, successful add selects new card, roots event updates other tabs.
+  CTO owns shared `Plans/R3/{EXECUTION,QA}.md`, workspaces TODO, `Plans/README.md`, `CHANGELOG.md`.
+  Authors report ready SHA and focused evidence; shared checkpoint remains open until accepted integration.
+
+  Acceptance: real RW add/write succeeds; RO add under auto-RW refuses writes from its first visible state.
+  Canonical/symlink duplicate is idempotent refusal; missing/file/relative/NUL/unknown-key/bad-mode requests fail.
+  Direct nonadmin, forged/revoked admin (including while lock waits), cross-origin, reference/descendant,
+  changed canonical target, fresh saved policy, blocked format and IO failures leave roots/config/authority unchanged.
+  Save after add preserves explicit mode and later session name B. Existing IDs/path/URLs/marks/views/body unchanged;
+  another tab learns added metadata without document replacement. No file creation or write during Add itself.
+  One combined impacted-path gate + types on the frozen cohort; reuse author evidence where source-identical.
+  Exact test list is fixed from the final diff before the gate; no duplicate full suites.
+  One dedicated pinned exact-SHA OpenCode independent security review, explicit allowed test paths/logs/original exits.
+  Native safe-smoke proof uses real backend and real writes/denials, no mocks; focus/readiness conditions,
+  two-tab metadata, stale/revoke/input errors, session/save, light/dark and narrow screenshots; retain first failures.
+  No live reload/service/session/provider/ACL/push/publish/deploy/version changes.
+
+  Capacity checked 2026-11-07 17:36 UTC: actual Kitty W1 Claude shows 5h 97%, weekly 52% remaining;
+  W2 account 2 shows 5h 95%, weekly 56% remaining. Workers cannot read their own usage; screen evidence used.
+  OpenCode API reports short-window 1% used, weekly 45% used; reserved for independent review.
+  CTO shared Codex screen weekly 3% remaining (reset Nov 10 21:35 local); short-window unavailable.
+  W3 idle; author work stays on available Claude, reserve Codex for coordination/integration.

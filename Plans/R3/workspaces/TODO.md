@@ -181,6 +181,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 ## W1 — Install and connect
 
 - [ ] MW.1 Add the AI installation runbook and managed workspace convention <a id="MW.1"></a>
+  - [ ] MW.1.3 Settings Add existing project; [bounded cohort](../EXECUTION.md#settings-add-project-cohort) <a id="MW.1.3"></a>
+    Explicit RW/RO, session-only, shared canonical registration; admin/reference/stale/IO gates before visibility.
   - [x] MW.1.2 Explicit RW/RO confirmation with mode prerequisite; [approved cohort](../EXECUTION.md#scoped-project-access-cohort) <a id="MW.1.2"></a>
     Integrated `9957efe`; explicit RO beats auto, live controls/drafts and server write-denial verified. [Evidence](../QA.md#scoped-project-access).
   - [x] MW.1.1 Existing-session explicit save with admin confirmation; [scope/dependency check](../EXECUTION.md#existing-project-explicit-save) <a id="MW.1.1"></a>
