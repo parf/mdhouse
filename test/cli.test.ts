@@ -414,3 +414,54 @@ describe('--name: a human name for one project, display only', () => {
     }
   });
 });
+
+describe('explicit RO from prefs: start, re-open, -p and --rw', () => {
+  type Root = { path: string; mode?: string; writable: boolean; saved: boolean };
+  const rootsAt = async (port: number) => ((await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()) as { roots: Root[] }).roots;
+  const modeOf = async (port: number, path: string) => {
+    const r = (await rootsAt(port)).find((x) => x.path === path)!;
+    return [r.mode, r.writable];
+  };
+
+  test('a saved RO folder stays RO under auto-rw across starts; re-open and -p keep it; --rw grants for the session, -p --rw saves RW', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const b = s.folder('b');
+    mkdirSync(join(s.cfg, 'mdhouse'), { recursive: true });
+    writeFileSync(
+      join(s.cfg, 'mdhouse/prefs.json'),
+      JSON.stringify({ version: 2, saved: [a, b], writable: [], readonly: [a], autoRwRules: [s.dir], settings: { autoRw: true } }),
+    );
+    try {
+      expect(s.run(['--port', '61948']).code).toBe(0);
+      expect(await modeOf(61948, a)).toEqual(['ro', false]);
+      expect(await modeOf(61948, b)).toEqual(['inherit', true]);
+
+      expect(s.run([a, '--port', '61948']).code).toBe(0); // bare re-open
+      expect(await modeOf(61948, a)).toEqual(['ro', false]);
+      expect(s.run([a, '-p', '--port', '61948']).code).toBe(0); // -p without --rw
+      expect(await modeOf(61948, a)).toEqual(['ro', false]);
+      expect(s.prefs().readonly).toEqual([a]);
+
+      expect(s.run([a, '--rw', '--port', '61948']).code).toBe(0); // the OS owner's grant, this session
+      expect(await modeOf(61948, a)).toEqual(['rw', true]);
+      expect(s.prefs()).toMatchObject({ readonly: [a], writable: [] });
+
+      expect(s.run(['exit', '--port', '61948']).code).toBe(0);
+      expect(s.run(['--port', '61948']).code).toBe(0); // a fresh start reads the saved RO again
+      expect(await modeOf(61948, a)).toEqual(['ro', false]);
+
+      expect(s.run([a, '-p', '--rw', '--port', '61948']).code).toBe(0);
+      expect(await modeOf(61948, a)).toEqual(['rw', true]);
+      expect(s.prefs()).toMatchObject({ readonly: [], writable: [a] });
+
+      // saved RO by another process after the start, then opened: RO, not auto-rw's grant
+      const c = s.folder('c');
+      writeFileSync(join(s.cfg, 'mdhouse/prefs.json'), JSON.stringify({ ...s.prefs(), saved: [a, b, c], readonly: [c] }));
+      expect(s.run([c, '--port', '61948']).code).toBe(0);
+      expect(await modeOf(61948, c)).toEqual(['ro', false]);
+    } finally {
+      s.run(['exit', '--port', '61948']);
+    }
+  });
+});

@@ -11,7 +11,7 @@
 import { accessSync, constants, existsSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Registry } from './lib/roots';
+import { Registry, type AccessMode } from './lib/roots';
 import { Prefs } from './lib/prefs';
 import { pageUrl, serve } from './server';
 import { answered, askAdminList, askAdminMint, askAdminRevoke, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
@@ -702,7 +702,7 @@ if (!opts.fg) {
 
   // The port is free and nothing is running: save here, and the daemon about to start reads them.
   await saveServer();
-  if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw);
+  if (opts.perm) for (const dir of dirs) await prefs.addSaved(canonical(dir), opts.rw ? 'rw' : null);
 
   /**
    * Start the server detached and wait for it to answer.
@@ -770,16 +770,16 @@ if (!opts.fg) {
 }
 
 // The daemon itself: what it was asked for, plus everything saved.
-// Writability per folder: `--rw` covers the folders named on this command, and a saved folder is
-// writable only if it was saved with `-p --rw`. One `--rw` never spreads to the others. A folder
-// named with `-p` is saved as asked once the port is bound, so its saved mark does not count.
+// Mode per folder: `--rw` makes the folders named on this command `rw`; any other folder takes its
+// saved mode — `rw` saved with `-p --rw`, `ro` set read-only — else `inherit`. One `--rw` never
+// spreads to the others. A folder named with `-p` and no `--rw` loses a saved `rw` and keeps a saved `ro`.
 const named = new Set(dirs.map(canonical));
-const registry = await Registry.create(
-  [...new Set([...named, ...saved.map(canonical)])].map((path) => ({
-    path,
-    writable: named.has(path) && opts.perm ? opts.rw : (named.has(path) && opts.rw) || prefs.isWritableSaved(path),
-  })),
-);
+const startMode = (path: string): AccessMode => {
+  if (named.has(path) && opts.rw) return 'rw';
+  const stored = prefs.savedMode(path) ?? 'inherit';
+  return named.has(path) && opts.perm && stored === 'rw' ? 'inherit' : stored;
+};
+const registry = await Registry.create([...new Set([...named, ...saved.map(canonical)])].map((path) => ({ path, mode: startMode(path) })));
 if (!REFERENCE) {
   console.error(`mdhouse: the reference material is missing: ${fileURLToPath(new URL('../doc', import.meta.url))} — reinstall mdhouse`);
   process.exit(1);
@@ -821,7 +821,7 @@ try {
 const { server, shutdown, control } = started;
 // `-p` is a promise that a directory comes back on every start, however the start was asked for.
 await saveServer();
-if (opts.perm) for (const dir of named) await prefs.addSaved(dir, opts.rw);
+if (opts.perm) for (const dir of named) await prefs.addSaved(dir, opts.rw ? 'rw' : null);
 // `--name` on a fresh start, once `-p` has saved: the name goes to prefs for a saved root, else memory.
 if (nameArg !== undefined) await started.setRootName(canonical(dirs[0]!), nameArg);
 

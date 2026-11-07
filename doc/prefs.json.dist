@@ -1,21 +1,27 @@
 // mdhouse config — ~/.config/mdhouse/prefs.json ($XDG_CONFIG_HOME respected)
 //
-// Every key is optional. mdhouse writes this file itself (marks, -p, user-add, the settings
-// page) as plain JSON, so comments you add are dropped on its next save.
+// Every key is optional, except that version 2 needs "readonly" and "autoRwRules". mdhouse writes
+// this file itself (marks, -p, user-add, the settings page) as plain JSON, so comments you add are
+// dropped on its next save. Its first save turns a version-1 file into version 2. A newer version,
+// or version 2 with those lists missing or malformed, is never written and makes nothing writable.
 {
-  "version": 1,
+  "version": 2,
 
   // Served on every start: `mdhouse <dir> -p`; forget with `mdhouse --rm <dir>`
   "saved": ["/home/you/notes", "/home/you/src/project"],
-  // The saved ones mdhouse may write to: `mdhouse -p --rw <dir>`
+  // The saved ones mdhouse may write to: `mdhouse -p --rw <dir>`, or [RW] on the settings page
   "writable": ["/home/you/notes"],
+  // The saved ones set read-only on the settings page — auto-rw never makes one writable
+  "readonly": ["/home/you/src/project"],
   // Human names of saved ones, display only: `mdhouse <dir> -p --name "My Notes"` or the settings page;
   // `--name reset` or an empty name removes one. An unsaved project's name is not kept here
   "names": { "/home/you/notes": "My Notes" },
 
-  // Every folder served from under these is writable without --rw: `mdhouse --auto-rw ~/src`
+  // Every folder served from under these is writable without --rw, unless read-only: `mdhouse --auto-rw ~/src`
   // (switched off and on by settings.autoRw, on the settings page)
-  "autoRw": ["/home/you/src"],
+  "autoRwRules": ["/home/you/src"],
+  // Version 1's place for those paths; version 2 keeps it empty, so an older mdhouse grants nothing by auto-rw
+  "autoRw": [],
 
   // The Agent Bus integration: `mdhouse --agent-bus` / `--agent-bus off` / `--agent-bus <x.sock>`
   // `--agent-bus http://host:6767` — a remote daemon: socket holds the URL, token its credential (asked for)

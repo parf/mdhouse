@@ -42,14 +42,14 @@ describe('Prefs.saveRoot — one write, guarded by the file as it is under the l
       const prefs = await Prefs.load(path);
       await prefs.addSaved('/keep');
       const seen: unknown[] = [];
-      expect(await prefs.saveRoot('/p', { writable: true, name: 'P' }, (fresh) => (seen.push(fresh), null))).toBeNull();
-      expect(seen).toEqual([{ saved: false, auto: false }]);
+      expect(await prefs.saveRoot('/p', { mode: 'rw', name: 'P' }, (fresh) => (seen.push(fresh), null))).toBeNull();
+      expect(seen).toEqual([{ saved: false, auto: false, stored: null }]);
       const disk = JSON.parse(readFileSync(path, 'utf8'));
       expect([disk.saved, disk.writable, disk.names]).toEqual([['/keep', '/p'], ['/p'], { '/p': 'P' }]);
       expect([prefs.isSaved('/p'), prefs.isWritableSaved('/p'), prefs.savedName('/p')]).toEqual([true, true, 'P']);
 
       // RO and no name: nothing writable, no name entry
-      expect(await prefs.saveRoot('/q', { writable: false, name: null }, () => null)).toBeNull();
+      expect(await prefs.saveRoot('/q', { mode: 'inherit', name: null }, () => null)).toBeNull();
       const after = JSON.parse(readFileSync(path, 'utf8'));
       expect([after.writable, after.names]).toEqual([['/p'], { '/p': 'P' }]);
     } finally {
@@ -70,7 +70,7 @@ describe('Prefs.saveRoot — one write, guarded by the file as it is under the l
       ]) {
         const release = await holdLock(path);
         const seen: Array<{ saved: boolean; auto: boolean }> = [];
-        const pending = stale.saveRoot('/p', { writable: false, name: 'P' }, (fresh) => {
+        const pending = stale.saveRoot('/p', { mode: 'inherit', name: 'P' }, (fresh) => {
           seen.push(fresh);
           return fresh.saved || fresh.auto ? 'stale' : null;
         });
@@ -269,7 +269,7 @@ describe('POST /api/roots/save', () => {
       let pending = t.post('/api/roots/save', { id: 'ses', rev: saveRev }, { cookie });
       await Bun.sleep(100);
       const current = disk(t.prefsPath);
-      const text = await replaceFile(t.prefsPath, { ...current, saved: [...current.saved, t.ses].sort(), settings: { autoRw: true }, autoRw: [t.ses] });
+      const text = await replaceFile(t.prefsPath, { ...current, saved: [...current.saved, t.ses].sort(), settings: { autoRw: true }, autoRwRules: [t.ses] });
       await release();
       let res = await pending;
       expect(res.status).toBe(409);
@@ -366,7 +366,7 @@ describe('POST /api/roots/save', () => {
       // a prefs file from a newer mdhouse is never written
       await t.post('/api/roots/remove', { id: 'ses' }, { cookie });
       await askDaemon(61729, { dirs: [t.ses], name: 'Again' });
-      const newer = `{"version":2,"saved":${JSON.stringify([t.keep])}}\n`;
+      const newer = `{"version":3,"saved":${JSON.stringify([t.keep])}}\n`;
       await writeFile(target, newer);
       t.prefs.refresh();
       const rev = (await t.ses_()).saveRev;

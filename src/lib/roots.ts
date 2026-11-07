@@ -16,6 +16,12 @@ import { fileUrl, RESERVED } from './urls';
  */
 export type RootKind = 'project' | 'reference';
 
+/**
+ * A project's chosen access: `rw` and `ro` are explicit choices, `inherit` follows auto-rw. Explicit
+ * `ro` beats auto-rw; explicit `rw` stays capped by reference protection.
+ */
+export type AccessMode = 'inherit' | 'rw' | 'ro';
+
 export interface Root {
   /** Short slug used in URLs. Never contains a slash. */
   id: string;
@@ -26,13 +32,13 @@ export interface Root {
   /** Absolute, symlink-resolved path. */
   path: string;
   /**
-   * false => every write through writeFile() throws. True when `--rw` was passed for it, or it
-   * sits under an auto-rw path with that setting on — worked out each time it is read. Always
-   * false for a reference root and for a root inside one.
+   * false => every write through writeFile() throws. True when its mode is `rw`, or `inherit` and
+   * it sits under an auto-rw path with that setting on — worked out each time it is read. Always
+   * false for a reference root, a root inside one, and while the stored access policy is blocked.
    */
   readonly writable: boolean;
-  /** `--rw` was passed for it. */
-  rwAsked?: boolean;
+  /** The access chosen for a project root; absent on a reference root. */
+  mode?: AccessMode;
 }
 
 export interface Resolved {
@@ -98,36 +104,42 @@ export class Registry {
   }
 
   /**
-   * @param specs directories, each a path or `{ path, writable }` — writability belongs to the
-   *        folder it was asked for, not to the process.
-   * @param writable the default for plain paths. Read-only is the default: a viewer that
+   * @param specs directories, each a path or `{ path, mode }` / `{ path, writable }` — access
+   *        belongs to the folder it was asked for, not to the process.
+   * @param mode the mode for plain paths. `inherit` is the default: without auto-rw a viewer that
    *        cannot write cannot damage anything it is pointed at.
    */
   static async create(
-    specs: Array<string | { path: string; writable: boolean }>,
-    writable = false,
+    specs: Array<string | { path: string; mode: AccessMode } | { path: string; writable: boolean }>,
+    mode: AccessMode | boolean = 'inherit',
   ): Promise<Registry> {
     const registry = new Registry([]);
     for (const spec of specs) {
-      if (typeof spec === 'string') await registry.add(spec, writable);
-      else await registry.add(spec.path, spec.writable);
+      if (typeof spec === 'string') await registry.add(spec, mode);
+      else await registry.add(spec.path, 'mode' in spec ? spec.mode : spec.writable);
     }
     return registry;
   }
 
   /**
-   * Make a served root writable, or read-only again. `mdhouse <dir> --rw` against a running
-   * daemon upgrades the folder in place rather than asking for a restart.
+   * Sets a project root's mode in place: `mdhouse <dir> --rw` against a running daemon, or the
+   * settings page. False for an unknown id or a reference root.
    */
-  setWritable(id: string, on: boolean): boolean {
+  setMode(id: string, mode: AccessMode): boolean {
     const root = this.byId.get(id);
     if (!root || root.kind === 'reference') return false;
-    root.rwAsked = on;
+    root.mode = mode;
     return true;
   }
 
   /** Is a folder writable without `--rw`? Set by the server to its auto-rw check. */
   autoRw: (dir: string) => boolean = () => false;
+
+  /**
+   * Is the stored access policy unreadable by this mdhouse (newer or malformed)? Then no root is
+   * writable, whatever its mode — `--rw` included. Set by the server to the prefs check.
+   */
+  accessBlocked: () => boolean = () => false;
 
   /**
    * Serve one more directory, for the lifetime of the process.
@@ -136,7 +148,9 @@ export class Registry {
    * than failing, so the registry has to grow after construction. A directory already served
    * returns the root it already has: asking twice is how you get its URL, not a duplicate.
    */
-  async add(spec: string, writable = false): Promise<Root> {
+  async add(spec: string, access: AccessMode | boolean = 'inherit'): Promise<Root> {
+    // `true` is `--rw`; `false` asks for nothing.
+    const mode: AccessMode = access === true ? 'rw' : access === false ? 'inherit' : access;
     const abs = await realpath(resolvePath(spec));
     const existing = this.list().find((r) => r.path === abs);
     if (existing?.kind === 'reference') throw new Error(`${abs} is mdhouse's reference material — it cannot be added as a project`);
@@ -153,9 +167,10 @@ export class Registry {
       name,
       path: abs,
       kind: 'project',
-      rwAsked: writable,
+      mode,
       get writable() {
-        return (!!this.rwAsked || registry.autoRw(this.path)) && !registry.inReference(this.path);
+        const on = this.mode === 'rw' || (this.mode === 'inherit' && registry.autoRw(this.path));
+        return on && !registry.inReference(this.path) && !registry.accessBlocked();
       },
     };
     this.byId.set(id, root);

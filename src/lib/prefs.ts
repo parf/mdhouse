@@ -23,6 +23,7 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DEFAULT_EDIT_SCHEME, normalizeEditScheme } from './urls';
 import { normalizeProjectName } from './project-name';
+import type { AccessMode } from './roots';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -34,8 +35,11 @@ interface RootPrefs {
   ignored: string[];
 }
 
+/** The format this mdhouse writes. A version-1 file is read as is and written as version 2. */
+export const PREFS_VERSION = 2;
+
 interface PrefsFile {
-  /** Above 1: written by a newer mdhouse — read, never written. */
+  /** 1 or 2. Any other value: written by a newer mdhouse — read, never written, grants no writes. */
   version: number;
   /** absolute root path -> marks */
   roots: Record<string, RootPrefs>;
@@ -48,11 +52,16 @@ interface PrefsFile {
    */
   names: Record<string, string>;
   /**
-   * The saved directories mdhouse may write to — saved with `-p --rw`. Writability belongs to
-   * the folder it was asked for, never to the process: starting with `--rw` for one folder does
-   * not make the saved ones writable.
+   * The saved directories mdhouse may write to — saved with `-p --rw`, or set RW on the settings
+   * page. Writability belongs to the folder it was asked for, never to the process: starting with
+   * `--rw` for one folder does not make the saved ones writable.
    */
   writable: string[];
+  /**
+   * Version 2: the saved directories set read-only on the settings page; auto-rw never makes one
+   * writable. Never shares a directory with `writable`.
+   */
+  readonly: string[];
   /** The settings page's options. */
   settings: Settings;
   /**
@@ -63,8 +72,14 @@ interface PrefsFile {
   /** Who may open mdhouse — see `lib/access.ts`. Set from the CLI only. */
   access: AccessConfig;
   /**
-   * auto-rw paths, `mdhouse --auto-rw <path,…>`: every folder served from under one is writable
-   * without `--rw` — while `settings.autoRw` is on; the settings page turns it off and on.
+   * Version 2: the auto-rw paths, `mdhouse --auto-rw <path,…>`: every folder served from under one
+   * is writable without `--rw` unless set read-only — while `settings.autoRw` is on; the settings
+   * page turns it off and on.
+   */
+  autoRwRules: string[];
+  /**
+   * Version 1's auto-rw paths, read into `autoRwRules`. Version 2 keeps it empty, so an older
+   * mdhouse reading the file grants nothing by auto-rw.
    */
   autoRw: string[];
   /** The Agent Bus integration — `mdhouse --agent-bus`; the settings page picks the default agents. */
@@ -133,17 +148,43 @@ function real(path: string): string {
 /** The saved entry for `dir` — itself, or a saved symlink that resolves to it — or undefined. */
 const savedEntry = (saved: string[], dir: string): string | undefined => saved.find((d) => d === dir || real(d) === dir);
 
-/** Is `dir` writable by auto-rw under `data`: the switch on and one of its paths covering it. */
+/** Does a list entry name `dir` — as written or through a symlink? */
+const sameDir = (entry: string, dir: string): boolean => entry === dir || real(entry) === dir || real(entry) === real(dir);
+
+/**
+ * Why this mdhouse must not change the file or take writes from it — a newer or malformed format —
+ * or undefined. Kept beside the data, never in it, so it is never written.
+ */
+const blockedBy = new WeakMap<PrefsFile, string>();
+
+/** Is `dir` writable by auto-rw under `data`: the switch on and one of its paths covering it. Never while blocked. */
 function autoCovers(data: PrefsFile, dir: string): boolean {
-  return data.settings.autoRw && data.autoRw.some((p) => [p, real(p)].some((q) => dir === q || dir.startsWith(q.endsWith('/') ? q : `${q}/`)));
+  if (blockedBy.has(data)) return false;
+  return data.settings.autoRw && data.autoRwRules.some((p) => [p, real(p)].some((q) => dir === q || dir.startsWith(q.endsWith('/') ? q : `${q}/`)));
 }
 
-/** What `saveRoot`'s guard sees: the file as it is under the lock, for one directory. */
-export interface SaveView {
+/** The stored mode of a saved directory, undefined when unsaved. A blocked file keeps read-only and grants no `rw`. */
+function storedMode(data: PrefsFile, dir: string): AccessMode | undefined {
+  if (savedEntry(data.saved, dir) === undefined) return undefined;
+  if (data.readonly.some((d) => sameDir(d, dir))) return 'ro';
+  if (!blockedBy.has(data) && data.writable.some((d) => sameDir(d, dir))) return 'rw';
+  return 'inherit';
+}
+
+/** What a guard sees: the file as it is under the lock, for one directory. */
+export interface PolicyView {
   saved: boolean;
   /** auto-rw makes it writable: the switch on and a path covering it. */
   auto: boolean;
+  /** Its stored mode; null when unsaved. */
+  stored: AccessMode | null;
 }
+
+const viewOf = (data: PrefsFile, dir: string): PolicyView => ({
+  saved: savedEntry(data.saved, dir) !== undefined,
+  auto: autoCovers(data, dir),
+  stored: storedMode(data, dir) ?? null,
+});
 
 /** A guard's refusal: `saveRoot` writes nothing and returns it. */
 class Refused extends Error {
@@ -175,25 +216,57 @@ function covers(rule: string, path: string): boolean {
 }
 
 const fresh = (): PrefsFile => ({
-  version: 1,
+  version: PREFS_VERSION,
   roots: {},
   saved: [],
   names: {},
   writable: [],
+  readonly: [],
   settings: { ...DEFAULT_SETTINGS },
   server: {},
   access: { allow: [], users: {}, hostNames: [] },
+  autoRwRules: [],
   autoRw: [],
   agentBus: { enabled: false, socket: '', token: '', default: [], filter: [...DEFAULT_AB_FILTER] },
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
 
+const strings = (x: unknown): x is string[] => Array.isArray(x) && x.every((e) => typeof e === 'string');
+
+/**
+ * Why the file's access data cannot be trusted, or null. Version 2 needs `readonly` and
+ * `autoRwRules` as string lists and an empty legacy `autoRw`; version 1 has no `autoRwRules`;
+ * no directory is both writable and read-only. Anything else is ambiguous, so it fails closed.
+ */
+function accessProblem(parsed: Partial<PrefsFile>): string | null {
+  const v: unknown = parsed.version;
+  if (v !== undefined && v !== 1 && v !== PREFS_VERSION) {
+    return typeof v === 'number' && v > PREFS_VERSION ? `version ${v}, from a newer mdhouse` : 'an unknown version';
+  }
+  if (v === PREFS_VERSION) {
+    if (!strings(parsed.readonly) || !strings(parsed.autoRwRules)) return 'version 2 without valid readonly and autoRwRules lists';
+    if (parsed.autoRw !== undefined && !(Array.isArray(parsed.autoRw) && parsed.autoRw.length === 0)) return 'version 2 with a legacy autoRw list';
+    if ((parsed.saved !== undefined && !strings(parsed.saved)) || (parsed.writable !== undefined && !strings(parsed.writable))) {
+      return 'version 2 with malformed saved or writable lists';
+    }
+  } else {
+    if ('autoRwRules' in parsed) return 'version 1 with autoRwRules';
+    if (parsed.readonly !== undefined && !strings(parsed.readonly)) return 'a malformed readonly list';
+  }
+  const ro = strings(parsed.readonly) ? parsed.readonly : [];
+  const rw = Array.isArray(parsed.writable) ? parsed.writable.filter((d) => typeof d === 'string') : [];
+  if (rw.some((w) => ro.some((r) => sameDir(r, w)))) return 'a directory both writable and read-only';
+  return null;
+}
+
 /**
  * A parsed file, filled out and type-checked, so an older or hand-edited one loads cleanly.
- * Unknown top-level keys are kept, so a save never drops what a newer mdhouse wrote.
+ * Unknown top-level keys are kept, so a save never drops what a newer mdhouse wrote. A file with
+ * an access problem keeps its version and is marked blocked: never written, no write granted.
  */
 function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
+  const problem = accessProblem(parsed);
   const saved = Array.isArray(parsed.saved) ? parsed.saved.filter((d) => typeof d === 'string') : [];
   // Only a saved directory can be saved writable.
   const writable = Array.isArray(parsed.writable)
@@ -234,17 +307,20 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     }
   }
   pruneNames({ saved, names });
-  return {
+  const legacyAuto = Array.isArray(parsed.autoRw) ? parsed.autoRw.filter((d) => typeof d === 'string') : [];
+  const data: PrefsFile = {
     ...parsed,
-    version: typeof parsed.version === 'number' && parsed.version > 1 ? parsed.version : 1,
+    version: problem ? (parsed.version as number) : parsed.version === PREFS_VERSION ? PREFS_VERSION : 1,
     roots,
     saved,
     names,
     writable,
+    readonly: strings(parsed.readonly) ? [...parsed.readonly] : [],
     settings,
     server,
     access,
-    autoRw: Array.isArray(parsed.autoRw) ? parsed.autoRw.filter((d) => typeof d === 'string') : [],
+    autoRwRules: parsed.version === PREFS_VERSION ? (strings(parsed.autoRwRules) ? [...parsed.autoRwRules] : []) : legacyAuto,
+    autoRw: parsed.version === PREFS_VERSION ? [] : legacyAuto,
     agentBus: {
       enabled: parsed.agentBus?.enabled === true,
       socket: typeof parsed.agentBus?.socket === 'string' ? parsed.agentBus.socket : '',
@@ -253,6 +329,8 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
       filter: Array.isArray(parsed.agentBus?.filter) ? parsed.agentBus.filter.filter((n) => typeof n === 'string') : [...DEFAULT_AB_FILTER],
     },
   };
+  if (problem) blockedBy.set(data, problem);
+  return data;
 }
 
 /**
@@ -364,19 +442,30 @@ export class Prefs {
    * service), and each holding its own copy meant each save undid the others' changes. Each
    * change runs under `withLock`, so two processes never interleave.
    */
-  private mutate<T>(change: (data: PrefsFile) => T): Promise<T> {
+  /**
+   * `change` may call `unchanged()` to leave the file as it is: nothing is written, and a version-1
+   * file stays version 1. Every write is version 2 — a version-1 file's auto-rw paths move to
+   * `autoRwRules` and its legacy `autoRw` empties, in the same atomic write.
+   */
+  private mutate<T>(change: (data: PrefsFile, unchanged: () => void) => T): Promise<T> {
     const run = this.queue.then(() => withLock(this.path, () => this.mutateNow(change)));
     this.queue = run.catch(() => {});
     return run;
   }
 
-  private async mutateNow<T>(change: (data: PrefsFile) => T): Promise<T> {
+  private async mutateNow<T>(change: (data: PrefsFile, unchanged: () => void) => T): Promise<T> {
     const found = await readFile(this.path);
     if (found === 'broken') await setAside(this.path);
     // A broken file falls back to a copy of what this process holds: a failed save must not have changed it.
     const data = typeof found === 'object' ? found : found === 'missing' ? fresh() : structuredClone(this.data);
-    if (data.version > 1) throw new Error(`${this.path} is version ${data.version}, from a newer mdhouse — not changed`);
-    const result = change(data);
+    if (found === 'broken' && blockedBy.has(this.data)) blockedBy.set(data, blockedBy.get(this.data)!);
+    const blocked = blockedBy.get(data);
+    if (blocked) throw new Error(`${this.path} is ${blocked} — not changed`);
+    let write = true;
+    const result = change(data, () => (write = false));
+    if (!write) return result;
+    data.version = PREFS_VERSION;
+    data.autoRw = [];
     // Durable first: readers in this process see the change only once it is on disk.
     await this.write(data);
     this.data = data;
@@ -461,7 +550,16 @@ export class Prefs {
 
   /** The auto-rw paths. */
   get autoRw(): string[] {
-    return [...this.data.autoRw];
+    return [...this.data.autoRwRules];
+  }
+
+  /**
+   * Why the file as it is now grants no writes and takes no changes — newer or malformed — or null.
+   * While it is set, no root is writable.
+   */
+  accessBlocked(): string | null {
+    this.refresh();
+    return blockedBy.get(this.data) ?? null;
   }
 
   /**
@@ -476,7 +574,7 @@ export class Prefs {
   /** Replace the auto-rw paths. */
   async setAutoRw(paths: string[]): Promise<string[]> {
     await this.mutate((data) => {
-      data.autoRw = [...paths];
+      data.autoRwRules = [...paths];
     });
     return this.autoRw;
   }
@@ -545,53 +643,87 @@ export class Prefs {
     return this.data.saved.some((d) => d === dir || real(d) === dir);
   }
 
-  /** Saved with `-p --rw`: mdhouse may write to it on every start — also when written through a symlink. */
+  /** Saved writable: mdhouse may write to it on every start — also when written through a symlink. */
   isWritableSaved(dir: string): boolean {
-    return this.data.writable.some((d) => d === dir || real(d) === dir);
+    return storedMode(this.data, dir) === 'rw';
+  }
+
+  /** The stored mode of a saved directory — also when asked through a saved symlink — or undefined when unsaved. */
+  savedMode(dir: string): AccessMode | undefined {
+    return storedMode(this.data, dir);
   }
 
   /**
-   * Save a directory, recording it exactly as asked: writable with `rw`, read-only without —
-   * so saving again without `--rw` is how write access is taken away. True when it was not
-   * saved before.
+   * Save a directory. `rw` saves it writable and `ro` read-only; `null` — `-p` without `--rw` —
+   * takes saved write access away and keeps a read-only choice. True when it was not saved before.
    */
-  addSaved(dir: string, rw = false): Promise<boolean> {
+  addSaved(dir: string, mode: 'rw' | 'ro' | null = null): Promise<boolean> {
     return this.mutate((data) => {
       const isNew = !data.saved.includes(dir);
       if (isNew) data.saved = [...data.saved, dir].sort();
-      data.writable = data.writable.filter((d) => d !== dir);
-      if (rw) data.writable = [...data.writable, dir].sort();
+      data.writable = data.writable.filter((d) => !sameDir(d, dir));
+      if (mode !== null) data.readonly = data.readonly.filter((d) => !sameDir(d, dir));
+      if (mode === 'rw') data.writable = [...data.writable, dir].sort();
+      if (mode === 'ro') data.readonly = [...data.readonly, dir].sort();
       return isNew;
     });
   }
 
-  /** Forget a saved directory, and its name; true when it was saved. */
+  /** Forget a saved directory, its access choice and its name; true when it was saved. */
   removeSaved(dir: string): Promise<boolean> {
     return this.mutate((data) => {
       if (!data.saved.includes(dir)) return false;
       data.saved = data.saved.filter((d) => d !== dir);
       data.writable = data.writable.filter((d) => d !== dir);
+      data.readonly = data.readonly.filter((d) => d !== dir);
       pruneNames(data);
       return true;
     });
   }
 
   /**
-   * Saves `dir` (canonical) in one write: saved, writable exactly as `writable` says, and its name
+   * Saves `dir` (canonical) in one write: saved, its mode (`inherit`: neither list) and its name
    * (`null`: none). `guard` sees the file as it is under the lock, before anything changes; a reason
    * it returns refuses the save, writing nothing. Returns that reason, or null once saved.
    */
-  async saveRoot(dir: string, values: { writable: boolean; name: string | null }, guard: (fresh: SaveView) => string | null): Promise<string | null> {
+  async saveRoot(dir: string, values: { mode: AccessMode; name: string | null }, guard: (fresh: PolicyView) => string | null): Promise<string | null> {
     try {
       await this.mutate((data) => {
-        const why = guard({ saved: savedEntry(data.saved, dir) !== undefined, auto: autoCovers(data, dir) });
+        const why = guard(viewOf(data, dir));
         if (why !== null) throw new Refused(why);
         data.saved = [...data.saved, dir].sort();
-        data.writable = data.writable.filter((d) => d !== dir);
-        if (values.writable) data.writable = [...data.writable, dir].sort();
+        data.writable = data.writable.filter((d) => !sameDir(d, dir));
+        data.readonly = data.readonly.filter((d) => !sameDir(d, dir));
+        if (values.mode === 'rw') data.writable = [...data.writable, dir].sort();
+        if (values.mode === 'ro') data.readonly = [...data.readonly, dir].sort();
         if (values.name === null) delete data.names[real(dir)];
         else data.names[real(dir)] = values.name;
         pruneNames(data);
+      });
+      return null;
+    } catch (err) {
+      if (err instanceof Refused) return err.reason;
+      throw err;
+    }
+  }
+
+  /**
+   * Commits an explicit mode for `dir` (canonical). `guard` sees the file under the lock first; a
+   * reason it returns refuses, writing nothing. A saved directory's mode is written to the file; an
+   * unsaved one's file is left as it is — its mode lives in memory. Returns the reason, or null.
+   * Throws, changing nothing, when the file is blocked or cannot be written.
+   */
+  async commitMode(dir: string, mode: 'rw' | 'ro', guard: (fresh: PolicyView) => string | null): Promise<string | null> {
+    try {
+      await this.mutate((data, unchanged) => {
+        const why = guard(viewOf(data, dir));
+        if (why !== null) throw new Refused(why);
+        const entry = savedEntry(data.saved, dir);
+        if (entry === undefined) return unchanged();
+        data.writable = data.writable.filter((d) => !sameDir(d, dir));
+        data.readonly = data.readonly.filter((d) => !sameDir(d, dir));
+        if (mode === 'rw') data.writable = [...data.writable, entry].sort();
+        else data.readonly = [...data.readonly, entry].sort();
       });
       return null;
     } catch (err) {

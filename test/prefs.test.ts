@@ -184,7 +184,7 @@ describe('writable saved folders', () => {
   test('-P records a folder as asked: with rw writable, without it read-only again', async () => {
     const f = join(dir, 'rw.json');
     const prefs = await Prefs.load(f);
-    await prefs.addSaved('/a', true);
+    await prefs.addSaved('/a', 'rw');
     await prefs.addSaved('/b');
     expect((await Prefs.load(f)).isWritableSaved('/a')).toBe(true);
     expect((await Prefs.load(f)).isWritableSaved('/b')).toBe(false);
@@ -196,7 +196,7 @@ describe('writable saved folders', () => {
   test('forgetting a folder forgets its write access; only saved folders can be writable', async () => {
     const f = join(dir, 'rw2.json');
     const prefs = await Prefs.load(f);
-    await prefs.addSaved('/c', true);
+    await prefs.addSaved('/c', 'rw');
     await prefs.removeSaved('/c');
     await prefs.addSaved('/c');
     expect((await Prefs.load(f)).isWritableSaved('/c')).toBe(false);
@@ -235,7 +235,7 @@ describe('auto-rw', () => {
       expect(a!.writable).toBe(false);
 
       // --rw for it still counts, whatever the switch.
-      registry.setWritable(a!.id, true);
+      registry.setMode(a!.id, 'rw');
       expect(a!.writable).toBe(true);
     } finally {
       await rmd(base, { recursive: true, force: true });
@@ -287,17 +287,17 @@ describe('a file from a newer mdhouse (D5)', () => {
     await writeFile(f, JSON.stringify({ version: 1, theme: 'dark', newThing: { a: [1] } }));
     await (await Prefs.load(f)).addSaved('/x');
     const saved = JSON.parse(await read(f, 'utf8'));
-    expect(saved).toMatchObject({ version: 1, theme: 'dark', newThing: { a: [1] }, saved: ['/x'] });
+    expect(saved).toMatchObject({ version: 2, theme: 'dark', newThing: { a: [1] }, saved: ['/x'] });
   });
 
   test('a file with a newer version is read, never written', async () => {
     const { readFile: read } = await import('node:fs/promises');
-    const f = join(dir, 'version2.json');
-    const original = JSON.stringify({ version: 2, saved: ['/keep'], theme: 'dark' });
+    const f = join(dir, 'version3.json');
+    const original = JSON.stringify({ version: 3, saved: ['/keep'], theme: 'dark' });
     await writeFile(f, original);
     const prefs = await Prefs.load(f);
     expect(prefs.savedDirs()).toEqual(['/keep']);
-    await expect(prefs.addSaved('/x')).rejects.toThrow(/version 2/);
+    await expect(prefs.addSaved('/x')).rejects.toThrow(/version 3/);
     expect(await read(f, 'utf8')).toBe(original);
     expect(prefs.savedDirs()).toEqual(['/keep']);
   });
@@ -392,8 +392,8 @@ describe('a failed save changes neither the file nor what this process reads', (
         });
       const before = view();
       const ops: Array<[string, () => Promise<unknown>]> = [
-        ['addSaved', () => prefs.addSaved('/y', true)],
-        ['addSaved rw', () => prefs.addSaved('/x', true)],
+        ['addSaved', () => prefs.addSaved('/y', 'rw')],
+        ['addSaved rw', () => prefs.addSaved('/x', 'rw')],
         ['removeSaved', () => prefs.removeSaved('/x')],
         ['setSavedName', () => prefs.setSavedName('/x', 'Leak')],
         ['updateSettings', () => prefs.updateSettings({ editLink: false, autoRw: false })],

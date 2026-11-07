@@ -46,6 +46,7 @@ test('/api/roots: the allowlisted project fields, with why a project is writable
         'writable',
         'configuredWritable',
         ...(r.writable ? ['writableBy'] : []),
+        ...(r.kind !== 'reference' ? ['mode', 'accessRev'] : []),
         ...(r.kind !== 'reference' && !r.saved ? ['saveRev'] : []),
       ];
       expect(Object.keys(r).sort()).toEqual(want.sort());

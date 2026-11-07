@@ -61,14 +61,14 @@ asks for the password; on non-interactive stdin it reads the first line.
 | Option | Meaning |
 | --- | --- |
 | `-p`, `--perm` | Save the named projects and any explicit `--port` / `--host` for later starts. |
-| `--rw` | The named project directories may be written; with `-p`, save them as writable. |
+| `--rw` | The named project directories may be written, also one set read-only; with `-p`, save them as writable. Without `--rw`, opening or `-p` keeps a read-only choice; `-p` takes saved write access away. |
 | `--rm` | Forget the named projects and stop serving them. With no directory, use the current directory. |
 | `--name <text>` | A human name for the one named project, shown instead of its directory name; display only. With `-p`, or on an already saved project, saved; otherwise kept until mdhouse stops, or saved with the project later. `reset` (or empty) restores the directory name. At most 80 characters, no control characters. |
 | `--host <addr>` | Address to bind; default `127.0.0.1`. |
 | `--port <n>` | Port to use; default `7777`. With `exit` or `admin`, select which mdhouse. |
 | `--allow <cidr,...>` | Allow only these networks and this machine; saved. `reset` allows every address again. |
 | `--host-name <name,...>` | Allow only these Host names; saved. `reset` allows localhost and IP addresses again. |
-| `--auto-rw <path,...>` | Make projects served from under these paths writable when the settings switch is on; saved. `reset` clears the paths. |
+| `--auto-rw <path,...>` | Make projects served from under these paths writable when the settings switch is on, unless set read-only; saved. `reset` clears the paths. |
 | `--agent-bus [on\|off\|<socket>\|<url>]` | Configure Agent Bus; saved. A remote HTTP(S) daemon asks for its token. |
 | `-o`, `--open` | Open the page in a browser after starting. |
 | `-a`, `--all` | Include gitignored Markdown while serving; with `exit`, stop every mdhouse. |

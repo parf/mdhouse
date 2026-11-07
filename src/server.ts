@@ -10,7 +10,7 @@ import index from './index.html';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
-import { Registry, ReadOnlyError, type Resolved, type Root } from './lib/roots';
+import { Registry, ReadOnlyError, type AccessMode, type Resolved, type Root } from './lib/roots';
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
@@ -26,7 +26,7 @@ import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/ins
 import { convertLegacy } from './lib/legacy';
 import { Watcher } from './lib/watch';
 import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-name';
-import type { SaveView } from './lib/prefs';
+import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
 import { allowedAddress, ipBytes, isLoopback, Users } from './lib/access';
@@ -198,6 +198,7 @@ export async function serve(opts: ServeOptions) {
   const { registry, prefs, port, hostname } = opts;
   const store = new Store(registry, prefs, { noGit: opts.noGit, gitLogLimit: opts.gitLogLimit });
   registry.autoRw = (dir) => prefs.autoRwCovers(dir);
+  registry.accessBlocked = () => prefs.accessBlocked() !== null;
   /** The settings page's options, and the auto-rw paths its switch is about (set from the CLI). */
   const settingsPayload = () => {
     prefs.refresh();
@@ -290,6 +291,16 @@ export async function serve(opts: ServeOptions) {
   /** A read-only root that shares files with the repo — a write to the repo may land in it. */
   const readOnlyIn = (repo: string): Root | undefined =>
     registry.list().find((r) => !r.writable && (within(r.path, repo) || within(repo, r.path)));
+  /**
+   * Run inside a git write's queue, right before git: the refusal when the folder stopped being
+   * writable since the request was checked — removed, set read-only, writes blocked — or `abs` is
+   * now in a read-only root. Null to go ahead.
+   */
+  const gitStillWritable = (at: { root: Root }, abs?: string): Response | null => {
+    if (registry.get(at.root.id) !== at.root || !at.root.writable) return fail(403, `${at.root.name} is read-only`);
+    if (abs !== undefined && registry.list().some((r) => !r.writable && within(abs, r.path))) return fail(403, 'that file is in a read-only folder now');
+    return null;
+  };
   /** Pull or push: uncommitted files only when all Markdown, and confirmed. Pull only when the whole repo is the root's to write. */
   const syncRepo = async (req: Request, args: string[]): Promise<Response> => {
     const body = (await req.json().catch(() => null)) as { p?: string; confirmed?: boolean } | null;
@@ -301,6 +312,10 @@ export async function serve(opts: ServeOptions) {
       if (!within(at.repo, at.root.path)) return fail(409, `the repository holds files outside ${at.root.name} — pull in a terminal`);
     }
     return queueWrite(`git:${at.repo}`, async () => {
+      const denied = gitStillWritable(at);
+      if (denied) return denied;
+      const ro = args[0] === 'pull' ? readOnlyIn(at.repo) : undefined;
+      if (ro) return fail(409, `${ro.name} is read-only and in the same repository — pull in a terminal`);
       const dirty = (await dirtyFiles(at.repo)).filter((f) => f.code !== '??' || f.md);
       if (dirty.some((f) => !f.md)) {
         return json({ error: 'You have uncommitted files that are not Markdown — commit them first', files: dirty }, 409);
@@ -391,28 +406,30 @@ export async function serve(opts: ServeOptions) {
       await setRootNameNow(path, name);
       publishRoots();
     });
+  /** A root's access as `policy` (prefs, from memory or the locked file) makes it: mode, auto-rw, reference cap, effective. */
+  const accessOf = (r: Root, policy: PolicyView) => {
+    const mode: AccessMode = r.mode ?? 'inherit';
+    const referenceCap = registry.inReference(r.path);
+    return { mode, auto: policy.auto, referenceCap, writable: (mode === 'rw' || (mode === 'inherit' && policy.auto)) && !referenceCap };
+  };
+  const sha256 = (value: unknown): string => createHash('sha256').update(JSON.stringify(value)).digest('hex');
   /**
    * What an administrator confirms when saving an unsaved project: full SHA-256 over its identity,
-   * configured and effective access (auto-rw and the reference cap), saved state and current name.
+   * mode and effective access (auto-rw and the reference cap), saved state and current name.
    * A staleness check, not authority. `policy` is prefs as read now — memory, or the locked file.
    */
-  const saveRevOf = (r: Root, policy: SaveView): string => {
-    const referenceCap = registry.inReference(r.path);
-    const rwAsked = !!r.rwAsked;
-    const snapshot = {
-      id: r.id,
-      path: r.path,
-      kind: r.kind ?? 'project',
-      rwAsked,
-      auto: policy.auto,
-      writable: (rwAsked || policy.auto) && !referenceCap,
-      referenceCap,
-      saved: policy.saved,
-      name: sessionNames.get(r.path) ?? null,
-    };
-    return createHash('sha256').update(JSON.stringify(snapshot)).digest('hex');
+  const saveRevOf = (r: Root, policy: PolicyView): string =>
+    sha256({ id: r.id, path: r.path, kind: r.kind ?? 'project', ...accessOf(r, policy), saved: policy.saved, name: sessionNames.get(r.path) ?? null });
+  /**
+   * What an administrator confirms when setting a project's mode: full SHA-256 over its identity,
+   * mode, stored mode, effective access and saved state — never its name. A staleness check, not authority.
+   */
+  const accessRevOf = (r: Root, policy: PolicyView): string =>
+    sha256({ id: r.id, path: r.path, kind: r.kind ?? 'project', ...accessOf(r, policy), stored: policy.stored, saved: policy.saved });
+  const memoryPolicy = (path: string): PolicyView => {
+    prefs.refresh();
+    return { saved: prefs.isSaved(path), auto: prefs.autoRwCovers(path), stored: prefs.savedMode(path) ?? null };
   };
-  const memoryPolicy = (path: string): SaveView => ({ saved: prefs.isSaved(path), auto: prefs.autoRwCovers(path) });
   /** The roots as the page sees them: `name` is the label to show, `customName` the override when set. */
   const rootsPayload = () =>
     registry.list().map((r) =>
@@ -423,11 +440,13 @@ export async function serve(opts: ServeOptions) {
           path: r.path,
           kind: r.kind ?? 'project',
           writable: r.writable,
-          // why it is writable: `--rw` asked for it, else an auto-rw path covers it
-          ...(r.writable ? { writableBy: r.rwAsked ? 'rw' : 'auto' } : {}),
-          // the access chosen for it (`--rw`), apart from auto-rw: what saving it keeps
-          configuredWritable: r.kind !== 'reference' && !!r.rwAsked,
+          // why it is writable: its mode is `rw`, else an auto-rw path covers it
+          ...(r.writable ? { writableBy: r.mode === 'rw' ? 'rw' : 'auto' } : {}),
+          // explicit RW, apart from auto-rw
+          configuredWritable: r.kind !== 'reference' && r.mode === 'rw',
           saved: prefs.isSaved(r.path),
+          // a project's mode (`inherit` follows auto-rw) and what the page confirms before changing it
+          ...(r.kind !== 'reference' ? { mode: r.mode ?? 'inherit', accessRev: accessRevOf(r, memoryPolicy(r.path)) } : {}),
           // what the page confirms before saving an unsaved project (`POST /api/roots/save`)
           ...(r.kind !== 'reference' && !prefs.isSaved(r.path) ? { saveRev: saveRevOf(r, memoryPolicy(r.path)) } : {}),
         },
@@ -895,8 +914,59 @@ export async function serve(opts: ServeOptions) {
       },
 
       /**
+       * The settings page's `[RW]` / `[RO]`: set a project's mode explicitly. `{id, mode: 'rw' | 'ro', rev}`
+       * only; `rev` is the root's `accessRev` the administrator confirmed. A saved project's mode is
+       * written to prefs; an unsaved one's lives in memory until it is saved or removed. `rw` never
+       * lifts the reference cap. Stale is 409, and nothing changes on any refusal or failure.
+       */
+      '/api/roots/mode': {
+        POST: mutation('root-admin', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort() : [];
+          const { id, mode, rev } = (body ?? {}) as { id?: unknown; mode?: unknown; rev?: unknown };
+          if (
+            keys.join() !== 'id,mode,rev' ||
+            typeof id !== 'string' ||
+            !id ||
+            (mode !== 'rw' && mode !== 'ro') ||
+            typeof rev !== 'string' ||
+            !/^[0-9a-f]{64}$/.test(rev)
+          ) {
+            return fail(400, "expected exactly {id, mode: 'rw' | 'ro', rev}");
+          }
+          return rootOps(async () => {
+            if (!actorOf(req).admin) return adminRequired();
+            const root = registry.get(id);
+            if (!root) return fail(404, 'unknown root');
+            if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — always read-only`);
+            if (mode === 'rw' && registry.inReference(root.path)) return fail(403, `${root.name} is inside mdhouse reference material — always read-only`);
+            const stale = () => json({ error: 'the project changed since it was shown — look again', reason: 'stale' }, 409);
+            if (accessRevOf(root, memoryPolicy(root.path)) !== rev) return stale();
+            let refused: string | null;
+            try {
+              // The file as it is under the lock: an auto-rw change, a save or a mode set by another
+              // process since the check above refuses here. So does an administrator signed out meanwhile.
+              refused = await prefs.commitMode(root.path, mode, (fresh) =>
+                !actorOf(req).admin ? 'admin' : accessRevOf(root, fresh) !== rev ? 'stale' : null,
+              );
+            } catch (err) {
+              const blocked = prefs.accessBlocked();
+              if (!blocked) console.error(err);
+              return fail(500, blocked ? `prefs.json is ${blocked} — access not changed` : 'prefs.json could not be written — access not changed');
+            }
+            if (refused === 'admin') return adminRequired();
+            if (refused !== null) return stale();
+            registry.setMode(root.id, mode);
+            publishRoots();
+            return json({ roots: rootsPayload() });
+          });
+        }),
+      },
+
+      /**
        * The settings page's `[unsaved]`: save a project served for this session only, as it is —
-       * its canonical path, the access chosen for it (never auto-rw's) and its name. `{id, rev}`
+       * its canonical path, its mode (never auto-rw's grant) and its name. `{id, rev}`
        * only; `rev` is the root's `saveRev` the administrator confirmed. Anything that changed it
        * since — access, auto-rw, name, an external save — is 409 stale, and nothing is written.
        */
@@ -919,7 +989,7 @@ export async function serve(opts: ServeOptions) {
             const name = sessionNames.get(root.path) ?? null;
             // The file as it is under the lock: an auto-rw change or a save by another process since
             // the check above refuses here. So does an administrator signed out meanwhile.
-            const refused = await prefs.saveRoot(root.path, { writable: !!root.rwAsked, name }, (fresh) =>
+            const refused = await prefs.saveRoot(root.path, { mode: root.mode ?? 'inherit', name }, (fresh) =>
               !actorOf(req).admin ? 'admin' : saveRevOf(root, fresh) !== rev ? 'stale' : null,
             );
             if (refused === 'admin') return adminRequired();
@@ -1025,6 +1095,8 @@ export async function serve(opts: ServeOptions) {
           if (!message) return fail(400, 'a commit message is needed');
           if (message.length > 100_000) return fail(413, 'the commit message is too long');
           return queueWrite(`git:${at.repo}`, async () => {
+            const denied = gitStillWritable(at);
+            if (denied) return denied;
             const files = commitable(await dirtyFiles(at.repo));
             if (!files.length) return fail(409, 'nothing to commit');
             const foreign = files.filter((f) => {
@@ -1065,6 +1137,8 @@ export async function serve(opts: ServeOptions) {
           }
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
           return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
+            const denied = gitStillWritable(at, loc.abs);
+            if (denied) return denied;
             const dirty = (await dirtyFiles(repo)).find((f) => f.path === rel);
             if (!dirty) return fail(409, 'nothing to commit — this file matches the last commit');
             if (dirty.code === '??' && (await run(repo, ['add', '--', literal(rel)])).code !== 0) {
@@ -1092,6 +1166,8 @@ export async function serve(opts: ServeOptions) {
           }
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
           return queueWrite(`git:${repo}`, () => queueWrite(loc.abs, async () => {
+            const denied = gitStillWritable(at, loc.abs);
+            if (denied) return denied;
             if ((await run(repo, ['ls-files', '--error-unmatch', '--', literal(rel)])).code !== 0) return fail(409, 'git has never seen this file');
             // Only the changes the page showed: saved again since, the file is kept.
             if (lineHash(await Bun.file(loc.abs).text()) !== body.hash) {
@@ -1453,13 +1529,17 @@ export async function serve(opts: ServeOptions) {
 
     for (const dir of dirs) {
       const known = new Set(registry.list().map((r) => r.id));
-      const root = await registry.add(dir, writable);
-      // `--rw` for a folder already served read-only upgrades it in place. Never the other way:
-      // taking write access away is `-p` without `--rw` and a restart, or `--rm`.
+      const root = await registry.add(dir, writable ? 'rw' : 'inherit');
+      // A saved read-only choice holds for a folder newly served without `--rw`.
+      if (!known.has(root.id) && !writable && prefs.savedMode(root.path) === 'ro') registry.setMode(root.id, 'ro');
+      // `--rw` for a folder already served read-only upgrades it in place — an explicit read-only
+      // choice too. Never the other way: re-opening without `--rw` changes nothing; taking write
+      // access away is `-p` without `--rw` and a restart, the settings page, or `--rm`.
       // A folder writable only by auto-rw is asked for too: `--rw` outlives auto-rw going off.
-      if (writable && !root.rwAsked) {
-        if (!root.writable) upgraded.add(root.id);
-        registry.setWritable(root.id, true);
+      if (writable && root.mode !== 'rw') {
+        const before = root.writable;
+        registry.setMode(root.id, 'rw');
+        if (!before && root.writable) upgraded.add(root.id);
       }
       // Asking for a directory already served is a request for its URL, not a second copy of
       // it — only a genuinely new root needs a watcher.
@@ -1469,7 +1549,8 @@ export async function serve(opts: ServeOptions) {
       }
       asked.add(root.id);
       if (save) {
-        await prefs.addSaved(root.path, writable);
+        // `--rw` saves it writable; without, saved write access goes and a read-only choice stays.
+        await prefs.addSaved(root.path, writable ? 'rw' : root.mode === 'ro' ? 'ro' : null);
         // Saving keeps the name the session gave it.
         const session = sessionNames.get(root.path);
         if (session !== undefined) await prefs.setSavedName(root.path, session);

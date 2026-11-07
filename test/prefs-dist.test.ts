@@ -18,6 +18,8 @@ test('doc/prefs.json.dist, comments and all, loads as a config', async () => {
     expect(Object.keys(prefs.access.users)).toEqual(['ann']);
     expect(prefs.settings).toEqual({ editLink: true, editScheme: 'edit', autoRw: true, me: '' });
     expect(prefs.autoRw).toEqual(['/home/you/src']);
+    expect(prefs.accessBlocked()).toBeNull();
+    expect([prefs.savedMode('/home/you/src/project'), prefs.autoRwCovers('/home/you/src/project')]).toEqual(['ro', true]);
     expect(prefs.agentBus).toEqual({ enabled: false, socket: '', token: '', default: [], filter: ['^claude', '^codex', '^opencode'] });
     expect(prefs.get('/home/you/notes').favorite).toEqual(['inbox.md', 'plans/']);
   } finally {

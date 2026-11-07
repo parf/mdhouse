@@ -206,9 +206,9 @@ describe('writability per folder', () => {
     const [a, b] = registry.list();
     expect([a!.writable, b!.writable]).toEqual([true, false]);
 
-    expect(registry.setWritable(b!.id, true)).toBe(true);
+    expect(registry.setMode(b!.id, 'rw')).toBe(true);
     expect(registry.get(b!.id)!.writable).toBe(true);
-    expect(registry.setWritable('nope', true)).toBe(false);
+    expect(registry.setMode('nope', 'rw')).toBe(false);
   });
 });
 
@@ -278,7 +278,7 @@ describe('a reference root (MW.0f.1)', () => {
   };
   const cleanup = async (base: string) => (await import('node:fs/promises')).rm(base, { recursive: true, force: true });
 
-  test('is never writable: not by rwAsked, auto-rw, setWritable or a direct write', async () => {
+  test('is never writable: not by mode rw, auto-rw, setMode or a direct write', async () => {
     const { base, ref, join } = await setup();
     try {
       const registry = await Registry.create([join(base, 'other')]);
@@ -286,8 +286,8 @@ describe('a reference root (MW.0f.1)', () => {
       const root = await registry.addReference(ref);
       expect(root.kind).toBe('reference');
       expect(root.writable).toBe(false);
-      expect(registry.setWritable(root.id, true)).toBe(false);
-      (root as { rwAsked?: boolean }).rwAsked = true;
+      expect(registry.setMode(root.id, 'rw')).toBe(false);
+      (root as { mode?: string }).mode = 'rw';
       expect(root.writable).toBe(false);
       await expect(registry.writeFile(`${root.id}/a.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
       await expect(registry.writeFile(`${root.id}/new.md`, 'x')).rejects.toBeInstanceOf(ReadOnlyError);
