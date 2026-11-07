@@ -543,3 +543,9 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.13 Schedule a comprehensive UX review of all pages and flows <a id="MW.13"></a>
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.
   Cover desktop/mobile, light/dark, roles/access modes and loading/empty/error/success states; record screenshot-backed findings and prioritize the resulting implementation work.
+
+## Configuration ownership
+
+- [ ] MW.14 Decide what belongs in user config versus project-local .mdhouse <a id="MW.14"></a>
+  Inventory current and planned data; define placement in `~/.config/mdhouse/` versus `$PROJECT_HOME/.mdhouse/`, including settings, project metadata, credentials, local state, flows and automation definitions.
+  Decide ownership, portability/version control, secret handling and migration before implementation.
