@@ -527,3 +527,9 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.11 Design Agent Bus Cron/At automation for AI pipelines <a id="MW.11"></a>
   Code review, QA and other agent pipelines; define triggers, scope, outputs, run history, overlap/failure handling and separate action approvals.
   Reuse Agent Bus scheduling; no custom scheduler or live jobs during design ([№AUTO-W1](DECISIONS.md#AUTO-W1)).
+
+## Access badge presentation
+
+- [ ] MW.12 Show only deviations from the mode access baseline <a id="MW.12"></a>
+  [№BADGE-W1](DECISIONS.md#BADGE-W1): Workspace hides RW/shows RO; Viewer hides RO/shows configured RW without write authority.
+  Presentation only; no default/mode/permission activation. Retain visible Settings access controls.

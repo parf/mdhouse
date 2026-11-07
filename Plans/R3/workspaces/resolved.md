@@ -471,3 +471,13 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > fisrt one - docs only
   >
   > 💬 👤parf - Общий code index  = same idea as first one but for Code+Docs
+
+## Access badge baseline
+
+- ✅ BADGE-W1 Show deviations from the current mode baseline <a id="BADGE-W1"></a>
+  > 💬 👤parf [Image #1] RW is default now - it should be hidden, and RO should be shown when set
+  > howecver in viewer mode it should be opposite
+  >
+  > 💬👾 Workspace: hide RW and show RO. Viewer: hide RO and show configured RW, while Viewer still forbids writes.
+  >
+  > 💬 👤parf good, go

@@ -160,3 +160,9 @@
   [Owner history](resolved.md#RAG-W2).
 - 📌 AUTO-W1 Use Agent Bus Cron/At to invoke agents and AI pipelines, including code review and QA. <a id="AUTO-W1"></a>
   No separate mdhouse scheduler; live schedules require separate authorization.
+
+## Access badges
+
+- 📌 BADGE-W1 Access badges show deviations from the mode baseline. <a id="BADGE-W1"></a>
+  Workspace: hide RW, show RO. Viewer: hide RO, show configured RW; effective writes remain forbidden.
+  [Owner history](resolved.md#BADGE-W1).
