@@ -77,3 +77,19 @@
 ## Project access migration and old readers
 
 - [№Q-R3-MODE1](DECISIONS.md#Q-R3-MODE1) <a id="Q-R3-MODE1"></a>
+
+
+## Per-project Agent Bus configuration lifetime — 2026-11-07
+
+- ❓ Q-R3-AB1 How does per-project Agent Bus configuration behave for an unsaved project? <a id="Q-R3-AB1"></a>
+  [Directory management](../README.md#directory-management) says saved-root changes persist and
+  unsaved-root changes remain in the session until saved, immediately before the `[AB]` rule.
+  [№AB-W1](DECISIONS.md#AB-W1)/[№AB-W3](DECISIONS.md#AB-W3) define canonical keys, overrides and clearing,
+  but do not explicitly include AB configuration in the save operation. [№Q-R3-NAME1](DECISIONS.md#Q-R3-NAME1)
+  is specific to names. No per-project AB schema or implementation exists yet.
+  Tokens remain server-side only; this slice adds no token input or new credential CLI surface.
+  - ( ) Keep unsaved endpoint/default overrides in memory; explicit save carries them into canonical prefs 🌟
+  - ( ) Require saving the project before editing AB configuration; show `[AB]` read-only until then
+  - ( ) Persist canonical AB overrides independently of whether the project is saved
+  > 💡👾 Use the existing Directory management lifetime for AB endpoint/defaults; clarify that explicit save
+  > carries this metadata. Saved-root credentials can be provisioned in server-side prefs only.
