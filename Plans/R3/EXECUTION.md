@@ -1558,7 +1558,7 @@ No live reload/service/session/provider/ACL/push/publish/deploy/version action. 
 
 ## Per-project Agent Bus cohort — 2026-11-07 {#project-agent-bus-cohort}
 
-- [ ] MW.2.1 Settings endpoint/default overrides and root-aware document routing
+- [x] MW.2.1 Settings endpoint/default overrides and root-aware document routing
   Base `35cb4402247e94af216cb0dd010aada0126883cd`, target `main`; CTO owns checkpoint/integration.
   Approved [№MW.2](workspaces/TODO.md#MW.2), [№AB-W1](workspaces/DECISIONS.md#AB-W1),
   [№AB-W2](workspaces/DECISIONS.md#AB-W2), [№AB-W3](workspaces/DECISIONS.md#AB-W3),
@@ -1625,3 +1625,21 @@ No live reload/service/session/provider/ACL/push/publish/deploy/version action. 
   OpenCode API short 2% used, weekly 46% used, reserved for independent review.
   Shared Codex screen 2% weekly remaining; short unavailable. Claude author work, W3 idle, coordination reserve.
   No live reload/service/session/provider/ACL/push/publish/deploy/version actions.
+
+
+## Per-project Agent Bus accepted — 2026-11-07
+
+[№MW.2.1](workspaces/TODO.md#MW.2.1) done: reviewed final `fe7bac8239689c3e56c6485b332ba933614412a5`,
+integrated merge `2f0ef62e86fbf9de67a0d915f3004a0b43e938e9`. CEO editor/RAG/automation plan commits retained;
+integrated src/test/doc/scripts identity equals final reviewed target, package version/dependencies unchanged.
+W1 backend `d75bb0b` + `3b1a58a`; W2 UI `51dc351` + draft/selection fixes `077a17f`/`75c6b78`,
+then save-confirm fix `fe7bac8`. One combined impacted gate: 245 pass (18 paths), types exit 0 on `b69982e`;
+final UI-only delta: author types exit 0, focused tests 18 pass. Independent pinned OpenCode prior 94 pass
+and final delta 18 pass, original exits 0; final PASS bound `fe7bac8`. Native real local-fake proof 27 PASS
+plus targeted confirm 5 PASS; no real bus/provider. Source-identical unchanged checks reused, no full duplicate.
+Original product drain/final-guard/draft/selection/confirm failures and harness failures retained;
+[complete evidence and limits](QA.md#project-agent-bus). Parent [№MW.2](workspaces/TODO.md#MW.2) stays open.
+No install/RAG/provider lifecycle/control API or live connectivity implied. No live reload/service/session/
+provider/ACL/push/publish/deploy/version actions. W3 idle; retain frozen artifacts and Codex reserve.
+Next approved priority: fact-based ready-made Markdown editor selection, then bounded integration scope;
+RAG documents-only enduser and independent Dev/AI Code+Docs corpora remain design-only.

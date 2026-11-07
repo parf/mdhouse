@@ -658,3 +658,70 @@ pinned review and detached native proof. Shared docs included before freeze; pac
   Transient prefs lock creation is expected; read-only validation does not repair/migrate/write the prefs file.
 - No live reload/service/session/provider/ACL/push/publish/deploy/version changes. Full parent
   [№MW.1](workspaces/TODO.md#MW.1), defaults/profile/Viewer/Team/install runbook/AB endpoint are not closed.
+
+
+## Per-project Agent Bus — integrated cohort {#project-agent-bus}
+
+[№MW.2.1](workspaces/TODO.md#MW.2.1), base `35cb4402247e94af216cb0dd010aada0126883cd`;
+initial frozen `b69982edda0e1faf541e57dcee61ded3c077e641`, final accepted
+`fe7bac8239689c3e56c6485b332ba933614412a5`; integrated merge `2f0ef62e86fbf9de67a0d915f3004a0b43e938e9`.
+Merge retained CEO doc-only editor/RAG/automation decisions/research, no conflicts;
+final src/test/doc/scripts identity checked, package version/dependencies unchanged.
+
+- Combined gate on exact initial frozen target: `.scratch/worktrees/r3-project-ab-cohort/.scratch/ab-gate/`
+  `sha.txt`, `cmd.txt`, `bun.log`/`bun.exit`, `tsc.log`/`tsc.exit`: one invocation, 18 impacted files,
+  245 pass / 0 fail, original bun exit 0, types exit 0. No full-suite duplicate, no masked pipeline or rerun.
+- Independent OpenCode prior PASS at `.scratch/worktrees/r3-project-ab-review`, detached/pinned/clean;
+  assigned project-ab/agent-bus/prefs/authz/ab-targets only: 94 pass / 0 fail, original exit 0,
+  `.scratch/review/focused-ab.log`/`.exit`. Final delta PASS exact accepted target in new
+  `.scratch/worktrees/r3-project-ab-fixed-review`, old checkout untouched; only ab-targets test,
+  18 pass / 0 fail, original exit 0, `.scratch/review/delta-ab-targets.log`/`.exit`.
+  Delta is only Settings/ab-targets helper/test. Unchanged backend prior verdict/gate/native reused.
+- Backend author evidence `.scratch/worktrees/r3-project-ab-backend/.scratch/logs/`:
+  `ab-routes-fail-first.log` (9 failures), `ab-drain-race-fail-first.kept.log`,
+  `ab-final-guard-fail-first.log` retain reproduced failures. Fixes: shared all-drains barrier and
+  synchronous active accounting; final admin/blocked/saved recheck before memory install.
+  `ab-final-guard-fixed.log` 19 pass, `ab-tsc-3.log` exit 0. Mutation definitions retained in
+  `mut-ab.py`, `mut-drain-2.py`; M1–M15 and valid drain mutation caught. M11 initially survived,
+  test strengthened and second run caught it; first log retained. `mut-drain-1` invalid/hung because
+  it removed set cleanup, explicitly not counted; explanation retained.
+- UI author original failures retained at W2 scratchpad below: `ab-race-51dc351.log` reproduces lost
+  dirty draft and stale out-of-order config; `ab-select-race-077a17f.log` reproduces late save A
+  replacing current B input. Fixes `077a17f`/`75c6b78` keep dirty drafts, latest-read sequence,
+  and selected-project identity. Fixed logs include `ab-race-fixed.log`, `ab-select-race-fixed.log`,
+  `ab-race-after-select-fix.log`; CDP-answered config reproductions are explicitly not real-bus proof.
+
+Native evidence root:
+`/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`.
+`ab-native-run5.log`, scripts `ab-native.ts`/`fake-bus.ts`, screenshots `ab-native/`:
+27 PASS / 0 FAIL, exit 0, exact initial frozen target in detached project-ab-proof, source unchanged,
+3 local loopback fake buses only; safe-smoke own-group cleanup. No real bus/provider calls.
+
+- Settings config reads and session config save make zero daemon calls; no-connect metadata/editor.
+  Tokens absent from HTML, both-tab WS frames and server logs; fake A echo-token error becomes safe HTTP500 words.
+  A sees only its provisioned credential/minted token, instance sees only its own, B sees no inherited credential.
+- Root endpoint/default route independently; instance default, project default, document AB names and explicit
+  picked targets covered. Unavailable document agent remains visible, send refused before POST with no fallback.
+  Explicit pick wins and survives reload per document. Two credentials at same endpoint get simultaneous replies;
+  override changes during an active job retain its answer. Deterministic held-drain/lock interleaves are unit/route tests.
+- Remote config change keeps dirty draft; stale direct/UI requests 409 with no mutation, fresh metadata shown;
+  revoke 401 keeps draft and disables controls. Session endpoint/default absent from prefs until explicit save
+  with mode/name B; clear removes entry, leaves `[AB]`, routes back to instance.
+- CTO viewed `5-editor-light.png` and `6-narrow-dark.png`; screenshots also cover panel/unavailable/stale/revoke,
+  light/dark desktop and 390px. Original native runs 1–4 retained: harness picker toggled closed twice,
+  wrong expected safe-error wording, per-document assertion strengthened; no product failure on initial frozen target.
+
+Native finding: original `[unsaved]` confirmation omitted the AB metadata newly carried by save.
+`ab-confirm-b69982e-run2.log` retains 2 FAIL; fix `fe7bac8` captures saveRev before fresh no-connect config read,
+shows endpoint/default/inheritance without credentials, adds busy/entry guard, refuses unreadable config before POST.
+`ab-confirm-fe7bac8-run2.log`: 5 PASS / 0 FAIL, exit 0, real backend + local fake bus, clean cleanup;
+fresh metadata/zero bus calls, cancel/no save POST, remote default change during confirm → 409 with no persist,
+then fresh confirm saves name B plus AB endpoint/default and no credential. Script `ab-confirm.ts` retained.
+Run1 on both SHAs was harness setup assuming a prefs file existed for session-only startup, retained separately.
+Author final focused tests 18 pass/types exit 0; independent final delta verdict confirms closure.
+
+Public no-connect metadata exposes sanitized endpoint/default and hasCredential boolean to admitted readers,
+consistent with existing settings visibility; grants remain administrator-only. Terse unavailable-agent labels
+use existing short names (cosmetic). Existing same-page admin-error follow-up remains separate.
+Full [№MW.2](workspaces/TODO.md#MW.2), install/provider/RAG/control lifecycle are not accepted by this checkpoint.
+No live reload/service/session/provider/ACL/push/publish/deploy/version actions.
