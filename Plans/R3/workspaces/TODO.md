@@ -543,8 +543,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.13 Schedule a comprehensive UX review of all pages and flows <a id="MW.13"></a>
   Owner priority: navigation and new project views are the next major UX step; Teams and automations design builds on the agreed structure and [№MW.14](#MW.14) data placement.
   - [ ] MW.13.1 Explore navigation and views for mdhouse as a project workspace beyond a Markdown viewer <a id="MW.13.1"></a>
-    - [ ] MW.13.1a Capture current journeys and compare navigation options <a id="MW.13.1a"></a>
-      [Research cohort](../EXECUTION.md#navigation-research): source inventory, current scratch screenshots, primary-source patterns and a proposal; no product implementation.
+    - [x] MW.13.1a Capture current journeys and compare navigation options <a id="MW.13.1a"></a>
+      [Research proposal](../UX-NAVIGATION.md): source inventory, 18 scratch journey captures, five IA alternatives and phased recommendation; nonauthor fact-check PASS. Direction/implementation and parent review remain open.
     Owner starting points: explicit MD view (default), All project files with highlighting and matching left-panel tree, and Git pages for branches/commits/authors.
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.

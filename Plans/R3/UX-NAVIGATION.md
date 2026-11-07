@@ -52,13 +52,13 @@ Priorities below are recommendations for design sequencing, not approved fixes o
 | Priority | Observed risk and evidence | Proposed response | Dependency |
 |---|---|---|---|
 | P1 🟠 | Scope/count mismatch and orphan code selection (07–08) | One visible MD/All scope for folder and tree, selected-file context | Bounded all-files tree/listing prerequisite, ignore/cap handling; search scope explicitly labelled |
-| P1 🟠 | Browser-only MD/All carries across roots; URL cannot reproduce the scope (07,16–17) | Make meaningful filter state shareable and define project/default behavior | URL/back compatibility design; valid All results are not an empty-state bug |
+| P1 🟠 | Browser-only MD/All carries across roots; URL cannot reproduce the scope (07,16) | Make meaningful filter state shareable and define project/default behavior | URL/back compatibility design; valid All results are not an empty-state bug |
 | P1 🟠 | Dense doc chrome: 20 interactive controls of all kinds; mobile rows plus TOC/history precede body (02,14) | Reading first; Edit clear when allowed; expandable secondary tools/context | Preserve required confirmations, discoverability and kept drafts; count is not proof of 20 primary actions |
 | P1 🟠 | Raw missing-origin error adjacent to Pull/Push (01,05,15) | Local-repository state with a clear explanation; disclose unavailable remote actions | Verify remote-state contract; do not add automatic connectivity probes |
 | P2 ⚪ | Activity destinations duplicated; diff/editor state not addressable (01,04–06,12) | Consolidate entry points, preserve personal curation, explicit file-history return | URL/state and revision-read design; no silent route or mark migration |
 | P2 ⚪ | Error/empty state has no suggested next step (17–18) | Folder/project recovery links and a relevant next action | Existing real hrefs and access semantics |
 | P2 ⚪ | Search repeats files per matching line (03) | Group file hits with expandable snippets and a direct line target | Current Markdown search contract; no implied all-code search |
-| P2 ⚪ | No branch discovery; commit status says unpushed without a remote (03,05) | Read-only branch/author context and honest local-only status | Missing reads; other-branch file absence from working-tree search is expected |
+| P2 🟠 | No branch discovery; commit status says unpushed without a remote (03,05) | Read-only branch/author context and honest local-only status | Missing reads; other-branch file absence from working-tree search is expected |
 
 Strengths worth preserving: immediate tree-to-doc navigation; adjacent file history/diff; combined name/content
 search; RO exception emphasis; direct curation; non-Markdown rendering already available. Do not replace these
@@ -158,4 +158,5 @@ Cron/At jobs and provider lifecycle are separate work.
 - [x] Current-source numbered journey screenshots and observations reviewed; author wording follow-up retained.
 - [x] Technical inventory checked against the proposal and gaps linked (W1 fact-check of `9851ca6`).
 - [x] Findings prioritized by observed impact; accessibility and coverage limits stated.
-- [ ] Nonauthor fact-check and source/link review; recommendation submitted for direction.
+- [x] Nonauthor W1 fact-check PASS on `23d400d`; local links/images and unchanged runtime source checked.
+  Recommendation submitted through CTO to CEO; this completes the research checkpoint, not direction approval.

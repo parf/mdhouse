@@ -1876,7 +1876,7 @@ No live reload/service/session/provider/ACL/push/publish/deploy/version action; 
 
 ## Navigation research and UX brainstorm — 2026-11-07 {#navigation-research}
 
-- [ ] MW.13.1a Evidence and navigation options, before implementation
+- [x] MW.13.1a Evidence and navigation options, before implementation
   [Parent №MW.13.1](workspaces/TODO.md#MW.13.1); [UX reference](../UX.md).
   Base `f646f8092a9a8014c5c1f391150002eebefe2e64`, target `main`; CTO owns synthesis/status.
   Product goal: find/read project content and understand Git context without losing project/path or drafts;
@@ -1916,3 +1916,24 @@ No live reload/service/session/provider/ACL/push/publish/deploy/version action; 
   W2 current-source journey captures remain in progress; acceptance and parent status remain open.
   [№MW.17](workspaces/TODO.md#MW.17) linked for future installed-reference discovery and one linked
   external-AI entrypoint; no reference content restructuring in this cohort.
+
+
+## Navigation research accepted checkpoint — 2026-11-07
+
+[№MW.13.1a](workspaces/TODO.md#MW.13.1a) done: W1 author inventory `3caf41b`, W2 captures `8cdda76`
+plus wording-only `9d85469` integrated. [Proposal](UX-NAVIGATION.md) includes 18 numbered current-source
+captures, seven journey summaries, strengths/risks/limits, five IA alternatives and a phased recommendation.
+W1 nonauthor synthesis fact-check PASS exact `23d400df729037270ea7df36d21f7fbe41439817`; two cosmetic
+citation/severity alignments applied afterwards, no material design change. CTO reviewed worker docs and key
+screenshots, local artifact links PASS, 18 images present, diff/check PASS; runtime source identity to base
+unchanged. No test/types/browser duplicate; worker current scratch capture cleaned its own groups.
+
+Recommendation for owner direction: Files with MD(default)/All filter and matching tree, separate Git activity
+axis, optional quick-open and contextual panels. First proposed implementation boundary is the all-files
+listing/tree prerequisite plus explicit URL/search-scope design, not branches/history/extraction all at once.
+Missing historical content/tree, branch/author reads and viewer coupling are explicit dependencies.
+Parent MW.13/MW.13.1 remains open: broad audit and chosen navigation design/implementation are not accepted
+by this research checkpoint. Full captured-state limitations are in JOURNEYS and synthesis; original harness
+failures retained in W2 scratch. MW.14 and MW.17 dependencies linked; no migrations or reference rewrites.
+No product source, version, provider, ACL, push/publish/deploy or service/session actions. CEO independently
+completed the owner-authorized local restart; CTO did not perform a parallel restart or implementation edit.
