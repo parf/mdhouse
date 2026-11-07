@@ -196,7 +196,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
 
 - [ ] MW.1a Add optional human names for project directories <a id="MW.1a"></a>
   - Builds: project display-name metadata keyed by canonical root path; a Project name field in the Settings project editor; CLI `--name`
-  - [ ] MW.1a.1 CLI, Settings and existing UI names; [cohort scope](../EXECUTION.md#optional-project-name-cohort) <a id="MW.1a.1"></a>
+  - [x] MW.1a.1 CLI, Settings and existing UI names; [cohort scope](../EXECUTION.md#optional-project-name-cohort) <a id="MW.1a.1"></a>
+  - Verified slice: exact `ba0b19c` independent PASS and fast-forward integration; combined 196/0 + targeted fix gates/types, native two-tab/reconnect and 390px proof. [Evidence](../QA.md#optional-project-names)
   - Lifetime: [№Q-R3-NAME1](DECISIONS.md#Q-R3-NAME1) — session names stay in memory until explicit save
   - Remaining parent dependency: Agent Bus control inventory belongs to [№MW.7](#MW.7), which is not implemented by this label slice
   - Acceptance: `mdhouse ~/mdhouse -p --name "All MDHouse Projects"` saves that human name for the canonical directory

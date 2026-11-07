@@ -406,7 +406,7 @@ covered at backend level. Cross-browser/real-device checks remain release QA.
 Team/OAuth, remote bootstrap, new project properties and marks policy remain outside this accepted scope.
 
 
-## Optional Project names — candidate {#optional-project-names}
+## Optional Project names — integrated slice {#optional-project-names}
 
 [№MW.1a.1](workspaces/TODO.md#MW.1a.1), code candidate `8408be3617969da18a6dd1d6563a2e5df86c79d1`.
 W1 author `1b91474`, canonical-path followup `b821a2e`; W2 author `ab7bf74`, duplicate chooser followup `554de32`.
@@ -422,7 +422,7 @@ chooser labels (`project-name-ui-labels` scratch); CTO reproduced alias retarget
 W1 recorded the canonical-key fixture failure in `r3-project-name-backend-canonical/.scratch/canonical-first-failure.log`.
 Fixes preserve the claims and tests; later pass evidence does not erase those failures.
 W2 initial browser proof mocked only root-name routes and does not establish final backend acceptance.
-Real-backend two-tab/identity/browser proof and pinned nonauthor config/control security review are pending.
+Real-backend proof and final pinned independent verdict completed below; historical failures remain recorded.
 Parent [№MW.1a](workspaces/TODO.md#MW.1a) remains open on the absent [№MW.7](workspaces/TODO.md#MW.7)
 Agent Bus control inventory; existing control ping is not that surface. No new RW/save/endpoint editor,
 mode migration, Team/OAuth, live reload, version bump, publication, provider or ACL change.
@@ -468,3 +468,16 @@ session/saved lifetime hints, CLI name without saving, ready light/dark/390px Se
 Final combined resync code `e5ba18d`: types exit 0, output/original exit in
 `r3-project-name-final/.scratch/final-name-gate/resync-types.log` and `.exit`. Fresh nonauthor verdict pending;
 previous `314e97c` PASS does not by itself approve this material UI delta.
+
+
+Accepted [№MW.1a.1](workspaces/TODO.md#MW.1a.1): exact final nonauthor CEO PASS on
+`ba0b19c13c859b6c198871534335fb841bd49feb`, with source identity on fast-forward integration into main.
+Final review inspected App early-return/hello snapshot path and actual native before/after artifacts; no duplicate
+full/types/browser run. Verdict retained in `r3-project-name-resync-review/.scratch/ceo-resync-review/verdict.txt`.
+Native acceptance is the combined verified cases plus the corrected deterministic reconnect regression, not a
+claim that run4/run5 were clean. Meaningful 390px ready screenshots live under W2 scratchpad `names-narrow/`,
+not the earlier spinner artifacts: `4-narrow-doc-dark.png` and `4-narrow-settings-light.png` inspected by CTO;
+other light/dark counterparts retained. CLI missing-argv negative coverage applies to the final parser code,
+while server/UI proof checkouts differ only in that separately verified parser guard.
+Remaining: absent Agent Bus control inventory ([№MW.7](workspaces/TODO.md#MW.7)); parent
+[№MW.1a](workspaces/TODO.md#MW.1a) stays open. Cross-browser/real-device release QA remains unverified.

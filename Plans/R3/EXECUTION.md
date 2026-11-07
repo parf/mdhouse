@@ -1224,7 +1224,7 @@ No live reload, push, publish, deployment, version bump, provider/ACL changes or
 
 ## Optional Project name cohort — selected 2026-11-06 {#optional-project-name-cohort}
 
-- [ ] MW.1a.1 CLI, Settings and existing UI display names
+- [x] MW.1a.1 CLI, Settings and existing UI display names
   Parent [№MW.1a](workspaces/TODO.md#MW.1a); contract [№DIR-W3](workspaces/DECISIONS.md#DIR-W3).
   Base `34b4e9978f065ed0a7b381841e6152c888e4afd2`, target `main`; no version/deploy/live authority.
   Product outcome: optional human labels configured by OS-owner CLI or browser administrator, with canonical path
@@ -1265,3 +1265,29 @@ reserve W3/coordination capacity. OpenCode remains at an observed hard usage lim
 W1/W2 acknowledged [№MW.1a.1](workspaces/TODO.md#MW.1a.1) and began the scoped isolated worktrees.
 State: working. Persistence-dependent work was held until the owner's exact “B” answer; both authors
 received the committed lifetime decision before proceeding. No new owner choice remains for this slice.
+
+
+## Optional Project name slice accepted — 2026-11-06
+
+[№MW.1a.1](workspaces/TODO.md#MW.1a.1) done: exact reviewed
+`ba0b19c13c859b6c198871534335fb841bd49feb` fast-forward integrated into `main`; source/test/doc/script identity checked.
+W1 backend/CLI `1b91474`, canonical-key fix `b821a2e`, missing-value fix `7486d97`;
+W2 UI `ab7bf74`, duplicate-path fix `554de32`, reconnect resync `6b96f9d`.
+Owner's “B” lifetime decision was recorded before persistence work, with canonical-path name keys,
+no name-driven root saving or access changes. Settings and CLI now set/reset optional labels across existing surfaces.
+One initial combined 196/0 + types gate; material findings got bounded 48/0 canonical and 5/0 CLI delta checks,
+final types exit 0. First failures and harness mistakes are retained in [QA](QA.md#optional-project-names).
+Independent CEO reviews: initial `63c78eb` HOLD; CLI-fixed `314e97c` PASS; final resync `ba0b19c` fresh PASS.
+Final verdict: `.scratch/worktrees/r3-project-name-resync-review/.scratch/ceo-resync-review/verdict.txt`.
+Native proof covers true admin API/CLI, labels and two tabs, duplicate full paths, stale/revoked-admin draft,
+reference denial, ready light/dark/390px, unchanged URL/IDs/body/node/metadata/marks/views and the reproduced
+reconnect-gap failure followed by passing authoritative hello resync. Safe-smoke teardown clean; no route mocks.
+Parent [№MW.1a](workspaces/TODO.md#MW.1a) remains open: missing [№MW.7](workspaces/TODO.md#MW.7) Agent Bus
+control inventory is not implemented or claimed by existing control ping labels. RW/save/endpoint editors,
+mode migration and Team/OAuth remain separate. No live reload, publish, push, deploy, version or provider/ACL changes.
+
+Capacity rechecked from actual screens 2026-11-07 00:56 UTC: W1 default Claude 5h 63% (~38m), weekly 55%
+(~5d21h); W2 account 2 5h 51% (~34m), weekly 58% (~5d12h). Shared Codex 6% weekly, reset screen says
+November 10 21:35 (timezone unspecified); short-window unavailable. OpenCode still displays hard 5h limit,
+reset `2026-11-07 10:12:12` (timezone unspecified). Decision: finish this accepted checkpoint, leave W3 idle
+and preserve Codex for coordination/review; no further heavy assignment started.
