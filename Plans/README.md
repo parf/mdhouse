@@ -379,7 +379,7 @@ Other families retain existing behavior; marks policy remains open and no Team/g
 | `admin-session` | `/api/admin/session`, `/api/admin/logout` |
 | `attribution` | `/api/author` |
 | `external-send` | `/api/ab/send` |
-| `root-admin` | `/api/roots/remove`, `/api/roots/name` |
+| `root-admin` | `/api/roots/remove`, `/api/roots/name`, `/api/roots/save` |
 | `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
 
@@ -509,3 +509,28 @@ Settings edits/resets names for administrators; name denial preserves the draft.
 labels across existing chooser, headings, Settings and tab titles without rebuilding document content.
 Duplicate chooser labels use path context, falling back to the full canonical path when needed.
 Agent Bus control inventory remains unimplemented work under [№MW.7](R3/workspaces/TODO.md#MW.7).
+
+
+## Explicitly saving an existing project
+
+Settings `[unsaved]` confirms the canonical folder, current name and access before POST `/api/roots/save`.
+The body accepts exactly `{id,rev}`; current mode/name come from the server. Existing `root-admin`
+same-origin and administrator checks apply, including a fresh session check after waiting for the prefs lock.
+Reference roots refuse; missing/revoked admin is 401, malformed/extra fields 400, unknown root 404,
+changed/already-saved confirmation 409 `reason: stale`. A retry needs a fresh confirmation.
+
+`/api/roots` exposes read-only `configuredWritable` and an unsaved project's full SHA-256 `saveRev`.
+The revision binds canonical identity, configured/effective access, auto source/reference cap, saved state
+and session name. It grants nothing. Root metadata mutations serialize; fresh locked prefs are checked
+before one transaction saves folder membership, configured write choice and canonical name.
+Only after success is the in-memory session name discarded and roots metadata published.
+
+Saving preserves `rwAsked`, not auto-derived effective RW. Auto-only RW remains conditional on the same
+policy and becomes RO when that policy no longer applies. No root ID, path, URL, content, mark/view or
+access toggle changes; no new-root RW defaults or Viewer/profile activation. Existing CLI flag behavior
+is unchanged. Saved projects have plain descriptive text instead of an unsaved/saved badge.
+
+Prefs mutators write a detached candidate atomically before installing it in process memory; failed
+pre-rename writes leave readers unchanged. Broken-file recovery retains its existing archive behavior,
+using a copied fallback so failures cannot mutate the previous in-memory object. Temporary failed writes
+are cleaned up. Unknown/newer-version protection and the owner-only file format remain unchanged.
