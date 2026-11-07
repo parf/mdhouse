@@ -1795,3 +1795,12 @@ remains open and implementation deferred. No new owner decision or provisioning 
 - [ ] MW.12.2 Apply Viewer deviation badges from authoritative mode
   Depends on [№MW.0](workspaces/TODO.md#MW.0)/[№MW.0h](workspaces/TODO.md#MW.0h) real Viewer metadata/cap.
   Hide baseline RO; show configured RW while effective writes remain forbidden. Not implemented or claimed by this cohort.
+
+
+### Access badge audit follow-up — sidebar-off header
+
+Before integration, the owner-wide header audit found the mutually exclusive `app.tsx` topstrip has no access
+indicator when the sidebar is off. Extend [№MW.12.1](workspaces/TODO.md#MW.12.1) before author edits:
+W2 follow-up owns `src/app.tsx` plus the existing badge CSS selector, reusing the same live-root helper.
+Show effective RO in this replacement header too, hide RW, reference/missing neutral. No new policy/control.
+Preserve original author `bbdb15f`; targeted topstrip light/dark/narrow/live proof only, do not repeat unchanged tests/native.
