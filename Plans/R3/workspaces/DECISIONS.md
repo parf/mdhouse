@@ -72,6 +72,8 @@
   Saved: persist. Session: until saved. Workspace: explicit mode wins; Viewer: RO, no toggle, stored mode retained.
 - 📌 DIR-W3 Optional name keyed by canonical path; display only; empty resets.
   No path/ID/URL/jail change; default = directory label.
+- 📌 Q-R3-NAME1 Unsaved project names stay in memory until the project is explicitly saved. <a id="Q-R3-NAME1"></a>
+  [History](resolved.md#Q-R3-NAME1).
 
 ## Editor
 

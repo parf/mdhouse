@@ -71,9 +71,4 @@
 
 ## Project display-name lifetime
 
-- ❓ Q-R3-NAME1 Should a name outlive an unsaved project session? <a id="Q-R3-NAME1"></a>
-  [№DIR-W3](DECISIONS.md#DIR-W3), [Project names](../README.md#project-names) and
-  [№MW.1a](TODO.md#MW.1a) define canonical-path display metadata and `-p --name`, but not name lifetime
-  for a session root or CLI `--name` without `-p`. Neither choice may save the root or change access.
-  - ( ) Persist names by canonical path independently of saved roots, retaining them on removal like existing marks 🌟
-  - ( ) Keep session-root names in memory until the root is explicitly saved
+- [№Q-R3-NAME1](DECISIONS.md#Q-R3-NAME1) <a id="Q-R3-NAME1"></a>

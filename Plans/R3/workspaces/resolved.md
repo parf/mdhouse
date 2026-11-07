@@ -400,3 +400,15 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > Owner reminds remaining requested work: per-project settings IN Settings view; rename Directories→Projects; many tasks simple, should progress them. Audit owning TODO/currentUI against original approved acceptance NOW and pick compatible simple/medium cohort beforecode, not more inert foundation detours. Ship rename throughout relevant UI/shared terms + current per-project settings that existing authority supports, project selection/grouping in Settings. Do not make routine text/UI work wait for unrelated OAuth/RAG; preserve required admin gates for mutations, explicitly scope any unavoidable dependent portion. Delegate available workers via established scheme, one proportional combined gate/review, no full after minor changes; exact task list/status back concise. Local reload after accepted integration under standing owner request, coordinated CEO only.
   >
   > 💬👾 Current Projects UI/read DTO/copy cohort accepted on be56acd. New name/access/kept/AB override editors remain explicit admin-gated tasks, not claimed delivered. Live result: e061cd7d59e9822f.
+
+## Project display-name lifetime
+
+- ✅ Q-R3-NAME1 Should a name outlive an unsaved project session? <a id="Q-R3-NAME1"></a>
+  [№DIR-W3](DECISIONS.md#DIR-W3), [Project names](../README.md#project-names) and
+  [№MW.1a](TODO.md#MW.1a) define canonical-path display metadata and `-p --name`, but not name lifetime
+  for a session root or CLI `--name` without `-p`. Neither choice may save the root or change access.
+  - ( ) Persist names by canonical path independently of saved roots, retaining them on removal like existing marks 🌟
+  - ( ) Keep session-root names in memory until the root is explicitly saved
+  > 💬👾 Owner-facing choices: A — persist by path independently of saved roots; B — keep the name temporary until the project is explicitly saved.
+  >
+  > 💬 👤parf B
