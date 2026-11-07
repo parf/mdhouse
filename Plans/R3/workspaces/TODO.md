@@ -549,4 +549,5 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.14 Decide where all mdhouse data belongs <a id="MW.14"></a>
   Inventory all current and planned data; define its owner, scope and storage location: user config, project config, secrets, local state, caches, logs, generated artifacts, flows and automation definitions.
   `$PROJECT_HOME/.mdhouse/` is Git-controlled; distinguish shared versioned project data from user/machine-local and secret data.
+  Priority: resolve before further Teams, flows and automations persistence work; distinguish shared Git-controlled definitions from per-user/per-machine state, credentials and execution history.
   Decide placement, portability, secret handling and migration before implementation.
