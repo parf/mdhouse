@@ -2060,3 +2060,20 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .project-facts { grid-template-columns: 1fr; gap: 2px; }
   .project-facts dd { margin-bottom: 6px; }
 }
+
+/* The full-source editor (DocEditor): a bar, then CodeMirror. */
+.doc-edit-btn { font: inherit; font-size: 13px; padding: 3px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
+.doc-edit-btn.on { border-color: var(--accent); color: var(--accent); }
+.doc-draft-note { margin: 8px 0; color: var(--fg-muted); font-size: 13px; }
+.doc-editor { margin: 12px 0; }
+.doc-editor-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.doc-editor-bar button { font: inherit; min-height: 32px; padding: 4px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
+.doc-editor-bar button:disabled { opacity: .6; cursor: not-allowed; }
+.doc-editor-save:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.doc-editor-state { color: var(--fg-muted); font-size: 12.5px; }
+.doc-editor-cm { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--fg); }
+.doc-editor-cm .cm-editor { min-height: 60vh; font-family: var(--mono); font-size: 14px; }
+.doc-editor-cm .cm-editor.cm-focused { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+.doc-editor-cm .cm-gutters { background: var(--bg-raised); color: var(--fg-faint); border-right: 1px solid var(--border); }
+.doc-editor-cm .cm-activeLine { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+@media (pointer: coarse) { .doc-editor-cm .cm-editor { font-size: 16px; } }

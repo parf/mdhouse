@@ -22,6 +22,7 @@ import { QaStrip } from './QaStrip';
 import { follow } from './PageHead';
 import { editTarget, isPageHref } from '../lib/urls';
 import { DocCommit } from './GitPanel';
+import { loadDraft } from './edit-source';
 
 /** The two diff views; either can be the one a toggle turns on. */
 type DiffView = 'patch' | 'marked';
@@ -167,6 +168,24 @@ export function Doc({
   /** An HTML file: its source instead of the page it renders. */
   const [source, setSource] = useState(false);
   useEffect(() => setSource(false), [doc?.url]);
+  /**
+   * The whole source in the editor, in place of the page. Its code is loaded on the first Edit, not
+   * with the page. Leaving the document closes it; an unsaved draft stays for when the reader comes back.
+   */
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const [Editor, setEditor] = useState<typeof import('./DocEditor').default | null>(null);
+  const [editorError, setEditorError] = useState('');
+  useEffect(() => setSourceOpen(false), [doc?.url]);
+  const openEditor = () => {
+    setSourceOpen(true);
+    if (!Editor)
+      import('./DocEditor').then(
+        (m) => setEditor(() => m.default),
+        (err: Error) => setEditorError(`The editor did not load: ${err.message}`),
+      );
+  };
+  const kept = doc?.kind === 'md' && !sourceOpen ? loadDraft(`${doc.root}/${doc.rel}`) : null;
+  const canEdit = !!doc && doc.kind === 'md' && !doc.reference && (writable || !!kept);
   const [tocOpen, setTocOpen] = useState(true);
   /** Deepest heading level the contents list shows. H1–H2 by default; the H3 chip widens it. */
   const [tocDepth, setTocDepth] = useState(2);
@@ -1108,6 +1127,17 @@ export function Doc({
               <IconGitMark />
             </a>
           )}
+          {canEdit && (
+            <button
+              type="button"
+              class={`doc-edit-btn${sourceOpen ? ' on' : ''}`}
+              aria-pressed={sourceOpen}
+              onClick={() => (sourceOpen ? setSourceOpen(false) : openEditor())}
+              title={sourceOpen ? 'Back to the page — unsaved text is kept' : 'Edit the whole source here'}
+            >
+              {sourceOpen ? 'Page' : 'Edit'}
+            </button>
+          )}
           {editAt && (
             <a class="icon-btn edit-link" href={editAt} title={`Edit ${editTarget(editAt)} (e)`} aria-label="Edit">
               <IconEdit />
@@ -1307,10 +1337,28 @@ export function Doc({
       {view === 'doc' && md && <QaStrip body={body} html={doc.html} url={doc.url} />}
       {view === 'doc' && !md && !byLines && <FileView doc={doc} />}
       {view === 'doc' && doc.tooBig && byLines && <FileView doc={doc} />}
+      {kept && (
+        <p class="doc-draft-note">
+          Unsaved edits of this document are kept in this browser.{' '}
+          <button type="button" class="doc-edit-btn" onClick={openEditor}>
+            Edit to continue
+          </button>
+        </p>
+      )}
+      {sourceOpen && editorError && <p class="settings-error">{editorError}</p>}
+      {sourceOpen && Editor && (
+        <Editor
+          p={`${doc.root}/${doc.rel}`}
+          writable={writable && !doc.reference}
+          revision={`${doc.mtime}:${doc.size}`}
+          onSaved={() => onReload?.()}
+          onClose={() => setSourceOpen(false)}
+        />
+      )}
       <div
         ref={body}
         class={md ? `md${overlaid ? ' marked' : ''}${answerable ? ' qa-rw' : ''}` : 'code-file'}
-        hidden={view === 'patch' || (view === 'marked' && diff?.current === false) || (!md && (!byLines || !!doc.tooBig))}
+        hidden={sourceOpen || view === 'patch' || (view === 'marked' && diff?.current === false) || (!md && (!byLines || !!doc.tooBig))}
         dangerouslySetInnerHTML={{ __html: safeBody }}
       />
     </article>

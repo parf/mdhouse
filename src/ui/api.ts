@@ -422,6 +422,10 @@ export const api = {
     }
   },
 
+  /** A document's raw source, read once with its SHA-256 — the base a full-source save is checked against. */
+  source: (p: string) => get<{ text: string; hash: string; writable: boolean; reference?: boolean }>('/api/source', { p }),
+  /** Saves the whole source; refused (409) when the file is no longer at `hash`. */
+  saveSource: (p: string, hash: string, text: string) => post<{ hash: string }>('/api/source', { p, hash, text }),
   abInfo: () => get<AbInfo>('/api/ab'),
   /** The root's bus: connects to it — only on the reader's request. */
   abRootInfo: (root: string) => get<AbRootInfo>('/api/ab', { root }),
