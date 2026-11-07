@@ -144,7 +144,14 @@ function parse(argv: string[]): Options {
       case '--rw': o.rw = true; break;
       case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
-      case '--name': o.name = next(); break;
+      case '--name':
+        // A missing value is not an empty one: `--name ''` and `--name reset` clear, a bare `--name` is an error.
+        if (i + 1 >= argv.length) {
+          console.error('mdhouse: --name needs a value (--name reset restores the directory name)');
+          process.exit(2);
+        }
+        o.name = next();
+        break;
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       // the value is optional: only on / off / a .sock path is taken — anything else is a folder
       case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$|^https?:\/\//.test(argv[i + 1] ?? '') ? next() : 'on'; break;

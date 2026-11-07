@@ -313,6 +313,26 @@ describe('--name: a human name for one project, display only', () => {
     expect(s.prefs()).toEqual({ saved: [], writable: [], server: {} }); // no prefs file was written
   });
 
+  test('--name with no value is an error, not a reset; an explicit empty value still resets', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    expect(s.run([a, '-p', '--name', 'Keep', '--port', '61947']).code).toBe(0);
+    try {
+      const before = JSON.stringify(s.prefs());
+      for (const args of [[a, '--name'], [a, '-p', '--name'], [a, '--rw', '--name']]) {
+        const r = s.run([...args.slice(0, 1), '--port', '61947', ...args.slice(1)]);
+        expect([r.code, r.err]).toEqual([2, 'mdhouse: --name needs a value (--name reset restores the directory name)\n']);
+        expect(JSON.stringify(s.prefs())).toBe(before);
+        expect((await rootsAt(61947))[0]).toMatchObject({ name: 'Keep', customName: 'Keep', saved: true, writable: false });
+      }
+      expect(s.run([a, '--name', '', '--port', '61947']).code).toBe(0);
+      expect(s.prefs().names).toEqual({});
+      expect((await rootsAt(61947))[0]!.name).toBe('a');
+    } finally {
+      s.run(['exit', '--port', '61947']);
+    }
+  });
+
   test('cold start with -p saves the name; a handoff resets it; the root stays read-only and unrenamed', async () => {
     const s = scratch();
     const a = s.folder('a');
@@ -335,14 +355,17 @@ describe('--name: a human name for one project, display only', () => {
     const s = scratch();
     const a = s.folder('a');
     const env = { ...process.env, XDG_CONFIG_HOME: s.cfg, MDHOUSE_PORT: '', MDHOUSE_HOST: '', MDHOUSE_SERVICE: '', MDHOUSE_DAEMON: '' };
+    // The server answers before the foreground daemon has saved (-p) and named the root: wait for that, not just for HTTP.
     const fg = async (args: string[]) => {
       const p = Bun.spawn([process.execPath, CLI, ...args, '--port', '61946', '--fg'], { env, stdin: 'ignore', stdout: 'ignore', stderr: 'ignore' });
       for (let i = 0; i < 100; i++) {
-        if (await fetch('http://127.0.0.1:61946/api/roots').then((r) => r.ok, () => false)) return p;
+        const named = await rootsAt(61946).then((roots) => roots[0]?.name === 'Foreground Saved', () => false);
+        if (named) return p;
         await Bun.sleep(50);
       }
       p.kill();
-      throw new Error('foreground mdhouse did not answer');
+      await p.exited;
+      throw new Error('foreground mdhouse did not answer with the name within 5 s');
     };
     let p = await fg([a, '-p', '--name', 'Foreground Saved']);
     try {
