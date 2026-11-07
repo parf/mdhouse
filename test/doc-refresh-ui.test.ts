@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import { docMetadataRevision, docRefreshTicket, mergeDocRefresh } from '../src/ui/doc-refresh';
-import type { DocMetadata, DocMetadataFields, DocPayload, DocUnchanged } from '../src/ui/api';
+import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from '../src/ui/doc-refresh';
+import type { DocMetadata, DocMetadataFields, DocPayload, DocUnchanged, RootInfo } from '../src/ui/api';
 
 function document(): DocPayload {
   return { kind:'md', root:'r', rel:'README.md', url:'/r/README.md', raw:'/api/raw?p=r/README.md', writable:true,
@@ -87,4 +87,17 @@ test('metadata can never inject a new renderer body/token via unexpected body fi
   const d=document();const reply={...metadata(d),meta:true as const,html:'forged',actToken:'forged',headings:[],tasks:{done:9,total:9}};
   const next=updated(d,reply);expect(next.html).toBe(d.html);expect(next.actToken).toBe(d.actToken);
   expect(next.headings).toBe(d.headings);expect(next.tasks).toBe(d.tasks);
+});
+
+test('liveWritable: the project\'s current access, never reference material, never an unlisted project', () => {
+  const root = (extra: Partial<RootInfo> = {}): RootInfo => ({ id: 'p', name: 'p', path: '/p', writable: true, mode: 'inherit', ...extra });
+  const doc = { root: 'p' };
+  expect(liveWritable(doc, root())).toBe(true);
+  expect(liveWritable(doc, root({ writable: false, mode: 'ro' }))).toBe(false);
+  // The project set read and write again does not open reference material under it.
+  expect(liveWritable({ root: 'p', reference: true }, root({ mode: 'rw' }))).toBe(false);
+  expect(liveWritable(doc, root({ kind: 'reference' }))).toBe(false);
+  expect(liveWritable(doc, undefined)).toBe(false);
+  expect(liveWritable(doc, root({ id: 'other' }))).toBe(false);
+  expect(liveWritable(null, root())).toBe(false);
 });

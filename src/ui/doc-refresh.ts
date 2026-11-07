@@ -1,5 +1,5 @@
 /** Separates file metadata updates from replacements of the rendered body and its provenance. */
-import type { DocMetadataFields, DocPayload, DocRefreshPayload } from './api';
+import type { DocMetadataFields, DocPayload, DocRefreshPayload, RootInfo } from './api';
 
 export interface DocRefreshTicket { generation: number; root: string; rel: string; url: string; contentHash: string | undefined }
 export type DocRefreshMerge = { kind: 'ignore' | 'reload' } | { kind: 'update'; doc: DocPayload };
@@ -34,4 +34,12 @@ export function mergeDocRefresh(current: DocPayload | null, reply: DocRefreshPay
     return { kind: 'update', doc: patchMetadata(current, reply) };
   }
   return { kind: 'update', doc: reply };
+}
+
+/**
+ * May the open document be written now: its project's effective access from the live root list, which every
+ * mode change refreshes. Reference material never; a project no longer listed never.
+ */
+export function liveWritable(doc: Pick<DocPayload, 'root' | 'reference'> | null, root: RootInfo | undefined): boolean {
+  return !!doc && !!root && root.id === doc.root && root.writable && root.kind !== 'reference' && !doc.reference;
 }

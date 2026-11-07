@@ -59,6 +59,10 @@ export interface RootInfo {
   configuredWritable?: boolean;
   /** The fingerprint a save confirms: a staleness check, not an authority. Only on a project that can be saved. */
   saveRev?: string;
+  /** Its access as set: `rw` / `ro` chosen for it, else `inherit` — the default and auto-RW decide. `writable` is the effect. */
+  mode?: 'inherit' | 'rw' | 'ro';
+  /** The fingerprint a mode change confirms, apart from `saveRev`: a staleness check, not an authority. */
+  accessRev?: string;
 }
 
 /** Who created a file and who last committed it. Arrives with the history, not the document. */
@@ -398,6 +402,8 @@ export const api = {
 
   /** Saves a session project as confirmed at `rev`; 409 `stale` when it changed since. Returns the served roots. */
   saveRoot: (id: string, rev: string) => post<{ roots: RootInfo[] }>('/api/roots/save', { id, rev }),
+  /** Sets a project read and write or read-only; administrator only. */
+  setRootMode: (id: string, mode: 'rw' | 'ro', rev: string) => post<{ roots: RootInfo[] }>('/api/roots/mode', { id, mode, rev }),
 
   /** Forget a directory and stop serving it. */
   async removeRoot(id: string): Promise<void> {

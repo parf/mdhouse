@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { api, type GitInfo, type RemoteState, type RootInfo } from './api';
+import { rootWritable } from './project-groups';
 import { CommitsView, FilesView, GitActions, RemoteBar, SyncLists } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
 import { PageHead, follow, inLink, type HomeView } from './PageHead';
@@ -157,7 +158,8 @@ export function Home(props: Props) {
         );
       })()}
       {git && <RemoteBar p={p} info={git} onState={setRemote} />}
-      {git?.writable && <GitActions p={p} info={git} remote={remote} onDone={() => setGitTick((n) => n + 1)} />}
+      {/* The project's current access from the live root list: a mode change shows here without a reload. */}
+      {git && rootWritable(props.roots, props.rootId) && <GitActions p={p} info={git} remote={remote} onDone={() => setGitTick((n) => n + 1)} />}
       {git && <SyncLists info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} commits={view === 'commits'} />}
 
       {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} revision={props.revision + gitTick} />}

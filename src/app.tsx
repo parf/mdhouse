@@ -6,7 +6,7 @@ import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, typ
 import { pageTitle, rootLabel } from './ui/format';
 import { customName } from './ui/project-groups';
 import { parentScope } from './ui/git-state';
-import { docMetadataRevision, docRefreshTicket, mergeDocRefresh } from './ui/doc-refresh';
+import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from './ui/doc-refresh';
 import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
 import { ViewChips } from './ui/ViewChips';
 import type { RecentEntry } from './lib/store';
@@ -717,6 +717,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
           rootGitUrl={`${dirPageUrl('', doc?.root)}?git`}
           onOpenRootGit={() => go(`${dirPageUrl('', doc?.root)}?git`)}
           onAgentPanel={() => setSidebar('off')}
+          writable={liveWritable(doc, docRoot)}
         />
         )}
       </main>

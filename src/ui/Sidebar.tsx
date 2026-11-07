@@ -3,6 +3,7 @@ import { inViewTab, VIEW_IDS, type RootViews, type ViewId } from './views';
 import type { RootInfo } from './api';
 import type { RecentEntry } from '../lib/store';
 import type { UiTree } from './api';
+import { rootWritable } from './project-groups';
 import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import type { SearchResult } from '../lib/search';
@@ -155,7 +156,7 @@ export function Sidebar(props: SidebarProps) {
             {(tree && (props.roots.find((r) => r.id === tree.root.id)?.name ?? tree.root.name)) || 'mdhouse'}
           </button>
           {/* Read-only is the normal state and says nothing; being able to write does. */}
-          {tree?.root.writable && (
+          {tree && rootWritable(props.roots, tree.root.id) && (
             <span class="rw" title="mdhouse may write to this tree">
               RW
             </span>

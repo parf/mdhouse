@@ -183,6 +183,8 @@ export function wireQa(el: HTMLElement, h: QaHandlers, token: string): () => voi
     el.removeEventListener('click', onClick);
     el.removeEventListener('change', onChange);
     el.removeEventListener('dblclick', onDblClick);
+    // Unwired, the options are inert again, as rendered: the page may have stopped being writable.
+    for (const input of el.querySelectorAll<HTMLInputElement>('.opt input')) input.disabled = true;
   };
 }
 

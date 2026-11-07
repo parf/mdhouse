@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
-import { customName, groupProjects, removable, selectedProject, writableVia } from './project-groups';
+import { accessMode, accessSource, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
@@ -27,12 +27,23 @@ interface Props {
 }
 
 const SAVE_STALE = 'This project changed since it was shown. Check it and save again.';
+const MODE_STALE = 'This project changed since it was shown. Check its access and choose again.';
 
-/** The access a save keeps: what was asked for; auto-RW stays conditional and is never made explicit. */
+/** The access a save keeps: the mode set for it; auto-RW stays conditional and is never made explicit. */
 function savedAccess(root: RootInfo): string {
-  if (root.configuredWritable === true) return 'read and write — started with --rw';
+  const mode = accessMode(root);
+  if (mode === 'rw') return 'read and write — set for this project';
+  if (mode === 'ro') return 'read-only — set for this project';
   if (root.writable) return 'read-only; writable only while an auto-RW path covers it';
   return 'read-only';
+}
+
+/** What a mode change does, for its confirmation. */
+function modeChange(root: RootInfo, to: 'rw' | 'ro'): string {
+  const now = `${root.writable ? 'read and write' : 'read-only'} — ${accessSource(root)}`;
+  const after = to === 'ro' ? 'read-only, whatever auto-RW covers' : 'read and write';
+  const lasts = root.saved ? 'Kept on every start.' : 'Lasts until mdhouse stops, unless the project is saved.';
+  return `Make project ${root.name} ${to === 'ro' ? 'read-only' : 'read and write'}?\n\nFolder: ${root.path}\nNow: ${now}\nAfter: ${after}\n\n${lasts} Project files stay unchanged.`;
 }
 
 /** A folder's own name: the last part of its path. */
@@ -167,6 +178,26 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && err.reason === 'stale') {
         setError(SAVE_STALE);
+        onChanged();
+      } else setError(refused(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // The mode is apart from the name: a name still being typed is saved by its own blur.
+  const setMode = async (root: RootInfo) => {
+    const to = modeTarget(root);
+    const rev = (root as { accessRev?: unknown }).accessRev;
+    if (!to || typeof rev !== 'string' || !confirm(modeChange(root, to))) return;
+    setBusy(root.id);
+    setError('');
+    try {
+      await api.setRootMode(root.id, to, rev);
+      onChanged();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.reason === 'stale') {
+        setError(MODE_STALE);
         onChanged();
       } else setError(refused(err));
     } finally {
@@ -327,14 +358,30 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 <dd>
                   {project.kind === 'reference' ? (
                     <span class="tag saved">read-only</span>
-                  ) : project.writable ? (
-                    <span class="tag rw" title="mdhouse may write to this tree">
-                      read and write
-                      {writableVia(project) === 'rw' && ' — started with --rw'}
-                      {writableVia(project) === 'auto' && ' — auto-RW'}
-                    </span>
                   ) : (
-                    <span class="tag session">read-only</span>
+                    <span class="project-access">
+                      <button
+                        type="button"
+                        class={`tag project-mode ${project.writable ? 'rw' : 'session'}`}
+                        disabled={!isAdmin || busy !== null || !modeTarget(project)}
+                        onClick={() => void setMode(project)}
+                        title={
+                          !isAdmin
+                            ? NEEDS_ADMIN
+                            : !modeTarget(project)
+                              ? 'Cannot be changed here'
+                              : project.writable
+                                ? 'Make it read-only'
+                                : 'Make it read and write'
+                        }
+                      >
+                        {project.writable ? '[RW]' : '[RO]'}
+                      </button>{' '}
+                      {project.writable ? 'read and write' : 'read-only'} — {accessSource(project)}
+                      {!project.saved && accessMode(project) !== 'inherit' && accessMode(project) !== null && (
+                        <span class="settings-hint">Lasts until mdhouse stops, unless the project is saved.</span>
+                      )}
+                    </span>
                   )}
                 </dd>
                 <dt>Kept</dt>
@@ -374,8 +421,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 </button>
               )}
               <p class="settings-note">
-                Access is set when it is added: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start (<code>--rw</code> for write
-                access); without <code>-p</code> it lasts until mdhouse stops, unless saved here.
+                Access starts as set when it is added: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start (<code>--rw</code> for
+                write access); without <code>-p</code> it lasts until mdhouse stops, unless saved here. [RW] / [RO] changes it.
               </p>
             </div>
           )}

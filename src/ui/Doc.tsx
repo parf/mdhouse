@@ -72,6 +72,8 @@ interface Props {
   /** The view chips on the title, and on the breadcrumbs (the document's folder). */
   chips?: preact.ComponentChildren;
   crumbChips?: preact.ComponentChildren;
+  /** May the document be written now: its project's current access (`liveWritable`), not the copy it was loaded with. */
+  writable: boolean;
 }
 
 /**
@@ -154,6 +156,7 @@ export function Doc({
   onAgentPanel,
   chips,
   crumbChips,
+  writable,
 }: Props) {
   const body = useRef<HTMLDivElement>(null);
   /** The token of the render on the page: html and token come in one payload, and change together. */
@@ -359,7 +362,7 @@ export function Doc({
   useEffect(() => {
     const el = body.current;
     if (!el || !doc) return;
-    const editable = doc.writable && view === 'doc' && doc.kind === 'md';
+    const editable = writable && view === 'doc' && doc.kind === 'md';
     for (const box of el.querySelectorAll<HTMLInputElement>('.task-checkbox')) box.disabled = !editable || !actOf(box, actToken);
     if (!editable) return;
 
@@ -388,7 +391,7 @@ export function Doc({
     };
     el.addEventListener('change', onChange);
     return () => el.removeEventListener('change', onChange);
-  }, [doc?.url, doc?.html, doc?.writable, view]);
+  }, [doc?.url, doc?.html, writable, view]);
 
   /**
    * Q&A in place (qa-page.ts, QaEditor). In a writable folder and the plain document view, an
@@ -407,7 +410,7 @@ export function Doc({
   // The text being written, as the editor reports it: what Save sends.
   const draft = useRef('');
   const opened = useRef(0);
-  const answerable = !!doc?.writable && view === 'doc' && doc.kind === 'md';
+  const answerable = !!doc && writable && view === 'doc' && doc.kind === 'md';
 
   // Who a signed reply is from, for the 👤 tooltip.
   const [me, setMe] = useState('');
@@ -470,16 +473,18 @@ export function Doc({
     if (!el || !doc) return;
     const unfold = markFolded(el);
     openTarget(el, decodeURIComponent(location.hash.slice(1)));
-    if (!answerable) return unfold;
-    const unwire = wireQa(el, {
+    return unfold;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.url, doc?.html]);
+  // The Q&A controls follow the access on its own: a mode change only turns them on or off.
+  useEffect(() => {
+    const el = body.current;
+    if (!el || !doc || !answerable) return;
+    return wireQa(el, {
       open: (t) => void openForm(t),
       act: (line, hash, change) => void act(line, hash, change),
       close: () => setEditing(null),
     }, actToken);
-    return () => {
-      unfold();
-      unwire();
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.url, doc?.html, answerable]);
 
@@ -701,6 +706,15 @@ export function Doc({
   const addingNow = useRef(adding);
   addingNow.current = adding;
   const addDraft = useRef('');
+
+  // Writing stopped with a form open: the text stays, and the form says why a save would be refused.
+  useEffect(() => {
+    if (answerable || !doc) return;
+    const note = 'This project is read-only now — your text is kept.';
+    setEditing((e) => (e && !e.note ? { ...e, note } : e));
+    setAdding((a) => (a && !a.note ? { ...a, note } : a));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answerable]);
 
   // Leaving a document with a form open keeps its draft; coming back opens the form again with it.
   useEffect(() => {
@@ -1002,7 +1016,7 @@ export function Doc({
   const hasSubs = doc.headings.some((h) => h.level === 3);
 
   /** Uncommitted changes in a writable folder: back to the last commit, after a confirm. */
-  const resetButton = diff?.kind === 'working' && diff.hunks.length > 0 && doc.writable && (
+  const resetButton = diff?.kind === 'working' && diff.hunks.length > 0 && writable && (
     <button
       class="diff-reset"
       title="Throw away the uncommitted changes in this file: git checkout HEAD -- file"
@@ -1116,7 +1130,7 @@ export function Doc({
             </button>
           )}
           {/* Commit this one file, without leaving it for the git view. */}
-          {doc.writable && rootInRepo && (
+          {writable && rootInRepo && (
             <DocCommit p={`${doc.root}/${doc.rel}`} name={name} dirty={dirty} onDone={() => onReload?.()} />
           )}
           {doc.tasks.total > 0 && (

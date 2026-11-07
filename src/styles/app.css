@@ -2030,9 +2030,10 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .settings-scheme.project-name { width: min(24em, 100%); font-family: inherit; }
 .project-remove { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--danger); cursor: pointer; }
 .project-remove:disabled { opacity: .5; cursor: not-allowed; }
-.project-save { font-family: inherit; cursor: pointer; }
-.project-save:disabled { opacity: .6; cursor: not-allowed; }
-@media (pointer: coarse) { .project-save { min-height: 32px; padding: 4px 10px; } }
+:is(.project-save, .project-mode) { font-family: inherit; cursor: pointer; }
+:is(.project-save, .project-mode):disabled { opacity: .6; cursor: not-allowed; }
+@media (pointer: coarse) { :is(.project-save, .project-mode) { min-height: 32px; padding: 4px 10px; } }
+.project-access .settings-hint { display: block; }
 .admin-logout { min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .admin-logout:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .settings input:disabled, .settings textarea:disabled { opacity: .6; cursor: not-allowed; }

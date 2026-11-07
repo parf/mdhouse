@@ -57,8 +57,31 @@ export function chooserLabels(
 /** Projects that can be removed: everything but the reference. */
 export const removable = (roots: readonly RootInfo[]): RootInfo[] => roots.filter((r) => r.kind !== 'reference');
 
-/** Why a project is writable, when the server says: asked with `--rw`, or covered by the auto-RW paths. */
-export function writableVia(root: RootInfo): 'rw' | 'auto' | null {
-  const by = (root as { writableBy?: unknown }).writableBy;
-  return root.writable && (by === 'rw' || by === 'auto') ? by : null;
+/** A project's access as set, as the server states it; null for the reference or a value this page does not know. */
+export function accessMode(root: RootInfo): 'inherit' | 'rw' | 'ro' | null {
+  const mode = (root as { mode?: unknown }).mode;
+  return root.kind !== 'reference' && (mode === 'inherit' || mode === 'rw' || mode === 'ro') ? mode : null;
 }
+
+/** The mode a change sets: the opposite of the access the project has now. Null when there is nothing to set. */
+export function modeTarget(root: RootInfo): 'rw' | 'ro' | null {
+  const mode = accessMode(root);
+  const rev = (root as { accessRev?: unknown }).accessRev;
+  if (!mode || typeof rev !== 'string' || !/^[0-9a-f]{64}$/.test(rev)) return null;
+  const to = root.writable ? 'ro' : 'rw';
+  return to === mode ? null : to;
+}
+
+/** Where a project's access comes from, in words. */
+export function accessSource(root: RootInfo): string {
+  const mode = accessMode(root);
+  if (mode === 'ro') return 'set read-only for this project';
+  if (mode === 'rw') return root.writable ? 'set read and write for this project' : 'set read and write, but mdhouse cannot write here';
+  return root.writable ? 'an auto-RW path covers it' : 'the default';
+}
+
+/** May mdhouse write to this project now, by the live root list. A project no longer listed: no. */
+export const rootWritable = (roots: readonly RootInfo[], id: string): boolean => {
+  const root = roots.find((r) => r.id === id);
+  return !!root && root.writable && root.kind !== 'reference';
+};

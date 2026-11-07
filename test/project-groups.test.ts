@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { RootInfo } from '../src/ui/api';
-import { groupProjects, removable, selectedProject, writableVia } from '../src/ui/project-groups';
+import { groupProjects, removable, selectedProject, accessMode, accessSource, modeTarget, rootWritable } from '../src/ui/project-groups';
 
 const root = (id: string, extra: Partial<RootInfo> = {}): RootInfo => ({ id, name: id, path: `/p/${id}`, writable: false, ...extra });
 const roots = [root('ref', { kind: 'reference' }), root('s1', { saved: true }), root('t1'), root('s2', { saved: true, writable: true })];
@@ -29,11 +29,32 @@ describe('project groups', () => {
     expect(removable([root('ref', { kind: 'reference' }), root('a')]).length).toBe(1);
   });
 
-  test('writableVia: only what the server states, only for a writable project', () => {
-    expect(writableVia({ ...root('a', { writable: true }), writableBy: 'rw' } as RootInfo)).toBe('rw');
-    expect(writableVia({ ...root('a', { writable: true }), writableBy: 'auto' } as RootInfo)).toBe('auto');
-    expect(writableVia(root('a', { writable: true }))).toBeNull();
-    expect(writableVia({ ...root('a'), writableBy: 'rw' } as RootInfo)).toBeNull();
-    expect(writableVia({ ...root('a', { writable: true }), writableBy: 'x' } as unknown as RootInfo)).toBeNull();
+  test('modeTarget: the opposite of the effective access, only with a known mode and a full accessRev', () => {
+    const rev = 'a'.repeat(64);
+    expect(modeTarget(root('a', { mode: 'inherit', accessRev: rev, writable: true }))).toBe('ro');
+    expect(modeTarget(root('a', { mode: 'inherit', accessRev: rev }))).toBe('rw');
+    expect(modeTarget(root('a', { mode: 'ro', accessRev: rev }))).toBe('rw');
+    expect(modeTarget(root('a', { mode: 'rw', accessRev: rev, writable: true }))).toBe('ro');
+    // Set read and write yet capped: setting it again would change nothing.
+    expect(modeTarget(root('a', { mode: 'rw', accessRev: rev }))).toBeNull();
+    expect(modeTarget(root('a', { mode: 'inherit' }))).toBeNull();
+    expect(modeTarget(root('a', { mode: 'inherit', accessRev: 'abc' }))).toBeNull();
+    expect(modeTarget(root('a', { accessRev: rev }))).toBeNull();
+    expect(modeTarget({ ...root('a', { accessRev: rev }), mode: 'x' } as unknown as RootInfo)).toBeNull();
+    expect(modeTarget(root('ref', { kind: 'reference', mode: 'inherit', accessRev: rev }))).toBeNull();
+  });
+
+  test('accessSource: an explicit choice apart from inherited auto-RW and the default', () => {
+    expect(accessMode(root('ref', { kind: 'reference', mode: 'ro' }))).toBeNull();
+    expect(accessSource(root('a', { mode: 'ro' }))).toBe('set read-only for this project');
+    expect(accessSource(root('a', { mode: 'rw', writable: true }))).toBe('set read and write for this project');
+    expect(accessSource(root('a', { mode: 'rw' }))).toBe('set read and write, but mdhouse cannot write here');
+    expect(accessSource(root('a', { mode: 'inherit', writable: true }))).toBe('an auto-RW path covers it');
+    expect(accessSource(root('a', { mode: 'inherit' }))).toBe('the default');
+  });
+
+  test('rootWritable: by the live list; reference and unlisted projects never', () => {
+    const live = [root('a', { writable: true }), root('b'), root('ref', { kind: 'reference', writable: true })];
+    expect(['a', 'b', 'ref', 'gone'].map((id) => rootWritable(live, id))).toEqual([true, false, false, false]);
   });
 });
