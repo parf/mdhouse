@@ -85,3 +85,15 @@ export const rootWritable = (roots: readonly RootInfo[], id: string): boolean =>
   const root = roots.find((r) => r.id === id);
   return !!root && root.writable && root.kind !== 'reference';
 };
+
+/** The longest folder path the add form sends. */
+export const ADD_PATH_MAX = 4096;
+
+/** Why a typed folder path cannot be sent as it is; null when it can. The server checks the folder itself. */
+export function addPathProblem(path: string): string | null {
+  if (!path) return 'Type the folder\'s full path.';
+  if (path.includes('\0')) return 'The path has a NUL character.';
+  if (path.length > ADD_PATH_MAX) return `The path is longer than ${ADD_PATH_MAX} characters.`;
+  if (!path.startsWith('/')) return 'A full path starts with /.';
+  return null;
+}

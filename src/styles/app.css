@@ -2011,6 +2011,14 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 /* Settings: Projects — a list to choose from, the chosen one's facts beside it (stacked on a phone). */
 .settings h2 .scope { font-size: 11px; font-weight: 500; color: var(--fg-faint); margin-left: 8px; text-transform: none; letter-spacing: 0; }
 .projects-pane { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 16px; align-items: start; }
+.project-add { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; }
+.project-add h3 { flex-basis: 100%; margin: 0; font-size: 13px; }
+.project-add .project-add-path { flex: 1 1 22em; width: auto; min-width: 0; }
+.project-add-mode { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; border: 0; }
+.project-add-btn:disabled { opacity: .6; cursor: not-allowed; }
+.project-add-mode legend { float: left; margin-right: 4px; color: var(--fg-muted); }
+.project-add-mode label { display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; }
+.project-add :is(.settings-hint, .settings-error) { flex-basis: 100%; }
 .project-list { display: flex; flex-direction: column; gap: 10px; }
 .project-group h3 { margin: 0 0 4px; font-size: 11px; font-weight: 600; color: var(--fg-faint); text-transform: uppercase; letter-spacing: .04em; }
 .project-pick { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 8px 10px; min-height: 36px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel); color: var(--fg); cursor: pointer; }
@@ -2034,8 +2042,8 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 :is(.project-save, .project-mode):disabled { opacity: .6; cursor: not-allowed; }
 @media (pointer: coarse) { :is(.project-save, .project-mode) { min-height: 32px; padding: 4px 10px; } }
 .project-access .settings-hint { display: block; }
-.admin-logout { min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
-.admin-logout:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+:is(.admin-logout, .project-add-btn) { min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+:is(.admin-logout, .project-add-btn):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .settings input:disabled, .settings textarea:disabled { opacity: .6; cursor: not-allowed; }
 @media (max-width: 720px) {
   .projects-pane { grid-template-columns: 1fr; }

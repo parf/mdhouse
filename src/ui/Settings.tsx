@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
-import { accessMode, accessSource, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
+import { ADD_PATH_MAX, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
@@ -28,6 +28,8 @@ interface Props {
 
 const SAVE_STALE = 'This project changed since it was shown. Check it and save again.';
 const MODE_STALE = 'This project changed since it was shown. Check its access and choose again.';
+const ADD_SERVED = 'That folder is already served — it is shown above. Nothing changed.';
+const ADD_STALE = 'mdhouse settings changed meanwhile, so nothing was added. Check and add again.';
 
 /** The access a save keeps: the mode set for it; auto-RW stays conditional and is never made explicit. */
 function savedAccess(root: RootInfo): string {
@@ -63,8 +65,8 @@ const ENTRY_NOTE: Partial<Record<AdminEntry, string>> = {
  * Settings. The Projects mdhouse serves — chosen and shown here, with what the server lets be
  * changed — then this browser's own setting, then the instance-wide ones.
  *
- * Removing is the only action here. Adding needs a path typed into a browser that cannot
- * check it exists or offer completion; `mdhouse <dir> -p` in a terminal does both.
+ * Adding takes a folder's full path and an access the administrator chooses; the server checks the
+ * folder. Nothing completes or lists paths here — `mdhouse <dir>` in a terminal can.
  */
 export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go, entry }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -200,6 +202,34 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         setError(MODE_STALE);
         onChanged();
       } else setError(refused(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // The folder to add, as typed, and its access: neither chosen in advance. A refusal keeps both.
+  const [addPath, setAddPath] = useState('');
+  const [addMode, setAddMode] = useState<'rw' | 'ro' | null>(null);
+  const [addError, setAddError] = useState('');
+  const addProblem = addPathProblem(addPath);
+  const add = async () => {
+    if (!isAdmin || busy !== null || !addMode || addProblem) return;
+    setBusy('add');
+    setAddError('');
+    try {
+      const { id } = await api.addRoot(addPath, addMode);
+      setPicked(id);
+      setAddPath('');
+      setAddMode(null);
+      onChanged();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.reason === 'served' && err.id) {
+        setPicked(err.id);
+        setAddError(ADD_SERVED);
+      } else if (err instanceof ApiError && err.status === 409 && err.reason === 'stale') {
+        setAddError(ADD_STALE);
+        onChanged();
+      } else setAddError(refused(err));
     } finally {
       setBusy(null);
     }
@@ -428,6 +458,52 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           )}
         </div>
         {error && <p class="settings-error">{error}</p>}
+        <form
+          class="project-add"
+          aria-label="Add project"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void add();
+          }}
+        >
+          <h3>Add project</h3>
+          <input
+            class="settings-scheme project-add-path"
+            type="text"
+            value={addPath}
+            placeholder="/full/path/to/folder"
+            maxLength={ADD_PATH_MAX}
+            spellcheck={false}
+            autocomplete="off"
+            aria-label="Full path of the folder to add"
+            disabled={!isAdmin}
+            title={isAdmin ? undefined : NEEDS_ADMIN}
+            onInput={(e) => setAddPath((e.target as HTMLInputElement).value)}
+          />
+          <fieldset class="project-add-mode" disabled={!isAdmin}>
+            <legend>Access</legend>
+            <label>
+              <input type="radio" name="project-add-mode" value="rw" checked={addMode === 'rw'} onChange={() => setAddMode('rw')} /> RW — read and write
+            </label>
+            <label>
+              <input type="radio" name="project-add-mode" value="ro" checked={addMode === 'ro'} onChange={() => setAddMode('ro')} /> RO — read-only
+            </label>
+          </fieldset>
+          <button
+            type="submit"
+            class="project-add-btn"
+            disabled={!isAdmin || busy !== null || !addMode || addProblem !== null}
+            title={!isAdmin ? NEEDS_ADMIN : addProblem ?? (!addMode ? 'Choose RW or RO' : 'Serve this folder until mdhouse stops')}
+          >
+            Add project
+          </button>
+          <span class="settings-hint">
+            An existing folder, by its full path; <code>~</code> and relative paths are not expanded. Served until mdhouse stops —
+            [unsaved] then keeps it.
+            {addPath && addProblem && <> {addProblem}</>}
+          </span>
+          {addError && <span class="settings-error">{addError}</span>}
+        </form>
       </section>
 
       {author && (

@@ -144,6 +144,8 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly reason?: string,
+    /** The project a refusal points at: the one already served, for an add of the same folder. */
+    readonly id?: string,
   ) {
     super(message);
   }
@@ -159,8 +161,13 @@ export interface AdminState {
 }
 
 async function refusal(res: Response): Promise<ApiError> {
-  const body = (await res.json().catch(() => null)) as { error?: string; reason?: string } | null;
-  return new ApiError(body?.error ?? `${res.status} ${res.statusText}`, res.status, typeof body?.reason === 'string' ? body.reason : undefined);
+  const body = (await res.json().catch(() => null)) as { error?: string; reason?: string; id?: unknown } | null;
+  return new ApiError(
+    body?.error ?? `${res.status} ${res.statusText}`,
+    res.status,
+    typeof body?.reason === 'string' ? body.reason : undefined,
+    typeof body?.id === 'string' ? body.id : undefined,
+  );
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -402,6 +409,8 @@ export const api = {
 
   /** Saves a session project as confirmed at `rev`; 409 `stale` when it changed since. Returns the served roots. */
   saveRoot: (id: string, rev: string) => post<{ roots: RootInfo[] }>('/api/roots/save', { id, rev }),
+  /** Serves an existing folder, by its absolute path, until mdhouse stops; administrator only. */
+  addRoot: (path: string, mode: 'rw' | 'ro') => post<{ roots: RootInfo[]; id: string }>('/api/roots/add', { path, mode }),
   /** Sets a project read and write or read-only; administrator only. */
   setRootMode: (id: string, mode: 'rw' | 'ro', rev: string) => post<{ roots: RootInfo[] }>('/api/roots/mode', { id, mode, rev }),
 
