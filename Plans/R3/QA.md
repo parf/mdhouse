@@ -404,3 +404,25 @@ Successful root removal is covered by server tests; native browser fixture had o
 kept the last-project remove control disabled. Browser Host/cross-origin/non-loopback negatives are
 covered at backend level. Cross-browser/real-device checks remain release QA.
 Team/OAuth, remote bootstrap, new project properties and marks policy remain outside this accepted scope.
+
+
+## Optional Project names — candidate {#optional-project-names}
+
+[№MW.1a.1](workspaces/TODO.md#MW.1a.1), code candidate `8408be3617969da18a6dd1d6563a2e5df86c79d1`.
+W1 author `1b91474`, canonical-path followup `b821a2e`; W2 author `ab7bf74`, duplicate chooser followup `554de32`.
+All author commits combined without conflicts. Owner chose session-only name lifetime until explicit save
+([№Q-R3-NAME1](workspaces/DECISIONS.md#Q-R3-NAME1)); this does not save a root or change its access.
+Initial combined gate: 196/0 across 14 named impacted test files, types exit 0; complete output/original exits
+in `.scratch/worktrees/r3-project-name-cohort/.scratch/name-gate/`.
+Canonical-path material fix: targeted 48/0 across project-name-wiring/project-name/prefs/prefs-dist,
+final types exit 0; `canonical-delta.log/.exit` and `final-types.log/.exit` in the same directory.
+No repeated full suite. Original first failures retained: W1 cold foreground saved-name test expected
+`Foreground Saved` but got directory label (`.scratch/cli-fg-first-failure.log`); W2 duplicate shortened
+chooser labels (`project-name-ui-labels` scratch); CTO reproduced alias retarget transferring a label,
+W1 recorded the canonical-key fixture failure in `r3-project-name-backend-canonical/.scratch/canonical-first-failure.log`.
+Fixes preserve the claims and tests; later pass evidence does not erase those failures.
+W2 initial browser proof mocked only root-name routes and does not establish final backend acceptance.
+Real-backend two-tab/identity/browser proof and pinned nonauthor config/control security review are pending.
+Parent [№MW.1a](workspaces/TODO.md#MW.1a) remains open on the absent [№MW.7](workspaces/TODO.md#MW.7)
+Agent Bus control inventory; existing control ping is not that surface. No new RW/save/endpoint editor,
+mode migration, Team/OAuth, live reload, version bump, publication, provider or ACL change.
