@@ -537,3 +537,9 @@ No package is done before shared runner/permission checks pass; tracker-free out
   [№BADGE-W1](DECISIONS.md#BADGE-W1): Workspace hides RW/shows RO; Viewer hides RO/shows configured RW without write authority.
   Apply throughout headers, project lists and Settings: hide defaults or render gray; highlight important/unusual states.
   Presentation only; no default/mode/permission activation. Retain visible Settings access controls.
+
+## UX review
+
+- [ ] MW.13 Schedule a comprehensive UX review of all pages and flows <a id="MW.13"></a>
+  Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.
+  Cover desktop/mobile, light/dark, roles/access modes and loading/empty/error/success states; record screenshot-backed findings and prioritize the resulting implementation work.
