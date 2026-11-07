@@ -1,7 +1,8 @@
 # Navigation and project views
 
-⚠️ Working proposal for [№MW.13.1a](workspaces/TODO.md#MW.13.1a), not an implementation decision.
-Base `f646f8092a9a8014c5c1f391150002eebefe2e64`. Current journey evidence pending; [technical inventory](ux-navigation/TECHNICAL-INVENTORY.md) integrated.
+Research proposal for [№MW.13.1a](workspaces/TODO.md#MW.13.1a), not an implementation decision.
+Base `f646f8092a9a8014c5c1f391150002eebefe2e64`. [18 journey captures](ux-navigation/JOURNEYS.md) and [technical inventory](ux-navigation/TECHNICAL-INVENTORY.md) integrated.
+Research complete; navigation direction and implementation remain pending.
 [Scope](EXECUTION.md#navigation-research) · [UX reference](../UX.md).
 
 ## Goal and evidence standard
@@ -28,6 +29,50 @@ Checked 2026-11-07. These are patterns to evaluate, not authority to copy anothe
 Inference: borrow context preservation and separation of scope; do not add a complete IDE shell or a
 second tab manager merely because a comparator has one. The owner asks for a useful workspace with a
 reader-oriented entry, not an assumed VS Code clone.
+
+## Journey review
+
+Full numbered captures, actions, URLs and visible results: [journey board](ux-navigation/JOURNEYS.md#shots).
+Current-source synthetic fixture; 1280×900 and 390×844, representative light/dark and access states.
+
+| Step | Goal and evidence | Health | Implication |
+|---|---|---|---|
+| 1 | Find/read/act: shots 01–04 | ⚠️ Tree, search and source edit are reachable; head is dense | Preserve useful direct routes; group secondary actions rather than remove capabilities |
+| 2 | Understand changes: 05–06 | ⚠️ Commit lists and local diff exist; local panels lack shareable state | Separate project activity and file history; label working tree versus revision |
+| 3 | Find other project files: 07–08 | ⚠️ Files open, but code selection has no matching tree node | Highest structural priority: consistent scope and selection |
+| 4 | Switch/manage project: 09–11 | ✅ RO exception and admin gating visible | Retain boundary feedback; improve discovery without implying access |
+| 5 | Curate: 12 | ✅ Favorite and personal file-set chips respond | Preserve these meanings when consolidating navigation |
+| 6 | Agent entry: 12 | ⚠️ Absent with AB off, as expected | AB-on journey not evaluated; do not infer its quality from absence |
+| 7 | Mobile and recovery: 13–18 | ⚠️ Navigation works; dense chrome and weak recovery | One navigation entry, progressive actions and explicit next steps |
+
+### Prioritized findings
+
+Priorities below are recommendations for design sequencing, not approved fixes or measured user frequency.
+
+| Priority | Observed risk and evidence | Proposed response | Dependency |
+|---|---|---|---|
+| P1 🟠 | Scope/count mismatch and orphan code selection (07–08) | One visible MD/All scope for folder and tree, selected-file context | Bounded all-files tree/listing prerequisite, ignore/cap handling; search scope explicitly labelled |
+| P1 🟠 | Browser-only MD/All carries across roots; URL cannot reproduce the scope (07,16–17) | Make meaningful filter state shareable and define project/default behavior | URL/back compatibility design; valid All results are not an empty-state bug |
+| P1 🟠 | Dense doc chrome: 20 interactive controls of all kinds; mobile rows plus TOC/history precede body (02,14) | Reading first; Edit clear when allowed; expandable secondary tools/context | Preserve required confirmations, discoverability and kept drafts; count is not proof of 20 primary actions |
+| P1 🟠 | Raw missing-origin error adjacent to Pull/Push (01,05,15) | Local-repository state with a clear explanation; disclose unavailable remote actions | Verify remote-state contract; do not add automatic connectivity probes |
+| P2 ⚪ | Activity destinations duplicated; diff/editor state not addressable (01,04–06,12) | Consolidate entry points, preserve personal curation, explicit file-history return | URL/state and revision-read design; no silent route or mark migration |
+| P2 ⚪ | Error/empty state has no suggested next step (17–18) | Folder/project recovery links and a relevant next action | Existing real hrefs and access semantics |
+| P2 ⚪ | Search repeats files per matching line (03) | Group file hits with expandable snippets and a direct line target | Current Markdown search contract; no implied all-code search |
+| P2 ⚪ | No branch discovery; commit status says unpushed without a remote (03,05) | Read-only branch/author context and honest local-only status | Missing reads; other-branch file absence from working-tree search is expected |
+
+Strengths worth preserving: immediate tree-to-doc navigation; adjacent file history/diff; combined name/content
+search; RO exception emphasis; direct curation; non-Markdown rendering already available. Do not replace these
+with a dashboard detour solely to simplify a diagram.
+
+### Limits and accessibility
+
+All 18 accepted images were inspected by W2; CTO inspected key desktop/mobile scope, density, access and recovery
+frames. Representative coverage is not the comprehensive MW.13 audit. AB-on, Q&A answer, loading, commit/push
+success, About, reference reading, 700px and every theme/state combination were not captured. Headless hover:none
+renders touch heading controls even on desktop, limiting desktop-density conclusions. No user timing, screen-reader,
+complete keyboard traversal, contrast audit or physical mobile/IME validation was performed. Progressive disclosure
+must retain labelled entry points, focus management and touch targets; screenshot appearance alone cannot prove these.
+The fixture PDF is a stub for listing, not proof of PDF reading quality. Original harness failures remain in scratch logs.
 
 ## Verified constraints before new views
 
@@ -62,9 +107,10 @@ checks, not confirmed vulnerabilities or grounds to expand this research into a 
 | D. Quick-open first | Fast known-name retrieval | Commands jump to history or changes | Must retain visible browse/search fallback | Useful accelerator | Recall burden and poor first-use discovery if primary navigation depends on commands |
 | E. Tree / content / context panels | Strong file context and adjacent history | Context panel for history/diff | Panels collapse into a sequential flow | Reader core can omit work actions | Wide-screen density and competing panels (TOC, history, AB) |
 
-Provisional recommendation: B as the structural spine, D as an accelerator and a restrained E for
-contextual details. A remains a simpler alternative to test; C is optional after task evidence justifies
-another landing. This recommendation must be checked against current screenshots before acceptance.
+Recommendation: B as the structural spine, D as an accelerator and a restrained E for contextual details.
+The scope mismatch in shots 07–08 supports B; mobile density in 14 supports sequential rather than simultaneous
+panels. A remains a simpler alternative to test; C is optional after task evidence justifies another landing.
+These are evidence-informed design inferences; no comparative usability test has selected a winner.
 
 ## Proposed context and transitions
 
@@ -107,9 +153,9 @@ No new storage layout is selected here. [№MW.14](workspaces/TODO.md#MW.14) pre
 flows and automation definitions/state. Viewer product extraction, global Viewer activation, RAG ingestion,
 Cron/At jobs and provider lifecycle are separate work.
 
-## Acceptance still pending
+## Research acceptance
 
-- [ ] Current-source numbered journey screenshots and observations reviewed.
+- [x] Current-source numbered journey screenshots and observations reviewed; author wording follow-up retained.
 - [x] Technical inventory checked against the proposal and gaps linked (W1 fact-check of `9851ca6`).
-- [ ] Findings prioritized by observed impact; accessibility and coverage limits stated.
+- [x] Findings prioritized by observed impact; accessibility and coverage limits stated.
 - [ ] Nonauthor fact-check and source/link review; recommendation submitted for direction.
