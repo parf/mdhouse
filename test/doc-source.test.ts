@@ -228,6 +228,53 @@ describe('POST /api/source', () => {
     }
   });
 
+  test('a file grown past the cap after the snapshot: 409 stale, nothing written, and the queued re-read stays bounded', async () => {
+    const t = await start(61820);
+    const reads: Array<{ path: string; end: number | null }> = [];
+    const file = Bun.file;
+    // records every read of a file's bytes: its end when sliced, null when the whole file is read
+    const spy = spyOn(Bun, 'file').mockImplementation(((path: string, o?: BlobPropertyBag) => {
+      const f = file(path, o);
+      const watch = (blob: Blob, end: number | null): Blob =>
+        new Proxy(blob, {
+          get(target, key) {
+            const v = Reflect.get(target, key, target) as unknown;
+            if (typeof v !== 'function') return v;
+            if (key === 'slice') return (start?: number, stop?: number) => watch((v as Blob['slice']).call(target, start, stop), stop ?? null);
+            if (key === 'bytes' || key === 'arrayBuffer' || key === 'text' || key === 'stream') {
+              return (...a: unknown[]) => {
+                reads.push({ path: String(path), end });
+                return (v as (...a: unknown[]) => unknown).apply(target, a);
+              };
+            }
+            return (v as (...a: unknown[]) => unknown).bind(target);
+          },
+        });
+      return watch(f, null);
+    }) as unknown as typeof Bun.file);
+    try {
+      const { SOURCE_MAX } = await import('../src/lib/source');
+      const p = `${t.rwId}/crlf.md`;
+      const snap = (await (await t.get(p)).json()) as { hash: string };
+      const grown = new Uint8Array(SOURCE_MAX + 10).fill(0x62);
+      await writeFile(t.at('crlf.md'), grown);
+      reads.length = 0;
+      const res = await t.post({ p, hash: snap.hash, text: 'my draft' });
+      expect([res.status, ((await res.json()) as { reason?: string }).reason]).toEqual([409, 'stale']);
+      expect(bytes(t.at('crlf.md'))).toEqual(grown);
+      // the hash of exactly the bytes a capped read sees is still not the whole file's
+      const prefix = await t.post({ p, hash: sha(grown.slice(0, SOURCE_MAX + 1)), text: 'my draft' });
+      expect(prefix.status).toBe(409);
+      expect(bytes(t.at('crlf.md'))).toEqual(grown);
+      const mine = reads.filter((r) => r.path === t.at('crlf.md'));
+      expect(mine.length).toBeGreaterThan(0);
+      for (const r of mine) expect(r.end).toBe(SOURCE_MAX + 1);
+    } finally {
+      spy.mockRestore();
+      await t.stop();
+    }
+  });
+
   test('the final write rechecks: a root set read-only after the first check is 403 and the file stays', async () => {
     const t = await start(61817);
     try {

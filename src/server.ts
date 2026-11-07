@@ -822,8 +822,9 @@ export async function serve(opts: ServeOptions) {
               // Read once, in the queue: still this document, still the bytes the editor started from.
               const now = await docAt(p);
               if (now?.abs !== loc.abs) return stale();
-              const current = await Bun.file(loc.abs).bytes().catch(() => null);
-              if (!current || sourceHash(current) !== hash) return stale();
+              // at most one byte past the cap: a file grown past it is stale, never a prefix hashed as the whole
+              const current = await Bun.file(loc.abs).slice(0, SOURCE_MAX + 1).bytes().catch(() => null);
+              if (!current || current.length > SOURCE_MAX || sourceHash(current) !== hash) return stale();
               await registry.writeFile(p, data);
               return json({ hash: sourceHash(data) });
             });
