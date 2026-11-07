@@ -127,10 +127,36 @@ export interface AbEvent {
 }
 export type AbAction = 'updated' | 'target' | 'resolve' | 'review' | 'note';
 
+/** A refused request: the server's message, its status and, when it gives one, its reason. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly reason?: string,
+  ) {
+    super(message);
+  }
+}
+
+/** The server refused for lack of an administrator session — none, expired or revoked. */
+export const isAdminDenial = (err: unknown): boolean => err instanceof ApiError && err.status === 401 && err.reason === 'admin';
+
+/** `GET /api/admin`: is this browser signed in as the instance administrator, and until when. */
+export interface AdminState {
+  admin: boolean;
+  expiresAt?: number;
+}
+
+async function refusal(res: Response): Promise<ApiError> {
+  const body = (await res.json().catch(() => null)) as { error?: string; reason?: string } | null;
+  return new ApiError(body?.error ?? `${res.status} ${res.statusText}`, res.status, typeof body?.reason === 'string' ? body.reason : undefined);
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  const got = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
-  if (!res.ok || !got) throw Object.assign(new Error(got?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+  if (!res.ok) throw await refusal(res);
+  const got = (await res.json().catch(() => null)) as T | null;
+  if (!got) throw new ApiError(`${res.status} ${res.statusText}`, res.status);
   return got;
 }
 
@@ -324,17 +350,20 @@ export const api = {
     return res.json() as Promise<AuthorInfo>;
   },
 
-  async setSettings(patch: Partial<Settings>): Promise<Settings> {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(patch),
-    });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
-    }
-    return res.json() as Promise<Settings>;
+  setSettings: (patch: Partial<Settings>) => post<Settings>('/api/settings', patch),
+
+  /** This browser's administrator state; never cached. */
+  async admin(): Promise<AdminState> {
+    const res = await fetch('/api/admin', { cache: 'no-store' });
+    if (!res.ok) throw await refusal(res);
+    const got = (await res.json().catch(() => null)) as { admin?: unknown; expiresAt?: unknown } | null;
+    return { admin: got?.admin === true, expiresAt: typeof got?.expiresAt === 'number' ? got.expiresAt : undefined };
+  },
+
+  /** Ends this browser's administrator session. */
+  async adminLogout(): Promise<void> {
+    const res = await fetch('/api/admin/logout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', cache: 'no-store' });
+    if (!res.ok) throw await refusal(res);
   },
 
   /** Is the page at `url` still there: a file, or a folder — a root's own always is. */
@@ -364,10 +393,7 @@ export const api = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id }),
     });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
-    }
+    if (!res.ok) throw await refusal(res);
   },
 };
 

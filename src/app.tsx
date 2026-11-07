@@ -1,3 +1,5 @@
+// First: removes an `#admin=` sign-in fragment before any other module, request or render.
+import { adminEntry, onAdminEntry, type AdminEntry } from './ui/admin-entry';
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
@@ -42,7 +44,10 @@ const save = (key: string, value: unknown) => {
   }
 };
 
-function App() {
+function App({ entry: first }: { entry: AdminEntry }) {
+  // The latest sign-in link's outcome; a new object for each, so the same outcome twice still counts.
+  const [entry, setEntry] = useState<{ outcome: AdminEntry }>({ outcome: first });
+  useEffect(() => onAdminEntry((outcome) => setEntry({ outcome })), []);
   const [roots, setRoots] = useState<RootInfo[]>([]);
   const [options, setOptions] = useState<Options>({ editLink: true, editScheme: 'edit', autoRw: true, me: '' });
   // Until the saved settings arrive, nothing that depends on them is drawn — otherwise a ✎
@@ -625,6 +630,7 @@ function App() {
             onOptions={setOptions}
             rootUrl={(id) => dirPageUrl('', id)}
             go={go}
+            entry={entry}
           />
         ) : dirTarget && gitView ? (
           <Home
@@ -714,4 +720,4 @@ function App() {
   );
 }
 
-render(<App />, document.getElementById('app')!);
+void adminEntry.then((entry) => render(<App entry={entry} />, document.getElementById('app')!));

@@ -2028,6 +2028,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-facts dd.path { font: 12.5px var(--mono); }
 .project-remove { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--danger); cursor: pointer; }
 .project-remove:disabled { opacity: .5; cursor: not-allowed; }
+.admin-logout { min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.admin-logout:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.settings input:disabled, .settings textarea:disabled { opacity: .6; cursor: not-allowed; }
 @media (max-width: 720px) {
   .projects-pane { grid-template-columns: 1fr; }
   .project-facts { grid-template-columns: 1fr; gap: 2px; }

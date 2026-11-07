@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
-import { api, type AbInfo, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
+import { api, isAdminDenial, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
+import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
 import { groupProjects, removable, selectedProject, writableVia } from './project-groups';
 
@@ -21,7 +22,19 @@ interface Props {
   /** A root's folder page, and moving there in the app. */
   rootUrl: (id: string) => string;
   go: (url: string) => void;
+  /** What the latest `#admin=` sign-in link came to, if there was one. */
+  entry: { outcome: AdminEntry };
 }
+
+/** How to become the administrator — said wherever a control needs it. */
+const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin in a terminal on this computer';
+const SESSION_ENDED = 'Your administrator session has ended. Run mdhouse admin in a terminal for a new sign-in link.';
+
+/** Only a failed sign-in needs a note: a successful one shows as the state itself. */
+const ENTRY_NOTE: Partial<Record<AdminEntry, string>> = {
+  invalid: '❌ That sign-in link is invalid, expired or already used. Run mdhouse admin for a new one.',
+  failed: '❌ The sign-in did not reach mdhouse. Run mdhouse admin for a new link.',
+};
 
 /**
  * Settings. The Projects mdhouse serves — chosen and shown here, with what the server lets be
@@ -30,8 +43,34 @@ interface Props {
  * Removing is the only action here. Adding needs a path typed into a browser that cannot
  * check it exists or offer completion; `mdhouse <dir> -p` in a terminal does both.
  */
-export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go }: Props) {
+export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go, entry }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
+  // Unknown until the server answers; protected controls stay off until it says `admin`.
+  const [admin, setAdmin] = useState<AdminState | null>(null);
+  const [adminError, setAdminError] = useState('');
+  const isAdmin = admin?.admin === true;
+  const loadAdmin = () =>
+    api.admin().then(
+      (a) => setAdmin(a),
+      () => setAdmin({ admin: false }),
+    );
+  useEffect(() => void loadAdmin(), [entry]);
+  /** The refusal's text; an administrator denial also turns the protected controls off. */
+  const refused = (err: unknown): string => {
+    if (!isAdminDenial(err)) return (err as Error).message;
+    setAdmin({ admin: false });
+    void loadAdmin();
+    return SESSION_ENDED;
+  };
+  const signOut = async () => {
+    setAdminError('');
+    try {
+      await api.adminLogout();
+    } catch (err) {
+      setAdminError((err as Error).message);
+    }
+    await loadAdmin();
+  };
   // The edit scheme as typed; saved on Enter or leaving the field, put back when the server refuses it.
   const [scheme, setScheme] = useState(options.editScheme);
   const [schemeError, setSchemeError] = useState<string | null>(null);
@@ -72,8 +111,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     try {
       onOptions(await api.setSettings({ editScheme: scheme }));
     } catch (err) {
-      setScheme(options.editScheme);
-      setSchemeError((err as Error).message);
+      if (!isAdminDenial(err)) setScheme(options.editScheme);
+      setSchemeError(refused(err));
     }
   };
   const [error, setError] = useState('');
@@ -91,7 +130,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       await api.removeRoot(root.id);
       onChanged();
     } catch (err) {
-      setError((err as Error).message);
+      setError(refused(err));
     } finally {
       setBusy(null);
     }
@@ -134,6 +173,32 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         <h1>Settings</h1>
         <span class="head-gear">{gear}</span>
       </header>
+
+      <section class="settings-admin">
+        <h2>
+          Administrator <span class="scope">this browser</span>
+        </h2>
+        {ENTRY_NOTE[entry.outcome] && !isAdmin && <p class="settings-error">{ENTRY_NOTE[entry.outcome]}</p>}
+        {admin?.admin ? (
+          <div class="settings-option admin-state">
+            <span>
+              <b>Signed in as the administrator</b>
+              {admin.expiresAt !== undefined && <> until {new Date(admin.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>}
+            </span>
+            <button type="button" class="admin-logout" onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </div>
+        ) : (
+          admin && (
+            <p class="settings-hint">
+              Not signed in. Instance settings and removing projects need the administrator: run <code>mdhouse admin</code> in a terminal on
+              this computer and open the link it gives.
+            </p>
+          )
+        )}
+        {adminError && <p class="settings-error">{adminError}</p>}
+      </section>
 
       <section class="settings-projects">
         <h2>Projects</h2>
@@ -211,9 +276,11 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               {project.kind !== 'reference' && (
                 <button
                   class="project-remove danger"
-                  disabled={last || busy !== null}
+                  disabled={!isAdmin || last || busy !== null}
                   onClick={() => void remove(project)}
-                  title={last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : 'Stop serving this project'}
+                  title={
+                    !isAdmin ? NEEDS_ADMIN : last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : 'Stop serving this project'
+                  }
                 >
                   <IconTrash size={15} /> Remove project
                 </button>
@@ -247,6 +314,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           <label>
             <input
               type="checkbox"
+              disabled={!isAdmin}
+              title={isAdmin ? undefined : NEEDS_ADMIN}
               checked={options.editLink}
               onChange={async (e) => {
                 const editLink = (e.target as HTMLInputElement).checked;
@@ -255,7 +324,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   onOptions(await api.setSettings({ editLink }));
                 } catch (err) {
                   onOptions(options);
-                  setError((err as Error).message);
+                  setError(refused(err));
                 }
               }}
             />
@@ -269,6 +338,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               <input
                 class="settings-scheme"
                 type="text"
+                disabled={!isAdmin}
+                title={isAdmin ? undefined : NEEDS_ADMIN}
                 value={scheme}
                 spellcheck={false}
                 autocapitalize="off"
@@ -302,6 +373,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             <label>
               <input
                 type="checkbox"
+                disabled={!isAdmin}
+                title={isAdmin ? undefined : NEEDS_ADMIN}
                 checked={options.autoRw}
                 onChange={async (e) => {
                   const autoRw = (e.target as HTMLInputElement).checked;
@@ -311,7 +384,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     onChanged();
                   } catch (err) {
                     onOptions(options);
-                    setError((err as Error).message);
+                    setError(refused(err));
                   }
                 }}
               />
@@ -332,13 +405,13 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         )}
       </section>
 
-      <AgentBusSettings />
+      <AgentBusSettings isAdmin={isAdmin} refused={refused} />
     </div>
   );
 }
 
 /** The Agent Bus section: off — how to turn it on; on — the connection, and the default agents. */
-function AgentBusSettings() {
+function AgentBusSettings({ isAdmin, refused }: { isAdmin: boolean; refused: (err: unknown) => string }) {
   const [info, setInfo] = useState<AbInfo | null>(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -355,28 +428,28 @@ function AgentBusSettings() {
   useEffect(() => void load(), []);
 
   const saveFilter = async () => {
-    if (saving || filter === null) return;
+    if (saving || !isAdmin || filter === null) return;
     setSaving(true);
     setError('');
     try {
       await api.abFilter(filter.split('\n'));
       await load();
     } catch (err) {
-      setError((err as Error).message);
+      setError(refused(err));
     } finally {
       setSaving(false);
     }
   };
 
   const setDefault = async (names: string[]) => {
-    if (saving || !info?.enabled) return;
+    if (saving || !isAdmin || !info?.enabled) return;
     setSaving(true);
     setError('');
     try {
       const got = await api.abDefault(names);
       setInfo({ ...info, default: got.default });
     } catch (err) {
-      setError((err as Error).message);
+      setError(refused(err));
     } finally {
       setSaving(false);
     }
@@ -412,7 +485,8 @@ function AgentBusSettings() {
                 <label class={a.alive ? '' : 'dead'}>
                   <input
                     type="checkbox"
-                    disabled={saving}
+                    disabled={saving || !isAdmin}
+                    title={isAdmin ? undefined : NEEDS_ADMIN}
                     checked={info.default.includes(a.name)}
                     onChange={(e) =>
                       void setDefault(
@@ -450,9 +524,9 @@ function AgentBusSettings() {
             <button
               type="button"
               class="ab-filter-save"
-              disabled={saving || filter === info.filter.join('\n')}
+              disabled={saving || !isAdmin || filter === info.filter.join('\n')}
               onClick={() => void saveFilter()}
-              title="Save — Ctrl+Enter"
+              title={isAdmin ? 'Save — Ctrl+Enter' : NEEDS_ADMIN}
             >
               Save filter
             </button>
