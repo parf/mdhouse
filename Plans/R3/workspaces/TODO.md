@@ -563,3 +563,10 @@ No package is done before shared runner/permission checks pass; tracker-free out
   Integrated CSS source `b4cdd00`; measured 90-cell matrix + 8 targeted empty cells accepted. [Evidence](../QA.md#page-header-top-alignment).
   [Scoped root-cause cohort](../EXECUTION.md#page-header-top-alignment): document/folder/Home/Git/diff/Settings,
   loading/error/empty, sidebar on/off and narrow; measured boxes/crops, no hierarchy/authority/layout redesign.
+
+## Standalone viewer product
+
+- [ ] MW.16 Define and create a stripped-down standalone Markdown web viewer with Git <a id="MW.16"></a>
+  Separate product/version for people who need viewing with Git only; define the retained and excluded scope before implementation.
+  Sequence: define scope → implement new MD / All files / Git views in mdhouse → create the standalone viewer.
+  Views build on the broader [№MW.13.1](#MW.13.1) UX exploration; do not extract the viewer before the new views are implemented.
