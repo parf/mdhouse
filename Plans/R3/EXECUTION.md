@@ -1873,3 +1873,39 @@ No full/types/unit duplicate; no permission/source/controller or dependency chan
 Live owner document/folder were inspected read-only, never patched/reloaded; old live badge/bundle not conflated.
 Owner broader navigation/UX/data-ownership backlog preserved, no implementation expansion or new owner question.
 No live reload/service/session/provider/ACL/push/publish/deploy/version action; workers idle after checkpoint.
+
+## Navigation research and UX brainstorm — 2026-11-07 {#navigation-research}
+
+- [ ] MW.13.1a Evidence and navigation options, before implementation
+  [Parent №MW.13.1](workspaces/TODO.md#MW.13.1); [UX reference](../UX.md).
+  Base `f646f8092a9a8014c5c1f391150002eebefe2e64`, target `main`; CTO owns synthesis/status.
+  Product goal: find/read project content and understand Git context without losing project/path or drafts;
+  compare broader structures, including MD/All files as filters and Git as an independent navigation axis.
+  Owner examples are starting points, not fixed tabs. Standalone viewer follows agreed scope and implemented views.
+
+  Owners and paths, assigned before edits: W1 `Plans/R3/ux-navigation/TECHNICAL-INVENTORY.md`;
+  W2 `Plans/R3/ux-navigation/JOURNEYS.md` and `Plans/R3/ux-navigation/images/`;
+  CTO `Plans/R3/UX-NAVIGATION.md`, EXECUTION and owning TODO. Separate research worktrees from base;
+  worker author commits, no product source/API/storage/dependency changes. Preserve previous frozen evidence.
+  W1 inventories routes, URL/state, files/search/highlighting/Git, access/reference/drafts and shared-core seams;
+  cite source paths/lines, distinguish delivered behavior from options. W2 captures current scratch journeys:
+  find/read/act, changes/history/diff, non-Markdown discovery, switch/add project, curation, agent entry;
+  representative desktop/mobile light/dark, RW/RO/admin/nonadmin and empty/error states. Use bounded
+  representative coverage, not a combinatorial full-product audit. Record uncaptured branches explicitly.
+  Local synthetic Git fixture only; AB off, or local fake bus only if required for the agent journey.
+  Numbered full-page screenshots plus URL/state/action/readiness notes; inspect accepted images.
+  Original failures remain in evidence. No reliance on earlier header crops as current journey evidence.
+
+  CTO compares at least three IA alternatives with primary-source comparator patterns, journey transitions,
+  URL/deep-link/context behavior, mobile/progressive disclosure, default/exception emphasis and future viewer fit.
+  Acceptance: screenshot-backed observations separated from inference; strengths, severity-ranked risks,
+  accessibility limits, tradeoffs and a concrete proposal with proposed first implementation boundary.
+  Source/link/diff review and evidence inspection are the proportional gate; no tests/types/full repeats.
+  W1 fact-checks synthesis; CTO reviews worker artifacts. Recommendation is not approved implementation;
+  parent comprehensive UX review stays open. MW.14 storage decision remains a dependency for persistent
+  Teams/flows/automation; no RAG implementation, extraction, live jobs or provider calls.
+
+  Availability checked: W1/W2 idle and available; own capacity readouts unavailable. Actual Kitty read
+  2026-11-07 21:03 UTC: W1 default Claude 5h 74%, weekly 49% remaining; W2 second account 5h 65%,
+  weekly 51% remaining. Codex coordination reserve; W3 idle. Bounded docs/research cohort, no heavy gate.
+  No live/service/session reload, restart, provider/ACL, push/publish/deploy or version actions.
