@@ -1909,3 +1909,10 @@ No live reload/service/session/provider/ACL/push/publish/deploy/version action; 
   2026-11-07 21:03 UTC: W1 default Claude 5h 74%, weekly 49% remaining; W2 second account 5h 65%,
   weekly 51% remaining. Codex coordination reserve; W3 idle. Bounded docs/research cohort, no heavy gate.
   No live/service/session reload, restart, provider/ACL, push/publish/deploy or version actions.
+
+  Research checkpoint: W1 inventory author `3caf41b` integrated; CTO fact/source review and W1
+  nonauthor synthesis fact-check applied in `9386385`. [Working synthesis](UX-NAVIGATION.md) compares
+  five structures, with listing/tree/search and historical Git read prerequisites explicit.
+  W2 current-source journey captures remain in progress; acceptance and parent status remain open.
+  [№MW.17](workspaces/TODO.md#MW.17) linked for future installed-reference discovery and one linked
+  external-AI entrypoint; no reference content restructuring in this cohort.
