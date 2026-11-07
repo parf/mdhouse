@@ -541,6 +541,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 ## UX review
 
 - [ ] MW.13 Schedule a comprehensive UX review of all pages and flows <a id="MW.13"></a>
+  Owner priority: navigation and new project views are the next major UX step; Teams and automations design builds on the agreed structure and [№MW.14](#MW.14) data placement.
   - [ ] MW.13.1 Explore navigation and views for mdhouse as a project workspace beyond a Markdown viewer <a id="MW.13.1"></a>
     Owner starting points: explicit MD view (default), All project files with highlighting and matching left-panel tree, and Git pages for branches/commits/authors.
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
@@ -568,5 +569,6 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 - [ ] MW.16 Define and create a stripped-down standalone Markdown web viewer with Git <a id="MW.16"></a>
   Separate product/version for people who need viewing with Git only; define the retained and excluded scope before implementation.
+  Keep a useful standalone viewer with quick startup, minimal setup and Git. Prefer shared rendering/file/search/Git core with Workspace-only editing, agents and automations.
   Sequence: define scope → implement new MD / All files / Git views in mdhouse → create the standalone viewer.
   Views build on the broader [№MW.13.1](#MW.13.1) UX exploration; do not extract the viewer before the new views are implemented.
