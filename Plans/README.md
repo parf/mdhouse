@@ -274,11 +274,11 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
-  argon2id hash, `hostNames`), and `autoRw` paths (`--auto-rw`; `settings.autoRw` switches them), and `agentBus` (`enabled`, `socket` — a path or `http(s)://`, `token` for a URL —
+  argon2id hash, `hostNames`), and version-2 `autoRwRules` paths (`--auto-rw`; `settings.autoRw` switches them), and `agentBus` (`enabled`, `socket` — a path or `http(s)://`, `token` for a URL —
   `--agent-bus [on|off|<x.sock>]`; `default` agents and the names `filter` — the settings page), and
   `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
-  `writable` is a getter — `--rw` asked, or under an auto-rw path with the switch on — so the
-  switch and the CLI apply to a running server at once (`Prefs.refresh()` re-reads the file
+  `writable` derives from `inherit | rw | ro`: explicit RO beats auto, explicit RW and inheritance
+  remain capped by reference protection and invalid/unsupported prefs. Auto changes and CLI grants apply live (`Prefs.refresh()` re-reads the file
   when it changed). Read as JSON with comments; every key is in `doc/prefs.json.dist`. Port and host resolve as flag → env → config →
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
   comes up where a start by hand does; a port from `service --port` or `MDHOUSE_PORT` is pinned into it. Beside it, `control-<port>.sock`. Never a dotfile inside a
@@ -311,7 +311,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   change is read–apply–write against the file as it is now, one at a time within a process
   (`Prefs.queue`) and across processes (`prefs.json.lock`, `O_EXCL`; unchanged 2 s → stale, taken over), written to a uniquely named temp file (0600, the dir created 0700) and renamed
   into place — a symlinked `prefs.json` at its target; a file that does not parse is moved aside as `prefs.json.broken-<time>`, never
-  written over. Unknown top-level keys are kept; a file with `version` above 1 is never written. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
+  written over. Unknown top-level keys are kept; unsupported/newer or ambiguous access formats are never written and grant no root write access. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
 - The systemd unit (`MDHOUSE_SERVICE=1`) is stopped by `systemctl` only: `mdhouse exit` sees
   `service` in the ping and names the command instead (exit 1); its `--fg` with the port taken
   exits 1 instead of handing over, so `Restart=on-failure` retries.
@@ -379,7 +379,7 @@ Other families retain existing behavior; marks policy remains open and no Team/g
 | `admin-session` | `/api/admin/session`, `/api/admin/logout` |
 | `attribution` | `/api/author` |
 | `external-send` | `/api/ab/send` |
-| `root-admin` | `/api/roots/remove`, `/api/roots/name`, `/api/roots/save` |
+| `root-admin` | `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
 | `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
 
@@ -525,7 +525,7 @@ and session name. It grants nothing. Root metadata mutations serialize; fresh lo
 before one transaction saves folder membership, configured write choice and canonical name.
 Only after success is the in-memory session name discarded and roots metadata published.
 
-Saving preserves `rwAsked`, not auto-derived effective RW. Auto-only RW remains conditional on the same
+Saving preserves the current tri-state mode, not auto-derived effective RW. Auto-only RW remains conditional on the same
 policy and becomes RO when that policy no longer applies. No root ID, path, URL, content, mark/view or
 access toggle changes; no new-root RW defaults or Viewer/profile activation. Existing CLI flag behavior
 is unchanged. Saved projects have plain descriptive text instead of an unsaved/saved badge.
@@ -534,3 +534,35 @@ Prefs mutators write a detached candidate atomically before installing it in pro
 pre-rename writes leave readers unchanged. Broken-file recovery retains its existing archive behavior,
 using a copied fallback so failures cannot mutate the previous in-memory object. Temporary failed writes
 are cleaned up. Unknown/newer-version protection and the owner-only file format remain unchanged.
+
+
+## Scoped project RW/RO and prefs version 2
+
+`Registry` stores `inherit | rw | ro`; effective writes require explicit RW or inherited auto-RW,
+with immutable reference/path protection and a blocked-format cap. Explicit RO always defeats auto.
+Saved choices persist; session choices stay in memory until saved or removed. Name lifetime B is unchanged.
+`--rw` is an explicit OS-owner grant; bare reopening and `-p` without `--rw` retain an existing explicit RO.
+No control resets mode to inherit in this slice, and no global default/profile/Viewer/Team mode is activated.
+
+Version 1 is read without rewriting or expanding access. The first successful prefs mutation atomically
+writes version 2: existing auto rules move unchanged to `autoRwRules`, legacy `autoRw` becomes empty,
+and saved explicit RO uses `readonly[]`; `writable[]` remains saved explicit RW. Migration is idempotent.
+A restarted old reader loses automatic write access and cannot write the newer config; existing deliberate
+RW remains. One process per machine is supported; normal reload applies new code. Manually started multiple
+instances are the user's responsibility, not a scanner/restart feature or a development gate.
+
+Unsupported versions, missing/malformed required v2 lists, nonempty legacy auto rules or conflicting RO/RW
+entries block prefs and root writes without resetting/rewriting the file. Unknown extension keys survive.
+Git queued commit/commit-file/reset/pull/push recheck current root/path access before executing; Registry
+rechecks document access at final write. Already running Git commands are not cancelled.
+
+POST `/api/roots/mode` accepts exactly `{id,mode:'rw'|'ro',rev}` behind same-origin/verified admin checks.
+Root payload `mode` plus full SHA-256 `accessRev` bind identity, mode, fresh stored/auto/reference/effective
+state and saved status; names are independent. The revision grants nothing. A mode change invalidates
+saveRev, and saving invalidates accessRev. Saved writes use the locked policy/admin guard and atomic
+persistence before installing live mode; session changes write no prefs. Errors leave mode unchanged.
+
+Settings confirms effective RW→explicit RO or RO→explicit RW, shows the source and lifetime, disables
+immutable/capped or unauthorized changes, and refreshes stale revisions without retry. Open Doc/Git controls
+follow current root access, retain drafts and preserve unchanged body/token/Mermaid; control disabled attrs
+may change. Document-reference paths never gain write controls through a wider writable root.

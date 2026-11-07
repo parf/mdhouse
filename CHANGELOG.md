@@ -15,6 +15,8 @@
 
 ### Added
 
+- Confirm project RW/RO in Settings with live write controls; explicit RO overrides automatic write access, with conservative version-2 prefs migration preserving existing access
+
 - Save an already open session Project from Settings with confirmation, retaining its name and direct access; automatic write access stays conditional
 
 - Optional Project names through `--name` and administrator Settings, with live labels and reset; unsaved-project names stay temporary until the project is explicitly saved

@@ -535,3 +535,33 @@ missed Kept; final capture scrolls it into view. Both failed harness runs are re
 CTO inspected ready `5-narrow-unsaved-light.png` and `5-narrow-saved-dark.png`; light/dark counterparts retained.
 All own smoke groups stopped cleanly. Cross-browser/real-device release QA remains open, as do the broader
 [№MW.1](workspaces/TODO.md#MW.1)/[№MW.0h](workspaces/TODO.md#MW.0h) mode and installation work.
+
+
+## Scoped project access — candidate {#scoped-project-access}
+
+[№MW.0h.1](workspaces/TODO.md#MW.0h.1)/[№MW.1.2](workspaces/TODO.md#MW.1.2), code candidate
+`7c1ac70dae0a2fcf585c8717de9c4658a7c9b163`: backend author `0775b9c`, UI author `6f4b144`, combined without conflicts.
+Approved A is [№Q-R3-MODE1](workspaces/DECISIONS.md#Q-R3-MODE1), clarified for one process per machine.
+No actual coexistence incident, process/restart scanner or live reload is part of this implementation.
+
+Backend exact-tree impacted gate reused by cherry-pick/source identity: 457 passed, 0 failed across 24 paths,
+original `bun-exit=0`, types exit 0. Full paths/output in `r3-project-access-backend/.scratch/logs/`:
+`gate-impacted.paths`, `gate-impacted.log`, `gate-tsc.log`.
+Evidence gap disclosed by W1: the first gate command used zsh without splitting the test-path variable;
+Bun ran zero tests, exit 1, “filters did not match any test files”. The bash diagnostic rerun executed the
+actual gate with no source changes, but overwrote the first command log. It was not a product assertion
+failure and is not claimed as a clean first invocation; no rerun was used to recreate the lost log.
+Retained earlier `first-run.log` has four expected old-format/inventory fixtures updated; new access tests
+passed first time (`access-first-run.log`). Fifteen mutation logs `mut-*.log` confirm guard/migration/RO/CLI
+negative tests detect removed protections. Original evidence is retained separately from final passes.
+
+Combined targeted UI contracts: 23/0 across doc-refresh-ui/project-groups/project-name-ui, types exit 0;
+full logs/original exits in `r3-project-access-cohort/.scratch/access-gate/`. Broad 24/full gate not duplicated.
+Backend tests include the real base-code old-reader fixture, idempotent migration/current-choice matrix,
+blocked formats, mode/save/name/CLI lifetimes, locked stale/admin/failure guards, slow-hook queued Git/task
+write denial after RO, no cancellation of the running command, unchanged files/repo on denied operations.
+W2 author mock proof (12 cases) establishes controls, draft and body/token/Mermaid behavior only; true-backend
+mode/write-denial native proof and pinned independent security verdict remain pending.
+Parent [№MW.0h](workspaces/TODO.md#MW.0h) stays open for default/profile/Viewer activation; parent
+[№MW.1](workspaces/TODO.md#MW.1) stays open for remaining setup/properties. No live/service/session/provider/
+ACL/push/publish/deploy actions or package-version bump. Storage version 2 is the explicitly authorized migration.
