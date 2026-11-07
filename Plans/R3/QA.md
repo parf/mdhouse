@@ -481,3 +481,32 @@ other light/dark counterparts retained. CLI missing-argv negative coverage appli
 while server/UI proof checkouts differ only in that separately verified parser guard.
 Remaining: absent Agent Bus control inventory ([№MW.7](workspaces/TODO.md#MW.7)); parent
 [№MW.1a](workspaces/TODO.md#MW.1a) stays open. Cross-browser/real-device release QA remains unverified.
+
+
+## Existing-project explicit save — candidate {#existing-project-explicit-save}
+
+[№MW.1.1](workspaces/TODO.md#MW.1.1), code candidate `533513a5dc41224c4f4121f0b98f3406a8815384`.
+W1 backend `2a2c5bc`, W2 UI `5f154b3`, combined without conflicts. Dependency check is in
+[execution scope](EXECUTION.md#existing-project-explicit-save): preserve configured `rwAsked` and the
+existing auto policy; no MW.0h/default/profile/Viewer activation. Owner's name lifetime B is retained.
+One combined gate: 166 passed, 0 failed across 13 impacted explicit test paths, types exit 0.
+Complete output and original exits: `.scratch/worktrees/r3-project-save-cohort/.scratch/save-gate/`.
+
+Prerequisite failures were reproduced before edits: failed Prefs write installed candidate values in memory;
+broken-file fallback also aliased the old object. W1 retained `prefs-commit-first-failure.log` and
+`prefs-broken-first-failure.log` under the backend worktree `.scratch/`; initial injection that failed
+before the lock/change was not treated as proof. Actual EACCES/symlink target and broken fallback failures
+are distinguished from the existing archive/recovery policy. Guard/admin-recheck/effective-as-configured
+mutants each failed the corresponding negative test; `save-mutant-*.log` retained.
+Initial integration-test inventory/allowlist failures remain in W1 `focused-1.log`, followed by the intended fixes.
+
+Backend checks: RO/explicit RW/auto-only save and reload, name B transfer, canonical IDs/URLs/marks;
+14 denied requests with byte-identical prefs and unchanged session name/revision; stale mode/name/auto/save;
+controlled lock interleavings with external save/auto and admin revocation; name/save and remove/save races;
+pre-rename IO and future-version failures preserve disk, process memory, runtime and session metadata.
+No production test-only lock export. Saved mode never promotes automatic write access to an explicit grant.
+W2 author UI proof used mocked root/save routes (other admin paths real), 13/13 cases; it does not establish
+real-backend acceptance. Its initial input-after-dialog harness failures are retained in `save-ui-run*.log`.
+Native combined browser proof and pinned independent review remain pending. No live/service/session actions,
+full-suite duplicate, version bump, provider/ACL or publication action. Parent [№MW.1](workspaces/TODO.md#MW.1)
+and [№MW.0h](workspaces/TODO.md#MW.0h) remain open.
