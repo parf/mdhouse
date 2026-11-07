@@ -61,6 +61,36 @@ describe('prefs names — saved directories only', () => {
     }
   });
 
+  test('a name belongs to the canonical directory: stored by real path, never carried by a retargeted symlink', async () => {
+    const dir = await tmp('mdhouse-names-');
+    try {
+      await mkdir(join(dir, 'a'));
+      await mkdir(join(dir, 'b'));
+      const alias = join(dir, 'alias');
+      await symlink(join(dir, 'a'), alias);
+      const path = join(dir, 'prefs.json');
+      const prefs = await Prefs.load(path);
+      await prefs.addSaved(alias); // a legacy saved entry that is a symlink
+      expect(await prefs.setSavedName(join(dir, 'a'), 'Alpha')).toBe(true);
+      expect((await onDisk(path)).names).toEqual({ [join(dir, 'a')]: 'Alpha' });
+
+      await rm(alias);
+      await symlink(join(dir, 'b'), alias);
+      expect(prefs.savedName(join(dir, 'b'))).toBeUndefined();
+      expect(prefs.savedName(alias)).toBeUndefined();
+      expect(prefs.savedName(join(dir, 'a'))).toBeUndefined(); // a is no longer a saved directory
+      expect((await Prefs.load(path)).savedName(join(dir, 'b'))).toBeUndefined(); // nor after a reload
+
+      // naming b now stores b, and drops the stale a
+      expect(await prefs.setSavedName(join(dir, 'b'), 'Beta')).toBe(true);
+      expect((await onDisk(path)).names).toEqual({ [join(dir, 'b')]: 'Beta' });
+      await prefs.removeSaved(alias);
+      expect((await onDisk(path)).names).toEqual({});
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test('a directory saved through a symlink answers by its real path too', async () => {
     const dir = await tmp('mdhouse-names-');
     try {

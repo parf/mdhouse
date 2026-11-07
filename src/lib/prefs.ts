@@ -41,7 +41,11 @@ interface PrefsFile {
   roots: Record<string, RootPrefs>;
   /** Absolute, symlink-resolved directories served on every start. */
   saved: string[];
-  /** Saved directory -> its human name. Only a saved directory keeps one; an unsaved root's name lives in memory. */
+  /**
+   * Canonical (symlink-resolved) path of a saved directory -> its human name. Only a saved directory
+   * keeps one; an unsaved root's name lives in memory. A saved entry that is a symlink names the
+   * directory it resolves to now, so retargeting the link never carries a name to another directory.
+   */
   names: Record<string, string>;
   /**
    * The saved directories mdhouse may write to — saved with `-p --rw`. Writability belongs to
@@ -126,6 +130,15 @@ function real(path: string): string {
   }
 }
 
+/** The saved entry for `dir` — itself, or a saved symlink that resolves to it — or undefined. */
+const savedEntry = (saved: string[], dir: string): string | undefined => saved.find((d) => d === dir || real(d) === dir);
+
+/** Drops every name whose key is not the canonical path of a saved directory now. */
+function pruneNames(data: { saved: string[]; names: Record<string, string> }): void {
+  const canonical = new Set(data.saved.map(real));
+  for (const key of Object.keys(data.names)) if (!canonical.has(key)) delete data.names[key];
+}
+
 export const CONFIG_DIR = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}/mdhouse`;
 const PREFS_PATH = `${CONFIG_DIR}/prefs.json`;
 
@@ -187,7 +200,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   if (parsed.names && typeof parsed.names === 'object') {
     for (const [dir, name] of Object.entries(parsed.names)) {
       const n = normalizeProjectName(name);
-      if (saved.includes(dir) && n.ok && n.name !== null && n.name === name) names[dir] = n.name;
+      if (n.ok && n.name !== null && n.name === name) names[dir] = n.name;
     }
   }
   const roots: Record<string, RootPrefs> = {};
@@ -201,6 +214,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
       roots[path] = marks;
     }
   }
+  pruneNames({ saved, names });
   return {
     ...parsed,
     version: typeof parsed.version === 'number' && parsed.version > 1 ? parsed.version : 1,
@@ -534,15 +548,15 @@ export class Prefs {
       if (!data.saved.includes(dir)) return false;
       data.saved = data.saved.filter((d) => d !== dir);
       data.writable = data.writable.filter((d) => d !== dir);
-      delete data.names[dir];
+      pruneNames(data);
       return true;
     });
   }
 
-  /** The human name of a saved directory — also when asked through a symlink. */
+  /** The human name of a saved directory, by its canonical path — also when asked through a saved symlink. */
   savedName(dir: string): string | undefined {
-    const key = this.data.saved.find((d) => d === dir || real(d) === dir);
-    return key === undefined ? undefined : this.data.names[key];
+    const entry = savedEntry(this.data.saved, dir);
+    return entry === undefined ? undefined : this.data.names[real(entry)];
   }
 
   /**
@@ -551,10 +565,11 @@ export class Prefs {
    */
   setSavedName(dir: string, name: string | null): Promise<boolean> {
     return this.mutate((data) => {
-      const key = data.saved.find((d) => d === dir || real(d) === dir);
-      if (key === undefined) return false;
-      if (name === null) delete data.names[key];
-      else data.names[key] = name;
+      const entry = savedEntry(data.saved, dir);
+      if (entry === undefined) return false;
+      if (name === null) delete data.names[real(entry)];
+      else data.names[real(entry)] = name;
+      pruneNames(data);
       return true;
     });
   }
