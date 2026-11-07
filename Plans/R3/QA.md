@@ -426,3 +426,19 @@ Real-backend two-tab/identity/browser proof and pinned nonauthor config/control 
 Parent [№MW.1a](workspaces/TODO.md#MW.1a) remains open on the absent [№MW.7](workspaces/TODO.md#MW.7)
 Agent Bus control inventory; existing control ping is not that surface. No new RW/save/endpoint editor,
 mode migration, Team/OAuth, live reload, version bump, publication, provider or ACL change.
+
+
+Project-name security review `63c78eb` was HOLD, despite 28/0 on the three allowed name test paths:
+reviewer identified missing CLI `--name` value being treated as intentional empty/reset. W1 actual
+scratch reproduction reset an existing saved `Keep` label; fail-first expected exit 2 but observed 0.
+Author `7486d97` distinguishes missing argv from explicit empty/reset, refusing before writes; three
+missing-value forms preserve byte-identical prefs, label, saved-state and RW. Explicit empty still resets.
+Evidence in `.scratch/worktrees/r3-project-name-backend-name-value/.scratch/name-value-repro.log`,
+`name-value-first-failure.log` and `name-value-after-fix.log`.
+W1 also retained a foreground-start test race (`fg-race-first-failure.log`): HTTP bound before final CLI
+startup metadata was applied. The fixture now waits for completed named startup; no hidden product
+change or silent retry into a pass. Author diagnostic repeat logs remain available.
+Final CLI-only code candidate `a9f3a6075515582389992287822c968653144e5e`: targeted CLI name tests 5/0,
+final types exit 0, full output/original exits in `r3-project-name-final/.scratch/final-name-gate/`.
+Server/UI/doc/scripts are unchanged from the frozen browser candidate `63c78eb`; a new exact nonauthor
+verdict is required for this material CLI fix. The old pinned checkout remains unchanged.
