@@ -647,7 +647,7 @@ watcher/WebSocket refresh are reused. No new authority, Git operation, editor en
 
 ## Access status emphasis
 
-Decorative project badges on the sidebar header and Settings chooser omit normal RW and highlight effective RO.
+Decorative project badges on the sidebar header, replacement top strip and Settings chooser omit normal RW and highlight effective RO.
 Settings access controls remain visible: RW is muted, RO emphasized; reference status stays neutral.
 Normal saved persistence is muted, while unsaved state and explicit Agent Bus overrides remain distinguishable.
 Presentation uses existing live metadata and changes no configured/effective access, default or mutation guard.
