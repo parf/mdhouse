@@ -1,6 +1,8 @@
 /* ── tokens ─────────────────────────────────────────────────────────────── */
 
 :root {
+  /* The sidebar header's height; every page's first header row is centred in a band this tall. */
+  --head-band: 41px;
   --bg: #fbfbfa;
   --bg-panel: #f4f4f2;
   --bg-raised: #ffffff;
@@ -241,7 +243,7 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 38px;
+  height: var(--head-band);
   padding: 0 10px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
@@ -275,7 +277,7 @@ main {
   gap: 6px;
   padding: 7px 8px;
   border-bottom: 1px solid var(--border);
-  min-height: 38px;
+  min-height: var(--head-band);
 }
 
 .icon-btn {
@@ -294,7 +296,7 @@ main {
 
 /* ── settings ───────────────────────────────────────────────────────────── */
 
-.settings { max-width: 860px; margin: 0 auto; padding: 24px 30px 120px; }
+.settings { max-width: 860px; margin: 0 auto; padding: 0 30px 120px; }
 .settings h2 {
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--fg-muted); margin: 6px 0 10px;
@@ -597,11 +599,14 @@ main {
 .brand .home-link { font: inherit; color: inherit; padding: 0; border-radius: 3px; }
 .brand .home-link:hover { color: var(--accent); }
 
-.home { max-width: 860px; margin: 0 auto; padding: 24px 30px 120px; }
+.home { max-width: 860px; margin: 0 auto; padding: 0 30px 120px; }
 .home.full { max-width: none; }
 .home-head { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; margin-bottom: 20px; }
 /* The name gives way down to a few words, then the tabs and ⚙ go to the next line together. */
 .home-head h1 { flex: 1 1 10em; }
+/* A page's first header row sits in the head band, level with the sidebar header; later rows follow it. */
+:is(.home, .settings) > .home-head:first-child h1 { min-height: var(--head-band); }
+.head-crumbs:first-child, .doc-head:first-child > .crumbs:first-child { min-height: var(--head-band); align-content: center; }
 .head-right { display: flex; align-items: center; gap: 14px; margin-left: auto; min-width: 0; }
 .home-head h1 { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; color: var(--doc-title); margin: 0; display: flex; align-items: center; }
 .home-head .tabs { flex: 0 1 auto; flex-wrap: wrap; gap: 3px; }
@@ -833,7 +838,7 @@ main {
 .home-table .commit-head .who { flex: none; font-size: 11.5px; color: var(--fg-muted); }
 
 @media (max-width: 720px) {
-  .home { padding: 16px 16px 90px; }
+  .home { padding: 0 16px 90px; }
   .home-table .commit-head { flex-wrap: wrap; }
   .repo-top { flex-wrap: wrap; }
   /* Narrow enough that a long folder would squeeze the names out; keep it to a third. */
@@ -842,7 +847,7 @@ main {
 
 /* ── document ───────────────────────────────────────────────────────────── */
 
-.doc-wrap { max-width: 900px; margin: 0 auto; padding: 22px 30px 120px; }
+.doc-wrap { max-width: 900px; margin: 0 auto; padding: 0 30px 120px; }
 /* Prose reads better in a column; tables and long code lines would rather have the window. */
 .doc-wrap.full { max-width: none; }
 
@@ -859,7 +864,7 @@ main {
 /* The title and the ⚙ share one line; the title takes the room. */
 .doc-title-row { display: flex; align-items: center; gap: 8px; }
 .doc-title-row > .doc-title { flex: 1 1 auto; min-width: 0; }
-.notice-gear { float: right; }
+.notice-gear { float: right; margin-top: calc((var(--head-band) - 26px) / 2); }
 .head-gear { margin-left: auto; }
 .doc-title { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; color: var(--doc-title);
   display: flex; align-items: center; }
@@ -1363,8 +1368,11 @@ main {
 
 /* ── states ─────────────────────────────────────────────────────────────── */
 
-.notice { padding: 40px 30px; color: var(--fg-muted); }
+.notice { padding: 0 30px 40px; color: var(--fg-muted); }
 .notice h2 { font-size: 17px; margin: 0 0 6px; color: var(--fg); }
+.notice > h2:first-of-type { min-height: var(--head-band); display: flex; align-items: center; }
+/* Centred in the head band by its margin: the spinner keeps its own size. */
+.notice > .spinner:first-child { margin-top: calc((var(--head-band) - 15px) / 2); }
 .dead-marks { display: flex; gap: 8px; }
 .notice code { font: 12.5px var(--mono); background: var(--bg-hover); padding: 1px 5px; border-radius: 4px; }
 
@@ -1389,7 +1397,7 @@ main {
     box-shadow: 0 0 18px rgb(0 0 0 / 0.25);
   }
   .app:not([data-sidebar="off"]) .scrim { display: block; position: fixed; inset: 0; z-index: 29; background: rgb(0 0 0 / 0.3); }
-  .doc-wrap { padding: 16px 16px 90px; }
+  .doc-wrap { padding: 0 16px 90px; }
 }
 
 /* ── Age ─────────────────────────────────────────────────────────────────── */
