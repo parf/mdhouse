@@ -1728,3 +1728,24 @@ network-lazy loading is not claimed. Final node_modules installed from frozen lo
 tracked source/lock remained identical. Package version unchanged. [Evidence](QA.md#full-source-editor).
 No live reload/service/session/provider/ACL/push/publish/deploy/release action. Frozen worktrees/logs retained.
 RAG stays design-only Docs and independent Dev/AI Code+Docs corpora; automations AgentBus Cron/At backlog/design only.
+
+
+## Two-corpus RAG capability/pilot design — 2026-11-07 {#rag-capability-pilot-design}
+
+- [ ] MW.2a.2 Compare delivered capabilities and propose independent corpus pilots
+  Base `f6cf6e0c29048b1b641b1eb91822b0da3f613333`, target `main`, CTO owns design document/status.
+  Owner direction [№RAG-W2](workspaces/DECISIONS.md#RAG-W2), [research](RAG-RESEARCH.md): design only,
+  independent end-user Docs and shared Dev/AI Code+Docs knowledge corpora; no custom symbol-engine prerequisite.
+  W1 read-only inventory of local delivered RAG/FileScan schemas/docs and existing sync-bin code;
+  W2 read-only pilot/evaluation proposal. No author code, fixture execution or dependency edits.
+  Deliver `Plans/R3/RAG-PILOTS.md`: capability-gap matrix with cited static source/version, historical report
+  distinguished from unverified runtime, one minimal proposed source manifest/query/eval pilot per corpus,
+  ACL/revision/citation/freshness/deletion/unknown-outcome boundaries and prerequisites for later approval.
+  CTO may link report from RAG-CONTRACT/owning TODO/EXEC; do not alter owner decisions/history.
+  Acceptance is a reviewable design, not provider readiness, production retrieval or completed lifecycle.
+  Existing parent [№MW.2a](workspaces/TODO.md#MW.2a) remains open and implementation deferred.
+  Verification is source/claim/link inspection only; no tests/full gate/security execution for prose-only work.
+  No live provider/status/search/sync/provisioning/ingestion/paid call, new requests for grants/credentials,
+  Cron/At job, custom scheduler, service/session/reload/push/publish/deploy/release action.
+  Current Kitty: W1 default Claude 5h82%, weekly50%; W2 second account 5h82%, weekly54% remaining;
+  both idle/available for bounded read-only work. W3 idle, Codex retained for coordination.
