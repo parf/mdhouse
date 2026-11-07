@@ -15,6 +15,8 @@
 
 ### Added
 
+- Edit complete Markdown source with CodeMirror, atomic stale-checked saves and retained drafts when the file changes or becomes read-only
+
 - Per-project Agent Bus endpoint/default editors with server-only credentials, root-aware routing and visible unavailable targets; Settings reads config without connecting
 
 - Add an existing project from administrator Settings with an explicit RW/RO choice; new projects stay session-only until separately saved

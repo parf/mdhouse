@@ -373,7 +373,7 @@ Other families retain existing behavior; marks policy remains open and no Team/g
 
 | Family | Routes (POST) |
 |---|---|
-| `doc-write` | `/api/task`, `/api/qa`, `/api/insert` |
+| `doc-write` | `/api/source`, `/api/task`, `/api/qa`, `/api/insert` |
 | `git-write` | `/api/git/commit`, `/commit-file`, `/reset` |
 | `git-sync` | `/api/git/pull`, `/push` |
 | `instance-config` | `/api/settings`, `/api/ab/default`, `/api/ab/filter` |
@@ -617,3 +617,29 @@ Panel targets resolve whole levels: explicit per-document choice → document AB
 instance defaults. A higher-priority unavailable target stays visible and refuses sending; it is never
 silently removed/replaced. Explicit picks survive reopening/default changes in existing guarded per-doc storage.
 Endpoint precedence is independent of these target priorities. No AB control/lifecycle/install/RAG activation.
+
+
+## Full Markdown source editor
+
+CodeMirror 6 supplies the editor engine; the app integrates a source editor, not a Markdown serializer.
+Minimal state/view/commands/language/Markdown/highlight modules are exact-pinned, MIT dependencies.
+The current Bun HTML bundler inlines the dynamic import: measured served scripts add 336,984 bytes raw /
+111,221 bytes gzip over the pre-editor baseline; a separate network-lazy bundle is not claimed. Markdown is edited
+as literal text; authored HTML stays text in the editor and uses the existing passive renderer after save.
+Current upstream is [CodeMirror Forgejo](https://code.haverbeke.berlin/codemirror); the GitHub archives are
+[the maintainer's migration](https://discuss.codemirror.net/t/codemirrors-migration-to-forgejo/9706).
+
+GET `/api/source?p=<root>/<rel>` reads one jailed Markdown file snapshot with `{text,hash,writable,reference?}`,
+no-store. `hash` is raw-byte SHA-256, distinct from `/api/doc`'s legacy-converted contentHash. Fatal UTF-8 decoding
+retains BOM; invalid encoding is 422 and the existing 5,000,000-byte source cap is 413. Nothing converts legacy
+syntax or reformats source. POST `/api/source` accepts exactly `{p,hash,text}`, doc-write family, same-origin,
+existing admission/jail/reference/RW checks, serialized file queue and fresh raw hash comparison. Stale is 409;
+Registry.writeFile writes verbatim atomically with final live access/path checks and mode preservation.
+IO failure keeps the old file. No renderer actToken is needed for app-chrome Save; authored content grants nothing.
+
+In-app Edit is available on current writable Markdown outside references. Save/Ctrl+S uses the raw snapshot hash;
+Close keeps the draft, explicit Discard asks first. Draft/base are kept per document in memory and guarded
+localStorage; navigation/reload and stale/IO/RO failures retain text. Live access loss disables save. Dirty edits
+are never overwritten by watcher refresh; the page shows an external-change note. LF/CRLF/BOM/final-newline and
+legacy forms retain source fidelity; unsupported input is explicit. Existing document diff/history/commit and
+watcher/WebSocket refresh are reused. No new authority, Git operation, editor engine or merge algorithm.
