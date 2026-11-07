@@ -30,18 +30,28 @@ export function customName(root: RootInfo): string | null {
 
 /**
  * The project chooser's label for each root, by id: its own name when one is set, else `pathLabel`
- * of its folder. A label two roots share is followed by the folder's label, so each stays told apart.
+ * of its folder. An own name two roots share is followed by the folder's `pathLabel`; labels that
+ * still collide use `fullLabel` instead — a canonical path is unique, so every option reads apart.
  */
-export function chooserLabels(roots: readonly RootInfo[], pathLabel: (path: string) => string): Map<string, string> {
+export function chooserLabels(
+  roots: readonly RootInfo[],
+  pathLabel: (path: string) => string,
+  fullLabel: (path: string) => string = (path) => path,
+): Map<string, string> {
+  const shared = (labels: Map<string, string>) => {
+    const count = new Map<string, number>();
+    for (const l of labels.values()) count.set(l, (count.get(l) ?? 0) + 1);
+    return (id: string) => count.get(labels.get(id)!)! > 1;
+  };
+  const withPath = (r: RootInfo, path: (p: string) => string) => {
+    const own = customName(r);
+    return own === null ? path(r.path) : `${own} — ${path(r.path)}`;
+  };
   const base = new Map(roots.map((r) => [r.id, customName(r) ?? pathLabel(r.path)] as const));
-  const count = new Map<string, number>();
-  for (const l of base.values()) count.set(l, (count.get(l) ?? 0) + 1);
-  return new Map(
-    roots.map((r) => {
-      const l = base.get(r.id)!;
-      return [r.id, count.get(l)! > 1 && customName(r) ? `${l} — ${pathLabel(r.path)}` : l] as const;
-    }),
-  );
+  const baseShared = shared(base);
+  const first = new Map(roots.map((r) => [r.id, baseShared(r.id) && customName(r) !== null ? withPath(r, pathLabel) : base.get(r.id)!] as const));
+  const firstShared = shared(first);
+  return new Map(roots.map((r) => [r.id, firstShared(r.id) ? withPath(r, fullLabel) : first.get(r.id)!] as const));
 }
 
 /** Projects that can be removed: everything but the reference. */

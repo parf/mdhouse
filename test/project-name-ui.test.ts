@@ -35,6 +35,20 @@ describe('chooserLabels', () => {
     expect(got.get('b')).toBe(label('/y/b'));
   });
 
+  test('labels the short path context cannot tell apart fall back to the full path', () => {
+    // rootLabel(…, above 1) gives `team/repo` for both folders.
+    const full = (p: string) => rootLabel(p, { above: 'all', max: Infinity, home: '/home/u' });
+    const named = chooserLabels([root('a', '/a/team/repo', { customName: 'Shared' }), root('b', '/b/team/repo', { customName: 'Shared' }), root('c', '/c/x')], label, full);
+    expect(named.get('a')).toBe('Shared — /a/team/repo');
+    expect(named.get('b')).toBe('Shared — /b/team/repo');
+    expect(named.get('c')).toBe(label('/c/x'));
+    const plain = chooserLabels([root('a', '/home/u/a/team/repo'), root('b', '/b/team/repo'), root('c', '/c/x')], label, full);
+    expect(plain.get('a')).toBe('~/a/team/repo');
+    expect(plain.get('b')).toBe('/b/team/repo');
+    expect(plain.get('c')).toBe(label('/c/x'));
+    for (const got of [named, plain]) expect(new Set(got.values()).size).toBe(got.size);
+  });
+
   test('names are labels, never markup', () => {
     const got = chooserLabels([root('a', '/x/a', { customName: '<b>x</b> & "y"' })], label);
     expect(got.get('a')).toBe('<b>x</b> & "y"');

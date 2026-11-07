@@ -33,7 +33,11 @@ export function RootSelect({
   if (roots.length < 2) return null;
 
   const current = roots.find((r) => r.id === rootId);
-  const labels = chooserLabels(roots, (path) => rootLabel(path, { above, max, home }));
+  const labels = chooserLabels(
+    roots,
+    (path) => rootLabel(path, { above, max, home }),
+    (path) => rootLabel(path, { above: 'all', max: Infinity, home }),
+  );
   return (
     <select
       class={`root-select${className ? ` ${className}` : ''}`}
