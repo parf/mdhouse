@@ -442,3 +442,29 @@ Final CLI-only code candidate `a9f3a6075515582389992287822c968653144e5e`: target
 final types exit 0, full output/original exits in `r3-project-name-final/.scratch/final-name-gate/`.
 Server/UI/doc/scripts are unchanged from the frozen browser candidate `63c78eb`; a new exact nonauthor
 verdict is required for this material CLI fix. The old pinned checkout remains unchanged.
+
+
+Native name acceptance on the frozen `63c78eb` code identified two harness problems, retained rather
+than declared PASS: headless input before `document.hasFocus()` (no typed value/POST) and an invalid
+views fixture `{repo:{probe:true}}` that crashed existing views code after reload. The fixture now uses
+valid V1/V2 arrays; focus/ready conditions precede input and screenshots. Product views code is unchanged.
+The initial run4 had no script error but missed updates under fixed sleeps; it is not a clean PASS.
+Run5 with explicit waits confirmed duplicate full paths, then failed on the CLI-reset live update.
+
+Real product finding: every roots event closes/reopens the live socket, and a second rename in the gap
+was missed because hello was ignored. W2 deterministic before-fix logs show server Second/tab First
+and exit 1. Author `6b96f9d` reloads roots on hello as well as roots, with no polling, tree/body refresh
+or permission changes. Actual after-fix proof: server Second/tab Second, same URL/body node, zero body
+mutations, unchanged metadata/body/views/marks; only roots GETs. Cleanup clean.
+Proof checkout `r3-project-name-resync-proof` uses `63c78eb` plus exactly this app.tsx change; final CLI
+missing-value guard is independently tested and does not change those server/UI surfaces.
+Original and corrected artifacts are in W2 scratchpad
+`/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`:
+`names-final-run4.log`, `names-final-run5.log`, `names-final/*.png`, `names-dup*.log`,
+`names-gap-before-fix.log`, `names-gap-after-fix.log`; scripts `names-final.ts`, `names-gap.ts`.
+Other native cases verified: name set/reset and text rendering; current path and IDs unchanged; both tabs'
+labels/title/crumb, reference no field/direct 403, nonadmin direct 401, revoked-admin draft retained;
+session/saved lifetime hints, CLI name without saving, ready light/dark/390px Settings/document screenshots.
+Final combined resync code `e5ba18d`: types exit 0, output/original exit in
+`r3-project-name-final/.scratch/final-name-gate/resync-types.log` and `.exit`. Fresh nonauthor verdict pending;
+previous `314e97c` PASS does not by itself approve this material UI delta.
