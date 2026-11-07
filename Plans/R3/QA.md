@@ -725,3 +725,68 @@ consistent with existing settings visibility; grants remain administrator-only. 
 use existing short names (cosmetic). Existing same-page admin-error follow-up remains separate.
 Full [№MW.2](workspaces/TODO.md#MW.2), install/provider/RAG/control lifecycle are not accepted by this checkpoint.
 No live reload/service/session/provider/ACL/push/publish/deploy/version actions.
+
+
+## Full Markdown source editor — integrated cohort {#full-source-editor}
+
+[№MW.5.1](workspaces/TODO.md#MW.5.1) and parent [№MW.5](workspaces/TODO.md#MW.5) accepted.
+Base `1e630e25a0f7b02202bb0dc5226c5459f23b6faf`, exact final target
+`8d84762d56b631c746f10b481b3ea1e0c1c03fa1`, fast-forward integrated into `main`.
+Authors: backend `57876ee` + bounded-read follow-up `bfbf052`; UI `66508da` + loading fix `66a1c54`,
+in-flight lifecycle fix `ae73889`, theme fix `e22c426`. No conflict or source resolution delta.
+
+- Combined proportional gate `.scratch/worktrees/r3-full-editor-cohort/.scratch/editor-gate/`:
+  `sha.txt`/`cmd.txt`, `bun.log`/`bun.exit`, `tsc.log`/`tsc.exit`. One invocation, 9 assigned paths,
+  143 pass / 0 fail, original exit 0; types exit 0. Exact UI dependency/lock identity and node_modules link recorded.
+  No full-suite duplicate or gate rerun. Final main installed exact frozen lockfile with `--ignore-scripts`;
+  tracked source/dependencies stayed identical; package version 2.3.3 unchanged.
+- Independent OpenCode PASS: `.scratch/worktrees/r3-full-editor-review` detached/pinned/clean, HEAD never moved.
+  Only doc-source/authz/edit-source tests: 44 pass / 0 fail, original exit 0;
+  `.scratch/review/focused-editor.log`/`.exit`, complete output. Whole source/UI/dependency/docs diff reviewed.
+- Backend author logs `.scratch/worktrees/r3-full-editor-backend/.scratch/logs/`:
+  `src-fail-first.log` retains 10 failures on tests-only base; `src-run2.log` 10 pass,
+  `src-impacted-1.log` 58 pass, `src-tsc-3.log` types 0. Definitions `mut-src.py`, summary retained;
+  S1–S15 finally caught, initial S10 early-RO/S14 read-cap survivors kept before strengthened tests/bounded read.
+  Follow-up `.scratch/worktrees/r3-full-editor-backend-cap/.scratch/logs/`: `cap-fail-first.log` proves unbounded
+  queued reread, `cap-fixed-2.log` 11 pass; C1 length-check and C2 unbounded-read mutations caught,
+  definitions in `mut-cap.py`. Additional author types run disclosed; not a second combined gate.
+- Raw-byte matrix: UTF-8/BOM/CRLF/LF/no-final-newline/legacy text/U+FFFD exact, no convertLegacy;
+  invalid encoding 422, input and bounded-read size cap, SHA-256 whole-source key, stale/queue competition,
+  final live RW/ref/jail recheck, cross-origin/strict schema/admission, atomic IO failure/mode preservation.
+  A grown file beyond cap returns 409 even for a forged prefix hash; read spy proves bounded bytes.
+
+W2 artifacts under
+`/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`:
+
+- `editor-native.ts`, `editor-native-run7.log`: 24 PASS / 0 FAIL, exit 0, safe-smoke clean;
+  proof `cab9be3` combines backend `57876ee` + final UI `e22c426`. Full source shown; real typing/Ctrl+S,
+  raw bytes exact; page refresh, diff, same-page real commit and history proved; repository clean after commit.
+  CRLF+BOM newline and no-final-newline preserved; mixed endings/invalid UTF-8 explicitly refused, U+FFFD allowed.
+  Close/navigation/reload/per-document draft retained; external edit → 409, draft kept, file equals external bytes;
+  Discard cancel/confirm, clean follow, live RW→RO disables editor/save, direct current-hash save 403 without write,
+  RW restores draft save; emulated composition commits once; phone390 and iPad820 touch type/save, light/dark.
+- Final proof `2254145` = backend `bfbf052` + UI `e22c426`; source/test/scripts/package/lock identity equals target.
+  Difference from full native proof is only queued bounded read and its test, independently gated/reviewed.
+  `editor-targeted-2254145-run2.log`: 4 PASS / 0 FAIL, exit 0, no full repeat; theme colors light/dark,
+  emulated IME and phone/iPad touch saves. `editor-targeted/` screenshots retained; CTO inspected
+  `6-editor-dark.png` and `7-phone.png`. Run1 was an undeclared harness counter, retained.
+- Four async product regressions: `editor-inflight-66a1c54.log` retains fail-first typing-during-save marked clean,
+  stale response storing old sent text, closed/reopened draft deleted by old callback, typing during discard lost.
+  `editor-inflight-fixed.log` / `editor-inflight-e22c426.log` prove all four fixed (8 PASS conditions), using real
+  backend and delayed requests only. Text newer than a successful POST stays dirty on new hash; failed POST stores
+  current text; epoch guards discard old-component callbacks; discard/follow never replace newer input.
+- Additional original failure: `editor-native-run1.log` exposed an empty editor accepting typing before source load;
+  fixed by creating CodeMirror with its source snapshot. Native runs1–6/harness logs retained, including source-ready
+  waits, commit-message preset, virtualized lines/main scrolling and background requestAnimationFrame;
+  `editor-ro-repro-run1/2.log` were harness diagnostics, not product hangs. `edit-source-fail-first.log` retained.
+
+Source engine selection uses official MIT/ESM/mobile documentation and current Forgejo/npm metadata;
+GitHub archives reflect upstream migration, not abandonment. Monaco's documented lack of mobile support
+made it unsuitable; npm unpacked package sizes were not presented as bundle size.
+Served app scripts measured (Mermaid excluded): baseline 197,592 raw / 68,898 gzip bytes, final 534,576 / 180,119;
+delta +336,984 raw / +111,221 gzip bytes. Bun HTML bundler inlines the dynamic import; no separate network chunk.
+Only Markdown highlighting is imported, no nested-language/autocomplete/lint engine; transitive installed packages
+remain exact-lock dependencies. Physical iOS/Android keyboards and real IMEs not tested, CDP emulation only.
+Mixed/bare-CR endings explicitly unsupported; paste follows the file's existing separator (not a native paste case).
+No custom editor/serializer/merge engine, authority expansion, new Git operation or live action.
+RAG implementation and live Cron/At jobs remain deferred; no provider/ACL/push/publish/deploy/release action.

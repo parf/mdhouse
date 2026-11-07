@@ -366,8 +366,9 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 ## W4 — Full-document editing
 
-- [ ] MW.5 Add a real Markdown editor for complete documents <a id="MW.5"></a>
-  - [ ] MW.5.1 CodeMirror 6 raw-source edit/save with stale-preserved drafts; [cohort](../EXECUTION.md#full-source-editor-cohort) <a id="MW.5.1"></a>
+- [x] MW.5 Add a real Markdown editor for complete documents <a id="MW.5"></a>
+  - [x] MW.5.1 CodeMirror 6 raw-source edit/save with stale-preserved drafts; [cohort](../EXECUTION.md#full-source-editor-cohort) <a id="MW.5.1"></a>
+  - Integrated `8d84762`; full-source edit/save, retained stale drafts, live RO refusal and existing diff/history/commit accepted. [Evidence and input/mobile limits](../QA.md#full-source-editor).
   - Implementation: integrate a ready-made editor component ([№EDIT-W2](DECISIONS.md#EDIT-W2)); preserve Markdown source, drafts, stale-write refusal, RW boundaries and mobile use.
   - Builds: edit the full source document; save; preserve the draft on stale writes; document diff, history and commit
   - Acceptance: a writable document can be edited end to end; a concurrent file change is refused without losing the draft; a read-only root cannot save

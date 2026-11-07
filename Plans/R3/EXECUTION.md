@@ -1647,7 +1647,7 @@ RAG documents-only enduser and independent Dev/AI Code+Docs corpora remain desig
 
 ## Ready-made full-source editor cohort — 2026-11-07 {#full-source-editor-cohort}
 
-- [ ] MW.5.1 Integrate CodeMirror 6 with atomic raw-source editing
+- [x] MW.5.1 Integrate CodeMirror 6 with atomic raw-source editing
   Base `1e630e25a0f7b02202bb0dc5226c5459f23b6faf`, target `main`, owner CTO.
   Approved [№MW.5](workspaces/TODO.md#MW.5)/[№EDIT-W2](workspaces/DECISIONS.md#EDIT-W2): integrate a ready-made
   editor, no custom editor engine. Scope recorded before any code/dependency edits.
@@ -1711,3 +1711,20 @@ RAG documents-only enduser and independent Dev/AI Code+Docs corpora remain desig
   W3 stays idle per owner coordination. No live reload/service/session/provider/ACL/push/publish/deploy/release actions.
   RAG remains design-only two independent corpora (enduser Docs, Dev/AI Code+Docs); no provisioning/ingestion/paid calls.
   Automations remain AgentBus Cron/At backlog/design, no scheduler or live jobs.
+
+
+## Ready-made full-source editor accepted — 2026-11-07
+
+[№MW.5.1](workspaces/TODO.md#MW.5.1) and parent [№MW.5](workspaces/TODO.md#MW.5) done:
+exact gated/reviewed `8d84762d56b631c746f10b481b3ea1e0c1c03fa1` fast-forward integrated into `main`.
+Full-document editing, stale-preserved drafts, RO/ref refusal and same-page diff/history/commit acceptance met.
+Ready-made CodeMirror 6 engine, exact MIT dependencies; raw source uses its own snapshot/hash, no legacy conversion.
+One gate on 9 paths: 143 pass, types exit 0. Pinned independent OpenCode PASS, 44 focused tests, original exit 0.
+Native24 plus final targeted4 and four in-flight cases reused with explicit source identity; no full duplicate.
+CTO inspected desktop-dark/phone screenshots; physical mobile keyboards/real IMEs remain unverified,
+and mixed/bare-CR or invalid UTF-8/oversize input explicitly refuses editing instead of corrupting source.
+Bun HTML bundler inlines dynamic import, measured bundle +336,984 raw / +111,221 gzip bytes accepted;
+network-lazy loading is not claimed. Final node_modules installed from frozen lockfile with lifecycle scripts disabled;
+tracked source/lock remained identical. Package version unchanged. [Evidence](QA.md#full-source-editor).
+No live reload/service/session/provider/ACL/push/publish/deploy/release action. Frozen worktrees/logs retained.
+RAG stays design-only Docs and independent Dev/AI Code+Docs corpora; automations AgentBus Cron/At backlog/design only.
