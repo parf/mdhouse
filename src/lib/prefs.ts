@@ -24,6 +24,7 @@ import { dirname } from 'node:path';
 import { DEFAULT_EDIT_SCHEME, normalizeEditScheme } from './urls';
 import { normalizeProjectName } from './project-name';
 import type { AccessMode } from './roots';
+import { validEndpoint, validTarget } from './agent-bus';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -84,6 +85,102 @@ interface PrefsFile {
   autoRw: string[];
   /** The Agent Bus integration — `mdhouse --agent-bus`; the settings page picks the default agents. */
   agentBus: AgentBusConfig;
+  /**
+   * Canonical path of a saved directory -> its own Agent Bus settings (`SpaceAb`). Kept as read: a
+   * malformed entry, or a malformed map, makes that project's Agent Bus unavailable — never the
+   * instance's in its place.
+   */
+  agentBusSpaces?: unknown;
+}
+
+/**
+ * A project's own Agent Bus settings, each optional: its endpoint, the credential for that endpoint
+ * (provisioned in this file only, never through a page), and its default agents.
+ */
+export interface SpaceAb {
+  endpoint?: string;
+  credential?: string;
+  default?: string[];
+}
+
+/** Most default agents a project names. */
+export const SPACE_DEFAULT_MAX = 20;
+
+/** What a page may know of a project's Agent Bus settings: no credential, only whether there is one. */
+export interface SpaceAbPublic {
+  endpoint: string | null;
+  default: string[] | null;
+  hasCredential: boolean;
+  /** The stored entry cannot be read: the project's Agent Bus is unavailable. */
+  malformed: boolean;
+}
+
+const SPACE_KEYS = new Set(['endpoint', 'credential', 'default']);
+
+/** A stored entry, checked: its settings, or null when it is malformed. */
+function spaceEntry(raw: unknown): SpaceAb | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const e = raw as Record<string, unknown>;
+  if (Object.keys(e).some((k) => !SPACE_KEYS.has(k))) return null;
+  if (e.endpoint !== undefined && !validEndpoint(e.endpoint)) return null;
+  if (e.credential !== undefined) {
+    // a credential belongs to the endpoint beside it
+    if (e.endpoint === undefined || typeof e.credential !== 'string' || !e.credential || e.credential.length > 4096) return null;
+    if (/[\u0000-\u001f\u007f]/.test(e.credential)) return null;
+  }
+  if (e.default !== undefined && (!Array.isArray(e.default) || e.default.length > SPACE_DEFAULT_MAX || !e.default.every(validTarget))) return null;
+  return {
+    ...(e.endpoint !== undefined ? { endpoint: e.endpoint as string } : {}),
+    ...(e.credential !== undefined ? { credential: e.credential as string } : {}),
+    ...(e.default !== undefined ? { default: [...(e.default as string[])] } : {}),
+  };
+}
+
+/** The map of project settings when it is one; null when it is malformed; undefined when absent. */
+function spaceMap(data: PrefsFile): Record<string, unknown> | null | undefined {
+  const map = data.agentBusSpaces;
+  if (map === undefined) return undefined;
+  return map && typeof map === 'object' && !Array.isArray(map) ? (map as Record<string, unknown>) : null;
+}
+
+/** The key a directory's settings are stored under: the canonical path of its saved entry. */
+const spaceKey = (data: PrefsFile, dir: string): string => real(savedEntry(data.saved, dir) ?? dir);
+
+/** A directory's stored settings: `{}` when none, null when malformed. */
+function spaceAbOf(data: PrefsFile, dir: string): SpaceAb | null {
+  const map = spaceMap(data);
+  if (map === undefined) return {};
+  if (map === null) return null;
+  const key = spaceKey(data, dir);
+  return Object.hasOwn(map, key) ? spaceEntry(map[key]) : {};
+}
+
+/** The public form of stored settings. */
+export const publicSpaceAb = (ab: SpaceAb | null): SpaceAbPublic =>
+  ab === null
+    ? { endpoint: null, default: null, hasCredential: false, malformed: true }
+    : { endpoint: ab.endpoint ?? null, default: ab.default?.length ? [...ab.default] : null, hasCredential: !!ab.credential, malformed: false };
+
+/**
+ * Stores `next` as `dir`'s settings. The credential stays only beside the same endpoint; a changed or
+ * cleared endpoint drops it. All empty removes the entry. Throws when the map is malformed.
+ */
+function putSpaceAb(data: PrefsFile, dir: string, next: { endpoint: string | null; default: string[] | null }): void {
+  const map = spaceMap(data);
+  if (map === null) throw new Error('agentBusSpaces is malformed — not changed');
+  const old = spaceAbOf(data, dir) ?? {};
+  const entry: SpaceAb = {};
+  if (next.endpoint) {
+    entry.endpoint = next.endpoint;
+    if (old.endpoint === next.endpoint && old.credential) entry.credential = old.credential;
+  }
+  if (next.default?.length) entry.default = [...next.default];
+  const key = spaceKey(data, dir);
+  const out = { ...(map ?? {}) };
+  if (Object.keys(entry).length) out[key] = entry;
+  else delete out[key];
+  if (Object.keys(out).length) data.agentBusSpaces = out;
+  else delete data.agentBusSpaces;
 }
 
 export interface AgentBusConfig {
@@ -677,19 +774,55 @@ export class Prefs {
       data.writable = data.writable.filter((d) => d !== dir);
       data.readonly = data.readonly.filter((d) => d !== dir);
       pruneNames(data);
+      // its Agent Bus settings go with it; a malformed map stays as it is
+      const map = spaceMap(data);
+      if (map && Object.hasOwn(map, real(dir))) putSpaceAb(data, dir, { endpoint: null, default: null });
       return true;
     });
   }
 
+  /** A saved directory's own Agent Bus settings, credential included — for the server only. `{}` when none; null when malformed. */
+  spaceAb(dir: string): SpaceAb | null {
+    this.refresh();
+    return spaceAbOf(this.data, dir);
+  }
+
   /**
-   * Saves `dir` (canonical) in one write: saved, its mode (`inherit`: neither list) and its name
-   * (`null`: none). `guard` sees the file as it is under the lock, before anything changes; a reason
-   * it returns refuses the save, writing nothing. Returns that reason, or null once saved.
+   * Commits `next` as a saved directory's Agent Bus settings (see `putSpaceAb`). `guard` sees the file
+   * and the directory's settings under the lock first; a reason it returns refuses, writing nothing.
+   * Returns the reason, or null. Throws, changing nothing, when the file or its map is unreadable.
    */
-  async saveRoot(dir: string, values: { mode: AccessMode; name: string | null }, guard: (fresh: PolicyView) => string | null): Promise<string | null> {
+  async commitSpaceAb(
+    dir: string,
+    next: { endpoint: string | null; default: string[] | null },
+    guard: (fresh: PolicyView, ab: SpaceAbPublic) => string | null,
+  ): Promise<string | null> {
     try {
       await this.mutate((data) => {
-        const why = guard(viewOf(data, dir));
+        const why = guard(viewOf(data, dir), publicSpaceAb(spaceAbOf(data, dir)));
+        if (why !== null) throw new Refused(why);
+        putSpaceAb(data, dir, next);
+      });
+      return null;
+    } catch (err) {
+      if (err instanceof Refused) return err.reason;
+      throw err;
+    }
+  }
+
+  /**
+   * Saves `dir` (canonical) in one write: saved, its mode (`inherit`: neither list), its name
+   * (`null`: none) and, when given, its Agent Bus settings (see `putSpaceAb`). `guard` sees the file as it is under the lock, before anything changes; a reason
+   * it returns refuses the save, writing nothing. Returns that reason, or null once saved.
+   */
+  async saveRoot(
+    dir: string,
+    values: { mode: AccessMode; name: string | null; ab?: { endpoint: string | null; default: string[] | null } },
+    guard: (fresh: PolicyView, ab: SpaceAbPublic) => string | null,
+  ): Promise<string | null> {
+    try {
+      await this.mutate((data) => {
+        const why = guard(viewOf(data, dir), publicSpaceAb(spaceAbOf(data, dir)));
         if (why !== null) throw new Refused(why);
         data.saved = [...data.saved, dir].sort();
         data.writable = data.writable.filter((d) => !sameDir(d, dir));
@@ -699,6 +832,7 @@ export class Prefs {
         if (values.name === null) delete data.names[real(dir)];
         else data.names[real(dir)] = values.name;
         pruneNames(data);
+        if (values.ab) putSpaceAb(data, dir, values.ab);
       });
       return null;
     } catch (err) {
@@ -712,7 +846,7 @@ export class Prefs {
    * says. Reads only: never sets a broken file aside, migrates or writes, and leaves this process's
    * copy as it was. Throws for a broken or blocked file.
    */
-  check(dir: string, guard: (fresh: PolicyView) => string | null): Promise<string | null> {
+  check(dir: string, guard: (fresh: PolicyView, ab: SpaceAbPublic) => string | null): Promise<string | null> {
     const run = this.queue.then(() =>
       withLock(this.path, async () => {
         const found = await readFile(this.path);
@@ -720,7 +854,7 @@ export class Prefs {
         const data = found === 'missing' ? fresh() : found;
         const blocked = blockedBy.get(data);
         if (blocked) throw new Error(`${this.path} is ${blocked} — not changed`);
-        return guard(viewOf(data, dir));
+        return guard(viewOf(data, dir), publicSpaceAb(spaceAbOf(data, dir)));
       }),
     );
     this.queue = run.catch(() => {});

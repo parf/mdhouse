@@ -64,6 +64,8 @@ export const ANSWER_MS = 10 * 60_000;
 const ALIVE_MS = 90_000;
 /** Jobs kept for a page that reconnects. */
 const JOBS_KEPT = 50;
+/** Connections kept, one per endpoint and credential; one with exchanges under way is never dropped. */
+const CONNECTIONS_KEPT = 16;
 
 /**
  * `<!-- AB: #claude/x@host -->` in a document: the agents it asks, in order, no repeats. One shown
@@ -90,6 +92,43 @@ export function ownName(host = hostname()): string {
 
 /** A daemon over TCP — `http://host:6767`, `https://…` — rather than a unix socket. */
 export const isUrl = (addr: string) => /^https?:\/\//.test(addr);
+
+/** Where a daemon is, and the credential to reach it with (empty: the account socket's login). */
+export interface Endpoint {
+  addr: string;
+  token: string;
+}
+
+/** Longest endpoint a project may name. */
+export const ENDPOINT_MAX = 1024;
+
+/**
+ * Is `addr` an endpoint a project may name: an absolute unix socket path, or an `http(s)://` address
+ * with no user info, query or fragment — nothing secret, so it can be shown. No control characters.
+ */
+export function validEndpoint(addr: unknown): addr is string {
+  if (typeof addr !== 'string' || !addr || addr.length > ENDPOINT_MAX || /[\u0000-\u001f\u007f-\u009f]/.test(addr)) return false;
+  if (addr.startsWith('/')) return true;
+  if (!isUrl(addr) || /[?#@]/.test(addr)) return false;
+  try {
+    const u = new URL(addr);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && !u.username && !u.password && !u.search && !u.hash && !!u.hostname;
+  } catch {
+    return false;
+  }
+}
+
+/** The words a page, a WebSocket event or a log may carry for a failure: never the daemon's own text. */
+export function safeError(err: unknown): string {
+  if (!(err instanceof BusError)) return 'the agent bus failed';
+  const { status } = err;
+  if (status === 0) return 'the agent bus is unreachable';
+  if (status === 401 || status === 403) return `the agent bus refused mdhouse's credential (HTTP ${status})`;
+  if (status === 404) return 'the agent bus does not know that name (HTTP 404)';
+  if (status === 408 || status === 504) return `the agent bus timed out (HTTP ${status})`;
+  if (status === 429) return 'the agent bus is busy (HTTP 429)';
+  return status >= 500 ? `the agent bus failed (HTTP ${status})` : `the agent bus refused the request (HTTP ${status})`;
+}
 
 /**
  * The daemon, as one credential sees it: a unix socket path or an `http(s)://` address. An empty
@@ -186,15 +225,26 @@ export function isAlive(r: Pick<Rec, 'readers' | 'last_used'>, now = Date.now())
  * a send per target, then a filtered wait for its ack and its answer. Every event goes to `emit`
  * and is kept with its job for a page that reconnects.
  */
+/**
+ * mdhouse's agent on every daemon it talks to: one connection per endpoint and credential, one job
+ * store. Roots that share an endpoint share its connection. A connection drains the replies an
+ * earlier run left only while no exchange is under way anywhere, and every exchange waits for
+ * every drain in progress on any connection — so no connection ever takes another's reply, whatever the endpoints or
+ * credentials, and a changed one never loses the jobs started before.
+ */
 export class AgentBus {
   readonly me: string;
-  private agent: Promise<Daemon> | null = null;
-  private agentSocket = '';
+  /** `addr \n token` → the connection. */
+  private readonly connections = new Map<string, Promise<Daemon>>();
+  /** Exchanges under way, per connection key. */
+  private readonly active = new Map<string, number>();
+  /** Drains still running, on any connection. */
+  private readonly drains = new Set<Promise<void>>();
   private readonly jobs = new Map<string, AbEvent[]>();
 
   constructor(
-    /** Where the daemon is, and the credential to reach it with (empty: the account socket's login). */
-    private readonly where: () => { addr: string; token: string },
+    /** The default endpoint: the instance's. */
+    private readonly where: () => Endpoint,
     private readonly emit: (ev: AbEvent) => void,
     opts: { me?: string; answerMs?: number; wait?: string } = {},
   ) {
@@ -205,15 +255,20 @@ export class AgentBus {
   private readonly answerMs: number;
   private readonly wait: string;
 
-  /** The daemon as mdhouse's agent: registered if missing, its token minted. Retried after a failure. */
-  private connect(): Promise<Daemon> {
-    const { addr: socket, token } = this.where();
-    // a new address or credential: connect again
-    const key = `${socket}\n${token}`;
-    if (this.agent && this.agentSocket === key) return this.agent;
-    this.agentSocket = key;
+  private busy = (): boolean => [...this.active.values()].some((n) => n > 0);
+
+  /**
+   * The daemon as mdhouse's agent at `ep`: registered if missing, its token minted. Retried after a
+   * failure. A new endpoint or credential is a connection of its own; the old one keeps serving the
+   * exchanges it started.
+   */
+  private connect(ep: Endpoint = this.where()): Promise<Daemon> {
+    const key = `${ep.addr}\n${ep.token}`;
+    const known = this.connections.get(key);
+    if (known) return known;
+    const { addr: socket, token } = ep;
     const owner = new Daemon(socket, token);
-    this.agent = (async () => {
+    const agent = (async () => {
       const rec = { name: this.me, kind: 'agent', descr: 'mdhouse — pages ask agents', tags: ['personal'], allow: ['@owner'] };
       // create only: an existing record keeps what its owner set on it
       await owner.call('POST', '/register', rec, { 'if-none-match': '*' }).catch((err: unknown) => {
@@ -222,29 +277,43 @@ export class AgentBus {
       const got = await owner.call<{ token: string }>('POST', '/token', { name: this.me });
       if (!got?.token) throw new BusError(500, `agent bus gave no token for ${this.me}`);
       const agent = new Daemon(socket, got.token);
-      // replies to jobs of an earlier run: nobody waits for them any more; other topics are not ours
-      for (let i = 0; i < 1000 && (await agent.drain(TOPIC)); i++);
+      // Replies to jobs of an earlier run: nobody waits for them any more; other topics are not ours.
+      // Only while no exchange is under way — its reply may sit in the same inbox.
+      if (!this.busy()) {
+        const drain = (async () => {
+          for (let i = 0; i < 1000 && (await agent.drain(TOPIC)); i++);
+        })();
+        const done = drain.catch(() => {});
+        this.drains.add(done);
+        void done.then(() => this.drains.delete(done));
+        await drain;
+      }
       return agent;
     })();
-    this.agent.catch(() => {
-      this.agent = null;
+    this.connections.set(key, agent);
+    agent.catch(() => {
+      if (this.connections.get(key) === agent) this.connections.delete(key);
     });
-    return this.agent;
+    for (const old of this.connections.keys()) {
+      if (this.connections.size <= CONNECTIONS_KEPT) break;
+      if (old !== key && !this.active.get(old)) this.connections.delete(old);
+    }
+    return agent;
   }
 
-  /** Connected, or why not. */
-  async status(): Promise<{ connected: boolean; error?: string }> {
+  /** Connected to `ep` (default: the instance's), or why not — in safe words. */
+  async status(ep?: Endpoint): Promise<{ connected: boolean; error?: string }> {
     try {
-      await this.connect();
+      await this.connect(ep);
       return { connected: true };
     } catch (err) {
-      return { connected: false, error: (err as Error).message };
+      return { connected: false, error: safeError(err) };
     }
   }
 
-  /** Every agent this login may see, mdhouse left out; the live ones first, A–Z. */
-  async agents(): Promise<BusAgent[]> {
-    const d = await this.connect();
+  /** Every agent this login may see at `ep`, mdhouse left out; the live ones first, A–Z. */
+  async agents(ep?: Endpoint): Promise<BusAgent[]> {
+    const d = await this.connect(ep);
     const now = Date.now();
     return ((await d.ls('agent')) ?? [])
       .filter((r) => r.kind === 'agent' && r.name !== this.me)
@@ -257,13 +326,17 @@ export class AgentBus {
     return this.jobs.get(id) ?? null;
   }
 
-  /** Ask each target; returns the job id at once — the events follow through `emit`. */
-  async ask(targets: string[], body: string): Promise<string> {
-    const d = await this.connect();
+  /** Ask each target at `ep` (default: the instance's); returns the job id at once — the events follow through `emit`. */
+  async ask(targets: string[], body: string, ep: Endpoint = this.where()): Promise<string> {
+    const key = `${ep.addr}\n${ep.token}`;
+    const d = await this.connect(ep);
+    // Every drain on every connection has ended; none starts once an exchange is counted.
+    while (this.drains.size) await Promise.all(this.drains);
     const job = crypto.randomUUID();
     this.jobs.set(job, []);
     while (this.jobs.size > JOBS_KEPT) this.jobs.delete(this.jobs.keys().next().value!);
-    for (const to of targets) void this.exchange(d, job, to, body);
+    this.active.set(key, (this.active.get(key) ?? 0) + targets.length);
+    for (const to of targets) void this.exchange(d, key, job, to, body);
     return job;
   }
 
@@ -273,8 +346,8 @@ export class AgentBus {
     this.emit(ev);
   }
 
-  /** One target: send, then wait on this exchange's tag for an ack and the answer (or done). */
-  private async exchange(d: Daemon, job: string, to: string, body: string): Promise<void> {
+  /** One target, already counted in `active`: send, then wait on this exchange's tag for an ack and the answer (or done). */
+  private async exchange(d: Daemon, key: string, job: string, to: string, body: string): Promise<void> {
     const tag = `mdhouse-${crypto.randomUUID()}`;
     try {
       await d.send({ to, body, topic: TOPIC, tag });
@@ -289,7 +362,11 @@ export class AgentBus {
       }
       this.note(job, to, 'timeout');
     } catch (err) {
-      this.note(job, to, 'error', (err as Error).message);
+      this.note(job, to, 'error', safeError(err));
+    } finally {
+      const n = (this.active.get(key) ?? 1) - 1;
+      if (n > 0) this.active.set(key, n);
+      else this.active.delete(key);
     }
   }
 }
