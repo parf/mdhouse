@@ -10,7 +10,7 @@ import index from './index.html';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { resolve as resolvePath } from 'node:path';
-import { Registry, ReadOnlyError, type AccessMode, type Resolved, type Root } from './lib/roots';
+import { ProjectDirError, Registry, ReadOnlyError, type AccessMode, type Resolved, type Root } from './lib/roots';
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
@@ -169,6 +169,8 @@ const PAGE_CSP = [
 
 /** A file's page: highlighted up to here; past it, no body — "too big, download". */
 const SHOW_MAX = 5_000_000;
+/** Longest path `POST /api/roots/add` takes, in UTF-16 code units — Linux's PATH_MAX. */
+const ADD_PATH_MAX = 4096;
 
 /**
  * The headers `/api/raw` serves a file with, by kind. Everything is sandboxed — opened on its
@@ -914,6 +916,79 @@ export async function serve(opts: ServeOptions) {
       },
 
       /**
+       * The settings page's Add project: serve an existing directory for this session, in the mode the
+       * administrator chose. `{path, mode: 'rw' | 'ro'}` only; `path` absolute, taken as written — no
+       * `~`, nothing relative. Refused: gone 404, not a directory 400, reference material or inside it
+       * 403, served already 409 `served` with its id, saved by another process or leading elsewhere by
+       * the time it would be served 409 `stale`. Writes nothing; nothing is served on any refusal.
+       */
+      '/api/roots/add': {
+        POST: mutation('root-admin', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort() : [];
+          const { path, mode } = (body ?? {}) as { path?: unknown; mode?: unknown };
+          if (
+            keys.join() !== 'mode,path' ||
+            typeof path !== 'string' ||
+            !path.startsWith('/') ||
+            path.includes('\0') ||
+            path.length > ADD_PATH_MAX ||
+            (mode !== 'rw' && mode !== 'ro')
+          ) {
+            return fail(400, "expected exactly {path: an absolute directory, mode: 'rw' | 'ro'}");
+          }
+          return rootOps(async () => {
+            if (!actorOf(req).admin) return adminRequired();
+            let prep: PreparedProject;
+            try {
+              prep = await prepareProject(path);
+            } catch (err) {
+              if (!(err instanceof ProjectDirError)) throw err;
+              return fail(err.code === 'missing' ? 404 : err.code === 'reference' ? 403 : 400, err.message);
+            }
+            if (registry.inReference(prep.abs)) return fail(403, `${prep.abs} is inside mdhouse reference material — it cannot be added`);
+            const servedAs = (root: Root) => json({ error: `${prep.abs} is served already`, reason: 'served', id: root.id }, 409);
+            const served = registry.list().find((r) => r.path === prep.abs);
+            if (served) return servedAs(served);
+            const stale = () => json({ error: 'the folder changed since it was asked for — look again', reason: 'stale' }, 409);
+            const unreadable = (blocked: string | null) =>
+              fail(500, blocked ? `prefs.json is ${blocked} — nothing added` : 'prefs.json could not be read — nothing added');
+            let refused: string | null;
+            try {
+              // The file as it is under the lock: saved by another process means a re-add with its own
+              // stored policy, which this does not do. So does an administrator signed out meanwhile.
+              refused = await prefs.check(prep.abs, (fresh) => (!actorOf(req).admin ? 'admin' : fresh.saved ? 'stale' : null));
+            } catch (err) {
+              const blocked = prefs.accessBlocked();
+              if (!blocked) console.error(err);
+              return unreadable(blocked);
+            }
+            if (refused === 'admin') return adminRequired();
+            if (refused !== null) return stale();
+            // The request named a path, not what it resolved to earlier: it must lead there still.
+            const now = await realpath(path).catch(() => null);
+            if (now !== prep.abs || !(await stat(now).catch(() => null))?.isDirectory()) return stale();
+            // No await from here on: these checks still hold when the root appears.
+            if (!actorOf(req).admin) return adminRequired();
+            const blocked = prefs.accessBlocked();
+            if (blocked) return unreadable(blocked);
+            if (prefs.isSaved(prep.abs)) return stale();
+            let installed: { root: Root; added: boolean };
+            try {
+              installed = installProject(prep, mode);
+            } catch (err) {
+              console.error(err);
+              return fail(500, `${prep.abs} could not be served — nothing added`);
+            }
+            if (!installed.added) return servedAs(installed.root);
+            publishRoots();
+            return json({ roots: rootsPayload(), id: installed.root.id });
+          });
+        }),
+      },
+
+      /**
        * The settings page's `[RW]` / `[RO]`: set a project's mode explicitly. `{id, mode: 'rw' | 'ro', rev}`
        * only; `rev` is the root's `accessRev` the administrator confirmed. A saved project's mode is
        * written to prefs; an unsaved one's lives in memory until it is saved or removed. `rw` never
@@ -1508,6 +1583,38 @@ export async function serve(opts: ServeOptions) {
   };
   for (const root of registry.list()) await watchTree(root);
 
+  /** A directory ready to serve, every await done: its canonical path and the git dirs to watch. */
+  type PreparedProject = { abs: string; gitDirs: string[] };
+  /**
+   * Prepares a directory for `installProject` — canonical, a directory, not a reference root, and its
+   * git dirs — serving nothing yet. Throws a `ProjectDirError`.
+   */
+  const prepareProject = async (spec: string): Promise<PreparedProject> => {
+    const abs = await registry.prepare(spec);
+    const served = registry.list().some((r) => r.path === abs);
+    return { abs, gitDirs: served || opts.noGit ? [] : await gitDirs(abs) };
+  };
+  /**
+   * Serves a prepared directory in `mode` and watches it — synchronously, so nothing sees it half set
+   * up. A directory served already returns its root unchanged, `added: false`. Should watching throw,
+   * the new root is gone again before this returns.
+   */
+  const installProject = (p: PreparedProject, mode: AccessMode): { root: Root; added: boolean } => {
+    const served = registry.list().find((r) => r.path === p.abs);
+    if (served) return { root: served, added: false };
+    const root = registry.install(p.abs, mode);
+    try {
+      watcher.watchRoot(root);
+      // A root inside a checkout, or a linked worktree, has its git dirs out of reach of the recursive watch.
+      if (!opts.noGit) watcher.watchRepo(root, p.gitDirs);
+    } catch (err) {
+      watcher.unwatch(root.id);
+      registry.remove(root.id);
+      throw err;
+    }
+    return { root, added: true };
+  };
+
   /**
    * Serve more directories, at the request of a second `mdhouse` on the control socket.
    *
@@ -1528,10 +1635,9 @@ export async function serve(opts: ServeOptions) {
     const upgraded = new Set<string>();
 
     for (const dir of dirs) {
-      const known = new Set(registry.list().map((r) => r.id));
-      const root = await registry.add(dir, writable ? 'rw' : 'inherit');
+      const prep = await prepareProject(dir);
       // A saved read-only choice holds for a folder newly served without `--rw`.
-      if (!known.has(root.id) && !writable && prefs.savedMode(root.path) === 'ro') registry.setMode(root.id, 'ro');
+      const { root, added: isNew } = installProject(prep, writable ? 'rw' : prefs.savedMode(prep.abs) === 'ro' ? 'ro' : 'inherit');
       // `--rw` for a folder already served read-only upgrades it in place — an explicit read-only
       // choice too. Never the other way: re-opening without `--rw` changes nothing; taking write
       // access away is `-p` without `--rw` and a restart, the settings page, or `--rm`.
@@ -1541,12 +1647,8 @@ export async function serve(opts: ServeOptions) {
         registry.setMode(root.id, 'rw');
         if (!before && root.writable) upgraded.add(root.id);
       }
-      // Asking for a directory already served is a request for its URL, not a second copy of
-      // it — only a genuinely new root needs a watcher.
-      if (!known.has(root.id)) {
-        await watchTree(root);
-        added.add(root.id);
-      }
+      // Asking for a directory already served is a request for its URL, not a second copy of it.
+      if (isNew) added.add(root.id);
       asked.add(root.id);
       if (save) {
         // `--rw` saves it writable; without, saved write access goes and a read-only choice stays.

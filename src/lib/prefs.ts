@@ -708,6 +708,26 @@ export class Prefs {
   }
 
   /**
+   * Runs `guard` on the file as it is now, under the lock, for `dir` (canonical), and returns what it
+   * says. Reads only: never sets a broken file aside, migrates or writes, and leaves this process's
+   * copy as it was. Throws for a broken or blocked file.
+   */
+  check(dir: string, guard: (fresh: PolicyView) => string | null): Promise<string | null> {
+    const run = this.queue.then(() =>
+      withLock(this.path, async () => {
+        const found = await readFile(this.path);
+        if (found === 'broken') throw new Error(`${this.path} could not be read — not changed`);
+        const data = found === 'missing' ? fresh() : found;
+        const blocked = blockedBy.get(data);
+        if (blocked) throw new Error(`${this.path} is ${blocked} — not changed`);
+        return guard(viewOf(data, dir));
+      }),
+    );
+    this.queue = run.catch(() => {});
+    return run;
+  }
+
+  /**
    * Commits an explicit mode for `dir` (canonical). `guard` sees the file under the lock first; a
    * reason it returns refuses, writing nothing. A saved directory's mode is written to the file; an
    * unsaved one's file is left as it is — its mode lives in memory. Returns the reason, or null.

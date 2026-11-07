@@ -56,6 +56,17 @@ export class ReadOnlyError extends Error {
   }
 }
 
+/** Why a directory cannot be added as a project: gone, not a directory, or a reference root. */
+export class ProjectDirError extends Error {
+  constructor(
+    readonly code: 'missing' | 'not-a-directory' | 'reference',
+    message: string,
+  ) {
+    super(message);
+    this.name = 'ProjectDirError';
+  }
+}
+
 function slugify(name: string): string {
   const slug = name
     .toLowerCase()
@@ -150,10 +161,36 @@ export class Registry {
    */
   async add(spec: string, access: AccessMode | boolean = 'inherit'): Promise<Root> {
     // `true` is `--rw`; `false` asks for nothing.
-    const mode: AccessMode = access === true ? 'rw' : access === false ? 'inherit' : access;
-    const abs = await realpath(resolvePath(spec));
+    return this.install(await this.prepare(spec), access === true ? 'rw' : access === false ? 'inherit' : access);
+  }
+
+  /**
+   * The canonical (symlink-resolved) directory `spec` names, ready for `install` — nothing is served
+   * yet. Throws a `ProjectDirError` when it is gone, not a directory, or a reference root itself.
+   */
+  async prepare(spec: string): Promise<string> {
+    const abs = await realpath(resolvePath(spec)).catch((err: NodeJS.ErrnoException) => {
+      if (err.code === 'ENOENT' || err.code === 'ENOTDIR') throw new ProjectDirError('missing', `${spec}: no such directory`);
+      throw err;
+    });
+    if (!(await stat(abs)).isDirectory()) throw new ProjectDirError('not-a-directory', `${abs} is not a directory`);
+    this.refuseReference(abs);
+    return abs;
+  }
+
+  private refuseReference(abs: string): void {
+    if (this.list().some((r) => r.kind === 'reference' && r.path === abs)) {
+      throw new ProjectDirError('reference', `${abs} is mdhouse's reference material — it cannot be added as a project`);
+    }
+  }
+
+  /**
+   * Serves a directory `prepare` returned, in `mode` from the moment it is visible — synchronous, so
+   * nothing sees it half set up. A directory already served returns its root unchanged.
+   */
+  install(abs: string, mode: AccessMode): Root {
+    this.refuseReference(abs);
     const existing = this.list().find((r) => r.path === abs);
-    if (existing?.kind === 'reference') throw new Error(`${abs} is mdhouse's reference material — it cannot be added as a project`);
     if (existing) return existing;
 
     const name = abs.split(sep).filter(Boolean).pop() ?? abs;
