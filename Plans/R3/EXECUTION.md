@@ -1454,3 +1454,10 @@ Resume capacity 2026-11-07 16:54 UTC: W1 available, weekly 54%; W2 available, we
 short-window readouts unavailable after idle compaction, not guessed. Shared Codex weekly 4% reserved for CTO/CEO;
 W3 idle. Review freshly verified GLM API: short-window 1% used, weekly 45% used (55% remaining), available;
 old terminal limit message is stale. One independent review assignment after target freeze, no stopped review resume.
+
+
+W1/W2 acknowledged the scoped assignments and began isolated author work. W2 author `6f4b144` is committed;
+necessary UI helper paths include `ui/Sidebar.tsx`, `ui/doc-refresh.ts`, `ui/project-groups.ts` and
+`ui/qa-page.ts` alongside the named components, to derive effective access and preserve editor drafts/control
+provenance without body/Mermaid replacement. This is within the accepted live write-control boundary;
+no new authority or product scope. Author mock proof is retained, not mistaken for real write-denial acceptance.
