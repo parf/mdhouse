@@ -17,7 +17,7 @@
 
 1. **Visible status.** Every action gets feedback within 100ms.
 2. **Speak the user's language.** Use domain terms (NOI, cap rate), not DB column names.
-3. **Undo over confirm.** Confirm only actions that are destructive and irreversible.
+3. **Undo over confirm.** Support undo where possible. Destructive actions always require confirmation.
 4. **Consistency.** Same thing, same name, same place, same color.
 5. **Prevent errors.** Constrain inputs and disable invalid actions, with a tooltip saying why.
 6. **Recognition over recall.** Show recent items, saved filters and inline hints.
@@ -37,7 +37,8 @@
 | Forms | One column, label above field, inline validation on blur. Mark optional fields, not required ones. |
 | Empty states | Explain why it's empty and give the next action. |
 | Loading | Under 1s, show nothing. 1–3s, show a skeleton. Over 3s, show progress plus a way to cancel. |
-| Destructive actions | Red, never the default button, need an explicit verb ("Delete 12 deals"), and support undo where possible. |
+| Destructive actions | Ideally hide behind an expandable "Danger zone", shown only when clicked. Always require confirmation. Red, never the default button, need an explicit verb ("Delete 12 deals"), and support undo where possible. |
+| Multiple options | Always use expand-like elements when several options are available. |
 | State | URL reflects filters and view, so every view is shareable and bookmarkable. |
 
 ## Color coding
