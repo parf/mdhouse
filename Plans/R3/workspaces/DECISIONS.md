@@ -165,4 +165,5 @@
 
 - 📌 BADGE-W1 Access badges show deviations from the mode baseline. <a id="BADGE-W1"></a>
   Workspace: hide RW, show RO. Viewer: hide RO, show configured RW; effective writes remain forbidden.
+  Apply throughout the UI: hide defaults or render them gray; highlight important or unusual states.
   [Owner history](resolved.md#BADGE-W1).

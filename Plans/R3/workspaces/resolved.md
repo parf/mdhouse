@@ -481,3 +481,9 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬👾 Workspace: hide RW and show RO. Viewer: hide RO and show configured RW, while Viewer still forbids writes.
   >
   > 💬 👤parf good, go
+  >
+  > 💬 👤parf применяем это везде
+  >
+  > deafults are either hidden or grey / and important / unusual stuff highlighted
+  >
+  > 💬 👤parf [Image #1] Settings project list with repeated RW badges.
