@@ -1,7 +1,7 @@
 # Navigation and project views
 
 ⚠️ Working proposal for [№MW.13.1a](workspaces/TODO.md#MW.13.1a), not an implementation decision.
-Base `f646f8092a9a8014c5c1f391150002eebefe2e64`. Current journey evidence and technical inventory pending.
+Base `f646f8092a9a8014c5c1f391150002eebefe2e64`. Current journey evidence pending; [technical inventory](ux-navigation/TECHNICAL-INVENTORY.md) integrated.
 [Scope](EXECUTION.md#navigation-research) · [UX reference](../UX.md).
 
 ## Goal and evidence standard
@@ -28,6 +28,29 @@ Checked 2026-11-07. These are patterns to evaluate, not authority to copy anothe
 Inference: borrow context preservation and separation of scope; do not add a complete IDE shell or a
 second tab manager merely because a comparator has one. The owner asks for a useful workspace with a
 reader-oriented entry, not an assumed VS Code clone.
+
+## Verified constraints before new views
+
+[Source inventory](ux-navigation/TECHNICAL-INVENTORY.md) distinguishes these delivered limits from proposals:
+
+- The current folder Git mode already exists (`?git` and URL-selected Favs/Recent/Mine/Commits/Files).
+  Compare consolidation against that baseline, not a blank slate. V1/V2 are personal file sets; avoid
+  reusing their existing “views” term for unrelated destinations without a naming decision.
+- The sidebar tree and search are Markdown-only. All files uses a separate folder listing capped at
+  5,000 without paging. A matching All tree needs backend listing work; expanding search needs an
+  explicit scope decision rather than an implied side effect.
+- Current commit file links open the working-tree file. Historical content/tree, branch listing and
+  server-side author queries are absent. Available Git lists/diffs do not supply a revision browser.
+  Remote freshness can invoke network `ls-remote`; a proposed Git hub must not trigger that implicitly.
+- Search scope/query, sidebar tab/author, document diff mode/revision are in memory. URL/state work
+  is required for reliable Back/share/return behavior; existing search hrefs omit the matching line.
+- Source drafts persist in guarded localStorage; Q&A/add drafts survive in-app navigation only.
+  Reading/recovering a kept source draft can be allowed on RO; saving remains refused by the server.
+- Viewer extraction needs real seams: Doc statically imports editing/agents/commit controls; Home and
+  GitPanel have an import cycle; GitPanel mixes reads and writes. “Shared core” is direction, not readiness.
+
+The inventory also lists unverified raw-ignore and WebSocket subscription questions. They are follow-up
+checks, not confirmed vulnerabilities or grounds to expand this research into a security implementation.
 
 ## Structures to compare
 
@@ -58,18 +81,20 @@ The following are requirements for a later scoped design, not new route or persi
 | Change project | Per-project navigation context and per-document drafts | No old project's async response may replace the new project's selection or draft |
 | Desktop → mobile | Same selected file/view and meaningful URL | One content surface, an explicit navigation entry, expandable secondary actions, visible return path |
 
-URLs should represent shareable content filters and activity selections. Durable project identity remains
-canonical path/root ID; display names do not become identity. Exact URL parameters, back-compatibility and
+URLs should represent shareable content filters and activity selections. Canonical path is the project identity; display names do not become identity. Current URL root IDs are
+basename slugs with order-dependent collision suffixes, so stable cross-restart links are not established. Exact URL parameters, back-compatibility and
 preference lifetimes need a bounded implementation design after direction is agreed. A shareable URL must
 not carry credentials or drafts. Historical source requires an immutable revision, not the live file with a
 historical label. Do not treat a proposed branch browser as authorization for checkout, fetch or writes.
 
 ## Suggested implementation sequence, subject to direction
 
-1. Unify MD/All scope between folder contents and the left tree, preserve path/context, define URL and
+1. Design the bounded listing/tree prerequisite for a matching MD/All scope, including listing caps,
+   ignore rules and an explicit search-scope choice. Preserve path/context, define URL and
    browser Back behavior. Reuse existing passive rendering/highlighting and access checks.
-2. Consolidate overlapping activity destinations without deleting personal curation semantics; keep file
-   history contextual and introduce a read-only Git hub incrementally from delivered APIs.
+2. Consolidate existing overlapping activity destinations without deleting personal curation semantics;
+   keep file history contextual. Initial Git work can reuse current lists/diffs; historical source, branch
+   and author browsing require separate missing read APIs, not a relabel of live content.
 3. Design branch/commit/author representations with verified backend gaps and independent access review;
    do not bundle missing revision APIs into the first tree/filter change.
 4. Define standalone viewer retained scope, then extract only after the shared views work in mdhouse.
@@ -85,6 +110,6 @@ Cron/At jobs and provider lifecycle are separate work.
 ## Acceptance still pending
 
 - [ ] Current-source numbered journey screenshots and observations reviewed.
-- [ ] Technical inventory checked against the proposal and gaps linked.
+- [x] Technical inventory checked against the proposal and gaps linked (W1 fact-check of `9851ca6`).
 - [ ] Findings prioritized by observed impact; accessibility and coverage limits stated.
 - [ ] Nonauthor fact-check and source/link review; recommendation submitted for direction.
