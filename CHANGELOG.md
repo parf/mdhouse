@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Align page-header first rows across documents, folders, Git, Settings and notices with a shared sidebar/topstrip header band, including narrow screens
+
 - Access indicators hide normal RW and emphasize read-only project exceptions across the sidebar and Settings; default controls and reference statuses stay neutral
 
 - File Git history and empty comparison actions stay hidden for Gitignored files and Untracked files without confirmed history; tracked history and useful current-change actions remain

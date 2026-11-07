@@ -653,3 +653,13 @@ Normal saved persistence is muted, while unsaved state and explicit Agent Bus ov
 Presentation uses existing live metadata and changes no configured/effective access, default or mutation guard.
 There is no authoritative global Viewer mode yet; Viewer-specific configured-RW indication remains pending
 [№MW.12.2](R3/workspaces/TODO.md#MW.12.2), without a synthetic mode or permission activation.
+
+
+## Shared first-header band
+
+CSS `--head-band` uses the sidebar's existing 41px header band for the replacement topstrip and each main
+page's first header row. Document breadcrumbs, root/folder/Home/Git and Settings headers, notice headings and
+loading align inside that band; titles after breadcrumbs retain their separate hierarchy and row gap.
+Page wrappers have no independent top padding, including narrow layouts. Side/bottom/max-width geometry is
+unchanged; wrapped heads may grow naturally. Spinner keeps its own 15px circle; the notice gear aligns too.
+This is page-header layout only, with no permission/source/control/navigation policy change.
