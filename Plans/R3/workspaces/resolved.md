@@ -469,3 +469,5 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   >
   > 💬 👤parf наверно второй - обший
   > fisrt one - docs only
+  >
+  > 💬 👤parf - Общий code index  = same idea as first one but for Code+Docs

@@ -1,6 +1,6 @@
 # RAG — requirements and open questions
 
-Current owner direction: implementation deferred. Design two independent indexes: end-user documents only, and a shared developer/AI-agent code index. Preserve repository/revision identity and access boundaries. Historical provider setup below does not supersede this direction. See [№RAG-W2](workspaces/DECISIONS.md#RAG-W2).
+Current owner direction: implementation deferred. Design two independent indexes: end-user documents only, and a shared developer/AI-agent code-and-documentation index. Preserve repository/revision identity and access boundaries. Historical provider setup below does not supersede this direction. See [№RAG-W2](workspaces/DECISIONS.md#RAG-W2).
 
 <!-- AB: #cx/mdhouse-ceo -->
 

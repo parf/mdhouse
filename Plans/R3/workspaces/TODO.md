@@ -238,7 +238,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle <a id="MW.2a"></a>
-  - Priority: implementation deferred; design separate end-user documents-only and shared developer/AI code indexes ([№RAG-W2](DECISIONS.md#RAG-W2)).
+  - Priority: implementation deferred; design separate end-user documents-only and shared developer/AI code-and-documentation indexes ([№RAG-W2](DECISIONS.md#RAG-W2)).
   - [ ] MW.2a.1 Implement separate on-demand RAG sync bin; owned by mdhouse, not removed from R3 implementation <a id="MW.2a.1"></a>
   - Current scope: owner-authorized first setup `/home/parf/src/mdhouse` with recursive `include:["*.md"]`, dotfile/dependency exclusions, proposed `mdhouse/docs`; W3 bin plan, owner/AB-CEO provisioning/provider gaps, no duplicate requests or implicit watch/paid run
   - Coverage: FileScan last reported 195 tracked; T-48 large Markdown/finite sync deployed per provider. Whole-file indexing remains unproven until actual sync/check; incomplete or unknown coverage stays explicit
