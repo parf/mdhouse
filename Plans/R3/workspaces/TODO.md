@@ -547,6 +547,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 ## Configuration ownership
 
 - [ ] MW.14 Decide where all mdhouse data belongs <a id="MW.14"></a>
+  First: research existing tools and analyze best practices for team/project configuration, versioned flows/automations, user/machine state and secrets; cite sources, compare trade-offs and recommend a mdhouse-specific layout.
   Inventory all current and planned data; define its owner, scope and storage location: user config, project config, secrets, local state, caches, logs, generated artifacts, flows and automation definitions.
   `$PROJECT_HOME/.mdhouse/` is Git-controlled; distinguish shared versioned project data from user/machine-local and secret data.
   Priority: resolve before further Teams, flows and automations persistence work; distinguish shared Git-controlled definitions from per-user/per-machine state, credentials and execution history.
