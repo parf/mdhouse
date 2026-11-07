@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
@@ -207,13 +207,17 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     }
   };
 
-  // The folder to add, as typed, and its access: neither chosen in advance. A refusal keeps both.
+  // The folder to add, as typed, and its access: neither chosen in advance. A refusal keeps both; while any
+  // project action is pending the form is off, so a success clears only what was sent.
   const [addPath, setAddPath] = useState('');
   const [addMode, setAddMode] = useState<'rw' | 'ro' | null>(null);
   const [addError, setAddError] = useState('');
   const addProblem = addPathProblem(addPath);
+  // Set on entry, before the re-render that turns the form off: a second Enter or click sends nothing.
+  const adding = useRef(false);
   const add = async () => {
-    if (!isAdmin || busy !== null || !addMode || addProblem) return;
+    if (adding.current || !isAdmin || busy !== null || !addMode || addProblem) return;
+    adding.current = true;
     setBusy('add');
     setAddError('');
     try {
@@ -231,6 +235,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         onChanged();
       } else setAddError(refused(err));
     } finally {
+      adding.current = false;
       setBusy(null);
     }
   };
@@ -476,11 +481,11 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             spellcheck={false}
             autocomplete="off"
             aria-label="Full path of the folder to add"
-            disabled={!isAdmin}
+            disabled={!isAdmin || busy !== null}
             title={isAdmin ? undefined : NEEDS_ADMIN}
             onInput={(e) => setAddPath((e.target as HTMLInputElement).value)}
           />
-          <fieldset class="project-add-mode" disabled={!isAdmin}>
+          <fieldset class="project-add-mode" disabled={!isAdmin || busy !== null}>
             <legend>Access</legend>
             <label>
               <input type="radio" name="project-add-mode" value="rw" checked={addMode === 'rw'} onChange={() => setAddMode('rw')} /> RW — read and write
