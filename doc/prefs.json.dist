@@ -28,6 +28,14 @@
   // default — the agents a page asks when it names none (<!-- AB: … -->); set on the settings page
   // filter — which agents the lists show: a regex per line, against the name without its #; [] — all
   "agentBus": { "enabled": false, "socket": "", "token": "", "default": [], "filter": ["^claude", "^codex", "^opencode"] },
+  // A saved project's own Agent Bus, by its path; the settings page sets endpoint and default.
+  // endpoint — a socket path or http(s)://host:port, nothing secret in it; none — the instance's
+  // credential — for that endpoint, written here only, never through a page; a new endpoint drops it
+  // default — the agents its pages ask when they name none; none — the instance's
+  // A malformed entry makes that project's Agent Bus unavailable — never the instance's in its place
+  "agentBusSpaces": {
+    "/home/you/src/project": { "endpoint": "http://127.0.0.1:6767", "credential": "…", "default": ["#claude/project@host"] }
+  },
 
   // Where to listen: `mdhouse -p --port 8080 --host 0.0.0.0`
   // Default 127.0.0.1:7777. MDHOUSE_PORT / MDHOUSE_HOST and --port / --host override it

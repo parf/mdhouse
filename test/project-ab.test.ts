@@ -3,7 +3,7 @@ import { chmodSync, readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, open, realpath, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { askAdminRevoke } from '../src/lib/control';
+import { askAdminRevoke, askDaemon, askRemove } from '../src/lib/control';
 import { AgentBus, BusError, safeError, validEndpoint, type AbEvent } from '../src/lib/agent-bus';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
@@ -439,6 +439,61 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
   });
 });
 
+describe('unsaved: the memory install after the locked check', () => {
+  test('a sign-out, or a save by another process, between the check and the install: refused, nothing kept', async () => {
+    const t = await start(61710);
+    try {
+      let cookie = await adminLogin(61710);
+      const id = t.idOf(t.ses);
+      const check = t.prefs.check.bind(t.prefs);
+      // the guard has passed under the lock; then, before the route resumes, the world moves
+      let after: () => Promise<unknown> = async () => askAdminRevoke(61710);
+      const spy = spyOn(t.prefs, 'check').mockImplementation(async (dir, guard) => {
+        const r = await check(dir, guard);
+        await after();
+        return r;
+      });
+      const before = (await t.config()).roots[id]!;
+      expect((await t.setAb(t.ses, t.space.socket, [], cookie, before.rev)).status).toBe(401);
+      expect((await t.config()).roots[id]).toEqual(before);
+
+      cookie = await adminLogin(61710);
+      after = async () => {
+        await writeFile(t.prefsPath, JSON.stringify({ ...disk(t.prefsPath), saved: [...(disk(t.prefsPath).saved as string[]), t.ses].sort() }));
+      };
+      const res = await t.setAb(t.ses, t.space.socket, [], cookie, before.rev);
+      expect([res.status, ((await res.json()) as { reason?: string }).reason]).toEqual([409, 'stale']);
+      spy.mockRestore();
+      expect((await t.config()).roots[id]).toEqual({ hasCredential: false, rev: expect.any(String) });
+    } finally {
+      await t.stop();
+    }
+  });
+});
+
+describe('lifetime through the CLI', () => {
+  test('-p saves a session entry; --rm drops a saved one; the last project, unsaved, keeps it in memory without its credential', async () => {
+    const t = await start(61709);
+    try {
+      const cookie = await adminLogin(61709);
+      expect((await t.setAb(t.keep, t.space.socket, [], cookie)).status).toBe(200);
+      await t.provision(t.keep, 'space-secret-5');
+      expect((await t.setAb(t.ses, '/run/ses.sock', ['#claude/ses@h'], cookie)).status).toBe(200);
+      expect(await askDaemon(61709, { dirs: [t.ses], rw: false, save: true })).not.toHaveProperty('error');
+      expect((disk(t.prefsPath).agentBusSpaces as Record<string, unknown>)[t.ses]).toEqual({ endpoint: '/run/ses.sock', default: ['#claude/ses@h'] });
+      expect(await askRemove(61709, { dirs: [t.keep] })).not.toHaveProperty('error');
+      expect(disk(t.prefsPath).agentBusSpaces).toEqual({ [t.ses]: { endpoint: '/run/ses.sock', default: ['#claude/ses@h'] } });
+      await t.provision(t.ses, 'ses-secret-6');
+      const removed = (await askRemove(61709, { dirs: [t.ses] })) as { results: Array<{ kept?: boolean }> };
+      expect(removed.results[0]).toMatchObject({ kept: true });
+      expect(disk(t.prefsPath)).not.toHaveProperty('agentBusSpaces');
+      expect((await t.config()).roots[t.idOf(t.ses)]).toEqual({ endpoint: '/run/ses.sock', hasCredential: false, default: ['#claude/ses@h'], rev: expect.any(String) });
+    } finally {
+      await t.stop();
+    }
+  });
+});
+
 describe('routing: the document root picks the bus', () => {
   afterEach(() => {});
 
@@ -472,6 +527,8 @@ describe('routing: the document root picks the bus', () => {
       const res = await t.send(t.keep, 'a.md');
       expect(res.status).toBe(503);
       expect(((await res.json()) as { error: string }).error).toBe('the agent bus is unreachable');
+      const st = (await (await fetch(`${t.origin}/api/ab?root=${t.idOf(t.keep)}`)).json()) as Record<string, unknown>;
+      expect(st).toMatchObject({ connected: false, error: 'the agent bus is unreachable', endpoint: '/nonexistent/bus.sock', source: 'space', agents: [] });
       await writeFile(t.prefsPath, JSON.stringify({ ...disk(t.prefsPath), agentBusSpaces: { [t.keep]: { endpoint: 'http://u:p@h' } } }));
       t.prefs.refresh();
       const bad = await t.send(t.keep, 'a.md');

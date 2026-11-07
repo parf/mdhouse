@@ -14,7 +14,7 @@ import { ProjectDirError, Registry, ReadOnlyError, type AccessMode, type Resolve
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
-import { Prefs, MARKS, type Mark } from './lib/prefs';
+import { Prefs, MARKS, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
 import { gitStateIn, parseReveal, Store } from './lib/store';
 import { isExplicitlyDenied } from './lib/ignore';
 import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
@@ -34,7 +34,7 @@ import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, type Ac
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
-import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, validTarget, type AbAction } from './lib/agent-bus';
+import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
@@ -207,10 +207,8 @@ export async function serve(opts: ServeOptions) {
     return { ...prefs.settings, autoRwPaths: prefs.autoRw };
   };
   /** The Agent Bus integration — on and off from the CLI (`--agent-bus`); its events go to every tab. */
-  const bus = new AgentBus(
-    () => ({ addr: prefs.agentBus.socket || defaultSocket(), token: prefs.agentBus.token }),
-    (ev) => server.publish('ab', JSON.stringify({ t: 'ab', ...ev })),
-  );
+  const instanceBus = (): Endpoint => ({ addr: prefs.agentBus.socket || defaultSocket(), token: prefs.agentBus.token });
+  const bus = new AgentBus(instanceBus, (ev) => server.publish('ab', JSON.stringify({ t: 'ab', ...ev })));
   /**
    * Writes to documents in flight, per file, so they apply one after another — two quick clicks
    * (a tick and an answer, or two ticks) each run against the file the previous one left.
@@ -389,6 +387,33 @@ export async function serve(opts: ServeOptions) {
    */
   const sessionNames = new Map<string, string>();
   const customName = (path: string): string | undefined => (prefs.isSaved(path) ? prefs.savedName(path) : sessionNames.get(path));
+  /**
+   * An unsaved project's own Agent Bus settings, in memory until it is saved — then they move to
+   * prefs — or removed, or mdhouse stops. Never a credential: one is provisioned in prefs only.
+   */
+  const sessionAb = new Map<string, { endpoint: string | null; default: string[] | null }>();
+  /** A project's own Agent Bus settings as a page may know them: a saved one's from prefs, an unsaved one's from memory. */
+  const abPublicOf = (r: Root): SpaceAbPublic => {
+    if (prefs.isSaved(r.path)) return publicSpaceAb(prefs.spaceAb(r.path));
+    const s = sessionAb.get(r.path);
+    return { endpoint: s?.endpoint ?? null, default: s?.default ?? null, hasCredential: false, malformed: false };
+  };
+  const AB_UNREADABLE = 'Agent Bus settings for this project are unreadable';
+  /**
+   * The bus a project's documents go to: its own endpoint with its own credential (none: no
+   * credential), else the instance's. Unreadable settings are an error — never the instance in its place.
+   */
+  const busOf = (r: Root): { ep: Endpoint; source: 'space' | 'instance' } | { error: string } => {
+    if (prefs.isSaved(r.path)) {
+      const ab = prefs.spaceAb(r.path);
+      if (ab === null) return { error: AB_UNREADABLE };
+      if (ab.endpoint) return { ep: { addr: ab.endpoint, token: ab.credential ?? '' }, source: 'space' };
+    } else {
+      const s = sessionAb.get(r.path);
+      if (s?.endpoint) return { ep: { addr: s.endpoint, token: '' }, source: 'space' };
+    }
+    return { ep: instanceBus(), source: 'instance' };
+  };
   /** Open tabs learn that root metadata changed; they read it again from `/api/roots`. */
   const publishRoots = () => server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
   /**
@@ -421,13 +446,32 @@ export async function serve(opts: ServeOptions) {
    * A staleness check, not authority. `policy` is prefs as read now — memory, or the locked file.
    */
   const saveRevOf = (r: Root, policy: PolicyView): string =>
-    sha256({ id: r.id, path: r.path, kind: r.kind ?? 'project', ...accessOf(r, policy), saved: policy.saved, name: sessionNames.get(r.path) ?? null });
+    sha256({ id: r.id, path: r.path, kind: r.kind ?? 'project', ...accessOf(r, policy), saved: policy.saved, name: sessionNames.get(r.path) ?? null, ab: sessionAb.get(r.path) ?? null });
   /**
    * What an administrator confirms when setting a project's mode: full SHA-256 over its identity,
    * mode, stored mode, effective access and saved state — never its name. A staleness check, not authority.
    */
   const accessRevOf = (r: Root, policy: PolicyView): string =>
     sha256({ id: r.id, path: r.path, kind: r.kind ?? 'project', ...accessOf(r, policy), stored: policy.stored, saved: policy.saved });
+  /**
+   * What an administrator confirms when setting a project's Agent Bus: full SHA-256 over its identity,
+   * saved state and public settings — never a credential, only whether there is one. A staleness check.
+   */
+  const abRevOf = (r: Root, saved: boolean, ab: SpaceAbPublic): string => sha256({ id: r.id, path: r.path, saved, ...ab });
+  /** The Agent Bus settings a page edits: the instance's and every project's — read from memory and prefs, never the bus. */
+  const abConfig = () => {
+    prefs.refresh();
+    const ab = prefs.agentBus;
+    const roots: Record<string, { endpoint?: string; hasCredential: boolean; default?: string[]; rev: string; error?: string }> = {};
+    for (const r of registry.projects()) {
+      const own = abPublicOf(r);
+      const rev = abRevOf(r, prefs.isSaved(r.path), own);
+      roots[r.id] = own.malformed
+        ? { hasCredential: false, rev, error: AB_UNREADABLE }
+        : { ...(own.endpoint ? { endpoint: own.endpoint } : {}), hasCredential: own.hasCredential, ...(own.default ? { default: own.default } : {}), rev };
+    }
+    return { enabled: ab.enabled, instance: { endpoint: ab.socket || defaultSocket(), hasCredential: !!ab.token, default: ab.default, filter: ab.filter }, roots };
+  };
   const memoryPolicy = (path: string): PolicyView => {
     prefs.refresh();
     return { saved: prefs.isSaved(path), auto: prefs.autoRwCovers(path), stored: prefs.savedMode(path) ?? null };
@@ -814,14 +858,26 @@ export async function serve(opts: ServeOptions) {
       },
 
       /** The Agent Bus integration: on or off, connected or why not, the agents and the default ones. */
-      '/api/ab': read(async () => {
+      '/api/ab': read(async (req) => {
         const ab = prefs.agentBus;
+        const id = new URL(req.url).searchParams.get('root');
+        const root = id === null ? null : registry.get(id);
+        if (id !== null && (!root || root.kind === 'reference')) return fail(404, 'unknown root');
         if (!ab.enabled) return json({ enabled: false });
-        const st = await bus.status();
+        // `?root=`: the bus that project's documents go to
+        const where = root ? busOf(root) : { ep: instanceBus(), source: 'instance' as const };
+        const spaceDefault = root ? abPublicOf(root).default : null;
+        const head = { enabled: true, me: bus.me, socket: ab.socket || defaultSocket(), default: ab.default, filter: ab.filter, ...(spaceDefault ? { spaceDefault } : {}) };
+        if ('error' in where) return json({ ...head, connected: false, error: where.error, endpoint: null, source: 'space', agents: [] });
+        const st = await bus.status(where.ep);
         // the filter narrows the lists; a default agent stays, whatever its name
-        const agents = (st.connected ? await bus.agents().catch(() => []) : []).filter((a) => passes(a.name, ab.filter) || ab.default.includes(a.name));
-        return json({ enabled: true, me: bus.me, socket: ab.socket || defaultSocket(), ...st, default: ab.default, filter: ab.filter, agents });
+        const keep = (name: string) => passes(name, ab.filter) || ab.default.includes(name) || !!spaceDefault?.includes(name);
+        const agents = (st.connected ? await bus.agents(where.ep).catch(() => []) : []).filter((a) => keep(a.name));
+        return json({ ...head, ...st, endpoint: where.ep.addr, source: where.source, agents });
       }),
+
+      /** The Agent Bus settings a page edits — read from memory and prefs; never connects. */
+      '/api/ab/config': read(() => json(abConfig())),
 
       /** The settings page's default agents — asked by a page that names none. */
       '/api/ab/default': {
@@ -878,11 +934,14 @@ export async function serve(opts: ServeOptions) {
           // An agent acts on the file itself, past every write check here.
           if (registry.inReference(loc.abs)) return fail(403, `${loc.rel} is mdhouse reference material — not sent to agents`);
           const url = new URL(registry.docUrl(loc.root, loc.rel), req.url).href;
+          // the document's project picks the bus; a project bus that fails is an error, never the instance's
+          const where = busOf(loc.root);
+          if ('error' in where) return fail(503, where.error);
           try {
-            const job = await bus.ask([...new Set(targets as string[])], requestText(body.action as AbAction, loc.abs, url, note));
+            const job = await bus.ask([...new Set(targets as string[])], requestText(body.action as AbAction, loc.abs, url, note), where.ep);
             return json({ job });
           } catch (err) {
-            return fail(503, (err as Error).message);
+            return fail(503, safeError(err));
           }
         }),
       },
@@ -1062,16 +1121,85 @@ export async function serve(opts: ServeOptions) {
             const stale = () => json({ error: 'the project changed since it was shown — look again', reason: 'stale' }, 409);
             if (saveRevOf(root, memoryPolicy(root.path)) !== rev) return stale();
             const name = sessionNames.get(root.path) ?? null;
+            const ab = sessionAb.get(root.path) ?? { endpoint: null, default: null };
             // The file as it is under the lock: an auto-rw change or a save by another process since
             // the check above refuses here. So does an administrator signed out meanwhile.
-            const refused = await prefs.saveRoot(root.path, { mode: root.mode ?? 'inherit', name }, (fresh) =>
+            const refused = await prefs.saveRoot(root.path, { mode: root.mode ?? 'inherit', name, ab }, (fresh) =>
               !actorOf(req).admin ? 'admin' : saveRevOf(root, fresh) !== rev ? 'stale' : null,
             );
             if (refused === 'admin') return adminRequired();
             if (refused !== null) return stale();
             sessionNames.delete(root.path);
+            sessionAb.delete(root.path);
             publishRoots();
             return json({ roots: rootsPayload() });
+          });
+        }),
+      },
+
+      /**
+       * The settings page's project Agent Bus: `{id, endpoint, default, rev}` only. `endpoint` is a socket
+       * path or an `http(s)://` address with nothing secret in it; `''` uses the instance's. `default`
+       * names agents; `[]` uses the instance's. `rev` is the project's `rev` from `/api/ab/config`. A
+       * saved project's settings go to prefs — a changed or cleared endpoint drops its credential — an
+       * unsaved one's stay in memory until it is saved. No credential is ever taken here. Never
+       * connects. Stale is 409, and nothing changes on any refusal or failure.
+       */
+      '/api/roots/ab': {
+        POST: mutation('root-admin', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort() : [];
+          const { id, endpoint, default: names, rev } = (body ?? {}) as { id?: unknown; endpoint?: unknown; default?: unknown; rev?: unknown };
+          if (
+            keys.join() !== 'default,endpoint,id,rev' ||
+            typeof id !== 'string' ||
+            !id ||
+            typeof endpoint !== 'string' ||
+            (endpoint !== '' && !validEndpoint(endpoint)) ||
+            !Array.isArray(names) ||
+            names.length > SPACE_DEFAULT_MAX ||
+            !names.every(validTarget) ||
+            typeof rev !== 'string' ||
+            !/^[0-9a-f]{64}$/.test(rev)
+          ) {
+            return fail(400, 'expected exactly {id, endpoint: a socket path, an http(s) address or empty, default: [bus name], rev}');
+          }
+          if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
+          const next = { endpoint: endpoint || null, default: names.length ? [...new Set(names as string[])] : null };
+          return rootOps(async () => {
+            if (!actorOf(req).admin) return adminRequired();
+            const root = registry.get(id);
+            if (!root) return fail(404, 'unknown root');
+            if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it has no Agent Bus of its own`);
+            const stale = () => json({ error: 'the project changed since it was shown — look again', reason: 'stale' }, 409);
+            const saved = prefs.isSaved(root.path);
+            if (abRevOf(root, saved, abPublicOf(root)) !== rev) return stale();
+            // The file as it is under the lock: a change by another process since the check above — the
+            // settings, a save or an unsave — refuses here. So does an administrator signed out meanwhile.
+            const guard = (fresh: PolicyView, ab: SpaceAbPublic) =>
+              !actorOf(req).admin ? 'admin' : fresh.saved !== saved || (saved && abRevOf(root, true, ab) !== rev) ? 'stale' : null;
+            let refused: string | null;
+            try {
+              refused = saved ? await prefs.commitSpaceAb(root.path, next, guard) : await prefs.check(root.path, guard);
+            } catch (err) {
+              const blocked = prefs.accessBlocked();
+              if (!blocked) console.error(err);
+              return fail(500, blocked ? `prefs.json is ${blocked} — not changed` : 'prefs.json could not be written — not changed');
+            }
+            if (refused === 'admin') return adminRequired();
+            if (refused !== null) return stale();
+            if (!saved) {
+              // No await from here on: these checks still hold when the settings land in memory.
+              if (!actorOf(req).admin) return adminRequired();
+              const blocked = prefs.accessBlocked();
+              if (blocked) return fail(500, `prefs.json is ${blocked} — not changed`);
+              if (memoryPolicy(root.path).saved) return stale();
+              if (next.endpoint || next.default) sessionAb.set(root.path, next);
+              else sessionAb.delete(root.path);
+            }
+            publishRoots();
+            return json(abConfig());
           });
         }),
       },
@@ -1657,6 +1785,10 @@ export async function serve(opts: ServeOptions) {
         const session = sessionNames.get(root.path);
         if (session !== undefined) await prefs.setSavedName(root.path, session);
         sessionNames.delete(root.path);
+        // so does its Agent Bus
+        const ab = sessionAb.get(root.path);
+        if (ab) await prefs.commitSpaceAb(root.path, ab, () => null);
+        sessionAb.delete(root.path);
       }
       if (name !== undefined) await setRootNameNow(root.path, name);
     }
@@ -1690,11 +1822,19 @@ export async function serve(opts: ServeOptions) {
     if (reference) throw new Error(`${reference.path} is mdhouse reference material — it cannot be removed`);
     for (const abs of paths) {
       const name = prefs.savedName(abs);
+      const ab = prefs.isSaved(abs) ? prefs.spaceAb(abs) : null;
       const unsaved = await prefs.removeSaved(abs);
       const root = registry.list().find((r) => r.path === abs);
-      // Still served (the last project) but no longer saved: its name lives on in memory.
+      // Still served (the last project) but no longer saved: its name and Agent Bus settings live on
+      // in memory — a credential does not.
       if (root && name !== undefined && registry.projects().length === 1) sessionNames.set(root.path, name);
-      if (root && registry.projects().length > 1) sessionNames.delete(root.path);
+      if (root && registry.projects().length === 1 && (ab?.endpoint || ab?.default?.length)) {
+        sessionAb.set(root.path, { endpoint: ab.endpoint ?? null, default: ab.default?.length ? ab.default : null });
+      }
+      if (root && registry.projects().length > 1) {
+        sessionNames.delete(root.path);
+        sessionAb.delete(root.path);
+      }
       if (!root) {
         results.push({ path: abs, unsaved, removed: false });
         continue;

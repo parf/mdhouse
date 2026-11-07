@@ -21,6 +21,8 @@ test('doc/prefs.json.dist, comments and all, loads as a config', async () => {
     expect(prefs.accessBlocked()).toBeNull();
     expect([prefs.savedMode('/home/you/src/project'), prefs.autoRwCovers('/home/you/src/project')]).toEqual(['ro', true]);
     expect(prefs.agentBus).toEqual({ enabled: false, socket: '', token: '', default: [], filter: ['^claude', '^codex', '^opencode'] });
+    expect(prefs.spaceAb('/home/you/src/project')).toEqual({ endpoint: 'http://127.0.0.1:6767', credential: '…', default: ['#claude/project@host'] });
+    expect(prefs.spaceAb('/home/you/notes')).toEqual({});
     expect(prefs.get('/home/you/notes').favorite).toEqual(['inbox.md', 'plans/']);
   } finally {
     await rm(dir, { recursive: true, force: true });
