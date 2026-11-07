@@ -1767,7 +1767,7 @@ remains open and implementation deferred. No new owner decision or provisioning 
 
 ## Access badge presentation cohort — 2026-11-07 {#access-badge-presentation}
 
-- [ ] MW.12.1 Apply Workspace default/exception presentation to existing surfaces
+- [x] MW.12.1 Apply Workspace default/exception presentation to existing surfaces
   Base `e4ce7310747d9a2485ebdb6926292b8f940bf85d`, target `main`; owner CTO, author W2.
   Owner [№BADGE-W1](workspaces/DECISIONS.md#BADGE-W1) and [№MW.12](workspaces/TODO.md#MW.12).
   Scope before edits: `.scratch/worktrees/r3-mode-badges-ui`, branch `r3/mode-badges-ui`;
@@ -1804,3 +1804,18 @@ indicator when the sidebar is off. Extend [№MW.12.1](workspaces/TODO.md#MW.12.
 W2 follow-up owns `src/app.tsx` plus the existing badge CSS selector, reusing the same live-root helper.
 Show effective RO in this replacement header too, hide RW, reference/missing neutral. No new policy/control.
 Preserve original author `bbdb15f`; targeted topstrip light/dark/narrow/live proof only, do not repeat unchanged tests/native.
+
+
+## Workspace badge presentation accepted — 2026-11-07
+
+[№MW.12.1](workspaces/TODO.md#MW.12.1) done: final author source `75b576a0550c5aa6343a933c9c2790a24f4a5b44`
+(original `bbdb15f` preserved), integrated source checkpoint `71e51636fb5acc1889454fbc4e62e59aa71d3620`.
+Exact source identity verified; CTO nonauthor review PASS for UI-only delta. One focused helper run (3 pass),
+real-backend header/list/control native plus targeted replacement-header proof; light/dark/narrow and live RO↔RW.
+Normal RW decorative badges hidden, effective RO highlighted, controls discoverable/muted defaults;
+reference/saved status neutral, unsaved and configured override distinct. No policy or authority code changed.
+[Evidence](QA.md#access-badge-presentation). Parent [№MW.12](workspaces/TODO.md#MW.12) and
+[№MW.12.2](workspaces/TODO.md#MW.12.2) remain open pending authoritative Viewer mode/cap metadata.
+Owner UX Golden Set and later Danger zone/expandable-options clarification preserved as future UX reference;
+no unrelated Settings rewrite, brand restyle or confirmation removal. No full/types mechanical repeat.
+No live reload/service/session/provider/ACL/push/publish/deploy/version action.

@@ -790,3 +790,42 @@ remain exact-lock dependencies. Physical iOS/Android keyboards and real IMEs not
 Mixed/bare-CR endings explicitly unsupported; paste follows the file's existing separator (not a native paste case).
 No custom editor/serializer/merge engine, authority expansion, new Git operation or live action.
 RAG implementation and live Cron/At jobs remain deferred; no provider/ACL/push/publish/deploy/release action.
+
+
+## Access badge presentation — Workspace checkpoint {#access-badge-presentation}
+
+[№MW.12.1](workspaces/TODO.md#MW.12.1), base `e4ce7310747d9a2485ebdb6926292b8f940bf85d`;
+W2 original `bbdb15fb05d1288cf2876181dbd464bfaebbb9d8`, follow-up
+`75b576a0550c5aa6343a933c9c2790a24f4a5b44`, integrated source `71e51636fb5acc1889454fbc4e62e59aa71d3620`.
+Owner plan/UX reference commits preserved. Source/test/package/lock identity equals final author;
+backend/lib/CLI/API/live-access helpers/Home unchanged from base. No new fields, mode or permission.
+
+- CTO exact-source nonauthor UI review PASS: pure accessBadge reads existing live effective writable,
+  hides RW, shows RO for explicit/inherited/capped projects; missing/nonboolean/reference makes no claim.
+  Sidebar header and sidebar-off topstrip reuse this helper. Settings chooser shows RO, never decorative RW;
+  actionable mode control behavior/disabled/admin checks unchanged. Default RW muted, RO/unsaved highlighted;
+  reference read-only/kept neutral, ordinary saved persistence muted, configured AB value accent only.
+- One author focused run `bun test test/access-badge.test.ts`: 3 pass / 9 expectations, reported in author
+  handoff `d170473a1c209583`. Cases cover explicit/auto RW, explicit/inherited/capped RO, missing/unstated/reference.
+  Reused on source-identical cohort; no duplicate run, full suite or types for presentation-only changes.
+- Native real-backend safe-smoke, real CLI PTY admin, source unchanged when committed. Artifacts under
+  `/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`:
+  `badge-native-run2.log`, script `badge-native.ts`, screenshots `badge-native/`. Explicit RW, inherited auto-RW,
+  inherited RO, saved RO, immutable reference verified. No RW list badges; RO only on actual RO projects;
+  [RW] control visible/muted, [RO] visible/warn, unsaved warn, saved/reference muted. Header RW absent/RO warn.
+  Real Settings toggle RO→RW→RO: two confirms, two mode POST200, list and open doc header update live.
+  First `badge-native-run1.log` retained: harness regex /ro/ matched `project-ab`; actual default colors were muted.
+- Audit found sidebar-off topstrip lacked the RO status. Follow-up scope recorded before edits; no PageHead/layout rewrite.
+  `badge-topstrip-run1.log` targeted native PASS on first run; script `badge-topstrip.ts`, `badge-topstrip/` screenshots.
+  Real Ctrl+B: sidebar absent/topstrip visible; RW/reference no badge, RO warn within strip at desktop and 390px light/dark;
+  live two-way real toggle confirmed with sidebar still off. Unchanged helper/full native not repeated.
+  CTO viewed `badge-native/settings-light.png`, `badge-native/header-ro-dark.png` and
+  `badge-topstrip/strip-ro-390-dark.png`. Own scratch cleanup completed.
+
+Configured AB accent was source/CSS reviewed, not exercised in the native fixture (AB off).
+At 390px existing sidebar overlay covers most Settings; row tags remain visible, layout was not changed.
+[№MW.12.2](workspaces/TODO.md#MW.12.2) remains blocked on real authoritative Viewer metadata;
+no synthetic appBaseline or dormant production Viewer branch. Configured/effective distinction is unchanged.
+Parent [№MW.12](workspaces/TODO.md#MW.12) stays open; this is an accepted Workspace presentation checkpoint.
+[UX reference](../UX.md) retained without inferring permission to restyle brand/remove access/security confirms.
+No live reload/service/session/provider/ACL/push/publish/deploy/version action.
