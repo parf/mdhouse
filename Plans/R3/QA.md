@@ -376,7 +376,7 @@ Nine roots/path/RW preserved, no build/provider call/version bump. Parent add/na
 admin gates remain open until their own complete acceptance; only this scoped checkpoint closes.
 
 
-## Local Personal administrator wiring — candidate {#local-personal-admin-wiring}
+## Local Personal administrator wiring — integrated {#local-personal-admin-wiring}
 
 [№MW.0g.2b](workspaces/TODO.md#MW.0g.2b), candidate `101fe1865ef6104ac393872497859bfcd48f2177`.
 W1 author `e897a53`, W2 author `9f4e2b6`; combined without conflicts. CTO malformed metadata fixture
@@ -386,6 +386,21 @@ Complete output and original exits: `.scratch/worktrees/r3-admin-local-cohort/.s
 W1 retained initial seven expected failures in `.scratch/worktrees/r3-admin-local-backend/.scratch/first-run.log`;
 these were missing-session/inventory assertions updated for the intended boundary, not silently rerun flakes.
 W2 author browser checks used mocked admin routes; these do not establish real-backend acceptance.
-Native combined browser proof and pinned independent review remain pending. Main is not yet integrated.
+Native combined proof PASS on `4af60fd`: actual CLI PTY link, first API request exchange before app APIs,
+clean URL, admin state and protected setting save; CLI revoke then 401 preserves the scheme draft;
+replay 403, malformed fragment without exchange, logout/direct denied POST, same-page link sign-in.
+Local fake-bus fixture verifies default/filter save with admin, disabled without admin and stale refusal
+without losing the filter draft. Only register/token/consume/list reached the fake socket; no external send.
+Light/dark/390px screenshots inspected; safe-smoke captured groups stopped cleanly.
+Artifacts: `/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/accept.log`,
+`accept.ts` and `accept/*.png`. Earlier harness issues (non-TTY script invocation and ambiguous input
+selector) were corrected in the scratch harness; no source fix or hidden test retry into a pass.
+Independent nonauthor CEO PASS on exact `4af60fd8af140df04bb2bfbade10bc249ed32807`, base `5273ebe`;
+allowed admin-session/admin-wiring/admin-entry tests 62/0, original exit 0, complete logs/verdict in
+`.scratch/worktrees/r3-admin-local-ceo-review/.scratch/ceo-security-review/`.
+Fast-forward integration into main preserves exact reviewed HEAD and tested source/test/doc/script identity.
 Proof/session primitive expiry uses deterministic unit checks; HTTP proof-expiry e2e is not yet exercised.
+Successful root removal is covered by server tests; native browser fixture had one project and correctly
+kept the last-project remove control disabled. Browser Host/cross-origin/non-loopback negatives are
+covered at backend level. Cross-browser/real-device checks remain release QA.
 Team/OAuth, remote bootstrap, new project properties and marks policy remain outside this accepted scope.

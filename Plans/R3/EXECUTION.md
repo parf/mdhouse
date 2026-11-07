@@ -1150,7 +1150,7 @@ not blocked by RAG/OAuth and not falsely marked complete. Workers completed thei
 
 ## Personal local administrator wiring cohort — selected 2026-11-06 {#personal-local-admin-wiring}
 
-- [ ] MW.0g.2b Local Personal bootstrap and existing administrator web boundaries
+- [x] MW.0g.2b Local Personal bootstrap and existing administrator web boundaries
   Parent [№MW.0g](workspaces/TODO.md#MW.0g) remains open; contract [№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1).
   Base: `5273ebee4abf1f865b731dd6fc51e9fd1c090bef` on `main`; integration target `main`.
   Product outcome: the OS owner establishes/revokes a browser administrator session without GitHub onboarding;
@@ -1202,3 +1202,21 @@ contract interpretation (`r3-admin/assigned-20261106`): explicit owner CLI recov
 service startup output. W1 may implement delivery and `doc/cli.md`; positive actual PTY and negative
 redirected/non-TTY checks must prove no secret in refusal, argv or files. Pinned review includes delivery.
 Protected POST denial seam is `401 {error, reason: 'admin'}`; exchange failure is generic 403, success 204.
+
+
+## Local Personal administrator wiring accepted — 2026-11-06
+
+[№MW.0g.2b](workspaces/TODO.md#MW.0g.2b) done: fast-forward integrated exact
+`4af60fd8af140df04bb2bfbade10bc249ed32807` into `main`, source/test/doc/script identity unchanged.
+W1 author `e897a53`, W2 author `9f4e2b6`; CTO type-only fixture `a451b27` and owning documentation included.
+Combined 223/0 focused gate + types exit 0; W2 real-backend Chromium light/dark/390px, actual PTY CLI,
+revocation/stale-draft, replay/logout and fake-local-bus default/filter acceptance PASS with clean teardown.
+Independent nonauthor CEO security PASS binds exact integrated SHA; three allowed test paths 62/0,
+original exit 0 and full verdict/logs in `.scratch/worktrees/r3-admin-local-ceo-review/.scratch/ceo-security-review/`.
+OpenCode fallback was required by observed screen `Usage limit reached for 5 hour`, reset shown as
+`2026-11-07 10:12:12` (timezone unspecified), superseding its earlier capacity estimate. Its assignment was
+stopped before CEO review; no duplicate run or session restart. [QA evidence/gaps](QA.md#local-personal-admin-wiring).
+Parent [№MW.0g](workspaces/TODO.md#MW.0g) stays open. Next dependent scope is explicit project-property
+editing atop this boundary; Team/OAuth, remote/headless bootstrap, other mutation-family activation,
+mode migration and [№Q-R3-ADMIN1](workspaces/QUESTIONS.md#Q-R3-ADMIN1) remain separate.
+No live reload, push, publish, deployment, version bump, provider/ACL changes or full-suite rerun.
