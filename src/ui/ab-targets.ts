@@ -53,3 +53,9 @@ export function spaceSummary(space: { endpoint?: string; default?: string[] } | 
   if (!space) return '';
   return [space.endpoint ?? '', (space.default ?? []).join(' ')].filter(Boolean).join(' · ');
 }
+
+/**
+ * A draft after the stored value changed from `before` to `after`: another project takes the stored value,
+ * an untouched draft follows it, a typed one stays as typed.
+ */
+export const syncDraft = (draft: string, before: string, after: string, switched: boolean): string => (switched || draft === before ? after : draft);

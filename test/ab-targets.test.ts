@@ -63,3 +63,18 @@ describe('Settings helpers', () => {
     expect(spaceSummary({ endpoint: 'http://h:1', default: ['#a'] })).toBe('http://h:1 · #a');
   });
 });
+
+describe('syncDraft', () => {
+  test('an untouched draft follows the stored value', async () => {
+    const { syncDraft } = await import('../src/ui/ab-targets');
+    expect(syncDraft('http://a', 'http://a', 'http://b', false)).toBe('http://b');
+  });
+  test('a typed draft stays when another tab changes the stored value', async () => {
+    const { syncDraft } = await import('../src/ui/ab-targets');
+    expect(syncDraft('http://typed', 'http://a', 'http://b', false)).toBe('http://typed');
+  });
+  test('another project takes its own stored value', async () => {
+    const { syncDraft } = await import('../src/ui/ab-targets');
+    expect(syncDraft('http://typed', 'http://a', 'http://other', true)).toBe('http://other');
+  });
+});

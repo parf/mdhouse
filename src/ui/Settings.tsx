@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbConfig, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
-import { spaceSummary, splitNames } from './ab-targets';
+import { spaceSummary, splitNames, syncDraft } from './ab-targets';
 import { ADD_PATH_MAX, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
@@ -246,14 +246,19 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   // The stored Agent Bus settings: read without reaching any bus, again whenever the roots change.
   const [abConfig, setAbConfig] = useState<AbConfig | null>(null);
   const [abLoadError, setAbLoadError] = useState('');
-  const loadAb = () =>
-    api.abConfig().then(
+  // A newer read, or a save's answer, supersedes an older read still on its way.
+  const abSeq = useRef(0);
+  const loadAb = () => {
+    const seq = ++abSeq.current;
+    return api.abConfig().then(
       (c) => {
+        if (seq !== abSeq.current) return;
         setAbConfig(c);
         setAbLoadError('');
       },
-      (err: Error) => setAbLoadError(err.message),
+      (err: Error) => seq === abSeq.current && setAbLoadError(err.message),
     );
+  };
   useEffect(() => void loadAb(), [roots]);
   const space = project ? abConfig?.roots[project.id] : undefined;
   // The project's own endpoint and default agents as typed; a refusal keeps them.
@@ -263,9 +268,14 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   const [abError, setAbError] = useState('');
   const storedEndpoint = space?.endpoint ?? '';
   const storedNames = (space?.default ?? []).join(' ');
+  // New stored values move an untouched draft along and leave a typed one as it is; another project starts afresh.
+  const abBase = useRef({ id: '', endpoint: '', names: '' });
   useEffect(() => {
-    setEndpointDraft(storedEndpoint);
-    setNamesDraft(storedNames);
+    const base = abBase.current;
+    const switched = base.id !== (project?.id ?? '');
+    setEndpointDraft((d) => syncDraft(d, base.endpoint, storedEndpoint, switched));
+    setNamesDraft((d) => syncDraft(d, base.names, storedNames, switched));
+    abBase.current = { id: project?.id ?? '', endpoint: storedEndpoint, names: storedNames };
   }, [project?.id, storedEndpoint, storedNames]);
   useEffect(() => {
     setAbOpen(false);
@@ -283,11 +293,12 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     setBusy(project.id);
     setAbError('');
     try {
-      setAbConfig(await api.setRootAb(project.id, endpoint, names, space.rev));
-      if (clear) {
-        setEndpointDraft('');
-        setNamesDraft('');
-      }
+      const got = await api.setRootAb(project.id, endpoint, names, space.rev);
+      ++abSeq.current;
+      setAbConfig(got);
+      // Saved: the drafts are what is stored now.
+      setEndpointDraft(got.roots[project.id]?.endpoint ?? '');
+      setNamesDraft((got.roots[project.id]?.default ?? []).join(' '));
       onChanged();
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && err.reason === 'stale') {
