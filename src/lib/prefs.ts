@@ -22,6 +22,7 @@ import { mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/
 import { readFileSync, realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DEFAULT_EDIT_SCHEME, normalizeEditScheme } from './urls';
+import { normalizeProjectName } from './project-name';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -40,6 +41,8 @@ interface PrefsFile {
   roots: Record<string, RootPrefs>;
   /** Absolute, symlink-resolved directories served on every start. */
   saved: string[];
+  /** Saved directory -> its human name. Only a saved directory keeps one; an unsaved root's name lives in memory. */
+  names: Record<string, string>;
   /**
    * The saved directories mdhouse may write to — saved with `-p --rw`. Writability belongs to
    * the folder it was asked for, never to the process: starting with `--rw` for one folder does
@@ -143,6 +146,7 @@ const fresh = (): PrefsFile => ({
   version: 1,
   roots: {},
   saved: [],
+  names: {},
   writable: [],
   settings: { ...DEFAULT_SETTINGS },
   server: {},
@@ -179,6 +183,13 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   if (users && typeof users === 'object') {
     for (const [login, hash] of Object.entries(users)) if (typeof hash === 'string') access.users[login] = hash;
   }
+  const names: Record<string, string> = {};
+  if (parsed.names && typeof parsed.names === 'object') {
+    for (const [dir, name] of Object.entries(parsed.names)) {
+      const n = normalizeProjectName(name);
+      if (saved.includes(dir) && n.ok && n.name !== null && n.name === name) names[dir] = n.name;
+    }
+  }
   const roots: Record<string, RootPrefs> = {};
   if (parsed.roots && typeof parsed.roots === 'object') {
     for (const [path, entry] of Object.entries(parsed.roots)) {
@@ -195,6 +206,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     version: typeof parsed.version === 'number' && parsed.version > 1 ? parsed.version : 1,
     roots,
     saved,
+    names,
     writable,
     settings,
     server,
@@ -516,12 +528,33 @@ export class Prefs {
     });
   }
 
-  /** Forget a saved directory; true when it was saved. */
+  /** Forget a saved directory, and its name; true when it was saved. */
   removeSaved(dir: string): Promise<boolean> {
     return this.mutate((data) => {
       if (!data.saved.includes(dir)) return false;
       data.saved = data.saved.filter((d) => d !== dir);
       data.writable = data.writable.filter((d) => d !== dir);
+      delete data.names[dir];
+      return true;
+    });
+  }
+
+  /** The human name of a saved directory — also when asked through a symlink. */
+  savedName(dir: string): string | undefined {
+    const key = this.data.saved.find((d) => d === dir || real(d) === dir);
+    return key === undefined ? undefined : this.data.names[key];
+  }
+
+  /**
+   * Set (a normalized name) or clear (`null`) the human name of a saved directory. False, changing
+   * nothing, when the directory is not saved: an unsaved root's name is not kept here.
+   */
+  setSavedName(dir: string, name: string | null): Promise<boolean> {
+    return this.mutate((data) => {
+      const key = data.saved.find((d) => d === dir || real(d) === dir);
+      if (key === undefined) return false;
+      if (name === null) delete data.names[key];
+      else data.names[key] = name;
       return true;
     });
   }

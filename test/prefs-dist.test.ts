@@ -12,6 +12,7 @@ test('doc/prefs.json.dist, comments and all, loads as a config', async () => {
     const prefs = await Prefs.load(path);
     expect(prefs.savedDirs()).toEqual(['/home/you/notes', '/home/you/src/project']);
     expect(prefs.isWritableSaved('/home/you/notes')).toBe(true);
+    expect(prefs.savedName('/home/you/notes')).toBe('My Notes');
     expect(prefs.server).toEqual({ port: 7777, host: '127.0.0.1' });
     expect(prefs.access.allow).toEqual(['192.168.1.0/24']);
     expect(Object.keys(prefs.access.users)).toEqual(['ann']);

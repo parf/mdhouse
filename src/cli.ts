@@ -18,6 +18,7 @@ import { answered, askAdminList, askAdminMint, askAdminRevoke, askDaemon, askExi
 import { ownStopCommand, ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
+import { checkNameArgs } from './lib/project-name';
 
 const USAGE = `mdhouse — a Markdown workspace on your own machine
 
@@ -51,6 +52,8 @@ Options
       --agent-bus [on|off|<x.sock>|<http://host:port>]  the Agent Bus integration:
                        a page asks an AI session to read it and reply; saved. A remote
                        daemon asks for its token (or reads it from stdin)
+      --name <text>    a human name for the one project named (display only); with -p, saved;
+                       --name reset: the directory's own name again
   -o, --open           open a browser on start
   -a, --all            include gitignored .md files
                        with \`exit\`: stop every mdhouse, whatever its port
@@ -79,6 +82,8 @@ interface Options {
   fg: boolean;
   perm: boolean;
   rm: boolean;
+  /** `--name`: the human name asked for the one directory named, or null when not given. */
+  name: string | null;
   /** `--allow`: the networks to save, or null when not given. */
   allow: string[] | null;
   /** `--host-name`: the names to save, or null when not given. */
@@ -107,6 +112,7 @@ function parse(argv: string[]): Options {
     fg: false,
     perm: false,
     rm: false,
+    name: null,
     allow: null,
     hostNames: null,
     autoRw: null,
@@ -138,6 +144,7 @@ function parse(argv: string[]): Options {
       case '--rw': o.rw = true; break;
       case '-p': case '--perm': o.perm = true; break;
       case '--rm': o.rm = true; break;
+      case '--name': o.name = next(); break;
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       // the value is optional: only on / off / a .sock path is taken — anything else is a folder
       case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$|^https?:\/\//.test(argv[i + 1] ?? '') ? next() : 'on'; break;
@@ -259,6 +266,20 @@ const prefs = await Prefs.load();
     process.exit(2);
   }
 }
+
+/**
+ * `--name`, checked before anything is saved or started: one directory, no `--rm`, a valid name.
+ * `undefined` when not given, `null` to clear the name.
+ */
+const nameArg: string | null | undefined = (() => {
+  if (opts.name === null) return undefined;
+  const checked = command === 'serve' ? checkNameArgs(opts.name, opts.dirs, { rm: opts.rm }) : { ok: false as const, error: `--name is not an option of ${command}` };
+  if (!checked.ok) {
+    console.error(`mdhouse: ${checked.error}`);
+    process.exit(2);
+  }
+  return checked.name;
+})();
 
 /** `--port` for a hint, only when this command needed one to find the daemon. */
 const portHint = opts.portGiven ? ` --port ${opts.port}` : '';
@@ -588,7 +609,9 @@ if (!dirs.length && !saved.length) {
  * What a running mdhouse is asked for: the folders named, with `--rw` and `-p`; with none named,
  * the saved ones as they are — `--rw` and `-p` never apply to the saved list.
  */
-const request = dirs.length ? { dirs, rw: opts.rw, save: opts.perm } : { dirs: saved, rw: false, save: false };
+const request = dirs.length
+  ? { dirs, rw: opts.rw, save: opts.perm, ...(nameArg !== undefined ? { name: nameArg } : {}) }
+  : { dirs: saved, rw: false, save: false };
 
 /**
  * Hand these directories to the mdhouse already on the port and print what it now serves.
@@ -792,6 +815,8 @@ const { server, shutdown, control } = started;
 // `-p` is a promise that a directory comes back on every start, however the start was asked for.
 await saveServer();
 if (opts.perm) for (const dir of named) await prefs.addSaved(dir, opts.rw);
+// `--name` on a fresh start, once `-p` has saved: the name goes to prefs for a saved root, else memory.
+if (nameArg !== undefined) await started.setRootName(canonical(dirs[0]!), nameArg);
 
 const url = pageUrl(opts.host, server.port);
 console.log(`mdhouse  ${url}`);

@@ -63,6 +63,7 @@ asks for the password; on non-interactive stdin it reads the first line.
 | `-p`, `--perm` | Save the named projects and any explicit `--port` / `--host` for later starts. |
 | `--rw` | The named project directories may be written; with `-p`, save them as writable. |
 | `--rm` | Forget the named projects and stop serving them. With no directory, use the current directory. |
+| `--name <text>` | A human name for the one named project, shown instead of its directory name; display only. With `-p`, or on an already saved project, saved; otherwise kept until mdhouse stops, or saved with the project later. `reset` (or empty) restores the directory name. At most 80 characters, no control characters. |
 | `--host <addr>` | Address to bind; default `127.0.0.1`. |
 | `--port <n>` | Port to use; default `7777`. With `exit` or `admin`, select which mdhouse. |
 | `--allow <cidr,...>` | Allow only these networks and this machine; saved. `reset` allows every address again. |

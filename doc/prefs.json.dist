@@ -9,6 +9,9 @@
   "saved": ["/home/you/notes", "/home/you/src/project"],
   // The saved ones mdhouse may write to: `mdhouse -p --rw <dir>`
   "writable": ["/home/you/notes"],
+  // Human names of saved ones, display only: `mdhouse <dir> -p --name "My Notes"` or the settings page;
+  // `--name reset` or an empty name removes one. An unsaved project's name is not kept here
+  "names": { "/home/you/notes": "My Notes" },
 
   // Every folder served from under these is writable without --rw: `mdhouse --auto-rw ~/src`
   // (switched off and on by settings.autoRw, on the settings page)

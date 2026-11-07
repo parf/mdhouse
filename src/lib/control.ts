@@ -22,6 +22,11 @@ export interface AddRequest {
   rw?: boolean;
   /** Also save them, so they are served on every start — `-p` / `--perm`. */
   save?: boolean;
+  /**
+   * `--name`: the human name for the one directory asked for, `null` to clear it. Accepted only
+   * over a control transport private to the OS owner.
+   */
+  name?: string | null;
 }
 
 /** `mdhouse --rm <dir>`: forget these directories and stop serving them. */
@@ -213,8 +218,12 @@ export async function answered(port: number): Promise<PingReply | null> {
   return reply && !('error' in reply) ? reply : null;
 }
 
-/** Ask the daemon on `port` to serve these directories too. */
+/** Ask the daemon on `port` to serve these directories too. A name goes only over a private transport. */
 export async function askDaemon(port: number, req: AddRequest): Promise<AddReply | { error: string } | null> {
+  if (req.name !== undefined && existsSync(controlPath(port))) {
+    const why = controlInsecurity(port);
+    if (why) return { error: `control socket is not private: ${why}` };
+  }
   return call<AddReply>(port, '/add', req, SLOW_MS);
 }
 
@@ -297,6 +306,10 @@ export async function serveControl(port: number, handlers: Handlers): Promise<{ 
           const body = (await req.json().catch(() => null)) as AddRequest | null;
           if (!body || !Array.isArray(body.dirs)) {
             return Response.json({ error: 'expected {dirs: string[]}' }, { status: 400 });
+          }
+          if (pathname === '/add' && body.name !== undefined) {
+            const why = controlInsecurity(port);
+            if (why) return Response.json({ error: `control socket is not private: ${why}` }, { status: 403 });
           }
           try {
             return Response.json(await (pathname === '/add' ? handlers.add(body) : handlers.remove(body)));

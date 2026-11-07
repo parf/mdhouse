@@ -287,3 +287,107 @@ describe('the reference root (MW.0f.2)', () => {
     }
   });
 });
+
+describe('--name: a human name for one project, display only', () => {
+  type Root = { id: string; name: string; customName?: string; path: string; writable: boolean; saved: boolean };
+  const rootsAt = async (port: number) => ((await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()) as { roots: Root[] }).roots;
+
+  test('zero or several directories, --rm, a bad name or another command are refused before anything changes', () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const b = s.folder('b');
+    const cases: Array<[string[], string]> = [
+      [['--name', 'X', '--port', '61943'], 'exactly one directory; none was given'],
+      [[a, b, '--name', 'X', '--port', '61943'], 'exactly one directory; got 2'],
+      [[a, '-p', '--rm', '--name', 'X', '--port', '61943'], 'cannot be combined with --rm'],
+      [[a, '-p', '--name', 'a\tb', '--port', '61943'], 'control and text-direction'],
+      [[a, '-p', '--name', 'x'.repeat(81), '--port', '61943'], 'at most 80'],
+      [['exit', '--name', 'X', '--port', '61943'], '--name is not an option of exit'],
+      [[a, '-p', '--allow', '10.0.0.0/8', '--name', 'X', a, '--port', '61943'], 'exactly one directory; got 2'],
+    ];
+    for (const [args, error] of cases) {
+      const r = s.run(args);
+      expect(r.code).toBe(2);
+      expect(r.err).toContain(error);
+    }
+    expect(s.prefs()).toEqual({ saved: [], writable: [], server: {} }); // no prefs file was written
+  });
+
+  test('cold start with -p saves the name; a handoff resets it; the root stays read-only and unrenamed', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const started = s.run([a, '-p', '--name', 'All MDHouse Projects', '--port', '61944']);
+    try {
+      expect(started.code).toBe(0);
+      expect(s.prefs().names).toEqual({ [a]: 'All MDHouse Projects' });
+      expect((await rootsAt(61944))[0]).toMatchObject({ id: 'a', name: 'All MDHouse Projects', customName: 'All MDHouse Projects', path: a, writable: false, saved: true });
+
+      expect(s.run([a, '--name', 'reset', '--port', '61944']).code).toBe(0);
+      expect(s.prefs().names).toEqual({});
+      const reset = (await rootsAt(61944))[0]!;
+      expect([reset.id, reset.name, 'customName' in reset]).toEqual(['a', 'a', false]);
+    } finally {
+      s.run(['exit', '--port', '61944']);
+    }
+  });
+
+  test('--fg -p --name: the foreground daemon saves the name, and a restart keeps it', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const env = { ...process.env, XDG_CONFIG_HOME: s.cfg, MDHOUSE_PORT: '', MDHOUSE_HOST: '', MDHOUSE_SERVICE: '', MDHOUSE_DAEMON: '' };
+    const fg = async (args: string[]) => {
+      const p = Bun.spawn([process.execPath, CLI, ...args, '--port', '61946', '--fg'], { env, stdin: 'ignore', stdout: 'ignore', stderr: 'ignore' });
+      for (let i = 0; i < 100; i++) {
+        if (await fetch('http://127.0.0.1:61946/api/roots').then((r) => r.ok, () => false)) return p;
+        await Bun.sleep(50);
+      }
+      p.kill();
+      throw new Error('foreground mdhouse did not answer');
+    };
+    let p = await fg([a, '-p', '--name', 'Foreground Saved']);
+    try {
+      expect((await rootsAt(61946))[0]).toMatchObject({ name: 'Foreground Saved', customName: 'Foreground Saved', saved: true, writable: false });
+      expect(s.prefs().names).toEqual({ [a]: 'Foreground Saved' });
+    } finally {
+      p.kill();
+      await p.exited;
+    }
+    p = await fg([]);
+    try {
+      expect((await rootsAt(61946))[0]).toMatchObject({ path: a, name: 'Foreground Saved' });
+    } finally {
+      p.kill();
+      await p.exited;
+    }
+  });
+
+  test('without -p the name lives only as long as the daemon; a later -p carries it into prefs', async () => {
+    const s = scratch();
+    const a = s.folder('a');
+    const b = s.folder('b');
+    expect(s.run([a, '--name', 'Cold Session', '--port', '61945']).code).toBe(0);
+    try {
+      expect((await rootsAt(61945))[0]).toMatchObject({ name: 'Cold Session', saved: false, writable: false });
+      expect(s.prefs().names ?? {}).toEqual({});
+
+      expect(s.run([b, '--name', 'Handoff Session', '--port', '61945']).code).toBe(0);
+      expect((await rootsAt(61945)).find((r) => r.path === b)).toMatchObject({ name: 'Handoff Session', saved: false });
+      expect(s.prefs().names ?? {}).toEqual({});
+      expect(s.prefs().saved).toEqual([]);
+
+      expect(s.run([b, '-p', '--port', '61945']).code).toBe(0);
+      expect(s.prefs().names).toEqual({ [b]: 'Handoff Session' });
+    } finally {
+      s.run(['exit', '--port', '61945']);
+    }
+    // a fresh start serves the saved one by its saved name; the session name is gone with its daemon
+    expect(s.run([a, '--port', '61945']).code).toBe(0);
+    try {
+      const roots = await rootsAt(61945);
+      expect(roots.find((r) => r.path === a)!.name).toBe('a');
+      expect(roots.find((r) => r.path === b)!.name).toBe('Handoff Session');
+    } finally {
+      s.run(['exit', '--port', '61945']);
+    }
+  });
+});

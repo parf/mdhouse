@@ -25,6 +25,7 @@ import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, new
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
 import { Watcher } from './lib/watch';
+import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-name';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
 import { allowedAddress, ipBytes, isLoopback, Users } from './lib/access';
@@ -364,6 +365,37 @@ export async function serve(opts: ServeOptions) {
     return { ...admins.mintProof(), url };
   };
 
+  /**
+   * Human project names (display only). A saved root's name is in prefs; an unsaved root's lives
+   * here, in memory, until the root is saved — then it moves to prefs — or removed, or mdhouse stops.
+   */
+  const sessionNames = new Map<string, string>();
+  const customName = (path: string): string | undefined => (prefs.isSaved(path) ? prefs.savedName(path) : sessionNames.get(path));
+  /** Sets (`null`: clears) a root's name where its lifetime says, and tells open tabs unless `publish` is false. */
+  const setRootName = async (path: string, name: string | null, publish = true): Promise<void> => {
+    if (await prefs.setSavedName(path, name)) sessionNames.delete(path);
+    else if (name === null) sessionNames.delete(path);
+    else sessionNames.set(path, name);
+    if (publish) server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
+  };
+  /** The roots as the page sees them: `name` is the label to show, `customName` the override when set. */
+  const rootsPayload = () =>
+    registry.list().map((r) =>
+      labelled(
+        {
+          id: r.id,
+          name: r.name,
+          path: r.path,
+          kind: r.kind ?? 'project',
+          writable: r.writable,
+          // why it is writable: `--rw` asked for it, else an auto-rw path covers it
+          ...(r.writable ? { writableBy: r.rwAsked ? 'rw' : 'auto' } : {}),
+          saved: prefs.isSaved(r.path),
+        },
+        customName(r.path),
+      ),
+    );
+
   /** Every handler behind the host check, then the access check. */
   type Handler = (req: Request) => Response | Promise<Response>;
   const check = (h: Handler): Handler => async (req) =>
@@ -490,16 +522,7 @@ export async function serve(opts: ServeOptions) {
 
       '/api/roots': read(() =>
         json({
-          roots: registry.list().map((r) => ({
-            id: r.id,
-            name: r.name,
-            path: r.path,
-            kind: r.kind ?? 'project',
-            writable: r.writable,
-            // why it is writable: `--rw` asked for it, else an auto-rw path covers it
-            ...(r.writable ? { writableBy: r.rwAsked ? 'rw' : 'auto' } : {}),
-            saved: prefs.isSaved(r.path),
-          })),
+          roots: rootsPayload(),
           single: registry.single,
           // So the top bar can write paths under it as `~/…`.
           home: homedir(),
@@ -817,6 +840,24 @@ export async function serve(opts: ServeOptions) {
        * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
        * non-browser caller sends neither and is let through — it could edit prefs.json itself.
        */
+      /**
+       * The settings page's project name: `{id, name}` only; an empty name clears it. A saved
+       * project keeps it in prefs, an unsaved one in memory until it is saved. Display only:
+       * id, path, URLs, marks and access stay as they are.
+       */
+      '/api/roots/name': {
+        POST: mutation('root-admin', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const asked = parseNameRequest(await req.json().catch(() => null));
+          if (!asked.ok) return fail(400, asked.error);
+          const root = registry.get(asked.id);
+          if (!root) return fail(404, 'unknown root');
+          if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be renamed`);
+          await setRootName(root.path, asked.name);
+          return json({ roots: rootsPayload() });
+        }),
+      },
+
       '/api/roots/remove': {
         POST: mutation('root-admin', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
@@ -986,7 +1027,8 @@ export async function serve(opts: ServeOptions) {
         if (!root) return fail(404, 'unknown root');
         const reveal = parseReveal(url.searchParams.getAll('reveal'));
         if (typeof reveal === 'string') return fail(400, reveal);
-        return json(await store.tree(root, flag(url, 'ignored', opts.includeIgnoredDefault), reveal));
+        const tree = await store.tree(root, flag(url, 'ignored', opts.includeIgnoredDefault), reveal);
+        return json({ ...tree, root: labelled(tree.root, customName(root.path)) });
       }),
 
       /**
@@ -1314,7 +1356,13 @@ export async function serve(opts: ServeOptions) {
    * place, the open document 404s, and nothing says why. mdhouse already serves several roots
    * with a switcher, so the new directory simply joins them and the caller is told its URL.
    */
-  const addRoots = async (dirs: string[], writable: boolean, save = false): Promise<AddReply> => {
+  const addRoots = async (dirs: string[], writable: boolean, save = false, name?: string | null): Promise<AddReply> => {
+    if (name !== undefined) {
+      const n = name === null ? { ok: true as const, name: null } : normalizeProjectName(name);
+      if (!n.ok) throw new Error(n.error);
+      if (dirs.length !== 1) throw new Error('a name is for exactly one directory');
+      name = n.name;
+    }
     const asked = new Set<string>();
     const added = new Set<string>();
     const upgraded = new Set<string>();
@@ -1336,7 +1384,14 @@ export async function serve(opts: ServeOptions) {
         added.add(root.id);
       }
       asked.add(root.id);
-      if (save) await prefs.addSaved(root.path, writable);
+      if (save) {
+        await prefs.addSaved(root.path, writable);
+        // Saving keeps the name the session gave it.
+        const session = sessionNames.get(root.path);
+        if (session !== undefined) await prefs.setSavedName(root.path, session);
+        sessionNames.delete(root.path);
+      }
+      if (name !== undefined) await setRootName(root.path, name, false);
     }
 
     const roots = rootLines(added, asked).map((r) => (upgraded.has(r.id) ? { ...r, upgraded: true } : r));
@@ -1347,7 +1402,7 @@ export async function serve(opts: ServeOptions) {
 
   const rootLines = (added: Set<string> = new Set(), asked: Set<string> = new Set()): RootLine[] =>
     registry.list().map((r) => ({
-      ...r,
+      ...labelled(r, customName(r.path)),
       added: added.has(r.id),
       asked: asked.has(r.id),
       saved: prefs.isSaved(r.path),
@@ -1367,8 +1422,12 @@ export async function serve(opts: ServeOptions) {
     const reference = registry.list().find((r) => r.kind === 'reference' && paths.includes(r.path));
     if (reference) throw new Error(`${reference.path} is mdhouse reference material — it cannot be removed`);
     for (const abs of paths) {
+      const name = prefs.savedName(abs);
       const unsaved = await prefs.removeSaved(abs);
       const root = registry.list().find((r) => r.path === abs);
+      // Still served (the last project) but no longer saved: its name lives on in memory.
+      if (root && name !== undefined && registry.projects().length === 1) sessionNames.set(root.path, name);
+      if (root && registry.projects().length > 1) sessionNames.delete(root.path);
       if (!root) {
         results.push({ path: abs, unsaved, removed: false });
         continue;
@@ -1397,13 +1456,13 @@ export async function serve(opts: ServeOptions) {
   };
 
   const control = await serveControl(port, {
-    add: (req) => addRoots(req.dirs, req.rw === true, req.save === true),
+    add: (req) => addRoots(req.dirs, req.rw === true, req.save === true, req.name),
     remove: (req) => removeRoots(req.dirs),
     ping: () => ({
       pid: process.pid,
       url: pageUrl(hostname, server.port),
       roots: registry.list().map((r) => ({
-        name: r.name,
+        name: customName(r.path) ?? r.name,
         path: r.path,
         writable: r.writable,
         saved: prefs.isSaved(r.path),
@@ -1422,5 +1481,5 @@ export async function serve(opts: ServeOptions) {
     },
   });
 
-  return { server, store, watcher, control, shutdown, routes };
+  return { server, store, watcher, control, shutdown, routes, setRootName };
 }

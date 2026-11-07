@@ -126,6 +126,7 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/api/ab/filter', 'POST', 'instance-config'],
   ['/api/ab/send', 'POST', 'external-send'],
   ['/api/ab/job', '*', null],
+  ['/api/roots/name', 'POST', 'root-admin'],
   ['/api/roots/remove', 'POST', 'root-admin'],
   ['/api/git', '*', null],
   ['/api/git/commits', '*', null],
