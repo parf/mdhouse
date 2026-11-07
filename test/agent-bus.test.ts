@@ -211,7 +211,7 @@ describe('agent bus — the service, against a fake daemon', () => {
       expect(by('#claude/a@h')).toEqual(['sent', 'ack', 'answer: read it — all good']);
       expect(by('#claude/b@h')).toEqual(['sent', 'done']);
       // the daemon's JSON refusal, as its words
-      expect(by('#nobody@x')).toEqual(['error: no such receiver: #nobody@x (no such name)']);
+      expect(by('#nobody@x')).toEqual(['error: the agent bus does not know that name (HTTP 404)']);
       expect(by('#claude/c@h')).toEqual(['sent', 'timeout']);
       expect(bus.job(job)).toHaveLength(8);
       expect(bus.job('nope')).toBeNull();

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { api, liveListeners, type AbAction, type AbEvent, type AbInfo, type BusAgent, type LiveMessage } from './api';
+import { api, liveListeners, type AbAction, type AbEvent, type AbRootInfo, type BusAgent, type LiveMessage } from './api';
+import { resolveTargets, type TargetLevel } from './ab-targets';
 import { IconBus, IconX } from './icons';
 import { VoiceInputControls, useVoiceInput } from './VoiceInput';
 
@@ -28,6 +29,8 @@ interface Sent {
 interface Chat {
   sent: Sent[];
   events: AbEvent[];
+  /** Whom the reader chose in the panel for this document; absent: the document's, then the defaults. */
+  picked?: string[];
 }
 
 /** Each document's conversation: in memory for the tab, its last `KEEP` requests in localStorage. */
@@ -38,7 +41,10 @@ const storeKey = (p: string) => `mdhouse.ab.${p}`;
 function loadChat(p: string): Chat {
   try {
     const got = JSON.parse(localStorage.getItem(storeKey(p)) ?? 'null') as Chat | null;
-    if (Array.isArray(got?.sent) && Array.isArray(got?.events)) return got;
+    if (Array.isArray(got?.sent) && Array.isArray(got?.events)) {
+      const picked = Array.isArray(got.picked) && got.picked.every((n) => typeof n === 'string') ? got.picked : undefined;
+      return { sent: got.sent, events: got.events, ...(picked ? { picked } : {}) };
+    }
   } catch {
     /* unavailable or not ours */
   }
@@ -50,7 +56,7 @@ function saveChat(p: string, chat: Chat): void {
   const jobs = new Set(sent.map((s) => s.job));
   const events = chat.events.filter((e) => jobs.has(e.job));
   try {
-    if (sent.length) localStorage.setItem(storeKey(p), JSON.stringify({ sent, events }));
+    if (sent.length || chat.picked) localStorage.setItem(storeKey(p), JSON.stringify({ sent, events, ...(chat.picked ? { picked: chat.picked } : {}) }));
     else localStorage.removeItem(storeKey(p));
   } catch {
     /* full or unavailable: the tab still has it */
@@ -74,6 +80,9 @@ const STATUS: Record<AbEvent['kind'], string> = {
   lost: 'reply lost — mdhouse restarted',
 };
 
+/** Where the listed targets come from, when no choice is made. */
+const FROM: Record<TargetLevel, string> = { picked: 'Your choice', named: 'Named on the page', space: "This project's default", instance: 'Default', none: '' };
+
 /** `#claude/home-parf-src-mdhouse@parf.us` → `home-parf-src-mdhouse` — the part a reader tells apart. */
 const short = (name: string) => name.replace(/^#/, '').replace(/@.*$/, '').replace(/^[^/]*\//, '');
 
@@ -84,6 +93,8 @@ interface Props {
   onClose: () => void;
   /** The document, as a wire path `root/rel`. */
   p: string;
+  /** The document's project: its bus and its default agents. */
+  root: string;
   /** The agents the document names (`<!-- AB: … -->`). */
   named: string[];
   onState: (s: AbState) => void;
@@ -93,10 +104,9 @@ interface Props {
  * The Agent Bus panel, on the right: the conversation about this document — what the reader
  * sent, each agent's progress and its answers — then whom to ask, a note and the buttons.
  */
-export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
-  const [info, setInfo] = useState<AbInfo | null>(null);
+export function AgentBusPanel({ open, onClose, p, root, named, onState }: Props) {
+  const [info, setInfo] = useState<AbRootInfo | null>(null);
   const [infoError, setInfoError] = useState<string | null>(null);
-  const [picked, setPicked] = useState<Set<string> | null>(null);
   const [picking, setPicking] = useState(false);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
@@ -117,7 +127,7 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
     if (!open) return;
     let live = true;
     api
-      .abInfo()
+      .abRootInfo(root)
       .then((got) => live && setInfo(got))
       .catch((err: Error) => live && setInfoError(err.message));
     area.current?.focus();
@@ -176,11 +186,15 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
   const agents: BusAgent[] = info?.enabled ? info.agents : [];
   const known = (name: string) => agents.some((a) => a.name === name);
   const aliveOf = (name: string) => agents.find((a) => a.name === name)?.alive ?? false;
-  const defaults = info?.enabled ? info.default : [];
-  // whom the page asks: the named ones, else the default ones, else a pick from the live ones
-  const asked = named.length ? named : defaults;
-  const others = agents.filter((a) => a.alive && !asked.includes(a.name));
-  const chosen = picked ?? new Set(asked.filter(aliveOf));
+  // Whom the page asks: the reader's choice, the document's names, the project's defaults, the instance's —
+  // the first that names anyone, whole. One not running stays and is shown so; nobody stands in for it.
+  const levels = { named, spaceDefault: info?.enabled ? info.spaceDefault : undefined, instanceDefault: info?.enabled ? info.default : [], agents };
+  const resolved = resolveTargets({ ...levels, picked: chat.picked ?? null });
+  const chosen = new Set(resolved.targets);
+  // what the page would ask without a choice: listed first when picking
+  const asked = resolveTargets({ ...levels, picked: null });
+  const others = agents.filter((a) => a.alive && !asked.targets.includes(a.name));
+  const unavailable = info?.enabled ? resolved.unavailable : [];
 
   // per job and target, the last event
   const last = new Map<string, AbEvent>();
@@ -190,11 +204,12 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
   const answered = lasts.some((ev) => ev.kind === 'answer');
   useEffect(() => onState(waiting ? 'waiting' : answered ? 'answered' : 'idle'), [waiting, answered]);
 
+  // A tick makes the reader's own choice for this document, kept with its conversation.
   const toggle = (name: string) =>
-    setPicked(() => {
-      const next = new Set(chosen);
+    setChat((c) => {
+      const next = new Set(resolveTargets({ ...levels, picked: c.picked ?? null }).targets);
       if (!next.delete(name)) next.add(name);
-      return next;
+      return { ...c, picked: [...next] };
     });
 
   const send = async (action: AbAction) => {
@@ -203,6 +218,11 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
     if (!targets.length) {
       setPicking(true);
       return setError('Pick an agent');
+    }
+    if (!info?.enabled) return setError('The Agent Bus is not reachable — nothing was sent');
+    if (unavailable.length) {
+      setPicking(true);
+      return setError(`Not running: ${unavailable.map(short).join(', ')} — nothing was sent. Untick it or start it.`);
     }
     if (action === 'note' && !note.trim()) return setError('Write a note');
     setSending(true);
@@ -285,7 +305,7 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
       <div class="ab-to">
         <span class="ab-to-label">to</span>
         {[...chosen].map((n) => (
-          <span class={`ab-chip${aliveOf(n) ? ' alive' : ''}`} key={n} title={n}>
+          <span class={`ab-chip${aliveOf(n) ? ' alive' : info?.enabled ? ' unavailable' : ''}`} key={n} title={info?.enabled && !aliveOf(n) ? `${n} — not running` : n}>
             {short(n)}
           </span>
         ))}
@@ -296,12 +316,18 @@ export function AgentBusPanel({ open, onClose, p, named, onState }: Props) {
       </div>
       {picking && (
         <div class="ab-agents">
-          {asked.length > 0 && <div class="ab-from">{named.length ? 'Named on the page' : 'Default'}</div>}
-          {asked.map((n) => agentRow(n))}
+          {asked.targets.length > 0 && <div class="ab-from">{FROM[asked.level]}</div>}
+          {asked.targets.map((n) => agentRow(n))}
+          {resolved.level === 'picked' && resolved.targets.filter((n) => !asked.targets.includes(n) && !others.some((a) => a.name === n)).map((n) => agentRow(n))}
           {others.length > 0 && <div class="ab-from">Live agents</div>}
           {others.map((a) => agentRow(a.name, a.descr))}
-          {info?.enabled && info.connected && !asked.length && !others.length && <p class="ab-from">No agent is running</p>}
+          {info?.enabled && info.connected && !asked.targets.length && !others.length && <p class="ab-from">No agent is running</p>}
         </div>
+      )}
+      {info?.enabled && info.endpoint !== undefined && (
+        <p class="ab-where">
+          via <code>{info.endpoint}</code> · {info.source === 'space' ? "this project's bus" : "the instance's bus"}
+        </p>
       )}
       {infoError && <p class="ab-error">{infoError}</p>}
       {info?.enabled && !info.connected && <p class="ab-error">Not connected: {info.error}</p>}

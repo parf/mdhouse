@@ -1226,6 +1226,7 @@ export function Doc({
           open={abOpen}
           onClose={() => setAbOpen(false)}
           p={`${doc.root}/${doc.rel}`}
+          root={doc.root}
           named={doc.ab ?? []}
           onState={setAbState}
         />

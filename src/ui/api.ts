@@ -127,6 +127,31 @@ export type AbInfo =
   | { enabled: false }
   | { enabled: true; me: string; socket: string; connected: boolean; error?: string; default: string[]; filter: string[]; agents: BusAgent[] };
 
+/** `GET /api/ab?root=`: the root's effective bus — where it is, and whether the project or the instance set it. */
+export type AbRootInfo = AbInfo & { endpoint?: string; source?: 'space' | 'instance'; spaceDefault?: string[] };
+
+/** A project's own Agent Bus settings, as stored; nothing here is a credential. */
+export interface AbSpace {
+  /** Its own bus, when set; else the instance's. */
+  endpoint?: string;
+  /** A credential for its bus is provisioned on the server — never sent here. */
+  hasCredential: boolean;
+  /** Its own default agents, when set. */
+  default?: string[];
+  /** The fingerprint a save confirms. */
+  rev: string;
+  /** Its stored settings cannot be used as they are. */
+  error?: string;
+}
+
+/** `GET /api/ab/config`: the stored settings, read without reaching any bus. */
+export interface AbConfig {
+  enabled: boolean;
+  instance: { endpoint: string; hasCredential: boolean; default: string[]; filter?: string[] };
+  /** Every project but the reference, by root id. */
+  roots: Record<string, AbSpace>;
+}
+
 /** `lost` is the page's own: a kept job the server no longer knows — mdhouse restarted while it waited. */
 export type AbKind = 'sent' | 'ack' | 'answer' | 'done' | 'timeout' | 'error' | 'lost';
 export interface AbEvent {
@@ -398,6 +423,12 @@ export const api = {
   },
 
   abInfo: () => get<AbInfo>('/api/ab'),
+  /** The root's bus: connects to it — only on the reader's request. */
+  abRootInfo: (root: string) => get<AbRootInfo>('/api/ab', { root }),
+  /** The stored Agent Bus settings: no bus is reached. */
+  abConfig: () => get<AbConfig>('/api/ab/config'),
+  /** A project's own endpoint and default agents; empty clears each; administrator only. */
+  setRootAb: (id: string, endpoint: string, names: string[], rev: string) => post<AbConfig>('/api/roots/ab', { id, endpoint, default: names, rev }),
   abDefault: (names: string[]) => post<{ default: string[] }>('/api/ab/default', { names }),
   abFilter: (lines: string[]) => post<{ filter: string[] }>('/api/ab/filter', { lines }),
   /** Ask agents about document `p` (a wire path): the job id; its events come over the live channel. */
