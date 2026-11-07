@@ -457,3 +457,15 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > unsaved memory-only, explicit save atomically carries AB metadata with mode/name; saved edits persist.
   > Tokens remain server-only; endpoint changes discard the prior credential.
   > Source: CEO `r3-project-ab / bounded-design-20261107`, 2026-11-07, message `0dc84fbd14ffd54c`.
+
+## Editor, RAG and automations owner direction
+
+- ✅ RAG-W2 Separate retrieval audiences and indexes <a id="RAG-W2"></a>
+  > 💬 👤parf Полный Markdown-редактор. - бери готовый
+  >
+  > 💬 👤parf RAG давай немного отложим, пока продумай как и для чего интегрировать: Docs/knowledge indexing; Code indexing; 2 unrelated indexes; one for MDHouse Endusers (knowledge); второй для Devs & AI Agents !!!
+  >
+  > 💬 👤parf Еще - TODO - automations: AgentBus умеет Cron/At service; it can call agents - so we can run our AI pipelines - like code review, qa and more
+  >
+  > 💬 👤parf наверно второй - обший
+  > fisrt one - docs only

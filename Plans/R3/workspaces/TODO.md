@@ -238,6 +238,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Workspace](README.md#workspace)
 
 - [ ] MW.2a Integrate the Agent Bus RAG agent lifecycle <a id="MW.2a"></a>
+  - Priority: implementation deferred; design separate end-user documents-only and shared developer/AI code indexes ([№RAG-W2](DECISIONS.md#RAG-W2)).
   - [ ] MW.2a.1 Implement separate on-demand RAG sync bin; owned by mdhouse, not removed from R3 implementation <a id="MW.2a.1"></a>
   - Current scope: owner-authorized first setup `/home/parf/src/mdhouse` with recursive `include:["*.md"]`, dotfile/dependency exclusions, proposed `mdhouse/docs`; W3 bin plan, owner/AB-CEO provisioning/provider gaps, no duplicate requests or implicit watch/paid run
   - Coverage: FileScan last reported 195 tracked; T-48 large Markdown/finite sync deployed per provider. Whole-file indexing remains unproven until actual sync/check; incomplete or unknown coverage stays explicit
@@ -366,6 +367,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 ## W4 — Full-document editing
 
 - [ ] MW.5 Add a real Markdown editor for complete documents <a id="MW.5"></a>
+  - Implementation: integrate a ready-made editor component ([№EDIT-W2](DECISIONS.md#EDIT-W2)); preserve Markdown source, drafts, stale-write refusal, RW boundaries and mobile use.
   - Builds: edit the full source document; save; preserve the draft on stale writes; document diff, history and commit
   - Acceptance: a writable document can be edited end to end; a concurrent file change is refused without losing the draft; a read-only root cannot save
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
@@ -514,3 +516,10 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: an allowed RAG source can be ingested, embedded/indexed, queried and refreshed through the Agent Bus RAG agent; requests/flows record source identity and citations without exposing credentials
   - Acceptance: Personal Workspace, Open Viewer, Private Viewer and Team Workspace each pass their full admission/read/write matrix, including trusted-network variants and profile switching
   - Acceptance: the remote Personal Workspace journey passes on iPad and a representative phone viewport without requiring a hardware keyboard, AI CLI or external editor
+
+
+## Automations
+
+- [ ] MW.11 Design Agent Bus Cron/At automation for AI pipelines <a id="MW.11"></a>
+  Code review, QA and other agent pipelines; define triggers, scope, outputs, run history, overlap/failure handling and separate action approvals.
+  Reuse Agent Bus scheduling; no custom scheduler or live jobs during design ([№AUTO-W1](DECISIONS.md#AUTO-W1)).

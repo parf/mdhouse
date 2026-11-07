@@ -151,3 +151,12 @@
   Unsaved: memory until explicit save; save atomically carries AB metadata with mode/name. Saved edits persist.
   Credentials stay server-only; endpoint change discards the old credential.
   [Verified-source clarification](resolved.md#Q-R3-AB1).
+
+## Editor, retrieval and automations direction
+
+- 📌 EDIT-W2 Integrate an existing Markdown editor component; do not build an editor engine. <a id="EDIT-W2"></a>
+- 📌 RAG-W2 Defer RAG implementation; design two independent indexes. <a id="RAG-W2"></a>
+  End users: documents only. Developers and AI agents: shared code index; retain repository/revision identity and access boundaries.
+  [Owner history](resolved.md#RAG-W2).
+- 📌 AUTO-W1 Use Agent Bus Cron/At to invoke agents and AI pipelines, including code review and QA. <a id="AUTO-W1"></a>
+  No separate mdhouse scheduler; live schedules require separate authorization.

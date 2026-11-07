@@ -1,5 +1,7 @@
 # RAG — requirements and open questions
 
+Current owner direction: implementation deferred. Design two independent indexes: end-user documents only, and a shared developer/AI-agent code index. Preserve repository/revision identity and access boundaries. Historical provider setup below does not supersede this direction. See [№RAG-W2](workspaces/DECISIONS.md#RAG-W2).
+
 <!-- AB: #cx/mdhouse-ceo -->
 
 For the owner implementing the Agent Bus RAG agent. mdhouse integration: [№R3f](TODO.md#R3f) / [№MW.2a](workspaces/TODO.md#MW.2a).
