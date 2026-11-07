@@ -51,11 +51,11 @@ page — shiki has `sideEffects: false`). No server code ships to the browser.
 
 ### Never write to a tree that did not ask for it
 
-Writability belongs to a **folder**, never to the process. A folder named on a command gets
-that command's `--rw`; a saved folder is writable only if it was saved with `-p --rw`
-(`writable` in prefs); `--rw` for an already-served folder upgrades it in place
-(`Registry.setWritable`), never downgrades. Write access is granted only from a terminal — no
-page can turn it on.
+Writability belongs to a **folder**, never to the process. OS-owner CLI `--rw` explicitly grants
+write access; reopening without it does not upgrade access. A verified administrator can add an
+existing directory with an explicit RW/RO choice and confirm mode changes in Settings. Saved choices
+persist; session choices stay in memory until saved. Explicit RO defeats auto-RW; reference/path and
+unsupported-config caps remain authoritative. See the scoped access and project-add contracts below.
 
 Every disk write to a served tree goes through the one chokepoint `Registry.writeFile()`, which
 refuses a read-only root and writes whole or not at all — a temp file beside the document, renamed
@@ -379,7 +379,7 @@ Other families retain existing behavior; marks policy remains open and no Team/g
 | `admin-session` | `/api/admin/session`, `/api/admin/logout` |
 | `attribution` | `/api/author` |
 | `external-send` | `/api/ab/send` |
-| `root-admin` | `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
+| `root-admin` | `/api/roots/add`, `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
 | `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
 
@@ -566,3 +566,22 @@ Settings confirms effective RW→explicit RO or RO→explicit RW, shows the sour
 immutable/capped or unauthorized changes, and refreshes stale revisions without retry. Open Doc/Git controls
 follow current root access, retain drafts and preserve unchanged body/token/Mermaid; control disabled attrs
 may change. Document-reference paths never gain write controls through a wider writable root.
+
+
+## Settings Add existing project
+
+POST `/api/roots/add` accepts exactly `{path,mode:'rw'|'ro'}` behind same-origin and verified
+administrator checks for every path. The absolute path must resolve to an existing directory;
+relative paths and tilde expansion are refused. Web add refuses reference roots and descendants.
+The canonical directory preparation/registration is shared with CLI/control. Web add never changes
+an already served canonical root: 409 `reason: served` includes its id, with its current mode intact.
+A successful add returns `{roots,id}`, publishes roots metadata and serves the directory for this
+session only with its explicit mode already installed. No directory or project file is created.
+Settings requires an explicit mode selection, preserves refused drafts and selects the added project.
+The existing `[unsaved]` confirmation persists current mode and name; no add-and-save/default activation.
+
+Preparation resolves and validates without registering. Async filesystem/git work and fresh locked
+read-only prefs/admin checks precede synchronous Registry/watcher installation. Revocation, changed
+canonical target, externally saved policy, invalid/newer prefs and IO failures expose no partial grant
+or config write. Fresh-policy validation never migrates or repairs prefs. Existing CLI persistence,
+name and reference-descendant behavior stays unchanged.

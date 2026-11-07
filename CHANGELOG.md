@@ -15,6 +15,8 @@
 
 ### Added
 
+- Add an existing project from administrator Settings with an explicit RW/RO choice; new projects stay session-only until separately saved
+
 - Confirm project RW/RO in Settings with live write controls; explicit RO overrides automatic write access, with conservative version-2 prefs migration preserving existing access
 
 - Save an already open session Project from Settings with confirmation, retaining its name and direct access; automatic write access stays conditional
