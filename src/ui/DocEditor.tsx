@@ -7,7 +7,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { LanguageSupport, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { HighlightStyle, LanguageSupport, syntaxHighlighting } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 import { markdownLanguage } from '@codemirror/lang-markdown';
 import { ApiError, api } from './api';
 import { dropDraft, forEditor, fromEditor, loadDraft, saveDraft, type EditorSource } from './edit-source';
@@ -23,6 +24,18 @@ interface Props {
   onSaved: () => void;
   onClose: () => void;
 }
+
+/** Markdown marks in the page's own colours, so light and dark both read. */
+const highlight = HighlightStyle.define([
+  { tag: t.heading, fontWeight: '700', color: 'var(--doc-title)' },
+  { tag: t.strong, fontWeight: '700' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: [t.link, t.url], color: 'var(--accent)' },
+  { tag: t.monospace, color: 'var(--fg-muted)' },
+  { tag: t.quote, color: 'var(--fg-muted)' },
+  { tag: [t.processingInstruction, t.meta, t.contentSeparator], color: 'var(--fg-faint)' },
+]);
 
 type Loaded = { src: EditorSource; base: string; disk: string };
 
@@ -85,7 +98,7 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
         EditorView.lineWrapping,
         // Markdown highlighting only: no languages nested in code blocks or HTML, which would weigh far more.
         new LanguageSupport(markdownLanguage),
-        syntaxHighlighting(defaultHighlightStyle),
+        syntaxHighlighting(highlight),
         keymap.of([{ key: 'Mod-s', preventDefault: true, run: () => (void save(), true) }, ...defaultKeymap, ...historyKeymap]),
         editable.current.of([EditorState.readOnly.of(!writable)]),
         EditorView.contentAttributes.of({ 'aria-label': 'Document source', spellcheck: 'true', autocapitalize: 'off' }),
