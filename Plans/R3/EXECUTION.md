@@ -1316,6 +1316,8 @@ and preserve Codex for coordination/review; no further heavy assignment started.
   Root payload optional `saveRev` is full SHA-256 of the confirmed canonical root identity, kind, configured
   mode, auto source/effective mode/reference cap, saved state and current name. It is a staleness check,
   not authority. Server derives mode/name itself, never accepts path/access/save/name changes from the body.
+  `configuredWritable` is read-only root metadata for confirmation. Recheck administrator validity at the locked
+  commit boundary; revocation while a save waits must refuse without publishing/persisting.
   Reject malformed/unknown fields 400, unknown root 404, immutable reference 403; already-saved or changed
   confirmed metadata 409 `{error, reason:'stale'}`. Missing/revoked administrator follows existing 401 policy.
   Root metadata top-level entrypoints (name/save/remove/control add/remove) serialize without nested same-queue
@@ -1345,3 +1347,10 @@ and preserve Codex for coordination/review; no further heavy assignment started.
 Capacity at design: W1 default Claude 5h 60% (~12m to reset), weekly 54%; W2 account 2 5h 51% (~32m),
 weekly 57%; shared Codex 6% at preceding checkpoint. OpenCode observed hard limit; reserve Codex for coordination
 and pinned nonauthor fallback. Author work fits available Claude capacity; start W1 only until API is stable.
+
+
+Backend/API seam is agreed in W1/W2 design before UI code. W1 began the scoped backend work;
+W2 may now implement the small Settings/API portion without a second heavy workload or gate.
+UI clarification: saved projects use plain descriptive text, no saved badge; Saved/This session list groups
+remain. Disable explicit save while the name draft differs from the current stored/session name, avoiding
+blur-save races. Confirmation says project files remain unchanged, not that prefs storage is untouched.
