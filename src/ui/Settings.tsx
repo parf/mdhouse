@@ -284,6 +284,9 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   const abDirty = endpointDraft.trim() !== storedEndpoint || splitNames(namesDraft).join(' ') !== storedNames;
   const abEditable = isAdmin && !!abConfig?.enabled && !!space && !space.error;
   const savingAb = useRef(false);
+  // The project shown now: a save's answer touches the drafts and note only of the project it was for.
+  const shownId = useRef(project?.id);
+  shownId.current = project?.id;
   const saveAb = async (clear: boolean) => {
     if (!project || !space || !abEditable || savingAb.current || busy !== null) return;
     const endpoint = clear ? '' : endpointDraft.trim();
@@ -296,15 +299,16 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       const got = await api.setRootAb(project.id, endpoint, names, space.rev);
       ++abSeq.current;
       setAbConfig(got);
-      // Saved: the drafts are what is stored now.
-      setEndpointDraft(got.roots[project.id]?.endpoint ?? '');
-      setNamesDraft((got.roots[project.id]?.default ?? []).join(' '));
+      // Saved: the drafts are what is stored now — if the reader is still on that project.
+      if (shownId.current === project.id) {
+        setEndpointDraft(got.roots[project.id]?.endpoint ?? '');
+        setNamesDraft((got.roots[project.id]?.default ?? []).join(' '));
+      }
       onChanged();
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409 && err.reason === 'stale') {
-        setAbError(AB_STALE);
-        void loadAb();
-      } else setAbError(refused(err));
+      const message = err instanceof ApiError && err.status === 409 && err.reason === 'stale' ? AB_STALE : refused(err);
+      if (shownId.current === project.id) setAbError(message);
+      if (message === AB_STALE) void loadAb();
     } finally {
       savingAb.current = false;
       setBusy(null);
