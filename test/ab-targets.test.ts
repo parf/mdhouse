@@ -78,3 +78,16 @@ describe('syncDraft', () => {
     expect(syncDraft('http://typed', 'http://a', 'http://other', true)).toBe('http://other');
   });
 });
+
+describe('abConfirmLine', () => {
+  test('what the project sets, else the instance; no credential', async () => {
+    const { abConfirmLine } = await import('../src/ui/ab-targets');
+    expect(abConfirmLine({})).toBe("the instance's bus; the instance's default agents");
+    expect(abConfirmLine({ endpoint: 'http://h:1', default: ['#a', '#b'] })).toBe('its own bus http://h:1; default agents #a #b');
+    expect(abConfirmLine({ default: ['#a'] })).toBe("the instance's bus; default agents #a");
+    expect(abConfirmLine({ endpoint: '/run/x.sock', default: [] })).toBe("its own bus /run/x.sock; the instance's default agents");
+    expect(abConfirmLine({ error: 'x' })).toBe('its stored settings are unreadable');
+    expect(abConfirmLine(undefined)).toMatch(/unknown/);
+    expect(abConfirmLine({ endpoint: 'http://h:1', hasCredential: true } as never)).not.toMatch(/credential/i);
+  });
+});

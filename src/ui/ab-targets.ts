@@ -59,3 +59,12 @@ export function spaceSummary(space: { endpoint?: string; default?: string[] } | 
  * an untouched draft follows it, a typed one stays as typed.
  */
 export const syncDraft = (draft: string, before: string, after: string, switched: boolean): string => (switched || draft === before ? after : draft);
+
+/** A project's Agent Bus settings in words, for the save confirmation: what it sets, else the instance's. Never a credential. */
+export function abConfirmLine(space: { endpoint?: string; default?: string[]; error?: string } | undefined): string {
+  if (!space) return 'unknown — not in the settings read';
+  if (space.error) return 'its stored settings are unreadable';
+  const bus = space.endpoint ? `its own bus ${space.endpoint}` : "the instance's bus";
+  const names = space.default?.length ? `default agents ${space.default.join(' ')}` : "the instance's default agents";
+  return `${bus}; ${names}`;
+}

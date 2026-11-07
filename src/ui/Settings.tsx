@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbConfig, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
-import { spaceSummary, splitNames, syncDraft } from './ab-targets';
+import { abConfirmLine, spaceSummary, splitNames, syncDraft } from './ab-targets';
 import { ADD_PATH_MAX, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
@@ -170,14 +170,26 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
 
   // A save confirms the stored name; one still being typed would be saved by the blur the click causes, after the confirmation.
   const nameDirty = nameDraft.trim() !== ownName;
+  // The revision is taken before the Agent Bus settings are read: anything that changes after it was shown,
+  // before or after that read, makes the save stale.
+  const preparingSave = useRef(false);
   const save = async (root: RootInfo) => {
     const rev = (root as { saveRev?: unknown }).saveRev;
-    if (typeof rev !== 'string' || nameDirty) return;
-    const name = customName(root) ?? `the folder's — ${folderName(root.path)}`;
-    if (!confirm(`Save project ${root.name}?\n\nFolder: ${root.path}\nName: ${name}\nAccess: ${savedAccess(root)}\n\nmdhouse will serve it on every start. Project files stay unchanged.`)) return;
+    if (typeof rev !== 'string' || nameDirty || preparingSave.current || busy !== null) return;
+    preparingSave.current = true;
     setBusy(root.id);
     setError('');
     try {
+      // Read now, not the copy on screen: the confirmation names what the save carries. It reaches no bus.
+      let ab: string;
+      try {
+        ab = abConfirmLine((await api.abConfig()).roots[root.id]);
+      } catch (err) {
+        setError(`The Agent Bus settings could not be read — nothing was saved: ${(err as Error).message}`);
+        return;
+      }
+      const name = customName(root) ?? `the folder's — ${folderName(root.path)}`;
+      if (!confirm(`Save project ${root.name}?\n\nFolder: ${root.path}\nName: ${name}\nAccess: ${savedAccess(root)}\nAgent Bus: ${ab}\n\nmdhouse will serve it on every start. Project files stay unchanged.`)) return;
       await api.saveRoot(root.id, rev);
       onChanged();
     } catch (err) {
@@ -186,6 +198,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         onChanged();
       } else setError(refused(err));
     } finally {
+      preparingSave.current = false;
       setBusy(null);
     }
   };
