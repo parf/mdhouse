@@ -574,3 +574,10 @@ No package is done before shared runner/permission checks pass; tracker-free out
   Keep a useful standalone viewer with quick startup, minimal setup and Git. Prefer shared rendering/file/search/Git core with Workspace-only editing, agents and automations.
   Sequence: define scope → implement new MD / All files / Git views in mdhouse → create the standalone viewer.
   Views build on the broader [№MW.13.1](#MW.13.1) UX exploration; do not extract the viewer before the new views are implemented.
+
+## Installed reference and external AI entry
+
+- [ ] MW.17 Review the installed reference content and define one external-AI start file <a id="MW.17"></a>
+  Review `http://md/_mdhouse/*`: determine what belongs in the installed reference, its organization and what should be removed or moved.
+  Provide ONE start file for external AI; it MUST contain links to the relevant instructions and reference material.
+  Define the content/navigation proposal before restructuring; preserve the immutable reference boundary.
