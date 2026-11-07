@@ -207,7 +207,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 - The daemon over its account socket (`user-<login>.sock`, Bun `fetch({unix})`) — own client, not `@agent-bus/client` (not on npm); or `http(s)://host:port` with `agentBus.token` (asked for by `--agent-bus <url>`, never in argv, never sent to the page)
 - mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), canonical `tags: ["personal"]` and `allow: ["@owner"]` on creation; existing records keep owner settings, token minted, every call with it
-- On connect it drains its own inbox: replies to an earlier run's jobs, which died with it
+- New connections drain earlier-run replies only while no exchange is active; sends wait for all pending drains. Endpoint/credential changes preserve active connections and the shared job index.
 - **Never `AGENT_BUS_*` from the environment** — a mdhouse started from an AI session's shell would act as that session
 - Alive: `readers > 0`, or `last_used` < 90 s
 - `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `send` (topic `mdhouse`, a fresh tag) → filtered `consume({topic, tag})` until the answer / `done` / 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
@@ -275,7 +275,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →
   argon2id hash, `hostNames`), and version-2 `autoRwRules` paths (`--auto-rw`; `settings.autoRw` switches them), and `agentBus` (`enabled`, `socket` — a path or `http(s)://`, `token` for a URL —
-  `--agent-bus [on|off|<x.sock>]`; `default` agents and the names `filter` — the settings page), and
+  `--agent-bus [on|off|<x.sock>]`; `default` agents and the names `filter` — the settings page), canonical
+  `agentBusSpaces` overrides with server-only credentials, and
   `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
   `writable` derives from `inherit | rw | ro`: explicit RO beats auto, explicit RW and inheritance
   remain capped by reference protection and invalid/unsupported prefs. Auto changes and CLI grants apply live (`Prefs.refresh()` re-reads the file
@@ -379,7 +380,7 @@ Other families retain existing behavior; marks policy remains open and no Team/g
 | `admin-session` | `/api/admin/session`, `/api/admin/logout` |
 | `attribution` | `/api/author` |
 | `external-send` | `/api/ab/send` |
-| `root-admin` | `/api/roots/add`, `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
+| `root-admin` | `/api/roots/ab`, `/api/roots/add`, `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
 | `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
 
@@ -585,3 +586,34 @@ read-only prefs/admin checks precede synchronous Registry/watcher installation. 
 canonical target, externally saved policy, invalid/newer prefs and IO failures expose no partial grant
 or config write. Fresh-policy validation never migrates or repairs prefs. Existing CLI persistence,
 name and reference-descendant behavior stays unchanged.
+
+
+## Per-project Agent Bus configuration and routing
+
+Canonical project paths key `agentBusSpaces` in server prefs. Saved overrides persist; unsaved
+endpoint/default overrides stay in memory until an explicit save atomically carries them with mode/name.
+Endpoint override precedes instance endpoint; target defaults resolve independently. Empty endpoint/default
+removes that field, all empty removes the entry. Malformed project config is unavailable, never fallback.
+Server-provisioned credentials stay server-only: no web token field, returned secret, localStorage or argv.
+A project endpoint never inherits the instance credential; endpoint change/clear discards its old credential.
+
+GET `/api/ab/config` supplies no-connect metadata for Settings: instance endpoint/default/filter and
+project endpoint/default/revision plus boolean `hasCredential`. It does not register/mint/list/send.
+POST `/api/roots/ab` accepts exactly `{id,endpoint,default,rev}` behind admin/same-origin/reference guards.
+Fresh locked policy/revision/admin checks and atomic prefs installation preserve state on stale/IO failure;
+refused browser drafts stay typed. Project config identity participates in explicit save revision without secrets.
+Endpoints are bounded absolute sockets or HTTP(S), without userinfo/query/fragment/control characters.
+Public errors are fixed safe messages; raw provider bodies and credentials never reach HTTP/WS/log errors.
+
+`[AB]` beside project access opens the endpoint/default editor; only explicit config adds row text.
+Reference controls are disabled. Off integration shows the CLI hint, with no web enable switch.
+Settings reads configuration without connecting; connection/agent listing needs an explicit user action.
+GET `/api/ab?root=<id>` reports the selected project's effective endpoint/source and agent list;
+root omitted keeps instance behavior. `/api/ab/send` routes by the jailed document's root.
+Connections are pooled by endpoint/credential, while jobs/events remain globally addressable after overrides
+change. Shared/rotated connections cannot drain active replies; saving metadata does not connect or send.
+
+Panel targets resolve whole levels: explicit per-document choice → document AB names → project defaults →
+instance defaults. A higher-priority unavailable target stays visible and refuses sending; it is never
+silently removed/replaced. Explicit picks survive reopening/default changes in existing guarded per-doc storage.
+Endpoint precedence is independent of these target priorities. No AB control/lifecycle/install/RAG activation.

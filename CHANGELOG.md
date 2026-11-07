@@ -15,6 +15,8 @@
 
 ### Added
 
+- Per-project Agent Bus endpoint/default editors with server-only credentials, root-aware routing and visible unavailable targets; Settings reads config without connecting
+
 - Add an existing project from administrator Settings with an explicit RW/RO choice; new projects stay session-only until separately saved
 
 - Confirm project RW/RO in Settings with live write controls; explicit RO overrides automatic write access, with conservative version-2 prefs migration preserving existing access
