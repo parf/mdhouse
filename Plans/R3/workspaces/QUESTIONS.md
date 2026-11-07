@@ -72,3 +72,22 @@
 ## Project display-name lifetime
 
 - [№Q-R3-NAME1](DECISIONS.md#Q-R3-NAME1) <a id="Q-R3-NAME1"></a>
+
+
+## Project access migration and old readers
+
+- ❓ Q-R3-MODE1 Which downgrade and rollout boundary should gate explicit project RO? <a id="Q-R3-MODE1"></a>
+  [№DIR-W2](DECISIONS.md#DIR-W2) requires explicit RO to beat auto-RW; current boolean cannot represent it.
+  An additive RO field is ignored by old readers and can reopen auto-RW. Merely raising prefs version
+  currently blocks old prefs writes, not document writes. A safe proposed version-2 format moves unchanged
+  auto rules to a new key and clears legacy auto rules; restarted old binaries lose automatic RW and
+  cannot edit the newer config, while their existing explicit writable list still works.
+  Existing older processes may retain explicit RW in Registry memory even after refresh: CTO reproduced
+  a successful actual file write after simulated v2 stored RO. Stopping/restarting such processes is an
+  operator action; it is not authorized by the current implementation task. Known control-port inspection
+  can find some old processes but cannot prove there is no old process without a control socket.
+  - ( ) Implement the scoped mode migration/toggle with conservative old-reader downgrade and an explicit operator rollout boundary; no automatic restart or claim of complete old-process revocation 🌟
+  - ( ) Implement only an inert compatibility prerequisite now; defer persistent RO/toggle until the rollout policy is separately approved
+  Independent facts: old saved/session and auto choices must not gain effective access during migration;
+  existing explicit RO must survive CLI `-p` without `--rw`; an explicit `--rw` remains an OS-owner grant.
+  Returning to inherit is outside this bounded toggle slice, which chooses only explicit RW or RO.

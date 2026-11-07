@@ -1374,3 +1374,22 @@ Parent [№MW.1](workspaces/TODO.md#MW.1), [№MW.0h](workspaces/TODO.md#MW.0h),
 migration, root add, AB endpoint and Team/OAuth remain open. Existing CLI flag semantics retained.
 No live/service/session actions, push/publish/deploy, provider/ACL changes, version bump or duplicated full suite.
 Authors' scoped assignments completed; no new task started. Codex reserve preserved, W3 idle.
+
+
+## Explicit project access — bounded design only {#explicit-project-access-design}
+
+Base `eec91ac5771c40e419096faca47bb068505bad64`, target `main`; no implementation assignment or code edits.
+[№DIR-W2](workspaces/DECISIONS.md#DIR-W2)/[№MW.1](workspaces/TODO.md#MW.1) needs a minimal
+[№MW.0h](workspaces/TODO.md#MW.0h) prerequisite: inherit, explicit RW and explicit RO must be distinct;
+RO overrides auto, references remain immutable, saved choices persist and session choices stay in memory.
+Save/name B and existing OS-owner CLI grant semantics remain; no new RW defaults, profile, Viewer or Team activation.
+W1 completed read-only design. Proposed versioned storage preserves current choices, moves auto rules unchanged
+out of the legacy field and clears legacy auto grants so an older restarted reader never gains new RW.
+CTO executed an old-reader probe: an already-running Registry with boot-time explicit RW still writes after
+simulated stored v2 RO and prefs refresh. This corrects the initial overbroad claim that all old running readers
+would fail closed. No actual live instance, service, session, provider or grant was touched.
+[№Q-R3-MODE1](workspaces/QUESTIONS.md#Q-R3-MODE1) gates selection of the coherent implementation cohort;
+full paths/acceptance/owners/review will be recorded before author edits once the rollout/downgrade boundary is settled.
+No production coexistence scanner is assumed complete; no poison credentials or silent auto-policy changes.
+Capacity checked: W1 default Claude 5h 100% (~4h53m), weekly 54%; W2 account 2 5h 47% (~13m), weekly 57%;
+shared Codex 5%, OpenCode observed hard limit. W3 idle; reserve Codex for coordination and exact nonauthor review.
