@@ -300,8 +300,9 @@ main {
   color: var(--fg-muted); margin: 6px 0 10px;
 }
 .settings-projects .tag { flex: none; font-size: 10.5px; padding: 1px 6px; border-radius: 3px; color: var(--fg-muted); border: 1px solid var(--border-strong); }
-.settings-projects .tag.saved { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
-.settings-projects .tag.rw { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+/* Defaults are muted; exceptions (read-only, unsaved) are highlighted. */
+.settings-projects .tag:is(.ro, .unsaved) { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); font-weight: 600; }
+.settings-projects .project-kept-default { color: var(--fg-muted); }
 .icon-btn.danger:hover:not(:disabled) { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .settings-error { color: var(--danger); font-size: 12.5px; }
@@ -327,12 +328,12 @@ main {
   display: inline-flex;
   align-items: center;
 }
-/* Every root is read-only unless --rw was passed, so only the exception is worth a badge. */
-.rw {
+/* Read and write is the default; only read-only, the exception, is worth a badge. */
+.side-head .ro {
   font-weight: 600;
   font-size: 10.5px;
   letter-spacing: 0.02em;
-  color: var(--ok);
+  color: var(--warn);
   border: 1px solid currentColor;
   border-radius: 3px;
   padding: 0 4px;
@@ -2045,7 +2046,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 :is(.project-save, .project-mode, .project-ab):disabled { opacity: .6; cursor: not-allowed; }
 @media (pointer: coarse) { :is(.project-save, .project-mode, .project-ab) { min-height: 32px; padding: 4px 10px; } }
 .project-ab[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
-.project-ab-value { margin-left: 6px; font-size: 12px; color: var(--fg-muted); overflow-wrap: anywhere; }
+.project-ab-value { margin-left: 6px; font-size: 12px; color: var(--accent); overflow-wrap: anywhere; }
 .project-ab-editor { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); }
 .project-ab-editor .settings-scheme-field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .project-ab-editor .settings-scheme { flex: 1 1 18em; width: auto; min-width: 0; }

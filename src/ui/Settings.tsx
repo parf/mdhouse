@@ -3,7 +3,7 @@ import { ApiError, api, isAdminDenial, type AbConfig, type AbInfo, type AdminSta
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
 import { abConfirmLine, spaceSummary, splitNames, syncDraft } from './ab-targets';
-import { ADD_PATH_MAX, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
+import { ADD_PATH_MAX, accessBadge, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
@@ -423,7 +423,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     title={root.path}
                   >
                     <span class="name">{root.name}</span>
-                    {root.writable && root.kind !== 'reference' && <span class="tag rw">RW</span>}
+                    {accessBadge(root) && <span class="tag ro" title="Read-only">RO</span>}
                   </button>
                 ))}
               </div>
@@ -481,7 +481,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 <dd>
                   {project.kind === 'reference' ? (
                     <span class="project-access">
-                      <span class="tag saved">read-only</span>{' '}
+                      <span class="tag">read-only</span>{' '}
                       <button type="button" class="tag project-ab" disabled title="mdhouse reference material is never sent to agents">
                         [AB]
                       </button>
@@ -490,7 +490,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     <span class="project-access">
                       <button
                         type="button"
-                        class={`tag project-mode ${project.writable ? 'rw' : 'session'}`}
+                        class={`tag project-mode${project.writable ? '' : ' ro'}`}
                         disabled={!isAdmin || busy !== null || !modeTarget(project)}
                         onClick={() => void setMode(project)}
                         title={
@@ -526,16 +526,16 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 <dt>Kept</dt>
                 <dd>
                   {project.kind === 'reference' ? (
-                    <span class="tag saved" title="mdhouse's own documentation — served on every start, read-only">
+                    <span class="tag" title="mdhouse's own documentation — served on every start, read-only">
                       reference — always served, cannot be changed
                     </span>
                   ) : project.saved ? (
-                    'served on every start'
+                    <span class="project-kept-default">served on every start</span>
                   ) : (
                     <span class="project-kept">
                       <button
                         type="button"
-                        class="tag session project-save"
+                        class="tag unsaved project-save"
                         disabled={!isAdmin || nameDirty || busy !== null || typeof project.saveRev !== 'string'}
                         onClick={() => void save(project)}
                         title={!isAdmin ? NEEDS_ADMIN : nameDirty ? 'Finish editing the name first' : 'Save it: serve it on every start'}

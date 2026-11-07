@@ -86,6 +86,16 @@ export const rootWritable = (roots: readonly RootInfo[], id: string): boolean =>
   return !!root && root.writable && root.kind !== 'reference';
 };
 
+/**
+ * The Workspace access badge: read and write is the default and shows nothing; effective read-only
+ * (set, inherited without auto-RW, or capped) is the exception and shows `RO`. The reference and a
+ * project not listed (or without its access stated) make no claim.
+ */
+export function accessBadge(root: RootInfo | undefined): 'RO' | null {
+  if (!root || root.kind === 'reference' || typeof (root as { writable?: unknown }).writable !== 'boolean') return null;
+  return root.writable ? null : 'RO';
+}
+
 /** The longest folder path the add form sends. */
 export const ADD_PATH_MAX = 4096;
 
