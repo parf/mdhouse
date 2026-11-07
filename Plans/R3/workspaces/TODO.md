@@ -531,6 +531,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
 ## Access badge presentation
 
 - [ ] MW.12 Show only deviations from the mode access baseline <a id="MW.12"></a>
+  - [ ] MW.12.1 Workspace current surfaces; [bounded cohort](../EXECUTION.md#access-badge-presentation) <a id="MW.12.1"></a>
+  - [ ] MW.12.2 Viewer presentation waits for authoritative mode/cap ([№MW.0](#MW.0), [№MW.0h](#MW.0h)); no invented mode <a id="MW.12.2"></a>
   [№BADGE-W1](DECISIONS.md#BADGE-W1): Workspace hides RW/shows RO; Viewer hides RO/shows configured RW without write authority.
   Apply throughout headers, project lists and Settings: hide defaults or render gray; highlight important/unusual states.
   Presentation only; no default/mode/permission activation. Retain visible Settings access controls.

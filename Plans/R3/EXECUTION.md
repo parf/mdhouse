@@ -1763,3 +1763,35 @@ Separate instance isolation is a proposed option for untrusted callers, not a si
 No external source/provider/API/status calls, fixtures, code/dependencies, paid work or live schedules/actions.
 Only document/link/source-claim checks applied; no unnecessary test/security gate for prose. Parent RAG lifecycle
 remains open and implementation deferred. No new owner decision or provisioning request.
+
+
+## Access badge presentation cohort — 2026-11-07 {#access-badge-presentation}
+
+- [ ] MW.12.1 Apply Workspace default/exception presentation to existing surfaces
+  Base `e4ce7310747d9a2485ebdb6926292b8f940bf85d`, target `main`; owner CTO, author W2.
+  Owner [№BADGE-W1](workspaces/DECISIONS.md#BADGE-W1) and [№MW.12](workspaces/TODO.md#MW.12).
+  Scope before edits: `.scratch/worktrees/r3-mode-badges-ui`, branch `r3/mode-badges-ui`;
+  `src/ui/Sidebar.tsx`, `src/ui/Settings.tsx`, pure helper in `src/ui/project-groups.ts`,
+  `src/styles/app.css`, focused helper tests. CTO owns Plans/QA/CHANGELOG. No overlapping backend changes.
+  Actual prefs/API/UI have no authoritative global Workspace/Viewer metadata. Apply approved Workspace
+  presentation directly without inventing appBaseline/mode fields or activating RW defaults/profile/Viewer.
+  Decorative RW is absent on sidebar header and Settings chooser rows. Effective project RO is highlighted,
+  including inherit without auto-RW; missing metadata makes no access claim. Reference remains neutral/distinct.
+  Settings actionable [RW]/[RO] control stays discoverable: muted default RW, highlighted RO exception.
+  Neutralize reference read-only/kept status; normal saved persistence muted, unsaved exception emphasized;
+  configured AB override may be accented without labelling it a warning. Audit current access surfaces,
+  preserve unrelated Git/status/layout semantics. No layout redesign or new access controls.
+  Viewer configured-RW badge is deferred to authoritative mode/cap delivery; no synthetic production branch.
+  Existing configured/effective metadata, rootWritable/liveWritable, control behavior, network and authority unchanged.
+  Availability: W2 available; actual Kitty 5h71%, weekly52% remaining, own readout unavailable. W3 idle.
+  Acceptance: explicit/auto RW has no decorative badge, explicit/inherited/capped RO shows RO; immutable reference
+  neutral; live toggle updates header/list; existing Settings mode control remains visible in RW and RO and respects
+  admin/busy checks. No backend/prefs/access/default mutation or new mode claim. Native scratch real metadata,
+  sidebar header + Settings chooser/control, light/dark/narrow screenshots, preserved first failures.
+  One focused helper test invocation and source review; no full/types repeat for presentation-only changes.
+  CTO nonauthor review checks exact source delta (no security/control implementation changes); escalate if scope changes.
+  No live reload/service/session/provider/ACL/push/publish/deploy/version actions.
+
+- [ ] MW.12.2 Apply Viewer deviation badges from authoritative mode
+  Depends on [№MW.0](workspaces/TODO.md#MW.0)/[№MW.0h](workspaces/TODO.md#MW.0h) real Viewer metadata/cap.
+  Hide baseline RO; show configured RW while effective writes remain forbidden. Not implemented or claimed by this cohort.
