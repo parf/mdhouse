@@ -1487,7 +1487,7 @@ are not activated. Authors' scoped tasks completed; no further task started, W3 
 
 ## Settings Add project cohort — 2026-11-07 {#settings-add-project-cohort}
 
-- [ ] MW.1.3 Add an existing directory from Settings
+- [x] MW.1.3 Add an existing directory from Settings
   Base `917f8c0cd54d0ab09933ce4a17bf222554cecfee`, target `main`; owner CTO, authors W1 backend and W2 UI.
   Approved [№MW.1](workspaces/TODO.md#MW.1), [№ADMIN-W1](workspaces/DECISIONS.md#ADMIN-W1),
   accepted [№MW.0h.1](workspaces/TODO.md#MW.0h.1)/[№MW.1.2](workspaces/TODO.md#MW.1.2) supply the scoped prerequisite.
@@ -1539,3 +1539,18 @@ are not activated. Authors' scoped tasks completed; no further task started, W3 
   OpenCode API reports short-window 1% used, weekly 45% used; reserved for independent review.
   CTO shared Codex screen weekly 3% remaining (reset Nov 10 21:35 local); short-window unavailable.
   W3 idle; author work stays on available Claude, reserve Codex for coordination/integration.
+
+
+## Settings Add project accepted — 2026-11-07
+
+[№MW.1.3](workspaces/TODO.md#MW.1.3) done: exact reviewed/native/gated target
+`c7c2ef4f1b6434789b163543fe4c2bfa8ce77104` fast-forward integrated into `main`.
+Authors: W1 `94ffed3`, W2 `6a5125f` plus in-flight draft/duplicate-submit fix `481aa7a`.
+Combined source identity verified; one impacted gate (488 pass, 28 paths, original exit 0) and types exit 0;
+independent OpenCode pinned review PASS (60 focused tests, original exit 0). Real-backend native 21 PASS,
+no mocks, own scratch cleanup; desktop/390px light/dark evidence, CTO inspected desktop and narrow dark.
+Canonical/session mode, duplicate/no-mode-change, reference, revoke, IO/no-partial authority and save+B accepted.
+Deterministic canonical/policy staleness is route-tested, not claimed as native coverage.
+[Evidence and limits](QA.md#settings-add-project). Parent [№MW.1](workspaces/TODO.md#MW.1) stays open:
+runbook/workspace defaults, profiles/Viewer/Team and AB endpoint remain outside this checkpoint.
+No live reload/service/session/provider/ACL/push/publish/deploy/version action. W3 idle; no new task started.

@@ -607,3 +607,54 @@ Cross-browser/real-device release QA remains unverified; no actual live instance
 - ⚪ ACCESS-F2 Clear an earlier administrator error after same-page re-sign-in
   Existing [№MW.0g](workspaces/TODO.md#MW.0g) behavior reported by W2; it does not grant authority or
   lose a draft. Handle in the owning admin flow, not this migration/access checkpoint.
+
+
+## Settings Add project — integrated cohort {#settings-add-project}
+
+[№MW.1.3](workspaces/TODO.md#MW.1.3), base `917f8c0cd54d0ab09933ce4a17bf222554cecfee`,
+exact accepted target `c7c2ef4f1b6434789b163543fe4c2bfa8ce77104`, fast-forward integrated into `main`.
+Author backend `94ffed3`, UI `6a5125f` + `481aa7a`; combined source identity confirmed for both authors,
+pinned review and detached native proof. Shared docs included before freeze; package version unchanged.
+
+- Combined gate: `.scratch/worktrees/r3-project-add-cohort/.scratch/add-gate/paths.txt` names 28 impacted files.
+  One invocation, 488 pass / 0 fail; `bun-test.log` complete and `bun-test.exit` original 0.
+  `tsc.log` complete (empty), `tsc.exit` original 0. No full-suite duplicate or first gate failure.
+- Independent nonauthor OpenCode review: exact target pinned in `.scratch/worktrees/r3-project-add-review`,
+  HEAD unchanged, tracked tree clean. PASS, no blocking findings; only assigned
+  `project-add`, `roots`, `authz`, `project-add-ui` tests, 60 pass / 0 fail, original exit 0.
+  Full `.scratch/review/focused-add.log` and `.exit`; no types/full/browser duplication by reviewer.
+- Author fail-first/new routes: `.scratch/worktrees/r3-project-add-backend/.scratch/logs/add-fail-first.log`
+  retains 14 failures on unchanged code; `add-impl-run1.log` 14 pass, `focused-run1.log` 148 pass.
+  Expected injected watcher/broken-prefs error stacks are negative-path evidence, not failed tests.
+  Route matrix covers exact schema, absolute path/length/NUL, missing/file, canonical duplicate,
+  reference and descendants, no/forged/revoked admin under lock, same-origin/sec-fetch, externally saved
+  fresh policy, symlink retarget, unknown/broken config byte preservation, no auto-RW window,
+  watcher rollback and save/name B. Registry prepare/install is shared with control/CLI; existing CLI
+  reference-descendant RO behavior is retained. Add writes neither project files nor prefs.
+- Native proof: `.scratch/worktrees/r3-project-add-proof` detached at exact target, source unchanged.
+  Real backend, no mocks, safe-smoke own-group cleanup, 21 PASS / 0 FAIL, exit 0.
+  Artifacts under `/tmp/claude-1001/-home-parf-src-mdhouse-Plans-ai-team-w2/dc2bbd38-3932-4687-9b33-5750de821884/scratchpad/`:
+  `add-native-run3.log`, script `add-native.ts`, screenshots `add-native/`.
+  Signed-out controls disabled/direct 401; no mode preselection; relative/tilde paths not submitted;
+  double Enter/click exactly one POST; RW session add and real checkbox write 200; explicit RO under auto-RW,
+  no live write controls from first render, valid-hash task 403 with unchanged file SHA;
+  second tab chooser updates live; duplicate path/symlink 409 selects existing card without mode/name/save change;
+  missing/file/reference/descendant refuse without root addition and retain draft;
+  explicit save keeps RO plus session name “Added B”; revoke 401 disables form and retains typed path/mode.
+  Stale canonical/policy is covered by deterministic route tests, not native proof.
+  Retained harness failures: run1 counted a signed-out direct POST as a form POST and used a wrong baseline;
+  run2 CDP Enter lacked carriage-return text and submitted nothing. No product native failure.
+  CTO inspected `2-added-rw-light.png` and `7-narrow-dark.png`; light/dark desktop and 390px ready screenshots retained.
+
+### Evidence limits and existing follow-ups
+
+- ⚪ ADD-E1 Author mutation definitions were not retained as a script. Some zero-failure logs cannot
+  distinguish a surviving redundant guard from a no-op mutation; `mut-saved-final-only` is disclosed no-op,
+  `mut-saved-both` is not counted as evidence. Negative route tests and effective both-layers removals
+  support the guards; do not claim every mutation was caught. Preserve scripts/annotated mutations next time.
+- Existing [№ACCESS-F2](#ACCESS-F2) same-page admin re-sign-in can retain prior session-ended text until the
+  next action; also seen below Add. No new follow-up duplicate or behavioral expansion in this checkpoint.
+- Existing CLI `-p`/`--name` late prefs-write partial-state behavior is outside this web-add slice.
+  Transient prefs lock creation is expected; read-only validation does not repair/migrate/write the prefs file.
+- No live reload/service/session/provider/ACL/push/publish/deploy/version changes. Full parent
+  [№MW.1](workspaces/TODO.md#MW.1), defaults/profile/Viewer/Team/install runbook/AB endpoint are not closed.
