@@ -643,3 +643,13 @@ localStorage; navigation/reload and stale/IO/RO failures retain text. Live acces
 are never overwritten by watcher refresh; the page shows an external-change note. LF/CRLF/BOM/final-newline and
 legacy forms retain source fidelity; unsupported input is explicit. Existing document diff/history/commit and
 watcher/WebSocket refresh are reused. No new authority, Git operation, editor engine or merge algorithm.
+
+
+## Access status emphasis
+
+Decorative project badges on the sidebar header and Settings chooser omit normal RW and highlight effective RO.
+Settings access controls remain visible: RW is muted, RO emphasized; reference status stays neutral.
+Normal saved persistence is muted, while unsaved state and explicit Agent Bus overrides remain distinguishable.
+Presentation uses existing live metadata and changes no configured/effective access, default or mutation guard.
+There is no authoritative global Viewer mode yet; Viewer-specific configured-RW indication remains pending
+[№MW.12.2](R3/workspaces/TODO.md#MW.12.2), without a synthetic mode or permission activation.
