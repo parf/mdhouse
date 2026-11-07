@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, mock, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -362,4 +362,100 @@ describe('processes saving at once (D4)', () => {
     await expect((await Prefs.load(f)).addSaved('/x')).rejects.toThrow();
     expect(await Bun.file(f).exists()).toBe(false);
   }, 10000);
+});
+
+describe('a failed save changes neither the file nor what this process reads', () => {
+  test('every mutation kind: the file, memory and a later refresh stay as before; the next save works', async () => {
+    const { chmodSync, mkdirSync, readFileSync, readdirSync, symlinkSync } = await import('node:fs');
+    const base = await mkdtemp(join(tmpdir(), 'mdhouse-prefs-fail-'));
+    try {
+      // The lock is taken beside the link; the write goes beside the target, in a directory made read-only.
+      const store = join(base, 'store');
+      mkdirSync(store);
+      const target = join(store, 'prefs.json');
+      const seed = await Prefs.load(target);
+      await seed.addSaved('/x');
+      await seed.setSavedName('/x', 'X');
+      const link = join(base, 'prefs.json');
+      symlinkSync(target, link);
+      const prefs = await Prefs.load(link);
+      const disk = readFileSync(target, 'utf8');
+      const view = () =>
+        JSON.stringify({
+          saved: prefs.savedDirs(),
+          writableX: prefs.isWritableSaved('/x'),
+          name: prefs.savedName('/x') ?? null,
+          settings: prefs.settings,
+          autoRw: prefs.autoRw,
+          marks: prefs.get('/x'),
+          access: prefs.access,
+        });
+      const before = view();
+      const ops: Array<[string, () => Promise<unknown>]> = [
+        ['addSaved', () => prefs.addSaved('/y', true)],
+        ['addSaved rw', () => prefs.addSaved('/x', true)],
+        ['removeSaved', () => prefs.removeSaved('/x')],
+        ['setSavedName', () => prefs.setSavedName('/x', 'Leak')],
+        ['updateSettings', () => prefs.updateSettings({ editLink: false, autoRw: false })],
+        ['setAutoRw', () => prefs.setAutoRw(['/x'])],
+        ['marks', () => prefs.set('/x', 'a.md', 'favorite', true)],
+        ['setAllow', () => prefs.setAllow(['10.0.0.0/8'])],
+      ];
+      chmodSync(store, 0o500);
+      try {
+        for (const [what, op] of ops) {
+          let failed = false;
+          await op().catch(() => (failed = true));
+          expect([what, failed]).toEqual([what, true]);
+          prefs.refresh();
+          expect([what, view()]).toEqual([what, before]);
+        }
+      } finally {
+        chmodSync(store, 0o700);
+      }
+      expect(readFileSync(target, 'utf8')).toBe(disk);
+      expect(readdirSync(store)).toEqual(['prefs.json']); // no temporary file left behind
+      await prefs.setSavedName('/x', 'After');
+      expect(prefs.savedName('/x')).toBe('After');
+      expect((await Prefs.load(link)).savedName('/x')).toBe('After');
+    } finally {
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+});
+
+test('a failed save over a broken file leaves the fallback copy in memory untouched', async () => {
+  // A copy taken before mocking: the mock replaces the module namespace's own bindings too.
+  const real = { ...(await import('node:fs/promises')) };
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const base = mkdtempSync(join(tmpdir(), 'mdhouse-prefs-broken-'));
+  let failNext = false;
+  // Fails exactly one temp-file write; every other call is the real one, so the mock is inert afterwards.
+  mock.module('node:fs/promises', () => ({
+    ...real,
+    writeFile: async (...args: Parameters<typeof real.writeFile>) => {
+      if (failNext) {
+        failNext = false;
+        throw Object.assign(new Error('injected write failure'), { code: 'EIO' });
+      }
+      return real.writeFile(...args);
+    },
+  }));
+  try {
+    const path = join(base, 'prefs.json');
+    const prefs = await Prefs.load(path);
+    await prefs.addSaved('/a');
+    writeFileSync(path, '{ broken'); // the save that follows falls back to what this process holds
+    failNext = true;
+    let code = '';
+    await prefs.addSaved('/b').catch((e: { code?: string }) => (code = e.code ?? ''));
+    expect(code).toBe('EIO');
+    expect(prefs.savedDirs()).toEqual(['/a']);
+    // The broken file was set aside by the failed save; the next one starts a new file (existing recovery policy).
+    await prefs.addSaved('/b');
+    expect((await Prefs.load(path)).savedDirs()).toEqual(['/b']);
+  } finally {
+    mock.module('node:fs/promises', () => real);
+    await rm(base, { recursive: true, force: true });
+  }
 });

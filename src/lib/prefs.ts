@@ -133,6 +133,25 @@ function real(path: string): string {
 /** The saved entry for `dir` — itself, or a saved symlink that resolves to it — or undefined. */
 const savedEntry = (saved: string[], dir: string): string | undefined => saved.find((d) => d === dir || real(d) === dir);
 
+/** Is `dir` writable by auto-rw under `data`: the switch on and one of its paths covering it. */
+function autoCovers(data: PrefsFile, dir: string): boolean {
+  return data.settings.autoRw && data.autoRw.some((p) => [p, real(p)].some((q) => dir === q || dir.startsWith(q.endsWith('/') ? q : `${q}/`)));
+}
+
+/** What `saveRoot`'s guard sees: the file as it is under the lock, for one directory. */
+export interface SaveView {
+  saved: boolean;
+  /** auto-rw makes it writable: the switch on and a path covering it. */
+  auto: boolean;
+}
+
+/** A guard's refusal: `saveRoot` writes nothing and returns it. */
+class Refused extends Error {
+  constructor(readonly reason: string) {
+    super(reason);
+  }
+}
+
 /** Drops every name whose key is not the canonical path of a saved directory now. */
 function pruneNames(data: { saved: string[]; names: Record<string, string> }): void {
   const canonical = new Set(data.saved.map(real));
@@ -354,11 +373,13 @@ export class Prefs {
   private async mutateNow<T>(change: (data: PrefsFile) => T): Promise<T> {
     const found = await readFile(this.path);
     if (found === 'broken') await setAside(this.path);
-    const data = typeof found === 'object' ? found : found === 'missing' ? fresh() : this.data;
+    // A broken file falls back to a copy of what this process holds: a failed save must not have changed it.
+    const data = typeof found === 'object' ? found : found === 'missing' ? fresh() : structuredClone(this.data);
     if (data.version > 1) throw new Error(`${this.path} is version ${data.version}, from a newer mdhouse — not changed`);
     const result = change(data);
+    // Durable first: readers in this process see the change only once it is on disk.
+    await this.write(data);
     this.data = data;
-    await this.write();
     return result;
   }
 
@@ -367,12 +388,17 @@ export class Prefs {
    * Mode 0600 in a directory created 0700: the file holds password hashes. A symlinked file is
    * written at its target, so the link stays.
    */
-  private async write(): Promise<void> {
+  private async write(data: PrefsFile): Promise<void> {
     const target = await realpath(this.path).catch(() => this.path);
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });
     const tmp = `${target}.${process.pid}.${++tmpSeq}.tmp`;
-    await writeFile(tmp, JSON.stringify(this.data, null, 2) + '\n', { mode: 0o600 });
-    await rename(tmp, target);
+    try {
+      await writeFile(tmp, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 });
+      await rename(tmp, target);
+    } catch (err) {
+      await unlink(tmp).catch(() => {});
+      throw err;
+    }
   }
 
   get settings(): Settings {
@@ -444,10 +470,7 @@ export class Prefs {
    */
   autoRwCovers(dir: string): boolean {
     this.refresh();
-    return (
-      this.data.settings.autoRw &&
-      this.data.autoRw.some((p) => [p, real(p)].some((q) => dir === q || dir.startsWith(q.endsWith('/') ? q : `${q}/`)))
-    );
+    return autoCovers(this.data, dir);
   }
 
   /** Replace the auto-rw paths. */
@@ -551,6 +574,30 @@ export class Prefs {
       pruneNames(data);
       return true;
     });
+  }
+
+  /**
+   * Saves `dir` (canonical) in one write: saved, writable exactly as `writable` says, and its name
+   * (`null`: none). `guard` sees the file as it is under the lock, before anything changes; a reason
+   * it returns refuses the save, writing nothing. Returns that reason, or null once saved.
+   */
+  async saveRoot(dir: string, values: { writable: boolean; name: string | null }, guard: (fresh: SaveView) => string | null): Promise<string | null> {
+    try {
+      await this.mutate((data) => {
+        const why = guard({ saved: savedEntry(data.saved, dir) !== undefined, auto: autoCovers(data, dir) });
+        if (why !== null) throw new Refused(why);
+        data.saved = [...data.saved, dir].sort();
+        data.writable = data.writable.filter((d) => d !== dir);
+        if (values.writable) data.writable = [...data.writable, dir].sort();
+        if (values.name === null) delete data.names[real(dir)];
+        else data.names[real(dir)] = values.name;
+        pruneNames(data);
+      });
+      return null;
+    } catch (err) {
+      if (err instanceof Refused) return err.reason;
+      throw err;
+    }
   }
 
   /** The human name of a saved directory, by its canonical path — also when asked through a saved symlink. */

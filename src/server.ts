@@ -26,6 +26,7 @@ import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/ins
 import { convertLegacy } from './lib/legacy';
 import { Watcher } from './lib/watch';
 import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-name';
+import type { SaveView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
 import { allowedAddress, ipBytes, isLoopback, Users } from './lib/access';
@@ -371,13 +372,47 @@ export async function serve(opts: ServeOptions) {
    */
   const sessionNames = new Map<string, string>();
   const customName = (path: string): string | undefined => (prefs.isSaved(path) ? prefs.savedName(path) : sessionNames.get(path));
-  /** Sets (`null`: clears) a root's name where its lifetime says, and tells open tabs unless `publish` is false. */
-  const setRootName = async (path: string, name: string | null, publish = true): Promise<void> => {
+  /** Open tabs learn that root metadata changed; they read it again from `/api/roots`. */
+  const publishRoots = () => server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
+  /**
+   * Root metadata changes — add, remove, name, save — one at a time. Only the entry points (routes,
+   * control handlers, the CLI's fresh-start name) queue; what they call runs inside, never queuing again.
+   */
+  const rootOps = <T>(op: () => Promise<T>): Promise<T> => queueWrite('roots:metadata', op);
+  /** Sets (`null`: clears) a root's name where its lifetime says. Runs inside `rootOps`. */
+  const setRootNameNow = async (path: string, name: string | null): Promise<void> => {
     if (await prefs.setSavedName(path, name)) sessionNames.delete(path);
     else if (name === null) sessionNames.delete(path);
     else sessionNames.set(path, name);
-    if (publish) server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
   };
+  /** Sets a root's name and tells open tabs — the entry point for the CLI's fresh start. */
+  const setRootName = (path: string, name: string | null): Promise<void> =>
+    rootOps(async () => {
+      await setRootNameNow(path, name);
+      publishRoots();
+    });
+  /**
+   * What an administrator confirms when saving an unsaved project: full SHA-256 over its identity,
+   * configured and effective access (auto-rw and the reference cap), saved state and current name.
+   * A staleness check, not authority. `policy` is prefs as read now — memory, or the locked file.
+   */
+  const saveRevOf = (r: Root, policy: SaveView): string => {
+    const referenceCap = registry.inReference(r.path);
+    const rwAsked = !!r.rwAsked;
+    const snapshot = {
+      id: r.id,
+      path: r.path,
+      kind: r.kind ?? 'project',
+      rwAsked,
+      auto: policy.auto,
+      writable: (rwAsked || policy.auto) && !referenceCap,
+      referenceCap,
+      saved: policy.saved,
+      name: sessionNames.get(r.path) ?? null,
+    };
+    return createHash('sha256').update(JSON.stringify(snapshot)).digest('hex');
+  };
+  const memoryPolicy = (path: string): SaveView => ({ saved: prefs.isSaved(path), auto: prefs.autoRwCovers(path) });
   /** The roots as the page sees them: `name` is the label to show, `customName` the override when set. */
   const rootsPayload = () =>
     registry.list().map((r) =>
@@ -390,7 +425,11 @@ export async function serve(opts: ServeOptions) {
           writable: r.writable,
           // why it is writable: `--rw` asked for it, else an auto-rw path covers it
           ...(r.writable ? { writableBy: r.rwAsked ? 'rw' : 'auto' } : {}),
+          // the access chosen for it (`--rw`), apart from auto-rw: what saving it keeps
+          configuredWritable: r.kind !== 'reference' && !!r.rwAsked,
           saved: prefs.isSaved(r.path),
+          // what the page confirms before saving an unsaved project (`POST /api/roots/save`)
+          ...(r.kind !== 'reference' && !prefs.isSaved(r.path) ? { saveRev: saveRevOf(r, memoryPolicy(r.path)) } : {}),
         },
         customName(r.path),
       ),
@@ -461,10 +500,11 @@ export async function serve(opts: ServeOptions) {
 
   /** Every route and its mutation family — filled by `guard`, which refuses an unclassified write. */
   let routes: RouteEntry[] = [];
+  const adminRequired = () => noStore(json({ error: 'administrator session required', reason: 'admin' }, 401));
   /** An administrator-family write: same-origin, then an administrator session, before the handler reads anything. */
   const adminOnly = (h: Handler): Handler => (req) => {
     if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
-    if (!actorOf(req).admin) return noStore(json({ error: 'administrator session required', reason: 'admin' }, 401));
+    if (!actorOf(req).admin) return adminRequired();
     return h(req);
   };
   function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
@@ -833,14 +873,6 @@ export async function serve(opts: ServeOptions) {
       }),
 
       /**
-       * The settings page's delete button: forget a directory and stop serving it.
-       *
-       * The only request a page can make that changes what mdhouse serves, so it has to come
-       * from mdhouse's own page. A browser sends `Origin` on a cross-site POST, and
-       * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
-       * non-browser caller sends neither and is let through — it could edit prefs.json itself.
-       */
-      /**
        * The settings page's project name: `{id, name}` only; an empty name clears it. A saved
        * project keeps it in prefs, an unsaved one in memory until it is saved. Display only:
        * id, path, URLs, marks and access stay as they are.
@@ -850,22 +882,74 @@ export async function serve(opts: ServeOptions) {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const asked = parseNameRequest(await req.json().catch(() => null));
           if (!asked.ok) return fail(400, asked.error);
-          const root = registry.get(asked.id);
-          if (!root) return fail(404, 'unknown root');
-          if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be renamed`);
-          await setRootName(root.path, asked.name);
-          return json({ roots: rootsPayload() });
+          return rootOps(async () => {
+            if (!actorOf(req).admin) return adminRequired();
+            const root = registry.get(asked.id);
+            if (!root) return fail(404, 'unknown root');
+            if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be renamed`);
+            await setRootNameNow(root.path, asked.name);
+            publishRoots();
+            return json({ roots: rootsPayload() });
+          });
         }),
       },
 
+      /**
+       * The settings page's `[unsaved]`: save a project served for this session only, as it is —
+       * its canonical path, the access chosen for it (never auto-rw's) and its name. `{id, rev}`
+       * only; `rev` is the root's `saveRev` the administrator confirmed. Anything that changed it
+       * since — access, auto-rw, name, an external save — is 409 stale, and nothing is written.
+       */
+      '/api/roots/save': {
+        POST: mutation('root-admin', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort() : [];
+          const { id, rev } = (body ?? {}) as { id?: unknown; rev?: unknown };
+          if (keys.join() !== 'id,rev' || typeof id !== 'string' || !id || typeof rev !== 'string' || !/^[0-9a-f]{64}$/.test(rev)) {
+            return fail(400, 'expected exactly {id, rev}');
+          }
+          return rootOps(async () => {
+            if (!actorOf(req).admin) return adminRequired();
+            const root = registry.get(id);
+            if (!root) return fail(404, 'unknown root');
+            if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it is never saved`);
+            const stale = () => json({ error: 'the project changed since it was shown — look again', reason: 'stale' }, 409);
+            if (saveRevOf(root, memoryPolicy(root.path)) !== rev) return stale();
+            const name = sessionNames.get(root.path) ?? null;
+            // The file as it is under the lock: an auto-rw change or a save by another process since
+            // the check above refuses here. So does an administrator signed out meanwhile.
+            const refused = await prefs.saveRoot(root.path, { writable: !!root.rwAsked, name }, (fresh) =>
+              !actorOf(req).admin ? 'admin' : saveRevOf(root, fresh) !== rev ? 'stale' : null,
+            );
+            if (refused === 'admin') return adminRequired();
+            if (refused !== null) return stale();
+            sessionNames.delete(root.path);
+            publishRoots();
+            return json({ roots: rootsPayload() });
+          });
+        }),
+      },
+
+      /**
+       * The settings page's delete button: forget a directory and stop serving it.
+       *
+       * The only request a page can make that changes what mdhouse serves, so it has to come
+       * from mdhouse's own page. A browser sends `Origin` on a cross-site POST, and
+       * `Sec-Fetch-Site` on every request; either one saying "another site" is a refusal. A
+       * non-browser caller sends neither and is let through — it could edit prefs.json itself.
+       */
       '/api/roots/remove': {
         POST: mutation('root-admin', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as { id?: string } | null;
-          const root = body?.id ? registry.get(body.id) : undefined;
-          if (!root) return fail(404, 'unknown root');
-          if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be removed`);
-          return json(await removeRoots([root.path]));
+          return rootOps(async () => {
+            if (!actorOf(req).admin) return adminRequired();
+            const root = body?.id ? registry.get(body.id) : undefined;
+            if (!root) return fail(404, 'unknown root');
+            if (root.kind === 'reference') return fail(403, `${root.name} is mdhouse reference material — it cannot be removed`);
+            return json(await removeRoots([root.path]));
+          });
         }),
       },
 
@@ -1391,7 +1475,7 @@ export async function serve(opts: ServeOptions) {
         if (session !== undefined) await prefs.setSavedName(root.path, session);
         sessionNames.delete(root.path);
       }
-      if (name !== undefined) await setRootName(root.path, name, false);
+      if (name !== undefined) await setRootNameNow(root.path, name);
     }
 
     const roots = rootLines(added, asked).map((r) => (upgraded.has(r.id) ? { ...r, upgraded: true } : r));
@@ -1456,8 +1540,8 @@ export async function serve(opts: ServeOptions) {
   };
 
   const control = await serveControl(port, {
-    add: (req) => addRoots(req.dirs, req.rw === true, req.save === true, req.name),
-    remove: (req) => removeRoots(req.dirs),
+    add: (req) => rootOps(() => addRoots(req.dirs, req.rw === true, req.save === true, req.name)),
+    remove: (req) => rootOps(() => removeRoots(req.dirs)),
     ping: () => ({
       pid: process.pid,
       url: pageUrl(hostname, server.port),

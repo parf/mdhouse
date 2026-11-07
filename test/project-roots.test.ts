@@ -37,11 +37,23 @@ test('/api/roots: the allowlisted project fields, with why a project is writable
   try {
     const on = await roots();
     for (const r of Object.values(on)) {
-      const want = ['id', 'kind', 'name', 'path', 'saved', 'writable', ...(r.writable ? ['writableBy'] : [])];
+      const want = [
+        'id',
+        'kind',
+        'name',
+        'path',
+        'saved',
+        'writable',
+        'configuredWritable',
+        ...(r.writable ? ['writableBy'] : []),
+        ...(r.kind !== 'reference' && !r.saved ? ['saveRev'] : []),
+      ];
       expect(Object.keys(r).sort()).toEqual(want.sort());
     }
     expect(on.rw).toMatchObject({ kind: 'project', path: join(base, 'rw'), writable: true, writableBy: 'rw' });
     expect(on.auto).toMatchObject({ writable: true, writableBy: 'auto' });
+    // configured apart from effective: only `--rw` is a chosen grant; auto-rw and the reference are not
+    expect([on.rw!.configuredWritable, on.auto!.configuredWritable, on.ro!.configuredWritable, on._ref!.configuredWritable]).toEqual([true, false, false, false]);
     expect(on.ro).toMatchObject({ writable: false });
     expect(on.ro!.writableBy).toBeUndefined();
     expect(on._ref).toMatchObject({ kind: 'reference', writable: false });
