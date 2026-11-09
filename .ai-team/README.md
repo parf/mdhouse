@@ -56,7 +56,7 @@ paths overlap, bases differ or work is long-lived. Claude workers also have a `C
 
 ## Plan accountability
 
-The project index is [`../TODO.md`](../TODO.md); the assigned task identifies its owning project and
+The project index is [`../Plans/TODO.md`](../Plans/TODO.md); the assigned task identifies its owning project and
 plan files. CTO verifies that completed items, remaining scope, blockers, follow-ups and exact
 revisions match reality. Workers provide evidence; CTO is the single owner of shared checkpoint
 status. A checkpoint becomes done only after the change is integrated and acceptance plus required
@@ -79,10 +79,10 @@ do not poll continuously.
 ## Start and status
 
 ```bash
-Plans/ai-team/start-agents.sh
-Plans/ai-team/start-agents.sh --run
-Plans/ai-team/start-agents.sh --run --to "$KITTY_LISTEN_ON"
-Plans/ai-team/start-agents.sh --stop
+.ai-team/start-agents.sh
+.ai-team/start-agents.sh --run
+.ai-team/start-agents.sh --run --to "$KITTY_LISTEN_ON"
+.ai-team/start-agents.sh --stop
 ```
 
 `--stop` closes all mdhouse team role windows on the selected Kitty socket, including the caller

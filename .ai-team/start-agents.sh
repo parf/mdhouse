@@ -3,8 +3,7 @@
 set -euo pipefail
 
 team_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-plans_dir=$(cd -- "$team_dir/.." && pwd -P)
-repo_dir=$(git -C "$plans_dir" rev-parse --show-toplevel)
+repo_dir=$(git -C "$team_dir" rev-parse --show-toplevel)
 run=0
 roles=0
 stop=0
@@ -16,7 +15,7 @@ Usage: start-agents.sh [--run | --stop] [--roles] [--to KITTY_SOCKET]
 
 Without --run, show help, Kitty availability and current team status only.
 
-Open six Kitty tabs, each in its own Plans/ai-team/<role>/ starting directory:
+Open six Kitty tabs, each in its own .ai-team/<role>/ starting directory:
   MDH-CEO md/ceo  #md/ceo   ab-codex
   MDH-CTO     #md/cto       ab-codex
   MDH-W1      #md/w1        ab-claude
@@ -143,7 +142,7 @@ is_active() {
 # its bus name is live.
 role_message() {
     local role=$1
-    printf 'Read your role now: Plans/ai-team/%s/AGENTS.md, then the role file it links (Plans/ai-team/%s.md) and every shared rule it links (Plans/ai-team/common.md, README.md). Follow them from now on. No reply is needed. Do not start a task because of this message.' "$role" "$role"
+    printf 'Read your role now: .ai-team/%s/AGENTS.md, then the role file it links (.ai-team/%s.md) and every shared rule it links (.ai-team/common.md, README.md). Follow them from now on. No reply is needed. Do not start a task because of this message.' "$role" "$role"
 }
 
 tell_role() {
@@ -214,7 +213,7 @@ fi
 
 for role in ceo cto w1 w2 w3 review; do
     if [[ ! -f "$team_dir/$role/AGENTS.md" ]]; then
-        echo "start-agents: missing role directory/instructions: Plans/ai-team/$role" >&2
+        echo "start-agents: missing role directory/instructions: .ai-team/$role" >&2
         exit 69
     fi
 done

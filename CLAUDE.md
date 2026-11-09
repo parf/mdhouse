@@ -10,7 +10,7 @@ Bun + Preact Markdown workspace for every `.md` under a folder. npm package `mdh
   [glyphs](doc/skills/glyphs.md), [Q&A states](doc/skills/qa-states.md) and
   [agent authoring rules](doc/agent-markup.md) before writing plans, questions, decisions or reports.
 - File presentation and planning flow: [syntax](doc/syntax.md), [Q&A](doc/qa.md),
-  [Markdown](doc/markdown.md). Team initialization: [shared rules](Plans/ai-team/common.md#planning-and-document-syntax).
+  [Markdown](doc/markdown.md). Team initialization: [shared rules](.ai-team/common.md#planning-and-document-syntax).
 
 ## How I want you to work
 

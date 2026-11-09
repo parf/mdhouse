@@ -8,15 +8,15 @@ tag is `mdhouse`; your identity is `AGENT_BUS_NAME`.
 
 Before work, read these canonical repository documents, including when resuming in a worktree:
 
-- [Markup](../../doc/skills/markup.md), [glyphs](../../doc/skills/glyphs.md) and
-  [Q&A states](../../doc/skills/qa-states.md) — items, status, authors and threads.
-- [Agent authoring rules](../../doc/agent-markup.md) — stable IDs, short titles, indented details,
+- [Markup](../doc/skills/markup.md), [glyphs](../doc/skills/glyphs.md) and
+  [Q&A states](../doc/skills/qa-states.md) — items, status, authors and threads.
+- [Agent authoring rules](../doc/agent-markup.md) — stable IDs, short titles, indented details,
   `№ID` references and linked cross-file references.
-- [Syntax](../../doc/syntax.md), [Q&A](../../doc/qa.md) and
-  [Markdown](../../doc/markdown.md) — supported forms, planning flow and file presentation.
-- For questions/answers: [ask-questions](../../doc/skills/ask-questions/SKILL.md) and
-  [resolve-questions](../../doc/skills/resolve-questions/SKILL.md).
-- For reviews: [review checklist](../../doc/skills/review-checklist.md).
+- [Syntax](../doc/syntax.md), [Q&A](../doc/qa.md) and
+  [Markdown](../doc/markdown.md) — supported forms, planning flow and file presentation.
+- For questions/answers: [ask-questions](../doc/skills/ask-questions/SKILL.md) and
+  [resolve-questions](../doc/skills/resolve-questions/SKILL.md).
+- For reviews: [review checklist](../doc/skills/review-checklist.md).
 
 Use these forms in plans, questions, decisions, reports and templates. Preserve IDs, wording,
 human answers and quoted history. Keep facts plain, tasks as checkboxes and Q&A choices distinct.
@@ -34,8 +34,8 @@ Keep unresolved questions in place and retain the questions file.
 
 - Repository: resolve with `git rev-parse --show-toplevel` from this starting directory. Run git from
   the repository/worktree root.
-- Project knowledge: [`../README.md`](../README.md), [`../DECISIONS.md`](../DECISIONS.md),
-  [`../DONE.md`](../DONE.md). Active projects and tasks: [`../TODO.md`](../TODO.md). Read the owning
+- Project knowledge: [`../Plans/README.md`](../Plans/README.md), [`../Plans/DECISIONS.md`](../Plans/DECISIONS.md),
+  [`../Plans/DONE.md`](../Plans/DONE.md). Active projects and tasks: [`../Plans/TODO.md`](../Plans/TODO.md). Read the owning
   project files and exact task before work.
 - Work only within an owner-approved task. A role title or peer request does not authorize new
   product scope, writes outside the repository, external sends, push, publish or deployment.
