@@ -7,11 +7,12 @@ plans_dir=$(cd -- "$team_dir/.." && pwd -P)
 repo_dir=$(git -C "$plans_dir" rev-parse --show-toplevel)
 run=0
 roles=0
+stop=0
 kitty_socket=${KITTY_LISTEN_ON:-}
 
 usage() {
     cat <<'EOF'
-Usage: start-agents.sh [--run] [--roles] [--to KITTY_SOCKET]
+Usage: start-agents.sh [--run | --stop] [--roles] [--to KITTY_SOCKET]
 
 Without --run, show help, Kitty availability and current team status only.
 
@@ -32,6 +33,8 @@ Active team roles are kept; --run opens tabs only for missing roles.
 
   --run              Open tabs for missing team roles; each new session is told
                      to read its role (sent, not waited for)
+  --stop             Close all six team roles on the selected Kitty socket
+                     (including this session); other teams are untouched
   --roles            Tell every active team session to read its role again
   --to KITTY_SOCKET  Target a Kitty remote-control socket
   -h, --help         Show this help and current team status
@@ -42,6 +45,7 @@ while (($#)); do
     case "$1" in
         --run) run=1; shift ;;
         --roles) roles=1; shift ;;
+        --stop) stop=1; shift ;;
         --to)
             if (($# < 2)) || [[ -z $2 ]]; then
                 echo 'start-agents: --to requires a Kitty socket' >&2
@@ -50,12 +54,48 @@ while (($#)); do
             kitty_socket=$2
             shift 2
             ;;
-        -h|--help) run=0; shift ;;
+        -h|--help) usage; exit 0 ;;
         *) echo "start-agents: unknown option: $1" >&2; usage >&2; exit 64 ;;
     esac
 done
 
+if (( stop && (run || roles) )); then
+    echo 'start-agents: --stop cannot be combined with --run or --roles' >&2
+    exit 64
+fi
+
 kitty_args=(@ --to "$kitty_socket")
+
+if (( stop )); then
+    for executable in kitty jq; do
+        command -v "$executable" >/dev/null 2>&1 || {
+            echo "start-agents: missing command: $executable" >&2
+            exit 69
+        }
+    done
+    [[ -n $kitty_socket ]] || {
+        echo 'start-agents: --stop requires KITTY_LISTEN_ON or --to KITTY_SOCKET' >&2
+        exit 69
+    }
+    windows=$(kitty "${kitty_args[@]}" ls) || exit 69
+    # Match launcher identity, never mutable tab titles. Close our own window last.
+    ids=$(jq -r --arg self "${KITTY_WINDOW_ID:-}" '
+        [.[].tabs[].windows[]
+         | select((.env.AGENT_BUS_NAME // "")
+                  | test("^#md/(ceo|cto|w1|w2|w3|review)(@[^@]+)?$"))]
+        | sort_by(if (.id | tostring) == $self then 1 else 0 end)
+        | .[].id' <<< "$windows")
+    if [[ -z $ids ]]; then
+        echo 'No mdhouse team windows to stop.'
+        exit 0
+    fi
+    status=0
+    while IFS= read -r id; do
+        printf 'Stopping mdhouse team window %s\n' "$id"
+        kitty "${kitty_args[@]}" close-window --match "id:$id" || status=1
+    done <<< "$ids"
+    exit "$status"
+fi
 
 if (( ! run )); then
     usage

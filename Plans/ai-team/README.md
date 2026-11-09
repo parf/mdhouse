@@ -82,9 +82,13 @@ do not poll continuously.
 Plans/ai-team/start-agents.sh
 Plans/ai-team/start-agents.sh --run
 Plans/ai-team/start-agents.sh --run --to "$KITTY_LISTEN_ON"
+Plans/ai-team/start-agents.sh --stop
 ```
 
-Without `--run`, the script is status-only. It never invokes raw `codex`, `claude` or `opencode`;
+`--stop` closes all mdhouse team role windows on the selected Kitty socket, including the caller
+when it is a team window. Other teams are untouched. It cannot be combined with `--run` or `--roles`.
+
+Without `--run` or `--stop`, the script is status-only. It never invokes raw `codex`, `claude` or `opencode`;
 session identity, resume and Agent Bus integration always go through the corresponding `ab-*`
 launcher.
 
