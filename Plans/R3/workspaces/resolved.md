@@ -526,3 +526,25 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬👾 (x) settles `NA → US` = reauthenticate. Open only: the stored marker — `NA` (= Namibia) or `--`/`null`.
   >
   > 💬 👤parf пустой страны в COUNTRY2 = NA
+
+## Team identity realm — 2026-11-06
+
+- ✅ Q-R3-REALM1 What does realm identify in the locked user name/realm? <a id="Q-R3-REALM1"></a>
+  [№USER-W7](DECISIONS.md#USER-W7) makes established GitHub username and name/realm admin-edit-only.
+  Current code has only the Basic challenge realm `mdhouse` and the Agent Bus host-derived realm;
+  neither is an authenticated-user field. Is realm an existing external identity component or
+  another label? Its meaning and source must be specified before adding a user-schema field; this question does not
+  block username/name protection or authenticated-actor-only login/signatures.
+  > ✅ 💡👾 Keep the established username/name lock; leave realm unmodeled until its meaning is explicit.
+  >
+  > 💬 👤parf elaborate
+  >
+  > 💬👾 "Realm" exists today only as: Basic auth `realm="mdhouse"` (`src/server.ts:358`); Agent Bus `#mdhouse@<host>` (`src/lib/agent-bus.ts:89`).
+  > No user record has one. Which is meant?
+  > - A — nothing extra: "name/realm" = the user's display name
+  > - B — the user's Agent Bus identity `#<name>@<realm>` (agents sign as the user)
+  > - C — an organization / team label of the user
+  - (x) A — display name only; no realm field 🌟
+  - ( ) B — the user's Agent Bus identity `#<name>@<realm>`
+  - ( ) C — organization / team label
+  > 💬 👤parf agree

@@ -42,7 +42,9 @@
   Each session idle >30 days requires GitHub re-login before last-used updates; other sessions do not renew it. Admin proof/session TTLs stay separate. [History](resolved.md#USER-W6).
 - 📌 USER-W7 Once set, Team GitHub username and name/realm are configured-admin-edit-only; self-edit and automatic profile-sync overwrite are forbidden. <a id="USER-W7"></a>
   Login/signature always uses the authenticated immutable principal; body/cookie spoof, different-ID OAuth rebinding and admin login-as are forbidden.
-  Immutable GitHub principal and grants stay unchanged; username correction requires GitHub lookup/preview/confirm. Realm meaning: [№Q-R3-REALM1](QUESTIONS.md#Q-R3-REALM1). [History](resolved.md#USER-W7).
+  Immutable GitHub principal and grants stay unchanged; username correction requires GitHub lookup/preview/confirm. Realm meaning: [№Q-R3-REALM1](#Q-R3-REALM1). [History](resolved.md#USER-W7).
+- 📌 Q-R3-REALM1 "name/realm" = the user's display name; no realm field. <a id="Q-R3-REALM1"></a>
+  [History](resolved.md#Q-R3-REALM1).
 - 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](resolved.md#Q-W1).
   No protected-path list; canonical root = grant; realpath jail = boundary; automatic references stay RO.
 - 📌 Q-W2 Roots: one `prefs.json` model; CLI + Settings Add directory; shared canonical registration. [History](resolved.md#Q-W2).
