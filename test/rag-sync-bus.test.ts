@@ -43,6 +43,8 @@ function fakeDaemon(o: {
     fetch: async (req) => {
       const url = new URL(req.url);
       const tok = req.headers.get('x-agent-bus-token') ?? '';
+      // the client's protocol handshake: answered, not logged
+      if (url.pathname === '/identity') return Response.json({ protocol: 1, protocol_min: 1 });
       calls.push(`${req.method} ${url.pathname}${url.search}${tok ? (tok === TOKEN ? ' +token' : ' +other') : ''}`);
       const route = `${req.method} ${url.pathname}`;
       if (route === 'GET /status') return Response.json({ you: tok === TOKEN ? (o.self ?? ME) : (o.you ?? 'parf'), up: true });
@@ -70,7 +72,7 @@ function fakeDaemon(o: {
           clock.t += Number.parseInt(url.searchParams.get('wait') ?? '0', 10) * 1000;
           return new Response(null, { status: 204 });
         }
-        return typeof queue[i]!.raw === 'string' ? new Response(queue.splice(i, 1)[0]!.raw as string) : Response.json(queue.splice(i, 1)[0]);
+        return Response.json(queue.splice(i, 1)[0]);
       }
       return Response.json({ error: 'not here' }, { status: 404 });
     },
@@ -283,7 +285,7 @@ describe('request — one exchange, own labels only', () => {
   });
 
   test('an answer over the byte bound is unknown, never truncated', async () => {
-    const d = fakeDaemon({ reply: () => [{ raw: 'x'.repeat(BUS_LIMITS.bytes + 1) }] });
+    const d = fakeDaemon({ reply: () => [{ body: 'x'.repeat(BUS_LIMITS.bytes + 1) }] });
     try {
       expect(await (await d.open()).request({ target: FS, body: 'sync' })).toEqual({ kind: 'uncertain', sent: true, reason: 'reply: answer too large' });
     } finally {

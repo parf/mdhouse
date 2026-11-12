@@ -1,14 +1,15 @@
 /**
  * The Agent Bus integration (`~/src/ai-agent-bus`): a page asks an AI session to read it and reply.
  *
- * Talks to the `agent-busd` daemon over its unix socket, HTTP+JSON. The account socket
+ * Talks to the `agent-busd` daemon through the `ai-agent-bus-sdk` client. The account socket
  * (`user-<login>.sock`) makes every call the login's own; mdhouse registers an agent of its own
  * (`#mdhouse@<host>`, owned by the login, `@owner` allowed) and talks as it, since a reply needs a
  * registered inbox. `AGENT_BUS_*` from the environment is never read: a mdhouse started from an AI
- * session's shell would act as that session.
+ * session's shell would act as that session — `connectBus` passes every client option explicitly.
  */
 import { existsSync } from 'node:fs';
 import { hostname, userInfo } from 'node:os';
+import { Bus, BusError as ClientError, BusTimeout, BusUnreachable } from 'ai-agent-bus-sdk';
 
 /** One message as the daemon hands it out. A receipt (`ack` / `done`) is not an answer. */
 export interface Envelope {
@@ -60,6 +61,8 @@ export class BusError extends Error {
 export const TOPIC = 'mdhouse';
 /** How long a request waits for its reply. */
 export const ANSWER_MS = 10 * 60_000;
+/** One daemon call other than a request's wait for its reply, ms. */
+const CALL_MS = 30_000;
 /** A pushed session re-polls every 55 s: a credential used this recently is alive between polls. */
 const ALIVE_MS = 90_000;
 /** Jobs kept for a page that reconnects. */
@@ -120,7 +123,9 @@ export function validEndpoint(addr: unknown): addr is string {
 
 /** The words a page, a WebSocket event or a log may carry for a failure: never the daemon's own text. */
 export function safeError(err: unknown): string {
-  if (!(err instanceof BusError)) return 'the agent bus failed';
+  if (err instanceof BusUnreachable) return 'the agent bus is unreachable';
+  if (err instanceof BusTimeout) return 'the agent bus timed out';
+  if (!(err instanceof BusError || err instanceof ClientError)) return 'the agent bus failed';
   const { status } = err;
   if (status === 0) return 'the agent bus is unreachable';
   if (status === 401 || status === 403) return `the agent bus refused mdhouse's credential (HTTP ${status})`;
@@ -131,60 +136,11 @@ export function safeError(err: unknown): string {
 }
 
 /**
- * The daemon, as one credential sees it: a unix socket path or an `http(s)://` address. An empty
- * token on the account socket is the login; over TCP every call needs one.
+ * A client of the daemon at `addr`, as `token` sees it: an empty token on the account socket is the
+ * login; over TCP every call needs one. Every option is explicit, so no `AGENT_BUS_*` is read.
  */
-export class Daemon {
-  constructor(
-    readonly socket: string,
-    private readonly token = '',
-  ) {}
-
-  async call<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T | null> {
-    const tcp = isUrl(this.socket);
-    const res = await fetch(`${tcp ? this.socket.replace(/\/+$/, '') : 'http://localhost'}${path}`, {
-      method,
-      ...(tcp ? {} : { unix: this.socket }),
-      headers: { 'content-type': 'application/json', ...(this.token ? { 'x-agent-bus-token': this.token } : {}), ...headers },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    }).catch((err: Error) => {
-      throw new BusError(0, `agent bus unreachable at ${this.socket}: ${err.message}`);
-    });
-    // nothing arrived before the wait ran out
-    if (res.status === 204) return null;
-    const text = await res.text();
-    if (!res.ok) throw new BusError(res.status, reason(text) || res.statusText);
-    return text ? (JSON.parse(text) as T) : null;
-  }
-
-  ls(kind?: string): Promise<Rec[] | null> {
-    return this.call<Rec[]>('GET', `/ls${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`);
-  }
-
-  send(msg: { to: string; body: string; topic: string; tag: string }): Promise<Envelope | null> {
-    return this.call<Envelope>('POST', '/send', msg);
-  }
-
-  /** Takes one message of this topic from the own inbox without waiting; false when there is none. */
-  async drain(topic: string): Promise<boolean> {
-    return (await this.call<Envelope>('GET', `/consume?${new URLSearchParams({ topic, wait: '0s' })}`)) !== null;
-  }
-
-  /** A filtered long-poll: only this topic + tag; null when the wait ran out. */
-  consume(topic: string, tag: string, wait = '55s'): Promise<Envelope | null> {
-    return this.call<Envelope>('GET', `/consume?${new URLSearchParams({ topic, tag, wait })}`);
-  }
-}
-
-/** A refusal's words: the daemon answers `{"error": "…"}`, or plain text. */
-function reason(text: string): string {
-  try {
-    const got = JSON.parse(text) as { error?: unknown };
-    if (typeof got?.error === 'string') return got.error;
-  } catch {
-    /* plain text */
-  }
-  return text.trim();
+export function connectBus(addr: string, token: string, expectName = '', timeout = CALL_MS): Bus {
+  return Bus.connect({ addr, token, expectName, fingerprint: '', timeout });
 }
 
 /**
@@ -235,7 +191,7 @@ export function isAlive(r: Pick<Rec, 'readers' | 'last_used'>, now = Date.now())
 export class AgentBus {
   readonly me: string;
   /** `addr \n token` → the connection. */
-  private readonly connections = new Map<string, Promise<Daemon>>();
+  private readonly connections = new Map<string, Promise<Bus>>();
   /** Exchanges under way, per connection key. */
   private readonly active = new Map<string, number>();
   /** Drains still running, on any connection. */
@@ -246,14 +202,12 @@ export class AgentBus {
     /** The default endpoint: the instance's. */
     private readonly where: () => Endpoint,
     private readonly emit: (ev: AbEvent) => void,
-    opts: { me?: string; answerMs?: number; wait?: string } = {},
+    opts: { me?: string; answerMs?: number } = {},
   ) {
     this.me = opts.me ?? ownName();
     this.answerMs = opts.answerMs ?? ANSWER_MS;
-    this.wait = opts.wait ?? '55s';
   }
   private readonly answerMs: number;
-  private readonly wait: string;
 
   private busy = (): boolean => [...this.active.values()].some((n) => n > 0);
 
@@ -262,26 +216,32 @@ export class AgentBus {
    * failure. A new endpoint or credential is a connection of its own; the old one keeps serving the
    * exchanges it started.
    */
-  private connect(ep: Endpoint = this.where()): Promise<Daemon> {
+  private connect(ep: Endpoint = this.where()): Promise<Bus> {
     const key = `${ep.addr}\n${ep.token}`;
     const known = this.connections.get(key);
     if (known) return known;
     const { addr: socket, token } = ep;
-    const owner = new Daemon(socket, token);
     const agent = (async () => {
-      const rec = { name: this.me, kind: 'agent', descr: 'mdhouse — pages ask agents', tags: ['personal'], allow: ['@owner'] };
-      // create only: an existing record keeps what its owner set on it
-      await owner.call('POST', '/register', rec, { 'if-none-match': '*' }).catch((err: unknown) => {
-        if (!(err instanceof BusError && err.status === 412)) throw err;
-      });
-      const got = await owner.call<{ token: string }>('POST', '/token', { name: this.me });
-      if (!got?.token) throw new BusError(500, `agent bus gave no token for ${this.me}`);
-      const agent = new Daemon(socket, got.token);
+      const owner = connectBus(socket, token);
+      let minted: string;
+      try {
+        const rec = { name: this.me, kind: 'agent', descr: 'mdhouse — pages ask agents', tags: ['personal'], allow: ['@owner'] };
+        // create only: an existing record keeps what its owner set on it
+        await owner.register(rec, { createOnly: true }).catch((err: unknown) => {
+          if (!(err instanceof ClientError && err.status === 412)) throw err;
+        });
+        const got = (await owner.request('POST', '/token', { name: this.me })) as { token?: unknown } | null;
+        if (typeof got?.token !== 'string' || !got.token) throw new BusError(500, `agent bus gave no token for ${this.me}`);
+        minted = got.token;
+      } finally {
+        await owner.close();
+      }
+      const agent = connectBus(socket, minted, this.me);
       // Replies to jobs of an earlier run: nobody waits for them any more; other topics are not ours.
       // Only while no exchange is under way — its reply may sit in the same inbox.
       if (!this.busy()) {
         const drain = (async () => {
-          for (let i = 0; i < 1000 && (await agent.drain(TOPIC)); i++);
+          for (let i = 0; i < 1000 && (await agent.consume({ topic: TOPIC, wait: 0 })); i++);
         })();
         const done = drain.catch(() => {});
         this.drains.add(done);
@@ -315,7 +275,7 @@ export class AgentBus {
   async agents(ep?: Endpoint): Promise<BusAgent[]> {
     const d = await this.connect(ep);
     const now = Date.now();
-    return ((await d.ls('agent')) ?? [])
+    return (((await d.records({ kind: 'agent' })) as Rec[] | null) ?? [])
       .filter((r) => r.kind === 'agent' && r.name !== this.me)
       .map((r) => ({ name: r.name, descr: r.descr ?? '', alive: isAlive(r, now) }))
       .sort((a, b) => Number(b.alive) - Number(a.alive) || a.name.localeCompare(b.name));
@@ -346,21 +306,16 @@ export class AgentBus {
     this.emit(ev);
   }
 
-  /** One target, already counted in `active`: send, then wait on this exchange's tag for an ack and the answer (or done). */
-  private async exchange(d: Daemon, key: string, job: string, to: string, body: string): Promise<void> {
-    const tag = `mdhouse-${crypto.randomUUID()}`;
+  /**
+   * One target, already counted in `active`: `sent` when handed to the client, then the client's call —
+   * its ack, then the answer, done or timeout. A refused send follows `sent` with `error`.
+   */
+  private async exchange(d: Bus, key: string, job: string, to: string, body: string): Promise<void> {
     try {
-      await d.send({ to, body, topic: TOPIC, tag });
       this.note(job, to, 'sent');
-      const until = Date.now() + this.answerMs;
-      while (Date.now() < until) {
-        const m = await d.consume(TOPIC, tag, this.wait);
-        if (!m) continue;
-        if (m.receipt === 'ack') this.note(job, to, 'ack');
-        else if (m.receipt === 'done') return this.note(job, to, 'done');
-        else return this.note(job, to, 'answer', m.body);
-      }
-      this.note(job, to, 'timeout');
+      const out = await d.call(to, body, { topic: TOPIC, timeout: this.answerMs, onAck: () => this.note(job, to, 'ack') });
+      if (out.kind === 'answer') this.note(job, to, 'answer', out.message.body);
+      else this.note(job, to, out.kind);
     } catch (err) {
       this.note(job, to, 'error', safeError(err));
     } finally {

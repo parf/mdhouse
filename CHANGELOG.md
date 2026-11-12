@@ -58,6 +58,8 @@
 
 ### Changed
 
+- Agent Bus traffic (page requests and `mdhouse-rag-sync`) goes through the `ai-agent-bus-sdk` client
+
 - Document HTML is passive on the server and at browser sinks. Passive classes, IDs, tables, details and code colours stay; scripts, handlers, frames, forms, inline SVG/MathML and unsafe URLs/styles are removed. Raw HTML opens sandboxed without scripts
 - Q&A write controls use generated-action provenance; double-click selection is on an item's glyph or row. Mermaid uses constrained inert images: diagram labels are no longer selectable and diagram links/callbacks are inactive
 - R3 and later distributions use the PolyForm Strict License 1.0.0, copyright Sergey Porfiriev; earlier releases retain their distributed licenses

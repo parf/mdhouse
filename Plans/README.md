@@ -205,12 +205,12 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 `src/lib/agent-bus.ts` — [ab-integration.md](ab-integration.md). Off until `mdhouse --agent-bus` (prefs `agentBus.enabled`); every `/api/ab*` POST is 404 while off.
 
-- The daemon over its account socket (`user-<login>.sock`, Bun `fetch({unix})`) — own client, not `@agent-bus/client` (not on npm); or `http(s)://host:port` with `agentBus.token` (asked for by `--agent-bus <url>`, never in argv, never sent to the page)
+- The daemon through `ai-agent-bus-sdk` (`connectBus`: every client option explicit) over its account socket (`user-<login>.sock`); or `http(s)://host:port` with `agentBus.token` (asked for by `--agent-bus <url>`, never in argv, never sent to the page)
 - mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), canonical `tags: ["personal"]` and `allow: ["@owner"]` on creation; existing records keep owner settings, token minted, every call with it
 - New connections drain earlier-run replies only while no exchange is active; sends wait for all pending drains. Endpoint/credential changes preserve active connections and the shared job index.
 - **Never `AGENT_BUS_*` from the environment** — a mdhouse started from an AI session's shell would act as that session
 - Alive: `readers > 0`, or `last_used` < 90 s
-- `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `send` (topic `mdhouse`, a fresh tag) → filtered `consume({topic, tag})` until the answer / `done` / 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
+- `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `sent`, then the client's `call` (topic `mdhouse`) → ack, answer / `done` / timeout at 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
 - The request text names the file by its absolute path and the page by its URL (`requestText`)
 - `/api/doc` → `ab: [names]` from `<!-- AB: … -->` — only while on
 - Page: `AgentBusPanel` — a chat panel on the right, `position: fixed`; `main` and the top strip get `margin-right` via `.app:has(.ab-panel)`; full width ≤720px. `a` / the button opens it and turns the left sidebar off (`onAgentPanel`). Closed, it stays mounted (returns null) so its jobs keep listening and the button shows waiting / answered
@@ -420,7 +420,7 @@ produces a deterministic full-metadata digest, not content hash, auth or atomic-
 an injected transport. Sync requires explicit apply, matching owner configuration, demand mode,
 no subscribers and RAG 0.4.2 or later capabilities/collection health; provider replies may add fields. Unknown outcomes never
 retry automatically; semantic/hybrid search requires explicit paid intent.
-`lib/rag-sync-bus.ts` uses only the protected local account socket: verifies the account and existing
+`lib/rag-sync-bus.ts` (on `ai-agent-bus-sdk`) uses only the protected local account socket: verifies the account and existing
 owned mdhouse agent, holds its token in memory and consumes only each request's random topic/tag.
 No registration, subscription, watch or background process is created. App reconnect cleanup also
 consumes only the mdhouse topic; older running app versions need an operator-authorized reload.

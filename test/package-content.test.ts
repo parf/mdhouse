@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { loadFlowCatalog } from '../src/lib/flow-package';
@@ -57,6 +57,8 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     const extracted = join(dir, 'extracted');
     await mkdir(extracted);
     await run(['tar', '-xzf', archive, '-C', extracted]);
+    // an install brings the declared dependencies; the repository's stand in for them
+    await symlink(join(root, 'node_modules'), join(extracted, 'package/node_modules'));
     const help = await run([join(extracted, 'package/bin/mdhouse-rag-sync'), '--help']);
     expect(help).toContain('mdhouse-rag-sync');
     expect(help).toContain('mdhouse-rag-sync plan');

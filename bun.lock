@@ -11,6 +11,7 @@
         "@codemirror/state": "6.7.6",
         "@codemirror/view": "6.43.15",
         "@lezer/highlight": "1.2.5",
+        "ai-agent-bus-sdk": "1.0.58",
         "dompurify": "3.4.17",
         "htmlparser2": "12.0.0",
         "markdown-it": "^14.1.0",
@@ -230,6 +231,8 @@
     "@ungap/structured-clone": ["@ungap/structured-clone@1.4.0", "", {}, "sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ=="],
 
     "@upsetjs/venn.js": ["@upsetjs/venn.js@2.0.0", "", { "optionalDependencies": { "d3-selection": "^3.0.0", "d3-transition": "^3.0.1" } }, "sha512-WbBhLrooyePuQ1VZxrJjtLvTc4NVfpOyKx0sKqioq9bX1C1m7Jgykkn8gLrtwumBioXIqam8DLxp88Adbue6Hw=="],
+
+    "ai-agent-bus-sdk": ["ai-agent-bus-sdk@1.0.58", "", {}, "sha512-Os/DMDal8w5tFciDXzg1wFMMgXc1uKNHZgZDSSmox9/cXwV0bqqV1tKEWAZ0PyXriHtzCMO5kp0R2YTIT7n/6g=="],
 
     "argparse": ["argparse@2.0.1", "", {}, "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q=="],
 

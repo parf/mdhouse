@@ -14,7 +14,8 @@ const tmp = async (prefix: string) => realpath(await mkdtemp(join(tmpdir(), pref
 const disk = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
 
 /**
- * A fake `agent-busd` on a temp unix socket. Calls are logged with the credential they carried.
+ * A fake `agent-busd` on a temp unix socket. Calls are logged with the credential they carried; the
+ * client's identity/status handshake is answered, not logged.
  * Replies to a send are queued under its tag, and held back until `release()` when `hold` is set.
  * The drain (a consume with no tag) takes any queued reply of the topic — as the real inbox does.
  * `echo`: every refusal's body repeats the credential it was sent.
@@ -23,8 +24,12 @@ async function fakeDaemon(name: string, o: { hold?: boolean; echo?: boolean; tok
   const dir = await mkdtemp(join(tmpdir(), `mdhouse-ab-${name}-`));
   const socket = join(dir, 'bus.sock');
   const calls: string[] = [];
-  const inbox: Array<{ tag: string; body: string; topic: string }> = [];
-  let held: Array<{ tag: string; body: string; topic: string }> = [];
+  type Reply = { message_id: string; from: string; to: string; tag: string; body: string; topic: string };
+  const inbox: Reply[] = [];
+  let held: Reply[] = [];
+  let sent = 0;
+  let agent = '';
+  const agentToken = o.tokenFor ?? `agent-${name}`;
   // `holdDrain`: the first drain (a consume with no tag) waits for `releaseDrain()`, then looks at the inbox.
   let drainHeld = false;
   let releaseDrain = () => {};
@@ -36,18 +41,24 @@ async function fakeDaemon(name: string, o: { hold?: boolean; echo?: boolean; tok
     fetch: async (req) => {
       const url = new URL(req.url);
       const token = req.headers.get('x-agent-bus-token') ?? '';
+      if (url.pathname === '/identity') return Response.json({ protocol: 1, protocol_min: 1 });
+      if (url.pathname === '/status') return Response.json({ you: token === agentToken && agent ? agent : 'test' });
       calls.push(`${req.method} ${url.pathname}${token ? ` +${token}` : ''}`);
       if (o.echo && url.pathname === '/register') return refuse(401, 'bad credential', token);
       if (url.pathname === '/register') return new Response('exists', { status: 412 });
-      if (url.pathname === '/token') return Response.json({ token: o.tokenFor ?? `agent-${name}` });
+      if (url.pathname === '/token') {
+        agent = ((await req.json()) as { name: string }).name;
+        return Response.json({ token: agentToken });
+      }
       if (url.pathname === '/ls') return Response.json([{ name: `#claude/${name}@h`, kind: 'agent', readers: 1 }]);
       if (url.pathname === '/send') {
         const m = (await req.json()) as { to: string; tag: string; topic: string };
         if (m.to === '#nobody@x') return refuse(404, 'no such receiver', token);
-        const reply = { tag: m.tag, topic: m.topic, body: `${name} read it` };
+        const id = `m${++sent}`;
+        const reply = { message_id: `${id}-r`, from: m.to, to: agent, tag: m.tag, topic: m.topic, body: `${name} read it` };
         if (o.hold) held.push(reply);
         else inbox.push(reply);
-        return Response.json({ message_id: 'm', ...m });
+        return Response.json({ message_id: id, from: agent, ...m });
       }
       if (url.pathname === '/consume') {
         const tag = url.searchParams.get('tag');
@@ -118,7 +129,7 @@ describe('AgentBus pool — one connection per endpoint and credential, one job 
     const b = await fakeDaemon('b');
     const c = collector();
     try {
-      const bus = new AgentBus(() => ({ addr: a.socket, token: 'inst-cred' }), c.emit, { me: '#mdhouse@h', answerMs: 2000, wait: '0s' });
+      const bus = new AgentBus(() => ({ addr: a.socket, token: 'inst-cred' }), c.emit, { me: '#mdhouse@h', answerMs: 2000 });
       const [ja, jb] = await Promise.all([bus.ask(['#claude/x@h'], 'hi'), bus.ask(['#claude/x@h'], 'hi', { addr: b.socket, token: 'space-cred' })]);
       await c.until(() => c.events.filter((e) => e.kind === 'answer').length === 2);
       expect(bus.job(ja)!.at(-1)).toMatchObject({ kind: 'answer', body: 'a read it' });
@@ -135,9 +146,10 @@ describe('AgentBus pool — one connection per endpoint and credential, one job 
     const a = await fakeDaemon('a', { hold: true });
     const c = collector();
     try {
-      const bus = new AgentBus(() => ({ addr: a.socket, token: 'old-cred' }), c.emit, { me: '#mdhouse@h', answerMs: 3000, wait: '0s' });
+      const bus = new AgentBus(() => ({ addr: a.socket, token: 'old-cred' }), c.emit, { me: '#mdhouse@h', answerMs: 3000 });
       const job = await bus.ask(['#claude/x@h'], 'hi');
       await c.until(() => c.events.some((e) => e.kind === 'sent'));
+      for (let i = 0; i < 200 && !a.sends().length; i++) await Bun.sleep(5); // `sent` is the hand-over; wait for the daemon
       a.release(); // the reply is in the inbox now
       // rotated: a connection of its own on the same daemon and identity
       expect(await bus.status({ addr: a.socket, token: 'new-cred' })).toEqual({ connected: true });
@@ -152,7 +164,7 @@ describe('AgentBus pool — one connection per endpoint and credential, one job 
     const a = await fakeDaemon('a', { holdDrain: true, hold: true });
     const c = collector();
     try {
-      const bus = new AgentBus(() => ({ addr: a.socket, token: 'cred-a' }), c.emit, { me: '#mdhouse@h', answerMs: 1500, wait: '0s' });
+      const bus = new AgentBus(() => ({ addr: a.socket, token: 'cred-a' }), c.emit, { me: '#mdhouse@h', answerMs: 1500 });
       const first = bus.status(); // its drain is held by the daemon
       for (let i = 0; i < 100 && !a.drainHeld(); i++) await Bun.sleep(10);
       expect(a.drainHeld()).toBe(true);
@@ -175,7 +187,7 @@ describe('AgentBus pool — one connection per endpoint and credential, one job 
     const a = await fakeDaemon('a', { echo: true });
     const c = collector();
     try {
-      const bus = new AgentBus(() => ({ addr: a.socket, token: 'echo-secret-1' }), c.emit, { me: '#mdhouse@h', answerMs: 200, wait: '0s' });
+      const bus = new AgentBus(() => ({ addr: a.socket, token: 'echo-secret-1' }), c.emit, { me: '#mdhouse@h', answerMs: 200 });
       const st = await bus.status();
       expect(st.connected).toBe(false);
       expect(JSON.stringify(st)).not.toContain('echo-secret-1');
@@ -504,6 +516,8 @@ describe('routing: the document root picks the bus', () => {
       expect((await t.setAb(t.ses, t.space.socket, ['#claude/space@h'], cookie)).status).toBe(200);
       const [ra, rb] = await Promise.all([t.send(t.keep, 'a.md'), t.send(t.ses, 'b.md')]);
       expect([ra.status, rb.status]).toEqual([200, 200]);
+      // jobs run after the reply: wait for their sends
+      for (let i = 0; i < 200 && (!t.inst.sends().length || !t.space.sends().length); i++) await Bun.sleep(5);
       expect(t.inst.sends()).toHaveLength(1);
       expect(t.space.sends()).toHaveLength(1);
       expect(t.space.calls.some((c) => c.includes('inst-cred'))).toBe(false);

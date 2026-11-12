@@ -6,8 +6,9 @@ import { adminLogin } from './admin-login';
 import { abTargets, AgentBus, badPatterns, isAlive, passes, ownName, requestText, validTarget, type AbEvent, type Envelope } from '../src/lib/agent-bus';
 
 /**
- * A fake `agent-busd` on a temp unix socket: register (412 when it exists), token, ls, send, and a
- * filtered consume served from what `reply` queued for a tag.
+ * A fake `agent-busd` on a temp unix socket: the client's identity/status handshake (not recorded),
+ * register (412 when it exists), token, ls, send, and a filtered consume served from what `reply`
+ * queued for a tag. A receipt names the message it is about.
  */
 async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: number; tcp?: number; reply?: (to: string) => Partial<Envelope>[] } = {}) {
   let stale = opts.stale ?? 0;
@@ -16,9 +17,13 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: n
   const calls: string[] = [];
   const registrations: Record<string, unknown>[] = [];
   const queued = new Map<string, Partial<Envelope>[]>();
+  let sent = 0;
+  let agent = '#mdhouse@h';
   const handler = async (req: Request): Promise<Response> => {
       const url = new URL(req.url);
       const token = req.headers.get('x-agent-bus-token') ?? '';
+      if (url.pathname === '/identity') return Response.json({ protocol: 1, protocol_min: 1 });
+      if (url.pathname === '/status') return Response.json({ you: token === 'tok' ? agent : 'test' });
       calls.push(`${req.method} ${url.pathname}${token === 'tok' ? ' +token' : token ? ` +${token}` : ''}`);
       if (url.pathname === '/register') {
         const record = await req.json() as Record<string, unknown>;
@@ -28,19 +33,23 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: n
         if (opts.exists && req.headers.get('if-none-match') === '*') return new Response('exists', { status: 412 });
         return Response.json(record);
       }
-      if (url.pathname === '/token') return Response.json({ token: 'tok' });
+      if (url.pathname === '/token') {
+        agent = ((await req.json()) as { name: string }).name;
+        return Response.json({ token: 'tok' });
+      }
       if (url.pathname === '/ls') return Response.json(opts.agents ?? []);
       if (url.pathname === '/send') {
         const m = (await req.json()) as { to: string; tag: string; topic: string };
         if (m.to === '#nobody@x') return Response.json({ error: 'no such receiver: #nobody@x (no such name)' }, { status: 404 });
-        queued.set(m.tag, (opts.reply?.(m.to) ?? []).map((r) => ({ topic: m.topic, tag: m.tag, ...r })));
-        return Response.json({ message_id: 'm1', ...m });
+        const id = `m${++sent}`;
+        queued.set(m.tag, (opts.reply?.(m.to) ?? []).map((r, i) => ({ message_id: `${id}-r${i}`, from: m.to, to: '#mdhouse@h', body: '', topic: m.topic, tag: m.tag, ...(r.receipt ? { re: id } : {}), ...r })));
+        return Response.json({ message_id: id, from: '#mdhouse@h', ...m });
       }
       if (url.pathname === '/consume') {
         if (!url.searchParams.get('tag')) {
           // the reconnect drain: only its own topic, never the whole inbox
           if (url.searchParams.get('topic') !== 'mdhouse') return new Response('unfiltered read', { status: 400 });
-          return stale-- > 0 ? Response.json({ body: 'old reply', topic: 'mdhouse' }) : new Response(null, { status: 204 });
+          return stale-- > 0 ? Response.json({ message_id: `old${stale}`, from: '#claude/x@h', to: '#mdhouse@h', body: 'old reply', topic: 'mdhouse' }) : new Response(null, { status: 204 });
         }
         const next = queued.get(url.searchParams.get('tag') ?? '')?.shift();
         return next ? Response.json(next) : new Response(null, { status: 204 });
@@ -152,6 +161,8 @@ describe('agent bus — the service, against a fake daemon', () => {
       unix: socket,
       fetch: (req) => {
         const url = new URL(req.url);
+        if (url.pathname === '/identity') return Response.json({ protocol: 1, protocol_min: 1 });
+        if (url.pathname === '/status') return Response.json({ you: req.headers.get('x-agent-bus-token') === 'tok' ? '#mdhouse@h' : 'test' });
         if (url.pathname === '/register') return new Response('exists', { status: 412 });
         if (url.pathname === '/token') return Response.json({ token: 'tok' });
         if (url.pathname === '/ls') return Response.json([]);
@@ -204,16 +215,16 @@ describe('agent bus — the service, against a fake daemon', () => {
     });
     const c = collector();
     try {
-      const bus = new AgentBus(() => ({ addr: d.socket, token: '' }), c.emit, { me: '#mdhouse@h', answerMs: 50, wait: '0s' });
+      const bus = new AgentBus(() => ({ addr: d.socket, token: '' }), c.emit, { me: '#mdhouse@h', answerMs: 50 });
       const job = await bus.ask(['#claude/a@h', '#claude/b@h', '#nobody@x', '#claude/c@h'], 'hi');
-      await c.until(8);
+      await c.until(9);
       const by = (to: string) => c.events.filter((e) => e.to === to).map((e) => (e.body ? `${e.kind}: ${e.body}` : e.kind));
       expect(by('#claude/a@h')).toEqual(['sent', 'ack', 'answer: read it — all good']);
       expect(by('#claude/b@h')).toEqual(['sent', 'done']);
       // the daemon's JSON refusal, as its words
-      expect(by('#nobody@x')).toEqual(['error: the agent bus does not know that name (HTTP 404)']);
+      expect(by('#nobody@x')).toEqual(['sent', 'error: the agent bus does not know that name (HTTP 404)']);
       expect(by('#claude/c@h')).toEqual(['sent', 'timeout']);
-      expect(bus.job(job)).toHaveLength(8);
+      expect(bus.job(job)).toHaveLength(9);
       expect(bus.job('nope')).toBeNull();
     } finally {
       await d.stop();
@@ -328,6 +339,8 @@ describe('agent bus — reference material (MW.0f.1)', () => {
       }
       expect(sends()).toBe(0);
       expect((await post(`${id}/a.md`, 'review')).status).toBe(200);
+      // the job runs after the reply: wait for its one send
+      for (let i = 0; i < 200 && sends() < 1; i++) await Bun.sleep(5);
       expect(sends()).toBe(1);
     } finally {
       server.stop(true);
