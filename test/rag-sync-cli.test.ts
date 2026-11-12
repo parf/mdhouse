@@ -45,11 +45,11 @@ afterEach(() => {
 describe('parseArgs', () => {
   test('takes the target flags in both forms', () => {
     const a = parseArgs('plan', ['--root', '/x', '--filescan=#filescan/a@h', '--rag', '#rag/a@h', '--namespace=ns', '--table', 't_1']);
-    expect(a).toEqual({ root: '/x', filescan: '#filescan/a@h', rag: '#rag/a@h', namespace: 'ns', table: 't_1', apply: false, resendUnknown: false, paid: false });
+    expect(a).toEqual({ root: '/x', filescan: '#filescan/a@h', rag: '#rag/a@h', namespace: 'ns', table: 't_1', apply: false, paid: false });
   });
 
   test('sync and search switches', () => {
-    expect(parseArgs('sync', ['--root', '/x', ...TARGET, '--apply', '--resend-unknown'])).toMatchObject({ apply: true, resendUnknown: true });
+    expect(() => parseArgs('sync', ['--root', '/x', ...TARGET, '--apply', '--resend-unknown'])).toThrow('unknown option --resend-unknown');
     expect(parseArgs('search', ['--root', '/x', ...TARGET, '--query', 'q'])).toMatchObject({ query: 'q', paid: false });
     expect(parseArgs('search', ['--root', '/x', ...TARGET, '--query=q', '--mode', 'hybrid', '--paid', '--limit', '16'])).toMatchObject({ mode: 'hybrid', paid: true, limit: 16 });
   });
@@ -326,15 +326,15 @@ describe('sync and search through the runtime, against a fake bus', () => {
     const r = await run(['sync', '--root', root, ...TARGET, '--apply'], bus);
     expect(r.code).toBe(code);
     expect(JSON.parse(r.out)).toHaveProperty('effect');
-    // one sync, after the preflight; never resend
+    // one sync, after the preflight
     const syncs = bus.reqs.filter((q) => typeof q.body === 'string' && q.body.startsWith('sync '));
-    expect(syncs).toEqual([{ target: '#filescan/notes@box', body: 'sync #rag/notes@box as rag notes md' }]);
+    expect(syncs).toEqual([{ target: '#filescan/notes@box', body: 'sync #rag/notes@box as rag notes md resend:true' }]);
   });
 
-  test('sync --resend-unknown asks the FileScan to resend', async () => {
+  test('sync always asks the FileScan to resend unconfirmed files', async () => {
     const root = tree({ 'a.md': 'a' });
     const bus = fakeBus(root, preflightThen(reply({ result: 'confirmed', confirmed: 1, remaining: 0, capped: false, sent: 1, files: [] })));
-    expect((await run(['sync', '--root', root, ...TARGET, '--apply', '--resend-unknown'], bus)).code).toBe(EXIT.ok);
+    expect((await run(['sync', '--root', root, ...TARGET, '--apply'], bus)).code).toBe(EXIT.ok);
     expect(bus.reqs.at(-1)).toEqual({ target: '#filescan/notes@box', body: 'sync #rag/notes@box as rag notes md resend:true' });
   });
 

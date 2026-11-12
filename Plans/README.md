@@ -418,8 +418,8 @@ Incomplete listing is visible with nonzero exit; >32 KiB files are annotated, no
 produces a deterministic full-metadata digest, not content hash, auth or atomic-folder proof.
 `lib/rag-sync-runtime.ts` validates finite sync preflights/results and scoped search citations through
 an injected transport. Sync requires explicit apply, matching owner configuration, demand mode,
-no subscribers and RAG 0.4.2 or later capabilities/collection health; provider replies may add fields. Unknown outcomes never
-retry automatically; semantic/hybrid search requires explicit paid intent.
+no subscribers and RAG 0.4.2 or later capabilities/collection health; provider replies may add fields. Every sync resends
+files sent before with no confirmation; semantic/hybrid search requires explicit paid intent.
 `lib/rag-sync-bus.ts` (on `ai-agent-bus-sdk`) uses only the protected local account socket: verifies the account and existing
 owned mdhouse agent, holds its token in memory and consumes only each request's random topic/tag.
 No registration, subscription, watch or background process is created. App reconnect cleanup also

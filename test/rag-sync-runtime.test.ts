@@ -9,7 +9,7 @@ function input(): SyncInput {
   return { plan: { caller: '#mdhouse@parf.us', root: { ...root }, target: { ...target }, include: ['*.md'], exclude: [...RAG_SYNC_REQUIRED_EXCLUDES],
     inventory: { root: { ...root }, complete: true, issues: [] }, sources: [{ path: 'README.md', size: 100, mtimeMs: 0 }, { path: 'doc/large.md', size: 40000, mtimeMs: 1 }], oversizeLimit: 32768 },
     ownerConfig: { filescan: target.filescan, root: { ...root }, config: { dir: root.path, include: ['*.md'], exclude: ['node_modules/**','*/node_modules/**','.*','*/.*','bower_components/**','*/bower_components/**','jspm_packages/**','*/jspm_packages/**'], namespace: 'mdhouse', table: 'docs', mode: 'demand' } },
-    intent: { apply: true, resendUnknown: false } };
+    intent: { apply: true } };
 }
 function status(): any { return { mode: 'demand', effective_mode: 'demand', fallback: null, tracked: 2, last_scan: null, skipped: [], state_bytes: 50, state_max: 1000, subscribers: [], paused: null, skipped_for_rag: {} }; }
 function caps(): any { return { version: '0.4.2', methods: ['upsert','get','search'], modes: ['keyword','semantic','hybrid'], embedding_model: 'voyage-3.5', dimensions: 1024,
@@ -31,15 +31,13 @@ test('one finite sync follows free metadata preflights and the exact documented 
   const result = await runSync(v,t);
   expect(result).toEqual({ effect: 'reported', result: 'confirmed', report: confirmed(), reason: null });
   expect(t.calls).toEqual([{ target: target.filescan, body: 'status' }, { target: target.rag, body: { method: 'capabilities' } },
-    { target: target.rag, ask: 'status' }, { target: target.filescan, body: 'sync #rag/mdhouse@parf.us as rag mdhouse docs' }]);
+    { target: target.rag, ask: 'status' }, { target: target.filescan, body: 'sync #rag/mdhouse@parf.us as rag mdhouse docs resend:true' }]);
   expect(v).toEqual(before);
-  v.intent.resendUnknown = true; const r = ready(); await runSync(v,r);
-  expect(r.calls.at(-1)!.body).toBe('sync #rag/mdhouse@parf.us as rag mdhouse docs resend:true');
 });
 
 test('missing apply, invalid source scope, config mismatch and wrong-service names refuse before transport', async () => {
   const changes: ((v: any) => void)[] = [
-    v => { v.intent.apply = false; }, v => { v.intent.resendUnknown = 'yes'; },
+    v => { v.intent.apply = false; }, v => { (v.intent as Record<string, unknown>).extra = true; },
     v => { v.ownerConfig.root.ino = '999'; }, v => { v.ownerConfig.root.path = '/other'; },
     v => { v.ownerConfig.filescan = '#filescan/other@parf.us'; }, v => { v.ownerConfig.config.dir = '/other'; },
     v => { v.ownerConfig.config.namespace = 'other'; }, v => { v.ownerConfig.config.table = 'other'; },
@@ -178,11 +176,11 @@ test('bounded raw replies above one field size are accepted, while oversize/prot
   expect(decodeSearchReply({mode:'keyword',records:[c]},expected).records[0]!.excerpt).toBe(hostile);
 });
 
-test('caller mutation during awaits cannot change selected scope or resend intent', async () => {
+test('caller mutation during awaits cannot change selected scope or intent', async () => {
   const v=input();const responses=[reply(status()),reply(caps()),reply(health),reply(confirmed())];const calls:RuntimeRequest[]=[];
-  const t:RuntimeTransport={request:async r=>{calls.push(structuredClone(r));if(calls.length===1){v.plan.target.namespace='changed';v.intent.resendUnknown=true;v.ownerConfig.config.dir='/changed';}return responses.shift();}};
+  const t:RuntimeTransport={request:async r=>{calls.push(structuredClone(r));if(calls.length===1){v.plan.target.namespace='changed';(v.intent as Record<string, unknown>).apply=false;v.ownerConfig.config.dir='/changed';}return responses.shift();}};
   expect((await runSync(v,t)).result).toBe('confirmed');
-  expect(calls.at(-1)!.body).toBe('sync #rag/mdhouse@parf.us as rag mdhouse docs');
+  expect(calls.at(-1)!.body).toBe('sync #rag/mdhouse@parf.us as rag mdhouse docs resend:true');
 });
 
 test('duplicate post-send wire keys and malformed Unicode cannot forge confirmation or citations', async () => {

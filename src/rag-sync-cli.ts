@@ -42,7 +42,7 @@ export const HELP = `mdhouse-rag-sync — sync one folder's Markdown files to RA
 
 Usage:
   mdhouse-rag-sync plan   <target>
-  mdhouse-rag-sync sync   <target> --apply [--resend-unknown]
+  mdhouse-rag-sync sync   <target> --apply
   mdhouse-rag-sync search <target> --query <text> [--mode keyword|semantic|hybrid] [--paid] [--limit 1-16]
   mdhouse-rag-sync --help
 
@@ -56,8 +56,7 @@ could not list and why, and the target. It makes no network or Agent Bus call an
 are never followed.
 
 sync asks the FileScan for one finite sync and prints its answer. It sends only with --apply and
-a complete listing; a file whose outcome is unknown is sent again only with --resend-unknown, and
-each send is paid. search asks the RAG once; keyword is free, semantic and hybrid need --paid.
+a complete listing; a file sent before with no confirmation is sent again, and each send is paid. search asks the RAG once; keyword is free, semantic and hybrid need --paid.
 Both talk as #mdhouse@<host> through the local account socket.
 
 Exit: 0 ok · 1 error, refused or failed · 2 usage · 4 outcome unknown · 5 sync incomplete
@@ -69,7 +68,7 @@ class UsageError extends Error {}
 const TARGET = ['root', 'filescan', 'rag', 'namespace', 'table'] as const;
 const SPEC = {
   plan: { values: TARGET, bools: [] },
-  sync: { values: TARGET, bools: ['apply', 'resend-unknown'] },
+  sync: { values: TARGET, bools: ['apply'] },
   search: { values: [...TARGET, 'query', 'mode', 'limit'], bools: ['paid'] },
 } as const satisfies Record<string, { values: readonly string[]; bools: readonly string[] }>;
 export type Command = keyof typeof SPEC;
@@ -90,7 +89,6 @@ export interface Args {
   mode?: Mode;
   limit?: number;
   apply: boolean;
-  resendUnknown: boolean;
   paid: boolean;
 }
 
@@ -128,7 +126,6 @@ export function parseArgs(cmd: Command, args: readonly string[]): Args {
     namespace: vals.namespace!,
     table: vals.table!,
     apply: bools.has('apply'),
-    resendUnknown: bools.has('resend-unknown'),
     paid: bools.has('paid'),
   };
   if (cmd === 'sync' && !out.apply) throw new UsageError('sync sends paid work: add --apply (see plan first)');
@@ -325,7 +322,7 @@ export async function main(argv: readonly string[], io: Io = stdio, deps: Deps =
     const bus = await deps.openBus({ replyMs: REPLY_MS[cmd], root: inv.root, targets: [args.filescan, args.rag] });
     if (cmd === 'sync') {
       const ownerConfig = await bus.ownerConfig(args.filescan);
-      const res = await runSync({ plan: input, ownerConfig, intent: { apply: args.apply, resendUnknown: args.resendUnknown } }, bus);
+      const res = await runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
       io.out(`${JSON.stringify(res, null, 2)}\n`);
       return resultExit('sync', res);
     }

@@ -125,12 +125,12 @@
 - 📌 Q-R3-COUNTRY2 No GeoIP country → country `NA` (not available); the first verified country after `NA` requires GitHub reauthentication. <a id="Q-R3-COUNTRY2"></a>
   [History](resolved.md#Q-R3-COUNTRY2).
 
-- 📌 Q-R3-RAGSYNC1 Use the finite on-demand FileScan sync; no subscription/watch/timer remains, unknown paid outcomes never auto-resend. <a id="Q-R3-RAGSYNC1"></a>
+- 📌 Q-R3-RAGSYNC1 Use the finite on-demand FileScan sync; no subscription/watch/timer remains, no answer within the timeout → the next sync repeats it (resend). <a id="Q-R3-RAGSYNC1"></a>
   Bind the delivered approved provider contract after deployment; standing-watch retry authority is separate. [History](resolved.md#Q-R3-RAGSYNC1).
 
 - 📌 Q-R3-RAG1 No provider source registry / job API / history; the R3 source lifecycle is mdhouse's. <a id="Q-R3-RAG1"></a>
-  New source: FileScan instance + runner roots (admin step) → `mdhouse-rag-sync` → RAG. Source registry, sync history, A7 request-id outcomes:
-  KV on `#mdhouse@<host>` (`set --add`); events: `#mdhouse` agent log. Small-file citations: mdhouse computes heading/lines from the file
+  New source: FileScan instance + runner roots (admin step) → `mdhouse-rag-sync` → RAG. Goal: index all docs. No answer within the timeout → repeat; no request-id dedup.
+  Source registry, sync history: KV on `#mdhouse@<host>` (`set --add`); events: `#mdhouse` agent log. Small-file citations: mdhouse computes heading/lines from the file
   at `content_hash`; mismatch → stale, no citation. [History](resolved.md#Q-R3-RAG1).
 
 

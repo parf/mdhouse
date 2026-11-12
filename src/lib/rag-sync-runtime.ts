@@ -35,7 +35,7 @@ export interface RagCapabilities {
 }
 export interface SyncInput {
   plan: RagSyncPlanInput; ownerConfig: { filescan: string; root: { path: string; dev: string; ino: string }; config: Record<string, unknown> };
-  intent: { apply: boolean; resendUnknown: boolean };
+  intent: { apply: boolean };
 }
 export interface SearchInput { plan: RagSyncPlanInput; query: string; mode?: SearchMode; limit?: number; intent: { paid: boolean } }
 export class RagSyncRuntimeError extends Error {
@@ -268,18 +268,18 @@ async function preflight(t: RuntimeTransport, p: RagSyncPlan): Promise<void> {
 function syncResult(effect: SyncRunResult['effect'], reason: string | null, report: SyncReply | null = null): SyncRunResult {
   return { effect, result: report?.result ?? (effect === 'unknown' ? 'unknown' : null), report, reason };
 }
-/** Executes exactly one finite sync only after explicit apply and metadata/config preflight. No resync. */
+/** Executes exactly one finite sync only after explicit apply and metadata/config preflight; files sent before with no confirmation are sent again. */
 export async function runSync(value: unknown, transport: RuntimeTransport): Promise<SyncRunResult> {
-  let p: RagSyncPlan; let resend: boolean;
+  let p: RagSyncPlan;
   try {
     const i = object(data(value,RAG_SYNC_RUNTIME_LIMITS.inputBytes),['plan','ownerConfig','intent']);
-    const intent = object(i.intent,['apply','resendUnknown']); if (!bool(intent.apply)) invalid('explicit apply required'); resend = bool(intent.resendUnknown);
+    const intent = object(i.intent,['apply']); if (!bool(intent.apply)) invalid('explicit apply required');
     p = plan(i.plan); owner(i.ownerConfig,p);
     if (!p.inventory.complete || p.inventory.issues.length || !p.sources.length || p.sources.some(s => s.size > 1048576 || s.path.split('/').slice(0,-1).some(x => x.endsWith('.md')))) invalid('unsupported/incomplete local source selection');
     await preflight(transport,p);
   } catch { return syncResult('notsent','sync-preflight-refused'); }
   const response = await request(transport,{ target: p.target.filescan,
-    body: `sync ${p.target.rag} as rag ${p.target.namespace} ${p.target.table}${resend ? ' resend:true' : ''}` });
+    body: `sync ${p.target.rag} as rag ${p.target.namespace} ${p.target.table} resend:true` });
   if (response.kind === 'uncertain') return syncResult(response.sent ? 'unknown' : 'notsent',response.reason);
   try {
     const raw = wire(response.body);
