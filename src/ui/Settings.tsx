@@ -369,6 +369,10 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           <div class="settings-option">
             <label class="settings-scheme-field">
               <b>Your name</b>
+              <Info label="About your name">
+                Signs your replies and quotes as <code>👤{author.name}</code>. Kept in this browser only. A label, not a login: it grants no
+                access. {author.cookie ? 'Empty: back to the default.' : `Now taken from ${AUTHOR_FROM[author.source]}; type to override.`}
+              </Info>
               <input
                 class="settings-scheme"
                 type="text"
@@ -383,11 +387,6 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
               />
             </label>
-            <span class="settings-hint">
-              Signs your replies and quotes as <code>👤{author.name}</code> in this browser only
-              {author.cookie ? ' (set here)' : ` — now from ${AUTHOR_FROM[author.source]}`}. It is a name, not a login: it gives no access. Empty
-              clears it.
-            </span>
             {authorError && <span class="settings-error">{authorError}</span>}
           </div>
         )}
@@ -418,9 +417,12 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           </div>
         ) : (
           admin && (
-            <p class="settings-hint">
-              Not signed in. Instance settings and removing projects need the administrator: run <code>mdhouse admin</code> in a terminal on
-              this computer and open the link it gives.
+            <p>
+              Not signed in — settings are read-only here{' '}
+              <Info label="How to sign in">
+                Changing settings and adding or removing projects needs the administrator. Run <code>mdhouse admin</code> in a terminal on this
+                computer and open the link it prints: it works once, within 60 s.
+              </Info>
             </p>
           )
         )}
@@ -468,7 +470,13 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               <dl class="project-facts">
                 {project.kind !== 'reference' && (
                   <>
-                    <dt>Name</dt>
+                    <dt>
+                      Name{' '}
+                      <Info label="About the name">
+                        Shown in the project list and headings instead of the folder name. Empty: the folder name.
+                        {!project.saved && ' Unsaved project: kept until mdhouse stops.'}
+                      </Info>
+                    </dt>
                     <dd class="project-name-field">
                       <input
                         class="settings-scheme project-name"
@@ -485,10 +493,6 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                         onBlur={() => void saveName()}
                         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                       />
-                      <span class="settings-hint">
-                        Shown instead of the folder's name; empty uses the folder's.
-                        {!project.saved && ' Lasts until mdhouse stops, like this project.'}
-                      </span>
                       {nameError && <span class="settings-error">{nameError}</span>}
                     </dd>
                   </>
@@ -497,7 +501,14 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 <dd class="path" title={project.path}>
                   {project.path}
                 </dd>
-                <dt>Access</dt>
+                <dt>
+                  Access{' '}
+                  <Info label="About access">
+                    <b>RW</b>: pages can be edited and saved. <b>RO</b>: view only. Click <code>[RW]</code> / <code>[RO]</code> to switch.
+                    {!project.saved && ' Unsaved project: the choice lasts until mdhouse stops.'} From a terminal:{' '}
+                    <code>mdhouse &lt;dir&gt; -p --rw</code> adds a project kept on every start, with write access.
+                  </Info>
+                </dt>
                 <dd>
                   {project.kind === 'reference' ? (
                     <span class="project-access">
@@ -523,13 +534,15 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                         {project.writable ? '[RW]' : '[RO]'}
                       </button>{' '}
                       {project.writable ? 'read and write' : 'read-only'} — {accessSource(project)}
-                      {!project.saved && accessMode(project) !== 'inherit' && accessMode(project) !== null && (
-                        <span class="settings-hint">Lasts until mdhouse stops, unless the project is saved.</span>
-                      )}
                     </span>
                   )}
                 </dd>
-                <dt>Kept</dt>
+                <dt>
+                  Kept{' '}
+                  <Info label="About kept">
+                    Saved: served on every start. <code>[unsaved]</code>: served until mdhouse stops — click it to keep it.
+                  </Info>
+                </dt>
                 <dd>
                   {project.kind === 'reference' ? (
                     <span class="tag" title="mdhouse's own documentation — served on every start, read-only">
@@ -552,7 +565,12 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     </span>
                   )}
                 </dd>
-                <dt>Agent Bus</dt>
+                <dt>
+                  Agent Bus{' '}
+                  <Info label="About the project's Agent Bus">
+                    Which bus and default agent this project's pages use. Unset: the instance's, from the Agent Bus section below.
+                  </Info>
+                </dt>
                 <dd>
                   {project.kind === 'reference' ? (
                     <span class="settings-hint">never sent to agents</span>
@@ -579,6 +597,10 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   {space?.error && <p class="settings-error">The stored Agent Bus settings of this project cannot be used: {space.error}</p>}
                   <label class="settings-scheme-field">
                     <b>Endpoint</b>
+                    <Info label="About the endpoint">
+                      The Agent Bus this project talks to: a socket path or <code>http(s)://host:port</code>. Empty: the instance's bus.
+                      {space?.hasCredential && ' A credential for it is set on the server; changing or clearing the endpoint discards it.'}
+                    </Info>
                     <input
                       class="settings-scheme project-ab-endpoint"
                       type="text"
@@ -593,12 +615,12 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                       onInput={(e) => setEndpointDraft((e.target as HTMLInputElement).value)}
                     />
                   </label>
-                  <span class="settings-hint">
-                    A socket path or <code>http(s)://host:port</code>; empty uses the instance's bus.
-                    {space?.hasCredential && ' A credential for it is set on the server; changing or clearing the endpoint discards it.'}
-                  </span>
                   <label class="settings-scheme-field">
                     <b>Default agent</b>
+                    <Info label="About the default agent">
+                      The agent a page in this project asks when the page names none with <code>&lt;!-- AB: name --&gt;</code>. Unset: the
+                      instance's default agent. {!project.saved && 'Unsaved project: kept until mdhouse stops.'}
+                    </Info>
                     <AgentSelect
                       class="project-ab-default"
                       value={splitNames(namesDraft)[0] ?? ''}
@@ -611,10 +633,6 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                       onChange={setNamesDraft}
                     />
                   </label>
-                  <span class="settings-hint">
-                    Asked by a page here that names none with <code>&lt;!-- AB: name --&gt;</code>; empty uses the instance's default.
-                    {!project.saved && ' Lasts until mdhouse stops, unless the project is saved.'}
-                  </span>
                   <div class="project-ab-actions">
                     <button type="button" class="project-ab-save" disabled={!abEditable || busy !== null || !abDirty} onClick={() => void saveAb(false)}>
                       Save
@@ -644,17 +662,9 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   <IconTrash size={15} /> Remove project
                 </button>
               )}
-              <p class="settings-note">
-                Access starts as set when it is added: <code>mdhouse &lt;dir&gt; -p</code> serves it now and on every start (<code>--rw</code> for
-                write access); without <code>-p</code> it lasts until mdhouse stops, unless saved here. [RW] / [RO] changes it.
-              </p>
             </div>
           )}
         </div>
-        <p class="settings-hint project-legend">
-          <code>[unsaved]</code> served until mdhouse stops — click to keep it · <code>[RW]</code> / <code>[RO]</code> its access — click to
-          switch
-        </p>
         {error && <p class="settings-error">{error}</p>}
         <form
           class="project-add"
@@ -664,7 +674,13 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             void add();
           }}
         >
-          <h3>Add project</h3>
+          <h3>
+            Add project{' '}
+            <Info label="About adding a project">
+              An existing folder by its full path, like <code>/home/me/notes</code>; <code>~</code> and relative paths don't work. Tick{' '}
+              <b>RW</b> to allow editing. It is served until mdhouse stops; click its <code>[unsaved]</code> to keep it.
+            </Info>
+          </h3>
           <input
             class="settings-scheme project-add-path"
             type="text"
@@ -695,11 +711,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           >
             Add project
           </button>
-          <span class="settings-hint">
-            An existing folder, by its full path; <code>~</code> and relative paths are not expanded. Served until mdhouse stops —
-            [unsaved] then keeps it.
-            {addPath && addProblem && <> {addProblem}</>}
-          </span>
+          {addPath && addProblem && <span class="settings-hint">{addProblem}</span>}
           {addError && <span class="settings-error">{addError}</span>}
         </form>
       </section>
@@ -738,9 +750,16 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               }}
             />
             <span>
-              <b>Edit link</b> — ✎ beside each title, opening <code>{options.editScheme}:/full/path</code>.
+              <b>Edit link</b> — ✎ beside each title opens the file in your editor
             </span>
           </label>
+          <Info label="About the edit link">
+            The ✎ opens <code>{options.editScheme}:/full/path</code>, so your system needs a handler for <code>{options.editScheme}:</code> URLs —{' '}
+            <a href={EDIT_HELP} target="_blank" rel="noopener noreferrer">
+              how to set one up
+            </a>
+            . Another scheme, like <code>mdedit</code>, can open a different editor (e.g. Typora) than your usual <code>edit</code> one.
+          </Info>
           {options.editLink && (
             <label class="settings-scheme-field">
               <b>Scheme</b>
@@ -760,20 +779,6 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               />
             </label>
           )}
-          <span class="settings-hint">
-            Needs a <code>{options.editScheme}:</code> URL handler.{' '}
-            <a href={EDIT_HELP} target="_blank" rel="noopener noreferrer">
-              How to set one up
-            </a>
-            .
-            {options.editLink && (
-              <>
-                {' '}
-                Example <code>mdedit:/path:line</code>: <code>mdedit</code> can be registered for Typora separately from your common{' '}
-                <code>edit</code> handler.
-              </>
-            )}
-          </span>
           {options.editLink && schemeError && <span class="settings-error">{schemeError}</span>}
         </div>
         {/* The paths are set from the CLI; here only the switch. */}
@@ -807,9 +812,10 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 are writable.
               </span>
             </label>
-            <span class="settings-hint">
-              Set with <code>mdhouse --auto-rw &lt;path,…&gt;</code>
-            </span>
+            <Info label="About Auto-RW">
+              Projects under these folders open with write access unless set to RO. The folders are set from a terminal:{' '}
+              <code>mdhouse --auto-rw &lt;path,…&gt;</code>
+            </Info>
           </div>
         )}
       </section>
@@ -825,6 +831,17 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         onCheck={() => void checkAb()}
       />
     </div>
+  );
+}
+
+/** An ⓘ that shows its help on mouseover or keyboard focus; the help is also its accessible description. */
+function Info({ children, label = 'Help' }: { children: preact.ComponentChildren; label?: string }) {
+  return (
+    <span class="info" tabIndex={0} role="button" aria-label={label}>
+      <span class="info-tip" role="tooltip">
+        {children}
+      </span>
+    </span>
   );
 }
 
@@ -952,7 +969,11 @@ function AgentBusSettings({
             </button>
           </p>
           <p>
-            <b>Default agent</b> — asked by a page that names none with <code>&lt;!-- AB: name --&gt;</code>, in a project without its own
+            <b>Default agent</b>{' '}
+            <Info label="About the default agent">
+              The agent a page asks when it names none with <code>&lt;!-- AB: name --&gt;</code> and its project sets no default agent of its
+              own.
+            </Info>
           </p>
           <AgentSelect
             class="ab-default"
@@ -967,7 +988,11 @@ function AgentBusSettings({
           />
           {info?.enabled && info.connected && !info.agents.some((a) => a.alive) && <p class="settings-hint">No agent is running</p>}
           <p>
-            <b>Names filter</b> — which agents the lists show: a regex per line, against the name without its <code>#</code>; empty — all
+            <b>Names filter</b>{' '}
+            <Info label="About the names filter">
+              Which agents the lists show: one regex per line, matched against the name without its <code>#</code> (<code>^claude</code> shows{' '}
+              <code>#claude/…</code>). Empty: all agents. A default agent is always shown.
+            </Info>
           </p>
           <textarea
             class="ab-filter"

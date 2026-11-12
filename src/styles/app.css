@@ -308,7 +308,6 @@ main {
 .icon-btn.danger:hover:not(:disabled) { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .settings-error { color: var(--danger); font-size: 12.5px; }
-.settings-note { color: var(--fg-muted); font-size: 12.5px; margin-top: 12px; }
 .settings section + section { margin-top: 28px; }
 .settings-option { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 13px; line-height: 1.5;
   background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); }
@@ -2057,7 +2056,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-ab-editor .settings-scheme-field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .project-ab-editor .settings-scheme { flex: 1 1 18em; width: auto; min-width: 0; }
 .project-ab-actions { display: flex; gap: 8px; }
-.project-legend { margin-top: 10px; }
 .project-access .settings-hint { display: block; }
 :is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab) { min-height: 32px; padding: 5px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
 :is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab):hover:not(:disabled) { background: var(--bg-hover); }
@@ -2092,3 +2090,11 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .doc-editor-cm .cm-gutters { background: var(--bg-raised); color: var(--fg-faint); border-right: 1px solid var(--border); }
 .doc-editor-cm .cm-activeLine { background: color-mix(in srgb, var(--accent) 6%, transparent); }
 @media (pointer: coarse) { .doc-editor-cm .cm-editor { font-size: 16px; } }
+
+/* ⓘ help: shown on mouseover or keyboard focus; the tip stays open while the pointer is over it (links in it work) */
+.info { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin: 0 3px; border: 1.2px solid currentColor; border-radius: 50%; color: var(--fg-muted); font-weight: normal; cursor: help; vertical-align: 1px; }
+.info::before { content: 'i'; font: italic 600 10.5px/1 Georgia, serif; }
+.info:hover, .info:focus-visible { color: var(--accent); outline: none; }
+.info-tip { position: absolute; z-index: 30; top: 100%; left: -8px; display: none; width: max-content; max-width: min(26em, 80vw); margin-top: 6px; padding: 10px 12px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); box-shadow: 0 4px 14px rgba(0, 0, 0, .18); font-size: 12.5px; font-weight: normal; line-height: 1.45; text-align: left; white-space: normal; cursor: auto; }
+.info-tip::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
+.info:hover .info-tip, .info:focus-within .info-tip { display: block; }
