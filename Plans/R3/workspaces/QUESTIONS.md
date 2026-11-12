@@ -12,26 +12,7 @@
 - <a id="Q-W7"></a>[№Q-W7](DECISIONS.md#Q-W7)
 - <a id="Q-W8"></a>[№Q-W8](DECISIONS.md#Q-W8)
 
-- ❓ Q-R3-RAG1 Which typed FileScan handoff completes the R3 source lifecycle? <a id="Q-R3-RAG1"></a>
-  RAG 0.3.0 free capabilities are verified; provider reports 0.4.1 live. Retrieval is no longer
-  blocked on v0.2 discovery, but actual T-49 live records/grants still await confirmation.
-  Dedicated endpoint [№Q353](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#rag-for-mdhouse) and FileScan roots
-  [№Q355](http://localhost:7777/ai-agent-bus/Plans/R1.1/QUESTIONS.md#owner-items-from-2026-11-06) are provider-reported approved with CTO Maintainer changes; T-49 live records/grants and T-48
-  bounded/large-text deployment remain pending. #mdhouse caller already exists as parf-owned; no re-registration.
-  T-45 typed docs/fixture are delivered: subscriber change messages and status snapshots, but no
-  source registry, job API/history or event stream. A4 end-to-end and A7 dedup remain unmet.
-  > 💡👾 Use the explicit dedicated endpoint/stored project namespace after provisioning; complete
-  > FileScan/recovery fixture acceptance without inventing provider jobs/history, treating pending:0
-  > as complete-folder proof or silently substituting polling for required live lifecycle updates.
-  > [Current contract](../RAG-CONTRACT.md); [original question/history](resolved.md#Q-R3-RAG1).
-  >
-  > 💬👾 2026-11-12: provisioning done — `#rag/mdhouse@parf.us` RAG 0.4.5 on `#qdrant@parf.us`, `#filescan/mdhouse@parf.us` on this repo; `mdhouse-rag-sync` confirmed 163/184 files.
-  > AB agent: no provider source registry / job API / history is planned. The question is no longer a provider question; the rest is mdhouse work.
-  - ( ) close: rule → DECISIONS, remaining work → TODO MW.2a 🌟
-    - lifecycle = FileScan instance + runner roots per source (admin step) → `mdhouse-rag-sync` → RAG
-    - source registry, sync history, A7 request-id outcomes: KV on `#mdhouse@<host>` (`set --add`); events: `#mdhouse` agent log
-    - small-file citations (heading/lines): computed by mdhouse from the file at `content_hash`; mismatch → stale, no citation
-  - ( ) keep open — wait for a provider job/history API
+- [№Q-R3-RAG1](DECISIONS.md#Q-R3-RAG1) <a id="Q-R3-RAG1"></a>
 
 - [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1) <a id="Q-R3-HTML1"></a>
 

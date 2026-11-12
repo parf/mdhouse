@@ -128,6 +128,11 @@
 - 📌 Q-R3-RAGSYNC1 Use the finite on-demand FileScan sync; no subscription/watch/timer remains, unknown paid outcomes never auto-resend. <a id="Q-R3-RAGSYNC1"></a>
   Bind the delivered approved provider contract after deployment; standing-watch retry authority is separate. [History](resolved.md#Q-R3-RAGSYNC1).
 
+- 📌 Q-R3-RAG1 No provider source registry / job API / history; the R3 source lifecycle is mdhouse's. <a id="Q-R3-RAG1"></a>
+  New source: FileScan instance + runner roots (admin step) → `mdhouse-rag-sync` → RAG. Source registry, sync history, A7 request-id outcomes:
+  KV on `#mdhouse@<host>` (`set --add`); events: `#mdhouse` agent log. Small-file citations: mdhouse computes heading/lines from the file
+  at `content_hash`; mismatch → stale, no citation. [History](resolved.md#Q-R3-RAG1).
+
 
 - 📌 BROWSE-W1 Gitignore is a visibility default, not access control. <a id="BROWSE-W1"></a>
   Show ignored when eligible ignored files exist; direct ignored-folder navigation lists its contents.
