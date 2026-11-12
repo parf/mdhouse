@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbConfig, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
@@ -324,6 +324,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     if (!project || !space || !abEditable || savingAb.current || busy !== null) return;
     const endpoint = clear ? '' : endpointDraft.trim();
     const names = clear ? [] : splitNames(namesDraft);
+    const dropped = splitNames(storedNames).filter((n) => !names.includes(n));
+    if (!clear && splitNames(storedNames).length > 1 && dropped.length && !confirm(`Keep only ${names[0] ?? "the instance's default"} as the default agent of ${project.name}?\n\nNo longer a default: ${dropped.join(' ')}`)) return;
     if (space.hasCredential && endpoint !== storedEndpoint && !confirm(`${clear ? 'Clear' : 'Change'} the Agent Bus endpoint of ${project.name}?\n\nThe credential set on the server for ${storedEndpoint} is discarded with it.`)) return;
     savingAb.current = true;
     setBusy(project.id);
@@ -633,7 +635,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                       class="project-ab-default"
                       value={splitNames(namesDraft)[0] ?? ''}
                       none={`instance default${abConfig?.instance.default.length ? `: ${abConfig.instance.default.join(' ')}` : ''}`}
-                      agents={abAgents(abInfo, splitNames(namesDraft))}
+                      agents={abAgents(abInfo, [...splitNames(namesDraft), ...splitNames(storedNames)])}
+                      extra={splitNames(namesDraft).slice(1)}
                       checked={abInfo?.enabled === true}
                       label={`Default agent of project ${project.name}`}
                       disabled={!abEditable || busy !== null}
@@ -842,11 +845,49 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   );
 }
 
-/** An ⓘ that shows its help on mouseover or keyboard focus; the help is also its accessible description. */
+/**
+ * An ⓘ whose help shows on mouseover or keyboard focus, and toggles on a click or tap, Enter or Space;
+ * Escape hides it. The help is the control's accessible description. A click on it never reaches an
+ * enclosing label, so it does not move focus to that label's field; a link inside the help still works.
+ */
 function Info({ children, label = 'Help' }: { children: preact.ComponentChildren; label?: string }) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const toggle = () => {
+    setDismissed(false);
+    setOpen((v) => !v);
+  };
   return (
-    <span class="info" tabIndex={0} role="button" aria-label={label}>
-      <span class="info-tip" role="tooltip">
+    <span
+      class={`info${open ? ' open' : ''}${dismissed ? ' dismissed' : ''}`}
+      tabIndex={0}
+      role="button"
+      aria-label={label}
+      aria-expanded={open}
+      aria-describedby={id}
+      onClick={(e) => {
+        if ((e.target as Element).closest('a')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        toggle();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          setOpen(false);
+          setDismissed(true);
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggle();
+        }
+      }}
+      onMouseLeave={() => setDismissed(false)}
+      onBlur={() => {
+        setOpen(false);
+        setDismissed(false);
+      }}
+    >
+      <span class="info-tip" role="tooltip" id={id}>
         {children}
       </span>
     </span>
@@ -872,9 +913,11 @@ function AgentSelect(props: {
   label: string;
   disabled: boolean;
   title?: string;
+  /** Further stored names beyond the shown one: listed, since a pick keeps only one. */
+  extra?: readonly string[];
   onChange: (name: string) => void;
 }) {
-  return (
+  const select = (
     <select
       class={`ab-select ${props.class}`}
       value={props.value}
@@ -892,6 +935,15 @@ function AgentSelect(props: {
         </option>
       ))}
     </select>
+  );
+  if (!props.extra?.length) return select;
+  return (
+    <>
+      {select}
+      <span class="settings-hint">
+        also {props.extra.join(' ')} — a new pick keeps only one
+      </span>
+    </>
   );
 }
 
@@ -925,6 +977,9 @@ function AgentBusSettings({
   const [filter, setFilter] = useState<string | null>(null);
   useEffect(() => setFilter(stored.join('\n')), [stored.join('\n')]);
   const defaults = config?.instance.default ?? [];
+  // The pick shown until the stored settings catch up, so the select does not snap back while saving.
+  const [picked, setPicked] = useState<string | null>(null);
+  useEffect(() => setPicked(null), [defaults.join(' ')]);
 
   const saveFilter = async () => {
     if (saving || !isAdmin || filter === null) return;
@@ -933,6 +988,7 @@ function AgentBusSettings({
     try {
       await api.abFilter(filter.split('\n'));
       onConfig();
+      onCheck();
     } catch (err) {
       setError(refused(err));
     } finally {
@@ -948,6 +1004,7 @@ function AgentBusSettings({
       await api.abDefault(names);
       onConfig();
     } catch (err) {
+      setPicked(null);
       setError(refused(err));
     } finally {
       setSaving(false);
@@ -985,14 +1042,22 @@ function AgentBusSettings({
           </p>
           <AgentSelect
             class="ab-default"
-            value={defaults[0] ?? ''}
+            value={picked ?? defaults[0] ?? ''}
             none="none"
             agents={abAgents(info, defaults)}
+            extra={picked === null ? defaults.slice(1) : []}
             checked={checked}
             label="Default agent of every project without its own"
             disabled={saving || !isAdmin}
             title={isAdmin ? undefined : NEEDS_ADMIN}
-            onChange={(name) => void setDefault(name ? [name] : [])}
+            onChange={(name) => {
+              if (defaults.length > 1 && !confirm(`Keep only ${name || 'no agent'} as the default agent?\n\nNo longer a default: ${defaults.filter((n) => n !== name).join(' ')}`)) {
+                setPicked(null);
+                return;
+              }
+              setPicked(name);
+              void setDefault(name ? [name] : []);
+            }}
           />
           {info?.enabled && info.connected && !info.agents.some((a) => a.alive) && <p class="settings-hint">No agent is running</p>}
           <p>

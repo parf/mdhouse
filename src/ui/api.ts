@@ -401,8 +401,12 @@ export const api = {
   async admin(): Promise<AdminState> {
     const res = await fetch('/api/admin', { cache: 'no-store' });
     if (!res.ok) throw await refusal(res);
-    const got = (await res.json().catch(() => null)) as { admin?: unknown; expiresAt?: unknown } | null;
-    return { admin: got?.admin === true, expiresAt: typeof got?.expiresAt === 'number' ? got.expiresAt : undefined };
+    const got = (await res.json().catch(() => null)) as { admin?: unknown; local?: unknown; expiresAt?: unknown } | null;
+    return {
+      admin: got?.admin === true,
+      ...(got?.admin === true && got.local === true ? { local: true } : {}),
+      expiresAt: typeof got?.expiresAt === 'number' ? got.expiresAt : undefined,
+    };
   },
 
   /** Ends this browser's administrator session. */
