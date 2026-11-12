@@ -227,10 +227,10 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: a space without an override uses the default; two spaces with different overrides route requests to their own Agent Bus daemons
   - Acceptance: per-space endpoint tokens remain in server-side prefs, never enter page state, and are covered by config and route tests
   - Acceptance: Agent Bus status shows the effective endpoint and whether it comes from the space or the default
-  - Acceptance: every directory row always shows a compact `[AB]` button beside its `[RW]` / `[RO]` access badge; `[AB]` opens its Agent Bus editor
-  - Acceptance: the per-space Agent Bus value is shown next to `[AB]` only when set; an inherited/default value adds no text to the row
-  - Acceptance: a legend below Projects explains `[unsaved]`, `[RW]` / `[RO]` and `[AB]`
-  - Acceptance: saving an empty endpoint/default removes that override and its displayed value without hiding `[AB]` or restarting mdhouse; clearing every field deletes the config entry
+  - Acceptance: each project shows its own `Agent Bus` row (not mixed with Access): its value when set, else the instance's; `Edit` opens its editor
+  - Acceptance: default agent — one, from a drop-down of the running agents (project and instance)
+  - Acceptance: a legend below Projects explains `[unsaved]` and `[RW]` / `[RO]`
+  - Acceptance: saving an empty endpoint/default removes that override and its displayed value without restarting mdhouse; clearing every field deletes the config entry
   - Acceptance: target precedence is explicit right-panel selection → document `<!-- AB: name -->` → space defaults → instance defaults
   - Acceptance: changing defaults or reopening the panel does not overwrite an explicit panel choice for that document
   - Acceptance: an unavailable document-named or explicitly selected agent is shown as unavailable, never silently replaced with a lower-priority default

@@ -2048,9 +2048,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .settings-scheme.project-name { width: min(24em, 100%); font-family: inherit; }
 .project-remove { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--danger); cursor: pointer; }
 .project-remove:disabled { opacity: .5; cursor: not-allowed; }
-:is(.project-save, .project-mode, .project-ab) { font-family: inherit; cursor: pointer; }
+:is(.project-save, .project-mode) { font-family: inherit; cursor: pointer; }
 :is(.project-save, .project-mode, .project-ab):disabled { opacity: .6; cursor: not-allowed; }
-@media (pointer: coarse) { :is(.project-save, .project-mode, .project-ab) { min-height: 32px; padding: 4px 10px; } }
+@media (pointer: coarse) { :is(.project-save, .project-mode) { min-height: 32px; padding: 4px 10px; } }
 .project-ab[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
 .project-ab-value { margin-left: 6px; font-size: 12px; color: var(--accent); overflow-wrap: anywhere; }
 .project-ab-editor { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); }
@@ -2059,8 +2059,16 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-ab-actions { display: flex; gap: 8px; }
 .project-legend { margin-top: 10px; }
 .project-access .settings-hint { display: block; }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check) { min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab) { min-height: 32px; padding: 5px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab):hover:not(:disabled) { background: var(--bg-hover); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab):active:not(:disabled) { box-shadow: none; transform: translateY(1px); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.project-ab-row { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.project-ab-row .project-ab-value { margin-left: 0; }
+.ab-select { min-height: 32px; max-width: 100%; padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; font-size: 13px; }
+.ab-select:disabled { opacity: .6; cursor: not-allowed; }
+.project-ab-editor .ab-select { flex: 1 1 18em; min-width: 0; }
+.ab-default { display: block; margin-top: 6px; }
 .settings input:disabled, .settings textarea:disabled { opacity: .6; cursor: not-allowed; }
 @media (max-width: 720px) {
   .projects-pane { grid-template-columns: 1fr; }

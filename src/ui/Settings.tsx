@@ -273,6 +273,26 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     );
   };
   useEffect(() => void loadAb(), [roots]);
+  // The running agents, read from the bus when Settings opens with Agent Bus on, and again on request.
+  const [abInfo, setAbInfo] = useState<AbInfo | null>(null);
+  const [abChecking, setAbChecking] = useState(false);
+  const [abCheckError, setAbCheckError] = useState('');
+  const checkAb = async () => {
+    if (abChecking) return;
+    setAbChecking(true);
+    setAbCheckError('');
+    try {
+      setAbInfo(await api.abInfo());
+    } catch (err) {
+      setAbCheckError((err as Error).message);
+    } finally {
+      setAbChecking(false);
+    }
+  };
+  const abOn = !!abConfig?.enabled;
+  useEffect(() => {
+    if (abOn) void checkAb();
+  }, [abOn]);
   const space = project ? abConfig?.roots[project.id] : undefined;
   // The project's own endpoint and default agents as typed; a refusal keeps them.
   const [abOpen, setAbOpen] = useState(false);
@@ -481,10 +501,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 <dd>
                   {project.kind === 'reference' ? (
                     <span class="project-access">
-                      <span class="tag">read-only</span>{' '}
-                      <button type="button" class="tag project-ab" disabled title="mdhouse reference material is never sent to agents">
-                        [AB]
-                      </button>
+                      <span class="tag">read-only</span>
                     </span>
                   ) : (
                     <span class="project-access">
@@ -505,18 +522,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                       >
                         {project.writable ? '[RW]' : '[RO]'}
                       </button>{' '}
-                      {project.writable ? 'read and write' : 'read-only'} — {accessSource(project)}{' '}
-                      <button
-                        type="button"
-                        class="tag project-ab"
-                        aria-expanded={abOpen}
-                        disabled={!abConfig}
-                        onClick={() => setAbOpen((v) => !v)}
-                        title={abConfig ? "This project's Agent Bus: endpoint and default agents" : abLoadError || 'Loading the Agent Bus settings'}
-                      >
-                        [AB]
-                      </button>
-                      {spaceSummary(space) && <code class="project-ab-value">{spaceSummary(space)}</code>}
+                      {project.writable ? 'read and write' : 'read-only'} — {accessSource(project)}
                       {!project.saved && accessMode(project) !== 'inherit' && accessMode(project) !== null && (
                         <span class="settings-hint">Lasts until mdhouse stops, unless the project is saved.</span>
                       )}
@@ -546,6 +552,26 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     </span>
                   )}
                 </dd>
+                <dt>Agent Bus</dt>
+                <dd>
+                  {project.kind === 'reference' ? (
+                    <span class="settings-hint">never sent to agents</span>
+                  ) : (
+                    <span class="project-ab-row">
+                      {spaceSummary(space) ? <code class="project-ab-value">{spaceSummary(space)}</code> : <span>the instance's bus and default agent</span>}{' '}
+                      <button
+                        type="button"
+                        class="project-ab"
+                        aria-expanded={abOpen}
+                        disabled={!abConfig}
+                        onClick={() => setAbOpen((v) => !v)}
+                        title={abConfig ? "This project's Agent Bus: endpoint and default agent" : abLoadError || 'Loading the Agent Bus settings'}
+                      >
+                        {abOpen ? 'Close' : 'Edit'}
+                      </button>
+                    </span>
+                  )}
+                </dd>
               </dl>
               {abOpen && project.kind !== 'reference' && (
                 <div class="project-ab-editor" role="group" aria-label={`Agent Bus for ${project.name}`}>
@@ -572,18 +598,17 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     {space?.hasCredential && ' A credential for it is set on the server; changing or clearing the endpoint discards it.'}
                   </span>
                   <label class="settings-scheme-field">
-                    <b>Default agents</b>
-                    <input
-                      class="settings-scheme project-ab-default"
-                      type="text"
-                      value={namesDraft}
-                      placeholder={(abConfig?.instance.default ?? []).join(' ')}
-                      spellcheck={false}
-                      autocomplete="off"
-                      aria-label={`Default agents of project ${project.name}`}
+                    <b>Default agent</b>
+                    <AgentSelect
+                      class="project-ab-default"
+                      value={splitNames(namesDraft)[0] ?? ''}
+                      none={`instance default${abConfig?.instance.default.length ? `: ${abConfig.instance.default.join(' ')}` : ''}`}
+                      agents={abAgents(abInfo, splitNames(namesDraft))}
+                      checked={abInfo?.enabled === true}
+                      label={`Default agent of project ${project.name}`}
                       disabled={!abEditable || busy !== null}
                       title={isAdmin ? undefined : NEEDS_ADMIN}
-                      onInput={(e) => setNamesDraft((e.target as HTMLInputElement).value)}
+                      onChange={setNamesDraft}
                     />
                   </label>
                   <span class="settings-hint">
@@ -628,7 +653,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         </div>
         <p class="settings-hint project-legend">
           <code>[unsaved]</code> served until mdhouse stops — click to keep it · <code>[RW]</code> / <code>[RO]</code> its access — click to
-          switch · <code>[AB]</code> its Agent Bus endpoint and default agents — shown beside it only when the project sets them
+          switch
         </p>
         {error && <p class="settings-error">{error}</p>}
         <form
@@ -789,38 +814,92 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         )}
       </section>
 
-      <AgentBusSettings isAdmin={isAdmin} refused={refused} config={abConfig} onConfig={() => void loadAb()} />
+      <AgentBusSettings
+        isAdmin={isAdmin}
+        refused={refused}
+        config={abConfig}
+        onConfig={() => void loadAb()}
+        info={abInfo}
+        checking={abChecking}
+        checkError={abCheckError}
+        onCheck={() => void checkAb()}
+      />
     </div>
   );
 }
 
-/** The Agent Bus section: off — how to turn it on; on — the connection, and the default agents. */
+/** The agents to choose from: the running ones, plus the chosen ones even when they are not running. */
+function abAgents(info: AbInfo | null, chosen: readonly string[]) {
+  const running = info?.enabled ? info.agents : [];
+  return [
+    ...running.filter((a) => a.alive || chosen.includes(a.name)),
+    ...chosen.filter((n) => !running.some((a) => a.name === n)).map((name) => ({ name, descr: '', alive: false })),
+  ];
+}
+
+/** One agent out of `agents`, or none (`''`); an agent not running is marked once the list is checked. */
+function AgentSelect(props: {
+  class: string;
+  value: string;
+  none: string;
+  agents: readonly { name: string; descr: string; alive: boolean }[];
+  checked: boolean;
+  label: string;
+  disabled: boolean;
+  title?: string;
+  onChange: (name: string) => void;
+}) {
+  return (
+    <select
+      class={`ab-select ${props.class}`}
+      value={props.value}
+      aria-label={props.label}
+      disabled={props.disabled}
+      title={props.title}
+      onChange={(e) => props.onChange((e.target as HTMLSelectElement).value)}
+    >
+      <option value="">— {props.none} —</option>
+      {props.agents.map((a) => (
+        <option key={a.name} value={a.name}>
+          {a.name}
+          {props.checked && !a.alive ? ' — not running' : ''}
+          {a.descr ? ` · ${a.descr}` : ''}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** The Agent Bus section: off — how to turn it on; on — the connection, and the default agent. */
 /**
- * The instance's Agent Bus settings. Shown from the stored settings — opening Settings reaches no bus; the
- * connection and the running agents are checked only when the reader asks.
+ * The instance's Agent Bus settings: the connection, the default agent (one, from the running agents) and the
+ * names filter. The agent list comes from the parent, read when Settings opens and on "Check again".
  */
-function AgentBusSettings({ isAdmin, refused, config, onConfig }: { isAdmin: boolean; refused: (err: unknown) => string; config: AbConfig | null; onConfig: () => void }) {
-  const [info, setInfo] = useState<AbInfo | null>(null);
-  const [checking, setChecking] = useState(false);
+function AgentBusSettings({
+  isAdmin,
+  refused,
+  config,
+  onConfig,
+  info,
+  checking,
+  checkError,
+  onCheck,
+}: {
+  isAdmin: boolean;
+  refused: (err: unknown) => string;
+  config: AbConfig | null;
+  onConfig: () => void;
+  info: AbInfo | null;
+  checking: boolean;
+  checkError: string;
+  onCheck: () => void;
+}) {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const stored = config?.instance.filter ?? [];
   const [filter, setFilter] = useState<string | null>(null);
   useEffect(() => setFilter(stored.join('\n')), [stored.join('\n')]);
   const defaults = config?.instance.default ?? [];
-
-  const check = async () => {
-    if (checking) return;
-    setChecking(true);
-    setError('');
-    try {
-      setInfo(await api.abInfo());
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setChecking(false);
-    }
-  };
 
   const saveFilter = async () => {
     if (saving || !isAdmin || filter === null) return;
@@ -850,12 +929,6 @@ function AgentBusSettings({ isAdmin, refused, config, onConfig }: { isAdmin: boo
     }
   };
 
-  // The default agents stay listed when they are not running; before a check only they are known.
-  const running = info?.enabled ? info.agents : [];
-  const listed = [
-    ...running.filter((a) => a.alive || defaults.includes(a.name)),
-    ...defaults.filter((n) => !running.some((a) => a.name === n)).map((name) => ({ name, descr: '', alive: false })),
-  ];
   const checked = info?.enabled === true;
 
   return (
@@ -863,7 +936,7 @@ function AgentBusSettings({ isAdmin, refused, config, onConfig }: { isAdmin: boo
       <h2>
         Agent Bus <span class="scope">all projects</span>
       </h2>
-      {error && <p class="settings-error">{error}</p>}
+      {(error || checkError) && <p class="settings-error">{error || checkError}</p>}
       {config && !config.enabled && (
         <p class="settings-hint">
           Enable the Agent Bus integration: <code>mdhouse --agent-bus</code>
@@ -874,37 +947,25 @@ function AgentBusSettings({ isAdmin, refused, config, onConfig }: { isAdmin: boo
           <p class="settings-hint">
             <code>{config.instance.endpoint}</code>
             {info?.enabled && <> · {info.connected ? '✅ connected' : `❌ not connected: ${info.error}`} · as <code>{info.me}</code></>}{' '}
-            <button type="button" class="ab-check" disabled={checking} onClick={() => void check()}>
+            <button type="button" class="ab-check" disabled={checking} onClick={onCheck}>
               {checking ? 'Checking…' : checked ? 'Check again' : 'Check connection, list agents'}
             </button>
           </p>
           <p>
             <b>Default agent</b> — asked by a page that names none with <code>&lt;!-- AB: name --&gt;</code>, in a project without its own
           </p>
-          <ul class="ab-defaults">
-            {listed.map((a) => (
-              <li key={a.name}>
-                <label class={a.alive || !checked ? '' : 'dead'}>
-                  <input
-                    type="checkbox"
-                    disabled={saving || !isAdmin}
-                    title={isAdmin ? undefined : NEEDS_ADMIN}
-                    checked={defaults.includes(a.name)}
-                    onChange={(e) =>
-                      void setDefault((e.target as HTMLInputElement).checked ? [...defaults, a.name] : defaults.filter((n) => n !== a.name))
-                    }
-                  />
-                  <span>
-                    <code>{a.name}</code>
-                    {checked && !a.alive && <span class="ab-dead">dead — not running</span>}
-                    {a.descr && <span class="ab-descr">{a.descr}</span>}
-                  </span>
-                </label>
-              </li>
-            ))}
-            {!checked && <li class="settings-hint">Check the connection to list the running agents.</li>}
-            {info?.enabled && info.connected && !listed.length && <li class="settings-hint">No agent is running</li>}
-          </ul>
+          <AgentSelect
+            class="ab-default"
+            value={defaults[0] ?? ''}
+            none="none"
+            agents={abAgents(info, defaults)}
+            checked={checked}
+            label="Default agent of every project without its own"
+            disabled={saving || !isAdmin}
+            title={isAdmin ? undefined : NEEDS_ADMIN}
+            onChange={(name) => void setDefault(name ? [name] : [])}
+          />
+          {info?.enabled && info.connected && !info.agents.some((a) => a.alive) && <p class="settings-hint">No agent is running</p>}
           <p>
             <b>Names filter</b> — which agents the lists show: a regex per line, against the name without its <code>#</code>; empty — all
           </p>

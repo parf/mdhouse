@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Settings: a project's Agent Bus has its own row; the default agent (project and instance) is one, picked from a drop-down of running agents, listed when Settings opens; buttons look like buttons
 - Settings › Add project fits one line: path, an `RW` checkbox (unticked = read-only) and the button
 - `mdhouse-rag-sync` works with newer RAG/FileScan agents: it accepts RAG 0.4.2 or later and ignores reply fields a newer agent adds
 

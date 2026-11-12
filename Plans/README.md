@@ -607,7 +607,7 @@ refused browser drafts stay typed. Project config identity participates in expli
 Endpoints are bounded absolute sockets or HTTP(S), without userinfo/query/fragment/control characters.
 Public errors are fixed safe messages; raw provider bodies and credentials never reach HTTP/WS/log errors.
 
-`[AB]` beside project access opens the endpoint/default editor; only explicit config adds row text.
+A project's own `Agent Bus` row opens the endpoint/default-agent editor; default agent: one, picked from the running agents.
 Reference controls are disabled. Off integration shows the CLI hint, with no web enable switch.
 Settings reads configuration without connecting; connection/agent listing needs an explicit user action.
 GET `/api/ab?root=<id>` reports the selected project's effective endpoint/source and agent list;
