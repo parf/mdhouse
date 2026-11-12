@@ -64,11 +64,5 @@
 
 ## Agent upkeep — 2026-11-12
 
-- ❓ Q-R3-RELOAD1 CLAUDE.md reload script: skip the reference root? <a id="Q-R3-RELOAD1"></a>
-  The script re-adds every unsaved root; `/home/parf/src/mdhouse/doc` (kind `reference`, built in) is unsaved, so `./bin/mdhouse` on it fails and `set -e` stops the reload.
-  - ( ) add `select(.kind != "reference")` after `select(.saved|not)` in the jq filter 🌟
-  - ( ) leave as is
-
-- ❓ Q-R3-HANDOFF1 `.ai-team/{w1,w2,w3}/HANDOFF.md` still name the 145 removed worktrees / `r3/*` branches (archive: `.scratch/worktree-archive-2026-11-12/`). <a id="Q-R3-HANDOFF1"></a>
-  - ( ) replace those lines with the archive path 🌟
-  - ( ) leave as is
+- [№Q-R3-RELOAD1](resolved.md#Q-R3-RELOAD1) <a id="Q-R3-RELOAD1"></a>
+- [№Q-R3-HANDOFF1](resolved.md#Q-R3-HANDOFF1) <a id="Q-R3-HANDOFF1"></a>

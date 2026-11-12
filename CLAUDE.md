@@ -165,7 +165,7 @@ journalctl --user -u mdhouse.service -n 50   # log
 ```sh
 bash -c '
 set -e
-R=$(curl -fsS localhost:7777/api/roots | jq -r ".roots[] | select(.saved|not) | [(if .writable then \"--rw\" else empty end), .path] | @sh")
+R=$(curl -fsS localhost:7777/api/roots | jq -r ".roots[] | select(.saved|not) | select(.kind != \"reference\") | [(if .writable then \"--rw\" else empty end), .path] | @sh")
 systemctl --user restart mdhouse.service
 for i in $(seq 50); do curl -so /dev/null localhost:7777/ && break; sleep 0.1; done
 curl -so /dev/null localhost:7777/ || { journalctl --user -u mdhouse.service -n 30; exit 1; }

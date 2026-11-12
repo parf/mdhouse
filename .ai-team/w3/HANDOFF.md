@@ -15,8 +15,7 @@ verification; root paths/RW preserved. New admin-gated editors are not complete.
 ## Last owned checkout
 
 - Owner: W3.
-- Checkout: `/home/parf/src/mdhouse/.scratch/worktrees/r3-project-terminology`.
-- Branch: `r3/project-terminology`.
+- Checkout and branch `r3/project-terminology` removed 2026-11-12; archive: `.scratch/worktree-archive-2026-11-12/`.
 - Frozen author commit: `927faa88469008f914813825f689ab14f9e0a2a2`.
 - Owned paths: `src/ui/RootSelect.tsx`, `README.md`, `doc/cli.md`, `doc/agent-bus.md`,
   `src/cli.ts` (human help/messages only).
