@@ -24,6 +24,14 @@
   > FileScan/recovery fixture acceptance without inventing provider jobs/history, treating pending:0
   > as complete-folder proof or silently substituting polling for required live lifecycle updates.
   > [Current contract](../RAG-CONTRACT.md); [original question/history](resolved.md#Q-R3-RAG1).
+  >
+  > 💬👾 2026-11-12: provisioning done — `#rag/mdhouse@parf.us` RAG 0.4.5 on `#qdrant@parf.us`, `#filescan/mdhouse@parf.us` on this repo; `mdhouse-rag-sync` confirmed 163/184 files.
+  > AB agent: no provider source registry / job API / history is planned. The question is no longer a provider question; the rest is mdhouse work.
+  - ( ) close: rule → DECISIONS, remaining work → TODO MW.2a 🌟
+    - lifecycle = FileScan instance + runner roots per source (admin step) → `mdhouse-rag-sync` → RAG
+    - source registry, sync history, A7 request-id outcomes: KV on `#mdhouse@<host>` (`set --add`); events: `#mdhouse` agent log
+    - small-file citations (heading/lines): computed by mdhouse from the file at `content_hash`; mismatch → stale, no citation
+  - ( ) keep open — wait for a provider job/history API
 
 - [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1) <a id="Q-R3-HTML1"></a>
 
