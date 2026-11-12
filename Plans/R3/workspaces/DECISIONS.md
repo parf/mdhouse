@@ -107,6 +107,9 @@
   No secrets in config/projects/logs/query/audit/startup output; explicit CLI/browser recovery.
   Independent security review + negative tests before integration. [History](resolved.md#ADMIN-W1).
 
+- 📌 Q-R3-ADMIN1 Shared file marks (`/api/marks`) = instance configuration: Personal owner / Team configured instance administrator only. <a id="Q-R3-ADMIN1"></a>
+  [History](resolved.md#Q-R3-ADMIN1).
+
 ## Document content
 
 - 📌 Q-R3-HTML1 Prohibit document-supplied active content. <a id="Q-R3-HTML1"></a>

@@ -41,7 +41,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - [x] MW.0g.2b Local Personal CLI/control bootstrap, browser session and existing config/root-admin enforcement <a id="MW.0g.2b"></a>
     Integrated `4af60fd`, exact nonauthor CEO security PASS, combined 223/0 + types and real-backend Chromium/TTY proof. [Evidence](../QA.md#local-personal-admin-wiring); Team/OAuth, remote bootstrap, marks policy and new project properties remain separate.
   - Slice verified: integrated `484a277`, approved `da05ea9`; source identity + focused pure 14/0, live inventory excluded. No admin activation; [evidence](../EXECUTION.md#dormant-route-classification-integrated)
-  - Slice acceptance: complete registered POST-family inventory, unknown/duplicate classification rejection, current route behavior unchanged; marks policy remains [№Q-R3-ADMIN1](QUESTIONS.md#Q-R3-ADMIN1), actor identity excludes author cookies
+  - Slice acceptance: complete registered POST-family inventory, unknown/duplicate classification rejection, current route behavior unchanged; marks policy [№Q-R3-ADMIN1](DECISIONS.md#Q-R3-ADMIN1), actor identity excludes author cookies
   - Wiring prerequisite: [№MW.8](#MW.8) content isolation reviewed and verified under [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1)
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
   - Contract: [№ADMIN-W1](DECISIONS.md#ADMIN-W1); short-lived single-use OS-control proof, fragment cleanup, revocable HttpOnly session, no secret in journal/history/query/config

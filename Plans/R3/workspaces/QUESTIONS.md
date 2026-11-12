@@ -29,15 +29,7 @@
 
 ## Shared marks authorization — 2026-11-05
 
-- ❓ Q-R3-ADMIN1 Who may change the existing shared file marks? <a id="Q-R3-ADMIN1"></a>
-  `/api/marks` stores favorite/muted/ignored for the entire root in instance prefs, including RO roots.
-  Ignored entries disappear from everyone's default tree; this is not a private browser preference.
-  [№MW.0g](TODO.md#MW.0g) must classify this mutation before activating web administration.
-  - (x) Personal owner / Team configured instance administrator 🌟
-  - ( ) Project Editor with an explicit grant to that project
-  > 💬👾 Verified `src/server.ts` marks route and `src/lib/prefs.ts`: all browsers share the same
-  > root-keyed arrays; ignored changes invalidate the shared tree. Recommend treating these existing
-  > global marks as instance configuration. A per-user marks store is a separate scope, not inferred.
+- [№Q-R3-ADMIN1](DECISIONS.md#Q-R3-ADMIN1) <a id="Q-R3-ADMIN1"></a>
 
 ## Country reauthentication baseline — 2026-11-06
 
@@ -54,6 +46,12 @@
   > 💡👾 Keep the established username/name lock; leave realm unmodeled until its meaning is explicit.
   >
   > 💬 👤parf elaborate
+  >
+  > 💬👾 "Realm" exists today only as: Basic auth `realm="mdhouse"` (`src/server.ts:358`); Agent Bus `#mdhouse@<host>` (`src/lib/agent-bus.ts:89`).
+  > No user record has one. Which is meant?
+  > - A — nothing extra: "name/realm" = the user's display name
+  > - B — the user's Agent Bus identity `#<name>@<realm>` (agents sign as the user)
+  > - C — an organization / team label of the user
 
 ## Initial unknown country — 2026-11-06
 
@@ -70,6 +68,8 @@
   >
   > 💬👾 ISO 3166-1 `NA` = Namibia; store not-available as a non-code marker (`--`/`null`)?
   > `NA → US`: reauthenticate (NA is a baseline 🌟) or enroll (NA is unknown, per [№Q-R3-COUNTRY1](DECISIONS.md#Q-R3-COUNTRY1))?
+  >
+  > 💬👾 (x) settles `NA → US` = reauthenticate. Open only: the stored marker — `NA` (= Namibia) or `--`/`null`.
 
 ## On-demand RAG sync lifetime — 2026-11-06
 

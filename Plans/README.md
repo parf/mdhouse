@@ -369,7 +369,7 @@ fetches from the network. `serve()` returns `routes`; `test/authz.test.ts` pins 
 `ADMIN_FAMILIES` gates `instance-config` and `root-admin` writes after Host/admission, with same-origin
 and a verified browser-admin session before body handling. Missing/expired/revoked authority is
 `401 {error, reason: 'admin'}`. `Actor` comes from the verified session; immutable `user` remains unset.
-Other families retain existing behavior; marks policy remains open and no Team/grant system is activated.
+Other families retain existing behavior; marks admin policy is decided, not enforced; no Team/grant system is activated.
 
 | Family | Routes (POST) |
 |---|---|
@@ -381,7 +381,7 @@ Other families retain existing behavior; marks policy remains open and no Team/g
 | `attribution` | `/api/author` |
 | `external-send` | `/api/ab/send` |
 | `root-admin` | `/api/roots/ab`, `/api/roots/add`, `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
-| `shared-prefs` | `/api/marks` — policy open ([№Q-R3-ADMIN1](R3/workspaces/QUESTIONS.md#Q-R3-ADMIN1)) |
+| `shared-prefs` | `/api/marks` — admin-only decided, not enforced ([№Q-R3-ADMIN1](R3/workspaces/DECISIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
 
 ## User session history (pure model)

@@ -494,3 +494,15 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬 👤parf и вообще решить что должно куда идти.  $PROJECT_HOME/.mdhouse/ - git controlled
   >
   > 💬 👤parf это особенно важно для teams flows & automations
+
+## Shared marks authorization — 2026-11-05
+
+- ✅ Q-R3-ADMIN1 Who may change the existing shared file marks? <a id="Q-R3-ADMIN1"></a>
+  `/api/marks` stores favorite/muted/ignored for the entire root in instance prefs, including RO roots.
+  Ignored entries disappear from everyone's default tree; this is not a private browser preference.
+  [№MW.0g](TODO.md#MW.0g) must classify this mutation before activating web administration.
+  - (x) Personal owner / Team configured instance administrator 🌟
+  - ( ) Project Editor with an explicit grant to that project
+  > 💬👾 Verified `src/server.ts` marks route and `src/lib/prefs.ts`: all browsers share the same
+  > root-keyed arrays; ignored changes invalidate the shared tree. Recommend treating these existing
+  > global marks as instance configuration. A per-user marks store is a separate scope, not inferred.
