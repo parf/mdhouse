@@ -1,0 +1,9 @@
+# CEO restart handoff
+
+- Owner requested team STOP for manual restart. No new work/checks until owner resumes.
+- New names: #md/ceo, #md/cto, #md/w1, #md/w2, #md/w3, #md/review; tag mdhouse. Launcher/init updated in 6e06c2e. Existing sessions still use old names; do not rename/restart/unregister them automatically.
+- Shared handoff/recovery rules adopted in 4b4ec8a: CEO/CTO may Escape a verified own-team blocked prompt, never answer/approve; restarts remain owner-controlled.
+- Main repo /home/parf/src/mdhouse. Current product checkpoint: Projects Settings be56acd (view/organization only), source rootcause flicker/history fix c568e3b. Both locally applied to mdhouse.service; HTTP healthy, 9 roots/RW preserved. README diagram 15s observation: same pre/img, zero body mutations/gaps; ignored history hidden. Name/RW/save/AB override editors still open/admin-gated.
+- RAG sync is OUR separate on-demand bin; connected cohort 1fd503a integrated, actual indexing/search pending provider readiness/private Qdrant key/runtime/collection. FileScan demand instance live without subscribers; J124 deploy/audit cleared. CTO old identity has scoped Maintainer grants: migrate separately only after new CTO ready, preserving access. Technical integration only CTO to confirmed AB CTO #ab-dir; no Realmo/RG/AB workers contacts.
+- Owner priorities: simple fixes CEO does directly; substantial work team scheme; simple tasks first; grouped cohorts/one proportional gate, no per-landing version bump/full reruns. Questions in owning QUESTIONS; concise decisions/history in resolved.
+- No CEO-owned active jobs or unsaved product work. Owner will restart; next CEO should read current Plans/R3/workspaces/TODO.md and CTO handoff before assignments. Do not mistake implemented foundations or Settings viewing for complete auth/runtime/editing.
