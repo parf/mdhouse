@@ -125,8 +125,10 @@ function wire(value: unknown): unknown {
 }
 function object(v: unknown, keys?: readonly string[], required = keys): Obj {
   if (!v || typeof v !== 'object' || Array.isArray(v)) invalid('object required'); const o = v as Obj;
-  if (keys && (Object.keys(o).some(k => !keys.includes(k)) || required?.some(k => !Object.hasOwn(o, k)))) invalid('schema keys'); return o;
+  if ((keys && Object.keys(o).some(k => !keys.includes(k))) || required?.some(k => !Object.hasOwn(o, k))) invalid('schema keys'); return o;
 }
+/** A provider reply object: `required` present; fields a newer provider adds are ignored. */
+function fields(v: unknown, required: readonly string[]): Obj { return object(v, undefined, required); }
 function array(v: unknown, max = 10_000): unknown[] { if (!Array.isArray(v) || v.length > max) invalid('array bound'); return v; }
 function text(v: unknown, max = 2048, empty = false): string {
   if (typeof v !== 'string' || !v.isWellFormed() || (!empty && !v.trim()) || bytes(v) > max || /[\x00\ufeff]/.test(v)) invalid('bounded text'); return v;
@@ -160,13 +162,13 @@ function stamp(v: unknown): string {
 }
 
 export function decodeFileScanStatus(value: unknown): FileScanStatus {
-  const o = object(wire(value), ['mode','effective_mode','fallback','tracked','last_scan','skipped','state_bytes','state_max','subscribers','paused','skipped_for_rag']);
+  const o = fields(wire(value), ['mode','effective_mode','fallback','tracked','last_scan','skipped','state_bytes','state_max','subscribers','paused','skipped_for_rag']);
   const modes = ['demand','poll','watch','both'] as const;
-  const subscribers = array(o.subscribers, 100).map(v => { const s = object(v, ['id','target','sent','confirmed','dropped','pending']);
+  const subscribers = array(o.subscribers, 100).map(v => { const s = fields(v, ['id','target','sent','confirmed','dropped','pending']);
     return { id: text(s.id), target: text(s.target), sent: integer(s.sent), confirmed: integer(s.confirmed), dropped: integer(s.dropped), pending: integer(s.pending) }; });
   const skipped = array(o.skipped).map(v => { const r = array(v, 2); if (r.length !== 2) invalid('skipped tuple'); return [text(r[0]),text(r[1])] as [string,string]; });
   let paused: FileScanStatus['paused'] = null;
-  if (o.paused !== null) { const p = object(o.paused, ['kind','reason','at']); paused = { kind: text(p.kind), reason: text(p.reason), at: numeric(p.at) }; }
+  if (o.paused !== null) { const p = fields(o.paused, ['kind','reason','at']); paused = { kind: text(p.kind), reason: text(p.reason), at: numeric(p.at) }; }
   const skipped_for_rag: FileScanStatus['skipped_for_rag'] = Object.create(null);
   for (const [key, v] of Object.entries(object(o.skipped_for_rag))) {
     const row: Record<string,string> = Object.create(null); for (const [path, reason] of Object.entries(object(v))) row[text(path)] = text(reason); skipped_for_rag[text(key)] = row;
@@ -174,17 +176,18 @@ export function decodeFileScanStatus(value: unknown): FileScanStatus {
   return { mode: choice(o.mode,modes), effective_mode: choice(o.effective_mode,modes), fallback: o.fallback === null ? null : text(o.fallback),
     tracked: integer(o.tracked), last_scan: o.last_scan === null ? null : numeric(o.last_scan), skipped, state_bytes: integer(o.state_bytes), state_max: integer(o.state_max), subscribers, paused, skipped_for_rag };
 }
+const LIMIT_KEYS = ['body_bytes','record_bytes','data_bytes','chunks','embedding_scalars','query_bytes','page_records','catalogue_bytes','namespaces','tables_per_namespace'] as const;
 export function decodeRagCapabilities(value: unknown): RagCapabilities {
-  const o = object(wire(value), ['version','methods','modes','limits','embedding_model','dimensions']);
+  const o = fields(wire(value), ['version','methods','modes','limits','embedding_model','dimensions']);
   const methods = array(o.methods, 64).map(v => text(v, 64)); const modes = array(o.modes,3).map(v => choice(v,MODES));
   if (new Set(methods).size !== methods.length || new Set(modes).size !== modes.length) invalid('duplicate capability');
-  const l = object(o.limits, ['body_bytes','record_bytes','data_bytes','chunks','embedding_scalars','query_bytes','page_records','catalogue_bytes','namespaces','tables_per_namespace']);
-  const limits: Record<string,number> = {}; for (const [k,v] of Object.entries(l)) limits[k] = integer(v);
+  const l = fields(o.limits, LIMIT_KEYS);
+  const limits: Record<string,number> = {}; for (const k of LIMIT_KEYS) limits[k] = integer(l[k]);
   return { version: text(o.version,32), methods, modes, limits, embedding_model: o.embedding_model === null ? null : text(o.embedding_model,128), dimensions: o.dimensions === null ? null : integer(o.dimensions,8192) };
 }
 export function decodeSyncReply(value: unknown): SyncReply {
-  const o = object(wire(value), ['result','confirmed','remaining','capped','sent','files']);
-  const files = array(o.files,200).map(v => { const f = object(v, ['path','state','reason']); return { path: sourcePath(f.path), state: choice(f.state,['failed','unknown','in_flight'] as const), reason: text(f.reason) }; });
+  const o = fields(wire(value), ['result','confirmed','remaining','capped','sent','files']);
+  const files = array(o.files,200).map(v => { const f = fields(v, ['path','state','reason']); return { path: sourcePath(f.path), state: choice(f.state,['failed','unknown','in_flight'] as const), reason: text(f.reason) }; });
   if (new Set(files.map(f => f.path)).size !== files.length) invalid('duplicate sync file');
   const r: SyncReply = { result: choice(o.result,['confirmed','incomplete','unknown','failed'] as const), confirmed: integer(o.confirmed), remaining: integer(o.remaining), capped: bool(o.capped), sent: integer(o.sent), files };
   if (files.length > r.remaining || (r.result === 'confirmed' && (r.remaining !== 0 || r.capped || files.length))
@@ -197,17 +200,16 @@ export function decodeSearchReply(value: unknown, expected: unknown): SearchRepl
   const e = object(data(expected), ['namespace','table','mode','limit','exclude']);
   const namespace = text(e.namespace,128); const table = text(e.table,128); const mode = choice(e.mode,MODES); const limit = integer(e.limit,16);
   if (!limit) invalid('search limit'); const excludes = array(e.exclude,128).map(v => text(v));
-  const o = object(wire(value), ['mode','records']); if (o.mode !== mode) invalid('effective search mode mismatch');
+  const o = fields(wire(value), ['mode','records']); if (o.mode !== mode) invalid('effective search mode mismatch');
   const identities = new Set<string>();
   const records = array(o.records,limit).map(v => {
-    const c = object(v, ['namespace','tableName','id','source','content_hash','indexed_at','chunk_index','excerpt','scores','key1','key2','heading_path','lines'],
-      ['namespace','tableName','id','source','content_hash','indexed_at','chunk_index','excerpt','scores']);
+    const c = fields(v, ['namespace','tableName','id','source','content_hash','indexed_at','chunk_index','excerpt','scores']);
     if (c.namespace !== namespace || c.tableName !== table) invalid('cross-scope citation');
     const id = text(c.id,128); if (id.normalize('NFC') !== id) invalid('citation ID');
     if (identities.has(id)) invalid('duplicate record citation'); identities.add(id);
     const source = sourcePath(c.source, excludes); if (!source.endsWith('.md')) invalid('non-Markdown citation');
     const hash = text(c.content_hash,64); if (!/^[0-9a-f]{64}$/.test(hash)) invalid('citation hash');
-    const score = { keyword: 'bm25', semantic: 'dense', hybrid: 'rrf' }[mode]; const rawScores = object(c.scores,[score]);
+    const score = { keyword: 'bm25', semantic: 'dense', hybrid: 'rrf' }[mode]; const rawScores = fields(c.scores,[score]);
     const n = rawScores[score]; if (typeof n !== 'number' || !Number.isFinite(n) || n < (mode === 'semantic' ? -1 : 0)) invalid('citation score');
     const record: Citation = { namespace, tableName: table, id, source, content_hash: hash, indexed_at: stamp(c.indexed_at), chunk_index: integer(c.chunk_index,255), excerpt: text(c.excerpt,32768,true), scores: { [score]: n } };
     for (const key of ['key1','key2'] as const) if (Object.hasOwn(c,key)) record[key] = text(c[key],256,true);
@@ -243,6 +245,12 @@ async function request(t: RuntimeTransport, r: RuntimeRequest): Promise<Reply> {
     return invalid('transport result');
   } catch { return { kind: 'uncertain', sent: true, reason: 'invalid-or-lost-transport-response' }; }
 }
+/** `version` is a plain `x.y.z` at or above `min`. */
+function atLeast(version: string, min: readonly [number, number, number]): boolean {
+  const m = /^(\d{1,6})\.(\d{1,6})\.(\d{1,6})$/.exec(version); if (!m) return false;
+  for (let i = 0; i < 3; i++) { const d = Number(m[i + 1]) - min[i]!; if (d) return d > 0; }
+  return true;
+}
 async function preflight(t: RuntimeTransport, p: RagSyncPlan): Promise<void> {
   const fs = await request(t,{ target: p.target.filescan, body: 'status' });
   if (fs.kind !== 'reply') invalid('FileScan preflight unavailable'); const status = decodeFileScanStatus(fs.body);
@@ -250,12 +258,12 @@ async function preflight(t: RuntimeTransport, p: RagSyncPlan): Promise<void> {
     || status.state_bytes > status.state_max || status.skipped.length || Object.keys(status.skipped_for_rag).length) invalid('FileScan not ready for finite sync');
   const cap = await request(t,{ target: p.target.rag, body: { method: 'capabilities' } });
   if (cap.kind !== 'reply') invalid('RAG capabilities unavailable'); const capabilities = decodeRagCapabilities(cap.body);
-  // The delivered 0.4.2 contract includes large Markdown references/checks; no guessed flag or future API.
-  if (capabilities.version !== '0.4.2' || !capabilities.embedding_model || !capabilities.dimensions
+  // 0.4.2 is the first contract with large Markdown references/checks; a newer one keeps it.
+  if (!atLeast(capabilities.version, [0,4,2]) || !capabilities.embedding_model || !capabilities.dimensions
     || ['upsert','get','search'].some(m => !capabilities.methods.includes(m)) || !capabilities.modes.includes('keyword')
     || capabilities.limits.data_bytes! < 32768 || capabilities.limits.body_bytes! < 1048576) invalid('unsupported/unconfigured RAG contract');
   const health = await request(t,{ target: p.target.rag, ask: 'status' });
-  if (health.kind !== 'reply' || health.body !== 'ok: collection verified (RAG 0.4.2)') invalid('RAG collection health unverified');
+  if (health.kind !== 'reply' || health.body !== `ok: collection verified (RAG ${capabilities.version})`) invalid('RAG collection health unverified');
 }
 function syncResult(effect: SyncRunResult['effect'], reason: string | null, report: SyncReply | null = null): SyncRunResult {
   return { effect, result: report?.result ?? (effect === 'unknown' ? 'unknown' : null), report, reason };

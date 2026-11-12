@@ -67,7 +67,7 @@ test('demand status, collection health and delivered large-file contract are req
   ]) { const s = status(); change(s); statuses.push(s); }
   for (const s of statuses) { const t = fake([reply(s)]); expect((await runSync(input(),t)).effect).toBe('notsent'); expect(t.calls).toHaveLength(1); }
   for (const change of [
-    (c: any) => { c.version = '0.4.1'; }, (c: any) => { c.version = '999.0.0'; },
+    (c: any) => { c.version = '0.4.1'; }, (c: any) => { c.version = '0.4'; }, (c: any) => { c.version = 'v0.4.5'; },
     (c: any) => { c.embedding_model = null; }, (c: any) => { c.dimensions = 0; },
     (c: any) => { c.methods = ['search']; }, (c: any) => { c.limits.data_bytes = 100; },
     (c: any) => { c.modes = ['unknown']; }, (c: any) => { c.limits.body_bytes = 32768; },
@@ -93,7 +93,7 @@ test('contradictory confirmations, invalid counts/scope/types and lost post-send
     r => { r.capped = true; }, r => { r.remaining = 1; }, r => { r.confirmed = 0; }, r => { r.sent = -1; },
     r => { r.confirmed = true; }, r => { r.remaining = 0.1; }, r => { r.result = 'done'; },
     r => { r.files = [{ path: '../outside.md', state:'failed',reason:'bad' }]; },
-    r => { r.files = Array(201).fill({path:'x.md',state:'failed',reason:'bad'}); }, r => { r.extra = true; },
+    r => { r.files = Array(201).fill({path:'x.md',state:'failed',reason:'bad'}); },
   ];
   for (const change of changes) { const r = confirmed(); change(r); const t = ready(reply(r)); const result = await runSync(input(),t); expect(result.effect).toBe('unknown'); expect(result.report).toBeNull(); expect(t.calls).toHaveLength(4); }
   for (const last of [new Error('lost'), {kind:'uncertain',sent:true,reason:'lost-reply'}, reply('{'), reply('unknown: pending'),
@@ -147,11 +147,11 @@ test('citation validation binds effective mode/scope/hash/paths/scores/time and 
     v=>{v.source='file.txt';},v=>{v.content_hash='A'.repeat(64);},v=>{v.id='x'.repeat(129);},
     v=>{v.chunk_index=256;},v=>{v.scores={dense:1};},v=>{v.scores={bm25:Infinity};},v=>{v.scores={bm25:-1};},
     v=>{v.indexed_at='2026-02-30T00:00:00Z';},v=>{v.indexed_at='not-time';},
-    v=>{v.lines=[20,1];},v=>{delete v.heading_path;},v=>{v.script=true;},
+    v=>{v.lines=[20,1];},v=>{delete v.heading_path;},
   ];
   for (const change of changes) { const value=structuredClone(c);change(value);expect(()=>decodeSearchReply({mode:'keyword',records:[value]},expected)).toThrow(RagSyncRuntimeError); }
   expect(()=>decodeSearchReply({mode:'semantic',records:[]},expected)).toThrow();
-  expect(()=>decodeSearchReply({mode:'keyword',reranked:true,records:[]},expected)).toThrow();
+  const extra=decodeSearchReply({mode:'keyword',reranked:true,records:[{...c,script:true}]},expected); expect(extra.records[0]).toEqual(c);
   expect(()=>decodeSearchReply({mode:'keyword',records:[c,c]},expected)).toThrow();
 });
 
@@ -193,4 +193,13 @@ test('duplicate post-send wire keys and malformed Unicode cannot forge confirmat
   expect(()=>decodeSearchReply({mode:'keyword',records:Array(17).fill(citation())},expected)).toThrow();
   const mutable:any={result:'failed',confirmed:0,remaining:1,sent:0,capped:false,files:[{path:'doc/a.md',state:'failed',reason:'untrusted <script>reason</script>'}]};
   const parsed=decodeSyncReply(mutable);parsed.files[0]!.reason='changed';expect(mutable.files[0].reason).toContain('<script>');
+});
+
+test('a newer provider: added reply fields are ignored and a later RAG version is accepted with its own health line', async () => {
+  const s = { ...status(), warnings: [] }; const c = { ...caps(), version: '0.4.5', limits: { ...caps().limits, future: 'x' } };
+  const r = { ...confirmed(), extra: true };
+  const t = fake([reply(s), reply(c), reply('ok: collection verified (RAG 0.4.5)'), reply(r)]);
+  const out = await runSync(input(), t); expect(out.effect).toBe('reported'); expect(out.report).toEqual(confirmed());
+  const stale = fake([reply(status()), reply({ ...caps(), version: '0.4.5' }), reply(health)]);
+  expect((await runSync(input(), stale)).effect).toBe('notsent');
 });

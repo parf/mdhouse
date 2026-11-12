@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- `mdhouse-rag-sync` works with newer RAG/FileScan agents: it accepts RAG 0.4.2 or later and ignores reply fields a newer agent adds
+
 - Align page-header first rows across documents, folders, Git, Settings and notices with a shared sidebar/topstrip header band, including narrow screens
 
 - Access indicators hide normal RW and emphasize read-only project exceptions across the sidebar and Settings; default controls and reference statuses stay neutral
