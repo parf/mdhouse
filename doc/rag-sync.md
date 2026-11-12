@@ -40,6 +40,7 @@ mdhouse-rag-sync --help
 - `--until-done` repeats the sync until every file is confirmed: 5 s after progress, doubling to
   15 min while nothing moves (provider down or throttled); a refusal stops it.
 - `search` sends one query to the RAG; `keyword` (default) is free, `semantic` and `hybrid` need `--paid`.
+- A record the RAG returns without `lines`/`heading_path` gets them from the local file at its `content_hash`; a changed file marks the record `stale: true`, with no citation.
 - Each request waits for its answer by its own random topic and tag; acks and other messages are
   not answers. A lost answer is `unknown`; the next `sync` repeats it.
 - The root is rechecked (device/inode) before anything with a body is sent.

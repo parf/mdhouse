@@ -24,6 +24,8 @@
 
 ### Added
 
+- `mdhouse-rag-sync search` cites a small file's record with `lines` and `heading_path` computed from the local file; a file changed since indexing marks the record `stale` instead
+
 - Edit complete Markdown source with CodeMirror, atomic stale-checked saves and retained drafts when the file changes or becomes read-only
 
 - Per-project Agent Bus endpoint/default editors with server-only credentials, root-aware routing and visible unavailable targets; Settings reads config without connecting

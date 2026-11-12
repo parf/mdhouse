@@ -1,10 +1,11 @@
 import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { RagBusError, type BusOptions, type RagBus } from '../src/lib/rag-sync-bus';
-import { BACKOFF, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
+import { BACKOFF, citeRecords, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
 
 const base = mkdtempSync(join(tmpdir(), 'mdhouse-rag-sync-'));
 afterAll(() => rmSync(base, { recursive: true, force: true }));
@@ -390,6 +391,64 @@ describe('sync and search through the runtime, against a fake bus', () => {
     expect(bus.reqs).toEqual([{ target: '#rag/notes@box', body: { method: 'search', namespace: 'notes', tableName: 'md', query: 'q', mode: 'keyword', limit: 5 } }]);
     const lost = fakeBus(root, () => ({ kind: 'uncertain', sent: true, reason: 'x' }));
     expect((await run(['search', '--root', root, ...TARGET, '--query', 'q'], lost)).code).toBe(EXIT.unknown);
+  });
+
+  describe('search citations computed from the local file', () => {
+    const sha = (t: string) => createHash('sha256').update(t).digest('hex');
+    const rec = (source: string, hash: string, excerpt: string, more: Record<string, unknown> = {}) => ({
+      namespace: 'notes', tableName: 'md', id: source, source, content_hash: hash, indexed_at: '2026-11-06T00:00:00Z', chunk_index: 0, excerpt, scores: { bm25: 1 }, ...more,
+    });
+    const search = async (root: string, records: unknown[]) => {
+      const bus = fakeBus(root, () => reply({ mode: 'keyword', records }));
+      const r = await run(['search', '--root', root, ...TARGET, '--query', 'q'], bus);
+      return { ...r, records: r.out ? (JSON.parse(r.out).result?.records as Array<Record<string, unknown>> | undefined) : undefined };
+    };
+    const NOTE = '# Notes\n\n## Plan\n\nfirst\nsecond\n';
+
+    test('a record without a location gets lines and the heading chain; one with a location is untouched', async () => {
+      const root = tree({ 'a.md': NOTE, 'b.md': NOTE });
+      const given = rec('b.md', sha(NOTE), 'first', { heading_path: ['X'], lines: [9, 9] });
+      const r = await search(root, [rec('a.md', sha(NOTE), 'first\nsecond\n'), given]);
+      expect(r.code).toBe(EXIT.ok);
+      expect(r.records![0]).toMatchObject({ source: 'a.md', lines: [5, 6], heading_path: ['Notes', 'Plan'] });
+      expect(r.records![0]).not.toHaveProperty('stale');
+      expect(r.records![1]).toEqual(given);
+    });
+
+    test('a changed file is stale: no lines, no heading path', async () => {
+      const root = tree({ 'a.md': NOTE });
+      const r = await search(root, [rec('a.md', sha('# Old\n'), 'first')]);
+      expect(r.records![0]).toMatchObject({ source: 'a.md', stale: true });
+      expect(r.records![0]).not.toHaveProperty('lines');
+      expect(r.records![0]).not.toHaveProperty('heading_path');
+    });
+
+    test('an excerpt the file does not hold, or a missing file, leaves the record as it was', async () => {
+      const root = tree({ 'a.md': NOTE });
+      const lost = rec('a.md', sha(NOTE), 'not in the file');
+      const gone = rec('gone.md', sha(NOTE), 'first');
+      expect((await search(root, [lost, gone])).records).toEqual([lost, gone]);
+    });
+
+    test('a source outside the root is not read: the reply is refused whole, and citeRecords itself leaves it as it was', async () => {
+      const root = tree({ 'a.md': NOTE });
+      writeFileSync(join(root, '..', 'x.md'), NOTE);
+      const r = await search(root, [rec('../x.md', sha(NOTE), 'first')]);
+      expect(r.code).toBe(EXIT.unknown);
+      expect(JSON.parse(r.out)).toMatchObject({ effect: 'unknown', result: null });
+
+      const escape = rec('../x.md', sha(NOTE), 'first');
+      const abs = rec('/etc/hostname', sha(NOTE), 'first');
+      expect(await citeRecords([escape as never, abs as never], root)).toEqual([escape, abs]);
+    });
+
+    test('a symlink out of the root, a non-Markdown source and an oversized file are not read', async () => {
+      const root = tree({ 'a.md': NOTE, 'b.txt': NOTE, 'big.md': `# Big\n\n${'x'.repeat(1_048_577)}\n` });
+      writeFileSync(join(root, '..', 'outside.md'), NOTE);
+      symlinkSync(join(root, '..', 'outside.md'), join(root, 'link.md'));
+      const records = [rec('link.md', sha(NOTE), 'first'), rec('b.txt', sha(NOTE), 'first'), rec('big.md', sha('#'), 'x')];
+      expect(await citeRecords(records as never, root)).toEqual(records);
+    });
   });
 });
 
