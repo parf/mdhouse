@@ -342,7 +342,7 @@ describe('sync and search through the runtime, against a fake bus', () => {
     const openBus = async (o: BusOptions) => ({ ...(await bus.openBus(o)), request: async (r: Req) => (bus.reqs.push(r), (typeof r.body === 'string' && r.body.startsWith('sync ') ? syncs.shift() : answer(r)) as never) });
     const code = await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus, sleep: async (ms) => void waits.push(ms) });
     expect(code).toBe(EXIT.ok);
-    expect(waits).toEqual([30_000, 60_000, 120_000, 240_000, 480_000]);
+    expect(waits).toEqual([5_000, 10_000, 20_000, 40_000, 80_000]);
     expect(JSON.parse(a.out.join('')).result).toBe('confirmed');
     expect(a.err.join('').split('\n').filter(Boolean)).toHaveLength(6);
   });

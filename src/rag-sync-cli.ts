@@ -57,7 +57,7 @@ are never followed.
 
 sync asks the FileScan for one finite sync and prints its answer. It sends only with --apply and
 a complete listing; a file sent before with no confirmation is sent again, and each send is paid.
---until-done repeats the sync until every file is confirmed: 30 s after progress, doubling to
+--until-done repeats the sync until every file is confirmed: 5 s after progress, doubling to
 15 min while nothing moves (provider down or throttled); it stops on a refusal. search asks the RAG once; keyword is free, semantic and hybrid need --paid.
 Both talk as #mdhouse@<host> through the local account socket.
 
@@ -273,7 +273,7 @@ export interface Deps {
 }
 
 /** `--until-done` pacing: the wait after a round with progress, and the cap it doubles to without. */
-export const BACKOFF = { baseMs: 30_000, maxMs: 900_000 } as const;
+export const BACKOFF = { baseMs: 5_000, maxMs: 900_000 } as const;
 
 /**
  * Repeats `once` until the sync is confirmed. Retries a reported or unknown outcome, and a refusal
