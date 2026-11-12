@@ -183,10 +183,10 @@ export function isAlive(r: Pick<Rec, 'readers' | 'last_used'>, now = Date.now())
  */
 /**
  * mdhouse's agent on every daemon it talks to: one connection per endpoint and credential, one job
- * store. Roots that share an endpoint share its connection. A connection drains the replies an
- * earlier run left only while no exchange is under way anywhere, and every exchange waits for
- * every drain in progress on any connection — so no connection ever takes another's reply, whatever the endpoints or
- * credentials, and a changed one never loses the jobs started before.
+ * store. Roots that share an endpoint share its connection. It never reads its inbox unfiltered: each call
+ * waits for its own topic and tag, so a reply left by an earlier run (it expires by the daemon's TTL) or meant
+ * for another process talking as the same agent is never taken. A changed endpoint or credential never loses
+ * the jobs started before.
  */
 export class AgentBus {
   readonly me: string;
@@ -194,8 +194,6 @@ export class AgentBus {
   private readonly connections = new Map<string, Promise<Bus>>();
   /** Exchanges under way, per connection key. */
   private readonly active = new Map<string, number>();
-  /** Drains still running, on any connection. */
-  private readonly drains = new Set<Promise<void>>();
   private readonly jobs = new Map<string, AbEvent[]>();
 
   constructor(
@@ -208,8 +206,6 @@ export class AgentBus {
     this.answerMs = opts.answerMs ?? ANSWER_MS;
   }
   private readonly answerMs: number;
-
-  private busy = (): boolean => [...this.active.values()].some((n) => n > 0);
 
   /**
    * The daemon as mdhouse's agent at `ep`: registered if missing, its token minted. Retried after a
@@ -236,19 +232,7 @@ export class AgentBus {
       } finally {
         await owner.close();
       }
-      const agent = connectBus(socket, minted, this.me);
-      // Replies to jobs of an earlier run: nobody waits for them any more; other topics are not ours.
-      // Only while no exchange is under way — its reply may sit in the same inbox.
-      if (!this.busy()) {
-        const drain = (async () => {
-          for (let i = 0; i < 1000 && (await agent.consume({ topic: TOPIC, wait: 0 })); i++);
-        })();
-        const done = drain.catch(() => {});
-        this.drains.add(done);
-        void done.then(() => this.drains.delete(done));
-        await drain;
-      }
-      return agent;
+      return connectBus(socket, minted, this.me);
     })();
     this.connections.set(key, agent);
     agent.catch(() => {
@@ -290,8 +274,6 @@ export class AgentBus {
   async ask(targets: string[], body: string, ep: Endpoint = this.where()): Promise<string> {
     const key = `${ep.addr}\n${ep.token}`;
     const d = await this.connect(ep);
-    // Every drain on every connection has ended; none starts once an exchange is counted.
-    while (this.drains.size) await Promise.all(this.drains);
     const job = crypto.randomUUID();
     this.jobs.set(job, []);
     while (this.jobs.size > JOBS_KEPT) this.jobs.delete(this.jobs.keys().next().value!);

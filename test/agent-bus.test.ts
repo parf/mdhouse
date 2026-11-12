@@ -10,8 +10,7 @@ import { abTargets, AgentBus, badPatterns, isAlive, passes, ownName, requestText
  * register (412 when it exists), token, ls, send, and a filtered consume served from what `reply`
  * queued for a tag. A receipt names the message it is about.
  */
-async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: number; tcp?: number; reply?: (to: string) => Partial<Envelope>[] } = {}) {
-  let stale = opts.stale ?? 0;
+async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; tcp?: number; reply?: (to: string) => Partial<Envelope>[] } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-'));
   const socket = join(dir, 'user-test.sock');
   const calls: string[] = [];
@@ -46,11 +45,8 @@ async function fakeDaemon(opts: { exists?: boolean; agents?: object[]; stale?: n
         return Response.json({ message_id: id, from: '#mdhouse@h', ...m });
       }
       if (url.pathname === '/consume') {
-        if (!url.searchParams.get('tag')) {
-          // the reconnect drain: only its own topic, never the whole inbox
-          if (url.searchParams.get('topic') !== 'mdhouse') return new Response('unfiltered read', { status: 400 });
-          return stale-- > 0 ? Response.json({ message_id: `old${stale}`, from: '#claude/x@h', to: '#mdhouse@h', body: 'old reply', topic: 'mdhouse' }) : new Response(null, { status: 204 });
-        }
+        // every read is filtered by its own tag: an untagged read would take another's reply
+        if (!url.searchParams.get('tag')) return new Response('untagged read', { status: 400 });
         const next = queued.get(url.searchParams.get('tag') ?? '')?.shift();
         return next ? Response.json(next) : new Response(null, { status: 204 });
       }
@@ -148,10 +144,10 @@ describe('agent bus — the service, against a fake daemon', () => {
     }
   });
 
-  test('a reconnect drains only the mdhouse topic: a reply waiting for another reader stays', async () => {
+  test('a reconnect reads nothing: replies waiting for another reader, or left by an earlier run, stay', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ab-'));
     const socket = join(dir, 'user-test.sock');
-    // the inbox: two stale app replies around a reply the rag-sync bin is waiting for
+    // the inbox: two replies left by an earlier run around a reply the rag-sync bin is waiting for
     const inbox: Envelope[] = [
       { message_id: 'a1', from: '#x@h', to: '#mdhouse@h', body: 'old', topic: 'mdhouse', tag: 'mdhouse-1' },
       { message_id: 'b1', from: '#filescan/x@h', to: '#mdhouse@h', body: '{"result":"confirmed"}', topic: 'mdhouse-rag-t', tag: 'g' },
@@ -177,7 +173,7 @@ describe('agent bus — the service, against a fake daemon', () => {
     try {
       const bus = new AgentBus(() => ({ addr: socket, token: '' }), () => {}, { me: '#mdhouse@h' });
       await bus.agents();
-      expect(inbox.map((m) => m.message_id)).toEqual(['b1']);
+      expect(inbox.map((m) => m.message_id)).toEqual(['a1', 'b1', 'a2']);
     } finally {
       server.stop(true);
       await rm(dir, { recursive: true, force: true });
@@ -187,7 +183,7 @@ describe('agent bus — the service, against a fake daemon', () => {
   test('connects as its own agent: registers (create only), mints a token, then talks with it', async () => {
     const d = await fakeDaemon({
       exists: true,
-      stale: 2,
+
       agents: [
         { name: '#claude/b@h', kind: 'agent', readers: 0 },
         { name: '#claude/a@h', kind: 'agent', readers: 1, descr: 'a' },
@@ -201,8 +197,8 @@ describe('agent bus — the service, against a fake daemon', () => {
         { name: '#claude/b@h', descr: '', alive: false },
       ]);
       // an existing record (412) is kept as is; every later call carries the agent's token
-      // and drains the replies an earlier run left: two, then empty
-      expect(d.calls).toEqual(['POST /register', 'POST /token', 'GET /consume +token', 'GET /consume +token', 'GET /consume +token', 'GET /ls +token']);
+      // and reads no inbox on connect
+      expect(d.calls).toEqual(['POST /register', 'POST /token', 'GET /ls +token']);
     } finally {
       await d.stop();
     }
@@ -236,7 +232,7 @@ describe('agent bus — the service, against a fake daemon', () => {
     try {
       const bus = new AgentBus(() => ({ addr: 'http://127.0.0.1:61789/', token: 'user-tok' }), () => {}, { me: '#mdhouse@h' });
       expect((await bus.agents()).map((a) => a.name)).toEqual(['#claude/a@h']);
-      expect(d.calls).toEqual(['POST /register +user-tok', 'POST /token +user-tok', 'GET /consume +token', 'GET /ls +token']);
+      expect(d.calls).toEqual(['POST /register +user-tok', 'POST /token +user-tok', 'GET /ls +token']);
     } finally {
       await d.stop();
     }

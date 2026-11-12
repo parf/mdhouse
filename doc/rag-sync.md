@@ -45,8 +45,8 @@ mdhouse-rag-sync --help
   not answers. A lost answer is `unknown`; the next `sync` repeats it.
 - The root is rechecked (device/inode) before anything with a body is sent.
 - Errors never repeat an argument's value, a token or a reply.
-- An mdhouse server from before this version drains its whole inbox when it reconnects, and can take
-  a sync's answer: the sync then reports `unknown`. Reload it first.
+- An mdhouse server from before this version reads its inbox on reconnect and can take a sync's answer:
+  the sync then reports `unknown`. Reload it first.
 
 Exit: `0` confirmed sync / search answered · `1` error, refused or failed · `2` usage ·
 `4` outcome unknown · `5` sync incomplete (run again to resume)

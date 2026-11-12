@@ -207,7 +207,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 - The daemon through `ai-agent-bus-sdk` (`connectBus`: every client option explicit) over its account socket (`user-<login>.sock`); or `http(s)://host:port` with `agentBus.token` (asked for by `--agent-bus <url>`, never in argv, never sent to the page)
 - mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), canonical `tags: ["personal"]` and `allow: ["@owner"]` on creation; existing records keep owner settings, token minted, every call with it
-- New connections drain earlier-run replies only while no exchange is active; sends wait for all pending drains. Endpoint/credential changes preserve active connections and the shared job index.
+- A connection never reads its inbox unfiltered: each call waits for its own topic and tag; earlier-run replies expire by the daemon's TTL. Endpoint/credential changes preserve active connections and the shared job index.
 - **Never `AGENT_BUS_*` from the environment** — a mdhouse started from an AI session's shell would act as that session
 - Alive: `readers > 0`, or `last_used` < 90 s
 - `/api/ab/send` `{p, targets, action, note}` → `{job}`; per target `sent`, then the client's `call` (topic `mdhouse`) → ack, answer / `done` / timeout at 10 min; events → WS topic `ab` and kept per job (last 50) for `/api/ab/job`
@@ -615,7 +615,7 @@ Settings reads configuration without connecting; connection/agent listing needs 
 GET `/api/ab?root=<id>` reports the selected project's effective endpoint/source and agent list;
 root omitted keeps instance behavior. `/api/ab/send` routes by the jailed document's root.
 Connections are pooled by endpoint/credential, while jobs/events remain globally addressable after overrides
-change. Shared/rotated connections cannot drain active replies; saving metadata does not connect or send.
+change. Shared/rotated connections never take another's reply; saving metadata does not connect or send.
 
 Panel targets resolve whole levels: explicit per-document choice → document AB names → project defaults →
 instance defaults. A higher-priority unavailable target stays visible and refuses sending; it is never

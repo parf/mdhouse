@@ -17,10 +17,10 @@ const disk = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<
  * A fake `agent-busd` on a temp unix socket. Calls are logged with the credential they carried; the
  * client's identity/status handshake is answered, not logged.
  * Replies to a send are queued under its tag, and held back until `release()` when `hold` is set.
- * The drain (a consume with no tag) takes any queued reply of the topic — as the real inbox does.
+ * A consume with no tag is refused: mdhouse reads only its own call's topic and tag.
  * `echo`: every refusal's body repeats the credential it was sent.
  */
-async function fakeDaemon(name: string, o: { hold?: boolean; echo?: boolean; tokenFor?: string; holdDrain?: boolean } = {}) {
+async function fakeDaemon(name: string, o: { hold?: boolean; echo?: boolean; tokenFor?: string } = {}) {
   const dir = await mkdtemp(join(tmpdir(), `mdhouse-ab-${name}-`));
   const socket = join(dir, 'bus.sock');
   const calls: string[] = [];
@@ -30,10 +30,6 @@ async function fakeDaemon(name: string, o: { hold?: boolean; echo?: boolean; tok
   let sent = 0;
   let agent = '';
   const agentToken = o.tokenFor ?? `agent-${name}`;
-  // `holdDrain`: the first drain (a consume with no tag) waits for `releaseDrain()`, then looks at the inbox.
-  let drainHeld = false;
-  let releaseDrain = () => {};
-  const drainGate = new Promise<void>((r) => (releaseDrain = r));
   const refuse = (status: number, why: string, token: string) =>
     Response.json({ error: o.echo ? `${why}; you sent ${token}` : why }, { status });
   const server = Bun.serve({
@@ -62,11 +58,8 @@ async function fakeDaemon(name: string, o: { hold?: boolean; echo?: boolean; tok
       }
       if (url.pathname === '/consume') {
         const tag = url.searchParams.get('tag');
-        if (o.holdDrain && !tag && !drainHeld) {
-          drainHeld = true;
-          await drainGate;
-        }
-        const i = inbox.findIndex((m) => m.topic === url.searchParams.get('topic') && (!tag || m.tag === tag));
+        if (!tag) return new Response('untagged read', { status: 400 });
+        const i = inbox.findIndex((m) => m.topic === url.searchParams.get('topic') && m.tag === tag);
         return i < 0 ? new Response(null, { status: 204 }) : Response.json(inbox.splice(i, 1)[0]);
       }
       return new Response('not found', { status: 404 });
@@ -76,8 +69,6 @@ async function fakeDaemon(name: string, o: { hold?: boolean; echo?: boolean; tok
     socket,
     calls,
     sends: () => calls.filter((c) => c.startsWith('POST /send')),
-    drainHeld: () => drainHeld,
-    releaseDrain: () => releaseDrain(),
     release: () => {
       inbox.push(...held);
       held = [];
@@ -142,7 +133,7 @@ describe('AgentBus pool — one connection per endpoint and credential, one job 
     }
   });
 
-  test('a new credential for the same daemon while a reply is pending: no drain takes it, the job is answered', async () => {
+  test('a new credential for the same daemon while a reply is pending: the new connection takes nothing, the job is answered', async () => {
     const a = await fakeDaemon('a', { hold: true });
     const c = collector();
     try {
@@ -156,29 +147,6 @@ describe('AgentBus pool — one connection per endpoint and credential, one job 
       await c.until(() => c.events.some((e) => e.kind === 'answer' || e.kind === 'timeout'));
       expect(bus.job(job)!.at(-1)).toMatchObject({ kind: 'answer', body: 'a read it' });
     } finally {
-      await a.stop();
-    }
-  });
-
-  test('a drain still in flight on one connection: an ask on another waits for it, so the drain cannot take its reply', async () => {
-    const a = await fakeDaemon('a', { holdDrain: true, hold: true });
-    const c = collector();
-    try {
-      const bus = new AgentBus(() => ({ addr: a.socket, token: 'cred-a' }), c.emit, { me: '#mdhouse@h', answerMs: 1500 });
-      const first = bus.status(); // its drain is held by the daemon
-      for (let i = 0; i < 100 && !a.drainHeld(); i++) await Bun.sleep(10);
-      expect(a.drainHeld()).toBe(true);
-      const job = bus.ask(['#claude/x@h'], 'hi', { addr: a.socket, token: 'cred-b' }); // same inbox, its own drain finishes at once
-      await Bun.sleep(150);
-      a.release(); // the reply arrives while the held drain is still at the daemon
-      a.releaseDrain(); // and the drain looks at the inbox first
-      expect(await first).toEqual({ connected: true });
-      for (let i = 0; i < 100 && !a.sends().length; i++) await Bun.sleep(10);
-      a.release(); // a reply sent after the drain ended
-      await c.until(() => c.events.some((e) => e.kind === 'answer' || e.kind === 'timeout'));
-      expect(bus.job(await job)!.at(-1)).toMatchObject({ kind: 'answer', body: 'a read it' });
-    } finally {
-      a.releaseDrain();
       await a.stop();
     }
   });

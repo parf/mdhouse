@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Agent Bus: mdhouse no longer reads its inbox when it connects, so it can never take a reply meant for another process talking as `#mdhouse` (another mdhouse, `mdhouse-rag-sync`)
 - Settings: every help moved into an ⓘ tooltip (mouseover or keyboard focus), rewritten to say what each setting does; only statuses and errors stay on the page
 - Settings: a project's Agent Bus has its own row; the default agent (project and instance) is one, picked from a drop-down of running agents, listed when Settings opens; buttons look like buttons
 - Settings › Add project fits one line: path, an `RW` checkbox (unticked = read-only) and the button
