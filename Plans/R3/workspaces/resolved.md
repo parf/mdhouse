@@ -506,3 +506,23 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
   > 💬👾 Verified `src/server.ts` marks route and `src/lib/prefs.ts`: all browsers share the same
   > root-keyed arrays; ignored changes invalidate the shared tree. Recommend treating these existing
   > global marks as instance configuration. A per-user marks store is a separate scope, not inferred.
+
+## Initial unknown country — 2026-11-06
+
+- ✅ Q-R3-COUNTRY2 What should the first known country do when GitHub login had no GeoIP country? <a id="Q-R3-COUNTRY2"></a>
+  [№USER-W6](DECISIONS.md#USER-W6) uses each session's authenticated country; unknown/private/failed
+  GeoIP is not a transition. The pure model reports unbound and does not trust that observation.
+  - (x) Require GitHub reauthentication when a verified country first becomes available 🌟
+  - ( ) Enroll the first verified country automatically without reauthentication
+  > 💡👾 Authenticate the first known country before a protected action and baseline/history trust.
+  > While GeoIP is unavailable, do not invent a country-change denial; ordinary identity/access
+  > rules still apply. This recommendation is not an approved blanket deny for unknown geography.
+  >
+  > 💬 👤parf country=NA (not avaiable)
+  >
+  > 💬👾 ISO 3166-1 `NA` = Namibia; store not-available as a non-code marker (`--`/`null`)?
+  > `NA → US`: reauthenticate (NA is a baseline 🌟) or enroll (NA is unknown, per [№Q-R3-COUNTRY1](DECISIONS.md#Q-R3-COUNTRY1))?
+  >
+  > 💬👾 (x) settles `NA → US` = reauthenticate. Open only: the stored marker — `NA` (= Namibia) or `--`/`null`.
+  >
+  > 💬 👤parf пустой страны в COUNTRY2 = NA

@@ -118,7 +118,10 @@
   [History](resolved.md#Q-R3-HTML1).
 
 - 📌 Q-R3-COUNTRY1 Country baseline = this session’s last GitHub-authenticated country; only successful reauthentication changes it. <a id="Q-R3-COUNTRY1"></a>
-  US→DE→US requires re-login twice; other sessions/history do not waive it. Initial unknown remains undecided. [History](resolved.md#Q-R3-COUNTRY1).
+  US→DE→US requires re-login twice; other sessions/history do not waive it. Initial unknown: [№Q-R3-COUNTRY2](#Q-R3-COUNTRY2). [History](resolved.md#Q-R3-COUNTRY1).
+
+- 📌 Q-R3-COUNTRY2 No GeoIP country → country `NA` (not available); the first verified country after `NA` requires GitHub reauthentication. <a id="Q-R3-COUNTRY2"></a>
+  [History](resolved.md#Q-R3-COUNTRY2).
 
 - 📌 Q-R3-RAGSYNC1 Use the finite on-demand FileScan sync; no subscription/watch/timer remains, unknown paid outcomes never auto-resend. <a id="Q-R3-RAGSYNC1"></a>
   Bind the delivered approved provider contract after deployment; standing-watch retry authority is separate. [History](resolved.md#Q-R3-RAGSYNC1).
