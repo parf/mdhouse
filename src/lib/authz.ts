@@ -33,7 +33,7 @@ export const ADMIN_FAMILIES: ReadonlySet<Family> = new Set<Family>(['instance-co
  */
 export interface Actor {
   readonly admin: boolean;
-  readonly via: 'control' | 'session' | 'none';
+  readonly via: 'control' | 'session' | 'local' | 'none';
   readonly user?: string;
 }
 

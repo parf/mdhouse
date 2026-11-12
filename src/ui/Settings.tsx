@@ -405,7 +405,15 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           Administrator <span class="scope">this browser</span>
         </h2>
         {ENTRY_NOTE[entry.outcome] && !isAdmin && <p class="settings-error">{ENTRY_NOTE[entry.outcome]}</p>}
-        {admin?.admin ? (
+        {admin?.admin && admin.local ? (
+          <p>
+            <b>Administrator</b> — this request reaches mdhouse from this computer{' '}
+            <Info label="Why you are the administrator">
+              No users are configured, and mdhouse sees this request coming from loopback (this computer, or a proxy on it). Such a request is
+              the administrator. Configure users to require a sign-in.
+            </Info>
+          </p>
+        ) : admin?.admin ? (
           <div class="settings-option admin-state">
             <span>
               <b>Signed in as the administrator</b>

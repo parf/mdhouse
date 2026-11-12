@@ -354,8 +354,9 @@ operations retain OS-owner authority. Remote/bootstrap-through-proxy and Team id
 application startup and keeps the proof out of storage. POST `/api/admin/session` checks trusted Host,
 admission, actual loopback peer and exact local Host/Origin, then sets a host-only HttpOnly SameSite=Strict
 port-named cookie. GET `/api/admin` returns safe state; POST `/api/admin/logout` revokes and clears it.
-Admin responses are no-store/no-referrer. Basic login, trusted addresses, author cookies and project RW
-never confer admin. Local HTTP is the only exchange transport in this slice; no inferred proxy HTTPS.
+Admin responses are no-store/no-referrer. Personal (no Basic users), CLI-started: a loopback peer is admin
+(`Actor.via: 'local'`, GET `/api/admin` → `{admin, local}`), proxied requests included. Otherwise Basic login,
+trusted addresses, author cookies and project RW never confer admin. Local HTTP is the only exchange transport in this slice; no inferred proxy HTTPS.
 Port-specific cookie names prevent accidental overwrites, not a browser origin boundary.
 
 ## Mutation classification
@@ -368,7 +369,7 @@ GET/HEAD/OPTIONS and `read()` are declared non-mutating, not effect-free: `GET /
 fetches from the network. `serve()` returns `routes`; `test/authz.test.ts` pins the full list.
 `ADMIN_FAMILIES` gates `instance-config` and `root-admin` writes after Host/admission, with same-origin
 and a verified browser-admin session before body handling. Missing/expired/revoked authority is
-`401 {error, reason: 'admin'}`. `Actor` comes from the verified session; immutable `user` remains unset.
+`401 {error, reason: 'admin'}`. `Actor` comes from a local Personal request or the verified session; immutable `user` remains unset.
 Other families retain existing behavior; marks admin policy is decided, not enforced; no Team/grant system is activated.
 
 | Family | Routes (POST) |

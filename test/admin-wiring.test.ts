@@ -64,13 +64,13 @@ describe('localExchange — actual loopback peer, exact local Host and Origin', 
 });
 
 /** An in-process server on `port` with its control socket, Basic users optional. */
-async function start(port: number, users: Record<string, string> = {}) {
+async function start(port: number, users: Record<string, string> = {}, localAdmin = false) {
   const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-admin-')));
   await writeFile(join(base, 'a.md'), '# a\n');
   await writeFile(join(base, 'prefs.json'), JSON.stringify({ access: { allow: [], users, hostNames: [] } }));
   const prefs = await Prefs.load(join(base, 'prefs.json'));
   const registry = await Registry.create([base, join(import.meta.dir, '../doc')]);
-  const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
+  const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true, localAdmin });
   const origin = `http://127.0.0.1:${port}`;
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
     fetch(origin + path, { method: 'POST', headers: { 'content-type': 'application/json', origin, ...headers }, body: JSON.stringify(body) });
@@ -84,6 +84,34 @@ async function start(port: number, users: Record<string, string> = {}) {
 }
 
 const ADMIN = { error: 'administrator session required', reason: 'admin' };
+
+describe('local administrator (Personal, loopback peer)', () => {
+  test('no users: a loopback request is the administrator, without a session', async () => {
+    const t = await start(61775, {}, true);
+    try {
+      expect(await (await fetch(`${t.origin}/api/admin`)).json()).toEqual({ admin: true, local: true });
+      expect((await t.post('/api/settings', { editLink: false, autoRw: false })).status).toBe(200);
+      // same-origin still comes first
+      expect((await t.post('/api/settings', { editLink: true, autoRw: false }, { origin: 'http://evil.example' })).status).toBe(403);
+    } finally {
+      await t.stop();
+    }
+  });
+
+  test('configured users: loopback alone is not the administrator', async () => {
+    const hash = await Bun.password.hash('pw');
+    const t = await start(61776, { alice: hash }, true);
+    try {
+      const auth = { authorization: `Basic ${btoa('alice:pw')}` };
+      expect(await (await fetch(`${t.origin}/api/admin`, { headers: auth })).json()).toEqual({ admin: false });
+      const res = await t.post('/api/settings', { editLink: false, autoRw: false }, auth);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual(ADMIN);
+    } finally {
+      await t.stop();
+    }
+  });
+});
 
 describe('administrator session over HTTP', () => {
   test('protected writes without a real session are 401 reason:admin and change nothing', async () => {

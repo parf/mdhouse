@@ -182,6 +182,8 @@ export const isAdminDenial = (err: unknown): boolean => err instanceof ApiError 
 /** `GET /api/admin`: is this browser signed in as the instance administrator, and until when. */
 export interface AdminState {
   admin: boolean;
+  /** Admin because the request came to mdhouse from loopback, with no users configured. */
+  local?: boolean;
   expiresAt?: number;
 }
 

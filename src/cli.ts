@@ -797,6 +797,7 @@ try {
     noGit: opts.noGit,
     gitLogLimit: opts.gitLog,
     includeIgnoredDefault: opts.all,
+    localAdmin: true,
   });
 } catch (err) {
   failOnAddress(err);

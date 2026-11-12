@@ -49,6 +49,8 @@ export interface ServeOptions {
   includeIgnoredDefault?: boolean;
   /** The authenticated author of a request, when there is one; it wins over the browser's cookie. */
   sessionAuthor?: (req: Request) => AuthorIdentity | null;
+  /** Personal (no configured users): a request whose peer is loopback is the administrator. The CLI turns it on. */
+  localAdmin?: boolean;
 }
 
 const json = (body: unknown, status = 200) =>
@@ -349,9 +351,14 @@ export async function serve(opts: ServeOptions) {
    * read from prefs.json for every request, so a change applies to a running server at once.
    */
   const users = new Users();
+  /** Requests admitted as Personal with a loopback peer: whoever routes a request to loopback means it to be local. */
+  const localAdmins = new WeakSet<Request>();
   const admit = async (req: Request): Promise<Response | null> => {
     const access = await prefs.currentAccess();
-    if (!allowedAddress(server.requestIP(req)?.address, access.allow)) return new Response('access denied\n', { status: 403 });
+    const peer = server.requestIP(req)?.address;
+    if (!allowedAddress(peer, access.allow)) return new Response('access denied\n', { status: 403 });
+    const ip = peer ? ipBytes(peer) : null;
+    if (opts.localAdmin && !Object.keys(access.users).length && ip && isLoopback(ip)) localAdmins.add(req);
     if (Object.keys(access.users).length && !(await users.check(req.headers.get('authorization'), access.users))) {
       return new Response('access denied\n', {
         status: 401,
@@ -368,7 +375,11 @@ export async function serve(opts: ServeOptions) {
   const admins = new AdminSessions();
   const adminScope = (): AdminCookieScope => ({ port: cookiePort(), secure: false });
   const actorOf = (req: Request): Actor =>
-    admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope())).ok ? { admin: true, via: 'session' } : { admin: false, via: 'none' };
+    localAdmins.has(req)
+      ? { admin: true, via: 'local' }
+      : admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope())).ok
+        ? { admin: true, via: 'session' }
+        : { admin: false, via: 'none' };
   const noStore = (res: Response): Response => {
     res.headers.set('cache-control', 'no-store');
     res.headers.set('referrer-policy', 'no-referrer');
@@ -838,6 +849,7 @@ export async function serve(opts: ServeOptions) {
 
       /** Whether this browser holds an administrator session, and until when at most. No secret. */
       '/api/admin': read((req) => {
+        if (localAdmins.has(req)) return noStore(json({ admin: true, local: true }));
         const v = admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope()));
         return noStore(json(v.ok ? { admin: true, expiresAt: v.expiresAt } : { admin: false }));
       }),

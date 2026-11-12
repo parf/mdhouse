@@ -61,6 +61,7 @@
 
 ### Changed
 
+- Local install = administrator: with no users configured, a request reaching mdhouse from this computer (loopback, a local proxy included) needs no `mdhouse admin` sign-in
 - Agent Bus traffic (page requests and `mdhouse-rag-sync`) goes through the `ai-agent-bus-sdk` client
 
 - Document HTML is passive on the server and at browser sinks. Passive classes, IDs, tables, details and code colours stay; scripts, handlers, frames, forms, inline SVG/MathML and unsafe URLs/styles are removed. Raw HTML opens sandboxed without scripts

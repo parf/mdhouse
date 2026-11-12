@@ -99,6 +99,8 @@
 ## Administration
 
 - 📌 ADMIN-W1 Instance admin ≠ project Editor/RW, trusted address, first visitor or author cookie.
+  Local install = admin: Personal (no users), a request reaching mdhouse from loopback is the administrator —
+  whoever routes a request to localhost meant it.
   CLI/control authority always comes from the process OS owner and protected local transport; no GitHub/web-admin checks.
   Team web administration requires configured `admin=username`, resolved to an existing immutable provider ID.
   Personal owner needs no Team admin configuration; first-user creation establishes Team/admin atomically.
