@@ -223,24 +223,24 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     }
   };
 
-  // The folder to add, as typed, and its access: neither chosen in advance. A refusal keeps both; while any
+  // The folder to add, as typed, and its access: RW when ticked, else RO. A refusal keeps both; while any
   // project action is pending the form is off, so a success clears only what was sent.
   const [addPath, setAddPath] = useState('');
-  const [addMode, setAddMode] = useState<'rw' | 'ro' | null>(null);
+  const [addRw, setAddRw] = useState(false);
   const [addError, setAddError] = useState('');
   const addProblem = addPathProblem(addPath);
   // Set on entry, before the re-render that turns the form off: a second Enter or click sends nothing.
   const adding = useRef(false);
   const add = async () => {
-    if (adding.current || !isAdmin || busy !== null || !addMode || addProblem) return;
+    if (adding.current || !isAdmin || busy !== null || addProblem) return;
     adding.current = true;
     setBusy('add');
     setAddError('');
     try {
-      const { id } = await api.addRoot(addPath, addMode);
+      const { id } = await api.addRoot(addPath, addRw ? 'rw' : 'ro');
       setPicked(id);
       setAddPath('');
-      setAddMode(null);
+      setAddRw(false);
       onChanged();
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && err.reason === 'served' && err.id) {
@@ -653,20 +653,20 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             title={isAdmin ? undefined : NEEDS_ADMIN}
             onInput={(e) => setAddPath((e.target as HTMLInputElement).value)}
           />
-          <fieldset class="project-add-mode" disabled={!isAdmin || busy !== null}>
-            <legend>Access</legend>
-            <label>
-              <input type="radio" name="project-add-mode" value="rw" checked={addMode === 'rw'} onChange={() => setAddMode('rw')} /> RW — read and write
-            </label>
-            <label>
-              <input type="radio" name="project-add-mode" value="ro" checked={addMode === 'ro'} onChange={() => setAddMode('ro')} /> RO — read-only
-            </label>
-          </fieldset>
+          <label class="project-add-mode" title="Ticked: read and write; else read-only">
+            <input
+              type="checkbox"
+              checked={addRw}
+              disabled={!isAdmin || busy !== null}
+              onChange={(e) => setAddRw((e.target as HTMLInputElement).checked)}
+            />{' '}
+            RW
+          </label>
           <button
             type="submit"
             class="project-add-btn"
-            disabled={!isAdmin || busy !== null || !addMode || addProblem !== null}
-            title={!isAdmin ? NEEDS_ADMIN : addProblem ?? (!addMode ? 'Choose RW or RO' : 'Serve this folder until mdhouse stops')}
+            disabled={!isAdmin || busy !== null || addProblem !== null}
+            title={!isAdmin ? NEEDS_ADMIN : addProblem ?? `Serve this folder ${addRw ? 'read and write' : 'read-only'} until mdhouse stops`}
           >
             Add project
           </button>

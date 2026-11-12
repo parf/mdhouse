@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Settings › Add project fits one line: path, an `RW` checkbox (unticked = read-only) and the button
 - `mdhouse-rag-sync` works with newer RAG/FileScan agents: it accepts RAG 0.4.2 or later and ignores reply fields a newer agent adds
 
 - Align page-header first rows across documents, folders, Git, Settings and notices with a shared sidebar/topstrip header band, including narrow screens
