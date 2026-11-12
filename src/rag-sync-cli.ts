@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { ownName, validTarget } from './lib/agent-bus';
 import { planRagSync, RagSyncPlanError, type RagSyncPlan, type RagSyncPlanInput } from './lib/rag-sync-plan';
 import { openBus, RagBusError, type BusOptions, type RagBus } from './lib/rag-sync-bus';
-import { runSearch, runSync, RagSyncRuntimeError } from './lib/rag-sync-runtime';
+import { runSearch, runSync, RagSyncRuntimeError, type SyncRunResult } from './lib/rag-sync-runtime';
 import { Registry } from './lib/roots';
 
 /**
@@ -42,7 +42,7 @@ export const HELP = `mdhouse-rag-sync — sync one folder's Markdown files to RA
 
 Usage:
   mdhouse-rag-sync plan   <target>
-  mdhouse-rag-sync sync   <target> --apply
+  mdhouse-rag-sync sync   <target> --apply [--until-done]
   mdhouse-rag-sync search <target> --query <text> [--mode keyword|semantic|hybrid] [--paid] [--limit 1-16]
   mdhouse-rag-sync --help
 
@@ -56,7 +56,9 @@ could not list and why, and the target. It makes no network or Agent Bus call an
 are never followed.
 
 sync asks the FileScan for one finite sync and prints its answer. It sends only with --apply and
-a complete listing; a file sent before with no confirmation is sent again, and each send is paid. search asks the RAG once; keyword is free, semantic and hybrid need --paid.
+a complete listing; a file sent before with no confirmation is sent again, and each send is paid.
+--until-done repeats the sync until every file is confirmed: 30 s after progress, doubling to
+15 min while nothing moves (provider down or throttled); it stops on a refusal. search asks the RAG once; keyword is free, semantic and hybrid need --paid.
 Both talk as #mdhouse@<host> through the local account socket.
 
 Exit: 0 ok · 1 error, refused or failed · 2 usage · 4 outcome unknown · 5 sync incomplete
@@ -68,7 +70,7 @@ class UsageError extends Error {}
 const TARGET = ['root', 'filescan', 'rag', 'namespace', 'table'] as const;
 const SPEC = {
   plan: { values: TARGET, bools: [] },
-  sync: { values: TARGET, bools: ['apply'] },
+  sync: { values: TARGET, bools: ['apply', 'until-done'] },
   search: { values: [...TARGET, 'query', 'mode', 'limit'], bools: ['paid'] },
 } as const satisfies Record<string, { values: readonly string[]; bools: readonly string[] }>;
 export type Command = keyof typeof SPEC;
@@ -89,6 +91,7 @@ export interface Args {
   mode?: Mode;
   limit?: number;
   apply: boolean;
+  untilDone: boolean;
   paid: boolean;
 }
 
@@ -126,6 +129,7 @@ export function parseArgs(cmd: Command, args: readonly string[]): Args {
     namespace: vals.namespace!,
     table: vals.table!,
     apply: bools.has('apply'),
+    untilDone: bools.has('until-done'),
     paid: bools.has('paid'),
   };
   if (cmd === 'sync' && !out.apply) throw new UsageError('sync sends paid work: add --apply (see plan first)');
@@ -264,6 +268,39 @@ export const REPLY_MS = { sync: 120_000, search: 60_000 } as const;
 export interface Deps {
   /** Opens the Agent Bus session; tests inject a fake daemon. */
   openBus: (opts: BusOptions) => Promise<RagBus>;
+  /** Waits between `--until-done` rounds; tests inject a fake clock. */
+  sleep?: (ms: number) => Promise<void>;
+}
+
+/** `--until-done` pacing: the wait after a round with progress, and the cap it doubles to without. */
+export const BACKOFF = { baseMs: 30_000, maxMs: 900_000 } as const;
+
+/**
+ * Repeats `once` until the sync is confirmed. Retries a reported or unknown outcome, and a refusal
+ * before sending once a round has reached the FileScan (the provider went down); a first-round
+ * refusal stops it. Waits `baseMs` after a round that confirmed more, else doubles up to `maxMs`.
+ * Prints one progress line per round to stderr and the last result to stdout.
+ */
+export async function untilDone(once: () => Promise<SyncRunResult>, io: Io, sleep: (ms: number) => Promise<void>, backoff: { baseMs: number; maxMs: number } = BACKOFF): Promise<number> {
+  let delay = backoff.baseMs;
+  let best = -1;
+  let reached = false;
+  for (let round = 1; ; round++) {
+    const res = await once();
+    const code = resultExit('sync', res);
+    const r = res.report;
+    io.err(`round ${round}: ${res.result ?? res.effect}${r ? ` — confirmed ${r.confirmed}, remaining ${r.remaining}, sent ${r.sent}` : ''}${res.reason ? ` (${res.reason})` : ''}\n`);
+    const retry = res.effect === 'unknown' || (res.effect === 'reported' && r !== null) || (reached && res.effect === 'notsent');
+    if (code === EXIT.ok || !retry) {
+      io.out(`${JSON.stringify(res, null, 2)}\n`);
+      return code;
+    }
+    if (res.effect !== 'notsent') reached = true;
+    const progress = !!r && r.confirmed > best;
+    if (r) best = Math.max(best, r.confirmed);
+    delay = progress ? backoff.baseMs : Math.min(delay * 2, backoff.maxMs);
+    await sleep(delay);
+  }
 }
 
 /** 0 only for a confirmed sync or a reported search; an outcome that may have happened is 4. */
@@ -322,7 +359,9 @@ export async function main(argv: readonly string[], io: Io = stdio, deps: Deps =
     const bus = await deps.openBus({ replyMs: REPLY_MS[cmd], root: inv.root, targets: [args.filescan, args.rag] });
     if (cmd === 'sync') {
       const ownerConfig = await bus.ownerConfig(args.filescan);
-      const res = await runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
+      const once = () => runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
+      if (args.untilDone) return await untilDone(once, io, deps.sleep ?? ((ms) => Bun.sleep(ms)));
+      const res = await once();
       io.out(`${JSON.stringify(res, null, 2)}\n`);
       return resultExit('sync', res);
     }

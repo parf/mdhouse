@@ -129,7 +129,8 @@
   Bind the delivered approved provider contract after deployment; standing-watch retry authority is separate. [History](resolved.md#Q-R3-RAGSYNC1).
 
 - 📌 Q-R3-RAG1 No provider source registry / job API / history; the R3 source lifecycle is mdhouse's. <a id="Q-R3-RAG1"></a>
-  New source: FileScan instance + runner roots (admin step) → `mdhouse-rag-sync` → RAG. Goal: index all docs. No answer within the timeout → repeat; no request-id dedup.
+  New source: FileScan instance + runner roots (admin step) → `mdhouse-rag-sync` → RAG. Goal: index all docs. No answer within the timeout → repeat; no request-id dedup;
+  failed/unknown files = fail queue, retried with back-off while the provider is down.
   Source registry, sync history: KV on `#mdhouse@<host>` (`set --add`); events: `#mdhouse` agent log. Small-file citations: mdhouse computes heading/lines from the file
   at `content_hash`; mismatch → stale, no citation. [History](resolved.md#Q-R3-RAG1).
 

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync, writeFileSync } 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { RagBusError, type BusOptions, type RagBus } from '../src/lib/rag-sync-bus';
-import { EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit } from '../src/rag-sync-cli';
+import { BACKOFF, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
 
 const base = mkdtempSync(join(tmpdir(), 'mdhouse-rag-sync-'));
 afterAll(() => rmSync(base, { recursive: true, force: true }));
@@ -45,7 +45,7 @@ afterEach(() => {
 describe('parseArgs', () => {
   test('takes the target flags in both forms', () => {
     const a = parseArgs('plan', ['--root', '/x', '--filescan=#filescan/a@h', '--rag', '#rag/a@h', '--namespace=ns', '--table', 't_1']);
-    expect(a).toEqual({ root: '/x', filescan: '#filescan/a@h', rag: '#rag/a@h', namespace: 'ns', table: 't_1', apply: false, paid: false });
+    expect(a).toEqual({ root: '/x', filescan: '#filescan/a@h', rag: '#rag/a@h', namespace: 'ns', table: 't_1', apply: false, untilDone: false, paid: false });
   });
 
   test('sync and search switches', () => {
@@ -329,6 +329,36 @@ describe('sync and search through the runtime, against a fake bus', () => {
     // one sync, after the preflight
     const syncs = bus.reqs.filter((q) => typeof q.body === 'string' && q.body.startsWith('sync '));
     expect(syncs).toEqual([{ target: '#filescan/notes@box', body: 'sync #rag/notes@box as rag notes md resend:true' }]);
+  });
+
+  test('sync --until-done repeats with back-off until confirmed', async () => {
+    const root = tree({ 'a.md': 'a', 'b.md': 'b' });
+    const rep = (result: string, confirmed: number) => reply({ result, confirmed, remaining: 2 - confirmed, capped: false, sent: 1, files: [] });
+    const syncs = [rep('incomplete', 1), rep('failed', 1), { kind: 'uncertain', sent: true, reason: 'lost' }, rep('failed', 1), rep('incomplete', 1), rep('confirmed', 2)];
+    const bus = fakeBus(root, preflightThen(null));
+    const answer = preflightThen(null);
+    const waits: number[] = [];
+    const a = io();
+    const openBus = async (o: BusOptions) => ({ ...(await bus.openBus(o)), request: async (r: Req) => (bus.reqs.push(r), (typeof r.body === 'string' && r.body.startsWith('sync ') ? syncs.shift() : answer(r)) as never) });
+    const code = await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus, sleep: async (ms) => void waits.push(ms) });
+    expect(code).toBe(EXIT.ok);
+    expect(waits).toEqual([30_000, 60_000, 120_000, 240_000, 480_000]);
+    expect(JSON.parse(a.out.join('')).result).toBe('confirmed');
+    expect(a.err.join('').split('\n').filter(Boolean)).toHaveLength(6);
+  });
+
+  test('sync --until-done stops on a first-round refusal and caps the wait', async () => {
+    const root = tree({ 'a.md': 'a' });
+    const refused = fakeBus(root, preflightThen({ kind: 'uncertain', sent: false, reason: 'send refused: HTTP 403' }));
+    const waits: number[] = [];
+    const a = io();
+    expect(await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus: refused.openBus, sleep: async (ms) => void waits.push(ms) })).toBe(EXIT.runtime);
+    expect(waits).toEqual([]);
+    let n = 0;
+    const once = async () => (++n < 9 ? { effect: 'unknown' as const, result: 'unknown' as const, report: null, reason: 'lost' } : { effect: 'reported' as const, result: 'confirmed' as const, report: null, reason: null });
+    const w: number[] = [];
+    expect(await untilDone(once, io().io, async (ms) => void w.push(ms))).toBe(EXIT.ok);
+    expect(Math.max(...w)).toBe(BACKOFF.maxMs);
   });
 
   test('sync always asks the FileScan to resend unconfirmed files', async () => {

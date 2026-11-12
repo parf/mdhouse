@@ -5,7 +5,7 @@ owner-provisioned FileScan. mdhouse itself never starts it.
 
 ```text
 mdhouse-rag-sync plan   <target>
-mdhouse-rag-sync sync   <target> --apply
+mdhouse-rag-sync sync   <target> --apply [--until-done]
 mdhouse-rag-sync search <target> --query <text> [--mode keyword|semantic|hybrid] [--paid] [--limit 1-16]
 mdhouse-rag-sync --help
 
@@ -37,6 +37,8 @@ mdhouse-rag-sync --help
 - `sync` needs `--apply`. It reads the FileScan's Configuration as the login, checks it against the
   plan (root identity, include/exclude, namespace, table, `mode` `demand`), then sends one finite
   `sync`. A file sent before with no confirmation is sent again; each send is paid.
+- `--until-done` repeats the sync until every file is confirmed: 30 s after progress, doubling to
+  15 min while nothing moves (provider down or throttled); a refusal stops it.
 - `search` sends one query to the RAG; `keyword` (default) is free, `semantic` and `hybrid` need `--paid`.
 - Each request waits for its answer by its own random topic and tag; acks and other messages are
   not answers. A lost answer is `unknown`; the next `sync` repeats it.

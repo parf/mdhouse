@@ -414,6 +414,8 @@ Help/import have no work; `plan` requires explicit root/FileScan/RAG/namespace/t
 local metadata through a read-only Registry. Recursive `*.md` is case-sensitive; dot entries,
 node_modules/bower_components/jspm_packages are excluded, symlinks/special files are not followed.
 Incomplete listing is visible with nonzero exit; >32 KiB files are annotated, not silently dropped.
+`sync --until-done` repeats until confirmed: FileScan's failed/unknown files are the fail queue; back-off
+30 s after progress, doubling to 15 min without; a first-round refusal stops it.
 `lib/rag-sync-plan.ts` strictly validates bounded metadata/root device+inode/target/selection and
 produces a deterministic full-metadata digest, not content hash, auth or atomic-folder proof.
 `lib/rag-sync-runtime.ts` validates finite sync preflights/results and scoped search citations through

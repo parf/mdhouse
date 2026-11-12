@@ -39,7 +39,7 @@
 
 - Browse gitignored Markdown with Show ignored, direct folder navigation, or folders selected in V1/V2; selected folders also appear in main/default while each V tab keeps its own selection
 
-- Standalone `mdhouse-rag-sync` previews local Markdown coverage, explicitly applies finite owner-configured sync and runs scoped searches; paid queries require an explicit flag; each sync resends files with no confirmation; no background sync
+- Standalone `mdhouse-rag-sync` previews local Markdown coverage, explicitly applies finite owner-configured sync and runs scoped searches; paid queries require an explicit flag; each sync resends files with no confirmation; `sync --until-done` repeats with back-off until every file is confirmed; no background sync
 
 - Pure analysis-run state transitions and deterministic unsaved Markdown previews validate bounded caller assertions; no analysis execution, filesystem writes, real approvals or scheduling are included
 - Five Legal authoring packages cover contracts, obligations/renewal, policy comparisons, change impacts and counsel briefs with supplied-source uncertainty and qualified-review stops; execution and legal actions are not included
