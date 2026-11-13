@@ -7,7 +7,7 @@
  * other families are classified only.
  */
 
-/** What a write changes. `flow` and `control` have no HTTP route yet; the control socket is OS-owner only. */
+/** What a write changes. `control` has no HTTP route; the control socket is OS-owner only. */
 export const FAMILIES = [
   'doc-write', // document content: task ticks, answers, inserts
   'git-write', // local repository history: commit, reset

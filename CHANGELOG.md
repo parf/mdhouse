@@ -4,6 +4,8 @@
 
 ### Added
 
+- Flows (server): `/api/flow/catalog`, `/api/flow/preview`, `/api/flow/start` — start the Recent commits review on a project; the run document lands in `Plans/flows/runs/recent-commits-review/`; a first run asks for a baseline commit; one open run at a time
+
 - Agent Bus control: an owner's agent can list the projects and open browser tabs, and send one tab to a Markdown document (topic `mdhouse.ctl`, `inventory` / `open`); reads only, one tab only, a tab with unsaved editor text stays; `mdhouse --ab-control <regexes|off|reset>` narrows who may
 
 - Viewer UI: while mdhouse is a Viewer the page drops every control that changes anything — marks, the Agent Bus button and panel, the ✎ edit links, "Your name", the per-project RW/RO toggle — shows a `Viewer — read-only` badge instead of per-project RO, and a refused write says so; Settings has a Workspace/Viewer switch for the administrator (a Viewer needs `mdhouse admin`)

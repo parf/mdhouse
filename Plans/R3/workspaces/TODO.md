@@ -285,6 +285,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - [x] MW.3.2 Pure manual analysis-run core and deterministic Markdown preview; no filesystem/provider/HTTP/UI or execution authority <a id="MW.3.2"></a>
     - Owner: W3; independent exact-SHA architecture review before integration; materialization remains a separate gated slice
   - Progress: MW.3.3 UI — Run flow dialog on a project's home (package, range, passive preview, confirm; bottom sheet on touch; none for a Viewer) and the flow bar on a run document (`doc.flow`: outcomes, evidence and question assertions, cancel) built against the agreed route contract with a fake server; wiring to the real `/api/flow/*` routes and `doc.flow` waits for server slices A/B
+  - Progress: MW.3.3 server A — `lib/flow-host.ts` + `/api/flow/catalog`, `/preview`, `/start` (recent-commits-review only; reference packages only; explicit first baseline; open-run, stale, Viewer/RO/noGit refusals); `doc.flow` + `/api/flow/event` = B
   - Builds: discoverable packages of Markdown documents plus routing; common scope, change range, audience, output and destination controls; optional schedules; run history
   - Depends: [№MW.2](#MW.2)
   - Acceptance: every flow leaves its inputs, plan, source evidence, findings, checks and outcome in project Markdown

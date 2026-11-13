@@ -48,3 +48,5 @@ history is explicitly unsaved. There is no `last-commit-id` field or marker adva
 The headless fixtures exercise the existing project-review and a generic Legal package. This proves
 only the pure transition/preview slice. Jailed materialization (checkpoint B), access/content gates,
 real manual UI/agent execution, external actions, durable resume and scheduling remain open.
+
+Host (MW.3.3 A): `lib/flow-host.ts` — see [Plans/README](../README.md#flow-authoring-packages).

@@ -346,6 +346,13 @@ consistency, not authenticity or semantic truth. `lib/flow-run-markdown.ts` rend
 unsaved preview with supplied data in inert JSON fences. Both grant no authority and perform no
 filesystem/provider/HTTP work; materialization, actual approvals and marker updates are separate.
 
+`lib/flow-host.ts` (MW.3.3 A) — packages only from `<reference>/flows`, runnable: `RUNNABLE` (`recent-commits-review`).
+- `planFlowRun` reads git (HEAD, base, `base..HEAD`, uncommitted paths apart, any file type) and returns the exact run document + HMAC token (per process) over `{req, runId, startedAt, sha256(doc)}`; writes nothing
+- Range: `since-last-run` = `last-commit-id` of `defaults.destination` (none → 409 `no-baseline` `why: first-run | marker-missing | marker-unreachable`); `baseline` = `/^[0-9a-f]{4,40}$/`, a commit, ancestor of HEAD, else 400 `bad-baseline`
+- `startFlowRun` — queue `flow:<root>:<package>`; inside it: open run (`running`/`held`) → 409 `open-run` + `run`; re-plan with the token's id/time, other bytes → 409 `stale`; `registry.writeFile` to `Plans/flows/runs/<package>/<UTC>-<runId8>.md`. Schedule: `run-` + sha256(`<id>:<slot>`)[0:16]; a repeat returns its run
+- First evidence label (commit range) supplied by mdhouse, the rest `missing` → a new run is `held`
+- `GET /api/flow/catalog?root=` → `{packages:[{id, family, title, ranges, defaults, lastRun, openRun}]}`; `POST /api/flow/preview {rootId, packageId, range}` — bare `read()`, POST + sameOrigin, Viewer allowed → `{token, runPath, base, target, dirty, warnings, html}` (`render()`); `POST /api/flow/start {token}` → `{status, runPath, url}`. Trigger = manual, actor = `authorOf(req)`. Errors `{error, reason}`; `opts.noGit` → 404 `no-git`
+
 ## Local browser administration
 
 `lib/admin-session.ts` holds memory-only single-use proofs and expiring revocable sessions.
@@ -388,7 +395,8 @@ Other families retain existing behavior; marks admin policy is decided, not enfo
 | `external-send` | `/api/ab/send` |
 | `root-admin` | `/api/roots/ab`, `/api/roots/add`, `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
 | `shared-prefs` | `/api/marks` — admin-only decided, not enforced ([№Q-R3-ADMIN1](R3/workspaces/DECISIONS.md#Q-R3-ADMIN1)) |
-| `flow`, `control` | no HTTP route |
+| `flow` | `/api/flow/start` |
+| `control` | no HTTP route |
 
 Viewer (`prefs.mode() === 'viewer'`, `lib/authz.ts` `VIEWER_REFUSED`): `doc-write`, `git-write`, `git-sync`,
 `external-send`, `shared-prefs`, `attribution`, `flow` → 403 `{reason: 'viewer'}` in `guard()` before the

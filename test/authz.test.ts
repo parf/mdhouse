@@ -158,6 +158,9 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/api/digest', '*', null],
   ['/api/git/log', '*', null],
   ['/api/git/diff', '*', null],
+  ['/api/flow/catalog', 'GET', null],
+  ['/api/flow/preview', '*', null],
+  ['/api/flow/start', 'POST', 'flow'],
   ['/api/marks', 'GET', null],
   ['/api/marks', 'POST', 'shared-prefs'],
 ];
@@ -182,9 +185,9 @@ describe('serve() route inventory', () => {
     }
   });
 
-  test('flow and control are families with no HTTP route; every family is known', () => {
+  test('control is a family with no HTTP route; every family is known', () => {
     const used = new Set(EXPECTED.map(([, , f]) => f).filter(Boolean));
-    expect(used.has('flow')).toBe(false);
+    expect(used.has('flow')).toBe(true);
     expect(used.has('control')).toBe(false);
     for (const f of used) expect(FAMILIES).toContain(f!);
   });

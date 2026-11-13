@@ -539,3 +539,38 @@ export async function repoHead(repo: string): Promise<RepoHead | null> {
     pulledAt,
   };
 }
+
+/** The full hash of `rev` as a commit; null when it names none. `rev` must already be validated by the caller. */
+export async function commitOf(repo: string, rev: string): Promise<string | null> {
+  const out = await git(repo, ['rev-parse', '--verify', '--quiet', '--end-of-options', `${rev}^{commit}`]);
+  return out?.trim() || null;
+}
+
+/** Whether commit `a` is an ancestor of (or equal to) `b`. */
+export async function isAncestor(repo: string, a: string, b: string): Promise<boolean> {
+  return (await git(repo, ['merge-base', '--is-ancestor', '--end-of-options', a, b])) !== null;
+}
+
+/** The commits in `base..target`, oldest first, as `<hash> <subject>` lines; null when git fails. */
+export async function rangeCommits(repo: string, base: string, target: string): Promise<string[] | null> {
+  const out = await git(repo, ['log', '--reverse', '--format=%H %s', '--end-of-options', `${base}..${target}`]);
+  return out === null ? null : out.split('\n').filter(Boolean);
+}
+
+/** Every path under `rootPath` with uncommitted changes (any file type), root-relative, sorted. */
+export async function dirtyPaths(repo: string, rootPath: string): Promise<string[]> {
+  const subdir = subdirOf(repo, rootPath);
+  const out = await git(repo, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--', subdir ? `./${subdir}/` : '.']);
+  if (out === null) return [];
+  const prefix = subdir ? `${subdir}/` : '';
+  const paths: string[] = [];
+  const entries = out.split('\0').filter(Boolean);
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!;
+    if (entry[0] === 'R' || entry[0] === 'C') i++;
+    const path = entry.slice(3);
+    if (prefix && !path.startsWith(prefix)) continue;
+    paths.push(path.slice(prefix.length));
+  }
+  return paths.sort();
+}

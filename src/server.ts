@@ -36,10 +36,12 @@ import { allowedAddress, ipBytes, isLoopback, Users } from './lib/access';
 import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_REFUSED, type Actor, type RouteEntry } from './lib/authz';
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
-import { repoHead } from './lib/git';
+import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits, repoHead } from './lib/git';
+import { isFlowError, isOpenRun, listRuns, planFlowRun, RUNNABLE, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { loadFlowCatalog, type LoadedFlowPackage } from './lib/flow-package';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { citeRecords } from './lib/rag-cite';
 import { decodeSearchReply } from './lib/rag-sync-runtime';
 import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, sourceFor, type RagLast, type RagSource } from './lib/rag-ui';
@@ -313,6 +315,51 @@ export async function serve(opts: ServeOptions) {
     void tail.then(() => fileWrites.get(abs) === tail && fileWrites.delete(abs));
     return run;
   };
+
+  /**
+   * Flow runs: packages come only from the installed reference catalog (`<reference>/flows`), loaded
+   * once; a reference without one has none. Run documents are written into the project.
+   */
+  let flowCatalog: Promise<LoadedFlowPackage[]> | null = null;
+  const flowDeps: FlowHostDeps = {
+    registry,
+    catalog: () => {
+      const ref = registry.list().find((r) => r.kind === 'reference');
+      if (!ref) return Promise.resolve([]);
+      flowCatalog ??= stat(`${ref.path}/flows/catalog.json`)
+        .then(
+          () => loadFlowCatalog(`${ref.path}/flows`),
+          () => [],
+        )
+        .catch((err: unknown) => {
+          flowCatalog = null;
+          throw err;
+        });
+      return flowCatalog;
+    },
+    git: {
+      repoOf: (root) => repoToplevel(root.path),
+      head: headCommit,
+      commitOf,
+      isAncestor,
+      commits: rangeCommits,
+      dirty: (repo, root) => dirtyPaths(repo, root.path),
+    },
+    key: randomBytes(32),
+  };
+  const FLOW_STATUS: Record<FlowError['reason'], number> = {
+    invalid: 400,
+    'bad-baseline': 400,
+    'not-writable': 403,
+    'no-root': 404,
+    'unknown-package': 404,
+    'no-git': 404,
+    'no-baseline': 409,
+    'open-run': 409,
+    stale: 409,
+  };
+  const flowFail = (e: FlowError): Response => noStore(json(e, FLOW_STATUS[e.reason]));
+  const flowNoGit = (): Response => flowFail({ error: 'git is off', reason: 'no-git' });
 
   /** `git ls-remote` answers, 30 seconds each — see `/api/git/remote`. */
   const remoteCache = new Map<string, { at: number; state: ReturnType<typeof remoteState> }>();
@@ -1884,6 +1931,63 @@ export async function serve(opts: ServeOptions) {
         const last = await commitDiff(where.repo, where.repoRel, by.last);
         return last ? served(last, committed) : json(none);
       }),
+
+      /** The runnable flow packages and, per package, this project's newest and open run. */
+      '/api/flow/catalog': {
+        GET: async (req) => {
+          const root = registry.get(new URL(req.url).searchParams.get('root') ?? '');
+          if (!root || root.kind === 'reference') return flowFail({ error: 'no such project', reason: 'no-root' });
+          const pkgs = (await flowDeps.catalog()).filter((p) => RUNNABLE.has(p.manifest.id));
+          const packages = await Promise.all(
+            pkgs.map(async ({ manifest: m }) => {
+              const runs = await listRuns(registry, root, m.id);
+              const last = runs[0];
+              const open = runs.find((r) => isOpenRun(r.status));
+              return {
+                id: m.id,
+                family: m.family,
+                title: m.title,
+                ranges: ['since-last-run', 'baseline'],
+                defaults: m.defaults,
+                lastRun: last ? { url: registry.docUrl(root, last.path), status: last.status, at: last.at } : null,
+                openRun: open ? { url: registry.docUrl(root, open.path), status: open.status } : null,
+              };
+            }),
+          );
+          return noStore(json({ packages }));
+        },
+      },
+
+      /**
+       * The run a start would write, rendered like `/api/doc`, and the token that binds it. Writes
+       * nothing, so a Viewer may preview; POST only, same-origin. The actor is the request's author.
+       */
+      '/api/flow/preview': read(async (req) => {
+        if (req.method !== 'POST') return fail(405, 'POST only');
+        if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+        if (opts.noGit) return flowNoGit();
+        const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+        if (!body || typeof body.rootId !== 'string') return flowFail({ error: 'expected {rootId, packageId, range}', reason: 'invalid' });
+        const root = registry.get(body.rootId);
+        const actor = root && root.kind !== 'reference' ? (await authorOf(req, { root, rel: '' })).name : '';
+        const plan = await planFlowRun(flowDeps, { rootId: body.rootId, packageId: body.packageId, range: body.range, trigger: { kind: 'manual', actor } });
+        if (isFlowError(plan)) return flowFail(plan);
+        const { html } = await render(plan.doc, { rootId: plan.rootId, docPath: plan.runPath, docUrl: (rel) => registry.docUrl(root!, rel) });
+        return noStore(json({ token: plan.token, runPath: plan.runPath, base: plan.base, target: plan.target, dirty: plan.dirty, warnings: plan.warnings, html }));
+      }),
+
+      /** Writes the previewed run document — exactly it, or 409 stale. One open run per package and project. */
+      '/api/flow/start': {
+        POST: mutation('flow', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          if (opts.noGit) return flowNoGit();
+          const body = (await req.json().catch(() => null)) as { token?: unknown } | null;
+          if (typeof body?.token !== 'string') return flowFail({ error: 'expected {token}', reason: 'invalid' });
+          const res = await startFlowRun(flowDeps, { queue: queueWrite, writeFile: (p, text) => registry.writeFile(p, text) }, { token: body.token });
+          if (isFlowError(res)) return flowFail(res);
+          return noStore(json({ status: res.status, runPath: res.runPath, url: res.url }));
+        }),
+      },
 
       '/api/marks': {
         GET: async (req) => {
