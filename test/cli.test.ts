@@ -249,7 +249,7 @@ describe('the reference root (MW.0f.2)', () => {
       expect(roots[1]!.path).toBe(REF);
       const doc = (await (await at(testPort(61940), '/api/doc?p=_mdhouse/syntax.md')).json()) as { writable: boolean; reference?: boolean };
       expect(doc).toMatchObject({ writable: false, reference: true });
-      expect((await at(testPort(61940), '/api/task', { p: '_mdhouse/qa-playground.md', line: 1, hash: '00000000' })).status).toBe(403);
+      expect((await at(testPort(61940), '/api/task', { p: '_mdhouse/syntax.md', line: 1, hash: '00000000' })).status).toBe(403);
       expect((await at(testPort(61940), '/api/roots/remove', { id: '_mdhouse' })).status).toBe(403); // local administrator; the reference root stays
       expect(s.run(['--rm', REF, '--port', String(testPort(61940))]).code).toBe(1);
     } finally {

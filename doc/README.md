@@ -48,5 +48,4 @@ Claude Code: copy `skills/` to `.claude/skills/`. Any other AI: read a `SKILL.md
 
 - [Markdown in mdhouse](markdown.md)
 - [Questions and answers in mdhouse](qa.md)
-- [Q&A playground](qa-playground.md)
 - [prefs.json.dist](prefs.json.dist)

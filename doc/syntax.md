@@ -1,7 +1,6 @@
 # Syntax — everything mdhouse reads
 
-One page, every form. Details: [Markdown in mdhouse](markdown.md) · [Questions and answers](qa.md) ·
-try them: [Q&A playground](qa-playground.md).
+One page, every form. Details: [Markdown in mdhouse](markdown.md) · [Questions and answers](qa.md).
 
 ## Markdown
 

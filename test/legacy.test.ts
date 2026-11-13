@@ -56,7 +56,7 @@ describe('old Q&A forms → the new markup', () => {
 
   test('CRLF is kept; converting twice changes nothing', () => {
     expect(convertLegacy('**Q:** a\r\n**A:** b\r\n')).toBe('> ❓ a\r\n> 💬 b\r\n');
-    const play = Bun.file(`${import.meta.dir}/../doc/qa-playground.md`);
+    const play = Bun.file(`${import.meta.dir}/fixtures/qa-playground.md`);
     return play.text().then((s) => {
       const once = convertLegacy(s);
       expect(convertLegacy(once)).toBe(once);

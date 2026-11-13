@@ -69,7 +69,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 ## ✎ Working on docs — with you and your agents
 
 Writes need a project served with `--rw`: `mdhouse -p --rw folder(s)`. The markup is plain GFM —
-[Questions and answers](doc/qa.md); try every form on the [Q&A playground](doc/qa-playground.md). Every syntax on one page: [Syntax](doc/syntax.md). For your agents: [Markup for agents](doc/agent-markup.md) — give it and say "do like this".
+[Questions and answers](doc/qa.md). Every syntax on one page: [Syntax](doc/syntax.md). For your agents: [Markup for agents](doc/agent-markup.md) — give it and say "do like this".
 
 **Edit while reading**
 

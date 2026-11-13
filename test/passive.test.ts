@@ -159,12 +159,12 @@ describe('passive formatting survives', () => {
 
   test('the shipped docs render exactly as before, apart from comments', async () => {
     const root = resolve(import.meta.dir, '..');
-    for (const f of ['doc/qa-playground.md', 'doc/syntax.md', 'doc/markdown.md', 'doc/qa.md', 'doc/skills/glyphs.md']) {
+    for (const f of ['test/fixtures/qa-playground.md', 'doc/syntax.md', 'doc/markdown.md', 'doc/qa.md', 'doc/skills/glyphs.md']) {
       const { html } = await render(readFileSync(join(root, f), 'utf8'), ctx);
       expect(passive(html)).toBe(html); // already passive: a second pass changes nothing
       expect(active(html)).toEqual([]);
     }
-    const playground = (await render(readFileSync(join(root, 'doc/qa-playground.md'), 'utf8'), ctx)).html;
+    const playground = (await render(readFileSync(join(root, 'test/fixtures/qa-playground.md'), 'utf8'), ctx)).html;
     const inputs = elements(playground).filter((e) => e.name === 'input').map((e) => e.attribs!.type);
     expect(inputs).toContain('radio');
     expect(inputs).toContain('checkbox');

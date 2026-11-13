@@ -4,7 +4,7 @@ Plain GFM that reads well on GitHub and in an editor; mdhouse adds the behavior 
 muting, folding) on render — never markup that only mdhouse understands. Glyph first in the line
 (status, then severity).
 
-To try every form, open the [Q&A playground](qa-playground.md). Everything else mdhouse renders
+Everything else mdhouse renders
 beyond CommonMark is in [Markdown in mdhouse](markdown.md).
 
 ---

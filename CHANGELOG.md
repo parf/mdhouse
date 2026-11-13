@@ -14,6 +14,10 @@
 
 - Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API (a `mdhouse admin` session — a Viewer has no local administrator) switches back; projects keep their RW/RO; an unreadable prefs.json counts as a Viewer. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
 
+### Changed
+
+- The Q&A playground is a test fixture (`test/fixtures/qa-playground.md`), no longer part of the installed reference
+
 ### Fixed
 
 - Document header: one Edit beside the title — the external editor's ✎ moved to the actions row (a long title no longer pushes it to its own line); in a Viewer a phone's top strip shows a short `Viewer` badge with the full words in its tooltip

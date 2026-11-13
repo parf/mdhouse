@@ -5,13 +5,13 @@ Copy this file to a writable folder first — the installed reference (`_mdhouse
 A page to try answering in the browser. Serve it writable and open it:
 
 ```bash
-mdhouse doc -p --rw        # from the repository root — or any folder holding a copy of this file
+mdhouse test/fixtures -p --rw   # from the repository root — or any folder holding a copy of this file
 ```
 
 In a `--rw` folder an item's first glyph is a button: click it, write, **💬** (or Ctrl+Enter) — or
 one of the actions after it (Alt+1…9). The reply is written into this file, quoted under the item.
 
-This page is meant to be written to. `git checkout doc/qa-playground.md` puts it back.
+This page is meant to be written to. `git checkout test/fixtures/qa-playground.md` puts it back.
 What each form means is in [Questions and answers in mdhouse](qa.md).
 
 ---
