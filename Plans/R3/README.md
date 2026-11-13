@@ -22,7 +22,7 @@ Detailed Workspace requirements and acceptance criteria remain in
 [`workspaces/TODO.md`](workspaces/TODO.md); rationale and settled choices are in
 [`workspaces/README.md`](workspaces/README.md) and
 [`workspaces/DECISIONS.md`](workspaces/DECISIONS.md); question history is in
-[`workspaces/QUESTIONS.md`](workspaces/QUESTIONS.md).
+[`workspaces/QUESTIONS.md`](workspaces/QUESTIONS.md). What mdhouse keeps, where: [`DATA.md`](DATA.md).
 
 ## The paradigm shift
 

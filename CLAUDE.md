@@ -120,17 +120,17 @@ npx tsc --noEmit -p .       # types
 ```
 
 - `bun run dev` — :7790, its own config in `.scratch/`; never reaches :7777
-- lib → `test/<module>.test.ts`; a route → `serve()` on its own 617xx port, torn down in
+- lib → `test/<module>.test.ts`; a route → `serve()` on its own `testPort(617xx)` port (`test/ports.ts`), torn down in
   `finally` (`test/server-guards.test.ts`); `src/ui` logic (`format`, `tree-model`) → its test; components —
   the browser check is the test
 
 ## Testing in a browser — never on the live instance
 
-`S` = the session's scratchpad dir. Scratch repo (git views need ≥1 commit; `doc/qa-playground.md`
+`S` = the session's scratchpad dir. Scratch repo (git views need ≥1 commit; `test/fixtures/qa-playground.md`
 has every Q&A form) + spare port + temp config:
 
 ```sh
-mkdir -p $S/repo $S/cfg && cp doc/*.md $S/repo && git -C $S/repo init -q && git -C $S/repo add -A && git -C $S/repo commit -qm init
+mkdir -p $S/repo $S/cfg && chmod 700 $S/cfg && cp doc/*.md test/fixtures/qa-playground.md $S/repo && git -C $S/repo init -q && git -C $S/repo add -A && git -C $S/repo commit -qm init
 XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
 ```
 
@@ -139,7 +139,9 @@ XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
 - abort if the scratch port is busy; never stop its listener to free it
 - capture the PID when starting your process; verify startup/bind and expected scratch roots before testing
 - cleanup only that captured own PID; never choose a PID by port/listener or use `pkill -f`
-- look at it in light + dark, and ≤720px
+- a CLI-started scratch makes a loopback browser the local administrator (no `mdhouse admin`)
+- Agent Bus in a scratch: only `--agent-bus <sandbox.sock>` with a temp `XDG_RUNTIME_DIR`; never the real daemon
+- look at it in light + dark, and ≤720px; touch: `scripts/touch-walk.ts` + `scripts/touch-audit.js`
 - headless Chrome — an SPA needs the time budget, without it the DOM is empty:
   `google-chrome --headless=new --disable-gpu --window-size=1280,900 --virtual-time-budget=3000 --screenshot=$S/a.png <url>`
   (`--dump-dom` the same way); clicks: `--remote-debugging-port=9333` + `scripts/cdp.ts` (usage in its first line)
@@ -196,8 +198,8 @@ Only on "publish".
 - [ ] Release commit `mdhouse X.Y.Z` (package.json + CHANGELOG), body = what changed
 - [ ] Pack, smoke-test and publish from a clean checkout of it — `npm pack` / `npm publish` take the
       working tree, uncommitted edits included: `git worktree add $S/rel-src HEAD && cd $S/rel-src && bun install`
-- [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, no PNGs —
-      ~65 files, ~234 kB (2.1); much more means a stray file
+- [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, one PNG (`doc/agent-bus.png`) —
+      ~257 files, ~800 kB (2.3.x, flows included); much more means a stray file
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh
       T=$S/rel; mkdir -p $T/prefix $T/cfg $T/notes
