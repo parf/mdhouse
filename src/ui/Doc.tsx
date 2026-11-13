@@ -554,7 +554,6 @@ export function Doc({
     return () => void window.dispatchEvent(new CustomEvent(ASK_STATE, { detail: false }));
   }, [abOpen]);
 
-
   /** `e` opens the file in the editor, as the ✎ beside the title does — not while typing. */
   useEffect(() => {
     if (!editAt) return;

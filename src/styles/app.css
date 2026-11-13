@@ -2371,14 +2371,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 @media (pointer: coarse) {
   .scope-opt { min-height: 44px; font-size: 14px; }
 }
-
 @media (pointer: coarse) {
   .search-box input { min-height: 44px; font-size: 16px; }
   .search-box .clear { min-width: 44px; min-height: 44px; }
-}
-
-@media (pointer: coarse) {
-  .sidebar a.hit { min-height: 44px; box-sizing: border-box; }
 }
 
 /* Changes (Q-R3-UX1): one project's uncommitted files, a tick each, a diff each, one commit button. */
@@ -2407,6 +2402,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .change-row { min-height: 44px; }
   :is(.change-diff-btn, .changes-commit-btn, .status-chip, .changes .changes-all) { min-height: 44px; display: inline-flex; align-items: center; padding-inline: 12px; }
   .changes-message { font-size: 16px; }
+}
+@media (pointer: coarse) {
+  .sidebar a.hit { min-height: 44px; box-sizing: border-box; }
 }
 
 /* ── The phone's places: Files · Changes · Search · Ask ─────────────────── */
