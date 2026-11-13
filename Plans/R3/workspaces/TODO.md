@@ -241,9 +241,9 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - [x] MW.2a.2 Delivered capability-gap matrix and two corpus pilot designs; [design scope](../EXECUTION.md#rag-capability-pilot-design) <a id="MW.2a.2"></a>
     [Design report](../RAG-PILOTS.md): provider 0.4.2 static vs unverified runtime, Docs pilot and blocked Code+Docs adapter extension; no calls/fixtures/ingestion or implementation.
   - Priority: implementation deferred; design separate end-user documents-only and shared developer/AI code-and-documentation indexes ([№RAG-W2](DECISIONS.md#RAG-W2)).
-  - [ ] MW.2a.1 Implement separate on-demand RAG sync bin; owned by mdhouse, not removed from R3 implementation <a id="MW.2a.1"></a>
+  - [x] MW.2a.1 Implement separate on-demand RAG sync bin; owned by mdhouse, not removed from R3 implementation <a id="MW.2a.1"></a>
   - Current scope: owner-authorized first setup `/home/parf/src/mdhouse` with recursive `include:["*.md"]`, dotfile/dependency exclusions, proposed `mdhouse/docs`; W3 bin plan, owner/AB-CEO provisioning/provider gaps, no duplicate requests or implicit watch/paid run
-  - Coverage: FileScan last reported 195 tracked; T-48 large Markdown/finite sync deployed per provider. Whole-file indexing remains unproven until actual sync/check; incomplete or unknown coverage stays explicit
+  - Coverage: first live sync 2026-11-12 — 184/184 confirmed ([checkpoint](../RAG-CONTRACT.md#first-live-sync--2026-11-12))
   - Contract: [№RAG-W1](DECISIONS.md#RAG-W1); no automatic/background execution or unsolicited provider status calls. Planning/implementation continue under ordinary cohort prioritization; paid/live/provisioning authority remains separate
   - Builds: consume one FileScan per owner-provisioned folder; after root/record/Configuration.dir/token/reload/grants setup, bind explicit RAG endpoint/namespace/table and inspect demand status with no subscribers; use finite on-demand sync ([№Q-R3-RAGSYNC1](DECISIONS.md#Q-R3-RAGSYNC1)) only after its provider deployment, no temporary standing subscription
   - [ ] MW.2a.3 Source registry and sync history in KV on `#mdhouse@<host>`; events in its agent log ([№Q-R3-RAG1](DECISIONS.md#Q-R3-RAG1)) <a id="MW.2a.3"></a>

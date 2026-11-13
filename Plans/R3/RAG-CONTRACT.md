@@ -55,6 +55,12 @@ steps; its old pack 1.0.1 label is not new verified deployment evidence. It is n
 - RAG owns storage, classification, embeddings, indexes, retrieval execution and source credentials.
 - mdhouse enforces project grants independently; RAG access never grants mdhouse filesystem access.
 
+## First live sync — 2026-11-12
+
+- ✅ `/home/parf/src/mdhouse` `*.md` → `#filescan/mdhouse@parf.us` → `#rag/mdhouse@parf.us` (RAG 0.4.5, shared `#qdrant`, `rag_mdhouse`, voyage-3.5/1024): 184/184 confirmed, `mdhouse-rag-sync sync --apply --until-done` exit 0.
+- Voyage free tier (3 RPM) throttled the first run; paid tier since 23:08Z; FileScan `max_per_scan` 20.
+- Keyword search returns cited records (`source`, `content_hash` = sha256 of the file bytes, `chunk_index`, large-file `lines`/`heading_path`); small-file citations computed by mdhouse (MW.2a.4).
+
 ## Current provider checkpoint — 2026-11-06
 
 Provider also reports J122 Python reply delivery fixed (`on_reply`; `call()` refuses `wait`).
