@@ -24,7 +24,6 @@ import { usePhone } from './phone';
 import { FlowBar } from './FlowBar';
 import { follow } from './PageHead';
 import { editTarget, isPageHref } from '../lib/urls';
-import { DocCommit } from './GitPanel';
 import { loadDraft } from './edit-source';
 
 /** The two diff views; either can be the one a toggle turns on. */
@@ -1141,9 +1140,12 @@ export function Doc({
       <span class="lbl">Edit in an external editor</span>
     </a>
   );
-  /** Commit this one file, without leaving it for the git view. */
-  const commitEl = writable && rootInRepo && (
-    <DocCommit p={`${doc.root}/${doc.rel}`} name={name} dirty={dirty} onDone={() => onReload?.()} />
+  /** The file's uncommitted state: one chip that opens Changes scoped to this file, where it is reviewed and committed. */
+  const changesUrl = rootInRepo && rootDirUrl ? `${rootDirUrl}?git=changes&file=${encodeURIComponent(doc.rel)}` : null;
+  const statusChip = dirty && changesUrl && (
+    <a class="status-chip" href={changesUrl} title="Review and commit this file in Changes" onClick={(e) => follow(e, () => onNavigate(changesUrl))}>
+      {doc.status === 'untracked' ? 'untracked' : 'modified'} · Changes
+    </a>
   );
   const actionBtns = (
     <>
@@ -1327,18 +1329,7 @@ export function Doc({
             <IconClock size={12} /> <Ago at={doc.mtime} />
           </span>
           <Authors authors={log?.authors ?? null} />
-          {dirty && (
-            <button
-              type="button"
-              class="uncommitted"
-              title={view === 'doc' ? 'Show your uncommitted changes' : 'Show the document'}
-              onClick={() => (view === 'doc' ? setView(doc.kind === 'md' ? diffView : 'patch') : setView('doc'))}
-            >
-              uncommitted file
-            </button>
-          )}
-          {/* Commit this one file, without leaving it for the git view. */}
-          {!phone && commitEl}
+          {statusChip}
           {doc.tasks.total > 0 && (
             <span>
               {doc.tasks.done}/{doc.tasks.total} done
@@ -1389,7 +1380,6 @@ export function Doc({
           Context
           {contextCounts && <span class="ctx-n"> · {contextCounts}</span>}
         </summary>
-        {phone && commitEl}
         <div class="doc-aside">
           {gitStateOf(doc) && (
             <div class="doc-git">

@@ -209,6 +209,9 @@
 - 📌 DATA-W1 User data (`$HOME/.config/mdhouse`): each user's own — e.g. favorites, agent setup. Team data (`$PROJECT/.mdhouse/`, Git): common — e.g. automation. <a id="DATA-W1"></a>
   [Owner comment](QUESTIONS.md#Q-R3-DATA1).
 
+- 📌 DATA-W2 Automation is controlled by Agent Bus, so its state lives there: approvals, run index and schedule state in the KV of `#mdhouse@<host>`, with its locks and agent log. <a id="DATA-W2"></a>
+  Migration order of [DATA.md](../DATA.md) agreed. [Owner comment](../DATA.md).
+
 ## Installed reference
 
 - 📌 Q-R3-REFDOC1 The installed reference holds only end-user docs; testing docs live outside it. <a id="Q-R3-REFDOC1"></a>

@@ -35,9 +35,14 @@ Open: [№Q-R3-DATA1](workspaces/QUESTIONS.md#Q-R3-DATA1). Inventory: #md/w1 (MW
 
 ## State — machine-local history, `$XDG_STATE_HOME/mdhouse/`
 
-- [ ] automation approvals (content hash per registration) — [№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2), MW.11 slice 2
-- [ ] schedule state, run index (last / next, failures) — MW.11 slice 2
-- [ ] user session history (`sessions.json`) — Team
+> 💬 Suggestion:
+>  IF Automation controlles by agent-bus - then use its KV storage / locks / LOGS !
+>
+> 💬👾 → [№DATA-W2](workspaces/DECISIONS.md#DATA-W2): automation approvals, run index and schedule state go to the KV of `#mdhouse@<host>` (per host, like the RAG registry), with its locks and agent log; nothing in `$XDG_STATE_HOME`. #md/w1 builds it in MW.11 slice 2.
+
+- [x] automation approvals (content hash per registration) — [№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2), MW.11 slice 2
+- [x] schedule state, run index (last / next, failures) — MW.11 slice 2
+- [x] user session history (`sessions.json`) — Team
 
 ## Browser — per origin
 
@@ -50,16 +55,16 @@ Open: [№Q-R3-DATA1](workspaces/QUESTIONS.md#Q-R3-DATA1). Inventory: #md/w1 (MW
 - ✅ RAG registry `rag/source/<sid>`, `rag/last/<sid>`, `rag/hist/<sid>/…` (KV) — `mdhouse-rag-sync`
 - ✅ control lock `ctl` + `ctl.owner` nonce (KV) — MW.7
 - ✅ agent log lines (notice / warning / alert) — not readable back
-- [ ] bus schedules — the timer for automation, MW.11 slice 2
+- [x] bus schedules — the timer for automation, MW.11 slice 2
 
 ## Team — `$PROJECT`, Git
 
 - ✅ documents, task ticks, answers, inserts
 - ✅ `.mdhouseignore` — stays top-level
 - ✅ flow run documents `Plans/flows/runs/<package>/…`, flow reports `Plans/flows/<package>.md` (`last-commit-id`) — MW.3.3
-- [ ] automation registrations `.mdhouse/automation/<id>.json` — fire only after per-machine approval ([№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2))
-- [ ] project id `.mdhouse/project.json` — created on the first team write (step 4)
-- [ ] other shared definitions (default agents, RAG source id) — your choice in [№Q-R3-DATA1](workspaces/QUESTIONS.md#Q-R3-DATA1)
+- [x] automation registrations `.mdhouse/automation/<id>.json` — fire only after per-machine approval ([№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2))
+- [x] project id `.mdhouse/project.json` — created on the first team write (step 4)
+- [x] other shared definitions (default agents, RAG source id) — your choice in [№Q-R3-DATA1](workspaces/QUESTIONS.md#Q-R3-DATA1)
 
 Never in Git: RW/RO, secrets, access, machine state.
 
@@ -69,6 +74,8 @@ Never in Git: RW/RO, secrets, access, machine state.
 - ✅ `.scratch/` (dev, gitignored), `test/fixtures/` — not shipped
 
 ## Migration order — proposal by #md/w1
+
+> 💬 OK - agree with section
 
 - [ ] 1 secrets out of `prefs.json` → `secrets.json` (version bump, read both for one release)
 - [ ] 2 control socket → `$XDG_RUNTIME_DIR/mdhouse/` (the CLI tries new, then old)

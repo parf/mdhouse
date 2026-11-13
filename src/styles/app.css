@@ -2380,3 +2380,31 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 @media (pointer: coarse) {
   .sidebar a.hit { min-height: 44px; box-sizing: border-box; }
 }
+
+/* Changes (Q-R3-UX1): one project's uncommitted files, a tick each, a diff each, one commit button. */
+.changes { margin: 12px 0 24px; }
+.changes h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 15px; margin: 0 0 8px; }
+.changes h2 .n { font-weight: 400; color: var(--fg-muted); }
+.changes .changes-all { margin-left: auto; font-size: 13px; font-weight: 400; }
+.changes-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.changes-list > li + li { border-top: 1px solid var(--border); }
+.change-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; min-width: 0; }
+.change-row .change-path { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.change-row .tag { flex: none; font-size: 11px; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--border-strong); color: var(--fg-muted); white-space: nowrap; }
+.change-diff-btn { flex: none; font: inherit; font-size: 12px; background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 8px; color: var(--fg); cursor: pointer; }
+.change-diff { padding: 0 10px 10px; overflow-x: auto; }
+.changes-commit { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; margin-top: 12px; }
+.changes-message { flex: 1 1 18em; min-width: 0; font: inherit; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); resize: vertical; }
+.changes-push { margin-top: 10px; }
+.changes .git-note { margin-top: 10px; white-space: normal; }
+/* A document's uncommitted state: one chip that opens Changes for it. */
+.status-chip { font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent); color: var(--warn); text-decoration: none; white-space: nowrap; }
+.status-chip:hover { background: color-mix(in srgb, var(--warn) 10%, transparent); }
+@media (pointer: coarse) {
+  .change-tick { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -6px 0 -6px -10px; }
+  .change-tick input { width: 22px; height: 22px; margin: 0; }
+  .change-row a.change-path { display: inline-flex; align-items: center; min-height: 44px; }
+  .change-row { min-height: 44px; }
+  :is(.change-diff-btn, .changes-commit-btn, .status-chip, .changes .changes-all) { min-height: 44px; display: inline-flex; align-items: center; padding-inline: 12px; }
+  .changes-message { font-size: 16px; }
+}

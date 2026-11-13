@@ -3,7 +3,9 @@ import { api, type GitInfo, type RemoteState, type RootInfo } from './api';
 import { rootWritable } from './project-groups';
 import { CommitsView, FilesView, GitActions, RemoteBar, SyncLists } from './GitPanel';
 import type { CommitGroup, Digest, RecentEntry, TreePayload } from '../lib/store';
-import { PageHead, follow, inLink, type HomeView } from './PageHead';
+import { PageHead, follow, inLink, viewQuery, type HomeView } from './PageHead';
+import { Changes } from './Changes';
+import { useViewer } from './viewer';
 import { loadWide } from './wide';
 import { IconGit } from './icons';
 import { preciseAgo, docName } from './format';
@@ -65,6 +67,9 @@ export function Home(props: Props) {
 
   /** The folder's repo — branch, origin, uncommitted files — or null outside one. */
   const p = `${props.rootId}/${props.dir}`;
+  const viewer = useViewer();
+  // Changes scoped to one file (`&file=`, root-relative), from a document's status chip.
+  const changesFile = new URLSearchParams(location.search).get('file');
   const [git, setGit] = useState<GitInfo | null>(null);
   const [gitTick, setGitTick] = useState(0);
   const [remote, setRemote] = useState<RemoteState | null>(null);
@@ -80,7 +85,7 @@ export function Home(props: Props) {
     };
   }, [p, props.revision, gitTick]);
   // Commits and Files need a repo; outside one they read as Recent.
-  const view: HomeView = !git && (props.view === 'commits' || props.view === 'files') ? 'recent' : props.view;
+  const view: HomeView = !git && (props.view === 'commits' || props.view === 'files' || props.view === 'changes') ? 'recent' : props.view;
 
   const me = props.tree?.user ?? null;
 
@@ -159,15 +164,30 @@ export function Home(props: Props) {
           )
         );
       })()}
-      {git && <RemoteBar p={p} info={git} onState={setRemote} />}
+      {git && view !== 'changes' && <RemoteBar p={p} info={git} onState={setRemote} />}
       {/* The project's current access from the live root list: a mode change shows here without a reload. */}
-      {git && rootWritable(props.roots, props.rootId) && <GitActions p={p} info={git} remote={remote} onDone={() => setGitTick((n) => n + 1)} />}
-      {git && <SyncLists info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} commits={view === 'commits'} />}
+      {git && view !== 'changes' && rootWritable(props.roots, props.rootId) && <GitActions p={p} info={git} remote={remote} onDone={() => setGitTick((n) => n + 1)} />}
+      {git && view !== 'changes' && <SyncLists info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} commits={view === 'commits'} />}
 
+      {view === 'changes' && git && (
+        <Changes
+          key={changesFile ?? ''}
+          p={p}
+          rootId={props.rootId}
+          info={git}
+          file={changesFile}
+          writable={!viewer && rootWritable(props.roots, props.rootId)}
+          fileUrl={props.fileUrl}
+          onOpen={props.onOpen}
+          allUrl={props.dirUrl + viewQuery('changes')}
+          go={props.go}
+          onDone={() => setGitTick((n) => n + 1)}
+        />
+      )}
       {view === 'commits' && git && <CommitsView p={p} info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} revision={props.revision + gitTick} />}
       {view === 'files' && git && <FilesView p={p} info={git} onOpen={props.onOpen} fileUrl={props.fileUrl} revision={props.revision + gitTick} />}
 
-      {(view === 'commits' || view === 'files') ? null : <>
+      {(view === 'commits' || view === 'files' || view === 'changes') ? null : <>
       {!digest && <div class="spinner" />}
 
       {digest && nothing && (

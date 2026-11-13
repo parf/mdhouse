@@ -1,17 +1,18 @@
 import { RunFlow } from './FlowRun';
-import { IconClock, IconDoc, IconGit, IconGitMark, IconStar, IconUser } from './icons';
+import { IconClock, IconDiff, IconDoc, IconGit, IconGitMark, IconStar, IconUser } from './icons';
 
-export type HomeView = 'favorites' | 'recent' | 'mine' | 'commits' | 'files';
+export type HomeView = 'favorites' | 'recent' | 'mine' | 'changes' | 'commits' | 'files';
 
 export const VIEWS: Array<{ id: HomeView; label: string; param: string; Icon: (p: { size?: number }) => preact.JSX.Element; git?: true }> = [
   { id: 'favorites', label: 'Favs', param: 'favs', Icon: (p) => <IconStar {...p} filled /> },
   { id: 'recent', label: 'Recent', param: '', Icon: IconClock },
   { id: 'mine', label: 'Mine', param: 'mine', Icon: IconUser },
+  { id: 'changes', label: 'Changes', param: 'changes', Icon: IconDiff, git: true },
   { id: 'commits', label: 'Commits', param: 'commits', Icon: IconGit, git: true },
   { id: 'files', label: 'Files', param: 'files', Icon: IconDoc, git: true },
 ];
 
-/** `?git` is Recent, `?git=favs` / `mine` / `commits` / `files` the others. */
+/** `?git` is Recent, `?git=favs` / `mine` / `changes` / `commits` / `files` the others; `changes` may add `&file=<root-relative path>`. */
 export const viewOf = (search: string): HomeView =>
   VIEWS.find((v) => v.param && v.param === new URLSearchParams(search).get('git'))?.id ?? 'recent';
 export const viewQuery = (id: HomeView) => {
