@@ -80,7 +80,7 @@ Over TCP, with a token:
 mdhouse --agent-bus http://host:6767     # asks for the token, or reads it from stdin
 ```
 
-- The token is saved in `~/.config/mdhouse/prefs.json` (0600), never in argv; `--agent-bus <x.sock>` drops it
+- The token is saved in `~/.config/mdhouse/secrets.json` (0600) with its endpoint, never in argv or `prefs.json`; `--agent-bus <x.sock>` drops it
 - Not `AGENT_BUS_TOKEN`: in an AI session's shell that is the session's own — mdhouse would act as it
 
 Or forward the remote socket over ssh — no token:

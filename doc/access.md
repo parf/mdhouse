@@ -11,7 +11,8 @@ mdhouse --allow 192.168.1.0/24,10.0.0.5   # only these networks (and this machin
 mdhouse --allow reset             # every address again
 ```
 
-- Passwords are kept as an argon2id hash in `~/.config/mdhouse/prefs.json`, never as text
+- Passwords are kept as an argon2id hash in `~/.config/mdhouse/secrets.json` (0600), never as text
+- An older mdhouse (2.3 and before) reads only `prefs.json`: it still asks for a login and admits nobody until the users are added again there
 - The login is asked from this machine too — behind a misconfigured nginx or alike proxy every
   request comes from 127.0.0.1
 - This machine is always allowed by `--allow`, so you cannot lock yourself out

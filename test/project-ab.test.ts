@@ -178,9 +178,14 @@ describe('Prefs — a project Agent Bus entry', () => {
       await writeFile(f, JSON.stringify({ ...disk(f), agentBusSpaces: { [p]: { endpoint: '/run/b.sock', credential: 'cred-1', default: ['#a@h'] } }, extra: 1 }));
       expect(prefs.spaceAb(p)).toEqual({ endpoint: '/run/b.sock', credential: 'cred-1', default: ['#a@h'] });
       await prefs.commitSpaceAb(p, { endpoint: '/run/b.sock', default: ['#b@h'] }, () => null);
-      expect(disk(f)).toMatchObject({ agentBusSpaces: { [p]: { endpoint: '/run/b.sock', credential: 'cred-1', default: ['#b@h'] } }, extra: 1 });
+      // The credential moves to secrets.json with its endpoint; prefs.json keeps the rest.
+      expect(disk(f)).toMatchObject({ agentBusSpaces: { [p]: { endpoint: '/run/b.sock', default: ['#b@h'] } }, extra: 1 });
+      expect((disk(f).agentBusSpaces as Record<string, object>)[p]).not.toHaveProperty('credential');
+      expect(disk(join(dir, 'secrets.json')).spaces).toEqual({ [p]: { endpoint: '/run/b.sock', credential: 'cred-1' } });
+      expect(prefs.spaceAb(p)).toEqual({ endpoint: '/run/b.sock', credential: 'cred-1', default: ['#b@h'] });
       await prefs.commitSpaceAb(p, { endpoint: 'http://127.0.0.1:1', default: ['#b@h'] }, () => null);
       expect((disk(f).agentBusSpaces as Record<string, unknown>)[p]).toEqual({ endpoint: 'http://127.0.0.1:1', default: ['#b@h'] });
+      expect(disk(join(dir, 'secrets.json'))).not.toHaveProperty('spaces');
       await prefs.commitSpaceAb(p, { endpoint: null, default: null }, () => null);
       expect(disk(f)).not.toHaveProperty('agentBusSpaces');
     } finally {
@@ -336,7 +341,8 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
       expect((await t.setAb(t.keep, t.space.socket, [], cookie)).status).toBe(200);
       await t.provision(t.keep, 'space-secret-1');
       expect((await t.setAb(t.keep, t.space.socket, ['#claude/space@h'], cookie)).status).toBe(200);
-      expect((disk(t.prefsPath).agentBusSpaces as Record<string, unknown>)[t.keep]).toEqual({ endpoint: t.space.socket, credential: 'space-secret-1', default: ['#claude/space@h'] });
+      expect((disk(t.prefsPath).agentBusSpaces as Record<string, unknown>)[t.keep]).toEqual({ endpoint: t.space.socket, default: ['#claude/space@h'] });
+      expect(t.prefs.spaceAb(t.keep)).toEqual({ endpoint: t.space.socket, credential: 'space-secret-1', default: ['#claude/space@h'] });
       expect((await t.setAb(t.keep, '/run/elsewhere.sock', ['#claude/space@h'], cookie)).status).toBe(200);
       expect((disk(t.prefsPath).agentBusSpaces as Record<string, unknown>)[t.keep]).toEqual({ endpoint: '/run/elsewhere.sock', default: ['#claude/space@h'] });
       expect((await t.setAb(t.keep, '', [], cookie)).status).toBe(200);

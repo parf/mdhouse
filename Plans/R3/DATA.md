@@ -12,12 +12,12 @@ Decided: [№DATA-W1](workspaces/DECISIONS.md#DATA-W1), [№DATA-W2](workspaces/
 - ✅ marks: favorite / muted / ignored per project — page ([№Q-R3-ADMIN1](workspaces/DECISIONS.md#Q-R3-ADMIN1))
 - ✅ edit link + scheme, `me` — Settings
 - ✅ Agent Bus: enabled (`true` / `false` / `auto`), socket, default agents, filter, `control` patterns, per-project spaces (endpoint, default) — CLI, Settings
-- ⚠️ Agent Bus token, per-space credentials — secret, moves to `secrets.json` (step 1)
+- ✅ Agent Bus token, per-space credentials — in `secrets.json` (step 1)
 
 ## User, secret — `secrets.json` 0600, keyring later
 
-- ⚠️ Agent Bus token, space credentials — today in `prefs.json` (step 1)
-- ⚠️ Basic users' password hashes (`access.users`) — today in `prefs.json` (step 1)
+- ✅ Agent Bus token, space credentials — each with its endpoint (step 1)
+- ✅ Basic users' password hashes (`access.users`) — `prefs.json` keeps a stand-in that never verifies (step 1)
 
 ## Machine — config dir
 
@@ -77,7 +77,7 @@ Never in Git: RW/RO, secrets, access, machine state.
 
 > 💬 OK - agree with section
 
-- [ ] 1 secrets out of `prefs.json` → `secrets.json` (version bump, read both for one release)
+- ✅ 1 secrets out of `prefs.json` → `secrets.json` (no version bump: never-verifying stand-ins; read both for one release)
 - [ ] 2 control socket → `$XDG_RUNTIME_DIR/mdhouse/` (the CLI tries new, then old)
 - 🚫 3 `$XDG_STATE_HOME/mdhouse/` — automation state lives on the bus instead ([№DATA-W2](workspaces/DECISIONS.md#DATA-W2))
 - [ ] 4 `.mdhouse/project.json` on the first team write; prefs stay keyed by path

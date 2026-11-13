@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { hostIsLocal } from '../src/lib/access';
 import { testPort } from './ports';
+import { SECRET_MOVED } from '../src/lib/secrets';
 
 // Every run gets its own config dir and a 619xx port; every daemon is stopped by `exit --all`
 // with that same config dir, so nothing here can reach ~/.config/mdhouse or :7777.
@@ -225,7 +226,9 @@ describe('user-add', () => {
     const r = s.run(['user-add', 'ann'], {}, 's3cret\n');
     expect(r.code).toBe(0);
     expect(r.out).toContain('ann  added');
-    expect(s.prefs().access.users.ann).toStartWith('$argon2id$');
+    // The hash is in secrets.json; prefs.json keeps a stand-in no mdhouse verifies.
+    expect(s.prefs().access.users.ann).toBe(SECRET_MOVED);
+    expect(JSON.parse(readFileSync(join(s.cfg, 'mdhouse/secrets.json'), 'utf8')).users.ann).toStartWith('$argon2id$');
     expect(s.run(['user-add', 'bob'], {}, '').code).toBe(2); // no password
     expect(s.run(['user-add', 'cy:pw']).out).toContain('cy  added'); // login:pwd still works
   });

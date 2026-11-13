@@ -178,7 +178,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   every route.
 - **Then access** — `admit()`, `src/lib/access.ts`, off until set from the CLI: an address outside
   `--allow` (this machine always passes) is `403`; with any user, no valid Basic login is `401`.
-  Read from `prefs.json` for every request (re-read when its mtime changes), so `user-add`
+  Read from `prefs.json` + `secrets.json` for every request (re-read when either changes), so `user-add`
   applies to a running server at once. The page routes hand out the HTML bundle's page from a
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
   code with no data, and stay open. [doc/access.md](../doc/access.md).
@@ -327,7 +327,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   change is read–apply–write against the file as it is now, one at a time within a process
   (`Prefs.queue`) and across processes (`prefs.json.lock`, `O_EXCL`; unchanged 2 s → stale, taken over), written to a uniquely named temp file (0600, the dir created 0700) and renamed
   into place — a symlinked `prefs.json` at its target; a file that does not parse is moved aside as `prefs.json.broken-<time>`, never
-  written over. Unknown top-level keys are kept; unsupported/newer or ambiguous access formats are never written and grant no root write access. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
+  written over. Secrets (`lib/secrets.ts`): `secrets.json` beside the real `prefs.json` (0600) — `{version:1, agentBus:{endpoint, token}, spaces:{<path>:{endpoint, credential}}, users}`, written first (none made while empty); `prefs.json` gets `token: ''`, no well-formed space credential, each hash `SECRET_MOVED` (never verifies: every release since 1.4 catches the throw → false). On read a real value in `prefs.json` wins (an older writer) and moves on the next write; token/credential apply only to the same endpoint; a `secrets.json` that is not JSON or another version blocks the pair (Viewer, no write, no login). Unknown top-level keys are kept; unsupported/newer or ambiguous access formats are never written and grant no root write access. The CLI still sends `-p` / `--rm` to a running daemon, so its open tabs update.
 - The systemd unit (`MDHOUSE_SERVICE=1`) is stopped by `systemctl` only: `mdhouse exit` sees
   `service` in the ping and names the command instead (exit 1); its `--fg` with the port taken
   exits 1 instead of handing over, so `Restart=on-failure` retries.

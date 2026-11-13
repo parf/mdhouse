@@ -26,6 +26,7 @@ import { normalizeProjectName } from './project-name';
 import type { AccessMode } from './roots';
 import { accountSocket, isUrl, validEndpoint, validTarget } from './agent-bus';
 import { parseControl, type ControlSetting } from './ab-control';
+import { readSecrets, SECRET_MOVED, secretsPath, writeSecrets, type Secrets } from './secrets';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -476,12 +477,96 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   return data;
 }
 
+/** `secrets.json` beside the file `prefsPath` names — beside a symlink's target. */
+const secretsOf = (prefsPath: string): string => {
+  try {
+    return secretsPath(realpathSync(prefsPath));
+  } catch {
+    return secretsPath(prefsPath);
+  }
+};
+
+/**
+ * `data` with its secrets from `secrets.json`. A real value in `prefs.json` wins — only an older mdhouse or a hand
+ * edit puts one there, after the last save of this one; it moves on the next write. A login whose hash is
+ * `SECRET_MOVED` and missing here keeps it: it never verifies. The token and a credential apply only to the
+ * endpoint they were saved with.
+ */
+function withSecrets(data: PrefsFile, sec: Secrets): PrefsFile {
+  const users: Record<string, string> = {};
+  for (const [login, hash] of Object.entries(data.access.users)) users[login] = hash === SECRET_MOVED ? (sec.users?.[login] ?? SECRET_MOVED) : hash;
+  data.access.users = users;
+  if (!data.agentBus.token && sec.agentBus && sec.agentBus.endpoint === data.agentBus.socket) data.agentBus.token = sec.agentBus.token;
+  const map = spaceMap(data);
+  if (map && sec.spaces) {
+    const out: Record<string, unknown> = {};
+    for (const [key, raw] of Object.entries(map)) {
+      const e = raw as Record<string, unknown> | null;
+      const s = sec.spaces[key];
+      out[key] = e && typeof e === 'object' && !Array.isArray(e) && e.credential === undefined && s && e.endpoint === s.endpoint ? { ...e, credential: s.credential } : raw;
+    }
+    data.agentBusSpaces = out;
+  }
+  return data;
+}
+
+/**
+ * What each file gets: the secrets out of `prefs.json` — `SECRET_MOVED` for each password hash, no token, no
+ * credential in a well-formed project entry (a malformed one is kept as read, credential and all).
+ */
+function splitSecrets(data: PrefsFile): { file: PrefsFile; secrets: Secrets } {
+  const secrets: Secrets = {};
+  const file: PrefsFile = { ...data, access: { ...data.access, users: {} }, agentBus: { ...data.agentBus, token: '' } };
+  const users: Record<string, string> = {};
+  for (const [login, hash] of Object.entries(data.access.users)) {
+    file.access.users[login] = SECRET_MOVED;
+    if (hash !== SECRET_MOVED) users[login] = hash;
+  }
+  if (Object.keys(users).length) secrets.users = users;
+  if (data.agentBus.token) secrets.agentBus = { endpoint: data.agentBus.socket, token: data.agentBus.token };
+  const map = spaceMap(data);
+  if (map) {
+    const out: Record<string, unknown> = {};
+    const spaces: NonNullable<Secrets['spaces']> = {};
+    for (const [key, raw] of Object.entries(map)) {
+      const e = spaceEntry(raw);
+      if (e?.credential && e.endpoint) {
+        spaces[key] = { endpoint: e.endpoint, credential: e.credential };
+        const { credential: _moved, ...rest } = raw as Record<string, unknown>;
+        out[key] = rest;
+      } else out[key] = raw;
+    }
+    file.agentBusSpaces = out;
+    if (Object.keys(spaces).length) secrets.spaces = spaces;
+  }
+  return { file, secrets };
+}
+
 /**
  * The file as it is on disk now: `missing`, `broken` (it exists and does not parse), or its data.
  * Writes are atomic (see `write`), so a parse failure is a real problem — a typo from a hand
  * edit — never a half-written file caught mid-save.
  */
 export async function readFile(path: string): Promise<PrefsFile | 'missing' | 'broken'> {
+  return readNow(path);
+}
+
+/**
+ * `prefs.json` with `secrets.json` beside it filled in (`withSecrets`). A `secrets.json` that cannot be used blocks
+ * the pair: nothing written, no write granted, no secret used — so no login is admitted.
+ */
+function readNow(path: string): PrefsFile | 'missing' | 'broken' {
+  const found = readPrefsOnly(path);
+  if (typeof found !== 'object') return found;
+  const sec = readSecrets(secretsOf(path));
+  if (typeof sec === 'object' && 'problem' in sec) {
+    if (!blockedBy.has(found)) blockedBy.set(found, `paired with a secrets.json that is ${sec.problem}`);
+    return withSecrets(found, {});
+  }
+  return withSecrets(found, sec === 'missing' ? {} : sec);
+}
+
+function readPrefsOnly(path: string): PrefsFile | 'missing' | 'broken' {
   // One read of whatever the path names now: a file renamed over it by another process's save is
   // read whole, never at the size an earlier look at the path saw.
   let text: string;
@@ -621,11 +706,16 @@ export class Prefs {
    * written at its target, so the link stays.
    */
   private async write(data: PrefsFile): Promise<void> {
+    // The secrets first: a hash moving out of prefs.json is on disk before prefs.json loses it. A failed prefs.json
+    // write after it leaves a secret nothing in prefs.json names (a login, an endpoint): never used.
+    const { file, secrets } = splitSecrets(data);
+    // No secrets and no file: none is made. An existing one is rewritten, so a removed secret leaves it too.
+    if (Object.keys(secrets).length || existsSync(secretsOf(this.path))) await writeSecrets(secretsOf(this.path), secrets);
     const target = await realpath(this.path).catch(() => this.path);
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });
     const tmp = `${target}.${process.pid}.${++tmpSeq}.tmp`;
     try {
-      await writeFile(tmp, JSON.stringify(onDisk(data), null, 2) + '\n', { mode: 0o600 });
+      await writeFile(tmp, JSON.stringify(onDisk(file), null, 2) + '\n', { mode: 0o600 });
       await rename(tmp, target);
     } catch (err) {
       await unlink(tmp).catch(() => {});
@@ -678,14 +768,17 @@ export class Prefs {
    */
   refresh(): void {
     const file = Bun.file(this.path);
-    // Time and size: two saves within one millisecond still differ in what they hold, mostly.
-    const stamp = `${file.lastModified}:${file.size}`;
+    const sec = Bun.file(secretsOf(this.path));
+    // Time and size of both files: two saves within one millisecond still differ in what they hold, mostly.
+    const stamp = `${file.lastModified}:${file.size}:${sec.lastModified}:${sec.size}`;
     if (stamp === this.stamp) return;
     this.stamp = stamp;
     try {
-      this.data = normalizeFile(Bun.JSONC.parse(readFileSync(this.path, 'utf8')) as Partial<PrefsFile>);
+      const found = readNow(this.path);
+      // missing, or mid-edit by hand: keep what we have
+      if (typeof found === 'object') this.data = found;
     } catch {
-      /* missing, or mid-edit by hand: keep what we have */
+      /* unreadable now: keep what we have */
     }
   }
   private stamp = '';
