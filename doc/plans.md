@@ -5,11 +5,6 @@
 - Project knowledge (modules, URLs, invariants, prefs, security rules): `Plans/README.md`
 - Open items `TODO.md` · choices `DECISIONS.md` · engineering record `DONE.md` (same folder)
 
-- **Keep docs in the same commit:**
-  - `Plans/README.md` — any route, lib module, prefs key, git call shape or security rule
-  - `TODO.md` — tick / reword items as each step lands; `DECISIONS.md` when a choice changes
-  - `CHANGELOG.md` `## Unreleased` — every user-visible change
-
 ## Decisions and resolved questions
 
 Important decisions → owning `DECISIONS.md`: shortest rule, minimal terms/forms, necessary conditions only.
