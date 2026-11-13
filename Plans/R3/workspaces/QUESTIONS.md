@@ -40,7 +40,7 @@
 
 - ❓ Q-R3-DATA1 Where mdhouse data belongs (MW.14, inventory by #md/w1): <a id="Q-R3-DATA1"></a>
   Everything kept now and planned: [DATA.md](../DATA.md).
-  Tick what to do (layout and order as in [DATA.md](../DATA.md#migration-order-proposal-mdw1)):
+  Tick what to do (layout and order as in [DATA.md](../DATA.md)):
   - [ ] layout as in DATA.md: user / secret / machine / runtime / state / browser / bus / team; never in Git: RW/RO, secrets, access, machine state 🌟
   - [ ] 1 secrets (bus token, credentials, user password hashes) → `secrets.json` 0600; read both places for one release 🌟
   - [ ] 2 control socket → `$XDG_RUNTIME_DIR/mdhouse/`; the CLI tries new, then old 🌟
