@@ -169,20 +169,19 @@ if (want('diff')) {
 if (want('commit')) {
   await go('/repo/README.md');
   await audit('commit-doc');
-  if (await ev("getComputedStyle(document.querySelector('.doc-context > summary')).display !== 'none'")) await tap('.doc-context > summary', 0);
-  await tap('.doc-commit .git-btn', 0);
+  // The document's status chip opens Changes scoped to it; the commit happens there.
+  await tap('.status-chip', 0);
+  await sleep(800);
   await audit('commit-open');
-  await tap('.doc-commit .git-message', 0);
-  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: 2 });
-  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'a', code: 'KeyA', modifiers: 2 });
+  await tap('.changes-message', 0);
   await type('touch walk commit');
   await audit('commit-typed');
-  await tap('.doc-commit .git-btn.primary', 0);
+  await tap('.changes-commit-btn', 0);
   await sleep(1200);
   say('  git log: ' + execSync(`git -C ${R} log --oneline -2`).toString().replace(/\n/g, ' | '));
   await audit('commit-done');
-  await go('/repo/?git');
-  await audit('git-home');
+  await go('/repo/?git=changes');
+  await audit('changes');
 }
 if (want('ab')) {
   await go('/repo/README.md');
@@ -354,6 +353,7 @@ if (only.includes('search')) {
 if (only.includes('nav4')) {
   await go('/repo/README.md');
   say('  bar: ' + await ev("[...document.querySelectorAll('.phone-nav .nav-dest')].map(b => b.textContent.trim() + (b.classList.contains('on') ? '*' : '')).join(' | ') || 'none'"));
+  say('  Changes badge: ' + await ev("document.querySelector('.nav-badge')?.textContent ?? 'none'"));
   await audit('nav4-doc');
   await tap('.phone-nav .nav-dest', 0);
   say('  Files: drawer ' + await ev("document.querySelector('.app').dataset.sidebar"));

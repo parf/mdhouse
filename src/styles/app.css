@@ -2422,3 +2422,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   /* The bar has these: the top strip keeps ☰ and ⚙. */
   .topstrip .rag-btn, .topstrip button[title^="Search"] { display: none; }
 }
+@media (pointer: coarse) and (max-width: 900px) {
+  .nav-ico { position: relative; display: block; line-height: 0; }
+  .nav-badge { position: absolute; top: -5px; left: 100%; margin-left: -6px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; font: 700 10px/16px var(--sans, inherit); text-align: center; color: #fff; background: var(--warn, #b45309); border-radius: 8px; }
+}

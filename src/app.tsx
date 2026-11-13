@@ -24,6 +24,7 @@ import { Settings } from './ui/Settings';
 import { RagPage } from './ui/RagPage';
 import { indexUrl, loadTarget, saveTarget, type SearchTarget } from './ui/search-scope';
 import { PhoneNav } from './ui/PhoneNav';
+import { changeSummary } from './ui/git-state';
 import { usePhone } from './ui/phone';
 import { ASK_EVENT, ASK_STATE, onChanges } from './ui/nav';
 import { DirPage } from './ui/DirPage';
@@ -105,6 +106,19 @@ function App({ entry: first }: { entry: AdminEntry }) {
     setSearchTargetState(t);
   }, []);
   const phone = usePhone();
+  // How many files are changed, for the bar's Changes: asked of the project's git view, again whenever the tree moves. No git, no badge.
+  const [changeCount, setChangeCount] = useState(0);
+  useEffect(() => {
+    if (!phone || !rootId) return;
+    let live = true;
+    api.git(rootId).then(
+      (g) => live && setChangeCount(changeSummary(g.dirty ?? []).total),
+      () => live && setChangeCount(0),
+    );
+    return () => {
+      live = false;
+    };
+  }, [phone, rootId, revision]);
   // The page's Agent Bus panel, as its document reports it: the bar's Ask shows when it is open.
   const [askOpen, setAskOpen] = useState(false);
   useEffect(() => {
@@ -827,6 +841,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
           go={go}
           askAvailable={!viewer && route.kind === 'file' && doc?.kind === 'md' && !!doc.ab && !doc.reference}
           askOpen={askOpen}
+          changeCount={changeCount}
           changes={onChanges(full.includes('?') ? full.slice(full.indexOf('?')) : '')}
           rag={onRag}
           drawerOpen={sidebar !== 'off'}

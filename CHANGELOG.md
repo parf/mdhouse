@@ -4,7 +4,7 @@
 
 ### Added
 
-- Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's R and magnifier are these places now
+- Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's R and magnifier are these places now
 
 - One search with a scope switch: `Files | Index` on the sidebar's search box and on the `/rag` page — Files is the search as before, Index searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); `R` opens the Index scope; on a phone the search box, results and the switch are 44px targets
 

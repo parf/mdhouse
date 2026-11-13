@@ -19,6 +19,8 @@ export const ASK_EVENT = 'mdhouse:ask-agent';
 export const ASK_STATE = 'mdhouse:ask-state';
 
 export interface NavState {
+  /** How many files are changed in the project (0 or unknown: no badge). */
+  changeCount?: number;
   /** The Agent Bus is on for the page on screen: a Markdown document of a project, not for a Viewer. */
   askAvailable: boolean;
   askOpen: boolean;
@@ -29,6 +31,9 @@ export interface NavState {
 
 /** Ask is there only when it can do something; the other three always are. */
 export const navItems = (s: Pick<NavState, 'askAvailable'>): NavId[] => NAV.filter((n) => n.id !== 'ask' || s.askAvailable).map((n) => n.id);
+
+/** The badge's text on Changes: the count, `99+` past two digits, nothing for none. */
+export const badgeText = (n: number | undefined): string => (!n || n < 1 ? '' : n > 99 ? '99+' : String(n));
 
 /** The one destination the user is at: the open Agent Bus panel, the Changes view, the index search, the open drawer — else none. */
 export function currentNav(s: NavState): NavId | null {

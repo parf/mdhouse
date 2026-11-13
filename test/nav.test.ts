@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { NAV, changesUrl, currentNav, navItems, onChanges, type NavState } from '../src/ui/nav';
+import { NAV, badgeText, changesUrl, currentNav, navItems, onChanges, type NavState } from '../src/ui/nav';
 
 const base: NavState = { askAvailable: true, askOpen: false, changes: false, rag: false, drawerOpen: false };
 
@@ -17,6 +17,9 @@ describe('the phone destinations', () => {
     expect(onChanges('?git')).toBe(false);
     expect(onChanges('?git=commits')).toBe(false);
     expect(onChanges('')).toBe(false);
+  });
+  test('the badge: nothing for none or unknown, the count, 99+', () => {
+    expect([badgeText(undefined), badgeText(0), badgeText(-1), badgeText(3), badgeText(99), badgeText(100)]).toEqual(['', '', '', '3', '99', '99+']);
   });
   test('one is current: the open Agent Bus panel, then Changes, the index search, the open drawer', () => {
     expect(currentNav(base)).toBeNull();

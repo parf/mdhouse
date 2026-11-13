@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { IconBus, IconDoc, IconGit, IconSearch } from './icons';
-import { NAV, changesUrl, currentNav, navItems, type NavId, type NavState } from './nav';
+import { NAV, badgeText, changesUrl, currentNav, navItems, type NavId, type NavState } from './nav';
 import { follow } from './PageHead';
 
 const ICON: Record<NavId, (p: { size?: number }) => preact.JSX.Element> = { files: IconDoc, changes: IconGit, search: IconSearch, ask: IconBus };
@@ -38,9 +38,17 @@ export function PhoneNav(props: Props) {
     <nav class="phone-nav" aria-label="Places">
       {NAV.filter((n) => ids.includes(n.id)).map(({ id, label, title }) => {
         const Icon = ICON[id];
+        const badge = id === 'changes' ? badgeText(props.changeCount) : '';
         const inner = (
           <>
-            <Icon size={20} />
+            <span class="nav-ico">
+              <Icon size={20} />
+              {badge && (
+                <b class="nav-badge" aria-label={`${props.changeCount} changed`}>
+                  {badge}
+                </b>
+              )}
+            </span>
             <span>{label}</span>
           </>
         );
