@@ -32,7 +32,7 @@ import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-
 import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
-import { allowedAddress, exposureOk, ipBytes, isLoopback, Users } from './lib/access';
+import { allowedAddress, exposedWhy, exposureOk, ipBytes, isLoopback, Users } from './lib/access';
 import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_REFUSED, type Actor, type RouteEntry } from './lib/authz';
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
@@ -730,10 +730,13 @@ export async function serve(opts: ServeOptions) {
   };
   /**
    * A write a Viewer refuses, before the handler reads anything; a blocked prefs file is refused the same
-   * way (`reason: blocked`). Root writability caps it again at the write itself.
+   * way (`reason: blocked`), and so is an exposed bind (`reason: exposed`, Q-R3-EXPOSE1). Root writability
+   * caps it again at the write itself.
    */
   const viewerGate = (h: Handler): Handler => (req) => {
-    if (prefs.mode() !== 'viewer') return h(req);
+    if (prefs.mode() !== 'viewer') {
+      return registry.exposed() ? noStore(json({ error: exposedWhy(hostname), reason: 'exposed' }, 403)) : h(req);
+    }
     const blocked = prefs.accessBlocked();
     return blocked
       ? noStore(json({ error: `read-only: prefs.json is ${blocked}`, reason: 'blocked' }, 403))

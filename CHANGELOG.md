@@ -4,6 +4,8 @@
 
 ### Added
 
+- Agent Bus out of the box: a new mdhouse config starts with `--agent-bus auto` — on while the login's Agent Bus socket exists, checked again on every request; an existing config keeps its value and an older mdhouse reads `auto` as off; the start line says `agent-bus: on — <socket> (found)`, `auto — not installed (no <path>)` or `off — found <socket>: mdhouse --agent-bus on`
+
 - Run flow: a button on a project's page runs a flow (package, range since the last run or from a commit, a preview, Confirm); the run document has a bar to supply evidence, answer questions and Complete, Block, Fail or Cancel it; a finished run records its last commit so the next one starts there. Not for a Viewer or a read-only project
 
 - `mdhouse docs` prints the one line to paste into a project's `AGENTS.md` (it points at `for-agents.md` on GitHub), then the installed reference path and the local raw URL for offline use (`--path`: the path alone)
@@ -22,7 +24,7 @@
 
 ### Changed
 
-- Served on a network address (`--host 0.0.0.0`, a LAN IP) with no users, no `--allow` list and no `--host-name`: every project is read-only, and the start line says why. To write again, add a user (`mdhouse user-add <login>`) or an allow list (`mdhouse --allow <cidr,…>`); a reverse proxy with `--host-name` works as before ([Access](doc/access.md#network-address--read-only-without-a-policy))
+- Served on a network address (`--host 0.0.0.0`, a LAN IP) with no users and no `--allow` list: every project is read-only — edits, git, flow runs, Agent Bus sends, author and marks are refused — and the start line says why. To write again, add a user (`mdhouse user-add <login>`) or an allow list (`mdhouse --allow <cidr,…>`); `--host-name` and a `/0` allow entry don't count. A reverse proxy on this host binds loopback and works as before ([Access](doc/access.md#network-address--read-only-without-a-policy))
 - The Q&A playground is a test fixture (`test/fixtures/qa-playground.md`), no longer part of the installed reference
 - `doc/skills/markup.md` is folded into `doc/agent-markup.md` (section “Suggested markup”); the old path stays as a short pointer
 - `doc/plans.md` is the portable Plans convention only; this repository's own commit rules are in `CLAUDE.md`

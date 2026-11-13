@@ -203,7 +203,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 
 ### Agent Bus
 
-`src/lib/agent-bus.ts` — [ab-integration.md](ab-integration.md). Off until `mdhouse --agent-bus` (prefs `agentBus.enabled`); every `/api/ab*` POST is 404 while off.
+`src/lib/agent-bus.ts` — [ab-integration.md](ab-integration.md). `agentBus.enabled` is `true`, `false` or `'auto'` — `auto` is the default of a NEW prefs file only (`fresh()`); an existing file keeps its value, an older mdhouse reads `'auto'` as off (`=== true`); `Prefs.agentBus` returns the effective `enabled` (auto: `accountSocket().found`, looked at on every call — `$XDG_RUNTIME_DIR/agent-bus/user-<login>.sock`, else `/run/agent-bus/…`; `MDHOUSE_AB_SOCKET_DIRS`, colon-separated, replaces that search for a sandbox or a test; `test/preload.ts` points it at nothing) and `stored` (the saved value); `--agent-bus on|off|auto|<sock>|<url>`; start/status line `abLine()`. Off: every `/api/ab*` POST is 404.
 
 - The daemon through `ai-agent-bus-sdk` (`connectBus`: every client option explicit) over its account socket (`user-<login>.sock`); or `http(s)://host:port` with `agentBus.token` (asked for by `--agent-bus <url>`, never in argv, never sent to the page)
 - mdhouse is its own agent `#mdhouse@<host>`: registered create-only (`If-None-Match: *`; 412 = there), canonical `tags: ["personal"]` and `allow: ["@owner"]` on creation; existing records keep owner settings, token minted, every call with it
@@ -409,7 +409,7 @@ handler; `Root.writable` caps again at the write. `instance-config`, `root-admin
 and a Viewer has no ADMIN-W1 local administrator (`isLocalAdmin`): only a minted `mdhouse admin` session. A blocked
 prefs file is a Viewer (`reason: 'blocked'`); `POST /api/settings` writes settings + `mode` in one mutate, blocked → 409.
 
-Exposure ([№Q-R3-EXPOSE1](R3/workspaces/DECISIONS.md#Q-R3-EXPOSE1)): `lib/access.ts` `exposureOk(bound, access)` — loopback bind, or users, `allow` or `hostNames` non-empty. Otherwise `registry.exposed()` caps `Root.writable` (live: `prefs.refresh()`), so `writeFile` refuses too; the CLI start line is `exposedNote`.
+Exposure ([№Q-R3-EXPOSE1](R3/workspaces/DECISIONS.md#Q-R3-EXPOSE1)): `lib/access.ts` `exposureOk(bound, access)` — loopback bind, users, or an `allow` list with no `/0` entry; `hostNames` never count (Host header only). Otherwise `registry.exposed()` caps `Root.writable` (live: `prefs.refresh()`, stat-based), so `writeFile` refuses too, and `viewerGate` refuses every `VIEWER_REFUSED` family → 403 `{reason: 'exposed'}` (`exposedWhy`); the CLI start line is `exposedNote`.
 
 Viewer UI (`ui/viewer-text.ts` pure strings/helpers, `ui/viewer.tsx` context + badge): `options.mode === 'viewer'` from
 `GET /api/settings`, re-read in every tab on a `roots` event and on any refused write (`reason: viewer` →

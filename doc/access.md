@@ -43,8 +43,11 @@ mdhouse --workspace     # projects writable by their own RW/RO again
 
 ## Network address — read-only without a policy
 
-- Served on an address other than loopback (`--host 0.0.0.0`, a LAN IP) with no users, no `--allow` and no `--host-name`: every project is read-only; the start line says why
-- To write: `mdhouse user-add <login>` or `mdhouse --allow <cidr,…>`; `--host-name` (a proxy on this host) counts too
+- Served on an address other than loopback (`--host 0.0.0.0`, a LAN IP) with no users and no `--allow`: every project is read-only; the start line says why
+- Read-only refuses every write a Viewer can't make — edits, git, flow runs, Agent Bus sends, author, marks — `403 {reason: 'exposed'}`
+- To write: `mdhouse user-add <login>` or `mdhouse --allow <cidr,…>`
+- `--host-name` doesn't count (it checks the Host header only); a proxy on this host binds loopback anyway
+- An allow list with a `/0` entry (`0.0.0.0/0`, `::/0`) doesn't count
 - Applies at once, like every access change
 
 ## No TLS — forward the port with ssh

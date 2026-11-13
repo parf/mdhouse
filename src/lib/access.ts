@@ -86,19 +86,25 @@ export function isLoopback(ip: number[]): boolean {
 }
 
 /**
- * Whether serving on `bound` may write: a loopback bind, or an explicit access policy — users, an
- * allow list, or host names (a proxy on this host). Otherwise every project is read-only (Q-R3-EXPOSE1).
+ * Whether serving on `bound` may write: a loopback bind, users, or an allow list that admits less than
+ * every address (no `/0` entry). Otherwise every project is read-only (Q-R3-EXPOSE1). Host names are no
+ * policy here: they check only the Host header, and a proxy on this host binds loopback (Q-R3-HOSTNAME1).
  */
-export function exposureOk(bound: string, access: { allow: string[]; users: Record<string, unknown>; hostNames: string[] }): boolean {
+export function exposureOk(bound: string, access: { allow: string[]; users: Record<string, unknown> }): boolean {
   const host = bound.toLowerCase();
   const ip = ipBytes(host);
   const loopback = host === 'localhost' || (ip !== null && isLoopback(ip));
-  return loopback || Object.keys(access.users).length > 0 || access.allow.length > 0 || access.hostNames.length > 0;
+  const narrows = access.allow.length > 0 && !access.allow.some((c) => parseCidr(c)?.prefix === 0);
+  return loopback || Object.keys(access.users).length > 0 || narrows;
 }
+
+/** Why an exposed bind is read-only, and the fix — one line, for a refused request. */
+export const exposedWhy = (bound: string): string =>
+  `read-only: served on ${bound} with no users or allow list — add a user (mdhouse user-add <login>) or an allow list (mdhouse --allow <cidr,…>)`;
 
 /** The start line for a bind `exposureOk` refuses: why every project is read-only, and the fix. */
 export const exposedNote = (bound: string): string =>
-  `\n  Read-only: served on ${bound} with no users, allow list or host names, so anyone on the network could write.` +
+  `\n  Read-only: served on ${bound} with no users or allow list, so anyone on the network could write.` +
   `\n  To write, add a user (mdhouse user-add <login>) or an allow list (mdhouse --allow <cidr,…>).`;
 
 /** May a request from `address` come in, by the allow list? An empty list allows everyone. */

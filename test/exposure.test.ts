@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { exposedNote, exposureOk, hashPassword } from '../src/lib/access';
+import { VIEWER_REFUSED } from '../src/lib/authz';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
@@ -19,10 +20,13 @@ describe('exposureOk (Q-R3-EXPOSE1, Q-R3-HOSTNAME1)', () => {
     for (const host of ['0.0.0.0', '::', '192.168.1.5', '10.0.0.1', 'myhost', 'myhost.local', '::ffff:192.168.1.5']) expect([host, exposureOk(host, none)]).toEqual([host, false]);
   });
 
-  test('users, an allow list or host names are each a policy', () => {
+  test('users or a narrowing allow list are a policy; host names and an allow-everything list are not', () => {
     expect(exposureOk('0.0.0.0', { ...none, users: { ann: 'h' } })).toBe(true);
     expect(exposureOk('0.0.0.0', { ...none, allow: ['192.168.1.0/24'] })).toBe(true);
-    expect(exposureOk('0.0.0.0', { ...none, hostNames: ['md.example'] })).toBe(true);
+    expect(exposureOk('0.0.0.0', { ...none, allow: ['10.0.0.5'] })).toBe(true);
+    const named = { ...none, hostNames: ['md.example'] };
+    expect(exposureOk('0.0.0.0', named)).toBe(false);
+    for (const allow of [['0.0.0.0/0'], ['::/0'], ['192.168.1.0/24', '0.0.0.0/0']]) expect([allow, exposureOk('0.0.0.0', { ...none, allow })]).toEqual([allow, false]);
   });
 
   test('the start line names the bind and the fix', () => {
@@ -60,10 +64,9 @@ describe('serve() on 0.0.0.0', () => {
       await prefs.setAllow([]);
       expect(root.writable).toBe(false);
 
-      await prefs.setHostNames(['md.example']);
-      expect(root.writable).toBe(true);
-      await prefs.setHostNames([]);
+      await prefs.setAllow(['0.0.0.0/0']);
       expect(root.writable).toBe(false);
+      await prefs.setAllow([]);
 
       await prefs.setUser('ann', await hashPassword('secret'));
       expect(root.writable).toBe(true);
@@ -76,6 +79,42 @@ describe('serve() on 0.0.0.0', () => {
       expect(root.writable).toBe(true);
       await cli.setAllow([]);
       expect(root.writable).toBe(false);
+    } finally {
+      s.server.stop(true);
+      s.watcher.close();
+      s.control?.stop();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('every family a Viewer refuses is refused while exposed (reason exposed); a Host name lets nothing through', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-expose-fam-')));
+    const proj = join(dir, 'proj');
+    await mkdir(proj);
+    await writeFile(join(proj, 'a.md'), '- [ ] t\n');
+    const prefs = await Prefs.load(join(dir, 'prefs.json'));
+    const registry = await Registry.create([{ path: proj, mode: 'rw' }]);
+    const port = testPort(61962);
+    const s = await serve({ registry, prefs, port, hostname: '0.0.0.0', noGit: true });
+    const origin = `http://127.0.0.1:${port}`;
+    try {
+      const refused = s.routes.filter((r) => r.family && VIEWER_REFUSED.has(r.family));
+      expect(refused.map((r) => r.family)).toEqual(expect.arrayContaining(['doc-write', 'external-send', 'attribution', 'shared-prefs', 'flow', 'git-write']));
+      for (const r of refused) {
+        const res = await fetch(origin + r.path, { method: 'POST', headers: { 'content-type': 'application/json', origin }, body: '{}' });
+        expect([r.path, res.status, ((await res.json()) as { reason?: string }).reason]).toEqual([r.path, 403, 'exposed']);
+      }
+      // #md/w2's probe: --host 0.0.0.0 --rw --host-name box.local, no users or allow list; a LAN client names the host.
+      await prefs.setHostNames(['box.local']);
+      expect(registry.list()[0]!.writable).toBe(false);
+      const probe = await fetch(`${origin}/api/task`, { method: 'POST', headers: { host: 'box.local', 'content-type': 'application/json' }, body: JSON.stringify({ p: `${registry.list()[0]!.id}/a.md`, line: 0, hash: 'x' }) });
+      expect([probe.status, ((await probe.json()) as { reason?: string }).reason]).toEqual([403, 'exposed']);
+      expect(await readFile(join(proj, 'a.md'), 'utf8')).toBe('- [ ] t\n');
+      // A policy lifts the refusal at once.
+      await prefs.setHostNames([]);
+      await prefs.setAllow(['192.168.0.0/16']);
+      const tick = await fetch(`${origin}/api/author`, { method: 'POST', headers: { 'content-type': 'application/json', origin }, body: JSON.stringify({ name: 'ann' }) });
+      expect(tick.status).toBe(200);
     } finally {
       s.server.stop(true);
       s.watcher.close();
