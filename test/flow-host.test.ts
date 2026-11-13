@@ -168,6 +168,31 @@ describe('startFlowRun', () => {
     expect(out.map((r) => (isFlowError(r) ? r.reason : r.status)).sort()).toEqual(['held', 'open-run']);
   });
 
+  test('a destination write waits for a start in progress: none lands between its re-plan and its write', async () => {
+    const t = await setup();
+    const p = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
+    const dest = (await t.registry.resolve(`${t.root.id}/${DEST}`))!;
+    const order: string[] = [];
+    let competitor: Promise<unknown> | null = null;
+    const deps: FlowHostDeps = {
+      ...t.deps,
+      git: {
+        ...t.deps.git,
+        // The start's re-plan reads HEAD inside its queues: a document write to the destination asks now.
+        head: (repo) => {
+          competitor ??= t.io.queue(dest.abs, async () => {
+            order.push('destination write');
+          });
+          return t.deps.git.head(repo);
+        },
+      },
+    };
+    const io: FlowWrite = { ...t.io, writeFile: async (path, text) => (order.push('run write'), t.io.writeFile(path, text)) };
+    expect(await startFlowRun(deps, io, { token: p.token, actor: tester })).toMatchObject({ status: 'held' });
+    await competitor;
+    expect(order).toEqual(['run write', 'destination write']);
+  });
+
   test('stale when HEAD or the uncommitted set moved since the preview', async () => {
     const t = await setup();
     const fresh = () => t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
