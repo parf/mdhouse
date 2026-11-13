@@ -79,3 +79,12 @@
   - [ ] untracked files in "Changes": listed, unticked by default
   - [ ] phone navigation = 4 labelled destinations: Files · Changes · Search · Ask
   - [ ] one Search with a scope switch Files | Index (the RAG page becomes "Index"; [R] stays as a shortcut)
+
+- ❓ Q-R3-AUTO1 MW.11 scheduled AI pipelines (design `Plans/R3/AUTOMATION.md` by #opencode/md-api; bus schedules fire a run in mdhouse). Temp CTO defaults — untick what you disagree with: <a id="Q-R3-AUTO1"></a>
+  - [x] v1 = analysis only: no code execution, commit or push
+  - [x] only the instance administrator registers a schedule; a Viewer never
+  - [x] auto-disable after 3 failures in a row; at most 10 runs a day per schedule
+  - [x] schedules live on the instance's `#mdhouse` record
+  - [x] QA v1 = review of documents and changes; running the project's tests comes later, approved separately
+  - [x] run results land in the project under `runs/` (visible, committable)
+  - [x] notify on the page, plus optionally one chosen agent
