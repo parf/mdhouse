@@ -18,6 +18,12 @@ mdhouse --allow reset             # every address again
 - Not allowed, or no login = access denied
 - Changes apply to a running mdhouse at once
 
+## Local administrator
+
+- No users configured: a request that reaches mdhouse from loopback is the administrator — no `mdhouse admin` needed
+- Loopback includes a proxy on this host (`--host-name` deployments too), `ssh -L` and other local OS users
+- To require a sign-in, configure users: `mdhouse user-add ann`
+
 ## No TLS — forward the port with ssh
 
 Basic auth sends the password in the clear. Across a network you do not trust, leave mdhouse

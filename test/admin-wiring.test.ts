@@ -64,10 +64,10 @@ describe('localExchange — actual loopback peer, exact local Host and Origin', 
 });
 
 /** An in-process server on `port` with its control socket, Basic users optional. */
-async function start(port: number, users: Record<string, string> = {}, localAdmin = false) {
+async function start(port: number, users: Record<string, string> = {}, localAdmin = false, hostNames: string[] = []) {
   const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-admin-')));
   await writeFile(join(base, 'a.md'), '# a\n');
-  await writeFile(join(base, 'prefs.json'), JSON.stringify({ access: { allow: [], users, hostNames: [] } }));
+  await writeFile(join(base, 'prefs.json'), JSON.stringify({ access: { allow: [], users, hostNames } }));
   const prefs = await Prefs.load(join(base, 'prefs.json'));
   const registry = await Registry.create([base, join(import.meta.dir, '../doc')]);
   const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true, localAdmin });
@@ -93,6 +93,18 @@ describe('local administrator (Personal, loopback peer)', () => {
       expect((await t.post('/api/settings', { editLink: false, autoRw: false })).status).toBe(200);
       // same-origin still comes first
       expect((await t.post('/api/settings', { editLink: true, autoRw: false }, { origin: 'http://evil.example' })).status).toBe(403);
+    } finally {
+      await t.stop();
+    }
+  });
+
+  test('no users: a loopback peer behind a host name and X-Forwarded-For is still the administrator', async () => {
+    const t = await start(61777, {}, true, ['notes.example']);
+    try {
+      const proxied = { host: 'notes.example', 'x-forwarded-for': '203.0.113.7' };
+      expect(await (await fetch(`${t.origin}/api/admin`, { headers: proxied })).json()).toEqual({ admin: true, local: true });
+      const res = await t.post('/api/settings', { editLink: false, autoRw: false }, { ...proxied, origin: 'http://notes.example' });
+      expect(res.status).toBe(200);
     } finally {
       await t.stop();
     }
