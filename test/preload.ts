@@ -10,3 +10,6 @@ process.env.XDG_CONFIG_HOME = mkdtempSync(join(tmpdir(), 'mdhouse-test-cfg-'));
 // (a new prefs file starts as `auto`, and the real daemon would turn the integration on). A test that needs a socket
 // names its own directory.
 process.env.MDHOUSE_AB_SOCKET_DIRS = join(mkdtempSync(join(tmpdir(), 'mdhouse-test-nobus-')), 'agent-bus');
+
+// Machine state (automation approvals, the run index) never lands in the real ~/.local/state/mdhouse.
+process.env.XDG_STATE_HOME = mkdtempSync(join(tmpdir(), 'mdhouse-test-state-'));
