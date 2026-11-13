@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { ApiError } from '../src/ui/api';
 import { automationApi } from '../src/ui/automation-api';
 import {
-  APPROVAL_WORDS, automationUrl, onAutomation, rangeWords, scheduleLine, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
+  APPROVAL_WORDS, actionFailure, automationUrl, latest, needsReapprove, onAutomation, rangeWords, REAPPROVE_WORDS, revokeNote, scheduleLine, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
   type AutoRegistration, type AutomationState,
 } from '../src/ui/automation-model';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
@@ -64,16 +64,51 @@ describe('what the page says', () => {
   test('approve and revoke are the administrator\'s, and only where they change something', () => {
     const admin = { canApprove: true } as AutomationState;
     const reader = { canApprove: false } as AutomationState;
-    expect([canApproveReg(admin, reg({ approval: 'none' })), canApproveReg(admin, reg({ approval: 'changed' })), canApproveReg(admin, reg({ approval: 'approved' })), canApproveReg(admin, reg({ approval: 'unknown' }))]).toEqual([true, true, false, false]);
-    expect([canRevokeReg(admin, reg({ approval: 'none' })), canRevokeReg(admin, reg({ approval: 'changed' })), canRevokeReg(admin, reg({ approval: 'approved' })), canRevokeReg(admin, reg({ approval: 'unknown' }))]).toEqual([false, true, true, false]);
-    for (const a of ['none', 'changed', 'approved', 'unknown'] as const) expect([canApproveReg(reader, reg({ approval: a })), canRevokeReg(reader, reg({ approval: a }))]).toEqual([false, false]);
+    const timer = { id: 's1', enabled: true };
+    expect([canApproveReg(admin, reg({ approval: 'none' })), canApproveReg(admin, reg({ approval: 'changed' })), canApproveReg(admin, reg({ approval: 'approved', schedule: timer })), canApproveReg(admin, reg({ approval: 'unknown' }))]).toEqual([true, true, false, false]);
+    // approved but the bus has no timer: it will not fire, so approving again is offered
+    expect(canApproveReg(admin, reg({ approval: 'approved', schedule: null }))).toBe(true);
+    expect([canRevokeReg(admin, reg({ approval: 'none' })), canRevokeReg(admin, reg({ approval: 'changed' })), canRevokeReg(admin, reg({ approval: 'approved', schedule: { id: 's1', enabled: true } })), canRevokeReg(admin, reg({ approval: 'unknown' }))]).toEqual([false, true, true, false]);
+    for (const a of ['none', 'changed', 'approved', 'unknown'] as const) expect([canApproveReg(reader, reg({ approval: a, schedule: null })), canRevokeReg(reader, reg({ approval: a }))]).toEqual([false, false]);
   });
   test('refusals: the page\'s words for stale and admin, the server\'s own for the rest', () => {
-    expect(autoReasonText('stale', 'x')).toMatch(/reload/);
+    expect(autoReasonText('stale', 'x')).toMatch(/changed while you were reviewing/);
     expect(autoReasonText('admin', 'x')).toMatch(/mdhouse admin/);
     expect(autoReasonText('exposed', 'x')).toMatch(/open to the network/);
     expect(autoReasonText(undefined, 'the bus is off')).toBe('the bus is off');
     expect(autoReasonText(undefined, 'fallback')).toBe('fallback');
+  });
+  test('a stale approve drops the review and keeps saying the file changed', () => {
+    const f = actionFailure('stale', 'the file changed');
+    expect(f.reset).toBe(true);
+    expect(f.text).toMatch(/file changed while you were reviewing.*review it, then approve/);
+    expect(actionFailure('invalid', 'not a registration')).toEqual({ text: 'not a registration', reset: false });
+    expect(actionFailure(undefined, 'the agent bus is off')).toEqual({ text: 'the agent bus is off', reset: false });
+  });
+  test('approved without a timer is its own state; a revoke that left a timer says so', () => {
+    expect(needsReapprove(reg({ approval: 'approved', schedule: null }))).toBe(true);
+    expect(needsReapprove(reg({ approval: 'approved' }))).toBe(true);
+    expect(needsReapprove(reg({ approval: 'approved', schedule: { id: 's', enabled: true } }))).toBe(false);
+    expect(needsReapprove(reg({ approval: 'none' }))).toBe(false);
+    expect(REAPPROVE_WORDS).toMatch(/approve again/);
+    expect(revokeNote({})).toBeNull();
+    expect(revokeNote({ scheduleError: 'the bus refused' })).toBe('Revoked here, but the bus timer could not be removed: the bus refused');
+  });
+  test('the latest request wins: a project switch or a newer load makes an older answer stale', () => {
+    const s = latest();
+    const a = s.next(); // project A's load
+    expect(s.current(a)).toBe(true);
+    const b = s.next(); // switched to project B
+    expect([s.current(a), s.current(b)]).toEqual([false, true]);
+    const again = s.next(); // a reload of B supersedes B's first
+    expect([s.current(b), s.current(again)]).toEqual([false, true]);
+  });
+  test('an exposed or bus-less instance offers nothing: canApprove false, whatever the registration says', () => {
+    const closed = { canApprove: false } as AutomationState;
+    for (const approval of ['none', 'changed', 'approved', 'unknown'] as const) {
+      expect(canApproveReg(closed, reg({ approval, schedule: null }))).toBe(false);
+      expect(canRevokeReg(closed, reg({ approval }))).toBe(false);
+    }
   });
   test('the page is a flag on the project\'s address', () => {
     expect(automationUrl('repo')).toBe('/repo/?automation');
@@ -124,6 +159,10 @@ describe('against the fake routes', () => {
     expect(await api().approve('p', 'weekly', 'a'.repeat(64))).toMatchObject({ approval: 'approved' });
     expect((await api().state('p')).registrations[0]!.approval).toBe('approved');
     expect(await api().revoke('p', 'weekly')).toEqual({ registration: 'weekly', approval: 'none' });
+  });
+  test('an error body is read only when the answer is not ok; an ok answer without a body is an error', async () => {
+    const e = await automationApi(base).state('nope').catch((x) => x);
+    expect([e instanceof ApiError, e.status, e.reason]).toEqual([true, 404, 'no-root']);
   });
   test('a stale hash, a bus that is off and an unknown project are refused with their reasons', async () => {
     expect((await api().approve('p', 'weekly', 'b'.repeat(64)).catch((e) => e)).reason).toBe('stale');

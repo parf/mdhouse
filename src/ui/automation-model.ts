@@ -127,11 +127,12 @@ export function willRun(reg: AutoRegistration): string[] {
 export const shortHash = (hash: string): string => hash.slice(0, 12);
 
 /** Approve is for an administrator, for a registration that is not already approved at its current hash. */
-export const canApproveReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval'>): boolean => state.canApprove && (reg.approval === 'none' || reg.approval === 'changed');
+export const canApproveReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval' | 'schedule'>): boolean =>
+  state.canApprove && (reg.approval === 'none' || reg.approval === 'changed' || needsReapprove(reg));
 export const canRevokeReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval'>): boolean => state.canApprove && (reg.approval === 'approved' || reg.approval === 'changed');
 
 const REASON_WORDS: Partial<Record<AutoReason, string>> = {
-  stale: 'The file changed since this page loaded: reload to see what it says now.',
+  stale: 'The file changed while you were reviewing it. It is shown again below — review it, then approve.',
   admin: 'Only the administrator sees and approves scheduled runs — sign in with mdhouse admin.',
   exposed: 'This mdhouse is open to the network: scheduled runs are managed only from the machine it runs on.',
   'no-root': 'That project is not served.',
@@ -141,6 +142,24 @@ const REASON_WORDS: Partial<Record<AutoReason, string>> = {
 export const autoReasonText = (reason: string | undefined, fallback: string): string => (reason && REASON_WORDS[reason as AutoReason]) || fallback;
 
 /** The page: a flag on the project's own address, like `?git`, so it needs no server route. */
+/** What the page does with a refused approve or revoke: `stale` means the file changed under the open review, so that review is dropped and the page reads again — keeping the message. */
+export function actionFailure(reason: string | undefined, message: string): { text: string; reset: boolean } {
+  return { text: autoReasonText(reason, message), reset: reason === 'stale' };
+}
+
+/** Approved, but the bus has no timer for it (the schedule was removed or lost): it will not fire until approved again. */
+export const needsReapprove = (reg: Pick<AutoRegistration, 'approval' | 'schedule'>): boolean => reg.approval === 'approved' && !reg.schedule;
+export const REAPPROVE_WORDS = 'approved, but the bus has no timer for it — approve again to make one';
+
+/** What a revoke leaves to say: the bus timer that could not be removed. */
+export const revokeNote = (r: { scheduleError?: string }): string | null => (r.scheduleError ? `Revoked here, but the bus timer could not be removed: ${r.scheduleError}` : null);
+
+/** The latest request wins: a project switch or a newer load makes an older answer stale. */
+export function latest() {
+  let n = 0;
+  return { next: (): number => ++n, current: (k: number): boolean => k === n };
+}
+
 export const automationUrl = (rootId: string): string => `/${rootId}/?automation`;
 /** Whether an address's query asks for it. */
 export const onAutomation = (search: string): boolean => new URLSearchParams(search).has('automation');

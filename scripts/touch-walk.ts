@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only), automationreal (real routes, needs a sandbox bus), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only; TW_STALE=1 answers the first approve with stale), automationreal (real routes, needs a sandbox bus), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -20,11 +20,12 @@ const send = (method: string, params: object = {}) => new Promise<any>((r) => { 
 // The flow step answers /api/flow/* itself (a fake of the contract, stateful for the run bar) until the real routes are on main.
 const bar: any = { version: 1, status: 'running', ev: 'missing', q: 'unanswered', events: [] as any[] };
 const docFlow = () => ({ runId: 'r1', version: bar.version, status: bar.status, node: { id: 'review', title: 'Review the commits', outcomes: ['complete', 'blocked', 'failed'] }, holds: bar.q === 'unanswered' ? ['A required question is open'] : [], evidence: [{ label: 'git log', status: bar.ev, note: '', required: true }], questions: [{ id: 'Q1', title: 'Is the baseline right?', required: true, status: bar.q }], canAct: bar.status === 'running' || bar.status === 'held' });
-const auto: any = { approved: false, can: process.env.TW_CAN !== '0' };
-const autoState = () => ({ root: 'repo', canApprove: auto.can, errors: [{ file: 'bad.json', error: 'unknown key "command"' }], registrations: [{ id: 'weekly', file: '.mdhouse/automation/weekly.json', flow: 'recent-commits-review', range: 'since-last-run', when: { cron: '30 8 * * 1-5' }, maxLate: '1h', overlap: 'skip', notify: '#claude/x@host', hash: 'ab12cd34'.repeat(8), approval: auto.approved ? 'approved' : 'none', disabled: false, failures: 0, startedToday: 1, lastStartAt: new Date(Date.now() - 3600_000).toISOString(), runs: [{ at: '2026-11-13T08:30:05Z', outcome: 'refused', why: 'not approved' }, { at: '2026-11-12T08:30:05Z', outcome: 'started', status: 'held' }] }] });
+const auto: any = { approved: false, can: process.env.TW_CAN !== '0', hash: 'ab12cd34'.repeat(8), staleOnce: process.env.TW_STALE === '1' };
+const autoState = () => ({ root: 'repo', canApprove: auto.can, errors: [{ file: 'bad.json', error: 'unknown key "command"' }], registrations: [{ id: 'weekly', file: '.mdhouse/automation/weekly.json', flow: 'recent-commits-review', range: 'since-last-run', when: { cron: '30 8 * * 1-5' }, maxLate: '1h', overlap: 'skip', notify: '#claude/x@host', hash: auto.hash, approval: auto.approved ? 'approved' : 'none', schedule: auto.approved ? { id: 'sch1', enabled: true, next: '2026-11-14T08:30:00Z' } : null, disabled: false, failures: 0, startedToday: 1, lastStartAt: new Date(Date.now() - 3600_000).toISOString(), runs: [{ at: '2026-11-13T08:30:05Z', outcome: 'refused', why: 'not approved' }, { at: '2026-11-12T08:30:05Z', outcome: 'started', status: 'held' }] }] });
 const fake = async (p: any) => {
   if (new URL(p.request.url).pathname.startsWith('/api/automation')) {
     const path = new URL(p.request.url).pathname; let out: any = autoState();
+    if (path.endsWith('/approve') && auto.staleOnce) { auto.staleOnce = false; auto.hash = 'ff00ee11'.repeat(8); return send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: 409, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body: Buffer.from(JSON.stringify({ error: 'the file changed', reason: 'stale' })).toString('base64') }); }
     if (path.endsWith('/approve')) { auto.approved = true; out = { registration: 'weekly', approval: 'approved', hash: 'x' }; }
     if (path.endsWith('/revoke')) { auto.approved = false; out = { registration: 'weekly', approval: 'none' }; }
     return send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: 200, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body: Buffer.from(JSON.stringify(out)).toString('base64') });
@@ -398,11 +399,20 @@ if (only.includes('automation')) {
     await tap('.auto-actions .rag-act', 0);
     say('  confirm: ' + await ev("[...document.querySelectorAll('.auto-confirm li')].map(l => l.textContent).join(' ; ')"));
     await audit('automation-confirm');
+    const before = await ev("document.querySelector('.auto-confirm code')?.textContent");
     await tap('.auto-confirm .rag-act.primary', 0);
     await sleep(900);
+    if (process.env.TW_STALE === '1') {
+      say('  stale: error "' + await ev("document.querySelector('.auto .settings-error[role=alert]')?.textContent") + '"; review panel open ' + await ev("!!document.querySelector('.auto-confirm')") + '; hash ' + before + ' -> ' + await ev("document.querySelector('.auto-facts code[title]')?.textContent"));
+      await audit('automation-stale');
+      await tap('.auto-actions .rag-act', 0);
+      say('  review again shows: ' + await ev("document.querySelector('.auto-confirm code')?.textContent"));
+      await tap('.auto-confirm .rag-act.primary', 0);
+      await sleep(900);
+    }
     say('  after approve: ' + await ev("document.querySelector('.auto-state')?.textContent + ' | buttons ' + [...document.querySelectorAll('.auto-actions .rag-act')].map(b => b.textContent.trim()).join(' | ')"));
     await audit('automation-approved');
-    await tap('.auto-actions .rag-act', 0);
+    await tap('.auto-actions .rag-act:last-child', 0);
     await sleep(900);
     say('  after revoke: ' + await ev("document.querySelector('.auto-state')?.textContent"));
   }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError } from './api';
 import { automationApi } from './automation-api';
 import {
-  APPROVAL_WORDS, autoReasonText, canApproveReg, canRevokeReg, rangeWords, runLine, scheduleLine, shortHash, whenWords, willRun,
+  APPROVAL_WORDS, REAPPROVE_WORDS, actionFailure, autoReasonText, canApproveReg, canRevokeReg, latest, needsReapprove, rangeWords, revokeNote, runLine, scheduleLine, shortHash, whenWords, willRun,
   type AutoRegistration, type AutomationState,
 } from './automation-model';
 import { Ago } from './Ago';
@@ -19,47 +19,66 @@ interface Props {
 export function AutomationPage({ rootId, rootName, gear }: Props) {
   const [state, setState] = useState<AutomationState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const going = useRef(false);
+  /** One request counter for the page: a project switch, or a newer load, makes an older answer stale. */
+  const seq = useRef(latest());
+  const gen = useRef(0);
 
-  const load = () => {
-    let live = true;
-    setError(null);
+  const load = (keep = false) => {
+    const mine = seq.current.next();
+    if (!keep) setError(null);
     api.state(rootId).then(
-      (s) => live && setState(s),
+      (s) => seq.current.current(mine) && setState(s),
       (e: ApiError) => {
-        if (!live) return;
+        if (!seq.current.current(mine)) return;
         setState(null);
         setError(autoReasonText(e.reason, e.message));
       },
     );
-    return () => {
-      live = false;
-    };
   };
   useEffect(() => {
+    gen.current++;
+    going.current = false;
     setState(null);
     setAsking(null);
-    return load();
+    setBusy(false);
+    setError(null);
+    setNote(null);
+    load();
+    return () => void seq.current.next();
   }, [rootId]);
 
-  const act = async (what: () => Promise<unknown>) => {
+  const act = async (what: () => Promise<{ scheduleError?: string } | unknown>) => {
     if (going.current) return;
     going.current = true;
+    const g = gen.current;
     setBusy(true);
     setError(null);
+    setNote(null);
     try {
-      await what();
+      const result = await what();
+      if (g !== gen.current) return;
       setAsking(null);
+      setNote(revokeNote((result ?? {}) as { scheduleError?: string }));
       load();
     } catch (e) {
+      if (g !== gen.current) return;
       const err = e as ApiError;
-      setError(autoReasonText(err.reason, err.message));
-      if (err.reason === 'stale') load();
+      const failure = actionFailure(err.reason, err.message);
+      setError(failure.text);
+      if (failure.reset) {
+        // The file changed under the review: drop it, read again, and keep saying so — a fresh Review shows the new one.
+        setAsking(null);
+        load(true);
+      }
     } finally {
-      going.current = false;
-      setBusy(false);
+      if (g === gen.current) {
+        going.current = false;
+        setBusy(false);
+      }
     }
   };
 
@@ -76,6 +95,11 @@ export function AutomationPage({ rootId, rootName, gear }: Props) {
       {error && (
         <p class="settings-error" role="alert">
           {error}
+        </p>
+      )}
+      {note && (
+        <p class="settings-hint" role="status">
+          {note}
         </p>
       )}
       {!state && !error && <div class="spinner" />}
@@ -144,7 +168,7 @@ function Registration({ reg, state, asking, busy, onAsk, onApprove, onRevoke }: 
         </dd>
         <dt>State</dt>
         <dd>
-          {APPROVAL_WORDS[reg.approval]}
+          {needsReapprove(reg) ? REAPPROVE_WORDS : APPROVAL_WORDS[reg.approval]}
           {reg.approved && (
             <>
               {' '}
@@ -169,7 +193,7 @@ function Registration({ reg, state, asking, busy, onAsk, onApprove, onRevoke }: 
         <div class="auto-actions">
           {canApproveReg(state, reg) && (
             <button type="button" class="rag-act" aria-expanded={asking} disabled={busy} onClick={onAsk}>
-              {reg.approval === 'changed' ? 'Review and approve again' : 'Review and approve'}
+              {reg.approval === 'changed' || needsReapprove(reg) ? 'Review and approve again' : 'Review and approve'}
             </button>
           )}
           {canRevokeReg(state, reg) && (
