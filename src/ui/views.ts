@@ -94,6 +94,30 @@ export function tabFiles<T extends { rel: string; size: number; ignored?: boolea
   return files.filter((f) => f.size > 0 && (!entries || (inViewTab(f, entries, showIgnored) && !f.marks?.includes('muted'))));
 }
 
+const TAB_KEY = 'mdhouse.sidebar.tab';
+const TABS = ['files', 'favorites', 'recent', 'mine', ...VIEW_IDS] as const;
+
+/** The remembered sidebar tab; anything unknown, or no storage, is All files. */
+export function loadTab(): (typeof TABS)[number] {
+  try {
+    const v = localStorage.getItem(TAB_KEY);
+    return TABS.find((t) => t === v) ?? 'files';
+  } catch {
+    return 'files';
+  }
+}
+
+export function saveTab(tab: string): void {
+  try {
+    localStorage.setItem(TAB_KEY, tab);
+  } catch {
+    /* private window: the tab lasts for this page */
+  }
+}
+
+/** A V tab whose view is empty has nothing to show: back to All files. */
+export const usableTab = <T extends string>(tab: T, views: RootViews): T | 'files' => ((tab === 'V1' || tab === 'V2') && !views[tab as ViewId].length ? 'files' : tab);
+
 /** A short warning when the reveal is incomplete — selections over the request limits, folders cut by the server — else null. */
 export function revealNote(omitted: number, capped: string[] = []): string | null {
   const parts = [

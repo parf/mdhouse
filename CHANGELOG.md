@@ -46,6 +46,7 @@
 
 ### Fixed
 
+- The sidebar tab is remembered across a reload (per browser); a V1/V2 tab whose view is empty opens as All files
 - Views: on a phone the bottom bar's Files no longer turns a V1/V2 tab into every file — the drawer keeps the tab it was left on (a V tab lists only its own selection; a unit test now holds that for files and folders, with the open document inside or outside it)
 
 - mdhouse's own config folder (prefs, password hashes, control sockets, the flow seal key) is never served, even when a served folder holds it (`mdhouse ~`)

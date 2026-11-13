@@ -10,7 +10,7 @@ import { StoredRwTag, ViewerBadge, ViewerContext } from './ui/viewer';
 import { isViewer, VIEWER_DENIED } from './ui/viewer-text';
 import { parentScope } from './ui/git-state';
 import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from './ui/doc-refresh';
-import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
+import { loadTab, loadViews, saveTab, usableTab, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
 import { ViewChips } from './ui/ViewChips';
 import type { RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
@@ -96,7 +96,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   // On a phone the sidebar is a drawer over the page: it starts closed, whatever a wider screen saved, and its state is not saved there.
   const [sidebar, setSidebar] = useState<SidebarState>(() => (narrowScreen() ? 'off' : load<SidebarState>(LS_STATE, 'compact')));
   const [showIgnored, setShowIgnored] = useState(() => load(LS_IGNORED, false));
-  const [tab, setTab] = useState<Tab>('files');
+  const [tab, setTab] = useState<Tab>(loadTab);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   /** Bumped by every live event, so the front page can refetch without a prop for each field. */
   const [revision, setRevision] = useState(0);
@@ -549,6 +549,16 @@ function App({ entry: first }: { entry: AdminEntry }) {
     if (revealFirst.current) revealFirst.current = false;
     else void reloadTree();
   }, [revealKey]);
+  // the remembered tab is kept when its view still holds something here, else All files
+  const tabChecked = useRef(false);
+  useEffect(() => {
+    if (!rootId || tabChecked.current) return;
+    tabChecked.current = true;
+    setTab((t) => usableTab(t, views[rootId] ?? noViews()));
+  }, [rootId]);
+  useEffect(() => {
+    if (tabChecked.current) saveTab(tab);
+  }, [tab]);
   const toggleView = (root: string, id: ViewId, item: string) =>
     setViews((all) => {
       const mine = all[root] ?? noViews();

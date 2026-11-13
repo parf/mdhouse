@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { inView, inViewTab, MAX_REVEAL, noViews, revealNote, revealScopes, scopeOf, tabFiles, toggle } from '../src/ui/views';
+import { inView, inViewTab, MAX_REVEAL, noViews, revealNote, revealScopes, scopeOf, tabFiles, loadTab, saveTab, usableTab, toggle } from '../src/ui/views';
 import { buildTree, type Node } from '../src/ui/tree-model';
 import type { FileEntry } from '../src/lib/store';
 
@@ -154,5 +154,28 @@ describe('a V tab is its selection only', () => {
 
   test('without entries (All files) every non-empty file', () => {
     expect(rels(null)).toHaveLength(files.length - 1);
+  });
+});
+
+describe('the remembered sidebar tab', () => {
+  const store = new Map<string, string>();
+  const ls = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
+  test('saved and restored; unknown or unavailable storage is All files', () => {
+    (globalThis as any).localStorage = ls;
+    expect(loadTab()).toBe('files');
+    saveTab('V2');
+    expect(loadTab()).toBe('V2');
+    store.set('mdhouse.sidebar.tab', 'nonsense');
+    expect(loadTab()).toBe('files');
+    (globalThis as any).localStorage = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } };
+    expect(loadTab()).toBe('files');
+    expect(() => saveTab('V1')).not.toThrow();
+    delete (globalThis as any).localStorage;
+  });
+  test('a V tab with an empty view falls back to All files', () => {
+    const v = { ...noViews(), V2: ['a.md'] };
+    expect(usableTab('V1', v)).toBe('files');
+    expect(usableTab('V2', v)).toBe('V2');
+    expect(usableTab('recent', v)).toBe('recent');
   });
 });
