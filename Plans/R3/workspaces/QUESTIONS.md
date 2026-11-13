@@ -86,5 +86,5 @@
   - [x] auto-disable after 3 failures in a row; at most 10 runs a day per schedule
   - [x] schedules live on the instance's `#mdhouse` record
   - [x] QA v1 = review of documents and changes; running the project's tests comes later, approved separately
-  - [x] run results land in the project under `runs/` (visible, committable)
+  - [x] run results land in the project under `Plans/flows/runs/` (visible, committable) — same place as manual runs (MW.3.3)
   - [x] notify on the page, plus optionally one chosen agent
