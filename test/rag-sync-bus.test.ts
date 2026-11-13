@@ -28,6 +28,8 @@ function fakeDaemon(o: {
   self?: string;
   config?: unknown;
   send?: (msg: Msg) => Response | undefined;
+  /** Status every key-value route answers with instead of working. */
+  kvStatus?: number;
   reply?: (msg: Msg, id: string) => Msg[];
   mode?: number;
 } = {}) {
@@ -37,6 +39,7 @@ function fakeDaemon(o: {
   const calls: string[] = [];
   const sent: Msg[] = [];
   const queue: Msg[] = [];
+  const kv = new Map<string, unknown>();
   const clock = { t: 1_000_000 };
   const server = Bun.serve({
     unix: socket,
@@ -63,6 +66,26 @@ function fakeDaemon(o: {
         for (const e of o.reply?.(msg, id) ?? []) queue.push({ topic: msg.topic, tag: msg.tag, to: ME, from: msg.to, ...e });
         return Response.json({ message_id: id, from: ME, to: msg.to, topic: msg.topic, tag: msg.tag });
       }
+      if (route.includes(' /kv') && o.kvStatus) return Response.json({ error: 'refused', kind: 'acl' }, { status: o.kvStatus });
+      if (route === 'GET /kv') {
+        const key = `${url.searchParams.get('kind')}:${url.searchParams.get('name')}`;
+        return kv.has(key) ? Response.json({ value: kv.get(key) }) : Response.json({ error: 'no such name', kind: 'not_found' }, { status: 404 });
+      }
+      if (route === 'POST /kv/set') {
+        const b = (await req.json()) as Msg;
+        const key = `${b.kind}:${b.name}`;
+        if (b.how === 'add' && kv.has(key)) return Response.json({ error: 'name taken', kind: 'name-taken' }, { status: 412 });
+        kv.set(key, b.value);
+        return Response.json({ record: b.record, kind: b.kind, name: b.name });
+      }
+      if (route === 'POST /kv/delete') {
+        const b = (await req.json()) as Msg;
+        return Response.json({ deleted: kv.delete(`${b.kind}:${b.name}`) });
+      }
+      if (route === 'GET /kv/list') {
+        const of = (kind: string) => [...kv.keys()].filter((k) => k.startsWith(`${kind}:`)).map((k) => ({ name: k.slice(kind.length + 1), size: 2, preview: '{}' }));
+        return Response.json({ values: { string: of('string'), int: of('int'), json: of('json') } });
+      }
       if (route === 'GET /consume') {
         const topic = url.searchParams.get('topic');
         const tag = url.searchParams.get('tag');
@@ -84,6 +107,7 @@ function fakeDaemon(o: {
     socket,
     calls,
     sent,
+    kv,
     clock,
     root,
     stop: () => server.stop(true),
@@ -187,6 +211,63 @@ describe('ownerConfig', () => {
     const d = fakeDaemon({ config });
     try {
       await refused((await d.open()).ownerConfig(FS), 'config');
+    } finally {
+      d.stop();
+    }
+  });
+});
+
+describe('store — the agent\'s own JSON key-value store and log', () => {
+  test('add, get, set, delete and names, each as the agent on its own record and the json kind', async () => {
+    const d = fakeDaemon();
+    try {
+      const { store } = await d.open();
+      expect(await store.get('rag/last/a')).toBeNull();
+      expect(await store.add('rag/last/a', { v: 1 })).toBe(true);
+      expect(await store.add('rag/last/a', { v: 2 })).toBe(false);
+      expect(await store.get('rag/last/a')).toEqual({ v: 1 });
+      await store.set('rag/last/a', { v: 3 });
+      expect(await store.get('rag/last/a')).toEqual({ v: 3 });
+      await store.set('rag/hist/a/1', {});
+      d.kv.set('string:rag/hist/a/str', 'x');
+      expect(await store.names('rag/hist/a/')).toEqual(['rag/hist/a/1']);
+      expect(await store.delete('rag/hist/a/1')).toBe(true);
+      expect(await store.delete('rag/hist/a/1')).toBe(false);
+      expect([...d.kv.keys()].sort()).toEqual(['json:rag/last/a', 'string:rag/hist/a/str']);
+      expect(d.calls.filter((c) => c.includes('/kv')).every((c) => c.endsWith(' +token'))).toBe(true);
+    } finally {
+      d.stop();
+    }
+  });
+
+  test('a refused store is a store step with the status, never the token', async () => {
+    const d = fakeDaemon({ kvStatus: 403 });
+    try {
+      const { store } = await d.open();
+      for (const run of [() => store.get('k'), () => store.add('k', {}), () => store.set('k', {}), () => store.delete('k'), () => store.names('k')]) await refused(run(), 'store');
+      await expect(store.get('k')).rejects.toThrow('store: HTTP 403');
+    } finally {
+      d.stop();
+    }
+  });
+
+  test('log writes one line to the agent log through #bus and waits for no answer', async () => {
+    const d = fakeDaemon();
+    try {
+      const { store } = await d.open();
+      await store.log('warning', 'rag-sync notes/md: incomplete, 2 remaining');
+      expect(d.sent).toHaveLength(1);
+      expect(d.sent[0]).toMatchObject({ to: '#bus', body: `write ${ME} warning rag-sync notes/md: incomplete, 2 remaining` });
+      expect(d.sent[0]).not.toHaveProperty('wait');
+    } finally {
+      d.stop();
+    }
+  });
+
+  test('a log the daemon refuses is a log step', async () => {
+    const d = fakeDaemon({ send: () => Response.json({ error: 'no', kind: 'acl' }, { status: 403 }) });
+    try {
+      await refused((await d.open()).store.log('notice', 'x'), 'log');
     } finally {
       d.stop();
     }

@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { RagBusError, type BusOptions, type RagBus } from '../src/lib/rag-sync-bus';
+import { RagBusError, type BusOptions, type RagBus, type RagStore } from '../src/lib/rag-sync-bus';
 import { BACKOFF, citeRecords, STALLED_ROUNDS, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
 
 const base = mkdtempSync(join(tmpdir(), 'mdhouse-rag-sync-'));
@@ -290,19 +290,37 @@ describe('sync and search through the runtime, against a fake bus', () => {
     limits: { body_bytes: 1048576, record_bytes: 1, data_bytes: 32768, chunks: 1, embedding_scalars: 1, query_bytes: 1024, page_records: 16, catalogue_bytes: 1, namespaces: 1, tables_per_namespace: 1 },
   };
   type Req = { target: string; body?: unknown; ask?: string };
+  /** The agent's KV and log, in memory; `down` makes every step fail as an unreachable daemon would. */
+  const memStore = (down = false) => {
+    const kv = new Map<string, Record<string, unknown>>();
+    const logs: Array<[string, string]> = [];
+    const gate = () => {
+      if (down) throw new RagBusError('store', 'daemon unreachable');
+    };
+    const store: RagStore = {
+      get: async (n) => (gate(), kv.has(n) ? structuredClone(kv.get(n)!) : null),
+      add: async (n, v) => (gate(), kv.has(n) ? false : (kv.set(n, structuredClone(v)), true)),
+      set: async (n, v) => (gate(), void kv.set(n, structuredClone(v))),
+      delete: async (n) => (gate(), kv.delete(n)),
+      names: async (prefix) => (gate(), [...kv.keys()].filter((k) => k.startsWith(prefix))),
+      log: async (level, text) => (gate(), void logs.push([level, text])),
+    };
+    return { store, kv, logs };
+  };
   /** A RagBus whose answers come from `answer`; records every request. */
-  const fakeBus = (root: string, answer: (r: Req) => unknown, config: Record<string, unknown> = {}) => {
+  const fakeBus = (root: string, answer: (r: Req) => unknown, config: Record<string, unknown> = {}, mem = memStore()) => {
     const reqs: Req[] = [];
     const openBus = async (o: BusOptions): Promise<RagBus> => ({
       me: '#mdhouse@box',
       account: 'parf',
+      store: mem.store,
       ownerConfig: async (filescan) => ({ filescan, root: o.root, config: { dir: root, include: ['*.md'], exclude: EXCL, namespace: 'notes', table: 'md', mode: 'demand', ...config } }),
       request: async (r) => {
         reqs.push(r);
         return answer(r) as never;
       },
     });
-    return { reqs, openBus };
+    return { reqs, openBus, mem };
   };
   const reply = (v: unknown) => ({ kind: 'reply', body: typeof v === 'string' ? v : JSON.stringify(v) });
   const preflightThen = (sync: unknown) => (r: Req) =>
@@ -514,6 +532,117 @@ describe('sync and search through the runtime, against a fake bus', () => {
       expect(await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus, sleep: async () => {} })).toBe(EXIT.runtime);
       expect(t.syncCount()).toBe(1);
       expect(a.err.join('')).toContain('owner config: unavailable');
+    });
+  });
+
+  describe('source registry, history and log on the agent\'s KV', () => {
+    const done = (result: string, confirmed: number, remaining: number, files: unknown[] = []) => reply({ result, confirmed, remaining, capped: false, sent: 1, files });
+    const confirmed1 = done('confirmed', 1, 0);
+    const hist = (mem: ReturnType<typeof memStore>) => [...mem.kv.entries()].filter(([k]) => k.startsWith('rag/hist/notes/md/'));
+    const sync = (root: string, bus: ReturnType<typeof fakeBus>, ...extra: string[]) => run(['sync', '--root', root, ...TARGET, '--apply', ...extra], bus);
+
+    test('the first sync registers the source and records the run and one notice; the next finds it', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const mem = memStore();
+      const bus = fakeBus(root, preflightThen(confirmed1), {}, mem);
+      expect((await sync(root, bus)).code).toBe(EXIT.ok);
+      expect(mem.kv.get('rag/source/notes/md')).toMatchObject({ v: 1, filescan: '#filescan/notes@box', rag: '#rag/notes@box', namespace: 'notes', table: 'md', by: '#mdhouse@box', root: { path: (await inventory(root)).root.path } });
+      expect(mem.kv.get('rag/last/notes/md')).toMatchObject({ v: 1, rounds: 1, untilDone: false, result: 'confirmed', exit: 0, confirmed: 1, remaining: 0, sent: 1 });
+      expect(hist(mem)).toHaveLength(1);
+      expect(hist(mem)[0]![0]).toMatch(/^rag\/hist\/notes\/md\/\d{8}T\d{6}Z-[0-9a-f]{4}$/);
+      expect(mem.logs).toEqual([['notice', 'rag-sync notes/md: confirmed 1 files in 1 rounds']]);
+      const created = (mem.kv.get('rag/source/notes/md') as { createdAt: string }).createdAt;
+      expect((await sync(root, bus)).code).toBe(EXIT.ok);
+      expect(hist(mem)).toHaveLength(2);
+      expect((mem.kv.get('rag/source/notes/md') as { createdAt: string }).createdAt).toBe(created);
+    });
+
+    test('a source the registry holds for another folder is refused before anything is sent', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const mem = memStore();
+      mem.kv.set('rag/source/notes/md', { v: 1, root: { path: '/somewhere/else' }, filescan: '#filescan/notes@box', rag: '#rag/notes@box', namespace: 'notes', table: 'md' });
+      const bus = fakeBus(root, preflightThen(confirmed1), {}, mem);
+      const r = await sync(root, bus);
+      expect(r.code).toBe(EXIT.runtime);
+      expect(r.out).toBe('');
+      expect(r.err).toContain('another folder, FileScan or RAG; nothing was sent');
+      expect(bus.reqs).toEqual([]);
+      expect([...mem.kv.keys()]).toEqual(['rag/source/notes/md']);
+      expect(mem.logs).toEqual([['alert', 'rag-sync notes/md: refused, the registry holds another folder, FileScan or RAG for it']]);
+    });
+
+    test('a failed or unfinished sync is recorded with its exit, its unconfirmed files and a warning', async () => {
+      const root = tree({ 'a.md': 'a', 'b.md': 'b' });
+      const mem = memStore();
+      const bus = fakeBus(root, preflightThen(done('failed', 1, 1, [{ path: 'b.md', state: 'failed', reason: 'refused' }])), {}, mem);
+      expect((await sync(root, bus)).code).toBe(EXIT.runtime);
+      expect(mem.kv.get('rag/last/notes/md')).toMatchObject({ result: 'failed', exit: EXIT.runtime, confirmed: 1, remaining: 1 });
+      expect(hist(mem)[0]![1]).toMatchObject({ files: [{ path: 'b.md', state: 'failed' }] });
+      expect(mem.kv.get('rag/last/notes/md')).not.toHaveProperty('files');
+      expect(mem.logs).toEqual([['warning', 'rag-sync notes/md: failed, 1 remaining']]);
+    });
+
+    test('--until-done records its rounds once; giving up is an alert', async () => {
+      const root = tree({ 'a.md': 'a', 'b.md': 'b' });
+      const mem = memStore();
+      const bus = fakeBus(root, preflightThen(done('incomplete', 1, 1)), {}, mem);
+      const a = io();
+      const code = await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus: bus.openBus, sleep: async () => {} });
+      expect(code).toBe(EXIT.incomplete);
+      expect(mem.kv.get('rag/last/notes/md')).toMatchObject({ untilDone: true, result: 'incomplete', exit: EXIT.incomplete, rounds: 12 });
+      expect(hist(mem)).toHaveLength(1);
+      expect(mem.logs).toEqual([['alert', 'rag-sync notes/md: gave up after 3 rounds at the 15 min wait']]);
+    });
+
+    test('--until-done confirmed after some rounds: one notice with the rounds', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const mem = memStore();
+      const syncs = [done('incomplete', 0, 1), confirmed1];
+      const bus = fakeBus(root, (r) => (typeof r.body === 'string' && r.body.startsWith('sync ') ? syncs.shift() : preflightThen(null)(r)), {}, mem);
+      const a = io();
+      expect(await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus: bus.openBus, sleep: async () => {} })).toBe(EXIT.ok);
+      expect(mem.kv.get('rag/last/notes/md')).toMatchObject({ rounds: 2, result: 'confirmed' });
+      expect(mem.logs).toEqual([['notice', 'rag-sync notes/md: confirmed 1 files in 2 rounds']]);
+    });
+
+    test('an unreachable KV is said once and changes neither the result, the output nor the exit', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const up = fakeBus(root, preflightThen(confirmed1));
+      const down = fakeBus(root, preflightThen(confirmed1), {}, memStore(true));
+      const good = await sync(root, up);
+      const bad = await sync(root, down);
+      expect(bad.code).toBe(good.code);
+      expect(bad.out).toBe(good.out);
+      expect(down.reqs).toEqual(up.reqs);
+      expect(bad.err.split('\n').filter(Boolean)).toEqual(['mdhouse-rag-sync: the KV registry is unavailable (store: daemon unreachable); continuing without it']);
+      expect(good.err).toBe('');
+    });
+
+    test('a KV that fails only on writes does not fail the sync either', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const mem = memStore();
+      const real = mem.store.set;
+      mem.store.set = async () => {
+        throw new RagBusError('store', 'HTTP 503');
+      };
+      const bus = fakeBus(root, preflightThen(confirmed1), {}, mem);
+      const r = await sync(root, bus);
+      expect(r.code).toBe(EXIT.ok);
+      expect(JSON.parse(r.out).result).toBe('confirmed');
+      expect(r.err).toContain('store: HTTP 503');
+      expect(mem.kv.has('rag/source/notes/md')).toBe(true);
+      expect(mem.logs).toEqual([]);
+      mem.store.set = real;
+    });
+
+    test('plan and search keep and log nothing', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const mem = memStore();
+      const bus = fakeBus(root, () => reply({ mode: 'keyword', records: [] }), {}, mem);
+      expect((await run(['search', '--root', root, ...TARGET, '--query', 'q'], bus)).code).toBe(EXIT.ok);
+      expect((await run(['plan', '--root', root, ...TARGET], bus)).code).toBe(EXIT.ok);
+      expect(mem.kv.size).toBe(0);
+      expect(mem.logs).toEqual([]);
     });
   });
 

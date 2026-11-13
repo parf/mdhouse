@@ -426,6 +426,10 @@ an injected transport. Sync requires explicit apply, matching owner configuratio
 no subscribers and RAG 0.4.2 or later capabilities/collection health; provider replies may add fields. Every sync resends
 files sent before with no confirmation; semantic/hybrid search requires explicit paid intent.
 `search` fills a record's missing `lines`/`heading_path` (`lib/rag-cite.ts`) from the root-jailed local file at `content_hash`: hash mismatch → `stale: true`, no citation; excerpt not found or file unreadable → the record as returned.
+`sync` registers its source and records its runs in the agent's own JSON KV (`lib/rag-registry.ts`, [№MW.2a.3](R3/workspaces/TODO.md#MW.2a.3)):
+`rag/source/<ns>/<table>` (add; another folder/FileScan/RAG → exit 1, nothing sent), `rag/last/<ns>/<table>` (set),
+`rag/hist/<ns>/<table>/<time>-<hex>` (add, newest 200); one agent-log line per run (notice/warning/alert). KV and log are best
+effort — a failure is one stderr line and never changes result, output or exit code; an unreachable KV on the registry read proceeds.
 `lib/rag-sync-bus.ts` (on `ai-agent-bus-sdk`) uses only the protected local account socket: verifies the account and existing
 owned mdhouse agent, holds its token in memory and consumes only each request's random topic/tag.
 No registration, subscription, watch or background process is created. App reconnect cleanup also

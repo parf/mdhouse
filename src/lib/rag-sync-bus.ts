@@ -9,7 +9,7 @@
  * never a token, a message body or a reply.
  */
 import { lstat, realpath, stat } from 'node:fs/promises';
-import { BusError as ClientError, BusUnreachable, IdentityMismatch, UncertainOutcome, type Bus } from 'ai-agent-bus-sdk';
+import { BusError as ClientError, BusUnreachable, IdentityMismatch, KVNotFound, UncertainOutcome, type Bus, type Json } from 'ai-agent-bus-sdk';
 import { connectBus, defaultSocket, isUrl, ownName, validTarget } from './agent-bus';
 
 export const BUS_LIMITS = Object.freeze({
@@ -61,11 +61,31 @@ export interface OwnerConfig {
   readonly config: Record<string, unknown>;
 }
 
+/** A JSON object, the only value the KV keeps under the `json` kind. */
+export type StoreValue = Record<string, unknown>;
+
+/** The agent's own record: its JSON key-value store and its agent log. Every failure is a `RagBusError('store', …)`. */
+export interface RagStore {
+  /** The JSON value at `name`, or null when there is none. */
+  get(name: string): Promise<StoreValue | null>;
+  /** Writes `name` only if it is absent; false when it is held. */
+  add(name: string, value: StoreValue): Promise<boolean>;
+  /** Writes `name`, replacing what is there. */
+  set(name: string, value: StoreValue): Promise<void>;
+  /** Removes `name`; false when it was not there. */
+  delete(name: string): Promise<boolean>;
+  /** The names of the JSON values that start with `prefix`. */
+  names(prefix: string): Promise<string[]>;
+  /** Sends one line to the agent's own log; no answer is waited for. */
+  log(level: 'notice' | 'warning' | 'alert', text: string): Promise<void>;
+}
+
 export interface RagBus {
   /** The agent the bin talks as. */
   readonly me: string;
   /** The account the socket authenticates as. */
   readonly account: string;
+  readonly store: RagStore;
   ownerConfig(filescan: string): Promise<OwnerConfig>;
   request(req: TransportRequest): Promise<TransportReply>;
 }
@@ -206,5 +226,38 @@ export async function openBus(opts: BusOptions): Promise<RagBus> {
     return unknown(ended ? 'done without an answer' : 'no answer before the deadline');
   };
 
-  return { me, account, ownerConfig, request };
+  const kv = agent.record(me).kv;
+  const store: RagStore = {
+    get: (name) =>
+      step('store', async () => {
+        try {
+          const got = await kv.get('json', name);
+          return got.kind === 'json' && isObj(got.value) ? got.value : null;
+        } catch (err) {
+          if (err instanceof KVNotFound) return null;
+          throw err;
+        }
+      }),
+    add: (name, value) =>
+      step('store', async () => {
+        try {
+          await kv.set('json', name, value as { [key: string]: Json }, { mode: 'add' });
+          return true;
+        } catch (err) {
+          if (err instanceof ClientError && err.status === 412) return false;
+          throw err;
+        }
+      }),
+    set: (name, value) => step('store', async () => void (await kv.set('json', name, value as { [key: string]: Json }, { mode: 'set' }))),
+    delete: (name) => step('store', async () => (await kv.delete('json', name)) === true),
+    names: (prefix) =>
+      step('store', async () => {
+        const listed: unknown = await kv.list();
+        const json = isObj(listed) && Array.isArray(listed.json) ? listed.json : [];
+        return json.flatMap((e: unknown) => (isObj(e) && typeof e.name === 'string' && e.name.startsWith(prefix) ? [e.name] : []));
+      }),
+    log: (level, text) => step('log', async () => void (await agent.send('#bus', `write ${me} ${level} ${text}`))),
+  };
+
+  return { me, account, store, ownerConfig, request };
 }

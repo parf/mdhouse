@@ -246,7 +246,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Coverage: first live sync 2026-11-12 — 184/184 confirmed ([checkpoint](../RAG-CONTRACT.md#first-live-sync--2026-11-12))
   - Contract: [№RAG-W1](DECISIONS.md#RAG-W1); no automatic/background execution or unsolicited provider status calls. Planning/implementation continue under ordinary cohort prioritization; paid/live/provisioning authority remains separate
   - Builds: consume one FileScan per owner-provisioned folder; after root/record/Configuration.dir/token/reload/grants setup, bind explicit RAG endpoint/namespace/table and inspect demand status with no subscribers; use finite on-demand sync ([№Q-R3-RAGSYNC1](DECISIONS.md#Q-R3-RAGSYNC1)) only after its provider deployment, no temporary standing subscription
-  - [ ] MW.2a.3 Source registry and sync history in KV on `#mdhouse@<host>`; events in its agent log ([№Q-R3-RAG1](DECISIONS.md#Q-R3-RAG1)) <a id="MW.2a.3"></a>
+  - [x] MW.2a.3 Source registry and sync history in KV on `#mdhouse@<host>`; events in its agent log ([№Q-R3-RAG1](DECISIONS.md#Q-R3-RAG1)) <a id="MW.2a.3"></a>
   - [x] MW.2a.4 A4 small-file citations: heading/lines computed from the file at `content_hash`; mismatch → stale, no citation <a id="MW.2a.4"></a>
   - [x] MW.2a.1a Separate bin local-planning cohort: W3 pure strict sync plan + W1 executable/local jailed Markdown inventory; no provider transport or fake index/search completion <a id="MW.2a.1a"></a>
   - Verified: approved `4087601`, integrated `ae04901`; combined focused/package-export/types gate and independent review PASS, source/package identity unchanged. Local preview only; connected bin/index/search remains open

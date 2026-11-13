@@ -41,6 +41,15 @@ mdhouse-rag-sync --help
   else doubling to 15 min (provider down or throttled). Each round lists the root, plans and reads the owner
   configuration again; a refusal, an incomplete listing or another root stops it (exit 1). Three rounds in a
   row at the 15 min wait with nothing more confirmed stop it with the last result and its exit code.
+- `sync` keeps a registry and history in the JSON KV of `#mdhouse@<host>`, best effort:
+  - `rag/source/<namespace>/<table>` — the source (folder path, FileScan, RAG), written on the first sync. A sync
+    whose folder, FileScan or RAG differs from it exits 1 and sends nothing. To replace it:
+    `agent-bus kv delete --json '#mdhouse@<host>' rag/source/<namespace>/<table>`;
+  - `rag/last/<namespace>/<table>` — the latest run; `rag/hist/<namespace>/<table>/<time>-<hex>` — one entry per
+    run (with up to 20 failed or unknown files), the newest 200 kept;
+  - one line in the agent log: notice confirmed, warning not confirmed, alert gave up.
+
+  An unreachable KV or log is said once on stderr; the result, the output and the exit code do not change.
 - `search` sends one query to the RAG; `keyword` (default) is free, `semantic` and `hybrid` need `--paid`.
 - A record the RAG returns without `lines`/`heading_path` gets them from the local file at its `content_hash`; a changed file marks the record `stale: true`, with no citation.
 - Each request waits for its answer by its own random topic and tag; acks and other messages are

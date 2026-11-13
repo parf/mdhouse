@@ -4,8 +4,9 @@ import { lstat, readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ownName, validTarget } from './lib/agent-bus';
 import { cite } from './lib/rag-cite';
+import { recordRun, registerSource, sourceId, type Registration, type RunRecord } from './lib/rag-registry';
 import { planRagSync, RagSyncPlanError, type RagSyncPlan, type RagSyncPlanInput } from './lib/rag-sync-plan';
-import { openBus, RagBusError, type BusOptions, type RagBus } from './lib/rag-sync-bus';
+import { openBus, RagBusError, type BusOptions, type OwnerConfig, type RagBus } from './lib/rag-sync-bus';
 import { runSearch, runSync, RagSyncRuntimeError, type Citation, type SyncRunResult } from './lib/rag-sync-runtime';
 import { Registry } from './lib/roots';
 
@@ -291,7 +292,13 @@ export type Round = SyncRunResult | { refused: string };
  * more confirmed it stops with the last result and its exit code. A round that cannot be made
  * (`refused`) stops with exit 1. Prints one progress line per round to stderr and the last result to stdout.
  */
-export async function untilDone(once: () => Promise<Round>, io: Io, sleep: (ms: number) => Promise<void>, backoff: { baseMs: number; maxMs: number } = BACKOFF): Promise<number> {
+export async function untilDone(
+  once: () => Promise<Round>,
+  io: Io,
+  sleep: (ms: number) => Promise<void>,
+  backoff: { baseMs: number; maxMs: number } = BACKOFF,
+  on: { gaveUp?: () => void } = {},
+): Promise<number> {
   let delay = backoff.baseMs;
   let best = 0;
   let reached = false;
@@ -316,6 +323,7 @@ export async function untilDone(once: () => Promise<Round>, io: Io, sleep: (ms: 
     stalled = !progress && delay === backoff.maxMs ? stalled + 1 : 0;
     if (stalled >= STALLED_ROUNDS) {
       io.err(`no progress for ${STALLED_ROUNDS} rounds at the ${backoff.maxMs / 60_000} min wait; giving up\n`);
+      on.gaveUp?.();
       io.out(`${JSON.stringify(res, null, 2)}\n`);
       return code;
     }
@@ -381,6 +389,103 @@ export async function citeRecords(records: readonly Citation[], rootPath: string
   );
 }
 
+/**
+ * `sync`: checks the source registry on the agent's own KV, makes the round or the `--until-done`
+ * rounds, then records the run and one log line. A KV or log failure prints one line and never
+ * changes the result, the output or the exit code; only a registry that holds another source for
+ * this namespace/table stops the sync, before anything is sent.
+ */
+async function syncCommand(args: Args, inv: Inventory, bus: RagBus, io: Io, deps: Deps, list: () => Promise<Inventory | string>): Promise<number> {
+  const sid = sourceId(args);
+  let kvDown = false;
+  /** Runs one KV or log step; the first failure is said once and later steps are skipped. */
+  const kv = async (step: () => Promise<void>): Promise<void> => {
+    if (kvDown) return;
+    try {
+      await step();
+    } catch (err) {
+      kvDown = true;
+      io.err(`mdhouse-rag-sync: the KV registry is unavailable (${err instanceof RagBusError ? err.message : 'error'}); continuing without it\n`);
+    }
+  };
+  let registration: Registration | null = null;
+  await kv(async () => {
+    registration = await registerSource(bus.store, { root: inv.root, filescan: args.filescan, rag: args.rag, namespace: args.namespace, table: args.table }, new Date(), bus.me);
+  });
+  if (registration === 'other') {
+    await kv(() => bus.store.log('alert', `rag-sync ${sid}: refused, the registry holds another folder, FileScan or RAG for it`));
+    io.err('mdhouse-rag-sync: the registry holds this namespace/table for another folder, FileScan or RAG; nothing was sent\n');
+    return EXIT.runtime;
+  }
+
+  const ownerConfig = await bus.ownerConfig(args.filescan);
+  const startedAt = new Date();
+  let rounds = 0;
+  let last: SyncRunResult | null = null;
+  let gaveUp = false;
+  const attempt = async (plan: RagSyncPlanInput, config: OwnerConfig): Promise<Round> => {
+    const res = await runSync({ plan, ownerConfig: config, intent: { apply: args.apply } }, bus);
+    rounds++;
+    last = res;
+    return res;
+  };
+
+  let code: number;
+  if (args.untilDone) {
+    // Round 1 is the listing and config above; each later round lists and reads again, and stops on
+    // what round 1 would have refused: an unreadable or incomplete listing, or another root.
+    let first = true;
+    const round = async (): Promise<Round> => {
+      if (first) {
+        first = false;
+        return attempt(planInput(args, inv, ownName()), ownerConfig);
+      }
+      const now = await list();
+      if (typeof now === 'string') return { refused: now };
+      if (now.root.path !== inv.root.path || now.root.dev !== inv.root.dev || now.root.ino !== inv.root.ino) return { refused: 'the root changed since the first round; nothing was sent' };
+      if (!now.complete) return { refused: 'the listing is incomplete — run plan to see why; nothing was sent' };
+      let config: OwnerConfig;
+      try {
+        config = await bus.ownerConfig(args.filescan);
+      } catch (err) {
+        if (err instanceof RagBusError) return { refused: `the owner configuration is refused: ${err.message}` };
+        throw err;
+      }
+      return attempt(planInput(args, now, ownName()), config);
+    };
+    code = await untilDone(round, io, deps.sleep ?? ((ms) => Bun.sleep(ms)), BACKOFF, { gaveUp: () => (gaveUp = true) });
+  } else {
+    const res = (await attempt(planInput(args, inv, ownName()), ownerConfig)) as SyncRunResult;
+    io.out(`${JSON.stringify(res, null, 2)}\n`);
+    code = resultExit('sync', res);
+  }
+
+  const done = last as SyncRunResult | null;
+  if (done) {
+    const r = done.report;
+    const result = done.result ?? done.effect;
+    const run: RunRecord = {
+      v: 1,
+      startedAt: startedAt.toISOString(),
+      endedAt: new Date().toISOString(),
+      rounds,
+      untilDone: args.untilDone,
+      result,
+      exit: code,
+      ...(r ? { confirmed: r.confirmed, remaining: r.remaining, sent: r.sent } : {}),
+    };
+    await kv(() => recordRun(bus.store, sid, run, r?.files ?? [], crypto.randomUUID().slice(0, 4)));
+    const [level, text] =
+      code === EXIT.ok
+        ? (['notice', `rag-sync ${sid}: confirmed ${r?.confirmed ?? 0} files in ${rounds} rounds`] as const)
+        : gaveUp
+          ? (['alert', `rag-sync ${sid}: gave up after ${STALLED_ROUNDS} rounds at the ${BACKOFF.maxMs / 60_000} min wait`] as const)
+          : (['warning', `rag-sync ${sid}: ${result}${r ? `, ${r.remaining} remaining` : ''}`] as const);
+    await kv(() => bus.store.log(level, text));
+  }
+  return code;
+}
+
 /** Runs one command line; returns the exit code. */
 export async function main(argv: readonly string[], io: Io = stdio, deps: Deps = { openBus }): Promise<number> {
   const [cmd, ...rest] = argv;
@@ -431,36 +536,7 @@ export async function main(argv: readonly string[], io: Io = stdio, deps: Deps =
   if (!inv.complete) return fail('the listing is incomplete — run plan to see why; nothing was sent');
   try {
     const bus = await deps.openBus({ replyMs: REPLY_MS[cmd], root: inv.root, targets: [args.filescan, args.rag] });
-    if (cmd === 'sync') {
-      const ownerConfig = await bus.ownerConfig(args.filescan);
-      if (args.untilDone) {
-        // Round 1 is the listing and config above; each later round lists and reads again, and stops on
-        // what round 1 would have refused: an unreadable or incomplete listing, or another root.
-        let first = true;
-        const round = async (): Promise<Round> => {
-          if (first) {
-            first = false;
-            return runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
-          }
-          const now = await list();
-          if (typeof now === 'string') return { refused: now };
-          if (now.root.path !== inv.root.path || now.root.dev !== inv.root.dev || now.root.ino !== inv.root.ino) return { refused: 'the root changed since the first round; nothing was sent' };
-          if (!now.complete) return { refused: 'the listing is incomplete — run plan to see why; nothing was sent' };
-          let config: Awaited<ReturnType<RagBus['ownerConfig']>>;
-          try {
-            config = await bus.ownerConfig(args.filescan);
-          } catch (err) {
-            if (err instanceof RagBusError) return { refused: `the owner configuration is refused: ${err.message}` };
-            throw err;
-          }
-          return runSync({ plan: planInput(args, now, ownName()), ownerConfig: config, intent: { apply: args.apply } }, bus);
-        };
-        return await untilDone(round, io, deps.sleep ?? ((ms) => Bun.sleep(ms)));
-      }
-      const res = await runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
-      io.out(`${JSON.stringify(res, null, 2)}\n`);
-      return resultExit('sync', res);
-    }
+    if (cmd === 'sync') return await syncCommand(args, inv, bus, io, deps, list);
     const res = await runSearch(
       { plan: input, query: args.query!, ...(args.mode ? { mode: args.mode } : {}), ...(args.limit ? { limit: args.limit } : {}), intent: { paid: args.paid } },
       bus,
