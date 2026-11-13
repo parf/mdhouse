@@ -9,6 +9,7 @@ import { Prefs, VIEWER_VERSION } from '../src/lib/prefs';
 import { ReadOnlyError, Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 const tmp = async (prefix: string) => realpath(await mkdtemp(join(tmpdir(), prefix)));
 const disk = (f: string) => JSON.parse(readFileSync(f, 'utf8')) as Record<string, unknown>;
@@ -181,7 +182,7 @@ describe('a Viewer over HTTP', () => {
   }
 
   test('every refused-family route is 403 reason:viewer; the mode switches back from Settings', async () => {
-    const t = await start(61791);
+    const t = await start(testPort(61791));
     try {
       expect(await t.writable()).toBe(true);
       expect((await t.post('/api/settings', { mode: 'viewer' })).status).toBe(200);
@@ -215,7 +216,7 @@ describe('a Viewer over HTTP', () => {
     ['plain loopback', [] as string[]],
     ['behind a host-name proxy, X-Forwarded-For', ['notes.example']],
   ])('%s: no local administrator in a Viewer — switching back and roots/add are 401', async (_how, names) => {
-    const t = await start(names.length ? 61801 : 61805, names);
+    const t = await start(names.length ? testPort(61801) : testPort(61805), names);
     try {
       const proxied: Record<string, string> = names.length ? { host: names[0]!, origin: `http://${names[0]}`, 'x-forwarded-for': '203.0.113.7' } : {};
       const admin = async (h: Record<string, string> = {}) => (await (await fetch(`${t.origin}/api/admin`, { headers: { ...proxied, ...h } })).json()) as Record<string, unknown>;
@@ -249,7 +250,7 @@ describe('a Viewer over HTTP', () => {
     ['malformed version 3', { version: 3, mode: 'viewer' }],
     ['unknown mode', { version: 2, mode: 'x', readonly: [], autoRwRules: [] }],
   ])('a blocked prefs file (%s) fails closed: writes 403 reason:blocked, no local administrator, settings 409', async (_what, content) => {
-    const t = await start(61806);
+    const t = await start(testPort(61806));
     try {
       const f = join(t.dir, 'prefs.json');
       const text = JSON.stringify({ saved: [t.proj], writable: [t.proj], ...content });
@@ -270,7 +271,7 @@ describe('a Viewer over HTTP', () => {
   });
 
   test('settings and the mode change in one write', async () => {
-    const t = await start(61807);
+    const t = await start(testPort(61807));
     try {
       const f = join(t.dir, 'prefs.json');
       expect((await t.post('/api/settings', { mode: 'viewer', editLink: false })).status).toBe(200);
@@ -281,7 +282,7 @@ describe('a Viewer over HTTP', () => {
   });
 
   test('switching needs the administrator: with users configured, a signed-in user cannot', async () => {
-    const t = await start(61792);
+    const t = await start(testPort(61792));
     try {
       await t.prefs.setUser('ann', await Bun.password.hash('pw'));
       const res = await t.post('/api/settings', { mode: 'viewer' }, { authorization: `Basic ${btoa('ann:pw')}` });
@@ -293,7 +294,7 @@ describe('a Viewer over HTTP', () => {
   });
 
   test('another process turning Viewer on refuses a write already past the route check', async () => {
-    const t = await start(61793);
+    const t = await start(testPort(61793));
     try {
       const rel = `${t.registry.list()[0]!.id}/a.md`;
       await (await Prefs.load(join(t.dir, 'prefs.json'))).setMode('viewer'); // the CLI, say

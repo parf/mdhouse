@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
+import { testPort } from './ports';
 
 const NOTE = '# Notes\n\n## Plan\n\nfirst\nsecond\n';
 const sha = (t: string) => createHash('sha256').update(t).digest('hex');
@@ -129,24 +130,24 @@ const answer = (records: unknown[]) => JSON.stringify({ mode: 'keyword', records
 
 describe('GET /api/rag — the status', () => {
   test('Agent Bus off: {enabled:false}, and the bus is not touched', async () => {
-    const t = await start(61851, { ab: false });
+    const t = await start(testPort(61851), { ab: false });
     expect(await (await t.get(`/api/rag?root=${t.rid}`)).json()).toEqual({ enabled: false });
     expect(t.bus.calls).toEqual([]);
   });
 
   test('an unknown root and the reference root are 404', async () => {
-    const t = await start(61852);
+    const t = await start(testPort(61852));
     expect((await t.get('/api/rag?root=nope')).status).toBe(404);
     expect((await t.get(`/api/rag?root=${t.refId}`)).status).toBe(404);
   });
 
   test('no registered source: enabled, source null, with the root path and the guide link, nothing else', async () => {
-    const t = await start(61853);
+    const t = await start(testPort(61853));
     expect(await (await t.get(`/api/rag?root=${t.rid}`)).json()).toEqual({ enabled: true, path: t.root, guide: `/${t.refId}/rag-sync.md`, source: null, last: null });
   });
 
   test('a registered source and its latest run; the RAG and FileScan names stay on the server', async () => {
-    const t = await start(61854);
+    const t = await start(testPort(61854));
     t.register();
     const body = await (await t.get(`/api/rag?root=${t.rid}`)).json();
     expect(body).toEqual({
@@ -161,20 +162,20 @@ describe('GET /api/rag — the status', () => {
   });
 
   test('a source registered for another folder is not this project\'s', async () => {
-    const t = await start(61855);
+    const t = await start(testPort(61855));
     t.register();
     expect(((await (await t.get(`/api/rag?root=${t.otherId}`)).json()) as { source: unknown }).source).toBeNull();
   });
 
   test('a source without a run yet: last null', async () => {
-    const t = await start(61856);
+    const t = await start(testPort(61856));
     t.register();
     t.bus.kv.delete('rag/last/notes/md');
     expect(((await (await t.get(`/api/rag?root=${t.rid}`)).json()) as { last: unknown }).last).toBeNull();
   });
 
   test('the KV is read once per 15 s', async () => {
-    const t = await start(61857);
+    const t = await start(testPort(61857));
     t.register();
     await t.get(`/api/rag?root=${t.rid}`);
     await t.get(`/api/rag?root=${t.rid}`);
@@ -182,7 +183,7 @@ describe('GET /api/rag — the status', () => {
   });
 
   test('an unreachable bus is an error in a 200, in safe words', async () => {
-    const t = await start(61858);
+    const t = await start(testPort(61858));
     await t.bus.stop();
     const res = await t.get(`/api/rag?root=${t.rid}`);
     expect(res.status).toBe(200);
@@ -195,14 +196,14 @@ describe('GET /api/rag — the status', () => {
 
 describe('GET /api/rag/search', () => {
   test('Agent Bus off is 404, like the other /api/ab* writes', async () => {
-    const t = await start(61861, { ab: false });
+    const t = await start(testPort(61861), { ab: false });
     const res = await t.search('plan');
     expect(res.status).toBe(404);
     expect(t.bus.calls).toEqual([]);
   });
 
   test('a query is 1–1024 characters; an unknown root is 404; a project with no source is 404', async () => {
-    const t = await start(61862);
+    const t = await start(testPort(61862));
     expect((await t.search('')).status).toBe(400);
     expect((await t.search('   ')).status).toBe(400);
     expect((await t.search('x'.repeat(1025))).status).toBe(400);
@@ -212,7 +213,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('keyword only, to the source\'s RAG: the request cannot choose the target, the mode, the namespace or the table', async () => {
-    const t = await start(61863);
+    const t = await start(testPort(61863));
     t.register();
     t.bus.state.answer = () => answer([]);
     const res = await t.search('plan', '&limit=3&mode=semantic&paid=1&rag=%23evil%40x&namespace=x&table=y&tableName=z');
@@ -221,7 +222,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test.each([['99', 16], ['0', 8], ['-4', 1], ['abc', 8], ['', 8], ['5', 5]])('limit %p is sent as %p', async (asked, sent) => {
-    const t = await start(61864);
+    const t = await start(testPort(61864));
     t.register();
     t.bus.state.answer = () => answer([]);
     await t.search('plan', `&limit=${asked}`);
@@ -229,7 +230,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('hits are cited from the local file and link to the document at the line; a changed file is stale', async () => {
-    const t = await start(61865);
+    const t = await start(testPort(61865));
     t.register();
     await writeFile(join(t.root, 'old.md'), '# Old\n\ntext\n');
     t.bus.state.answer = () =>
@@ -250,7 +251,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('a long excerpt is cut and says so', async () => {
-    const t = await start(61866);
+    const t = await start(testPort(61866));
     t.register();
     t.bus.state.answer = () => answer([rec('a.md', sha(NOTE), 'x'.repeat(700))]);
     const body = (await (await t.search('x')).json()) as { hits: Array<{ excerpt: string; truncated?: boolean }> };
@@ -259,7 +260,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('a reply that does not validate is 503 and nothing from it is shown', async () => {
-    const t = await start(61867);
+    const t = await start(testPort(61867));
     t.register();
     for (const bad of ['not json', JSON.stringify({ error: { code: 'x', text: 'denied' } }), answer([rec('../x.md', sha(NOTE), 'x')]), answer([rec('a.md', sha(NOTE), 'x', { namespace: 'other' })])]) {
       t.bus.state.answer = () => bad;
@@ -270,7 +271,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('a cross-site request is refused before anything is sent', async () => {
-    const t = await start(61868);
+    const t = await start(testPort(61868));
     t.register();
     t.bus.state.answer = () => answer([]);
     expect((await t.search('plan', '', { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
@@ -280,7 +281,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('without the page\'s x-mdhouse: 1 header it is 403 before anything is sent', async () => {
-    const t = await start(61871);
+    const t = await start(testPort(61871));
     t.register();
     t.bus.state.answer = () => answer([]);
     for (const h of [undefined, '', '0', 'yes']) {
@@ -291,7 +292,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('a Viewer still searches: searching is reading', async () => {
-    const t = await start(61872);
+    const t = await start(testPort(61872));
     t.register();
     t.bus.state.answer = () => answer([]);
     await t.prefs.setMode('viewer');
@@ -301,7 +302,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('the source is found past the 50th of 60 registered ones', async () => {
-    const t = await start(61873);
+    const t = await start(testPort(61873));
     for (let i = 0; i < 59; i++) t.bus.kv.set(`rag/source/ns${String(i).padStart(2, '0')}/md`, { ...t.source, root: { path: `/elsewhere/${i}` }, namespace: `ns${String(i).padStart(2, '0')}` });
     t.register(); // rag/source/notes/md sorts after every ns..
     expect([...t.bus.kv.keys()].filter((k) => k.startsWith('rag/source/')).indexOf('rag/source/notes/md')).toBe(59);
@@ -310,7 +311,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('concurrent first requests share one KV lookup', async () => {
-    const t = await start(61874);
+    const t = await start(testPort(61874));
     t.register();
     const all = await Promise.all(Array.from({ length: 5 }, () => t.get(`/api/rag?root=${t.rid}`)));
     for (const r of all) expect(r.status).toBe(200);
@@ -319,7 +320,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('at most two searches run at once; the third is 429 and the first two finish', async () => {
-    const t = await start(61869);
+    const t = await start(testPort(61869));
     t.register();
     t.bus.state.hold = true;
     t.bus.state.answer = () => answer([]);
@@ -333,7 +334,7 @@ describe('GET /api/rag/search', () => {
   });
 
   test('an unreachable bus is 503 in safe words', async () => {
-    const t = await start(61870);
+    const t = await start(testPort(61870));
     await t.bus.stop();
     const res = await t.search('plan');
     expect(res.status).toBe(503);
@@ -343,7 +344,7 @@ describe('GET /api/rag/search', () => {
 
 describe('/rag page', () => {
   test('is served like /settings, and `rag` can never be a project id', async () => {
-    const t = await start(61871);
+    const t = await start(testPort(61871));
     const res = await t.get('/rag');
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/html');

@@ -8,6 +8,7 @@ import { Prefs } from '../src/lib/prefs';
 import { splitFrontmatter } from '../src/lib/render';
 import { Registry } from '../src/lib/roots';
 import { Store } from '../src/lib/store';
+import { testPort } from './ports';
 
 const env = { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' };
 const git = (cwd: string, ...args: string[]) => Bun.spawnSync(['git', ...args], { cwd, env, stdout: 'pipe', stderr: 'ignore' });
@@ -86,7 +87,7 @@ test('route: /api/doc meta=1 and ifContent', async () => {
   const { serve: start } = await import('../src/server');
   const registry = await Registry.create([repo]);
   const id = registry.list()[0]!.id;
-  const port = 61748;
+  const port = testPort(61748);
   const { server, watcher, control } = await start({ registry, prefs: await Prefs.load(join(base, 'p-route.json')), port, hostname: '127.0.0.1' });
   const res = (path: string) => fetch(`http://127.0.0.1:${port}${path}`);
   const get = async (path: string) => (await res(path)).json() as Promise<Record<string, unknown>>;
@@ -158,7 +159,7 @@ test('route: gitRevision is null without git', async () => {
   const { serve: start } = await import('../src/server');
   const registry = await Registry.create([repo]);
   const id = registry.list()[0]!.id;
-  const port = 61749;
+  const port = testPort(61749);
   const { server, watcher, control } = await start({ registry, prefs: await Prefs.load(join(base, 'p-nogit.json')), port, hostname: '127.0.0.1', noGit: true });
   try {
     const meta = (await (await fetch(`http://127.0.0.1:${port}/api/doc?p=${id}/a.md&meta=1`)).json()) as Record<string, unknown>;

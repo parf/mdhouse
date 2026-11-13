@@ -9,6 +9,7 @@ import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 const tmp = async (prefix: string) => realpath(await mkdtemp(join(tmpdir(), prefix)));
 const disk = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
@@ -269,9 +270,9 @@ const busCalls = (t: { inst: { calls: string[] }; space: { calls: string[] } }) 
 
 describe('GET /api/ab/config and POST /api/roots/ab', () => {
   test('config: every project root, nothing secret, no connection; a save neither', async () => {
-    const t = await start(61700);
+    const t = await start(testPort(61700));
     try {
-      const cookie = await adminLogin(61700);
+      const cookie = await adminLogin(testPort(61700));
       const cfg = await t.config();
       expect(cfg.enabled).toBe(true);
       expect(cfg.instance).toEqual({ endpoint: t.inst.socket, hasCredential: true, default: ['#claude/inst@h'], filter: expect.any(Array) });
@@ -290,9 +291,9 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
   });
 
   test('refusals change nothing: 400 shape/token field/bad endpoint/default, 401, forged, cross-origin 403, reference 403, 404, stale 409', async () => {
-    const t = await start(61701);
+    const t = await start(testPort(61701));
     try {
-      const cookie = await adminLogin(61701);
+      const cookie = await adminLogin(testPort(61701));
       const id = t.idOf(t.keep);
       const rev = (await t.config()).roots[id]!.rev;
       const before = [readFileSync(t.prefsPath, 'utf8'), JSON.stringify(await t.config())];
@@ -326,9 +327,9 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
   });
 
   test('saved: persisted; same endpoint keeps the provisioned credential, a new endpoint drops it; clearing removes the entry', async () => {
-    const t = await start(61702);
+    const t = await start(testPort(61702));
     try {
-      const cookie = await adminLogin(61702);
+      const cookie = await adminLogin(testPort(61702));
       expect((await t.setAb(t.keep, t.space.socket, [], cookie)).status).toBe(200);
       await t.provision(t.keep, 'space-secret-1');
       expect((await t.setAb(t.keep, t.space.socket, ['#claude/space@h'], cookie)).status).toBe(200);
@@ -344,9 +345,9 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
   });
 
   test('session: in memory only; save carries it with mode and name in one write; an AB change makes the old saveRev stale', async () => {
-    const t = await start(61703);
+    const t = await start(testPort(61703));
     try {
-      const cookie = await adminLogin(61703);
+      const cookie = await adminLogin(testPort(61703));
       const id = t.idOf(t.ses);
       const text = readFileSync(t.prefsPath, 'utf8');
       const rootsOf = async () => ((await (await fetch(`${t.origin}/api/roots`)).json()) as { roots: Array<{ id: string; saveRev?: string; mode?: string; accessRev?: string }> }).roots.find((r) => r.id === id)!;
@@ -373,9 +374,9 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
   });
 
   test('under the lock: another process changes the entry → 409; an administrator signed out → 401; IO failure → 500; nothing changes', async () => {
-    const t = await start(61704);
+    const t = await start(testPort(61704));
     try {
-      let cookie = await adminLogin(61704);
+      let cookie = await adminLogin(testPort(61704));
       const id = t.idOf(t.keep);
       const rev = (await t.config()).roots[id]!.rev;
       const lock = `${t.prefsPath}.lock`;
@@ -398,12 +399,12 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
       release = await hold();
       pending = t.post('/api/roots/ab', { id, endpoint: t.space.socket, default: [], rev: rev2 }, { cookie });
       await Bun.sleep(100);
-      await askAdminRevoke(61704);
+      await askAdminRevoke(testPort(61704));
       await release();
       expect((await pending).status).toBe(401);
       expect(readFileSync(t.prefsPath, 'utf8')).toBe(changed);
 
-      cookie = await adminLogin(61704);
+      cookie = await adminLogin(testPort(61704));
       chmodSync(t.dir, 0o500);
       let res: Response;
       try {
@@ -422,13 +423,13 @@ describe('GET /api/ab/config and POST /api/roots/ab', () => {
 
 describe('unsaved: the memory install after the locked check', () => {
   test('a sign-out, or a save by another process, between the check and the install: refused, nothing kept', async () => {
-    const t = await start(61710);
+    const t = await start(testPort(61710));
     try {
-      let cookie = await adminLogin(61710);
+      let cookie = await adminLogin(testPort(61710));
       const id = t.idOf(t.ses);
       const check = t.prefs.check.bind(t.prefs);
       // the guard has passed under the lock; then, before the route resumes, the world moves
-      let after: () => Promise<unknown> = async () => askAdminRevoke(61710);
+      let after: () => Promise<unknown> = async () => askAdminRevoke(testPort(61710));
       const spy = spyOn(t.prefs, 'check').mockImplementation(async (dir, guard) => {
         const r = await check(dir, guard);
         await after();
@@ -438,7 +439,7 @@ describe('unsaved: the memory install after the locked check', () => {
       expect((await t.setAb(t.ses, t.space.socket, [], cookie, before.rev)).status).toBe(401);
       expect((await t.config()).roots[id]).toEqual(before);
 
-      cookie = await adminLogin(61710);
+      cookie = await adminLogin(testPort(61710));
       after = async () => {
         await writeFile(t.prefsPath, JSON.stringify({ ...disk(t.prefsPath), saved: [...(disk(t.prefsPath).saved as string[]), t.ses].sort() }));
       };
@@ -454,18 +455,18 @@ describe('unsaved: the memory install after the locked check', () => {
 
 describe('lifetime through the CLI', () => {
   test('-p saves a session entry; --rm drops a saved one; the last project, unsaved, keeps it in memory without its credential', async () => {
-    const t = await start(61709);
+    const t = await start(testPort(61709));
     try {
-      const cookie = await adminLogin(61709);
+      const cookie = await adminLogin(testPort(61709));
       expect((await t.setAb(t.keep, t.space.socket, [], cookie)).status).toBe(200);
       await t.provision(t.keep, 'space-secret-5');
       expect((await t.setAb(t.ses, '/run/ses.sock', ['#claude/ses@h'], cookie)).status).toBe(200);
-      expect(await askDaemon(61709, { dirs: [t.ses], rw: false, save: true })).not.toHaveProperty('error');
+      expect(await askDaemon(testPort(61709), { dirs: [t.ses], rw: false, save: true })).not.toHaveProperty('error');
       expect((disk(t.prefsPath).agentBusSpaces as Record<string, unknown>)[t.ses]).toEqual({ endpoint: '/run/ses.sock', default: ['#claude/ses@h'] });
-      expect(await askRemove(61709, { dirs: [t.keep] })).not.toHaveProperty('error');
+      expect(await askRemove(testPort(61709), { dirs: [t.keep] })).not.toHaveProperty('error');
       expect(disk(t.prefsPath).agentBusSpaces).toEqual({ [t.ses]: { endpoint: '/run/ses.sock', default: ['#claude/ses@h'] } });
       await t.provision(t.ses, 'ses-secret-6');
-      const removed = (await askRemove(61709, { dirs: [t.ses] })) as { results: Array<{ kept?: boolean }> };
+      const removed = (await askRemove(testPort(61709), { dirs: [t.ses] })) as { results: Array<{ kept?: boolean }> };
       expect(removed.results[0]).toMatchObject({ kept: true });
       expect(disk(t.prefsPath)).not.toHaveProperty('agentBusSpaces');
       expect((await t.config()).roots[t.idOf(t.ses)]).toEqual({ endpoint: '/run/ses.sock', hasCredential: false, default: ['#claude/ses@h'], rev: expect.any(String) });
@@ -479,9 +480,9 @@ describe('routing: the document root picks the bus', () => {
   afterEach(() => {});
 
   test('instance vs project endpoint at once; the project credential goes only to its daemon; status says where', async () => {
-    const t = await start(61705);
+    const t = await start(testPort(61705));
     try {
-      const cookie = await adminLogin(61705);
+      const cookie = await adminLogin(testPort(61705));
       expect((await t.setAb(t.ses, t.space.socket, ['#claude/space@h'], cookie)).status).toBe(200);
       const [ra, rb] = await Promise.all([t.send(t.keep, 'a.md'), t.send(t.ses, 'b.md')]);
       expect([ra.status, rb.status]).toEqual([200, 200]);
@@ -503,9 +504,9 @@ describe('routing: the document root picks the bus', () => {
   });
 
   test('a project endpoint that fails, or a malformed entry: 503 in safe words, never the instance in its place', async () => {
-    const t = await start(61706);
+    const t = await start(testPort(61706));
     try {
-      const cookie = await adminLogin(61706);
+      const cookie = await adminLogin(testPort(61706));
       expect((await t.setAb(t.keep, '/nonexistent/bus.sock', [], cookie)).status).toBe(200);
       const res = await t.send(t.keep, 'a.md');
       expect(res.status).toBe(503);
@@ -525,14 +526,14 @@ describe('routing: the document root picks the bus', () => {
   });
 
   test('an echoing daemon: its credential reaches no response, WebSocket event or log', async () => {
-    const t = await start(61707, { echo: true });
+    const t = await start(testPort(61707), { echo: true });
     const logs: string[] = [];
     const spies = (['error', 'log', 'warn'] as const).map((k) => spyOn(console, k).mockImplementation((...a: unknown[]) => void logs.push(a.map(String).join(' '))));
     try {
-      const cookie = await adminLogin(61707);
+      const cookie = await adminLogin(testPort(61707));
       expect((await t.setAb(t.keep, t.space.socket, [], cookie)).status).toBe(200);
       await t.provision(t.keep, 'echo-secret-77');
-      const ws = new WebSocket(`ws://127.0.0.1:61707/ws`);
+      const ws = new WebSocket(`ws://127.0.0.1:${testPort(61707)}/ws`);
       const frames: string[] = [];
       ws.onmessage = (e) => frames.push(String(e.data));
       await new Promise((r) => (ws.onopen = r));
@@ -550,9 +551,9 @@ describe('routing: the document root picks the bus', () => {
   });
 
   test('a job outlives its project endpoint changing: /api/ab/job still has it, and its answer arrives', async () => {
-    const t = await start(61708, { hold: true });
+    const t = await start(testPort(61708), { hold: true });
     try {
-      const cookie = await adminLogin(61708);
+      const cookie = await adminLogin(testPort(61708));
       expect((await t.setAb(t.ses, t.space.socket, [], cookie)).status).toBe(200);
       const { job } = (await (await t.send(t.ses, 'b.md')).json()) as { job: string };
       expect((await t.setAb(t.ses, '', [], cookie)).status).toBe(200); // back to the instance bus

@@ -8,6 +8,7 @@ import { hashPassword } from '../src/lib/access';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
+import { testPort } from './ports';
 
 const sha = (b: Uint8Array | string) => createHash('sha256').update(b).digest('hex');
 const enc = (s: string) => new TextEncoder().encode(s);
@@ -83,7 +84,7 @@ describe('lib/source', () => {
 
 describe('GET /api/source', () => {
   test('one snapshot of the raw bytes: text, hash, writable, no-store; no legacy conversion', async () => {
-    const t = await start(61811);
+    const t = await start(testPort(61811));
     try {
       for (const [name, b] of Object.entries(SAMPLES)) {
         const res = await t.get(`${t.rwId}/${name}`);
@@ -101,7 +102,7 @@ describe('GET /api/source', () => {
   });
 
   test('refused: folder, non-Markdown, missing, .git, ../ and symlink escapes → 404; invalid UTF-8 → 422; over 5,000,000 bytes → 413', async () => {
-    const t = await start(61812);
+    const t = await start(testPort(61812));
     try {
       for (const p of [`${t.rwId}/sub`, `${t.rwId}/a.txt`, `${t.rwId}/none.md`, `${t.rwId}/.git/x.md`, `${t.rwId}/../outside/secret.md`, `${t.rwId}/escape.md`, 'nope/a.md', '']) {
         const res = await t.get(p);
@@ -122,7 +123,7 @@ describe('GET /api/source', () => {
 
 describe('POST /api/source', () => {
   test('saves the text verbatim — CRLF, BOM, no final newline, legacy forms, mixed endings — keeps the mode, answers the new hash', async () => {
-    const t = await start(61813);
+    const t = await start(testPort(61813));
     try {
       for (const [name, b] of Object.entries(SAMPLES)) {
         const before = (await (await t.get(`${t.rwId}/${name}`)).json()) as { text: string; hash: string };
@@ -139,7 +140,7 @@ describe('POST /api/source', () => {
   });
 
   test('refusals write nothing: shape/extra/hash/lone surrogate 400, cross-origin 403, 404s, read-only and reference 403, 413', async () => {
-    const t = await start(61814);
+    const t = await start(testPort(61814));
     try {
       const p = `${t.rwId}/crlf.md`;
       const hash = sha(SAMPLES['crlf.md']!);
@@ -184,7 +185,7 @@ describe('POST /api/source', () => {
   });
 
   test('stale: a changed file is 409 with the reason only, the bytes on disk stay', async () => {
-    const t = await start(61815);
+    const t = await start(testPort(61815));
     try {
       const p = `${t.rwId}/crlf.md`;
       const old = sha(SAMPLES['crlf.md']!);
@@ -202,7 +203,7 @@ describe('POST /api/source', () => {
   });
 
   test('concurrency: two saves from one snapshot — one wins, one is stale; a queued task tick and a save — no lost update', async () => {
-    const t = await start(61816);
+    const t = await start(testPort(61816));
     try {
       const p = `${t.rwId}/crlf.md`;
       const base = sha(SAMPLES['crlf.md']!);
@@ -229,7 +230,7 @@ describe('POST /api/source', () => {
   });
 
   test('a file grown past the cap after the snapshot: 409 stale, nothing written, and the queued re-read stays bounded', async () => {
-    const t = await start(61820);
+    const t = await start(testPort(61820));
     const reads: Array<{ path: string; end: number | null }> = [];
     const file = Bun.file;
     // records every read of a file's bytes: its end when sliced, null when the whole file is read
@@ -276,7 +277,7 @@ describe('POST /api/source', () => {
   });
 
   test('the final write rechecks: a root set read-only after the first check is 403 and the file stays', async () => {
-    const t = await start(61817);
+    const t = await start(testPort(61817));
     try {
       const p = `${t.rwId}/crlf.md`;
       const resolve = t.registry.resolve.bind(t.registry);
@@ -296,7 +297,7 @@ describe('POST /api/source', () => {
   });
 
   test('an IO failure is a generic 500; the atomic writer keeps the old bytes and mode', async () => {
-    const t = await start(61818);
+    const t = await start(testPort(61818));
     const logs = spyOn(console, 'error').mockImplementation(() => {});
     try {
       chmodSync(t.rw, 0o500);
@@ -313,7 +314,7 @@ describe('POST /api/source', () => {
   });
 
   test('admission unchanged: with a user configured, GET and POST ask for a login', async () => {
-    const t = await start(61819);
+    const t = await start(testPort(61819));
     try {
       await t.prefs.setUser('ann', await hashPassword('s3cret'));
       expect((await t.get(`${t.rwId}/crlf.md`)).status).toBe(401);

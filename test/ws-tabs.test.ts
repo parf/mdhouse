@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { browserOf, Tabs, type TabSink } from '../src/lib/ws-tabs';
+import { testPort } from './ports';
 
 const KEY = Buffer.alloc(32, 7);
 const sink = (): TabSink & { got: string[] } => {
@@ -118,7 +119,7 @@ describe('/ws and control, through serve()', () => {
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-ctl-'));
     await writeFile(join(dir, 'a.md'), '# a\n');
     const prefs = await Prefs.load(join(dir, 'prefs.json'));
-    const port = 61960;
+    const port = testPort(61960);
     const registry = await Registry.create([dir]);
     const id = registry.list()[0]!.id;
     const { server, watcher, control, abControl, stopAbControl } = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });

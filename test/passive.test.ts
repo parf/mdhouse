@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { parseDocument } from 'htmlparser2';
 import { passive } from '../src/lib/passive';
 import { highlightFile, markupHunks, render } from '../src/lib/render';
+import { testPort } from './ports';
 
 const ctx = { rootId: 'r', docPath: 'x.md', docUrl: (rel: string) => `/r/${rel}` };
 
@@ -181,7 +182,7 @@ test('the server sends passive HTML for a document and a file; raw HTML runs no 
   const evil = '# e\n\n<img src="x.png" onerror="fetch(\'/api/settings\')">\n\n<iframe srcdoc="<script>1</script>"></iframe>\n';
   await writeFile(join(dir, 'e.md'), evil);
   await writeFile(join(dir, 'e.html'), '<script>1</script><img src=x onerror=alert(1)>');
-  const port = 61786;
+  const port = testPort(61786);
   const { server, watcher, control } = await serve({
     registry: await Registry.create([dir]),
     prefs: await Prefs.load(join(dir, 'prefs.json')),

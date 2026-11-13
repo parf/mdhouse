@@ -1,12 +1,13 @@
 import { afterAll, describe, expect, test } from 'bun:test';
 import { chmodSync, existsSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { askDaemon, askExit, askPing, askRemove, controlPath, knownPorts, serveControl } from '../src/lib/control';
+import { testPort } from './ports';
 
 // A port number nothing binds — the control socket is a file, not a TCP port, so this only
 // has to be unique among tests.
-const PORT = 61771;
+const PORT = testPort(61771);
 const SOCK = controlPath(PORT);
-const URL = 'http://127.0.0.1:61771';
+const URL = `http://127.0.0.1:${testPort(61771)}`;
 
 const handlers = (over: Partial<Parameters<typeof serveControl>[1]> = {}) => ({
   add: async () => ({ url: URL, roots: [] }),
@@ -122,7 +123,7 @@ describe('the control socket', () => {
   test('a second server on the port (another host) never takes a live socket over (C3)', async () => {
     const first = await serveControl(PORT, handlers());
     try {
-      expect(await serveControl(PORT, handlers({ ping: () => ({ pid: 1, url: 'http://127.0.0.2:61771', roots: [] }) }))).toBeNull();
+      expect(await serveControl(PORT, handlers({ ping: () => ({ pid: 1, url: `http://127.0.0.2:${testPort(61771)}`, roots: [] }) }))).toBeNull();
       expect(await askPing(PORT)).toEqual({ pid: process.pid, url: URL, roots: [] });
     } finally {
       first!.stop();

@@ -9,6 +9,7 @@ import { lineHash } from '../src/lib/qa';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 const tmp = async (prefix: string) => realpath(await mkdtemp(join(tmpdir(), prefix)));
 
@@ -80,9 +81,9 @@ const task = (id: string, file: string, line: string) => ({ p: `${id}/${file}`, 
 
 describe('POST /api/roots/add', () => {
   test('RW: a session project, mode rw, writable at once; the add itself writes no file and no prefs', async () => {
-    const t = await start(61772);
+    const t = await start(testPort(61772));
     try {
-      const cookie = await adminLogin(61772);
+      const cookie = await adminLogin(testPort(61772));
       const before = await t.snapshot();
       const res = await t.add({ path: t.fresh, mode: 'rw' }, cookie);
       expect(res.status).toBe(200);
@@ -101,9 +102,9 @@ describe('POST /api/roots/add', () => {
   });
 
   test('RO under auto-rw: never writable, from the first payload; a write right after is refused', async () => {
-    const t = await start(61773);
+    const t = await start(testPort(61773));
     try {
-      const cookie = await adminLogin(61773);
+      const cookie = await adminLogin(testPort(61773));
       const res = await t.add({ path: t.autoNew, mode: 'ro' }, cookie);
       expect(res.status).toBe(200);
       const body = (await res.json()) as { roots: RootJson[]; id: string };
@@ -117,9 +118,9 @@ describe('POST /api/roots/add', () => {
   });
 
   test('bad input is refused and changes nothing: 400 shape/relative/tilde/NUL/length/mode, 400 a file, 404 missing', async () => {
-    const t = await start(61774);
+    const t = await start(testPort(61774));
     try {
-      const cookie = await adminLogin(61774);
+      const cookie = await adminLogin(testPort(61774));
       const before = await t.snapshot();
       const cases: Array<[unknown, number]> = [
         ['not json', 400],
@@ -153,9 +154,9 @@ describe('POST /api/roots/add', () => {
   });
 
   test('already served — by its path or a symlink to it — is 409 served with its id; its mode, name and save stay', async () => {
-    const t = await start(61775);
+    const t = await start(testPort(61775));
     try {
-      const cookie = await adminLogin(61775);
+      const cookie = await adminLogin(testPort(61775));
       const first = (await (await t.add({ path: t.fresh, mode: 'ro' }, cookie)).json()) as { id: string };
       const before = await t.snapshot();
       for (const path of [t.fresh, join(t.dir, 'link'), t.keep]) {
@@ -173,16 +174,16 @@ describe('POST /api/roots/add', () => {
   });
 
   test('a reference root or anything inside it is 403 in either mode; the CLI path keeps serving a descendant read-only as before', async () => {
-    const t = await start(61776);
+    const t = await start(testPort(61776));
     try {
-      const cookie = await adminLogin(61776);
+      const cookie = await adminLogin(testPort(61776));
       const before = await t.snapshot();
       for (const path of [t.ref, join(t.ref, 'inside')]) {
         for (const mode of ['rw', 'ro']) expect((await t.add({ path, mode }, cookie)).status).toBe(403);
       }
       expect(await t.snapshot()).toEqual(before);
       // control / CLI compatibility: a descendant is served, never writable
-      const reply = await askDaemon(61776, { dirs: [join(t.ref, 'inside')], rw: true });
+      const reply = await askDaemon(testPort(61776), { dirs: [join(t.ref, 'inside')], rw: true });
       expect(reply && 'roots' in reply).toBe(true);
       expect((await t.roots()).find((r) => r.path === join(t.ref, 'inside'))).toMatchObject({ writable: false });
     } finally {
@@ -192,9 +193,9 @@ describe('POST /api/roots/add', () => {
   });
 
   test('no admin, a forged cookie, cross-origin, or an administrator signed out while the lock waits: refused, nothing changes', async () => {
-    const t = await start(61739);
+    const t = await start(testPort(61739));
     try {
-      const cookie = await adminLogin(61739);
+      const cookie = await adminLogin(testPort(61739));
       const before = await t.snapshot();
       expect((await t.post('/api/roots/add', { path: t.fresh, mode: 'rw' })).status).toBe(401);
       expect((await t.add({ path: t.fresh, mode: 'rw' }, `${cookie.split('=')[0]}=forged`)).status).toBe(401);
@@ -203,7 +204,7 @@ describe('POST /api/roots/add', () => {
       const release = await holdLock(t.prefsPath);
       const pending = t.add({ path: t.fresh, mode: 'rw' }, cookie);
       await Bun.sleep(100);
-      await askAdminRevoke(61739);
+      await askAdminRevoke(testPort(61739));
       await release();
       expect((await pending).status).toBe(401);
       expect(await t.snapshot()).toEqual(before);
@@ -214,9 +215,9 @@ describe('POST /api/roots/add', () => {
   });
 
   test('saved by another process (before, or while the lock waits) is 409 stale with no write', async () => {
-    const t = await start(61777);
+    const t = await start(testPort(61777));
     try {
-      const cookie = await adminLogin(61777);
+      const cookie = await adminLogin(testPort(61777));
       const original = readFileSync(t.prefsPath, 'utf8');
       const savedText = JSON.stringify({ ...JSON.parse(original), saved: [t.fresh, t.keep].sort() }, null, 2) + '\n';
 
@@ -242,9 +243,9 @@ describe('POST /api/roots/add', () => {
   });
 
   test('the path now leads elsewhere once the queue and the lock are through: 409 stale, nothing added', async () => {
-    const t = await start(61778);
+    const t = await start(testPort(61778));
     try {
-      const cookie = await adminLogin(61778);
+      const cookie = await adminLogin(testPort(61778));
       const other = join(t.dir, 'other');
       await mkdir(other);
       const link = join(t.dir, 'link');
@@ -267,8 +268,8 @@ describe('POST /api/roots/add', () => {
 
   test('a newer prefs file is 409 blocked, a broken one 500; either is left byte for byte — not set aside, not migrated; nothing added', async () => {
     for (const [port, text, status] of [
-      [61779, JSON.stringify({ version: 9, saved: [] }) + '\n', 409],
-      [61780, '{ "version": 2, "saved": [ \n', 500],
+      [testPort(61779), JSON.stringify({ version: 9, saved: [] }) + '\n', 409],
+      [testPort(61780), '{ "version": 2, "saved": [ \n', 500],
     ] as const) {
       const t = await start(port);
       try {
@@ -288,9 +289,9 @@ describe('POST /api/roots/add', () => {
   });
 
   test('an unexpected failure installing the watcher removes the new root before the reply', async () => {
-    const t = await start(61787);
+    const t = await start(testPort(61787));
     try {
-      const cookie = await adminLogin(61787);
+      const cookie = await adminLogin(testPort(61787));
       const before = await t.snapshot();
       const watchRoot = t.watcher.watchRoot.bind(t.watcher);
       t.watcher.watchRoot = () => {
@@ -308,10 +309,10 @@ describe('POST /api/roots/add', () => {
   });
 
   test('save after add keeps the explicit mode and the session name; another tab hears about the add', async () => {
-    const t = await start(61788);
+    const t = await start(testPort(61788));
     try {
-      const cookie = await adminLogin(61788);
-      const ws = new WebSocket(`ws://127.0.0.1:61788/ws`);
+      const cookie = await adminLogin(testPort(61788));
+      const ws = new WebSocket(`ws://127.0.0.1:${testPort(61788)}/ws`);
       const events: unknown[] = [];
       ws.onmessage = (e) => events.push(JSON.parse(String(e.data)));
       await new Promise((r) => (ws.onopen = r));

@@ -8,6 +8,7 @@ import { CONFIG_DIR, Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 const tmp = async (prefix: string) => realpath(await mkdtemp(join(tmpdir(), prefix)));
 const onDisk = async (path: string) => JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>;
@@ -138,13 +139,13 @@ async function start(port: number, base?: string) {
 
 describe('POST /api/roots/name and the root payloads', () => {
   test('administrator renames: label + customName everywhere; identity, marks and access unchanged; tabs told', async () => {
-    const t = await start(61751);
+    const t = await start(testPort(61751));
     try {
       await t.prefs.set(t.one, 'a.md', 'favorite', true);
       const before = await t.roots();
-      const cookie = await adminLogin(61751);
+      const cookie = await adminLogin(testPort(61751));
 
-      const ws = new WebSocket(`ws://127.0.0.1:61751/ws`, { headers: { origin: t.origin } } as unknown as string[]);
+      const ws = new WebSocket(`ws://127.0.0.1:${testPort(61751)}/ws`, { headers: { origin: t.origin } } as unknown as string[]);
       const told = new Promise<unknown>((resolve) => {
         ws.onmessage = (e) => {
           const m = JSON.parse(String(e.data)) as { t: string };
@@ -185,13 +186,13 @@ describe('POST /api/roots/name and the root payloads', () => {
   });
 
   test('refusals change nothing: no admin 401, cross-origin 403, bad body 400, unknown 404, reference 403', async () => {
-    const t = await start(61752);
+    const t = await start(testPort(61752));
     try {
-      const cookie = await adminLogin(61752);
+      const cookie = await adminLogin(testPort(61752));
       const before = await readFile(t.prefsPath, 'utf8');
       const cases: Array<[unknown, Record<string, string>, number]> = [
         [{ id: t.oneId, name: 'X' }, {}, 401],
-        [{ id: t.oneId, name: 'X' }, { cookie: 'mdhouse-admin-61752=' + 'A'.repeat(43) }, 401],
+        [{ id: t.oneId, name: 'X' }, { cookie: `mdhouse-admin-${testPort(61752)}=` + 'A'.repeat(43) }, 401],
         [{ id: t.oneId, name: 'X' }, { cookie, 'sec-fetch-site': 'cross-site' }, 403],
         [{ id: t.oneId, name: 'X', writable: true }, { cookie }, 400],
         [{ id: t.oneId, name: 'X', save: true }, { cookie }, 400],
@@ -213,9 +214,9 @@ describe('POST /api/roots/name and the root payloads', () => {
 
   test('lifetime: a saved root keeps its name in prefs across a restart; an unsaved one only in memory', async () => {
     const dir = await tmp('mdhouse-name-life-');
-    let t = await start(61753, dir);
+    let t = await start(testPort(61753), dir);
     try {
-      const cookie = await adminLogin(61753);
+      const cookie = await adminLogin(testPort(61753));
       await t.post({ id: t.oneId, name: 'Saved Name' }, { cookie });
       await t.post({ id: t.twoId, name: 'Session Name' }, { cookie });
       expect((await t.roots()).map((r) => r.customName)).toEqual(['Saved Name', 'Session Name', undefined]);
@@ -225,7 +226,7 @@ describe('POST /api/roots/name and the root payloads', () => {
     } finally {
       t.stop();
     }
-    t = await start(61753, dir);
+    t = await start(testPort(61753), dir);
     try {
       expect((await t.roots()).map((r) => r.customName)).toEqual(['Saved Name', undefined, undefined]);
     } finally {
@@ -237,36 +238,36 @@ describe('POST /api/roots/name and the root payloads', () => {
 
 describe('names over the control socket', () => {
   test('handoff names a session root in memory; saving carries it to prefs; removing forgets it', async () => {
-    const t = await start(61754);
+    const t = await start(testPort(61754));
     try {
       const three = join(t.dir, 'three');
       await mkdir(three);
-      const reply = await askDaemon(61754, { dirs: [three], name: 'Temp' });
+      const reply = await askDaemon(testPort(61754), { dirs: [three], name: 'Temp' });
       if (!reply || 'error' in reply) throw new Error('add failed');
       expect(reply.roots.find((r) => r.path === three)).toMatchObject({ name: 'Temp', saved: false, writable: false });
       expect((await onDisk(t.prefsPath)).names).toEqual({});
 
-      const saved = await askDaemon(61754, { dirs: [three], save: true });
+      const saved = await askDaemon(testPort(61754), { dirs: [three], save: true });
       if (!saved || 'error' in saved) throw new Error('save failed');
       expect(saved.roots.find((r) => r.path === three)).toMatchObject({ name: 'Temp', saved: true, writable: false });
       expect((await onDisk(t.prefsPath)).names).toEqual({ [three]: 'Temp' });
 
-      expect(await askDaemon(61754, { dirs: [three], name: null })).not.toHaveProperty('error');
+      expect(await askDaemon(testPort(61754), { dirs: [three], name: null })).not.toHaveProperty('error');
       expect((await onDisk(t.prefsPath)).names).toEqual({});
-      await askDaemon(61754, { dirs: [three], name: 'Again' });
+      await askDaemon(testPort(61754), { dirs: [three], name: 'Again' });
       expect((await onDisk(t.prefsPath)).names).toEqual({ [three]: 'Again' });
 
-      const removed = await askRemove(61754, { dirs: [three] });
+      const removed = await askRemove(testPort(61754), { dirs: [three] });
       if (!removed || 'error' in removed) throw new Error('remove failed');
       expect(removed.results).toMatchObject([{ removed: true, unsaved: true }]);
       expect((await onDisk(t.prefsPath)).names).toEqual({});
-      const back = await askDaemon(61754, { dirs: [three] });
+      const back = await askDaemon(testPort(61754), { dirs: [three] });
       if (!back || 'error' in back) throw new Error('add failed');
       expect(back.roots.find((r) => r.path === three)!.name).toBe('three');
 
       // a name-only request on a writable root keeps it writable and unsaved
-      await askDaemon(61754, { dirs: [t.two], rw: true });
-      const renamed = await askDaemon(61754, { dirs: [t.two], name: 'Still RW' });
+      await askDaemon(testPort(61754), { dirs: [t.two], rw: true });
+      const renamed = await askDaemon(testPort(61754), { dirs: [t.two], name: 'Still RW' });
       if (!renamed || 'error' in renamed) throw new Error('rename failed');
       expect(renamed.roots.find((r) => r.path === t.two)).toMatchObject({ name: 'Still RW', writable: true, saved: false });
     } finally {
@@ -276,7 +277,7 @@ describe('names over the control socket', () => {
   });
 
   test('a bad name or several directories are refused whole; an unprivate transport refuses a name', async () => {
-    const t = await start(61755);
+    const t = await start(testPort(61755));
     try {
       const four = join(t.dir, 'four');
       await mkdir(four);
@@ -285,16 +286,16 @@ describe('names over the control socket', () => {
         { dirs: [four], name: 'x'.repeat(81) },
         { dirs: [four, t.two], name: 'X' },
       ]) {
-        expect(await askDaemon(61755, req)).toHaveProperty('error');
+        expect(await askDaemon(testPort(61755), req)).toHaveProperty('error');
       }
       expect(t.registry.list().some((r) => r.path === four)).toBe(false); // refused before adding
 
       chmodSync(CONFIG_DIR, 0o755);
       try {
-        expect(await askDaemon(61755, { dirs: [t.two], name: 'X' })).toMatchObject({ error: expect.stringContaining('not private') });
-        const raw = await fetch('http://localhost/add', { unix: controlPath(61755), method: 'POST', body: JSON.stringify({ dirs: [t.two], name: 'X' }) });
+        expect(await askDaemon(testPort(61755), { dirs: [t.two], name: 'X' })).toMatchObject({ error: expect.stringContaining('not private') });
+        const raw = await fetch('http://localhost/add', { unix: controlPath(testPort(61755)), method: 'POST', body: JSON.stringify({ dirs: [t.two], name: 'X' }) });
         expect(raw.status).toBe(403);
-        expect(await askDaemon(61755, { dirs: [t.two] })).not.toHaveProperty('error'); // unnamed add as before
+        expect(await askDaemon(testPort(61755), { dirs: [t.two] })).not.toHaveProperty('error'); // unnamed add as before
       } finally {
         chmodSync(CONFIG_DIR, 0o700);
       }
@@ -313,9 +314,9 @@ describe('names over the control socket', () => {
     await prefs.addSaved(only);
     await prefs.setSavedName(only, 'Only');
     const registry = await Registry.create([only]);
-    const s = await serve({ registry, prefs, port: 61756, hostname: '127.0.0.1', noGit: true });
+    const s = await serve({ registry, prefs, port: testPort(61756), hostname: '127.0.0.1', noGit: true });
     try {
-      const removed = await askRemove(61756, { dirs: [only] });
+      const removed = await askRemove(testPort(61756), { dirs: [only] });
       if (!removed || 'error' in removed) throw new Error('remove failed');
       expect(removed.results).toMatchObject([{ kept: true, unsaved: true }]);
       expect(removed.roots[0]!.name).toBe('Only');

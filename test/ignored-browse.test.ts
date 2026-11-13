@@ -7,6 +7,7 @@ import { Prefs } from '../src/lib/prefs';
 import { Registry, type Root } from '../src/lib/roots';
 import { scanRoot } from '../src/lib/scan';
 import { parseReveal, REVEAL, Store } from '../src/lib/store';
+import { testPort } from './ports';
 
 const env = { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' };
 const git = (cwd: string, ...args: string[]) => Bun.spawnSync(['git', ...args], { cwd, env, stdout: 'ignore', stderr: 'ignore' });
@@ -259,7 +260,7 @@ describe('routes', () => {
     const { serve } = await import('../src/server');
     const registry = await Registry.create([dir]);
     const id = registry.list()[0]!.id;
-    const port = 61746;
+    const port = testPort(61746);
     const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs-route.json')), port, hostname: '127.0.0.1' });
     const get = (path: string) => fetch(`http://127.0.0.1:${port}${path}`);
     try {

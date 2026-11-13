@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { gitStateIn, Store } from '../src/lib/store';
+import { testPort } from './ports';
 
 const env = { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' };
 const git = (cwd: string, ...args: string[]) => Bun.spawnSync(['git', ...args], { cwd, env, stdout: 'ignore', stderr: 'ignore' });
@@ -144,7 +145,7 @@ test('routes: /api/doc for any kind and /api/files rows carry it', async () => {
   const { serve: start } = await import('../src/server');
   const registry = await Registry.create([repo]);
   const id = registry.list()[0]!.id;
-  const port = 61747;
+  const port = testPort(61747);
   const { server, watcher, control } = await start({ registry, prefs: await Prefs.load(join(base, 'p-route.json')), port, hostname: '127.0.0.1' });
   const get = async (path: string) => (await fetch(`http://127.0.0.1:${port}${path}`)).json() as Promise<Record<string, unknown>>;
   try {

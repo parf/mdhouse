@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { bundle, FAMILIES, inventory, mutation, read, type Family } from '../src/lib/authz';
+import { testPort } from './ports';
 
 const h = () => () => new Response('');
 
@@ -170,7 +171,7 @@ describe('serve() route inventory', () => {
     await writeFile(join(dir, 'a.md'), '# a\n');
     const prefs = await Prefs.load(join(dir, 'prefs.json'));
     const registry = await Registry.create([dir]);
-    const { server, watcher, control, routes } = await serve({ registry, prefs, port: 61804, hostname: '127.0.0.1', noGit: true });
+    const { server, watcher, control, routes } = await serve({ registry, prefs, port: testPort(61804), hostname: '127.0.0.1', noGit: true });
     try {
       expect(routes.map((r) => [r.path, r.method, r.family])).toEqual(EXPECTED);
     } finally {

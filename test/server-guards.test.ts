@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { pageUrl, sameOrigin, trustedHost } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 describe('trustedHost — the DNS-rebinding guard', () => {
   test('loopback names and IP literals are accepted', () => {
@@ -73,7 +74,7 @@ describe('a running server', () => {
 
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-serve-'));
     await writeFile(join(dir, 'a.md'), '# a\n');
-    const port = 61790;
+    const port = testPort(61790);
     const { server, watcher, control } = await serve({
       registry: await Registry.create([dir]),
       prefs: await Prefs.load(join(dir, 'prefs.json')),
@@ -111,7 +112,7 @@ describe('access — allow list and users', () => {
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-access-'));
     await writeFile(join(dir, 'a.md'), '# a\n');
     const prefs = await Prefs.load(join(dir, 'prefs.json'));
-    const port = 61794;
+    const port = testPort(61794);
     const registry = await Registry.create([dir]);
     const id = registry.list()[0]!.id;
     const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
@@ -162,7 +163,7 @@ describe('page addresses — /<rootId>/<rel>', () => {
     await mkdir(join(base, 'api'));
     await writeFile(join(base, 'notes', 'a.md'), '# a\n');
     await writeFile(join(base, 'api', 'x.md'), '# x\n');
-    const port = 61803;
+    const port = testPort(61803);
     const registry = await Registry.create([join(base, 'notes'), join(base, 'api')]);
     const [notes, api] = registry.list();
     expect(api!.id).toBe('api-2');
@@ -218,7 +219,7 @@ describe('the git view — /api/git', () => {
     await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'first']);
     await writeFile(join(repo, 'a.md'), 'a2\n');
 
-    const port = 61795;
+    const port = testPort(61795);
     const { server, watcher, control } = await serve({
       registry: await Registry.create([repo, plain]),
       prefs: await Prefs.load(join(base, 'prefs.json')),
@@ -268,7 +269,7 @@ describe('the git view — /api/git', () => {
     await git(['config', 'user.name', 't']);
     await git(['config', 'user.email', 't@t']);
 
-    const port = 61930;
+    const port = testPort(61930);
     const registry = await Registry.create([{ path: repo, writable: true }]);
     const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
     const p = `${registry.list()[0]!.id}/`;
@@ -344,7 +345,7 @@ test('POST /api/git/reset — a file back to its last commit; refuses read-only,
   await writeFile(join(ro, 'b.md'), 'b changed\n');
   await writeFile(join(repo, 'code.ts'), 'const a = 2;\n');
 
-  const port = 61797;
+  const port = testPort(61797);
   const registry = await Registry.create([
     { path: repo, writable: true },
     { path: ro, writable: false },
@@ -418,7 +419,7 @@ test('POST /api/git/commit-file — one file, leaving the rest of the repo alone
   await writeFile(join(repo, 'new.md'), 'n\n');
   await writeFile(join(ro, 'r.md'), 'r changed\n');
 
-  const port = 61931;
+  const port = testPort(61931);
   const registry = await Registry.create([
     { path: repo, writable: true },
     { path: ro, writable: false },
@@ -480,7 +481,7 @@ test('POST /api/git/reset resets that file only — a name git would read as a g
   await run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'first']);
   for (const f of files) await writeFile(join(repo, f), 'edited\n');
 
-  const port = 61901;
+  const port = testPort(61901);
   const registry = await Registry.create([{ path: repo, writable: true }]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
   const id = registry.list()[0]!.id;
@@ -518,7 +519,7 @@ describe('POST /api/task — ticking a box', () => {
     await Bun.write(join(rw, 'todo.md'), '# T\n\n- [ ] one\n- [ ] two\n');
     await Bun.write(join(ro, 'todo.md'), '- [ ] locked\n');
 
-    const port = 61791;
+    const port = testPort(61791);
     const registry = await Registry.create([
       { path: rw, writable: true },
       { path: ro, writable: false },
@@ -579,7 +580,7 @@ describe('/api/qa — a change to one Q&A item', () => {
     await Bun.write(join(rw, 'q.md'), '# Q\n\n> ? Who?\n> A: Nobody.\n\n- 🟠 Fixed?\n');
     await Bun.write(join(ro, 'q.md'), '- ❓ Locked?\n');
 
-    const port = 61792;
+    const port = testPort(61792);
     const registry = await Registry.create([
       { path: rw, writable: true },
       { path: ro, writable: false },
@@ -648,7 +649,7 @@ describe('POST /api/insert — adding under a heading', () => {
     await Bun.write(join(rw, 'n.md'), '# N\n\n## A\n\none\n\n## B\n');
     await Bun.write(join(ro, 'n.md'), '# Locked\n');
 
-    const port = 61793;
+    const port = testPort(61793);
     const registry = await Registry.create([
       { path: rw, writable: true },
       { path: ro, writable: false },
@@ -699,7 +700,7 @@ describe('request limits', () => {
     const dir = await mkdtemp(join(tmpdir(), 'mdhouse-limits-'));
     // 30 files × 20 hits: more than the 500 cap.
     for (let i = 0; i < 30; i++) await writeFile(join(dir, `f${i}.md`), 'needle\n'.repeat(20));
-    const port = 61798;
+    const port = testPort(61798);
     const base = `http://127.0.0.1:${port}`;
     const { server, watcher, control } = await serve({
       registry: await Registry.create([dir]),
@@ -743,7 +744,7 @@ describe('/api/raw', () => {
     await writeFile(join(dir, 'notes'), 'plain words\n');
     await mkdir(join(dir, '.git'));
     await writeFile(join(dir, '.git', 'config'), '[remote "origin"]\n');
-    const port = 61799;
+    const port = testPort(61799);
     const { server, watcher, control } = await serve({
       registry: await Registry.create([dir]),
       prefs: await Prefs.load(join(dir, 'prefs.json')),
@@ -805,7 +806,7 @@ describe('/api/files', () => {
     await mkdir(join(dir, 'node_modules'), { recursive: true });
     await mkdir(join(dir, '.hidden'), { recursive: true });
     for (const f of ['a.md', 'sub/b.txt', 'sub/c.png', 'sub/deep/d.js', 'node_modules/x.js', '.hidden/y.txt']) await writeFile(join(dir, f), 'x');
-    const port = 61800;
+    const port = testPort(61800);
     const { server, watcher, control } = await serve({
       registry: await Registry.create([dir]),
       prefs: await Prefs.load(join(dir, 'prefs.json')),
@@ -842,7 +843,7 @@ test('/api/asset — an image never runs as a page: an SVG\'s script is sandboxe
   const base = await mkdtemp(join(tmpdir(), 'mdhouse-asset-'));
   await Bun.write(join(base, 'x.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><script>fetch("/api/marks")</script></svg>');
   await Bun.write(join(base, 'p.png'), 'png');
-  const port = 61798;
+  const port = testPort(61798);
   const registry = await Registry.create([{ path: base, writable: true }]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
   const id = registry.list()[0]!.id;
@@ -869,7 +870,7 @@ test('a document that is gone, or a folder named *.md, is 404 on every document 
   const { serve } = await import('../src/server');
   const base = await mkdtemp(join(tmpdir(), 'mdhouse-gone-'));
   await mkdir(join(base, 'dir.md'));
-  const port = 61799;
+  const port = testPort(61799);
   const registry = await Registry.create([{ path: base, writable: true }]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
   const id = registry.list()[0]!.id;
@@ -915,7 +916,7 @@ test('pull and commit refuse a repo that holds a read-only root or files outside
   await writeFile(join(origin, 'notes', 'n.md'), 'n upstream\n');
   await git(origin, ['commit', '-qam', 'upstream']);
 
-  const port = 61781;
+  const port = testPort(61781);
   const registry = await Registry.create([
     { path: join(repo, 'docs'), writable: true },
     { path: join(repo, 'notes'), writable: false },
@@ -971,7 +972,7 @@ test('/api/doc answers every kind; code and text by numbered lines; nothing unde
   await writeFile(join(dir, 'p.html'), '<p>hi</p>\n');
   for (const f of ['i.png', 'd.pdf', 'v.webm', 's.mp3']) await writeFile(join(dir, f), 'x');
   await writeFile(join(dir, 'big.txt'), 'x'.repeat(5_000_001));
-  const port = 61782;
+  const port = testPort(61782);
   const registry = await Registry.create([dir]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(dir, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
   const id = registry.list()[0]!.id;
@@ -1022,7 +1023,7 @@ test('--rw for a folder writable only by auto-rw sticks when auto-rw goes off (A
   await mkdir(notes, { recursive: true });
   const prefs = await Prefs.load(join(base, 'prefs.json'));
   await prefs.setAutoRw([join(base, 'auto')]);
-  const port = 61783;
+  const port = testPort(61783);
   const { server, watcher, control } = await serve({ registry: await Registry.create([base]), prefs, port, hostname: '127.0.0.1', noGit: true });
   const writable = async () =>
     ((await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()).roots as { path: string; writable: boolean }[]).find((r) => r.path === notes)?.writable;
@@ -1054,7 +1055,7 @@ test('/api/doc links a file named in the text when it is a file in the root', as
   await Bun.write(join(base, 'a.md'), 'See `notes/b.md`, missing.md and `src/x.ts:3`.\n');
   await Bun.write(join(base, 'notes/b.md'), 'b\n');
   await Bun.write(join(base, 'src/x.ts'), 'x\n');
-  const port = 61802;
+  const port = testPort(61802);
   const registry = await Registry.create([{ path: base, writable: false }]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
   const id = registry.list()[0]!.id;
@@ -1094,7 +1095,7 @@ test('POST /api/roots/remove refuses another site, an unknown root and the last 
   await git(['init', '-q']);
   await git(['add', '.']);
   await git(['commit', '-qm', 'first']);
-  const port = 61932;
+  const port = testPort(61932);
   const registry = await Registry.create([repo, other]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1' });
   const [id, otherId] = registry.list().map((r) => r.id);
@@ -1138,7 +1139,7 @@ test('/api/doc on a folder named without its slash gives the folder page\'s addr
   const base = await mkdtemp(join(tmpdir(), 'mdhouse-folder-'));
   await mkdir(join(base, 'sub'));
   await Bun.write(join(base, 'sub/a.md'), 'a\n');
-  const port = 61803;
+  const port = testPort(61803);
   const registry = await Registry.create([{ path: base, writable: false }]);
   const { server, watcher, control } = await serve({ registry, prefs: await Prefs.load(join(base, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
   const id = registry.list()[0]!.id;
@@ -1180,7 +1181,7 @@ describe('a reference root on a running server (MW.0f.1)', () => {
     const changed = `${doc}local change\n`;
     await writeFile(join(ref, 'a.md'), changed);
 
-    const port = 61784;
+    const port = testPort(61784);
     const prefs = await Prefs.load(join(base, 'prefs.json'));
     await prefs.setAutoRw([base]);
     const registry = await Registry.create([{ path: repo, writable: true }]);
@@ -1257,7 +1258,7 @@ describe('POST /api/settings — the edit scheme', () => {
     const { serve } = await import('../src/server');
     const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-scheme-')));
     const prefs = await Prefs.load(join(base, 'prefs.json'));
-    const port = 61810;
+    const port = testPort(61810);
     const { server, watcher, control } = await serve({ registry: await Registry.create([base]), prefs, port, hostname: '127.0.0.1', noGit: true });
     let cookie = '';
     const post = (body: unknown) =>
@@ -1305,7 +1306,7 @@ describe('the author cookie — per-browser attribution, no rights (MW.0a)', () 
     const prefs = await Prefs.load(prefsFile);
     await prefs.updateSettings({ me: 'Owner' });
     const prefsBytes = await readFile(prefsFile, 'utf8');
-    const port = 61950;
+    const port = testPort(61950);
     const registry = await Registry.create([
       { path: join(base, 'rw'), writable: true },
       { path: join(base, 'ro'), writable: false },

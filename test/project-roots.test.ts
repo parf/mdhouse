@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 let base: string;
 
@@ -26,7 +27,7 @@ test('/api/roots: the allowlisted project fields, with why a project is writable
   await registry.addReference(join(base, 'ref'), '_ref', 'reference');
   const prefs = await Prefs.load(join(base, 'prefs.json'));
   await prefs.setAutoRw([join(base, 'auto')]);
-  const port = 61750;
+  const port = testPort(61750);
   const { server, watcher, control } = await start({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
   type Row = Record<string, unknown>;
   const roots = async () => {

@@ -9,6 +9,7 @@ import { CONFIG_DIR, Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { localAdminOrigin, localExchange, serve } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 const CLI = join(import.meta.dir, '../src/cli.ts');
 
@@ -87,7 +88,7 @@ const ADMIN = { error: 'administrator session required', reason: 'admin' };
 
 describe('local administrator (Personal, loopback peer)', () => {
   test('no users: a loopback request is the administrator, without a session', async () => {
-    const t = await start(61775, {}, true);
+    const t = await start(testPort(61775), {}, true);
     try {
       expect(await (await fetch(`${t.origin}/api/admin`)).json()).toEqual({ admin: true, local: true });
       expect((await t.post('/api/settings', { editLink: false, autoRw: false })).status).toBe(200);
@@ -99,7 +100,7 @@ describe('local administrator (Personal, loopback peer)', () => {
   });
 
   test('no users: a loopback peer behind a host name and X-Forwarded-For is still the administrator', async () => {
-    const t = await start(61777, {}, true, ['notes.example']);
+    const t = await start(testPort(61777), {}, true, ['notes.example']);
     try {
       const proxied = { host: 'notes.example', 'x-forwarded-for': '203.0.113.7' };
       expect(await (await fetch(`${t.origin}/api/admin`, { headers: proxied })).json()).toEqual({ admin: true, local: true });
@@ -112,7 +113,7 @@ describe('local administrator (Personal, loopback peer)', () => {
 
   test('configured users: loopback alone is not the administrator', async () => {
     const hash = await Bun.password.hash('pw');
-    const t = await start(61776, { alice: hash }, true);
+    const t = await start(testPort(61776), { alice: hash }, true);
     try {
       const auth = { authorization: `Basic ${btoa('alice:pw')}` };
       expect(await (await fetch(`${t.origin}/api/admin`, { headers: auth })).json()).toEqual({ admin: false });
@@ -127,13 +128,13 @@ describe('local administrator (Personal, loopback peer)', () => {
 
 describe('administrator session over HTTP', () => {
   test('protected writes without a real session are 401 reason:admin and change nothing', async () => {
-    const t = await start(61760);
+    const t = await start(testPort(61760));
     try {
       expect(await (await fetch(`${t.origin}/api/admin`)).json()).toEqual({ admin: false });
       const before = await readFile(join(t.base, 'prefs.json'), 'utf8');
       const ids = t.registry.list().map((r) => r.id);
-      const spoofed = `mdhouse-admin-61760=${'A'.repeat(43)}`;
-      const author = 'mdhouse-author-61760=alice';
+      const spoofed = `mdhouse-admin-${testPort(61760)}=${'A'.repeat(43)}`;
+      const author = `mdhouse-author-${testPort(61760)}=alice`;
       for (const cookie of ['', spoofed, author, `${spoofed}; ${author}`]) {
         for (const [path, body] of [
           ['/api/settings', { editLink: false, autoRw: false }],
@@ -157,9 +158,9 @@ describe('administrator session over HTTP', () => {
   });
 
   test('exchange: 204 + HttpOnly SameSite=Strict cookie, no-store; replay and garbage are the same 403', async () => {
-    const t = await start(61761);
+    const t = await start(testPort(61761));
     try {
-      const minted = await askAdminMint(61761);
+      const minted = await askAdminMint(testPort(61761));
       if (!minted || 'error' in minted) throw new Error('mint failed');
       expect(minted.url).toBe(t.origin);
       const ok = await t.post('/api/admin/session', { proof: minted.proof }, { 'sec-fetch-site': 'same-origin' });
@@ -167,7 +168,7 @@ describe('administrator session over HTTP', () => {
       expect(ok.headers.get('cache-control')).toBe('no-store');
       expect(ok.headers.get('referrer-policy')).toBe('no-referrer');
       const set = ok.headers.get('set-cookie')!;
-      expect(set).toMatch(/^mdhouse-admin-61761=[A-Za-z0-9_-]{43}; Path=\/; HttpOnly; SameSite=Strict; Max-Age=\d+$/);
+      expect(set).toMatch(new RegExp(`^mdhouse-admin-${testPort(61761)}=[A-Za-z0-9_-]{43}; Path=/; HttpOnly; SameSite=Strict; Max-Age=\\d+$`));
       expect(set.includes(minted.proof)).toBe(false); // booleans only: a failure must not print a secret
       const cookie = set.slice(0, set.indexOf(';'));
 
@@ -196,9 +197,9 @@ describe('administrator session over HTTP', () => {
   });
 
   test('a refused exchange leaves the proof unused; a rebound Host never reaches the handler', async () => {
-    const t = await start(61762);
+    const t = await start(testPort(61762));
     try {
-      const minted = await askAdminMint(61762);
+      const minted = await askAdminMint(testPort(61762));
       if (!minted || 'error' in minted) throw new Error('mint failed');
       const proof = { proof: minted.proof };
       const send = (headers: Record<string, string>) =>
@@ -209,11 +210,11 @@ describe('administrator session over HTTP', () => {
       expect((await send({ origin: t.origin, 'x-forwarded-for': '203.0.113.9' })).status).toBe(204); // XFF is not read either way
       expect((await send({ origin: t.origin })).status).toBe(403); // now spent
 
-      const again = await askAdminMint(61762);
+      const again = await askAdminMint(testPort(61762));
       if (!again || 'error' in again) throw new Error('mint failed');
       const rebound = await fetch(`${t.origin}/api/admin/session`, {
         method: 'POST',
-        headers: { host: 'evil.example:61762', origin: 'http://evil.example:61762', 'content-type': 'application/json' },
+        headers: { host: `evil.example:${testPort(61762)}`, origin: `http://evil.example:${testPort(61762)}`, 'content-type': 'application/json' },
         body: JSON.stringify({ proof: again.proof }),
       });
       expect(rebound.status).toBe(421);
@@ -224,11 +225,11 @@ describe('administrator session over HTTP', () => {
   });
 
   test('logout and control revoke end sessions; list shows no secrets', async () => {
-    const t = await start(61763);
+    const t = await start(testPort(61763));
     try {
-      const one = await adminLogin(61763);
-      const two = await adminLogin(61763);
-      const listed = await askAdminList(61763);
+      const one = await adminLogin(testPort(61763));
+      const two = await adminLogin(testPort(61763));
+      const listed = await askAdminList(testPort(61763));
       if (!listed || 'error' in listed) throw new Error('list failed');
       expect(listed.sessions).toHaveLength(2);
       for (const s of listed.sessions) expect(Object.keys(s).sort()).toEqual(['createdAt', 'expiresAt', 'id', 'lastSeenAt']);
@@ -236,15 +237,15 @@ describe('administrator session over HTTP', () => {
 
       const out = await t.post('/api/admin/logout', {}, { cookie: one });
       expect(out.status).toBe(204);
-      expect(out.headers.get('set-cookie')).toBe('mdhouse-admin-61763=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
+      expect(out.headers.get('set-cookie')).toBe(`mdhouse-admin-${testPort(61763)}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`);
       expect(await (await fetch(`${t.origin}/api/admin`, { headers: { cookie: one } })).json()).toEqual({ admin: false });
       expect((await t.post('/api/settings', { editLink: false }, { cookie: one })).status).toBe(401);
       expect((await t.post('/api/admin/logout', {}, { cookie: two, 'sec-fetch-site': 'cross-site' })).status).toBe(403);
       expect((await t.post('/api/settings', { editLink: false }, { cookie: two })).status).toBe(200);
 
-      const unused = await askAdminMint(61763);
+      const unused = await askAdminMint(testPort(61763));
       if (!unused || 'error' in unused) throw new Error('mint failed');
-      expect(await askAdminRevoke(61763)).toEqual({ revoked: 1 });
+      expect(await askAdminRevoke(testPort(61763))).toEqual({ revoked: 1 });
       expect((await t.post('/api/settings', { editLink: true }, { cookie: two })).status).toBe(401);
       expect((await t.post('/api/admin/session', { proof: unused.proof })).status).toBe(403);
       expect(t.prefs.settings.editLink).toBe(false);
@@ -254,14 +255,14 @@ describe('administrator session over HTTP', () => {
   });
 
   test('Basic admission admits but is not administration; the exchange still needs it', async () => {
-    const t = await start(61764, { u: await hashPassword('pw') });
+    const t = await start(testPort(61764), { u: await hashPassword('pw') });
     try {
       const basic = `Basic ${btoa('u:pw')}`;
       expect((await fetch(`${t.origin}/api/admin`)).status).toBe(401); // not admitted
       expect(await (await fetch(`${t.origin}/api/admin`, { headers: { authorization: basic } })).json()).toEqual({ admin: false });
       expect(await (await t.post('/api/settings', { editLink: false }, { authorization: basic })).json()).toEqual(ADMIN);
 
-      const minted = await askAdminMint(61764);
+      const minted = await askAdminMint(testPort(61764));
       if (!minted || 'error' in minted) throw new Error('mint failed');
       expect((await t.post('/api/admin/session', { proof: minted.proof })).status).toBe(401); // admission first, proof untouched
       const ok = await t.post('/api/admin/session', { proof: minted.proof }, { authorization: basic });
@@ -275,10 +276,10 @@ describe('administrator session over HTTP', () => {
   });
 
   test('no mint while --host-name names a proxy: localhost is refused there', async () => {
-    const t = await start(61765);
+    const t = await start(testPort(61765));
     try {
       await t.prefs.setHostNames(['proxy.example']);
-      const minted = await askAdminMint(61765);
+      const minted = await askAdminMint(testPort(61765));
       expect(minted && 'error' in minted && minted.error).toContain('--host-name');
     } finally {
       await t.stop();
@@ -291,44 +292,44 @@ describe('admin control transport must be private to the OS owner', () => {
     fetch(`http://localhost${path}`, { unix: controlPath(port), method: 'POST', body: '{}' }).then(async (r) => ({ status: r.status, body: (await r.json()) as Record<string, unknown> }));
 
   test('a group/other-accessible config dir or socket, or a symlinked config dir, refuses admin ops; ping still answers', async () => {
-    const t = await start(61766);
+    const t = await start(testPort(61766));
     try {
-      expect(controlInsecurity(61766)).toBeNull();
-      expect((await raw(61766, '/admin/mint')).status).toBe(200);
+      expect(controlInsecurity(testPort(61766))).toBeNull();
+      expect((await raw(testPort(61766), '/admin/mint')).status).toBe(200);
 
       chmodSync(CONFIG_DIR, 0o755);
       try {
-        expect(controlInsecurity(61766)).toContain('open to other users');
-        expect(await askAdminMint(61766)).toMatchObject({ error: expect.stringContaining('not private') }); // client refuses
-        const served = await raw(61766, '/admin/mint'); // and so does the daemon
+        expect(controlInsecurity(testPort(61766))).toContain('open to other users');
+        expect(await askAdminMint(testPort(61766))).toMatchObject({ error: expect.stringContaining('not private') }); // client refuses
+        const served = await raw(testPort(61766), '/admin/mint'); // and so does the daemon
         expect(served.status).toBe(403);
         expect(served.body).not.toHaveProperty('proof');
-        expect((await raw(61766, '/admin/revoke')).status).toBe(403);
-        expect((await raw(61766, '/admin/list')).status).toBe(403);
-        expect(await askPing(61766)).toMatchObject({ pid: process.pid }); // existing control unchanged
+        expect((await raw(testPort(61766), '/admin/revoke')).status).toBe(403);
+        expect((await raw(testPort(61766), '/admin/list')).status).toBe(403);
+        expect(await askPing(testPort(61766))).toMatchObject({ pid: process.pid }); // existing control unchanged
       } finally {
         chmodSync(CONFIG_DIR, 0o700);
       }
 
-      chmodSync(controlPath(61766), 0o666);
+      chmodSync(controlPath(testPort(61766)), 0o666);
       try {
-        expect(controlInsecurity(61766)).toContain('open to other users');
-        expect((await raw(61766, '/admin/mint')).status).toBe(403);
+        expect(controlInsecurity(testPort(61766))).toContain('open to other users');
+        expect((await raw(testPort(61766), '/admin/mint')).status).toBe(403);
       } finally {
-        chmodSync(controlPath(61766), 0o600);
+        chmodSync(controlPath(testPort(61766)), 0o600);
       }
 
       const real = `${CONFIG_DIR}.real`;
       renameSync(CONFIG_DIR, real);
       symlinkSync(real, CONFIG_DIR);
       try {
-        expect(controlInsecurity(61766)).toContain('is not a directory');
-        expect((await raw(61766, '/admin/mint')).status).toBe(403);
+        expect(controlInsecurity(testPort(61766))).toContain('is not a directory');
+        expect((await raw(testPort(61766), '/admin/mint')).status).toBe(403);
       } finally {
         unlinkSync(CONFIG_DIR);
         renameSync(real, CONFIG_DIR);
       }
-      expect((await raw(61766, '/admin/mint')).status).toBe(200);
+      expect((await raw(testPort(61766), '/admin/mint')).status).toBe(200);
     } finally {
       await t.stop();
     }
@@ -346,22 +347,22 @@ describe('mdhouse admin — the link goes only to an interactive terminal', () =
 
   test('redirected or piped output is refused before any daemon is asked; nothing secret is printed', async () => {
     // nothing runs on this port: a refusal that came from the daemon would say "nothing running"
-    const piped = await cli('--port', '61767');
+    const piped = await cli('--port', String(testPort(61767)));
     expect(piped.exitCode).toBe(2);
     expect(piped.stderr).toContain('only to an interactive terminal');
     expect(piped.stdout).toBe('');
 
-    const t = await start(61768);
+    const t = await start(testPort(61768));
     try {
       let seen = '';
       const out = join(t.base, 'out.txt');
       // a real PTY on stdin, stdout redirected to a file
-      const p = Bun.spawn(['bash', '-c', `exec bun "$0" admin --port 61768 > "$1"`, CLI, out], { env, terminal: { cols: 200, rows: 24, data: (_t, d) => (seen += Buffer.from(d).toString()) } });
+      const p = Bun.spawn(['bash', '-c', `exec bun "$0" admin --port ${testPort(61768)} > "$1"`, CLI, out], { env, terminal: { cols: 200, rows: 24, data: (_t, d) => (seen += Buffer.from(d).toString()) } });
       expect(await p.exited).toBe(2);
       expect(seen).toContain('only to an interactive terminal');
       expect(seen.includes('#admin=')).toBe(false);
       expect(await readFile(out, 'utf8')).toBe('');
-      const listed = await askAdminList(61768);
+      const listed = await askAdminList(testPort(61768));
       expect(listed).toEqual({ sessions: [] });
     } finally {
       await t.stop();
@@ -369,12 +370,12 @@ describe('mdhouse admin — the link goes only to an interactive terminal', () =
   });
 
   test('on a real PTY it prints a single-use local fragment link that the public exchange accepts once', async () => {
-    const t = await start(61769);
+    const t = await start(testPort(61769));
     try {
       let seen = '';
-      const p = Bun.spawn(['bun', CLI, 'admin', '--port', '61769'], { env, terminal: { cols: 300, rows: 24, data: (_t, d) => (seen += Buffer.from(d).toString()) } });
+      const p = Bun.spawn(['bun', CLI, 'admin', '--port', String(testPort(61769))], { env, terminal: { cols: 300, rows: 24, data: (_t, d) => (seen += Buffer.from(d).toString()) } });
       expect(await p.exited).toBe(0);
-      const link = /(http:\/\/127\.0\.0\.1:61769)\/settings#admin=([A-Za-z0-9_-]{43})/.exec(seen);
+      const link = new RegExp(`(http://127\\.0\\.0\\.1:${testPort(61769)})/settings#admin=([A-Za-z0-9_-]{43})`).exec(seen);
       // booleans only: a failure must not print the captured terminal, which holds the proof
       expect(link !== null).toBe(true);
       expect(/[?&]admin=/.test(seen)).toBe(false);
@@ -390,18 +391,18 @@ describe('mdhouse admin — the link goes only to an interactive terminal', () =
   });
 
   test('--list and --revoke work without a terminal and print no secret', async () => {
-    const t = await start(61770);
+    const t = await start(testPort(61770));
     try {
-      const cookie = await adminLogin(61770);
-      const list = await cli('--list', '--port', '61770');
+      const cookie = await adminLogin(testPort(61770));
+      const list = await cli('--list', '--port', String(testPort(61770)));
       expect([list.exitCode, list.stderr]).toEqual([0, '']);
       expect(list.stdout).toMatch(/^[0-9a-f]{32}  since /);
       expect(list.stdout.includes(cookie.split('=')[1]!)).toBe(false);
-      const revoke = await cli('--revoke', '--port', '61770');
+      const revoke = await cli('--revoke', '--port', String(testPort(61770)));
       expect(revoke.exitCode).toBe(0);
       expect(revoke.stdout).toContain('ended 1 browser administrator session');
       expect((await t.post('/api/settings', { editLink: false }, { cookie })).status).toBe(401);
-      expect((await cli('--list', '--revoke', '--port', '61770')).exitCode).toBe(2);
+      expect((await cli('--list', '--revoke', '--port', String(testPort(61770)))).exitCode).toBe(2);
     } finally {
       await t.stop();
     }

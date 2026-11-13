@@ -3,18 +3,10 @@ import { spawn, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { testPort } from './ports';
 
 const SCRIPT = resolve(import.meta.dir, '../scripts/safe-smoke.ts');
-/**
- * Ports free on this machine now, one per role. The kernel hands each bind on port 0 a distinct
- * ephemeral port, so a concurrent run of this file gets other ones; fixed numbers collided.
- */
-const P = (() => {
-  const held = Array.from({ length: 5 }, () => Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: () => new Response('') }));
-  const ports = held.map((s) => s.port!);
-  for (const s of held) s.stop(true);
-  return ports;
-})();
+const P = [61741, 61742, 61743, 61744, 61745].map(testPort);
 
 /**
  * A stand-in for `src/cli.ts`: `FIX` picks what it does. It serves `/api/roots` like mdhouse, and

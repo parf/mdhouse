@@ -10,6 +10,7 @@ import { lineHash } from '../src/lib/qa';
 import { ReadOnlyError, Registry, type AccessMode } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 const tmp = async (prefix: string) => realpath(await mkdtemp(join(tmpdir(), prefix)));
 const disk = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
@@ -301,9 +302,9 @@ async function start(port: number, o: { dir?: string; prefsPath?: string; git?: 
 
 describe('POST /api/roots/mode', () => {
   test('payload: mode and a full accessRev on projects only, apart from saveRev and the name', async () => {
-    const t = await start(61731);
+    const t = await start(testPort(61731));
     try {
-      const cookie = await adminLogin(61731);
+      const cookie = await adminLogin(testPort(61731));
       const all = await t.roots();
       expect(all.find((r) => r.kind === 'reference')).not.toHaveProperty('mode');
       expect(all.find((r) => r.kind === 'reference')).not.toHaveProperty('accessRev');
@@ -322,9 +323,9 @@ describe('POST /api/roots/mode', () => {
   });
 
   test('refusals change nothing: schema 400, cross-origin 403, no or spoofed admin 401, unknown 404, reference 403, stale 409', async () => {
-    const t = await start(61732);
+    const t = await start(testPort(61732));
     try {
-      const cookie = await adminLogin(61732);
+      const cookie = await adminLogin(testPort(61732));
       const keep = await t.root(t.keep);
       const text = readFileSync(t.prefsPath, 'utf8');
       const rev = keep.accessRev!;
@@ -358,9 +359,9 @@ describe('POST /api/roots/mode', () => {
   });
 
   test('saved: RO beats auto-rw, is written to prefs and denies document writes; RW restores them', async () => {
-    const t = await start(61733);
+    const t = await start(testPort(61733));
     try {
-      const cookie = await adminLogin(61733);
+      const cookie = await adminLogin(testPort(61733));
       let keep = await t.root(t.keep);
       expect([keep.mode, keep.writable]).toEqual(['inherit', true]);
       const res = await t.post('/api/roots/mode', { id: keep.id, mode: 'ro', rev: keep.accessRev }, { cookie });
@@ -383,9 +384,9 @@ describe('POST /api/roots/mode', () => {
   });
 
   test('session: the mode lives in memory, the file is untouched; save carries mode and name together; each invalidates the other revision', async () => {
-    const t = await start(61734);
+    const t = await start(testPort(61734));
     try {
-      const cookie = await adminLogin(61734);
+      const cookie = await adminLogin(testPort(61734));
       const text = readFileSync(t.prefsPath, 'utf8');
       let ses = await t.root(t.ses);
       expect((await t.post('/api/roots/name', { id: ses.id, name: 'Session RO' }, { cookie })).status).toBe(200);
@@ -406,11 +407,11 @@ describe('POST /api/roots/mode', () => {
 
       // a session RO carried by `mdhouse <dir> -p` (no --rw) from the CLI too
       await t.post('/api/roots/remove', { id: ses.id }, { cookie });
-      await askDaemon(61734, { dirs: [t.ses] });
+      await askDaemon(testPort(61734), { dirs: [t.ses] });
       const again = await t.root(t.ses);
       expect(again).toMatchObject({ mode: 'inherit', saved: false });
       expect((await t.post('/api/roots/mode', { id: again.id, mode: 'ro', rev: again.accessRev }, { cookie })).status).toBe(200);
-      await askDaemon(61734, { dirs: [t.ses], save: true });
+      await askDaemon(testPort(61734), { dirs: [t.ses], save: true });
       expect(disk(t.prefsPath)).toMatchObject({ readonly: [t.ses] });
       expect(await t.root(t.ses)).toMatchObject({ mode: 'ro', saved: true });
     } finally {
@@ -420,9 +421,9 @@ describe('POST /api/roots/mode', () => {
   });
 
   test('under the lock: an external save, auto-rw or mode change is 409; an administrator signed out meanwhile is 401; nothing changes', async () => {
-    const t = await start(61735);
+    const t = await start(testPort(61735));
     try {
-      let cookie = await adminLogin(61735);
+      let cookie = await adminLogin(testPort(61735));
       type Change = (c: Record<string, unknown>) => Record<string, unknown>;
       const cases: Array<[string, Change]> = [
         [t.ses, (c) => ({ ...c, saved: [...(c.saved as string[]), t.ses].sort() })], // saved by another process
@@ -450,12 +451,12 @@ describe('POST /api/roots/mode', () => {
       const release = await holdLock(t.prefsPath);
       const pending = t.post('/api/roots/mode', { id: keep.id, mode: 'ro', rev: keep.accessRev }, { cookie });
       await Bun.sleep(100);
-      await askAdminRevoke(61735);
+      await askAdminRevoke(testPort(61735));
       await release();
       expect((await pending).status).toBe(401);
       expect(readFileSync(t.prefsPath, 'utf8')).toBe(text);
       expect(await t.root(t.keep)).toEqual(keep);
-      cookie = await adminLogin(61735);
+      cookie = await adminLogin(testPort(61735));
       expect((await t.post('/api/roots/mode', { id: keep.id, mode: 'ro', rev: keep.accessRev }, { cookie })).status).toBe(200);
     } finally {
       t.stop();
@@ -471,9 +472,9 @@ describe('POST /api/roots/mode', () => {
     await writeFile(target, '{"version":1}\n');
     const link = join(dir, 'prefs.json');
     await symlink(target, link);
-    const t = await start(61736, { dir, prefsPath: link });
+    const t = await start(testPort(61736), { dir, prefsPath: link });
     try {
-      const cookie = await adminLogin(61736);
+      const cookie = await adminLogin(testPort(61736));
       const keep = await t.root(t.keep);
       const text = readFileSync(target, 'utf8');
       chmodSync(store, 0o500);
@@ -487,7 +488,7 @@ describe('POST /api/roots/mode', () => {
       expect(readFileSync(target, 'utf8')).toBe(text);
       expect(await t.root(t.keep)).toEqual(keep);
 
-      await askDaemon(61736, { dirs: [t.ses], rw: true }); // a session `--rw`
+      await askDaemon(testPort(61736), { dirs: [t.ses], rw: true }); // a session `--rw`
       expect((await t.root(t.ses)).writable).toBe(true);
       const newer = JSON.stringify({ version: 9, saved: [t.keep], writable: [t.keep] }) + '\n';
       await writeFile(target, newer);
@@ -516,7 +517,7 @@ describe('POST /api/roots/mode', () => {
 describe('writes queued while RW are checked again before they run', () => {
   test('git commit-file / commit / reset / pull and a document write behind a slow commit: denied once the project is RO, files unchanged', async () => {
     const dir = await tmp('mdhouse-access-queue-');
-    const t = await start(61737, { dir, git: true });
+    const t = await start(testPort(61737), { dir, git: true });
     try {
       const repo = t.ses;
       const git = (args: string[]) => run(repo, ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args]);
@@ -531,7 +532,7 @@ describe('writes queued while RW are checked again before they run', () => {
       const head = async () => (await git(['rev-parse', 'HEAD'])).out.trim();
       const first = await head();
 
-      const cookie = await adminLogin(61737);
+      const cookie = await adminLogin(testPort(61737));
       let ses = await t.root(t.ses);
       expect((await t.post('/api/roots/mode', { id: ses.id, mode: 'rw', rev: ses.accessRev }, { cookie })).status).toBe(200);
       ses = await t.root(t.ses);

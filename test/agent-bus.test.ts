@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { adminLogin } from './admin-login';
 import { abTargets, AgentBus, badPatterns, isAlive, passes, ownName, requestText, validTarget, type AbEvent, type Envelope } from '../src/lib/agent-bus';
+import { testPort } from './ports';
 
 /**
  * A fake `agent-busd` on a temp unix socket: the client's identity/status handshake (not recorded),
@@ -228,9 +229,9 @@ describe('agent bus — the service, against a fake daemon', () => {
   });
 
   test('over TCP: http://host:port, the configured token for the owner calls, then its own', async () => {
-    const d = await fakeDaemon({ tcp: 61789, agents: [{ name: '#claude/a@h', kind: 'agent', readers: 1 }] });
+    const d = await fakeDaemon({ tcp: testPort(61789), agents: [{ name: '#claude/a@h', kind: 'agent', readers: 1 }] });
     try {
-      const bus = new AgentBus(() => ({ addr: 'http://127.0.0.1:61789/', token: 'user-tok' }), () => {}, { me: '#mdhouse@h' });
+      const bus = new AgentBus(() => ({ addr: `http://127.0.0.1:${testPort(61789)}/`, token: 'user-tok' }), () => {}, { me: '#mdhouse@h' });
       expect((await bus.agents()).map((a) => a.name)).toEqual(['#claude/a@h']);
       expect(d.calls).toEqual(['POST /register +user-tok', 'POST /token +user-tok', 'GET /ls +token']);
     } finally {
@@ -257,7 +258,7 @@ describe('agent bus — routes', () => {
     const prefs = await Prefs.load(join(dir, 'prefs.json'));
     const registry = await Registry.create([dir]);
     const id = registry.list()[0]!.id;
-    const port = 61796;
+    const port = testPort(61796);
     const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
     const at = (path: string) => `http://127.0.0.1:${port}${path}`;
     let cookie = '';
@@ -318,7 +319,7 @@ describe('agent bus — reference material (MW.0f.1)', () => {
     const registry = await Registry.create([{ path: dir, writable: true }]);
     const id = registry.defaultRoot().id;
     const ref = await registry.addReference(join(dir, 'ref'));
-    const port = 61785;
+    const port = testPort(61785);
     const { server, watcher, control } = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
     const post = (p: string, action: string) =>
       fetch(`http://127.0.0.1:${port}/api/ab/send`, {

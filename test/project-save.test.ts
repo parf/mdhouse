@@ -8,6 +8,7 @@ import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
+import { testPort } from './ports';
 
 const tmp = async (prefix: string) => realpath(await mkdtemp(join(tmpdir(), prefix)));
 
@@ -141,7 +142,7 @@ const disk = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as { saved
 
 describe('POST /api/roots/save', () => {
   test('payload: saveRev only on unsaved projects; configuredWritable apart from effective access', async () => {
-    const t = await start(61721, { auto: true });
+    const t = await start(testPort(61721), { auto: true });
     try {
       const all = await t.roots();
       const [keep, ses, ref] = all;
@@ -157,7 +158,7 @@ describe('POST /api/roots/save', () => {
   });
 
   test('RO, explicit RW and auto-only RW: saved as configured, reloaded without escalation; name B carried', async () => {
-    for (const [mode, port] of [['ro', 61722], ['rw', 61723], ['auto', 61724]] as const) {
+    for (const [mode, port] of [['ro', testPort(61722)], ['rw', testPort(61723)], ['auto', testPort(61724)]] as const) {
       const dir = await tmp('mdhouse-save-mode-');
       let t = await start(port, { dir, sesRw: mode === 'rw', auto: mode === 'auto' });
       const cookie = await adminLogin(port);
@@ -194,16 +195,16 @@ describe('POST /api/roots/save', () => {
   });
 
   test('refusals: nothing on disk, in memory or in the session changes', async () => {
-    const t = await start(61725);
+    const t = await start(testPort(61725));
     try {
-      const cookie = await adminLogin(61725);
+      const cookie = await adminLogin(testPort(61725));
       await t.post('/api/roots/name', { id: 'ses', name: 'Kept In Memory' }, { cookie });
       const { saveRev } = await t.ses_();
       const before = readFileSync(t.prefsPath, 'utf8');
       const other = 'f'.repeat(64);
       const cases: Array<[unknown, Record<string, string>, number]> = [
         [{ id: 'ses', rev: saveRev }, {}, 401],
-        [{ id: 'ses', rev: saveRev }, { cookie: 'mdhouse-admin-61725=' + 'A'.repeat(43) }, 401],
+        [{ id: 'ses', rev: saveRev }, { cookie: `mdhouse-admin-${testPort(61725)}=` + 'A'.repeat(43) }, 401],
         [{ id: 'ses', rev: saveRev }, { cookie, 'sec-fetch-site': 'cross-site' }, 403],
         [{ id: 'ses' }, { cookie }, 400],
         [{ id: 'ses', rev: saveRev, writable: true }, { cookie }, 400],
@@ -228,9 +229,9 @@ describe('POST /api/roots/save', () => {
   });
 
   test('stale snapshots: a rename, an access change, an auto-rw change or an external save since the confirm', async () => {
-    const t = await start(61726);
+    const t = await start(testPort(61726));
     try {
-      const cookie = await adminLogin(61726);
+      const cookie = await adminLogin(testPort(61726));
       const save = async (rev: string) => (await t.post('/api/roots/save', { id: 'ses', rev }, { cookie })).status;
 
       let rev = (await t.ses_()).saveRev!;
@@ -238,7 +239,7 @@ describe('POST /api/roots/save', () => {
       expect(await save(rev)).toBe(409);
 
       rev = (await t.ses_()).saveRev!;
-      await askDaemon(61726, { dirs: [t.ses], rw: true }); // access changed by a terminal
+      await askDaemon(testPort(61726), { dirs: [t.ses], rw: true }); // access changed by a terminal
       expect(await save(rev)).toBe(409);
 
       rev = (await t.ses_()).saveRev!;
@@ -258,9 +259,9 @@ describe('POST /api/roots/save', () => {
   });
 
   test('changes under the prefs lock while the save waits: 409, or 401 when the administrator is signed out; no partial write', async () => {
-    const t = await start(61727);
+    const t = await start(testPort(61727));
     try {
-      const cookie = await adminLogin(61727);
+      const cookie = await adminLogin(testPort(61727));
       await t.post('/api/roots/name', { id: 'ses', name: 'Waiting' }, { cookie });
 
       // another process saves the project and turns auto-rw on while this save waits for the lock
@@ -283,7 +284,7 @@ describe('POST /api/roots/save', () => {
       release = await holdLock(t.prefsPath);
       pending = t.post('/api/roots/save', { id: 'ses', rev: saveRev }, { cookie });
       await Bun.sleep(100);
-      expect(await askAdminRevoke(61727)).toEqual({ revoked: 1 });
+      expect(await askAdminRevoke(testPort(61727))).toEqual({ revoked: 1 });
       await release();
       res = await pending;
       expect(res.status).toBe(401);
@@ -297,9 +298,9 @@ describe('POST /api/roots/save', () => {
   });
 
   test('a rename or removal racing a save: one wins whole; prefs, memory and runtime agree', async () => {
-    const t = await start(61728);
+    const t = await start(testPort(61728));
     try {
-      const cookie = await adminLogin(61728);
+      const cookie = await adminLogin(testPort(61728));
       let { saveRev } = await t.ses_();
       const [save, name] = await Promise.all([
         t.post('/api/roots/save', { id: 'ses', rev: saveRev }, { cookie }),
@@ -318,7 +319,7 @@ describe('POST /api/roots/save', () => {
 
       // a fresh unsaved root, then save and remove at once
       if (ses.saved) await t.post('/api/roots/remove', { id: 'ses' }, { cookie });
-      const re = await askDaemon(61728, { dirs: [t.ses] });
+      const re = await askDaemon(testPort(61728), { dirs: [t.ses] });
       if (!re || 'error' in re) throw new Error('re-add failed');
       saveRev = (await t.ses_()).saveRev;
       const [save2, removed] = await Promise.all([
@@ -344,9 +345,9 @@ describe('POST /api/roots/save', () => {
     await writeFile(target, '{"version":1}\n');
     const link = join(dir, 'prefs.json');
     await symlink(target, link); // the lock goes beside the link, the write beside the target
-    const t = await start(61729, { dir, prefsPath: link });
+    const t = await start(testPort(61729), { dir, prefsPath: link });
     try {
-      const cookie = await adminLogin(61729);
+      const cookie = await adminLogin(testPort(61729));
       await t.post('/api/roots/name', { id: 'ses', name: 'Not Lost' }, { cookie });
       const before = await t.ses_();
       const text = await readFile(target, 'utf8');
@@ -365,7 +366,7 @@ describe('POST /api/roots/save', () => {
 
       // a prefs file from a newer mdhouse is never written
       await t.post('/api/roots/remove', { id: 'ses' }, { cookie });
-      await askDaemon(61729, { dirs: [t.ses], name: 'Again' });
+      await askDaemon(testPort(61729), { dirs: [t.ses], name: 'Again' });
       const newer = `{"version":3,"saved":${JSON.stringify([t.keep])}}\n`;
       await writeFile(target, newer);
       t.prefs.refresh();
