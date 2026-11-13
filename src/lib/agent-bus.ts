@@ -69,16 +69,17 @@ const ALIVE_MS = 90_000;
 const JOBS_KEPT = 50;
 /** Connections kept, one per endpoint and credential; one with exchanges under way is never dropped. */
 const CONNECTIONS_KEPT = 16;
-/** The lock on mdhouse's own record that one process per agent name holds while it serves control. */
+/** The lock on mdhouse's own record that one process per agent name holds while it serves control; its holder's per-process nonce is in KV `<lock>.owner`. */
 const CONTROL_LOCK = 'ctl';
-/** The holder's per-process nonce, in mdhouse's own KV: processes that share the agent name are one lock holder. */
-const CONTROL_OWNER = 'ctl.owner';
 
 /** Control serving (`AgentBus.control`). */
 export interface ControlServing {
   topic: string;
-  /** Answers one request; never throws. */
-  handle: (from: string, body: string) => Promise<string>;
+  /** The lock one process per agent name holds while serving `topic`, and the name its log lines start with; default `ctl` / `control`. */
+  lock?: string;
+  name?: string;
+  /** Answers one request; never throws. `envelope` is the message as the daemon sent it (a schedule's stamp is its `schedule`). */
+  handle: (from: string, body: string, envelope: Readonly<Record<string, unknown>>) => Promise<string>;
   /** Asked each tick: serve now? */
   wanted: () => boolean;
   /** A serving change, in safe words. */
@@ -366,6 +367,9 @@ export class AgentBus {
     const tickMs = o.tickMs ?? 20_000;
     const ttl = o.ttlMs ?? 60_000;
     const nonce = crypto.randomUUID();
+    const lock = o.lock ?? CONTROL_LOCK;
+    const ownerKey = `${lock}.owner`;
+    const name = o.name ?? 'control';
     let cur: { key: string; d: Bus; abort: AbortController; done: Promise<void> } | null = null;
     let refused = '';
     let running: Promise<void> | null = null;
@@ -377,9 +381,9 @@ export class AgentBus {
       cur = null;
       c.abort.abort();
       await c.done.catch(() => {});
-      if (release) await c.d.record(this.me).locks.release(CONTROL_LOCK).catch(() => {});
+      if (release) await c.d.record(this.me).locks.release(lock).catch(() => {});
       this.hold(c.key, -1);
-      o.log(`control: stopped — ${why}`);
+      o.log(`${name}: stopped — ${why}`);
     };
 
     const step = async () => {
@@ -389,9 +393,9 @@ export class AgentBus {
       if (cur && (!want || cur.key !== key)) await halt(true, want ? 'endpoint changed' : 'turned off');
       if (cur) {
         const rec = cur.d.record(this.me);
-        const owner = await rec.kv.get('string', CONTROL_OWNER).then((v) => (v.kind === 'string' ? String(v.value) : null), () => null);
+        const owner = await rec.kv.get('string', ownerKey).then((v) => (v.kind === 'string' ? String(v.value) : null), () => null);
         if (owner !== nonce) return halt(false, 'another mdhouse serves control');
-        await rec.locks.extend(CONTROL_LOCK, ttl).catch((err: unknown) => halt(false, `lock lost: ${safeError(err)}`));
+        await rec.locks.extend(lock, ttl).catch((err: unknown) => halt(false, `lock lost: ${safeError(err)}`));
         return;
       }
       if (!want) return;
@@ -401,42 +405,42 @@ export class AgentBus {
         if (refused !== why) o.log(why);
         refused = why;
       };
-      const held = () => rec.locks.holders().then((hs) => hs.some((h) => h.name === CONTROL_LOCK));
+      const held = () => rec.locks.holders().then((hs) => hs.some((h) => h.name === lock));
       // A held lock under another process's nonce: it serves, whether or not the daemon would grant the lock to this name again.
       if (await held().catch(() => true)) {
-        const owner = await rec.kv.get('string', CONTROL_OWNER).then((v) => (v.kind === 'string' ? String(v.value) : null), () => null);
-        if (owner !== null && owner !== nonce) return say('control: served by another mdhouse');
+        const owner = await rec.kv.get('string', ownerKey).then((v) => (v.kind === 'string' ? String(v.value) : null), () => null);
+        if (owner !== null && owner !== nonce) return say(`${name}: served by another mdhouse`);
       }
       try {
-        await rec.locks.tryAcquire(CONTROL_LOCK, { ttl });
+        await rec.locks.tryAcquire(lock, { ttl });
       } catch (err) {
-        return say((await held().catch(() => false)) ? 'control: served by another mdhouse' : `control: not served — ${safeError(err)}`);
+        return say((await held().catch(() => false)) ? `${name}: served by another mdhouse` : `${name}: not served — ${safeError(err)}`);
       }
       refused = '';
       try {
-        await rec.kv.set('string', CONTROL_OWNER, nonce, { mode: 'set' });
+        await rec.kv.set('string', ownerKey, nonce, { mode: 'set' });
       } catch (err) {
-        await rec.locks.release(CONTROL_LOCK).catch(() => {});
+        await rec.locks.release(lock).catch(() => {});
         throw err;
       }
       const abort = new AbortController();
       this.hold(key, 1);
-      const done = d.serve(async (m) => (m.ask ? o.help : o.handle(m.from, m.body)), { topic: o.topic, workers: 1, signal: abort.signal, drainTimeout: 2_000 });
+      const done = d.serve(async (m) => (m.ask ? o.help : o.handle(m.from, m.body, m.envelope)), { topic: o.topic, workers: 1, signal: abort.signal, drainTimeout: 2_000 });
       cur = { key, d, abort, done };
-      o.log(`control: serving topic ${o.topic}`);
+      o.log(`${name}: serving topic ${o.topic}`);
       done
-        .catch((err: unknown) => o.log(`control: serving ended — ${safeError(err)}`))
+        .catch((err: unknown) => o.log(`${name}: serving ended — ${safeError(err)}`))
         .finally(() => {
           if (cur?.done !== done) return;
           cur = null;
           this.hold(key, -1);
-          void rec.locks.release(CONTROL_LOCK).catch(() => {});
+          void rec.locks.release(lock).catch(() => {});
         });
     };
 
     const tick = () => {
       running ??= step()
-        .catch((err: unknown) => o.log(`control: ${safeError(err)}`))
+        .catch((err: unknown) => o.log(`${name}: ${safeError(err)}`))
         .finally(() => {
           running = null;
         });
