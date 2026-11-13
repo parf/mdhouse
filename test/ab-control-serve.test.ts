@@ -248,3 +248,53 @@ describe('AgentBus.control — the tick', () => {
     await b.stop();
   });
 });
+
+describe('AgentBus.control — two topics on one instance', () => {
+  test('each serving gets a connection of its own: a connection serves one topic (SDK ReaderInUse)', async () => {
+    const locks = new Map<string, number>();
+    const kv = new Map<string, string>();
+    const serving: string[] = [];
+    /** A connection as the SDK's: a second serve on it throws. */
+    const conn = () => {
+      let busy = false;
+      return {
+        record: () => ({
+          kv: {
+            get: async (_k: string, name: string) => {
+              if (!kv.has(name)) throw new Error('not found');
+              return { kind: 'string', value: kv.get(name)! };
+            },
+            set: async (_k: string, name: string, value: string) => void kv.set(name, value),
+          },
+          locks: {
+            tryAcquire: async (n: string) => void locks.set(n, 1),
+            extend: async () => {},
+            release: async (n: string) => void locks.delete(n),
+            holders: async () => [...locks.keys()].map((name) => ({ name, holder: '#mdhouse@test', expires: '' })),
+          },
+        }),
+        serve: (_h: unknown, o: { topic: string; signal: AbortSignal }) => {
+          if (busy) return Promise.reject(new Error('ReaderInUse'));
+          busy = true;
+          serving.push(o.topic);
+          return new Promise<void>((resolve) => o.signal.addEventListener('abort', () => resolve()));
+        },
+      };
+    };
+    const ab = new AgentBus(() => ({ addr: '/fake.sock', token: '' }), () => {}, { me: '#mdhouse@test' });
+    const byLane = new Map<string, ReturnType<typeof conn>>();
+    (ab as unknown as { connect: (ep: unknown, lane?: string) => Promise<unknown> }).connect = async (_ep, lane = '') => {
+      if (!byLane.has(lane)) byLane.set(lane, conn());
+      return byLane.get(lane)!;
+    };
+    const log: string[] = [];
+    const base = { handle: async () => '', wanted: () => true, log: (l: string) => log.push(l), help: '', tickMs: 3_600_000 };
+    const stopA = ab.control({ ...base, topic: 'mdhouse.ctl' });
+    const stopB = ab.control({ ...base, topic: 'schedule', lock: 'auto', name: 'automation' });
+    await Bun.sleep(10);
+    expect(serving.sort()).toEqual(['mdhouse.ctl', 'schedule']);
+    expect(log.filter((l) => l.includes('ended'))).toEqual([]);
+    await stopA();
+    await stopB();
+  });
+});

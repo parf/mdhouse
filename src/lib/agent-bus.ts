@@ -256,10 +256,10 @@ export class AgentBus {
   /**
    * The daemon as mdhouse's agent at `ep`: registered if missing, its token minted. Retried after a
    * failure. A new endpoint or credential is a connection of its own; the old one keeps serving the
-   * exchanges it started.
+   * exchanges it started. A `lane` is a connection of its own too: a connection serves one topic at most.
    */
-  private connect(ep: Endpoint = this.where()): Promise<Bus> {
-    const key = `${ep.addr}\n${ep.token}`;
+  private connect(ep: Endpoint = this.where(), lane = ''): Promise<Bus> {
+    const key = `${ep.addr}\n${ep.token}${lane ? `\n${lane}` : ''}`;
     const known = this.connections.get(key);
     if (known) return known;
     const { addr: socket, token } = ep;
@@ -419,7 +419,7 @@ export class AgentBus {
     const step = async () => {
       const want = !stopped && o.wanted();
       const ep = this.where();
-      const key = `${ep.addr}\n${ep.token}`;
+      const key = `${ep.addr}\n${ep.token}\n${name}`;
       if (cur && (!want || cur.key !== key)) await halt(true, want ? 'endpoint changed' : 'turned off');
       if (cur) {
         const rec = cur.d.record(this.me);
@@ -429,7 +429,8 @@ export class AgentBus {
         return;
       }
       if (!want) return;
-      const d = await this.connect(ep);
+      // Its own connection: the SDK lets one connection serve one topic.
+      const d = await this.connect(ep, name);
       const rec = d.record(this.me);
       const say = (why: string) => {
         if (refused !== why) o.log(why);
