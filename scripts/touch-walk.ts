@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer (named only: answer /api/flow/* with a fake).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer (named only: they answer /api/flow/* with a fake; TW_REAL=1 skips the fake for `flow`, TW_BASELINE = the commit to start from).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -47,7 +47,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceSc
 await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
 await send('Page.enable'); await send('Runtime.enable');
-if (only.includes('flow') || only.includes('flowbar') || only.includes('flowviewer')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
+if (!process.env.TW_REAL && (only.includes('flow') || only.includes('flowbar') || only.includes('flowviewer'))) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
 const sleep = (ms: number) => Bun.sleep(ms);
 export const ev = async (expression: string): Promise<any> => {
   const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -248,7 +248,7 @@ if (only.includes('flow')) {
   await audit('flow-no-baseline');
   say('  note: ' + await ev("document.querySelector('.flow-note')?.textContent"));
   await tap('.flow-commit', 0);
-  await type('abc1234');
+  await type(process.env.TW_BASELINE ?? 'abc1234');
   await tap('.flow-go', 0);
   await audit('flow-preview');
   say('  script in pane: ' + await ev("!!document.querySelector('.flow-html script')") + ' items: ' + await ev("document.querySelectorAll('.flow-html li').length"));

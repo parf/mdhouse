@@ -975,7 +975,9 @@ activation (the command the context menu runs — the native menu itself cannot 
 
 Viewer: a scratch Viewer instance (`--viewer`), 390/768 light and dark — no Run flow button on the root's page and no flow bar on a run document even when the (fake) `doc.flow` says `canAct: true` (`fv-<w>-<scheme>-01-viewer-run-doc.png`). A stale tab that still shows a control and gets `403 reason: viewer` from `/api/flow/*` shows the Viewer's words and tells the app to re-read the mode (`test/flow-ui.test.ts`).
 
-Not verified: the real routes.
+Real server (`df04925`, `TW_REAL=1`), 390 light: catalog → no-baseline note → preview (server HTML, run path, range, uncommitted files kept apart) → Confirm → the run document `Plans/flows/runs/recent-commits-review/<UTC>-<runId8>.md` is written in the scratch repo and opened; the catalog then lists the package's open run. `real-390-light-0N-*.png`.
+
+Not verified: completing a run from the page and the next "since last run" (the flow bar needs `doc.flow` and `/api/flow/event`, server part B).
 
 
 ## Access badge presentation — Viewer {#access-badge-viewer}

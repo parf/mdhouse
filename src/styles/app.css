@@ -2355,3 +2355,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .flow-mini { min-height: 44px; min-width: 44px; padding-inline: 12px; font-size: 14px; }
   .flow-items li { min-height: 44px; }
 }
+@media (pointer: coarse) {
+  .flow-html summary { min-height: 44px; display: flex; align-items: center; }
+}
