@@ -4,6 +4,8 @@
 
 ### Added
 
+- One search with a scope switch: `Files | Index` on the sidebar's search box and on the `/rag` page — Files is the search as before, Index searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); `R` opens the Index scope; on a phone the search box, results and the switch are 44px targets
+
 - Agent Bus out of the box: a new mdhouse config starts with `--agent-bus auto` — on while the login's Agent Bus socket exists, checked again on every request; an existing config keeps its value and an older mdhouse reads `auto` as off; the start line says `agent-bus: on — <socket> (found)`, `auto — not installed (no <path>)` or `off — found <socket>: mdhouse --agent-bus on`
 
 - Run flow lists every analysis-only package that names a commit range in its evidence, not one hard-coded flow: `docs-refresh-verify` (docs drift over a commit range), `project-review` and `engineering-delivery-sync` run beside `recent-commits-review`; a run that is not the host's own says why instead of showing a bar

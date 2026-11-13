@@ -22,6 +22,7 @@ import { viewOf } from './ui/PageHead';
 import { AboutModal } from './ui/AboutModal';
 import { Settings } from './ui/Settings';
 import { RagPage } from './ui/RagPage';
+import { indexUrl, loadTarget, saveTarget, type SearchTarget } from './ui/search-scope';
 import { DirPage } from './ui/DirPage';
 import { ancestors } from './ui/tree-model';
 import { dirUrl, editUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
@@ -95,6 +96,11 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const [revision, setRevision] = useState(0);
 
   const [query, setQuery] = useState('');
+  const [searchTarget, setSearchTargetState] = useState<SearchTarget>(loadTarget);
+  const setSearchTarget = useCallback((t: SearchTarget) => {
+    saveTarget(t);
+    setSearchTargetState(t);
+  }, []);
   const [searchIn, setSearchIn] = useState<SearchIn>({ names: true, text: true });
   const [searchScope, setSearchScope] = useState<SearchScope>('all');
   const [search, setSearch] = useState<SearchResult | null>(null);
@@ -136,8 +142,11 @@ function App({ entry: first }: { entry: AdminEntry }) {
   }, [sidebar]);
   // On a phone, choosing a page from the drawer shows the page: the drawer closes when the address changes.
   const firstPath = useRef(true);
+  /** Set by an action that goes to a page and then wants the search box open: the drawer is not closed for that navigation. */
+  const wantSearch = useRef(false);
   useEffect(() => {
     if (firstPath.current) firstPath.current = false;
+    else if (wantSearch.current) wantSearch.current = false;
     else if (narrowScreen()) setSidebar('off');
   }, [path]);
 
@@ -296,7 +305,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
     const q = query.trim();
     // With the contents filter off there is nothing to ask the server for: name matching
     // runs on the tree the client already holds.
-    if (!q || !rootId || !searchIn.text) {
+    if (!q || !rootId || !searchIn.text || searchTarget !== 'files') {
       setSearch(null);
       setSearching(false);
       return;
@@ -314,7 +323,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       live = false;
       clearTimeout(timer);
     };
-  }, [query, rootId, showIgnored, searchIn.text]);
+  }, [query, rootId, showIgnored, searchIn.text, searchTarget]);
 
   /** The root and file a file address names — what a dead mark points at when it fails to open. */
   const missing = useMemo(() => {
@@ -400,6 +409,11 @@ function App({ entry: first }: { entry: AdminEntry }) {
   // ── keyboard ────────────────────────────────────────────────────────────
 
   const cycle = useCallback(() => setSidebar((s) => STATES[(STATES.indexOf(s) + 1) % STATES.length]!), []);
+  /** The search box, in the remembered scope: the sidebar wide and its field focused. */
+  const openSearch = useCallback(() => {
+    setSidebar('open');
+    requestAnimationFrame(() => document.querySelector<HTMLInputElement>('[data-search-input]')?.focus());
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -420,19 +434,33 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
       if (e.key === '/' || ((e.key === 'k' || e.key === 'p') && (e.ctrlKey || e.metaKey))) {
         e.preventDefault();
-        setSidebar('open');
-        requestAnimationFrame(() => document.querySelector<HTMLInputElement>('[data-search-input]')?.focus());
+        openSearch();
       }
     };
     addEventListener('keydown', onKey);
     return () => removeEventListener('keydown', onKey);
-  }, [cycle]);
+  }, [cycle, openSearch]);
 
   // ── actions ─────────────────────────────────────────────────────────────
 
   /** A file's page, in the dropdown's root unless named. */
   const fileUrl = useCallback((rel: string, inRoot = rootId) => pageUrl(inRoot, rel), [rootId]);
   const openFile = useCallback((rel: string, line?: number) => go(fileUrl(rel), line), [go, fileUrl]);
+  // The page a search of the index came from, for the switch's way back to Files.
+  const lastPage = useRef('/');
+  useEffect(() => {
+    if (!onRag) lastPage.current = full;
+  }, [onRag, full]);
+  const leaveRag = useCallback(
+    (q: string) => {
+      setSearchTarget('files');
+      setQuery(q);
+      wantSearch.current = true;
+      go(lastPage.current);
+      openSearch();
+    },
+    [go, openSearch, setSearchTarget],
+  );
 
   /** A folder's page; `''` is the root's own. */
   const dirPageUrl = useCallback((dir: string, inRoot = rootId) => dirUrl(inRoot, dir), [rootId]);
@@ -604,14 +632,18 @@ function App({ entry: first }: { entry: AdminEntry }) {
           </span>
           {/* Outside the brand, whose name gives way when the line is short: the badge keeps its words. */}
           {viewer && <ViewerBadge />}
-          <RagLink rootId={rootId} active={onRag} onOpen={go} />
+          <RagLink
+            rootId={rootId}
+            active={onRag}
+            onOpen={(url) => {
+              setSearchTarget('index');
+              go(url);
+            }}
+          />
           <button
             class="icon-btn"
             title="Search (/)"
-            onClick={() => {
-              setSidebar('open');
-              requestAnimationFrame(() => document.querySelector<HTMLInputElement>('[data-search-input]')?.focus());
-            }}
+            onClick={openSearch}
           >
             <IconSearch />
           </button>
@@ -652,6 +684,12 @@ function App({ entry: first }: { entry: AdminEntry }) {
             })
           }
           onSearchScope={(scope) => setSearchScope((prev) => (prev === scope ? 'all' : scope))}
+          searchTarget={searchTarget}
+          onSearchTarget={setSearchTarget}
+          onIndexSearch={(q) => {
+            setSearchTarget('index');
+            go(indexUrl(q, rootId));
+          }}
           onAuthor={setAuthorFilter}
           revealNote={revealNote(revealPlan.omitted, tree?.capped)}
           onToggleIgnored={() => setShowIgnored((v) => !v)}
@@ -663,7 +701,10 @@ function App({ entry: first }: { entry: AdminEntry }) {
           onHome={() => go('/')}
           onAbout={() => setAboutOpen(true)}
           ragActive={onRag}
-          onRag={go}
+          onRag={(url) => {
+            setSearchTarget('index');
+            go(url);
+          }}
         />
       )}
 
@@ -672,7 +713,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       <main>
         {/* The ⚙ sits in each page's own header row; with the sidebar off the top bar has it. */}
         {onRag ? (
-          <RagPage search={full.slice(path.length)} rootId={rootId} roots={roots} go={go} gear={pageGear} />
+          <RagPage search={full.slice(path.length)} rootId={rootId} roots={roots} go={go} gear={pageGear} onFiles={leaveRag} />
         ) : onSettings ? (
           <Settings
             roots={roots}

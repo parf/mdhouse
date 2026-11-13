@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -330,6 +330,26 @@ if (only.includes('flowro')) {
   say('  writable project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')"));
   await go('/ro/?git');
   say('  read-only project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')") + ' (page: ' + await ev("location.pathname") + ')');
+}
+if (only.includes('search')) {
+  await go('/repo/README.md');
+  await tap('.icon-btn[title^="Search"]', 0);
+  await sleep(500);
+  say('  scope switch: ' + await ev("[...document.querySelectorAll('.scope-opt')].map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' ')"));
+  await audit('search-files');
+  await tap('.scope-opt', 1);
+  await tap('[data-search-input]', 0);
+  await type('notes');
+  say('  index hint: ' + await ev("document.querySelector('.side-body .empty')?.textContent"));
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+  await sleep(1200);
+  say('  after Enter: ' + await ev('location.pathname + location.search') + '; page switch: ' + await ev("[...document.querySelectorAll('main .scope-opt')].map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' ')"));
+  await audit('search-index');
+  await tap('main .scope-opt', 0);
+  await sleep(1000);
+  say('  back to Files: ' + await ev('location.pathname') + '; sidebar field: ' + await ev("document.querySelector('[data-search-input]')?.value") + '; scope: ' + await ev("[...document.querySelectorAll('.sidebar .scope-opt')].map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' ')"));
+  await audit('search-files-again');
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

@@ -1025,3 +1025,13 @@ Real round trip (`flow` step with `TW_PACKAGE`, scratch git repo, no fake), 390 
 
 A run document the host refuses (tampered, foreign, made before runs were sealed) carries `flow.refused`; the page shows "This run cannot be acted on: …" instead of the bar (unit-tested; not made in a browser).
 
+## One search, Files | Index and the phone bar {#search-nav}
+
+[№Q-R3-UX1](workspaces/DECISIONS.md#Q-R3-UX1). Touch walk and audit (`scripts/touch-walk.ts`), 390 / 768 / 1280, light and dark, a scratch project.
+
+| Step | Result | Evidence |
+| --- | --- | --- |
+| Search: Files | switch `Files* Index` above the search box; the box, tabs and results as before; box, clear and result rows 44px on touch | `sr3-390-light-01-search-files.png` |
+| Search: Index | typing shows "Press Enter to search the project's index…", Enter opens `/rag?q=notes&root=repo`, the page shows the same switch with Index chosen and the index status / how to enable it when it is not indexed | `sr3-390-light-02-search-index.png` |
+| Index → Files | the switch's Files returns to the page the search came from with the sidebar open (also on a phone) and the same query in Files scope | `sr3-390-light-03-search-files-again.png` |
+

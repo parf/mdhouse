@@ -23,7 +23,7 @@
     const [a, ra] = rects[i], [b, rb] = rects[j];
     if (a.contains(b) || b.contains(a)) continue;
     if (!!a.closest('.topstrip, .side-head') !== !!b.closest('.topstrip, .side-head')) continue;
-    if ((a.matches('textarea, input') && b.matches('.voice-btn, .form-edit')) || (b.matches('textarea, input') && a.matches('.voice-btn, .form-edit'))) continue;
+    if ((a.matches('textarea, input') && b.matches('.voice-btn, .form-edit, .clear')) || (b.matches('textarea, input') && a.matches('.voice-btn, .form-edit, .clear'))) continue;
     const ox = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left), oy = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
     if (ox > 6 && oy > 6) overlap.push(name(a) + '  X  ' + name(b));
   }

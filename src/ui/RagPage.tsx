@@ -3,6 +3,7 @@ import { api, type RagSearch, type RagStatus, type RootInfo } from './api';
 import { Ago } from './Ago';
 import { follow } from './PageHead';
 import { Info } from './Settings';
+import { SearchScope } from './SearchScope';
 import { breadcrumb, highlight, lineLabel, parseRagUrl, progress, ragUrl, resultGlyph, stateOf, syncCommand } from './rag-model';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
   roots: RootInfo[];
   go: (url: string) => void;
   gear: preact.ComponentChildren;
+  /** The scope switch's other side: back to the files search, carrying the query. */
+  onFiles: (query: string) => void;
 }
 
 /** A command to copy: the text as `<code>`, selectable, with a button for the clipboard. */
@@ -108,7 +111,7 @@ function Enable({ state, status, go, onCheck }: { state: 'off' | 'unindexed'; st
 }
 
 /** `RAG search`: the project's index status, a keyword search of it, and — until it is set up — how to set it up. */
-export function RagPage({ search, rootId, roots, go, gear }: Props) {
+export function RagPage({ search, rootId, roots, go, gear, onFiles }: Props) {
   const url = parseRagUrl(search);
   const projects = roots.filter((r) => r.kind !== 'reference');
   const root = projects.find((r) => r.id === url.root) ?? projects.find((r) => r.id === rootId) ?? projects[0];
@@ -187,9 +190,10 @@ export function RagPage({ search, rootId, roots, go, gear }: Props) {
   return (
     <div class="settings rag">
       <header class="home-head">
-        <h1>RAG search</h1>
+        <h1>Search</h1>
         <span class="head-gear">{gear}</span>
       </header>
+      <SearchScope value="index" onPick={(t) => t === 'files' && onFiles(draft)} />
 
       {!root ? (
         <p class="settings-hint">No project is served.</p>

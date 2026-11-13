@@ -8,6 +8,8 @@ import { StoredRwTag, useViewer, ViewerBadge } from './viewer';
 import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import type { SearchResult } from '../lib/search';
+import { SearchScope } from './SearchScope';
+import { placeholder, type SearchTarget } from './search-scope';
 import type { Mark } from '../lib/prefs';
 import { SizeMark, sizeClass } from './Tree';
 import { buildTree, fuzzyScore, type Node } from './tree-model';
@@ -72,6 +74,11 @@ export interface SidebarProps {
   searchScope: SearchScope;
   onSearchIn: (key: keyof SearchIn) => void;
   onSearchScope: (scope: SearchScope) => void;
+  /** Where the search looks: this project's files, or its RAG index (Enter opens `/rag`). */
+  searchTarget: SearchTarget;
+  onSearchTarget: (target: SearchTarget) => void;
+  /** An Index search: the `/rag` page for this query. */
+  onIndexSearch: (query: string) => void;
   onAuthor: (author: string) => void;
   /** Why the ignored folders listed are incomplete; null when they are complete. */
   revealNote: string | null;
@@ -210,6 +217,7 @@ export function Sidebar(props: SidebarProps) {
       )}
 
       <div class="side-tools">
+        {wide && <SearchScope value={props.searchTarget} onPick={props.onSearchTarget} />}
         {wide && (
           <div class="search-box">
             <span class="mag">
@@ -217,11 +225,17 @@ export function Sidebar(props: SidebarProps) {
             </span>
             <input
               type="search"
-              placeholder="Search files and contents"
+              placeholder={placeholder(props.searchTarget)}
               value={query}
               data-search-input
               onInput={(e) => props.onQuery((e.target as HTMLInputElement).value)}
-              onKeyDown={(e) => e.key === 'Escape' && props.onQuery('')}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') props.onQuery('');
+                else if (e.key === 'Enter' && props.searchTarget === 'index') {
+                  e.preventDefault();
+                  props.onIndexSearch(query);
+                }
+              }}
             />
             {query && (
               <button class="clear" title="Clear" onClick={() => props.onQuery('')}>
@@ -231,7 +245,7 @@ export function Sidebar(props: SidebarProps) {
           </div>
         )}
 
-        {query && wide && (
+        {query && wide && props.searchTarget === 'files' && (
           <div class="filters">
             <button class="chip" aria-pressed={props.searchIn.names} onClick={() => props.onSearchIn('names')}>
               names
@@ -322,7 +336,9 @@ export function Sidebar(props: SidebarProps) {
       </div>
 
       <div class="side-body">
-        {query ? (
+        {query && props.searchTarget === 'index' ? (
+          <p class="empty">Press Enter to search the project's index for “{query}”.</p>
+        ) : query ? (
           <SearchResults {...props} sizes={sizes} nameHits={nameHits} />
         ) : props.tab === 'files' || entries ? (
           <>

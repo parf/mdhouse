@@ -2361,3 +2361,22 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 @media (pointer: coarse) {
   .md details.settled > summary { min-height: 44px; align-items: center; }
 }
+
+/* ── One search, two scopes: Files | Index ──────────────────────────────── */
+
+.scope-switch { display: flex; gap: 2px; padding: 2px; margin: 0 0 6px; background: var(--bg-hover); border-radius: 8px; }
+.scope-opt { flex: 1; font: inherit; font-size: 12px; font-weight: 550; padding: 3px 8px; color: var(--fg-muted); background: none; border: 0; border-radius: 6px; cursor: pointer; }
+.scope-opt[aria-pressed="true"] { color: var(--fg); background: var(--bg-raised); box-shadow: 0 1px 2px color-mix(in srgb, var(--fg) 18%, transparent); }
+.settings.rag > .scope-switch { max-width: 240px; margin: 4px 0 10px; }
+@media (pointer: coarse) {
+  .scope-opt { min-height: 44px; font-size: 14px; }
+}
+
+@media (pointer: coarse) {
+  .search-box input { min-height: 44px; font-size: 16px; }
+  .search-box .clear { min-width: 44px; min-height: 44px; }
+}
+
+@media (pointer: coarse) {
+  .sidebar a.hit { min-height: 44px; box-sizing: border-box; }
+}
