@@ -18,7 +18,7 @@ import { pageUrl, serve } from './server';
 import { answered, askAdminList, askAdminMint, askAdminRevoke, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
 import { ownStopCommand, ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
-import { hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
+import { exposedNote, exposureOk, hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
 import { checkNameArgs } from './lib/project-name';
 import { badPatterns } from './lib/agent-bus';
 
@@ -257,9 +257,11 @@ const printRoots = (
   }
 };
 
-/** What mdhouse may write, said once under the root list, which marks each writable one `[RW]`. */
+/** What mdhouse may write, said once under the root list, which marks each writable one `[RW]`; on an exposed bind, why nothing is. */
 const writeNote = (roots: Array<{ writable: boolean }>): string =>
-  roots.some((r) => r.writable)
+  !exposureOk(opts.host, prefs.access)
+    ? exposedNote(opts.host)
+    : roots.some((r) => r.writable)
     ? '\n  Projects marked [RW]: ticking a checkbox saves the file. The rest are read-only.'
     : '\n  Read-only — mdhouse does not write to the trees it serves.';
 

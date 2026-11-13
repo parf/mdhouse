@@ -41,6 +41,12 @@ mdhouse --workspace     # projects writable by their own RW/RO again
 - Downgrade: a Viewer prefs.json is version 3 — mdhouse ≤ 2.3.3 finds no saved RW project, a version-2
   mdhouse reads it read-only and never rewrites it; run `mdhouse --workspace` before downgrading
 
+## Network address — read-only without a policy
+
+- Served on an address other than loopback (`--host 0.0.0.0`, a LAN IP) with no users, no `--allow` and no `--host-name`: every project is read-only; the start line says why
+- To write: `mdhouse user-add <login>` or `mdhouse --allow <cidr,…>`; `--host-name` (a proxy on this host) counts too
+- Applies at once, like every access change
+
 ## No TLS — forward the port with ssh
 
 Basic auth sends the password in the clear. Across a network you do not trust, leave mdhouse

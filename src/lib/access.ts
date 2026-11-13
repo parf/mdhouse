@@ -85,6 +85,22 @@ export function isLoopback(ip: number[]): boolean {
   return ip.length === 4 ? ip[0] === 127 : ip.every((b, i) => b === (i === 15 ? 1 : 0));
 }
 
+/**
+ * Whether serving on `bound` may write: a loopback bind, or an explicit access policy — users, an
+ * allow list, or host names (a proxy on this host). Otherwise every project is read-only (Q-R3-EXPOSE1).
+ */
+export function exposureOk(bound: string, access: { allow: string[]; users: Record<string, unknown>; hostNames: string[] }): boolean {
+  const host = bound.toLowerCase();
+  const ip = ipBytes(host);
+  const loopback = host === 'localhost' || (ip !== null && isLoopback(ip));
+  return loopback || Object.keys(access.users).length > 0 || access.allow.length > 0 || access.hostNames.length > 0;
+}
+
+/** The start line for a bind `exposureOk` refuses: why every project is read-only, and the fix. */
+export const exposedNote = (bound: string): string =>
+  `\n  Read-only: served on ${bound} with no users, allow list or host names, so anyone on the network could write.` +
+  `\n  To write, add a user (mdhouse user-add <login>) or an allow list (mdhouse --allow <cidr,…>).`;
+
 /** May a request from `address` come in, by the allow list? An empty list allows everyone. */
 export function allowedAddress(address: string | undefined, allow: string[]): boolean {
   if (!allow.length) return true;

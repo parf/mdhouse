@@ -156,6 +156,9 @@ export class Registry {
   /** Is the instance a Viewer? Then no root is writable, whatever its mode. Set by the server to the prefs mode. */
   viewer: () => boolean = () => false;
 
+  /** Is it served on a network address with no access policy? Then no root is writable. Set by the server (`exposureOk`). */
+  exposed: () => boolean = () => false;
+
   /**
    * Serve one more directory, for the lifetime of the process.
    *
@@ -211,7 +214,7 @@ export class Registry {
       mode,
       get writable() {
         const on = this.mode === 'rw' || (this.mode === 'inherit' && registry.autoRw(this.path));
-        return on && !registry.inReference(this.path) && !registry.accessBlocked() && !registry.viewer();
+        return on && !registry.inReference(this.path) && !registry.accessBlocked() && !registry.viewer() && !registry.exposed();
       },
     };
     this.byId.set(id, root);

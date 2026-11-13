@@ -62,6 +62,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: Viewer refuses every mutation family through stale/direct requests and preserves configured choices; restart and downgrade behavior are documented/tested
   - Acceptance: no non-loopback RW exposure without explicit admission policy; migration does not activate incomplete Team/profile UI
   - Progress: Viewer server side — `mode: "viewer"` (`--viewer|--workspace`, `/api/settings`), `Root.writable` cap, `VIEWER_REFUSED` gate, version 3 with `viewerWritable` (≤2.3.3 finds no grant; v2 build blocked); `test/viewer.test.ts`. UI: a Viewer removes write controls, shows the badge and has the Settings Mode switch (administrator; `mdhouse admin` in a Viewer) — `ui/viewer*.ts`
+  - Progress: exposure — non-loopback bind with no users / allow / host names caps every project RO (`exposureOk`, `registry.exposed`), start line says why; `test/exposure.test.ts`
   - Note: version 3 = Viewer format; the legacy inherit → explicit RO migration (with the MW.0 default switch) must fold into it or take version 4
 
 

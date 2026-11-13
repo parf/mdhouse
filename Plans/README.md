@@ -408,6 +408,8 @@ handler; `Root.writable` caps again at the write. `instance-config`, `root-admin
 and a Viewer has no ADMIN-W1 local administrator (`isLocalAdmin`): only a minted `mdhouse admin` session. A blocked
 prefs file is a Viewer (`reason: 'blocked'`); `POST /api/settings` writes settings + `mode` in one mutate, blocked → 409.
 
+Exposure ([№Q-R3-EXPOSE1](R3/workspaces/DECISIONS.md#Q-R3-EXPOSE1)): `lib/access.ts` `exposureOk(bound, access)` — loopback bind, or users, `allow` or `hostNames` non-empty. Otherwise `registry.exposed()` caps `Root.writable` (live: `prefs.refresh()`), so `writeFile` refuses too; the CLI start line is `exposedNote`.
+
 Viewer UI (`ui/viewer-text.ts` pure strings/helpers, `ui/viewer.tsx` context + badge): `options.mode === 'viewer'` from
 `GET /api/settings`, re-read in every tab on a `roots` event and on any refused write (`reason: viewer` →
 `VIEWER_DENIED`, one message from `refusedText()` in `api.ts`). A Viewer *removes* (does not disable) what changes

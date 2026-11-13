@@ -32,7 +32,7 @@ import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-
 import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
-import { allowedAddress, ipBytes, isLoopback, Users } from './lib/access';
+import { allowedAddress, exposureOk, ipBytes, isLoopback, Users } from './lib/access';
 import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_REFUSED, type Actor, type RouteEntry } from './lib/authz';
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
@@ -220,6 +220,10 @@ export async function serve(opts: ServeOptions) {
   registry.autoRw = (dir) => prefs.autoRwCovers(dir);
   registry.accessBlocked = () => prefs.accessBlocked() !== null;
   registry.viewer = () => prefs.mode() === 'viewer';
+  registry.exposed = () => {
+    prefs.refresh();
+    return !exposureOk(hostname, prefs.access);
+  };
   /** The settings page's options, and the auto-rw paths its switch is about (set from the CLI). */
   const settingsPayload = () => {
     prefs.refresh();

@@ -20,6 +20,7 @@
 
 ### Changed
 
+- Served on a network address (`--host 0.0.0.0`, a LAN IP) with no users, no `--allow` list and no `--host-name`: every project is read-only, and the start line says why. To write again, add a user (`mdhouse user-add <login>`) or an allow list (`mdhouse --allow <cidr,…>`); a reverse proxy with `--host-name` works as before ([Access](doc/access.md#network-address--read-only-without-a-policy))
 - The Q&A playground is a test fixture (`test/fixtures/qa-playground.md`), no longer part of the installed reference
 - `doc/skills/markup.md` is folded into `doc/agent-markup.md` (section “Suggested markup”); the old path stays as a short pointer
 - `doc/plans.md` is the portable Plans convention only; this repository's own commit rules are in `CLAUDE.md`
