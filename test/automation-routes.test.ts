@@ -129,7 +129,7 @@ describe('/api/automation — this machine approves a registration file', () => 
     expect([first.root, first.canApprove]).toEqual([t.id, true]);
     expect(first.registrations[0]!.file).toBe('.mdhouse/automation/review.json');
     expect(first.errors).toEqual([{ file: 'Bad Name.json', error: expect.any(String) }]);
-    expect(first.registrations).toEqual([expect.objectContaining({ id: 'review', flow: 'recent-commits-review', approval: 'none', schedule: null, disabled: false, history: [] })]);
+    expect(first.registrations).toEqual([expect.objectContaining({ id: 'review', flow: 'recent-commits-review', maxLate: '30m', overlap: 'skip', approval: 'none', schedule: null, disabled: false, startedToday: 0, runs: [] })]);
     const hash = first.registrations[0]!.hash as string;
 
     // Not approved: a firing reaches nothing.
@@ -137,9 +137,9 @@ describe('/api/automation — this machine approves a registration file', () => 
 
     expect(await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash: 'ab'.repeat(32) })).toEqual([409, { error: expect.stringContaining('changed'), reason: 'stale' }]);
     const [st, ok] = await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash });
-    expect([st, ok]).toEqual([200, { approved: { hash, scheduleId: 'sch-1' }, schedule: { id: 'sch-1', enabled: true, next: '2026-11-14T08:30:00Z' } }]);
+    expect([st, ok]).toEqual([200, { registration: 'review', approval: 'approved', hash, approved: { hash, scheduleId: 'sch-1' }, schedule: { id: 'sch-1', enabled: true, next: '2026-11-14T08:30:00Z' } }]);
     expect(t.bus.added).toEqual([{ record: expect.stringMatching(/^#mdhouse@/), expr: '30 8 * * 1-5', body: JSON.stringify({ v: 1, op: 'run', project: t.id, registration: 'review' }), max_late: '1800s', target: expect.stringMatching(/^#mdhouse@/) }]);
-    expect((await t.list()).registrations[0]).toMatchObject({ approval: 'approved', approved: { scheduleId: 'sch-1' }, schedule: { id: 'sch-1', enabled: true } });
+    expect((await t.list()).registrations[0]).toMatchObject({ approval: 'approved', approvedHash: hash, approved: { scheduleId: 'sch-1' }, schedule: { id: 'sch-1', enabled: true } });
     // Kept in the record's key-value store, keyed by the folder, not the root id.
     expect([...t.bus.kv.keys()].filter((k) => k.startsWith('auto/approval/'))).toEqual([expect.stringMatching(/^auto\/approval\/[0-9a-f]{16}\/review$/)]);
 
@@ -148,7 +148,8 @@ describe('/api/automation — this machine approves a registration file', () => 
     const ran = await t.fire('sch-1');
     expect({ ...ran }).toMatchObject({ ok: true, status: 'held', created: true, runPath: expect.stringMatching(/^Plans\/flows\/runs\/recent-commits-review\//) });
     expect(await readFile(join(t.proj, ran.runPath), 'utf8')).toContain('schedule');
-    expect((await t.list()).registrations[0]!.history).toEqual(expect.arrayContaining([expect.objectContaining({ outcome: 'started', runPath: ran.runPath }), expect.objectContaining({ outcome: 'refused', why: 'not approved' })]));
+    expect((await t.list()).registrations[0]).toMatchObject({ startedToday: expect.any(Number), lastStartAt: expect.any(String) });
+    expect((await t.list()).registrations[0]!.runs).toEqual(expect.arrayContaining([expect.objectContaining({ outcome: 'started', runPath: ran.runPath }), expect.objectContaining({ outcome: 'refused', why: 'not approved' })]));
 
     // A pull changed the file: it stops until approved again.
     await writeFile(join(t.proj, '.mdhouse/automation/review.json'), t.regText.replace('30m', '45m'));
@@ -160,10 +161,10 @@ describe('/api/automation — this machine approves a registration file', () => 
     expect((await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash: again }))[1]).toMatchObject({ approved: { scheduleId: 'sch-2' } });
     expect(t.bus.deleted).toEqual(['sch-1']);
 
-    expect(await t.post('/api/automation/revoke', { root: t.id, registration: 'review' })).toEqual([200, { revoked: true }]);
+    expect(await t.post('/api/automation/revoke', { root: t.id, registration: 'review' })).toEqual([200, { registration: 'review', approval: 'none', revoked: true }]);
     expect(t.bus.deleted).toEqual(['sch-1', 'sch-2']);
     expect((await t.list()).registrations[0]).toMatchObject({ approval: 'none', schedule: null });
-    expect(await t.post('/api/automation/revoke', { root: t.id, registration: 'review' })).toEqual([404, { error: 'not approved on this machine' }]);
+    expect(await t.post('/api/automation/revoke', { root: t.id, registration: 'review' })).toEqual([404, { error: 'not approved on this machine', reason: 'not-found' }]);
   });
 
   test('refusals keep nothing: bus refusal, bad bodies, unknown names, another site, a Viewer', async () => {
@@ -175,8 +176,8 @@ describe('/api/automation — this machine approves a registration file', () => 
     t.bus.state.refuse = '';
     expect((await t.list()).registrations[0]).toMatchObject({ approval: 'none' });
     for (const bad of [{}, { root: t.id, registration: 'review' }, { root: 1, registration: 'review', hash }]) expect([bad, (await t.post('/api/automation/approve', bad))[0]]).toEqual([bad, 400]);
-    expect((await t.post('/api/automation/approve', { ...ask, registration: 'nope' }))[0]).toBe(404);
-    expect((await t.post('/api/automation/approve', { ...ask, root: 'nope' }))[0]).toBe(404);
+    expect((await t.post('/api/automation/approve', { ...ask, registration: 'nope' }))).toEqual([404, { error: 'no such registration', reason: 'not-found' }]);
+    expect((await t.post('/api/automation/approve', { ...ask, root: 'nope' }))).toEqual([404, { error: 'no such project', reason: 'no-root' }]);
     expect((await t.post('/api/automation/approve', ask, { origin: 'http://evil.example' }))[0]).toBe(403);
     await t.prefs.setMode('viewer');
     // A Viewer has no local administrator, and its gate refuses an administrator too.

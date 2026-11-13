@@ -440,22 +440,36 @@ export async function serve(opts: ServeOptions) {
       range: reg.reg.range,
       when: reg.reg.when,
       maxLateMs: reg.reg.maxLateMs,
+      maxLate: durationWords(reg.reg.maxLateMs),
+      overlap: reg.reg.overlap,
       ...(reg.reg.notify ? { notify: reg.reg.notify } : {}),
       hash: reg.hash,
     };
-    if (!schedules) return { ...file, approval: 'unknown', schedule: null, disabled: false, failures: 0, history: [] };
+    if (!schedules) return { ...file, approval: 'unknown', schedule: null, disabled: false, failures: 0, startedToday: 0, runs: [] };
     const ok = await approvals.get(root.path, reg.reg.id);
     const st = await runIndex.state(root.id, reg.reg.id);
     const sched = ok ? schedules.get(ok.scheduleId) : undefined;
     return {
       ...file,
       approval: !ok ? 'none' : ok.hash === reg.hash ? 'approved' : 'changed',
-      ...(ok ? { approved: { at: ok.at, by: ok.by, scheduleId: ok.scheduleId } } : {}),
+      ...(ok ? { approvedHash: ok.hash, approved: { at: ok.at, by: ok.by, scheduleId: ok.scheduleId } } : {}),
       schedule: sched ? { id: sched.id, enabled: sched.enabled, next: sched.next ?? null, last: sched.last ?? null } : null,
       disabled: st.disabled,
       failures: st.failures,
-      history: await runIndex.history(root.id, reg.reg.id, 5),
+      startedToday: st.day === new Date().toISOString().slice(0, 10) ? st.started : 0,
+      ...(st.lastStartMs ? { lastStartAt: new Date(st.lastStartMs).toISOString() } : {}),
+      runs: await runIndex.history(root.id, reg.reg.id, 5),
     };
+  };
+  /** `90000` → `1m30s`: a lateness as a registration writes it. */
+  const durationWords = (ms: number): string => {
+    const parts: string[] = [];
+    let rest = Math.round(ms / 1000);
+    for (const [unit, n] of [['d', 86400], ['h', 3600], ['m', 60], ['s', 1]] as const) {
+      if (rest >= n) parts.push(`${Math.floor(rest / n)}${unit}`);
+      rest %= n;
+    }
+    return parts.join('') || '0s';
   };
   /** The bus schedule a registration fires by: its timer, its body, its lateness. */
   const scheduleSpec = (rootId: string, reg: LoadedRegistration['reg']) => ({
@@ -2192,7 +2206,7 @@ export async function serve(opts: ServeOptions) {
       '/api/automation': read(async (req) => {
         if (!actorOf(req).admin) return adminRequired();
         const root = registry.get(new URL(req.url).searchParams.get('root') ?? '');
-        if (!root || root.kind === 'reference') return fail(404, 'no such project');
+        if (!root || root.kind === 'reference') return json({ error: 'no such project', reason: 'no-root' }, 404);
         const { loaded, errors } = await loadRegistrations(registry, root.id, await flowDeps.catalog());
         let schedules: Map<string, Schedule> | null = null;
         let busError: string | undefined;
@@ -2223,16 +2237,16 @@ export async function serve(opts: ServeOptions) {
       '/api/automation/approve': {
         POST: mutation('automation', async (req) => {
           const body = (await req.json().catch(() => null)) as { root?: unknown; registration?: unknown; hash?: unknown } | null;
-          if (typeof body?.root !== 'string' || typeof body.registration !== 'string' || typeof body.hash !== 'string') return fail(400, 'expected {root, registration, hash}');
+          if (typeof body?.root !== 'string' || typeof body.registration !== 'string' || typeof body.hash !== 'string') return json({ error: 'expected {root, registration, hash}', reason: 'invalid' }, 400);
           const root = registry.get(body.root);
-          if (!root || root.kind === 'reference') return fail(404, 'no such project');
+          if (!root || root.kind === 'reference') return json({ error: 'no such project', reason: 'no-root' }, 404);
           if (!prefs.agentBus.enabled) return fail(409, 'the Agent Bus integration is off — mdhouse --agent-bus on');
           const id = body.registration;
           const hash = body.hash;
           return queueWrite(`automation:${root.path}:${id}`, async () => {
             const found = await readRegistration(registry, root.id, id, await flowDeps.catalog());
-            if (!found) return fail(404, 'no such registration');
-            if ('error' in found) return fail(409, `not a registration: ${found.error}`);
+            if (!found) return json({ error: 'no such registration', reason: 'not-found' }, 404);
+            if ('error' in found) return json({ error: `not a registration: ${found.error}`, reason: 'invalid' }, 409);
             if (found.loaded.hash !== hash) return noStore(json({ error: 'the file changed since it was shown — have a look again', reason: 'stale' }, 409));
             let before;
             try {
@@ -2255,7 +2269,7 @@ export async function serve(opts: ServeOptions) {
               return fail(503, safeError(err));
             }
             if (before && before.scheduleId !== made.id) await bus.scheduleDelete(before.scheduleId).catch(() => false);
-            return noStore(json({ approved: { hash, scheduleId: made.id }, schedule: { id: made.id, enabled: made.enabled, next: made.next ?? null } }));
+            return noStore(json({ registration: id, approval: 'approved', hash, approved: { hash, scheduleId: made.id }, schedule: { id: made.id, enabled: made.enabled, next: made.next ?? null } }));
           });
         }),
       },
@@ -2264,9 +2278,9 @@ export async function serve(opts: ServeOptions) {
       '/api/automation/revoke': {
         POST: mutation('automation', async (req) => {
           const body = (await req.json().catch(() => null)) as { root?: unknown; registration?: unknown } | null;
-          if (typeof body?.root !== 'string' || typeof body.registration !== 'string') return fail(400, 'expected {root, registration}');
+          if (typeof body?.root !== 'string' || typeof body.registration !== 'string') return json({ error: 'expected {root, registration}', reason: 'invalid' }, 400);
           const root = registry.get(body.root);
-          if (!root || root.kind === 'reference') return fail(404, 'no such project');
+          if (!root || root.kind === 'reference') return json({ error: 'no such project', reason: 'no-root' }, 404);
           if (!prefs.agentBus.enabled) return fail(409, 'the Agent Bus integration is off — mdhouse --agent-bus on');
           const id = body.registration;
           return queueWrite(`automation:${root.path}:${id}`, async () => {
@@ -2276,14 +2290,14 @@ export async function serve(opts: ServeOptions) {
             } catch (err) {
               return fail(503, safeError(err));
             }
-            if (!was) return fail(404, 'not approved on this machine');
+            if (!was) return json({ error: 'not approved on this machine', reason: 'not-found' }, 404);
             let scheduleError: string | undefined;
             try {
               await bus.scheduleDelete(was.scheduleId);
             } catch (err) {
               scheduleError = safeError(err);
             }
-            return noStore(json({ revoked: true, ...(scheduleError ? { scheduleError } : {}) }));
+            return noStore(json({ registration: id, approval: 'none', revoked: true, ...(scheduleError ? { scheduleError } : {}) }));
           });
         }),
       },
