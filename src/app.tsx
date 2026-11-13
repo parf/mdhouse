@@ -12,12 +12,13 @@ import { ViewChips } from './ui/ViewChips';
 import type { RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
-import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
+import { RagLink, Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
 import { Home } from './ui/Home';
 import { viewOf } from './ui/PageHead';
 import { AboutModal } from './ui/AboutModal';
 import { Settings } from './ui/Settings';
+import { RagPage } from './ui/RagPage';
 import { DirPage } from './ui/DirPage';
 import { ancestors } from './ui/tree-model';
 import { dirUrl, editUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
@@ -98,6 +99,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const currentDocPath = useRef(docPath);
   currentDocPath.current = docPath;
   const onSettings = route.kind === 'settings';
+  const onRag = route.kind === 'rag';
 
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
@@ -486,6 +488,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       return r ? (customName(r) ?? rootLabel(r.path)) : '';
     };
     if (onSettings) document.title = pageTitle({ settings: true });
+    else if (onRag) document.title = pageTitle({ rag: true });
     else if (dirTarget) document.title = pageTitle({ rel: dirTarget.dir, folder: true, root: rootName(dirTarget.rootId) });
     else if (docPath && doc) document.title = pageTitle({ rel: doc.rel, root: rootName(doc.root) });
     // a document that did not load: named from its address
@@ -500,7 +503,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       document.title = pageTitle({ rel: rel.join('/'), root: rootName(id) });
     }
     else if (!docPath) document.title = pageTitle({ root: rootName(tree?.root.id ?? '') });
-  }, [onSettings, docPath, doc?.rel, doc?.root, dirTarget?.rootId, dirTarget?.dir, tree?.root.id, roots]);
+  }, [onSettings, onRag, docPath, doc?.rel, doc?.root, dirTarget?.rootId, dirTarget?.dir, tree?.root.id, roots]);
 
   const toggleDir = useCallback((dirPath: string) => {
     setExpanded((prev) => {
@@ -568,6 +571,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
               </span>
             )}
           </span>
+          <RagLink rootId={rootId} active={onRag} onOpen={go} />
           <button
             class="icon-btn"
             title="Search (/)"
@@ -625,6 +629,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
           onMark={setMark}
           onHome={() => go('/')}
           onAbout={() => setAboutOpen(true)}
+          ragActive={onRag}
+          onRag={go}
         />
       )}
 
@@ -632,7 +638,9 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
       <main>
         {/* The ⚙ sits in each page's own header row; with the sidebar off the top bar has it. */}
-        {onSettings ? (
+        {onRag ? (
+          <RagPage search={full.slice(path.length)} rootId={rootId} roots={roots} go={go} gear={pageGear} />
+        ) : onSettings ? (
           <Settings
             roots={roots}
             onChanged={() => void reloadRoots()}

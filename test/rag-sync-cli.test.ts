@@ -4,8 +4,9 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { citeRecords } from '../src/lib/rag-cite';
 import { RagBusError, type BusOptions, type RagBus, type RagStore } from '../src/lib/rag-sync-bus';
-import { BACKOFF, citeRecords, STALLED_ROUNDS, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
+import { BACKOFF, STALLED_ROUNDS, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
 
 const base = mkdtempSync(join(tmpdir(), 'mdhouse-rag-sync-'));
 afterAll(() => rmSync(base, { recursive: true, force: true }));

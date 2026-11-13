@@ -50,6 +50,8 @@ mdhouse-rag-sync --help
   - one line in the agent log: notice confirmed, warning not confirmed, alert gave up.
 
   An unreachable KV or log is said once on stderr; the result, the output and the exit code do not change.
+- The `R` button in the sidebar header opens the RAG search page (`/rag`): the project's index status and a keyword search of it; until a
+  source is registered it shows how to set RAG up. It only reads — it never syncs.
 - `search` sends one query to the RAG; `keyword` (default) is free, `semantic` and `hybrid` need `--paid`.
 - A record the RAG returns without `lines`/`heading_path` gets them from the local file at its `content_hash`; a changed file marks the record `stale: true`, with no citation.
 - Each request waits for its answer by its own random topic and tag; acks and other messages are

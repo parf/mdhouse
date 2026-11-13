@@ -437,6 +437,27 @@ consumes only the mdhouse topic; older running app versions need an operator-aut
 Help/import/plan remain credential/network-free. Connected mock acceptance does not prove live
 provider readiness, source-mask deployment or real indexing/search; those remain separate gates.
 
+### RAG search page
+
+`/rag?q=…&root=<id>` (page route; `rag` is a reserved first segment, so no project takes it) is opened by the colored
+`R` link in the sidebar header and the top strip (a real `<a href>`, `PageHead` click rule). Read-only; it never syncs,
+registers or writes KV/log (the bin runs only on explicit demand).
+
+- `GET /api/rag?root=` — Agent Bus off → `{enabled:false}`; unknown/reference root 404; else `{enabled, path, guide?, source, last}`:
+  the source registered for this root's real path (`rag/source/*` in the `#mdhouse@<host>` KV on the **instance** bus, through
+  the live `AgentBus` connection — no second identity, never `AGENT_BUS_*`) and `rag/last/<sid>`; 15 s per-root cache of successes;
+  a bus failure is `{enabled:true, error}` (200, safe words). The RAG/FileScan names never reach the page.
+- `GET /api/rag/search?root=&q=&limit=` — `sameOrigin` (a cross-site GET costs a bus message) → 403; Agent Bus off → 404; q 1–1024
+  chars, limit 1–16 (default 8); no registered source → 404. **Keyword mode and the target (`source.rag`, namespace, table) are the
+  server's, never the request's.** Reply through `decodeSearchReply`, then `citeRecords` (jailed local file, hash → `lines`/
+  `heading_path`/`stale`); hit `url` = `registry.docUrl` + `#L<line>`; excerpt cut at 600 chars; ≤2 searches in flight (429);
+  waits ≤60 s (504); invalid reply/bus failure 503 in safe words; `no-store`.
+- Page (`ui/RagPage.tsx`, pure logic `ui/rag-model.ts`): status line (glyph first: ✅ ⚠️ ❌ ❓ ⛔) `index <sid> · last sync <ago> · <result> <confirmed>/<total>`;
+  one input (Enter submits; the address is the query — pushState, Back works, seq-counter supersede, button off while searching);
+  cards with the source link at the line, breadcrumb, `lines a–b`, `stale`, excerpt as text with query words in `<mark>` runs (never HTML);
+  not enabled → step-by-step enabling for the case (Agent Bus off: `mdhouse --agent-bus`; no source: provision FileScan + RAG, the sync command with
+  this project's real path, check again; guide link `_mdhouse/rag-sync.md`); bus unreachable → safe error + Check again.
+
 ## Session-history snapshot foundations
 
 `lib/user-session-codec.ts` encodes/decodes strict version-1 `{version,revision,model}` snapshots as

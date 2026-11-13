@@ -850,7 +850,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
  * Escape hides it. The help is the control's accessible description. A click on it never reaches an
  * enclosing label, so it does not move focus to that label's field; a link inside the help still works.
  */
-function Info({ children, label = 'Help' }: { children: preact.ComponentChildren; label?: string }) {
+export function Info({ children, label = 'Help' }: { children: preact.ComponentChildren; label?: string }) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);

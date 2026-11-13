@@ -1,3 +1,8 @@
+import { createHash } from 'node:crypto';
+import { readFile, stat } from 'node:fs/promises';
+import { Registry } from './roots';
+import type { Citation } from './rag-sync-runtime';
+
 /** Where a RAG excerpt sits in its file: 1-based inclusive `lines` and the ATX heading chain enclosing the first one. */
 export interface Cite {
   lines: [number, number];
@@ -47,3 +52,52 @@ export function cite(text: string, excerpt: string): Cite | null {
 }
 
 const count = (s: string): number => s.split('\n').length - 1;
+
+/** Local files larger than this are not read for a citation. */
+const CITE_MAX_BYTES = 1_048_576;
+
+/**
+ * Fills in `lines` and `heading_path` for the records the RAG returned without them. The record's
+ * `source` is looked up only through the root's jailed path resolution; a file that is not there, not
+ * Markdown or not a plain file leaves its record as it was. A file whose sha256 differs from the
+ * record's `content_hash` marks the record `stale: true` — no citation; an excerpt not found in the
+ * file leaves the record as it was.
+ */
+export async function citeRecords(records: readonly Citation[], rootPath: string): Promise<Array<Citation & { stale?: true }>> {
+  const registry = await Registry.create([rootPath], false);
+  const id = registry.list()[0]!.id;
+  const files = new Map<string, Promise<{ hash: string; text: string } | null>>();
+  const load = (source: string) => {
+    let f = files.get(source);
+    if (!f) {
+      f = (async () => {
+        if (!source.endsWith('.md')) return null;
+        const loc = await registry.resolve(`${id}/${source}`);
+        if (!loc) return null;
+        try {
+          const st = await stat(loc.abs);
+          if (!st.isFile() || st.size > CITE_MAX_BYTES) return null;
+          const bytes = await readFile(loc.abs);
+          return { hash: createHash('sha256').update(bytes).digest('hex'), text: bytes.toString('utf8') };
+        } catch {
+          return null;
+        }
+      })();
+      files.set(source, f);
+    }
+    return f;
+  };
+  return Promise.all(
+    records.map(async (r) => {
+      if (r.lines) return r;
+      const file = await load(r.source);
+      if (!file) return r;
+      if (file.hash !== r.content_hash.toLowerCase()) {
+        const { heading_path: _h, lines: _l, ...rest } = r;
+        return { ...rest, stale: true as const };
+      }
+      const found = cite(file.text, r.excerpt);
+      return found ? { ...r, ...found } : r;
+    }),
+  );
+}

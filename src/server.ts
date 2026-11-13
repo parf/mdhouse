@@ -38,6 +38,9 @@ import { repoHead } from './lib/git';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { citeRecords } from './lib/rag-cite';
+import { decodeSearchReply } from './lib/rag-sync-runtime';
+import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, sourceFor, type RagLast, type RagSource } from './lib/rag-ui';
 
 export interface ServeOptions {
   registry: Registry;
@@ -426,6 +429,25 @@ export async function serve(opts: ServeOptions) {
     }
     return { ep: instanceBus(), source: 'instance' };
   };
+  /** Registered RAG sources are read from the KV at most this often per project. */
+  const RAG_STATE_MS = 15_000;
+  const RAG_ANSWER_MS = 60_000;
+  const RAG_SEARCHES = 2;
+  let ragSearching = 0;
+  const ragCache = new Map<string, { at: number; state: { source: RagSource | null; last: RagLast | null } }>();
+  /** The source registered for `root`'s folder and its latest run; a failure throws and is not kept. */
+  const ragState = async (root: Root): Promise<{ source: RagSource | null; last: RagLast | null }> => {
+    const kept = ragCache.get(root.path);
+    if (kept && Date.now() - kept.at < RAG_STATE_MS) return kept.state;
+    const ep = instanceBus();
+    const names = (await bus.kvNames('rag/source/', ep)).filter(isSourceKey).slice(0, 50);
+    const entries = await Promise.all(names.map(async (name) => ({ name, value: await bus.kvJson(name, ep) })));
+    const source = sourceFor(entries, root.path);
+    const last = source ? lastOf(await bus.kvJson(lastKeyOf(source.sid), ep)) : null;
+    const state = { source, last };
+    ragCache.set(root.path, { at: Date.now(), state });
+    return state;
+  };
   /** Open tabs learn that root metadata changed; they read it again from `/api/roots`. */
   const publishRoots = () => server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
   /**
@@ -618,6 +640,7 @@ export async function serve(opts: ServeOptions) {
       '/d': read(legacyPage),
       '/d/*': read(legacyPage),
       '/settings': read(page),
+      '/rag': read(page),
 
       /**
        * Mermaid's own ESM build, served straight from node_modules so it stays out of the app
@@ -1023,6 +1046,72 @@ export async function serve(opts: ServeOptions) {
       '/api/ab/job': read((req) => {
         const events = bus.job(new URL(req.url).searchParams.get('id') ?? '');
         return events ? json({ events }) : fail(404, 'no such job');
+      }),
+
+      /**
+       * The `/rag` page's status: the project's registered RAG source and its latest sync, read from the
+       * KV of `#mdhouse@<host>` on the instance bus — where `mdhouse-rag-sync` writes them. Never connects
+       * to the RAG, writes nothing; a bus that fails is an `error` in a 200, so the page can say so.
+       */
+      '/api/rag': read(async (req) => {
+        const url = new URL(req.url);
+        const root = rootOf(url);
+        if (!root || root.kind === 'reference') return fail(404, 'unknown root');
+        if (!prefs.agentBus.enabled) return json({ enabled: false });
+        const guide = registry.list().find((r) => r.kind === 'reference');
+        const hasGuide = !!guide && !!(await fileAt(`${guide.id}/rag-sync.md`));
+        const head = { enabled: true, path: root.path, ...(guide && hasGuide ? { guide: registry.docUrl(guide, 'rag-sync.md') } : {}) };
+        try {
+          const state = await ragState(root);
+          return json({ ...head, source: state.source ? { sid: state.source.sid, namespace: state.source.namespace, table: state.source.table } : null, last: state.last });
+        } catch (err) {
+          return json({ ...head, error: safeError(err) });
+        }
+      }),
+
+      /**
+       * A keyword search of the project's registered RAG, as `#mdhouse`: the target and the mode are the
+       * source's and `keyword`, never the request's. Read-only, but it costs a bus message, so a cross-site
+       * request is refused. Hits are cited from the local file (`citeRecords`).
+       */
+      '/api/rag/search': read(async (req) => {
+        if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+        if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
+        const url = new URL(req.url);
+        const root = rootOf(url);
+        if (!root || root.kind === 'reference') return fail(404, 'unknown root');
+        const { q, limit } = searchParams(url);
+        if (q === null) return fail(400, 'expected q: 1–1024 characters');
+        if (ragSearching >= RAG_SEARCHES) return fail(429, 'a search is already running — try again in a moment');
+        ragSearching++;
+        const started = Date.now();
+        try {
+          let source: RagSource | null;
+          try {
+            source = (await ragState(root)).source;
+          } catch (err) {
+            return fail(503, safeError(err));
+          }
+          if (!source) return fail(404, 'this project is not indexed');
+          let answer: string | null;
+          try {
+            answer = await bus.askOnce(source.rag, searchBody(source, q, limit), RAG_ANSWER_MS, instanceBus());
+          } catch (err) {
+            return fail(503, safeError(err));
+          }
+          if (answer === null) return fail(504, 'the RAG did not answer in time');
+          let reply: ReturnType<typeof decodeSearchReply>;
+          try {
+            reply = decodeSearchReply(answer, { namespace: source.namespace, table: source.table, mode: 'keyword', limit, exclude: [] });
+          } catch {
+            return fail(503, 'the RAG answer was not understood');
+          }
+          const records = await citeRecords(reply.records, root.path);
+          const hits = shapeHits(records, (src) => registry.docUrl(root, src));
+          return noStore(json({ hits, count: hits.length, took: Date.now() - started }));
+        } finally {
+          ragSearching--;
+        }
       }),
 
       /**

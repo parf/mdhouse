@@ -134,8 +134,9 @@ export function highlightRanges(text: string, ranges: Array<[number, number]>): 
  * PATH too like the root merges into it: one inside the other keeps the longer, and the root's
  * last folder starting the PATH is written once.
  */
-export function pageTitle(p: { rel?: string; folder?: boolean; root?: string; settings?: boolean }): string {
+export function pageTitle(p: { rel?: string; folder?: boolean; root?: string; settings?: boolean; rag?: boolean }): string {
   if (p.settings) return 'Settings - MDHOUSE';
+  if (p.rag) return 'RAG search - MDHOUSE';
   const root = p.root ?? '';
   const parts = (p.rel ?? '').split('/').filter(Boolean);
   if (!parts.length) return [root, 'MDHOUSE'].filter(Boolean).join(' - ');

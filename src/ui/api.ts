@@ -220,6 +220,37 @@ async function get<T>(path: string, params: Record<string, string | number | boo
   return res.json() as Promise<T>;
 }
 
+/** `/api/rag`: the project's RAG source (`source` null: none registered), or why it cannot be read. */
+export interface RagStatus {
+  enabled: boolean;
+  /** The project's folder, for the sync command. */
+  path?: string;
+  /** The installed guide's page address. */
+  guide?: string;
+  source?: { sid: string; namespace: string; table: string } | null;
+  last?: { startedAt: string; endedAt: string; result: string; confirmed: number | null; remaining: number | null; rounds: number } | null;
+  error?: string;
+}
+
+export interface RagHit {
+  source: string;
+  url: string;
+  lines?: [number, number];
+  heading_path?: string[];
+  excerpt: string;
+  truncated?: true;
+  stale?: true;
+  score: number;
+}
+
+/** `/api/rag/search`. */
+export interface RagSearch {
+  hits: RagHit[];
+  count: number;
+  /** Milliseconds the bus round trip took. */
+  took: number;
+}
+
 /** A folder's git view — `/api/git`. */
 export interface GitInfo {
   repo: string;
@@ -433,6 +464,10 @@ export const api = {
   /** Saves the whole source; refused (409) when the file is no longer at `hash`. */
   saveSource: (p: string, hash: string, text: string) => post<{ hash: string }>('/api/source', { p, hash, text }),
   abInfo: () => get<AbInfo>('/api/ab'),
+  /** The project's registered RAG source and latest sync — `/api/rag`. */
+  rag: (root: string) => get<RagStatus>('/api/rag', { root }),
+  /** A keyword search of the project's RAG — `/api/rag/search`. */
+  ragSearch: (root: string, q: string) => get<RagSearch>('/api/rag/search', { root, q }),
   /** The root's bus: connects to it — only on the reader's request. */
   abRootInfo: (root: string) => get<AbRootInfo>('/api/ab', { root }),
   /** The stored Agent Bus settings: no bus is reached. */

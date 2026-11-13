@@ -26,6 +26,8 @@
 
 ### Added
 
+- RAG search page: a colored `R` button in the sidebar header opens `/rag` — the project's index status (source, last sync, confirmed/total) and a keyword search with cited hits (file, lines, heading, query words marked); when RAG is not set up it explains step by step how to enable it
+
 - `mdhouse-rag-sync sync` registers its source (one folder per namespace/table) and keeps its latest run and the last 200 runs in the KV of `#mdhouse@<host>`, with one agent-log line per run; a sync for another folder, FileScan or RAG is refused before anything is sent
 
 - `mdhouse-rag-sync sync --until-done` gives up after three rounds in a row at its 15 min wait with nothing more confirmed, and lists the root, plans and reads the owner configuration again every round, so a changed or incomplete listing stops it

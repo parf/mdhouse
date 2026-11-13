@@ -4,7 +4,7 @@
  */
 
 /** First path segments the server answers itself — a root id never takes one. */
-export const RESERVED = new Set(['api', 'ws', 'vendor', '__app', '_bun', 'settings', 'd', 'favicon.ico']);
+export const RESERVED = new Set(['api', 'ws', 'vendor', '__app', '_bun', 'settings', 'rag', 'd', 'favicon.ico']);
 
 const decode = (seg: string): string => {
   try {
@@ -28,6 +28,7 @@ export const dirUrl = (rootId: string, dir: string): string =>
 export type Route =
   | { kind: 'home' }
   | { kind: 'settings' }
+  | { kind: 'rag' }
   | { kind: 'dir'; rootId: string; dir: string }
   /** `path`: the pathname as written, for `/api/doc?d=`. */
   | { kind: 'file'; path: string };
@@ -36,6 +37,7 @@ export type Route =
 export function routeOf(pathname: string): Route {
   if (pathname === '/' || pathname === '') return { kind: 'home' };
   if (pathname === '/settings') return { kind: 'settings' };
+  if (pathname === '/rag') return { kind: 'rag' };
   const segs = pathname.slice(1).split('/');
   if (segs.length === 1 || pathname.endsWith('/')) {
     const [rootId = '', ...dir] = segs.filter(Boolean).map(decode);

@@ -9,7 +9,7 @@
  */
 import { existsSync } from 'node:fs';
 import { hostname, userInfo } from 'node:os';
-import { Bus, BusError as ClientError, BusTimeout, BusUnreachable } from 'ai-agent-bus-sdk';
+import { Bus, BusError as ClientError, BusTimeout, BusUnreachable, KVNotFound } from 'ai-agent-bus-sdk';
 
 /** One message as the daemon hands it out. A receipt (`ack` / `done`) is not an answer. */
 export interface Envelope {
@@ -263,6 +263,33 @@ export class AgentBus {
       .filter((r) => r.kind === 'agent' && r.name !== this.me)
       .map((r) => ({ name: r.name, descr: r.descr ?? '', alive: isAlive(r, now) }))
       .sort((a, b) => Number(b.alive) - Number(a.alive) || a.name.localeCompare(b.name));
+  }
+
+  /** One JSON value of mdhouse's own key-value store at `ep` (default: the instance's); null when there is none. */
+  async kvJson(name: string, ep?: Endpoint): Promise<Record<string, unknown> | null> {
+    const d = await this.connect(ep);
+    try {
+      const got = await d.record(this.me).kv.get('json', name);
+      return got.kind === 'json' ? got.value : null;
+    } catch (err) {
+      if (err instanceof KVNotFound) return null;
+      throw err;
+    }
+  }
+
+  /** The names of mdhouse's own JSON values that start with `prefix`. */
+  async kvNames(prefix: string, ep?: Endpoint): Promise<string[]> {
+    const d = await this.connect(ep);
+    const listed: unknown = await d.record(this.me).kv.list();
+    const json = typeof listed === 'object' && listed !== null && Array.isArray((listed as { json?: unknown }).json) ? (listed as { json: unknown[] }).json : [];
+    return json.flatMap((e) => (typeof e === 'object' && e !== null && typeof (e as { name?: unknown }).name === 'string' && (e as { name: string }).name.startsWith(prefix) ? [(e as { name: string }).name] : []));
+  }
+
+  /** One request to `to` and its answer's text; null when no answer came within `timeoutMs`. */
+  async askOnce(to: string, body: string, timeoutMs: number, ep?: Endpoint): Promise<string | null> {
+    const d = await this.connect(ep);
+    const out = await d.call(to, body, { topic: TOPIC, timeout: timeoutMs });
+    return out.kind === 'answer' ? out.message.body : null;
   }
 
   /** A job's events so far; null when it is not (or no longer) kept. */

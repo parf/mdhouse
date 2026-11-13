@@ -123,6 +123,10 @@ describe('likeMatcher', () => {
 });
 
 describe('pageTitle', () => {
+  test('the RAG page', () => {
+    expect(pageTitle({ rag: true })).toBe('RAG search - MDHOUSE');
+  });
+
   test('FileName - PATH (the last two folders) - Root - MDHOUSE', () => {
     expect(pageTitle({ rel: 'a/b/c/README.md', root: 'realty/Plans' })).toBe('README - b/c - realty/Plans - MDHOUSE');
     expect(pageTitle({ rel: 'TODO.md', root: 'src/mdhouse' })).toBe('TODO - src/mdhouse - MDHOUSE');
