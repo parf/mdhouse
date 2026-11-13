@@ -284,7 +284,8 @@ export async function startSmoke(opts: SmokeOptions): Promise<Smoke> {
     const log = join(dir, 'server.log');
     const server = start('mdhouse', process.execPath, ['run', 'src/cli.ts', wanted!, ...(opts.rw ? ['--rw'] : []), '--port', String(serverPort), '--fg'], {
       cwd: src,
-      env: { ...process.env, XDG_CONFIG_HOME: cfg },
+      // A fresh config starts the Agent Bus as `auto`: a scratch server must never find this machine's real bus, so it searches nowhere.
+      env: { ...process.env, XDG_CONFIG_HOME: cfg, MDHOUSE_AB_SOCKET_DIRS: join(dir, 'no-agent-bus') },
       log,
     });
     const base = `http://127.0.0.1:${serverPort}`;
