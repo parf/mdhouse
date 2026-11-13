@@ -37,7 +37,7 @@ import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits, repoHead } from './lib/git';
-import { applyFlowAction, docFlow, isFlowError, verifyRun, isOpenRun, listRuns, planFlowRun, runnableFlow, runsDir, sealKeyAt, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, verifyRun, listRuns, openRunOf, planFlowRun, runnableFlow, runsDir, sealKeyAt, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
 import { advanceDestination, readFlowRunDocument, readFlowRunMeta } from './lib/flow-run-markdown';
 import { loadFlowCatalog, type LoadedFlowPackage } from './lib/flow-package';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
@@ -1974,7 +1974,7 @@ export async function serve(opts: ServeOptions) {
             pkgs.map(async ({ manifest: m }) => {
               const runs = await listRuns(registry, root, m.id);
               const last = runs[0];
-              const open = runs.find((r) => isOpenRun(r.status));
+              const open = await openRunOf(flowDeps, root, runs);
               return {
                 id: m.id,
                 family: m.family,

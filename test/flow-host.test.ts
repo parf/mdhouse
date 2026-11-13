@@ -162,6 +162,20 @@ describe('startFlowRun', () => {
     expect(await startFlowRun(t.deps, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'open-run' });
   });
 
+  test('an open run this host cannot act on (another key) blocks nothing: a new run starts', async () => {
+    const t = await setup();
+    const p = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
+    expect(await startFlowRun(t.deps, t.io, { token: p.token, actor: tester })).toMatchObject({ status: 'held' });
+    const here = { ...t.deps, sealKey: async () => Buffer.alloc(32, 3) };
+    const q = await planFlowRun(here, t.req({ kind: 'baseline', commit: c[1]! }));
+    if (isFlowError(q)) throw new Error(q.error);
+    expect(await startFlowRun(here, t.io, { token: q.token, actor: tester })).toMatchObject({ status: 'held', created: true, runPath: q.runPath });
+    // Its own run blocks the next one again.
+    const r = await planFlowRun(here, t.req({ kind: 'baseline', commit: c[0]! }));
+    if (isFlowError(r)) throw new Error(r.error);
+    expect(await startFlowRun(here, t.io, { token: r.token, actor: tester })).toMatchObject({ reason: 'open-run', run: { url: t.registry.docUrl(t.root, q.runPath) } });
+  });
+
   test('two starts at once: one writes, the other is open-run — never stale, whatever the timing', async () => {
     const t = await setup();
     const a = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));

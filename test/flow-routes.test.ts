@@ -409,6 +409,32 @@ describe('/api/flow routes', () => {
     }
   });
 
+  test('a held run that cannot be acted on is no open run: catalog and start agree, a new run starts', async () => {
+    const t = await start();
+    try {
+      const pv = (await (await t.preview()).json()) as { token: string; runPath: string };
+      await t.post('/api/flow/start', { token: pv.token });
+      const doc = await readFile(join(t.proj, pv.runPath), 'utf8');
+      // Edited by hand: its target moved, so its seal no longer holds.
+      const edited = doc.replaceAll(`"target": "${t.c[1]}"`, `"target": "${t.c[0]}"`);
+      expect(edited).not.toBe(doc);
+      await writeFile(join(t.proj, pv.runPath), edited);
+      const cat = async () => ((await (await t.get(`/api/flow/catalog?root=${t.root.id}`)).json()) as { packages: Array<{ id: string; openRun: unknown }> }).packages.find((p) => p.id === PKG)!.openRun;
+      expect(await cat()).toBeNull();
+      const pv2 = (await (await t.preview({ kind: 'baseline', commit: t.c[0] })).json()) as { token: string; runPath: string };
+      expect(await body(await t.post('/api/flow/start', { token: pv2.token }))).toEqual([200, { status: 'held', runPath: pv2.runPath, url: expect.any(String) }]);
+      expect(await cat()).toEqual({ url: t.registry.docUrl(t.root, pv2.runPath), status: 'held' });
+      // Cancelled, it blocks nothing either.
+      const cancel = { root: t.root.id, path: pv2.runPath, expectedVersion: 0, clientId: 'cancel-0001', action: { type: 'cancel', reason: 'x' } };
+      expect((await t.post('/api/flow/event', cancel)).status).toBe(200);
+      expect(await cat()).toBeNull();
+      const pv3 = (await (await t.preview({ kind: 'baseline', commit: t.c[0] })).json()) as { token: string };
+      expect((await t.post('/api/flow/start', { token: pv3.token })).status).toBe(200);
+    } finally {
+      t.stop();
+    }
+  });
+
   test('completing writes the destination first: when it cannot be written, the run stays as it was', async () => {
     const t = await start();
     try {

@@ -197,8 +197,24 @@ export async function listRuns(registry: Registry, root: Root, packageId: string
   return out;
 }
 
-/** A run that still blocks a new one of its package. */
+/** A run status that still blocks a new run of its package. */
 export const isOpenRun = (s: FlowRunStatus): boolean => s === 'running' || s === 'held';
+
+/**
+ * The run that blocks a new start of its package — for the catalog and for a start alike: the newest
+ * running or held run this host may act on (`verifyRun`). A refused one (another machine's key, a moved
+ * project, an edited document) stays a read-only document and blocks nothing.
+ */
+export async function openRunOf<R extends { path: string; status: FlowRunStatus }>(deps: FlowHostDeps, root: Root, runs: R[]): Promise<R | null> {
+  for (const r of runs) {
+    if (!isOpenRun(r.status)) continue;
+    const loc = await deps.registry.resolve(`${root.id}/${r.path}`);
+    const text = loc ? await Bun.file(loc.abs).text().catch(() => null) : null;
+    const doc = text === null ? null : readFlowRunDocument(text);
+    if (doc && !(await verifyRun(deps, root, r.path, doc.state, readFlowRunMeta(text!)))) return r;
+  }
+  return null;
+}
 
 /**
  * The run a request would start, without writing anything. `fixed` replays a token's run id and
@@ -354,7 +370,7 @@ export async function startFlowRun(deps: FlowHostDeps, io: FlowWrite, start: { t
       const runId = fixed ? null : runIdFor(req.trigger);
       const same = runs.find((r) => r.runId === runId);
       if (same) return { status: same.status, runPath: same.path, url: deps.registry.docUrl(root, same.path), created: false };
-      const open = runs.find((r) => isOpenRun(r.status));
+      const open = await openRunOf(deps, root, runs);
       if (open) return fail('open-run', 'a run of this flow is still open', { run: { url: deps.registry.docUrl(root, open.path), status: open.status } });
       const plan = await planFlowRun(deps, req, fixed);
       if (isError(plan)) return plan;
