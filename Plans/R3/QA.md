@@ -910,7 +910,7 @@ Each step also checks the result on disk (tick, answer, edit, commit) or in the 
 | Open project (drawer, tabs, folder, file) | pass, 4/4 | tabs 27–28px, tree rows 24px, root select 22px, logo 22×13; compact sidebar 220px too narrow for five 44px tabs at 768 → `8ff0a3b` |
 | Open a document from the drawer | pass, 4/4 | the drawer stayed open over the page it opened → closes on navigation at ≤720px `f175d6e` |
 | Read a document (header, TOC, history, chips) | pass, 4/4 | header icons 26px, +V1/+V2 33×21, breadcrumbs 14px, Edit 28px, TOC links 20px, summaries 18px, title row ran into the Edit button → `8ff0a3b` |
-| Tick a task | pass, 4/4 (box 32px) | 13px box → 32px; a native checkbox takes no hit area, so 44px stays **remaining** |
+| Tick a task | pass, 4/4, by touch and by keyboard (Space) | 13px box → 44px target (the native input is kept, restyled with a 22px drawn box) (follow-up to the walk) |
 | Add a block under a heading (↓ ⇊) | pass, 4/4 | kind buttons 28px, 14px font → `8ff0a3b` |
 | Q&A answer (❓ → 💬 save) | pass, 4/4, answer on disk | action buttons and 💬 22px, textarea 14px (zoom), mic 32px overlapping the text, options 24px → `8ff0a3b` |
 | Full editor edit + save | pass, 4/4, edit on disk | Save/Close/Discard 32px → `8ff0a3b`; CodeMirror was already 16px |
@@ -923,6 +923,9 @@ Hover-only and keyboard-only: the tree rows' ★/mute buttons exist only on `:ho
 depends on hover. Every desktop shortcut used in the journey has a visible control: `a` (Agent Bus button), `e` (✎ and the Edit button), `/` (search icon), Alt+1…9 and Ctrl+Enter
 (the numbered action buttons and 💬 Save), Ctrl+Shift+Space (the mic).
 
-Remaining: real-device virtual keyboard and viewport behaviour (iOS Safari, Chrome Android), long-press Copy ([№MW.5c.1](workspaces/TODO.md#MW.5c.1)); the task box is 32px;
-the sticky Q&A filter strip takes about 100px of a 390px screen when its chips wrap; the glyph of an open question's form is 21px (the row itself is the target).
+The sticky Q&A filter strip is one 57px row below 720px on a coarse pointer (its chips sit behind a `Filter · N` toggle that shows the active level as `🟠 13 of 22`); it was about 100px
+when the chips wrapped. Tablet widths keep the chips.
+
+Remaining: real-device virtual keyboard and viewport behaviour (iOS Safari, Chrome Android), long-press Copy ([№MW.5c.1](workspaces/TODO.md#MW.5c.1)); the glyph of an open question's form
+is 21px (the row itself is the target).
 

@@ -418,7 +418,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - [x] MW.5c.1 Touch-visible heading/actions and 44px controls; integrated `f434fd5`/`80c17e6`, responsive Chromium light/dark evidence in [QA](../QA.md) <a id="MW.5c.1"></a>
   - Remaining: real-device virtual keyboard, long-press Copy and complete mobile journey; parent stays open
   - [x] MW.5c.2 Primary journey walked at 390 and 768, light and dark, touch emulation: open → document → tick → Q&A → editor → diff → commit → Agent Bus → /rag; 44px targets, 16px fields, drawer closes on navigation; matrix in [QA](../QA.md#touch-walk) <a id="MW.5c.2"></a>
-  - Remaining after MW.5c.2: real-device keyboard/viewport, long-press Copy; task box 32px, sticky Q&A strip height
+  - Remaining after MW.5c.2: real-device keyboard/viewport, long-press Copy (task box is 44px and the Q&A strip one row on a phone)
   - Acceptance: responsive UI tests and a documented manual device matrix in `Plans/R3/QA.md` cover iPad landscape/portrait and representative phone widths
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 

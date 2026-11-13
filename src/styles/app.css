@@ -1304,6 +1304,7 @@ main {
 .qa-strip .chip { font: inherit; font-size: 13px; border: 1px solid var(--border); background: var(--bg-raised); color: var(--fg);
   border-radius: 12px; padding: 1px 9px; cursor: pointer; position: relative; }
 .qa-strip .chip[aria-pressed="true"] { border-color: var(--qa-pick); background: var(--qa-pick-bg); }
+.qa-strip .qa-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 100%; }
 .qa-strip .sep { color: var(--border-strong); font-size: 18px; line-height: 1; margin: 0 2px; }
 .md.qa-filtered li.item.qa-hide { display: none; }
 @media (max-width: 720px) {
@@ -2174,8 +2175,17 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .toc summary, .doc-aside summary { min-height: 44px; }
   .toc li { padding: 0; }
   .toc li a { display: block; padding-block: 12px; }
-  /* A tick is the one thing a task line is for: the box is as big as a thumb allows beside the text. */
-  .md input.task-checkbox { width: 32px; height: 32px; margin: 6px 10px 6px 0; }
+  /* A tick is the one thing a task line is for: the native input stays (keyboard, screen reader, the change event) but is a 44px target
+     with a 22px drawn box; it reaches 10px into the text, and the line is tall enough for it. */
+  .md li.task-item { padding-block: 10px; padding-left: 1.9em; margin-left: -1.9em; }
+  .md li.task-item > .task-checkbox, .md li.task-item > p:first-child > .task-checkbox { left: -10px; top: 0; }
+  .md input.task-checkbox { appearance: none; -webkit-appearance: none; width: 44px; height: 44px; margin: 0; border: 0; background: none; display: inline-grid; place-items: center; }
+  .md input.task-checkbox::before { content: ''; grid-area: 1 / 1; width: 22px; height: 22px; box-sizing: border-box; border: 2px solid var(--fg-muted); border-radius: 5px; background: var(--bg); }
+  .md input.task-checkbox:checked::before { background: var(--accent); border-color: var(--accent); }
+  .md input.task-checkbox:checked::after { content: ''; grid-area: 1 / 1; width: 6px; height: 11px; margin-top: -2px; border: solid var(--accent-fg); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+  .md input.task-checkbox:disabled { opacity: 0.55; }
+  .md input.task-checkbox:focus-visible { outline: none; }
+  .md input.task-checkbox:focus-visible::before { outline: 2px solid var(--accent); outline-offset: 2px; }
   /* The icons grew to 44px: the title row wraps instead of running into the Edit button. */
   :is(.doc-title, .doc-title-row) { flex-wrap: wrap; }
   :is(.git-link, .edit-link) { margin-left: 4px; }
@@ -2185,7 +2195,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .home-table tr.file > td { height: 44px; }
   .home-table .name a.link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
   :is(.sort-flip, .kind-flip button) { min-height: 44px; min-width: 44px; padding-inline: 10px; }
-  .md li.task-list-item, .md li.task-item { min-height: 44px; }
   .git-list li { align-items: center; min-height: 44px; }
   .git-list li a { display: inline-flex; align-items: center; min-height: 44px; }
 }
