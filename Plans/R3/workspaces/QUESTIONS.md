@@ -40,13 +40,15 @@
 
 - ❓ Q-R3-DATA1 Where mdhouse data belongs (MW.14, inventory by #md/w1): <a id="Q-R3-DATA1"></a>
   Everything kept now and planned: [DATA.md](../DATA.md).
-  - [ ] shared project definitions in `$PROJECT/.mdhouse/` (Git): ignore rules, default agents, RAG source id, flows
-  - [ ] RW/RO stays per user/machine — a repo never grants itself write
-  - [ ] secrets (bus token, credentials, user hashes) move out of prefs.json into `secrets.json` 0600 (keyring later)
-  - [ ] a stable project id in `.mdhouse/project.json` (survives moves/clones), prefs keyed by it
-  - [ ] control sockets → `$XDG_RUNTIME_DIR/mdhouse/`; history/state → `$XDG_STATE_HOME/mdhouse/`
-  - ( ) marks: per user (prefs)
-  - ( ) marks: team-shared (`.mdhouse/`, Git)
+  Tick what to do (layout and order as in [DATA.md](../DATA.md#migration-order-proposal-mdw1)):
+  - [ ] layout as in DATA.md: user / secret / machine / runtime / state / browser / bus / team; never in Git: RW/RO, secrets, access, machine state 🌟
+  - [ ] 1 secrets (bus token, credentials, user password hashes) → `secrets.json` 0600; read both places for one release 🌟
+  - [ ] 2 control socket → `$XDG_RUNTIME_DIR/mdhouse/`; the CLI tries new, then old 🌟
+  - [ ] 3 `$XDG_STATE_HOME/mdhouse/` for new machine state (automation approvals, run index) 🌟
+  - [ ] 4 `.mdhouse/project.json` (stable project id) created on the first team write; prefs stay keyed by path
+  - [ ] other shared definitions in `.mdhouse/` (default agents, RAG source id): which ones? → 💬
+  - ( ) marks stay per user (prefs) 🌟
+  - ( ) marks become team-shared (`.mdhouse/`, Git)
   > 💬👾 Common practice (#md/w1, sources: XDG basedir, git protected config, VS Code Workspace Trust, JetBrains `.idea`, direnv, Bun.secrets):
   > a repo never grants itself permissions (RW/RO stays per user); committed definitions run only after per-user trust;
   > personal marks are user state, only deliberately shared lists go in Git; secrets: 0600 file now (works headless), keyring later;
@@ -81,3 +83,17 @@
 - [№Q-R3-AUTO1](DECISIONS.md#Q-R3-AUTO1) <a id="Q-R3-AUTO1"></a>
 
 - [№Q-R3-AUTO2](DECISIONS.md#Q-R3-AUTO2) <a id="Q-R3-AUTO2"></a>
+
+## Open — 2026-11-12, evening
+
+- ❓ Q-R3-REL1 Release now? `main` is 440+ commits ahead (RAG page, Viewer, flows, Settings/mobile, MW.7 control, `mdhouse docs`); 1554 tests pass. <a id="Q-R3-REL1"></a>
+  Publishing also makes the AGENTS.md line's GitHub URL live; MW.16 starts right after.
+  - ( ) publish after #md/review's independent pass (back after 01:19 EST) 🌟
+  - ( ) publish now
+  - ( ) wait — finish Changes / phone navigation / MW.11 slice 2 first
+
+- ❓ Q-R3-CLAUDE1 CLAUDE.md (your file — you edit it): <a id="Q-R3-CLAUDE1"></a>
+  - [ ] line 129: `doc/qa-playground.md` → `test/fixtures/qa-playground.md` (moved in 93e8f63)
+  - [ ] "a route → serve() on its own 617xx port" → "on its own `testPort(617xx)` port (`test/ports.ts`)" (0d6fb0d)
+  - [ ] Deploy checklist "~65 files, ~234 kB": today ~240 files, ~730 kB (flows + agent-bus.png)
+  - [ ] Plans/R3/README.md: link DATA.md
