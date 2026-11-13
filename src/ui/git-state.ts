@@ -79,3 +79,46 @@ export const holdAnswer = <T>(held: Held<T> | null, ask: HistoryAsk, now: Histor
  */
 export const heldConfirmed = <T>(held: Held<T> | null, now: HistoryAsk | null): T | null =>
   held && now && held.ask && sameAsk(held.ask, now) ? held.value : null;
+
+/** A changed file's state, from its porcelain `XY` code. */
+export type Change = 'modified' | 'added' | 'deleted' | 'untracked';
+
+/** `??` untracked; a `D` on either side deleted; an `A` added; anything else (M, R, C, T, U) modified. */
+export function changeOf(code: string): Change {
+  if (code === '??') return 'untracked';
+  if (code.includes('D')) return 'deleted';
+  if (code.includes('A')) return 'added';
+  return 'modified';
+}
+
+/** The counts every place shows for uncommitted files — the Changes view, the document chip, a nav badge. */
+export interface ChangeSummary {
+  modified: number;
+  added: number;
+  deleted: number;
+  untracked: number;
+  total: number;
+  /** `No changes`, `1 change`, `3 changes`. */
+  label: string;
+}
+
+/** Counts `dirty` (the git payload's `dirty` list) by `changeOf`; `total` includes untracked files. */
+export function changeSummary(dirty: ReadonlyArray<{ code: string }>): ChangeSummary {
+  const s: ChangeSummary = { modified: 0, added: 0, deleted: 0, untracked: 0, total: 0, label: '' };
+  for (const f of dirty) s[changeOf(f.code)]++;
+  s.total = dirty.length;
+  s.label = s.total === 0 ? 'No changes' : `${s.total} ${s.total === 1 ? 'change' : 'changes'}`;
+  return s;
+}
+
+/** The commit button's words: `Commit README.md` for one file, `Commit 3 files`, or null for none. */
+export function commitLabel(paths: readonly string[]): string | null {
+  if (!paths.length) return null;
+  return paths.length === 1 ? `Commit ${paths[0]!.split('/').pop()}` : `Commit ${paths.length} files`;
+}
+
+/** The files ticked when Changes opens: every changed file but untracked ones; scoped to `file`, only it (ticked even untracked). */
+export function initialTicks(dirty: ReadonlyArray<{ path: string; code: string }>, file: string | null = null): Set<string> {
+  if (file !== null) return new Set(dirty.some((f) => f.path === file) ? [file] : []);
+  return new Set(dirty.filter((f) => f.code !== '??').map((f) => f.path));
+}
