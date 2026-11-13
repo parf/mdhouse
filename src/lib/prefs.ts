@@ -36,12 +36,27 @@ interface RootPrefs {
   ignored: string[];
 }
 
-/** The format this mdhouse writes. A version-1 file is read as is and written as version 2. */
+/** The format this mdhouse writes for a workspace. A version-1 file is read as is and written as version 2. */
 export const PREFS_VERSION = 2;
+/**
+ * Version 2 plus `mode: "viewer"`, written while the instance is a Viewer. An mdhouse that knows
+ * only version 2 reads it as newer: grants no writes, never rewrites it.
+ */
+export const VIEWER_VERSION = 3;
+
+/** The instance mode: `workspace` writes by root mode; `viewer` caps every root read-only. */
+export type InstanceMode = 'workspace' | 'viewer';
 
 interface PrefsFile {
-  /** 1 or 2. Any other value: written by a newer mdhouse — read, never written, grants no writes. */
+  /** 1, 2 or 3 (Viewer). Any other value: written by a newer mdhouse — read, never written, grants no writes. */
   version: number;
+  /** `viewer` while the instance is a Viewer; absent means workspace. */
+  mode?: 'viewer';
+  /**
+   * On disk in a Viewer (version 3) file only: the RW grants, moved out of `writable` so an older
+   * mdhouse, which grants `writable` whatever the version, finds none. Read back into `writable`.
+   */
+  viewerWritable?: string[];
   /** absolute root path -> marks */
   roots: Record<string, RootPrefs>;
   /** Absolute, symlink-resolved directories served on every start. */
@@ -331,6 +346,18 @@ const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as numb
 
 const strings = (x: unknown): x is string[] => Array.isArray(x) && x.every((e) => typeof e === 'string');
 
+/** The RW grants a parsed file holds: `viewerWritable` in a version-3 file, else `writable`. */
+function grants(parsed: Partial<PrefsFile>): string[] {
+  const list: unknown = parsed.version === VIEWER_VERSION ? parsed.viewerWritable : parsed.writable;
+  return Array.isArray(list) ? list.filter((d): d is string => typeof d === 'string') : [];
+}
+
+/** The file as written: a Viewer's RW grants move to `viewerWritable`, in the same atomic write. */
+function onDisk(data: PrefsFile): PrefsFile {
+  if (data.mode !== 'viewer') return { ...data, viewerWritable: undefined };
+  return { ...data, writable: [], viewerWritable: [...data.writable] };
+}
+
 /**
  * Why the file's access data cannot be trusted, or null. Version 2 needs `readonly` and
  * `autoRwRules` as string lists and an empty legacy `autoRw`; version 1 has no `autoRwRules`;
@@ -338,21 +365,29 @@ const strings = (x: unknown): x is string[] => Array.isArray(x) && x.every((e) =
  */
 function accessProblem(parsed: Partial<PrefsFile>): string | null {
   const v: unknown = parsed.version;
-  if (v !== undefined && v !== 1 && v !== PREFS_VERSION) {
-    return typeof v === 'number' && v > PREFS_VERSION ? `version ${v}, from a newer mdhouse` : 'an unknown version';
+  if (v !== undefined && v !== 1 && v !== PREFS_VERSION && v !== VIEWER_VERSION) {
+    return typeof v === 'number' && v > VIEWER_VERSION ? `version ${v}, from a newer mdhouse` : 'an unknown version';
   }
-  if (v === PREFS_VERSION) {
-    if (!strings(parsed.readonly) || !strings(parsed.autoRwRules)) return 'version 2 without valid readonly and autoRwRules lists';
-    if (parsed.autoRw !== undefined && !(Array.isArray(parsed.autoRw) && parsed.autoRw.length === 0)) return 'version 2 with a legacy autoRw list';
+  const mode: unknown = (parsed as { mode?: unknown }).mode;
+  if (mode !== undefined && mode !== 'workspace' && mode !== 'viewer') return 'an unknown mode';
+  if (v === VIEWER_VERSION) {
+    if (mode !== 'viewer') return 'version 3 without viewer mode';
+    if (!strings(parsed.viewerWritable) || (parsed.writable !== undefined && !(Array.isArray(parsed.writable) && parsed.writable.length === 0))) {
+      return 'version 3 without a valid viewerWritable list, or with writable entries';
+    }
+  } else if ('viewerWritable' in parsed) return `version ${String(v ?? 1)} with viewerWritable`;
+  if (v === PREFS_VERSION || v === VIEWER_VERSION) {
+    if (!strings(parsed.readonly) || !strings(parsed.autoRwRules)) return `version ${v} without valid readonly and autoRwRules lists`;
+    if (parsed.autoRw !== undefined && !(Array.isArray(parsed.autoRw) && parsed.autoRw.length === 0)) return `version ${v} with a legacy autoRw list`;
     if ((parsed.saved !== undefined && !strings(parsed.saved)) || (parsed.writable !== undefined && !strings(parsed.writable))) {
-      return 'version 2 with malformed saved or writable lists';
+      return `version ${v} with malformed saved or writable lists`;
     }
   } else {
     if ('autoRwRules' in parsed) return 'version 1 with autoRwRules';
     if (parsed.readonly !== undefined && !strings(parsed.readonly)) return 'a malformed readonly list';
   }
   const ro = strings(parsed.readonly) ? parsed.readonly : [];
-  const rw = Array.isArray(parsed.writable) ? parsed.writable.filter((d) => typeof d === 'string') : [];
+  const rw = grants(parsed);
   if (rw.some((w) => ro.some((r) => sameDir(r, w)))) return 'a directory both writable and read-only';
   return null;
 }
@@ -366,9 +401,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   const problem = accessProblem(parsed);
   const saved = Array.isArray(parsed.saved) ? parsed.saved.filter((d) => typeof d === 'string') : [];
   // Only a saved directory can be saved writable.
-  const writable = Array.isArray(parsed.writable)
-    ? parsed.writable.filter((d) => typeof d === 'string' && saved.includes(d))
-    : [];
+  const writable = grants(parsed).filter((d) => saved.includes(d));
   const settings = { ...DEFAULT_SETTINGS };
   for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
     const value = parsed.settings?.[key];
@@ -405,9 +438,12 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   }
   pruneNames({ saved, names });
   const legacyAuto = Array.isArray(parsed.autoRw) ? parsed.autoRw.filter((d) => typeof d === 'string') : [];
+  const v2 = parsed.version === PREFS_VERSION || parsed.version === VIEWER_VERSION;
   const data: PrefsFile = {
     ...parsed,
-    version: problem ? (parsed.version as number) : parsed.version === PREFS_VERSION ? PREFS_VERSION : 1,
+    version: problem ? (parsed.version as number) : v2 ? (parsed.version as number) : 1,
+    mode: (parsed as { mode?: unknown }).mode === 'viewer' ? 'viewer' : undefined,
+    viewerWritable: undefined,
     roots,
     saved,
     names,
@@ -416,8 +452,8 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     settings,
     server,
     access,
-    autoRwRules: parsed.version === PREFS_VERSION ? (strings(parsed.autoRwRules) ? [...parsed.autoRwRules] : []) : legacyAuto,
-    autoRw: parsed.version === PREFS_VERSION ? [] : legacyAuto,
+    autoRwRules: v2 ? (strings(parsed.autoRwRules) ? [...parsed.autoRwRules] : []) : legacyAuto,
+    autoRw: v2 ? [] : legacyAuto,
     agentBus: {
       enabled: parsed.agentBus?.enabled === true,
       socket: typeof parsed.agentBus?.socket === 'string' ? parsed.agentBus.socket : '',
@@ -561,7 +597,7 @@ export class Prefs {
     let write = true;
     const result = change(data, () => (write = false));
     if (!write) return result;
-    data.version = PREFS_VERSION;
+    data.version = data.mode === 'viewer' ? VIEWER_VERSION : PREFS_VERSION;
     data.autoRw = [];
     // Durable first: readers in this process see the change only once it is on disk.
     await this.write(data);
@@ -579,7 +615,7 @@ export class Prefs {
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });
     const tmp = `${target}.${process.pid}.${++tmpSeq}.tmp`;
     try {
-      await writeFile(tmp, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 });
+      await writeFile(tmp, JSON.stringify(onDisk(data), null, 2) + '\n', { mode: 0o600 });
       await rename(tmp, target);
     } catch (err) {
       await unlink(tmp).catch(() => {});
@@ -643,6 +679,20 @@ export class Prefs {
   async currentAccess(): Promise<AccessConfig> {
     this.refresh();
     return this.access;
+  }
+
+  /** The instance mode as the file holds it now. */
+  mode(): InstanceMode {
+    this.refresh();
+    return this.data.mode === 'viewer' ? 'viewer' : 'workspace';
+  }
+
+  /** Set the instance mode: Viewer writes the file as version 3, workspace as version 2. */
+  async setMode(mode: InstanceMode): Promise<InstanceMode> {
+    await this.mutate((data) => {
+      data.mode = mode === 'viewer' ? 'viewer' : undefined;
+    });
+    return this.mode();
   }
 
   /** The auto-rw paths. */

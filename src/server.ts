@@ -31,7 +31,7 @@ import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
 import { ownUnit, ownStopCommand } from './lib/service';
 import { allowedAddress, ipBytes, isLoopback, Users } from './lib/access';
-import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, type Actor, type RouteEntry } from './lib/authz';
+import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_REFUSED, type Actor, type RouteEntry } from './lib/authz';
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { repoHead } from './lib/git';
@@ -207,10 +207,11 @@ export async function serve(opts: ServeOptions) {
   const store = new Store(registry, prefs, { noGit: opts.noGit, gitLogLimit: opts.gitLogLimit });
   registry.autoRw = (dir) => prefs.autoRwCovers(dir);
   registry.accessBlocked = () => prefs.accessBlocked() !== null;
+  registry.viewer = () => prefs.mode() === 'viewer';
   /** The settings page's options, and the auto-rw paths its switch is about (set from the CLI). */
   const settingsPayload = () => {
     prefs.refresh();
-    return { ...prefs.settings, autoRwPaths: prefs.autoRw };
+    return { ...prefs.settings, autoRwPaths: prefs.autoRw, mode: prefs.mode() };
   };
   /** The Agent Bus integration — on and off from the CLI (`--agent-bus`); its events go to every tab. */
   const instanceBus = (): Endpoint => ({ addr: prefs.agentBus.socket || defaultSocket(), token: prefs.agentBus.token });
@@ -606,6 +607,9 @@ export async function serve(opts: ServeOptions) {
     if (!actorOf(req).admin) return adminRequired();
     return h(req);
   };
+  /** A write a Viewer refuses, before the handler reads anything. Root writability caps it again at the write itself. */
+  const viewerGate = (h: Handler): Handler => (req) =>
+    prefs.mode() === 'viewer' ? noStore(json({ error: 'read-only: this mdhouse is a Viewer', reason: 'viewer' }, 403)) : h(req);
   function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
     routes = inventory(table);
     const family = new Map(routes.map((r) => [`${r.method} ${r.path}`, r.family]));
@@ -616,7 +620,8 @@ export async function serve(opts: ServeOptions) {
         out[path] = Object.fromEntries(
           Object.entries(route).map(([m, h]) => {
             const f = family.get(`${m} ${path}`);
-            return [m, check(f && ADMIN_FAMILIES.has(f) ? adminOnly(h as Handler) : (h as Handler))];
+            const gated = f && ADMIN_FAMILIES.has(f) ? adminOnly(h as Handler) : f && VIEWER_REFUSED.has(f) ? viewerGate(h as Handler) : (h as Handler);
+            return [m, check(gated)];
           }),
         );
       } else out[path] = route;
@@ -915,10 +920,13 @@ export async function serve(opts: ServeOptions) {
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
           if (!body) return fail(400, 'expected a JSON object');
           if ('editScheme' in body && normalizeEditScheme(body.editScheme) === null) return fail(400, 'editScheme: not an allowed URL scheme');
+          if ('mode' in body && body.mode !== 'workspace' && body.mode !== 'viewer') return fail(400, "mode: 'workspace' or 'viewer'");
           const before = prefs.settings.autoRw;
+          const beforeMode = prefs.mode();
           await prefs.updateSettings(body);
-          // Auto-rw on or off changes which folders are writable: every tab shows it.
-          if (prefs.settings.autoRw !== before) {
+          if ((body.mode === 'workspace' || body.mode === 'viewer') && body.mode !== beforeMode) await prefs.setMode(body.mode);
+          // Auto-rw or the mode changes which folders are writable: every tab shows it.
+          if (prefs.settings.autoRw !== before || prefs.mode() !== beforeMode) {
             server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
           }
           return json(settingsPayload());

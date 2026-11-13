@@ -34,7 +34,8 @@ export interface Root {
   /**
    * false => every write through writeFile() throws. True when its mode is `rw`, or `inherit` and
    * it sits under an auto-rw path with that setting on — worked out each time it is read. Always
-   * false for a reference root, a root inside one, and while the stored access policy is blocked.
+   * false for a reference root, a root inside one, while the stored access policy is blocked and
+   * while the instance is a Viewer.
    */
   readonly writable: boolean;
   /** The access chosen for a project root; absent on a reference root. */
@@ -152,6 +153,9 @@ export class Registry {
    */
   accessBlocked: () => boolean = () => false;
 
+  /** Is the instance a Viewer? Then no root is writable, whatever its mode. Set by the server to the prefs mode. */
+  viewer: () => boolean = () => false;
+
   /**
    * Serve one more directory, for the lifetime of the process.
    *
@@ -207,7 +211,7 @@ export class Registry {
       mode,
       get writable() {
         const on = this.mode === 'rw' || (this.mode === 'inherit' && registry.autoRw(this.path));
-        return on && !registry.inReference(this.path) && !registry.accessBlocked();
+        return on && !registry.inReference(this.path) && !registry.accessBlocked() && !registry.viewer();
       },
     };
     this.byId.set(id, root);

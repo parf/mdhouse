@@ -58,9 +58,11 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Depends: [№MW.0f](#MW.0f), [№MW.0g](#MW.0g)
   - Builds: explicit configured vs effective root access, Viewer hard cap, versioned compatible prefs migration and safe exposure defaults
   - Acceptance: migration is idempotent; old absent RW grants become explicit RO choices before any new-root default applies
-  - Acceptance: old saved/session/autoRw choices preserve effective access; unknown/newer config cannot be destructively rewritten; no upgrade silently expands admission/RW
+  - Acceptance: old saved/session/autoRw choices preserve effective access; unknown/newer config cannot be destructively rewritten; no upgrade silently expands admission/RW, except the ADMIN-W1 local administrator
   - Acceptance: Viewer refuses every mutation family through stale/direct requests and preserves configured choices; restart and downgrade behavior are documented/tested
   - Acceptance: no non-loopback RW exposure without explicit admission policy; migration does not activate incomplete Team/profile UI
+  - Progress: Viewer server side — `mode: "viewer"` (`--viewer|--workspace`, `/api/settings`), `Root.writable` cap, `VIEWER_REFUSED` gate, version 3 with `viewerWritable` (≤2.3.3 finds no grant; v2 build blocked); `test/viewer.test.ts`. Open: UI hiding write controls in Viewer; Settings switch UI
+  - Note: version 3 = Viewer format; the legacy inherit → explicit RO migration (with the MW.0 default switch) must fold into it or take version 4
 
 
 - [ ] MW.0 Change the next release from viewer-by-default to workspace-by-default <a id="MW.0"></a>

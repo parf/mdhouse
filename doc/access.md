@@ -24,6 +24,19 @@ mdhouse --allow reset             # every address again
 - Loopback includes a proxy on this host (`--host-name` deployments too), `ssh -L` and other local OS users
 - To require a sign-in, configure users: `mdhouse user-add ann`
 
+## Viewer — read-only for everyone
+
+```sh
+mdhouse --viewer        # every project read-only; saved
+mdhouse --workspace     # projects writable by their own RW/RO again
+```
+
+- Refused (403): document writes, git commit/reset/pull/push, marks, author name, Agent Bus send
+- The administrator still changes settings and projects — `mode` in `POST /api/settings` switches back
+- Each project keeps its RW/RO; the web page still shows write controls (refused on use)
+- Downgrade: a Viewer prefs.json is version 3 — mdhouse ≤ 2.3.3 finds no saved RW project, a version-2
+  mdhouse reads it read-only and never rewrites it; run `mdhouse --workspace` before downgrading
+
 ## No TLS — forward the port with ssh
 
 Basic auth sends the password in the clear. Across a network you do not trust, leave mdhouse

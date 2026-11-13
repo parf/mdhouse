@@ -4,6 +4,8 @@
 // this file itself (marks, -p, user-add, the settings page) as plain JSON, so comments you add are
 // dropped on its next save. Its first save turns a version-1 file into version 2. A newer version,
 // or version 2 with those lists missing or malformed, is never written and makes nothing writable.
+// `mdhouse --viewer` writes version 3 with "mode": "viewer" — every project read-only — and moves the
+// "writable" list to "viewerWritable", so an older mdhouse finds no write grant; `--workspace` writes version 2 again.
 {
   "version": 2,
 

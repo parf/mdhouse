@@ -267,7 +267,7 @@ describe('POST /api/roots/add', () => {
 
   test('a newer or broken prefs file refuses (500) and is left byte for byte — not set aside, not migrated; nothing added', async () => {
     for (const [port, text] of [
-      [61779, JSON.stringify({ version: 3, saved: [] }) + '\n'],
+      [61779, JSON.stringify({ version: 9, saved: [] }) + '\n'],
       [61780, '{ "version": 2, "saved": [ \n'],
     ] as const) {
       const t = await start(port);
@@ -384,7 +384,7 @@ describe('Prefs.check — a fresh read under the lock, never a write', () => {
         { saved: false, auto: true, stored: null },
       ]);
       expect(readFileSync(f, 'utf8')).toBe(v1); // never migrated
-      for (const text of ['{ broken', JSON.stringify({ version: 3, saved: ['/n'] })]) {
+      for (const text of ['{ broken', JSON.stringify({ version: 9, saved: ['/n'] })]) {
         await writeFile(f, text);
         await expect(prefs.check('/s', () => null)).rejects.toThrow();
         expect(readFileSync(f, 'utf8')).toBe(text);

@@ -169,7 +169,7 @@ describe('version 2: conservative migration on the first write', () => {
 
 describe('unsupported or malformed access data fails closed', () => {
   const cases: Array<[string, Record<string, unknown>]> = [
-    ['newer version', { version: 3, saved: ['/s'], writable: ['/s'], readonly: [], autoRwRules: ['/'] }],
+    ['newer version', { version: 9, saved: ['/s'], writable: ['/s'], readonly: [], autoRwRules: ['/'] }],
     ['unknown version', { version: '2', saved: ['/s'], writable: ['/s'], autoRw: ['/'] }],
     ['v2 without readonly', { version: 2, saved: ['/s'], writable: ['/s'], autoRwRules: ['/'] }],
     ['v2 without autoRwRules', { version: 2, saved: ['/s'], writable: ['/s'], readonly: [] }],
@@ -213,7 +213,7 @@ describe('unsupported or malformed access data fails closed', () => {
     const dir = await tmp('mdhouse-access-blocked-ro-');
     try {
       const f = join(dir, 'prefs.json');
-      await writeFile(f, JSON.stringify({ version: 3, saved: ['/s', '/w'], readonly: ['/s'], writable: ['/w'] }));
+      await writeFile(f, JSON.stringify({ version: 9, saved: ['/s', '/w'], readonly: ['/s'], writable: ['/w'] }));
       const prefs = await Prefs.load(f);
       expect([prefs.savedMode('/s'), prefs.savedMode('/w')]).toEqual(['ro', 'inherit']);
     } finally {
@@ -485,7 +485,7 @@ describe('POST /api/roots/mode', () => {
 
       await askDaemon(61736, { dirs: [t.ses], rw: true }); // a session `--rw`
       expect((await t.root(t.ses)).writable).toBe(true);
-      const newer = JSON.stringify({ version: 3, saved: [t.keep], writable: [t.keep] }) + '\n';
+      const newer = JSON.stringify({ version: 9, saved: [t.keep], writable: [t.keep] }) + '\n';
       await writeFile(target, newer);
       const before = await t.roots();
       expect(before.filter((r) => r.writable)).toEqual([]);
@@ -493,7 +493,7 @@ describe('POST /api/roots/mode', () => {
         for (const mode of ['ro', 'rw']) {
           const refused = await t.post('/api/roots/mode', { id: r.id, mode, rev: r.accessRev }, { cookie });
           expect(refused.status).toBe(500);
-          expect(((await refused.json()) as { error: string }).error).toMatch(/version 3/);
+          expect(((await refused.json()) as { error: string }).error).toMatch(/version 9/);
         }
       }
       expect(await t.roots()).toEqual(before);

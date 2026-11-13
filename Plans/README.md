@@ -279,7 +279,9 @@ contents list, so a heading link and its contents entry cannot disagree.
   `agentBusSpaces` overrides with server-only credentials, and
   `settings.me` — the name a signed Q&A reply carries (empty: git, else the login). A root's
   `writable` derives from `inherit | rw | ro`: explicit RO beats auto, explicit RW and inheritance
-  remain capped by reference protection and invalid/unsupported prefs. Auto changes and CLI grants apply live (`Prefs.refresh()` re-reads the file
+  remain capped by reference protection, invalid/unsupported prefs and a Viewer (`mode: "viewer"`,
+  `--viewer|--workspace`, `mode` in `/api/settings`; the file is then version 3 with `writable[]`
+  moved to `viewerWritable[]`). Auto changes and CLI grants apply live (`Prefs.refresh()` re-reads the file
   when it changed). Read as JSON with comments; every key is in `doc/prefs.json.dist`. Port and host resolve as flag → env → config →
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
   comes up where a start by hand does; a port from `service --port` or `MDHOUSE_PORT` is pinned into it. Beside it, `control-<port>.sock`. Never a dotfile inside a
@@ -384,6 +386,10 @@ Other families retain existing behavior; marks admin policy is decided, not enfo
 | `root-admin` | `/api/roots/ab`, `/api/roots/add`, `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
 | `shared-prefs` | `/api/marks` — admin-only decided, not enforced ([№Q-R3-ADMIN1](R3/workspaces/DECISIONS.md#Q-R3-ADMIN1)) |
 | `flow`, `control` | no HTTP route |
+
+Viewer (`prefs.mode() === 'viewer'`, `lib/authz.ts` `VIEWER_REFUSED`): `doc-write`, `git-write`, `git-sync`,
+`external-send`, `shared-prefs`, `attribution`, `flow` → 403 `{reason: 'viewer'}` in `guard()` before the
+handler; `Root.writable` caps again at the write. `instance-config`, `root-admin`, `admin-session` stay admin-only.
 
 ## User session history (pure model)
 

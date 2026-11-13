@@ -292,12 +292,12 @@ describe('a file from a newer mdhouse (D5)', () => {
 
   test('a file with a newer version is read, never written', async () => {
     const { readFile: read } = await import('node:fs/promises');
-    const f = join(dir, 'version3.json');
-    const original = JSON.stringify({ version: 3, saved: ['/keep'], theme: 'dark' });
+    const f = join(dir, 'version9.json');
+    const original = JSON.stringify({ version: 9, saved: ['/keep'], theme: 'dark' });
     await writeFile(f, original);
     const prefs = await Prefs.load(f);
     expect(prefs.savedDirs()).toEqual(['/keep']);
-    await expect(prefs.addSaved('/x')).rejects.toThrow(/version 3/);
+    await expect(prefs.addSaved('/x')).rejects.toThrow(/version 9/);
     expect(await read(f, 'utf8')).toBe(original);
     expect(prefs.savedDirs()).toEqual(['/keep']);
   });

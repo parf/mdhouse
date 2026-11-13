@@ -69,6 +69,8 @@ asks for the password; on non-interactive stdin it reads the first line.
 | `--allow <cidr,...>` | Allow only these networks and this machine; saved. `reset` allows every address again. |
 | `--host-name <name,...>` | Allow only these Host names; saved. `reset` allows localhost and IP addresses again. |
 | `--auto-rw <path,...>` | Make projects served from under these paths writable when the settings switch is on, unless set read-only; saved. `reset` clears the paths. |
+| `--viewer` | Viewer: every project read-only, no writes from the web; saved. Projects keep their own RW/RO. |
+| `--workspace` | Back to a workspace: projects writable by their own modes (the default); saved. |
 | `--agent-bus [on\|off\|<socket>\|<url>]` | Configure Agent Bus; saved. A remote HTTP(S) daemon asks for its token. |
 | `-o`, `--open` | Open the page in a browser after starting. |
 | `-a`, `--all` | Include gitignored Markdown while serving; with `exit`, stop every mdhouse. |

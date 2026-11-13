@@ -12,7 +12,7 @@ import { accessSync, constants, existsSync, realpathSync, statSync } from 'node:
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Registry, type AccessMode } from './lib/roots';
-import { Prefs } from './lib/prefs';
+import { Prefs, type InstanceMode } from './lib/prefs';
 import { pageUrl, serve } from './server';
 import { answered, askAdminList, askAdminMint, askAdminRevoke, askDaemon, askExit, askPing, askRemove, knownPorts, type AddReply, type PingReply } from './lib/control';
 import { ownStopCommand, ownUnit, runService } from './lib/service';
@@ -49,6 +49,8 @@ Options
                        --host-name reset: localhost and IP addresses again
       --auto-rw <p,…>  projects under these paths are writable (switch in settings); saved
                        --auto-rw reset: no such paths
+      --viewer         every project read-only, no writes from the web; saved
+      --workspace      projects writable by their own modes again (the default); saved
       --agent-bus [on|off|<x.sock>|<http://host:port>]  the Agent Bus integration:
                        a page asks an AI session to read it and reply; saved. A remote
                        daemon asks for its token (or reads it from stdin)
@@ -92,6 +94,8 @@ interface Options {
   agentBus: string | null;
   /** `--auto-rw`: the paths to save, or null when not given. */
   autoRw: string[] | null;
+  /** `--viewer` / `--workspace`: the instance mode to save, or null when not given. */
+  mode: InstanceMode | null;
   /** Given flags that only a fresh start applies — a running mdhouse keeps its own. */
   startOnly: Set<string>;
 }
@@ -116,6 +120,7 @@ function parse(argv: string[]): Options {
     allow: null,
     hostNames: null,
     autoRw: null,
+    mode: null,
     agentBus: null,
     startOnly: new Set(),
   };
@@ -155,6 +160,8 @@ function parse(argv: string[]): Options {
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       // the value is optional: only on / off / a .sock path is taken — anything else is a folder
       case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$|^https?:\/\//.test(argv[i + 1] ?? '') ? next() : 'on'; break;
+      case '--viewer': o.mode = 'viewer'; break;
+      case '--workspace': o.mode = 'workspace'; break;
       case '--host-name': o.hostNames = [...(o.hostNames ?? []), ...next().split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)]; break;
       case '--allow': o.allow = [...(o.allow ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--help': console.log(USAGE); process.exit(0);
@@ -506,6 +513,12 @@ if (opts.agentBus) {
   }
   const ab = await prefs.setAgentBus({ enabled: !off, ...(socket ? { socket } : {}), ...(token !== undefined ? { token } : {}) });
   console.log(`mdhouse  agent-bus:  ${ab.enabled ? `on  ${ab.socket || '(default socket)'}` : 'off'}`);
+  if (!opts.dirs.length) process.exit(0);
+}
+
+if (opts.mode) {
+  const mode = await prefs.setMode(opts.mode);
+  console.log(`mdhouse  mode:  ${mode}${mode === 'viewer' ? '  (every project read-only)' : ''}`);
   if (!opts.dirs.length) process.exit(0);
 }
 

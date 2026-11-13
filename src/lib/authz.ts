@@ -27,6 +27,20 @@ export type Family = (typeof FAMILIES)[number];
 export const ADMIN_FAMILIES: ReadonlySet<Family> = new Set<Family>(['instance-config', 'root-admin']);
 
 /**
+ * Families a Viewer refuses (403 `reason: viewer`). The rest stay as in a workspace — administrator
+ * only — so the administrator can still switch the mode and manage roots on the web.
+ */
+export const VIEWER_REFUSED: ReadonlySet<Family> = new Set<Family>([
+  'doc-write',
+  'git-write',
+  'git-sync',
+  'external-send',
+  'shared-prefs',
+  'attribution',
+  'flow',
+]);
+
+/**
  * Who makes a request. `admin` comes only from a verified administrator session cookie — never
  * Basic admission, an address, the author cookie, a body field or a display name. `user` is an
  * immutable provider ID from an authenticated session; nothing sets it yet.
