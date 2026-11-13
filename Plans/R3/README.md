@@ -300,6 +300,8 @@ remains useful as Markdown without a connected tracker.
 
 The pure analysis-run core (checkpoint A) is specified in [`FLOW-RUNTIME-CORE.md`](FLOW-RUNTIME-CORE.md).
 
+Scheduled runs through Agent Bus Cron/At are proposed in [`AUTOMATION.md`](AUTOMATION.md) (draft, design only).
+
 ### Feature and delivery flows
 
 The core delivery package covers:

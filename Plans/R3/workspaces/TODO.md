@@ -536,6 +536,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.11 Design Agent Bus Cron/At automation for AI pipelines <a id="MW.11"></a>
   Code review, QA and other agent pipelines; define triggers, scope, outputs, run history, overlap/failure handling and separate action approvals.
   Reuse Agent Bus scheduling; no custom scheduler or live jobs during design ([№AUTO-W1](DECISIONS.md#AUTO-W1)).
+  - Progress: design drafted in [AUTOMATION.md](../AUTOMATION.md); owner decisions pending ([Q-R3-AUTO1](QUESTIONS.md#Q-R3-AUTO1)); no implementation until answered
 
 ## Access badge presentation
 
