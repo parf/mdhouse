@@ -45,10 +45,10 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Wiring prerequisite: [№MW.8](#MW.8) content isolation reviewed and verified under [№Q-R3-HTML1](DECISIONS.md#Q-R3-HTML1)
   - Acceptance: web root add/remove/save/mode, config/AB endpoint/default/filter, profile/user/grant controls require an authenticated authorized administrator and same-origin protection
   - Contract: [№ADMIN-W1](DECISIONS.md#ADMIN-W1); short-lived single-use OS-control proof, fragment cleanup, revocable HttpOnly session, no secret in journal/history/query/config
-  - Acceptance: trusted localhost/CIDR or project RW alone never grants administrator; existing OS-protected CLI/control remains an explicit administration path
+  - Acceptance: Personal (no users) loopback peer = administrator; with users configured, localhost/CIDR or project RW never grants administrator; existing OS-protected CLI/control remains an explicit administration path
   - Acceptance: CLI/control always authorizes the process OS owner through protected local transport, with no GitHub/web-admin/project-grant requirement
   - Acceptance: local Personal administration uses OS-owner-protected CLI/control bootstrap into a browser session without GitHub/account onboarding; remote admin designation remains explicit
-  - Acceptance: bootstrap/recovery never trusts first visitor, localhost/CIDR or arbitrary Basic/GitHub login; single-use proof/session expiry/revocation and secret handling are tested
+  - Acceptance: bootstrap/recovery never trusts first visitor or arbitrary Basic/GitHub login, nor localhost/CIDR with users configured; single-use proof/session expiry/revocation and secret handling are tested
   - Acceptance: classify document/Git/flow/control/config/marks/external-send mutations; direct/stale requests deny missing authority; no new privilege-granting endpoint before checks exist
   - Acceptance: test every mutation family, cross-user/root isolation and denial; dormant foundations retain current RO defaults
 
