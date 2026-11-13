@@ -2049,7 +2049,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-remove:disabled { opacity: .5; cursor: not-allowed; }
 :is(.project-save, .project-mode) { font-family: inherit; cursor: pointer; }
 :is(.project-save, .project-mode, .project-ab):disabled { opacity: .6; cursor: not-allowed; }
-@media (pointer: coarse) { :is(.project-save, .project-mode) { min-height: 32px; padding: 4px 10px; } }
 .project-ab[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
 .project-ab-value { margin-left: 6px; font-size: 12px; color: var(--accent); overflow-wrap: anywhere; }
 .project-ab-editor { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); }
@@ -2068,7 +2067,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-ab-editor .ab-select { flex: 1 1 18em; min-width: 0; }
 .ab-default { display: block; margin-top: 6px; }
 .settings input:disabled, .settings textarea:disabled { opacity: .6; cursor: not-allowed; }
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .projects-pane { grid-template-columns: 1fr; }
   .project-facts { grid-template-columns: 1fr; gap: 2px; }
   .project-facts dd { margin-bottom: 6px; }
@@ -2131,3 +2130,25 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .mode-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 8px; }
 .mode-btn[aria-pressed="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); opacity: 1; font-weight: 600; }
 .mode-btn[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); }
+
+/* ── Narrow and touch: Settings and /rag ────────────────────────────────── */
+
+/* The ⓘ tip is a sheet along the bottom of the screen: beside a small icon near the right edge it ran off it. */
+@media (max-width: 900px), (pointer: coarse) {
+  .info { width: 22px; height: 22px; margin: 0 5px; }
+  .info::before { font-size: 13px; }
+  .info::after { content: ''; position: absolute; inset: -11px; }
+  .info-tip { position: fixed; left: 12px; right: 12px; top: auto; bottom: 12px; width: auto; max-width: 34em; max-height: 50vh; overflow: auto; margin: 0 auto; z-index: 60; font-size: 14px; }
+  .info-tip::before { display: none; }
+}
+/* Finger-sized controls. */
+@media (pointer: coarse) {
+  :is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn, .project-remove, .project-pick, .project-save, .project-mode, .ab-filter-save, .ab-select) { min-height: 44px; padding-block: 6px; }
+  .tag.project-mode { padding-inline: 12px; }
+  .settings-option label, .project-add-mode, .rag-src { min-height: 44px; display: inline-flex; align-items: center; }
+  .settings input[type="checkbox"] { width: 22px; height: 22px; }
+  .head-gear .icon-btn, .topstrip .icon-btn { width: 44px; height: 44px; }
+  /* The sidebar header is narrow: the icons keep their size and a finger-sized area around them. */
+  .side-head .icon-btn { position: relative; }
+  .side-head .icon-btn::after { content: ''; position: absolute; inset: -9px; }
+}

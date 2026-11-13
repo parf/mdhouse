@@ -884,3 +884,16 @@ W2 artifacts under
 CTO nonauthor exact-diff review PASS for the CSS-only cohort. No full suite/types/unit mirror tests were run;
 compiled real-page visual/native matrix is the proportional gate. No live Settings connection checks (scratch AB off).
 No new navigation/brand/source/access/control semantics, provider action, service/session/live reload, push/publish/deploy/version bump.
+
+## Settings and RAG search at 390/768 — touch checkpoint {#settings-mobile}
+
+[№MW.5c](workspaces/TODO.md#MW.5c). Scratch instances only (CLI-started, so a loopback browser is the local administrator; one Viewer instance), touch-emulated
+Chromium 390×2800 and 768×2000, light and dark, `/settings` and `/rag` with a search; before = HEAD `8d7bb3b`.
+
+- Before: at 390 the sidebar drawer opened over Settings and `/rag` on load (default `compact`, saved by the first visit); 9 of 11 ⓘ tips ran past the right edge at 390,
+  2 at 768, and the ⓘ was 15×15; buttons were 32–39px; at 768 the project list and details shared a cramped two-column row.
+- After: drawer starts closed at ≤720px whatever a wider screen saved, and is not saved there; tips are a bottom sheet (all 11 inside 12…378 of 390, 12…756 of 768 and a 22px ⓘ
+  with a 44px area); buttons, picks and checkbox rows ≥44px on coarse pointers (the checkbox itself is 22px inside a 44px label); sidebar-header icons keep 26px with a 44px
+  hit area; project list stacks to 900px. `scrollWidth == width` on every cell; no element past the right edge; Viewer instance: same, Mode buttons disabled with the sign-in line.
+- Not covered: real iOS Safari keyboard/viewport behaviour, ⓘ tap on a physical device. No full suite beyond the tests named in the commit.
+

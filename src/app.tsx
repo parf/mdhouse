@@ -27,6 +27,8 @@ import { dirUrl, editUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
 import { IconGear, IconPanel, IconSearch } from './ui/icons';
 
 const STATES: SidebarState[] = ['off', 'compact', 'open'];
+/** The width at which the sidebar becomes a drawer (see `max-width: 720px` in app.css). */
+const narrowScreen = (): boolean => matchMedia('(max-width: 720px)').matches;
 const LS_STATE = 'mdhouse.sidebar';
 const LS_IGNORED = 'mdhouse.ignored';
 /** Per root, the page last shown in it — a root switch goes back there. */
@@ -83,7 +85,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const [loadingDoc, setLoadingDoc] = useState(false);
   const [jumpLine, setJumpLine] = useState<number | null>(null);
 
-  const [sidebar, setSidebar] = useState<SidebarState>(() => load<SidebarState>(LS_STATE, 'compact'));
+  // On a phone the sidebar is a drawer over the page: it starts closed, whatever a wider screen saved, and its state is not saved there.
+  const [sidebar, setSidebar] = useState<SidebarState>(() => (narrowScreen() ? 'off' : load<SidebarState>(LS_STATE, 'compact')));
   const [showIgnored, setShowIgnored] = useState(() => load(LS_IGNORED, false));
   const [tab, setTab] = useState<Tab>('files');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -127,7 +130,9 @@ function App({ entry: first }: { entry: AdminEntry }) {
     return () => removeEventListener('popstate', onPop);
   }, []);
 
-  useEffect(() => save(LS_STATE, sidebar), [sidebar]);
+  useEffect(() => {
+    if (!narrowScreen()) save(LS_STATE, sidebar);
+  }, [sidebar]);
 
   // `/` is the root's git view: `/<root>/?git`.
   useEffect(() => {
