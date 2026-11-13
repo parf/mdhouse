@@ -4,6 +4,8 @@
 
 ### Added
 
+- Changes: one place per project for uncommitted files (`?git=changes`) — each file's state and diff, a tick each (untracked files start unticked), a message and a button that says what it commits ("Commit 2 files" / "Commit README.md"); Push is its own step, shown only when the branch has a remote branch. A document shows one status chip ("modified · Changes") that opens Changes for that file, in place of Commit / Commit+Push and "uncommitted file". Read-only projects and a Viewer see files and diffs only
+
 - Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's R and magnifier are these places now
 
 - One search with a scope switch: `Files | Index` on the sidebar's search box and on the `/rag` page — Files is the search as before, Index searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); `R` opens the Index scope; on a phone the search box, results and the switch are 44px targets

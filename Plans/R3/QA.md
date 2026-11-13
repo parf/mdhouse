@@ -1038,3 +1038,18 @@ A run document the host refuses (tampered, foreign, made before runs were sealed
 
 Note: the walk's `commit` step needs the doc header's Commit as before; it did not commit on a tree that carries #md/w2's unlanded Changes work (the step is theirs to update when it lands).
 
+
+## Changes destination {#changes}
+
+[№MW.13.1b](workspaces/TODO.md#MW.13.1b), [Q-R3-UX1](workspaces/DECISIONS.md#Q-R3-UX1). Scratch repo with each change kind (` M`, `A `, ` D`, `??`), a bare remote added later; scratch instance with `--agent-bus off`.
+
+| Check | Result |
+| --- | --- |
+| List + state + diff | pass: modified / added / deleted / untracked rows, untracked unticked; diff expands per file (none for a deleted file) |
+| Commit chosen files | pass: untick `old.md` → "Commit 2 files" commits README.md + docs/staged.md only (`/api/git/commit-files`, 739a2b0); `old.md`, `new.md` stay |
+| Document chip → scoped commit | pass: "modified · Changes" → `?git=changes&file=docs/plan.md`, suggested "Update plan.md", commits that file only; touch-walk `commit` step now goes this way |
+| Push | pass: no upstream → "No remote branch — commits stay on this machine" (no raw git text; RemoteBar hidden on Changes); with upstream "Push 1 commit" → confirm for uncommitted files → "Push anyway" → remote has the commit |
+| RO project / Viewer | pass: rows + diffs, no ticks / message / commit / push |
+| Touch 390/768 light/dark | pass: touch-audit clean (ticks and path links 44px), no horizontal scroll; 1280 light/dark checked |
+
+Evidence: W2 scratchpad `chs/` (`all-1280-light-1.png`, `t-{390,768}-{light,dark}.png`, `d-390-light.png`, `push-3.png`, `ro-1.png`, `walk/`).
