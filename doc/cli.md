@@ -17,7 +17,7 @@ mdhouse exit --all
 ```
 
 Stop the mdhouse on the selected port. `stop` is an alias for `exit`; `--all` stops every mdhouse
-found in the config directory. A systemd service is not stopped through the control socket: the
+found in `$XDG_RUNTIME_DIR/mdhouse` (and, for one release, the config directory). A systemd service is not stopped through the control socket: the
 command prints the exact `systemctl` command instead.
 
 ```text

@@ -1,6 +1,9 @@
 import { afterAll, describe, expect, test } from 'bun:test';
-import { chmodSync, existsSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
-import { askDaemon, askExit, askPing, askRemove, controlPath, knownPorts, serveControl } from '../src/lib/control';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { CONFIG_DIR } from '../src/lib/prefs';
+import { askDaemon, askExit, askPing, askRemove, controlDir, controlPath, knownPorts, serveControl } from '../src/lib/control';
 import { testPort } from './ports';
 
 // A port number nothing binds — the control socket is a file, not a TCP port, so this only
@@ -142,5 +145,31 @@ describe('the control socket', () => {
 
     expect(await askDaemon(PORT, { dirs: ['/nope'] })).toEqual({ error: 'no such directory: /nope' });
     control!.stop();
+  });
+
+  test('the socket is in the runtime dir; the config dir only without one', () => {
+    expect(SOCK).toBe(`${process.env.XDG_RUNTIME_DIR}/mdhouse/control-${PORT}.sock`);
+    const own = mkdtempSync(join(tmpdir(), 'mdhouse-run-'));
+    expect(controlDir({ XDG_RUNTIME_DIR: own })).toBe(`${own}/mdhouse`);
+    // Missing, relative (even to a folder that exists), or another user's (root's /tmp): the config dir.
+    for (const bad of [join(own, 'missing'), '.', '/tmp']) expect([bad, controlDir({ XDG_RUNTIME_DIR: bad })]).toEqual([bad, CONFIG_DIR]);
+  });
+
+  test('a daemon from before 2.4, in the config dir: reached there, listed, its stale file cleared', async () => {
+    const port = testPort(61772);
+    const old = `${CONFIG_DIR}/control-${port}.sock`;
+    mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+    const server = Bun.serve({ unix: old, fetch: () => Response.json({ pid: 1, url: 'old', roots: [] }) });
+    try {
+      expect(existsSync(controlPath(port))).toBe(false);
+      expect(await askPing(port)).toEqual({ pid: 1, url: 'old', roots: [] });
+      expect(knownPorts()).toContain(port);
+    } finally {
+      server.stop(true);
+    }
+    // Nobody behind it now: the next caller removes the file.
+    if (!existsSync(old)) writeFileSync(old, '');
+    expect(await askPing(port)).toBeNull();
+    expect(existsSync(old)).toBe(false);
   });
 });

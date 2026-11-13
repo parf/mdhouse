@@ -3,7 +3,7 @@ import { chmodSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { askDaemon, askRemove, controlPath } from '../src/lib/control';
+import { askDaemon, askRemove, controlDir, controlPath } from '../src/lib/control';
 import { CONFIG_DIR, Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
@@ -290,14 +290,14 @@ describe('names over the control socket', () => {
       }
       expect(t.registry.list().some((r) => r.path === four)).toBe(false); // refused before adding
 
-      chmodSync(CONFIG_DIR, 0o755);
+      chmodSync(controlDir(), 0o755);
       try {
         expect(await askDaemon(testPort(61755), { dirs: [t.two], name: 'X' })).toMatchObject({ error: expect.stringContaining('not private') });
         const raw = await fetch('http://localhost/add', { unix: controlPath(testPort(61755)), method: 'POST', body: JSON.stringify({ dirs: [t.two], name: 'X' }) });
         expect(raw.status).toBe(403);
         expect(await askDaemon(testPort(61755), { dirs: [t.two] })).not.toHaveProperty('error'); // unnamed add as before
       } finally {
-        chmodSync(CONFIG_DIR, 0o700);
+        chmodSync(controlDir(), 0o700);
       }
       expect((await t.roots()).some((r) => 'customName' in r)).toBe(false);
     } finally {

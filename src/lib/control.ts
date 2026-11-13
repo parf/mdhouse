@@ -1,9 +1,9 @@
 /**
- * The control channel: a unix socket beside the config, used by a second `mdhouse` to hand
+ * The control channel: a unix socket in this user's runtime dir, used by a second `mdhouse` to hand
  * its directories to the one already running — or to ask it to stop.
  *
- * There is no token, no signature and no clock. The socket lives at
- * `~/.config/mdhouse/control-<port>.sock` with mode 0600, so the only process that can ask a
+ * There is no token, no signature and no clock. The socket lives at `controlDir()/control-<port>.sock`
+ * (`$XDG_RUNTIME_DIR/mdhouse`, else the config dir) with mode 0600, so the only process that can ask a
  * daemon to do anything is one running as the user who started it — which is exactly the
  * policy a shared secret in that same directory would have been standing in for. A browser
  * cannot open a unix socket at all, so the CSRF and DNS-rebinding routes into a local HTTP
@@ -104,27 +104,58 @@ export interface Handlers {
   admin?: AdminHandlers;
 }
 
-export function controlPath(port: number): string {
-  return `${CONFIG_DIR}/control-${port}.sock`;
+/**
+ * Where a daemon listens: `$XDG_RUNTIME_DIR/mdhouse` — else `/run/user/<uid>/mdhouse`, for a caller without the
+ * variable (cron, `su`) — when that base is a directory this user owns; else the config dir.
+ */
+export function controlDir(env: Record<string, string | undefined> = process.env): string {
+  const uid = process.getuid?.();
+  const base = env.XDG_RUNTIME_DIR || (uid !== undefined ? `/run/user/${uid}` : '');
+  if (base.startsWith('/')) {
+    try {
+      const st = lstatSync(base);
+      if (st.isDirectory() && st.uid === uid) return `${base}/mdhouse`;
+    } catch {
+      /* no runtime dir */
+    }
+  }
+  return CONFIG_DIR;
 }
 
-/** Every port this user has a control socket for — live daemons and stale files alike. */
+/** The socket a daemon on `port` binds. */
+export function controlPath(port: number): string {
+  return `${controlDir()}/control-${port}.sock`;
+}
+
+/** Before 2.4 every daemon listened in the config dir: a caller looks there too, for one release. */
+const legacyPath = (port: number): string => `${CONFIG_DIR}/control-${port}.sock`;
+
+/** The socket a caller talks to on `port`: the current place, else the old one; null when neither exists. */
+export function socketOf(port: number): string | null {
+  for (const p of [controlPath(port), legacyPath(port)]) if (existsSync(p)) return p;
+  return null;
+}
+
+/** Every port this user has a control socket for — live daemons and stale files alike, in either place. */
 export function knownPorts(): number[] {
-  try {
-    return readdirSync(CONFIG_DIR)
-      .map((f) => /^control-(\d+)\.sock$/.exec(f)?.[1])
-      .filter((p): p is string => p !== undefined)
-      .map(Number)
-      .sort((a, b) => a - b);
-  } catch {
-    return [];
+  const ports = new Set<number>();
+  for (const dir of new Set([controlDir(), CONFIG_DIR])) {
+    try {
+      for (const f of readdirSync(dir)) {
+        const m = /^control-(\d+)\.sock$/.exec(f);
+        if (m) ports.add(Number(m[1]));
+      }
+    } catch {
+      /* no such dir */
+    }
   }
+  return [...ports].sort((a, b) => a - b);
 }
 
 /**
  * Returns why the control transport on `port` is not private to this OS user, or null when it is.
  *
- * Private means: the config directory is a real directory owned by this user with no group or
+ * Private means: the socket's directory (`socketOf`, else `controlPath`) is a real directory owned by this user with no group or
  * other access; its parent cannot be renamed under it by anyone else (owned by this user or root,
  * and not group/other-writable unless sticky); the socket, when `socket` is set, is a socket owned
  * by this user with no group or other access. Without peer credentials, these file modes are what
@@ -140,19 +171,21 @@ export function controlInsecurity(port: number, socket = true): string | null {
       return null;
     }
   };
-  const dir = look(CONFIG_DIR);
-  if (!dir || dir.isSymbolicLink() || !dir.isDirectory()) return `${CONFIG_DIR} is not a directory`;
-  if (dir.uid !== uid) return `${CONFIG_DIR} is owned by another user`;
-  if (dir.mode & 0o077) return `${CONFIG_DIR} is open to other users (chmod 700 it)`;
-  const parent = look(dirname(CONFIG_DIR));
-  if (!parent || !parent.isDirectory()) return `${dirname(CONFIG_DIR)} is not a directory`;
-  if (parent.uid !== uid && parent.uid !== 0) return `${dirname(CONFIG_DIR)} is owned by another user`;
-  if (parent.mode & 0o022 && !(parent.mode & 0o1000)) return `${dirname(CONFIG_DIR)} is writable by other users`;
+  const path = socketOf(port) ?? controlPath(port);
+  const where = dirname(path);
+  const dir = look(where);
+  if (!dir || dir.isSymbolicLink() || !dir.isDirectory()) return `${where} is not a directory`;
+  if (dir.uid !== uid) return `${where} is owned by another user`;
+  if (dir.mode & 0o077) return `${where} is open to other users (chmod 700 it)`;
+  const parent = look(dirname(where));
+  if (!parent || !parent.isDirectory()) return `${dirname(where)} is not a directory`;
+  if (parent.uid !== uid && parent.uid !== 0) return `${dirname(where)} is owned by another user`;
+  if (parent.mode & 0o022 && !(parent.mode & 0o1000)) return `${dirname(where)} is writable by other users`;
   if (!socket) return null;
-  const sock = look(controlPath(port));
-  if (!sock || !sock.isSocket()) return `${controlPath(port)} is not a socket`;
-  if (sock.uid !== uid) return `${controlPath(port)} is owned by another user`;
-  if (sock.mode & 0o077) return `${controlPath(port)} is open to other users`;
+  const sock = look(path);
+  if (!sock || !sock.isSocket()) return `${path} is not a socket`;
+  if (sock.uid !== uid) return `${path} is owned by another user`;
+  if (sock.mode & 0o077) return `${path} is open to other users`;
   return null;
 }
 
@@ -169,8 +202,8 @@ const SLOW_MS = 60_000;
  * (stopped with Ctrl+Z, hung) is `{error}`, and its socket is kept.
  */
 async function call<T>(port: number, path: string, body: unknown = {}, ms = QUICK_MS): Promise<T | { error: string } | null> {
-  const sock = controlPath(port);
-  if (!existsSync(sock)) return null;
+  const sock = socketOf(port);
+  if (!sock) return null;
 
   try {
     const res = await fetch(`http://localhost${path}`, {
@@ -220,7 +253,7 @@ export async function answered(port: number): Promise<PingReply | null> {
 
 /** Ask the daemon on `port` to serve these directories too. A name goes only over a private transport. */
 export async function askDaemon(port: number, req: AddRequest): Promise<AddReply | { error: string } | null> {
-  if (req.name !== undefined && existsSync(controlPath(port))) {
+  if (req.name !== undefined && socketOf(port)) {
     const why = controlInsecurity(port);
     if (why) return { error: `control socket is not private: ${why}` };
   }
@@ -234,7 +267,7 @@ export async function askRemove(port: number, req: RemoveRequest): Promise<Remov
 
 /** Admin calls go only through a private transport: an impostor socket must not answer them. */
 async function adminCall<T>(port: number, path: string): Promise<T | { error: string } | null> {
-  if (!existsSync(controlPath(port))) return null;
+  if (!socketOf(port)) return null;
   const why = controlInsecurity(port);
   if (why) return { error: `control socket is not private: ${why}` };
   return call<T>(port, path);
@@ -265,8 +298,9 @@ export async function askExit(port: number): Promise<PingReply | { error: string
   const who = await askPing(port);
   if (!who || 'error' in who) return who;
 
+  const sock = socketOf(port);
   await call(port, '/exit');
-  for (let i = 0; i < 100 && existsSync(controlPath(port)); i++) await Bun.sleep(20);
+  for (let i = 0; i < 100 && sock && existsSync(sock); i++) await Bun.sleep(20);
   return who;
 }
 
@@ -279,7 +313,7 @@ export async function askExit(port: number): Promise<PingReply | { error: string
  * taken over: its daemon would be left with no way to reach it.
  */
 export async function serveControl(port: number, handlers: Handlers): Promise<{ stop: () => void } | null> {
-  await mkdir(CONFIG_DIR, { recursive: true, mode: 0o700 });
+  await mkdir(controlDir(), { recursive: true, mode: 0o700 });
   const path = controlPath(port);
 
   // A socket file with nobody behind it is left by a killed process. The ping clears it; one

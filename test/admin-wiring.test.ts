@@ -4,7 +4,7 @@ import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { hashPassword } from '../src/lib/access';
-import { askAdminList, askAdminMint, askAdminRevoke, askPing, controlInsecurity, controlPath } from '../src/lib/control';
+import { askAdminList, askAdminMint, askAdminRevoke, askPing, controlDir, controlInsecurity, controlPath } from '../src/lib/control';
 import { CONFIG_DIR, Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { localAdminOrigin, localExchange, serve } from '../src/server';
@@ -297,7 +297,7 @@ describe('admin control transport must be private to the OS owner', () => {
       expect(controlInsecurity(testPort(61766))).toBeNull();
       expect((await raw(testPort(61766), '/admin/mint')).status).toBe(200);
 
-      chmodSync(CONFIG_DIR, 0o755);
+      chmodSync(controlDir(), 0o755);
       try {
         expect(controlInsecurity(testPort(61766))).toContain('open to other users');
         expect(await askAdminMint(testPort(61766))).toMatchObject({ error: expect.stringContaining('not private') }); // client refuses
@@ -308,7 +308,7 @@ describe('admin control transport must be private to the OS owner', () => {
         expect((await raw(testPort(61766), '/admin/list')).status).toBe(403);
         expect(await askPing(testPort(61766))).toMatchObject({ pid: process.pid }); // existing control unchanged
       } finally {
-        chmodSync(CONFIG_DIR, 0o700);
+        chmodSync(controlDir(), 0o700);
       }
 
       chmodSync(controlPath(testPort(61766)), 0o666);
@@ -319,15 +319,15 @@ describe('admin control transport must be private to the OS owner', () => {
         chmodSync(controlPath(testPort(61766)), 0o600);
       }
 
-      const real = `${CONFIG_DIR}.real`;
-      renameSync(CONFIG_DIR, real);
-      symlinkSync(real, CONFIG_DIR);
+      const real = `${controlDir()}.real`;
+      renameSync(controlDir(), real);
+      symlinkSync(real, controlDir());
       try {
         expect(controlInsecurity(testPort(61766))).toContain('is not a directory');
         expect((await raw(testPort(61766), '/admin/mint')).status).toBe(403);
       } finally {
-        unlinkSync(CONFIG_DIR);
-        renameSync(real, CONFIG_DIR);
+        unlinkSync(controlDir());
+        renameSync(real, controlDir());
       }
       expect((await raw(testPort(61766), '/admin/mint')).status).toBe(200);
     } finally {

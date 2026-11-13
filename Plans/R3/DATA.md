@@ -28,7 +28,7 @@ Decided: [№DATA-W1](workspaces/DECISIONS.md#DATA-W1), [№DATA-W2](workspaces/
 
 ## Runtime — memory, socket, journal
 
-- ⚠️ control socket `control-<port>.sock` — config dir today, moves to `$XDG_RUNTIME_DIR/mdhouse/` (step 2)
+- ✅ control socket `control-<port>.sock` — `$XDG_RUNTIME_DIR/mdhouse/` (0700), else the config dir; the CLI also tries the config dir for one release (step 2)
 - ✅ admin sessions, proofs, local-administrator marks — memory
 - ✅ Agent Bus send jobs, tab ids (`/ws` clientId) — memory
 - ✅ logs — journald
@@ -78,7 +78,7 @@ Never in Git: RW/RO, secrets, access, machine state.
 > 💬 OK - agree with section
 
 - ✅ 1 secrets out of `prefs.json` → `secrets.json` (no version bump: never-verifying stand-ins; read both for one release)
-- [ ] 2 control socket → `$XDG_RUNTIME_DIR/mdhouse/` (the CLI tries new, then old)
+- ✅ 2 control socket → `$XDG_RUNTIME_DIR/mdhouse/` (the CLI tries new, then old)
 - 🚫 3 `$XDG_STATE_HOME/mdhouse/` — automation state lives on the bus instead ([№DATA-W2](workspaces/DECISIONS.md#DATA-W2))
 - [ ] 4 `.mdhouse/project.json` on the first team write; prefs stay keyed by path
 - ✅ 5 `.mdhouse/automation/` with approvals on the bus (MW.11 slice 2)

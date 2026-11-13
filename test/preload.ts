@@ -11,5 +11,8 @@ process.env.XDG_CONFIG_HOME = mkdtempSync(join(tmpdir(), 'mdhouse-test-cfg-'));
 // names its own directory.
 process.env.MDHOUSE_AB_SOCKET_DIRS = join(mkdtempSync(join(tmpdir(), 'mdhouse-test-nobus-')), 'agent-bus');
 
+// Control sockets live in the runtime dir: never beside a running mdhouse's in /run/user/<uid>/mdhouse.
+process.env.XDG_RUNTIME_DIR = mkdtempSync(join(tmpdir(), 'mdhouse-test-run-'));
+
 // Machine state (automation approvals, the run index) never lands in the real ~/.local/state/mdhouse.
 process.env.XDG_STATE_HOME = mkdtempSync(join(tmpdir(), 'mdhouse-test-state-'));

@@ -297,7 +297,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   moved to `viewerWritable[]`). Auto changes and CLI grants apply live (`Prefs.refresh()` re-reads the file
   when it changed). Read as JSON with comments; every key is in `doc/prefs.json.dist`. Port and host resolve as flag → env → config →
   `127.0.0.1:7777`, the same in every command, so the unpinned systemd unit (`mdhouse --fg`)
-  comes up where a start by hand does; a port from `service --port` or `MDHOUSE_PORT` is pinned into it. Beside it, `control-<port>.sock`. Never a dotfile inside a
+  comes up where a start by hand does; a port from `service --port` or `MDHOUSE_PORT` is pinned into it. The control socket `control-<port>.sock` is in `controlDir()`: `$XDG_RUNTIME_DIR/mdhouse` (else `/run/user/<uid>/mdhouse`) when that base is this user's directory, else the config dir. Never a dotfile inside a
   browsed tree.
 - **Git view** — `/<root>/<dir>/?git`, `/` redirects to the root's: `Home` scoped to a folder,
   plus `src/ui/GitPanel.tsx` (remote check, commit / pull / push, Commits, Files). Server:
@@ -333,7 +333,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   exits 1 instead of handing over, so `Restart=on-failure` retries.
 - A control call times out — ping / exit 2 s, add / remove 60 s: a daemon that does not answer
   (Ctrl+Z) is `{error}` "not answering", its socket kept; every command says so and exits 1.
-- One control socket per port. A live one is never unlinked: a second server on the port (another
+- One control socket per port, bound at `controlPath`. A caller (`socketOf`) tries it, then the pre-2.4 config-dir path, for one release; `knownPorts` lists both; `controlInsecurity` checks the folder the socket is in. A live one is never unlinked: a second server on the port (another
   host) runs without it and says `mdhouse exit` cannot reach it.
 - Tests: `bun test`, against a temp config dir (`test/preload.ts`); types: `npx tsc --noEmit -p .`, which covers `src/` and `test/`.
 

@@ -35,6 +35,8 @@
 
 ### Changed
 
+- The control socket (`mdhouse exit`, a second `mdhouse <dir>`) moves from the config dir to `$XDG_RUNTIME_DIR/mdhouse/`; this mdhouse still reaches and stops an older one listening in the config dir, an older `mdhouse` command cannot reach a newer daemon
+
 - Secrets leave `prefs.json`: the Agent Bus token, project Agent Bus credentials and Basic users' password hashes are kept in `secrets.json` (0600) beside it, moved on the next save; an older mdhouse then still asks for a login and admits nobody, and has no Agent Bus token
 
 - Served on a network address (`--host 0.0.0.0`, a LAN IP) with no users and no `--allow` list: every project is read-only — edits, git, flow runs, Agent Bus sends, author and marks are refused — and the start line says why. To write again, add a user (`mdhouse user-add <login>`) or an allow list (`mdhouse --allow <cidr,…>`); `--host-name` and a `/0` allow entry don't count. A reverse proxy on this host binds loopback and works as before ([Access](doc/access.md#network-address--read-only-without-a-policy))
