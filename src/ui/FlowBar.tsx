@@ -1,6 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
 import { FlowApiError, flowApi } from './flow-api';
-import { barOutcomes, flowReasonText, isTerminal, newClientId, outcomeError, showsBar, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
+import { assertionError, barOutcomes, flowReasonText, isTerminal, newClientId, outcomeError, showsBar, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
 import { useViewer } from './viewer';
 
 const api = flowApi();
@@ -49,6 +49,11 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
       setBusy(false);
     }
   };
+  const assert = (kind: 'evidence' | 'question', action: FlowAction) => {
+    const bad = assertionError(kind, text);
+    if (bad) return setError(bad);
+    void send(action);
+  };
   const outcome = (o: FlowOutcome) => {
     const bad = outcomeError(o, text);
     if (bad) return setError(bad);
@@ -78,7 +83,7 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
                     {ev.label}
                     {ev.required ? ' *' : ''} — {ev.status}
                   </span>
-                  <button type="button" class="flow-mini" disabled={busy} onClick={() => void send({ type: 'evidence', label: ev.label, status: ev.status === 'supplied' ? 'missing' : 'supplied', note: text.trim() })}>
+                  <button type="button" class="flow-mini" disabled={busy} onClick={() => assert('evidence', { type: 'evidence', label: ev.label, status: ev.status === 'supplied' ? 'missing' : 'supplied', note: text.trim() })}>
                     {ev.status === 'supplied' ? 'Mark missing' : 'Mark supplied'}
                   </button>
                 </li>
@@ -89,7 +94,7 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
                     ❓ {q.title}
                     {q.required ? ' *' : ''} — {q.status}
                   </span>
-                  <button type="button" class="flow-mini" disabled={busy} onClick={() => void send({ type: 'question', questionId: q.id, status: q.status === 'answered' ? 'unanswered' : 'answered', turn: text.trim() })}>
+                  <button type="button" class="flow-mini" disabled={busy} onClick={() => assert('question', { type: 'question', questionId: q.id, status: q.status === 'answered' ? 'unanswered' : 'answered', turn: text.trim() })}>
                     {q.status === 'answered' ? 'Reopen' : 'Mark answered'}
                   </button>
                 </li>
@@ -99,7 +104,7 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
           <textarea
             class="flow-text"
             rows={2}
-            placeholder="A note for the action you press — required for Blocked and Failed"
+            placeholder="A note for the action you press — required for every outcome, evidence and answer"
             value={text}
             onInput={(e) => {
               setText((e.target as HTMLTextAreaElement).value);

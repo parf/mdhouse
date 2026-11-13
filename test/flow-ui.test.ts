@@ -3,7 +3,7 @@ import { ApiError } from '../src/ui/api';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
 import { FlowApiError, flowApi } from '../src/ui/flow-api';
 import {
-  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, noBaselineText, outcomeError, rangeOf, showsBar, startable,
+  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, assertionError, noBaselineText, outcomeError, rangeOf, showsBar, startable,
   type DocFlow, type FlowCatalogEntry,
 } from '../src/ui/flow-model';
 
@@ -95,12 +95,19 @@ describe('the run bar', () => {
     expect(showsBar(flow({ canAct: false }))).toBe(false);
     expect(showsBar(flow({ canAct: false, holds: ['a question is open'] }))).toBe(false);
   });
-  test('blocked and failed need words; a text has a size limit', () => {
-    expect(outcomeError('complete', '')).toBeNull();
+  test('every outcome needs words; a text has a size limit', () => {
+    expect(outcomeError('complete', '')).toMatch(/found/);
+    expect(outcomeError('complete', 'All read.')).toBeNull();
     expect(outcomeError('blocked', '  ')).toMatch(/blocks/);
     expect(outcomeError('failed', '')).toMatch(/failed/);
     expect(outcomeError('failed', 'why')).toBeNull();
     expect(outcomeError('complete', 'x'.repeat(16 * 1024 + 1))).toMatch(/long/);
+  });
+  test('an assertion needs its note', () => {
+    expect(assertionError('evidence', ' ')).toMatch(/evidence is/);
+    expect(assertionError('question', '')).toMatch(/answer was/);
+    expect(assertionError('evidence', 'git log read')).toBeNull();
+    expect(flowReasonText('invalid', 'Invalid flow run: evidence note')).toBe('Invalid flow run: evidence note');
   });
   test('a missing baseline says why', () => {
     expect(noBaselineText('first-run')).toMatch(/not run here yet/);

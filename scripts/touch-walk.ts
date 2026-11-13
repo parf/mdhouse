@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer (named only: they answer /api/flow/* with a fake; TW_REAL=1 skips the fake for `flow`, TW_BASELINE = the commit to start from).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer, flowro, flowreal (named only; flowreal needs TW_RUN, a started run's url, and no fake: they answer /api/flow/* with a fake; TW_REAL=1 skips the fake for `flow`, TW_BASELINE = the commit to start from).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -259,7 +259,11 @@ if (only.includes('flowbar')) {
   await go('/repo/notes/plan.md');
   await audit('flowbar');
   say('  bar: ' + await ev("document.querySelector('.flow-bar')?.innerText.replace(/\\n/g,' | ')"));
+  await tap('.flow-text', 0);
+  await type('Seen.');
   await tap('.flow-items .flow-mini', 0);
+  await tap('.flow-text', 0);
+  await type('Seen.');
   await tap('.flow-items .flow-mini', 1);
   await audit('flowbar-asserted');
   say('  bar after assertions: ' + await ev("document.querySelector('.flow-bar')?.innerText.replace(/\\n/g,' | ')"));
@@ -284,6 +288,32 @@ if (only.includes('flowro')) {
   say('  writable project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')"));
   await go('/ro/?git');
   say('  read-only project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')") + ' (page: ' + await ev("location.pathname") + ')');
+}
+if (only.includes('flowreal')) {
+  // A run started through the real routes (TW_RUN = its url): supply the missing evidence, complete it; the report then holds last-commit-id.
+  const run = process.env.TW_RUN!;
+  await go(run);
+  await audit('flowreal-run');
+  for (let i = 0; i < 4; i++) {
+    const idx = await ev(`[...document.querySelectorAll('.flow-mini')].findIndex(b => b.textContent.trim() === 'Mark supplied')`);
+    if (idx < 0) break;
+    await tap('.flow-text', 0);
+    await type('Checked in the run document and the commits.');
+    await tap('.flow-mini', idx);
+    await sleep(900);
+  }
+  say('  bar: ' + await ev("document.querySelector('.flow-bar')?.innerText.replace(/\\n/g,' | ')"));
+  await audit('flowreal-supplied');
+  // Each Complete moves the run to its next step; the last one ends it and the bar goes.
+  for (let i = 0; i < 10 && await ev("!!document.querySelector('.flow-bar')"); i++) {
+    say('  step: ' + await ev("document.querySelector('.flow-node')?.textContent + ' / ' + document.querySelector('.flow-status')?.textContent"));
+    await tap('.flow-text', 0);
+    await type('Reviewed the range; no findings.');
+    await tap('.flow-bar-actions .flow-go.primary', 0);
+    await sleep(1500);
+  }
+  say('  after Complete: bar shown ' + await ev("!!document.querySelector('.flow-bar')") + '; error: ' + await ev("document.querySelector('.flow-error')?.textContent"));
+  await audit('flowreal-done');
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

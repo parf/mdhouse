@@ -4,6 +4,8 @@
 
 ### Added
 
+- Run flow: a button on a project's page runs a flow (package, range since the last run or from a commit, a preview, Confirm); the run document has a bar to supply evidence, answer questions and Complete, Block, Fail or Cancel it; a finished run records its last commit so the next one starts there. Not for a Viewer or a read-only project
+
 - `mdhouse docs` prints the one line to paste into a project's `AGENTS.md` (it points at `for-agents.md` on GitHub), then the installed reference path and the local raw URL for offline use (`--path`: the path alone)
 
 - `for-agents.md` in the reference: one page an AI reads first — how to write plans, which glyphs, which markup — at `/api/raw?p=_mdhouse/for-agents.md`

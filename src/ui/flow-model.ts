@@ -76,7 +76,7 @@ export const noBaselineText = (why: string | undefined): string =>
   why === 'marker-missing' ? 'The last run left no commit to start from: choose one.' : why === 'marker-unreachable' ? 'The last run’s commit is no longer in the history (rewritten?): choose where to start.' : 'This flow has not run here yet: choose the commit to start from.';
 
 /** The server's reasons for a refusal (`{ error, reason }`, as every write route). */
-export type FlowReason = 'viewer' | 'read-only' | 'not-writable' | 'no-root' | 'no-git' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
+export type FlowReason = 'viewer' | 'held' | 'read-only' | 'not-writable' | 'no-root' | 'no-git' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
 
 const TERMINAL: FlowRunStatus[] = ['complete', 'blocked', 'failed', 'cancelled', 'partial', 'unsupported'];
 export const isTerminal = (status: FlowRunStatus): boolean => TERMINAL.includes(status);
@@ -111,16 +111,19 @@ const REASON_WORDS: Partial<Record<FlowReason, string>> = {
   'no-baseline': 'This flow has not run here yet: choose the commit to start from.',
   'bad-baseline': 'That commit is not in this project’s history.',
   'open-run': 'A run of this flow is already open.',
-  invalid: 'The server did not accept that.',
 };
 /** The page's words for a refusal; a `stale` is the server's own (a preview that went out of date and a run that moved on need different things). */
 export const flowReasonText = (reason: string | undefined, fallback: string): string => (reason && REASON_WORDS[reason as FlowReason]) || fallback;
 
-/** Blocked and failed say why; completing may add a note. Every text is bounded like the server's (16 KiB). */
+/** An assertion carries its words: where the evidence is, what the answer was (the server refuses an empty note). */
+export const assertionError = (kind: 'evidence' | 'question', text: string): string | null =>
+  text.trim() ? null : kind === 'evidence' ? 'Write the note first: where the evidence is.' : 'Write the note first: what the answer was.';
+
+/** Every outcome says something: what was found, what blocks it, what failed (the server refuses an empty one). Every text is bounded like the server's (16 KiB). */
 export const OUTCOME_TEXT_MAX = 16 * 1024;
 export function outcomeError(outcome: FlowOutcome, text: string): string | null {
   const t = text.trim();
-  if (outcome !== 'complete' && !t) return outcome === 'blocked' ? 'Say what blocks it.' : 'Say what failed.';
+  if (!t) return outcome === 'complete' ? 'Say what the analysis found.' : outcome === 'blocked' ? 'Say what blocks it.' : 'Say what failed.';
   if (new TextEncoder().encode(t).length > OUTCOME_TEXT_MAX) return 'That is too long.';
   return null;
 }

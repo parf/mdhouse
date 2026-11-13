@@ -2358,3 +2358,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 @media (pointer: coarse) {
   .flow-html summary { min-height: 44px; display: flex; align-items: center; }
 }
+@media (pointer: coarse) {
+  .md details.settled > summary { min-height: 44px; align-items: center; }
+}

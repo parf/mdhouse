@@ -979,7 +979,8 @@ Real server (`df04925`, `TW_REAL=1`), 390 light: catalog → no-baseline note �
 
 Read-only project: no Run flow button (`flowro` step: the writable project shows it, a `ro` one does not). Review fixes: a stale preview shows the server's words and offers **Preview again**; a start that meets an open run shows the package's open run with its link instead of jumping; busy guards are refs. Not exercised in a browser: the stale-start path (the server needs a changed HEAD between preview and start).
 
-Not verified: completing a run from the page and the next "since last run" (the flow bar needs `doc.flow` and `/api/flow/event`, server part B).
+Real server (`ae86ce8`, `flowreal` step), 390 light, scratch git repo: a run started through the routes → the flow bar on its document → each evidence line supplied with a note → Complete at every step (scope, summaries, risks, delivery-sync, report) → the bar goes; the server wrote `Plans/flows/recent-commits-review.md` with `last-commit-id` = the run's target and a "Last run:" line; the next preview "since the last run" starts at that commit (base = last target; after a new commit, base..new HEAD); the catalog shows `lastRun` complete and no open run. The server refuses an empty note, so the bar asks for one for every outcome, evidence line and answer, in words. `fr4-390-light-*.png`.
+
 
 
 ## Access badge presentation — Viewer {#access-badge-viewer}
