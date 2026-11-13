@@ -2137,7 +2137,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 @media (max-width: 900px), (pointer: coarse) {
   .info { width: 22px; height: 22px; margin: 0 5px; }
   .info::before { font-size: 13px; }
-  .info::after { content: ''; position: absolute; inset: -11px; }
+  .info::after { content: ''; position: absolute; inset: -12px; }
   .info-tip { position: fixed; left: 12px; right: 12px; top: auto; bottom: 12px; width: auto; max-width: 34em; max-height: 50vh; overflow: auto; margin: 0 auto; z-index: 60; font-size: 14px; }
   .info-tip::before { display: none; }
 }
@@ -2151,4 +2151,63 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   /* The sidebar header is narrow: the icons keep their size and a finger-sized area around them. */
   .side-head .icon-btn { position: relative; }
   .side-head .icon-btn::after { content: ''; position: absolute; inset: -9px; }
+}
+
+/* ── Touch: the page chrome ─────────────────────────────────────────────── */
+
+/* A finger needs 44px each way: small icons and links keep their look and get an invisible area around them. */
+@media (pointer: coarse) {
+  :is(.view-chip.add, button.mark, .brand-mark, .crumbs .crumb, .home-link, .md .g-btn, .md .g-answered) { position: relative; }
+  :is(.view-chip.add, button.mark, .home-link)::after { content: ''; position: absolute; inset: -14px -8px; }
+  .view-chip.add { padding-inline: 9px; }
+  .view-chip.add::after { inset: -14px -3px; }
+  button.mark.brand-mark::after { content: ''; position: absolute; inset: -16px -11px; }
+  .crumbs .crumb::after { content: ''; position: absolute; inset: -16px -10px; }
+  .md :is(.g-btn, .g-answered)::after { content: ''; position: absolute; inset: -15px -14px; }
+  .badge.count { position: relative; }
+  .badge.count::after { content: ''; position: absolute; inset: -14px -14px; }
+  main .icon-btn { min-width: 44px; min-height: 44px; }
+  :is(.doc-edit-btn, .chip, .tabs button, .home-head .tabs a, .git-tab, .head-name, .view-tab, .git-btn, .uncommitted, .root-select, .filters select, .summary) { min-height: 44px; }
+  :is(.chip, .git-btn, .doc-edit-btn) { padding-inline: 12px; min-width: 44px; }
+  .tabs button { display: inline-flex; align-items: center; justify-content: center; }
+  .row { min-height: 44px; }
+  .toc summary, .doc-aside summary { min-height: 44px; }
+  .toc li { padding: 0; }
+  .toc li a { display: block; padding-block: 12px; }
+  /* A tick is the one thing a task line is for: the box is as big as a thumb allows beside the text. */
+  .md input.task-checkbox { width: 32px; height: 32px; margin: 6px 10px 6px 0; }
+  /* The icons grew to 44px: the title row wraps instead of running into the Edit button. */
+  :is(.doc-title, .doc-title-row) { flex-wrap: wrap; }
+  :is(.git-link, .edit-link) { margin-left: 4px; }
+  .badge.count::after { inset: -15px -15px; }
+  .md .opt { min-height: 44px; align-items: center; }
+  .md .opt input { width: 22px; height: 22px; }
+  .home-table tr.file > td { height: 44px; }
+  .home-table .name a.link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+  :is(.sort-flip, .kind-flip button) { min-height: 44px; min-width: 44px; padding-inline: 10px; }
+  .md li.task-list-item, .md li.task-item { min-height: 44px; }
+  .git-list li { align-items: center; min-height: 44px; }
+  .git-list li a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* ── Touch: forms, editor, commit ───────────────────────────────────────── */
+
+/* Fields are 16px so a phone does not zoom in on focus; every button of a form is a full touch target. */
+@media (pointer: coarse) {
+  :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select) { font-size: 16px; }
+  .git-message, .doc-commit .git-message { min-height: 44px; font-size: 16px; padding: 4px 10px; }
+  .md .qa-edit .bar { gap: 8px; }
+  :is(.md .qa-edit .bar button, .md .add-kind, .md .answer-cancel, .doc-editor-bar button, .ab-bar button, .ab-pick, .diff-reset, .git-list h2 .fold, button.sync-chip) { min-height: 44px; min-width: 44px; padding: 4px 12px; font-size: 14px; }
+  .md .qa-edit .bar .sign { min-height: 44px; padding-inline: 6px; }
+  .md .form-edit { min-width: 44px; min-height: 44px; justify-content: center; }
+  .md .qa-edit textarea, .ab-input { padding-right: 56px; }
+  .voice-btn { width: 44px; height: 44px; }
+  .view-chip.add::after { inset: -15px -3px; }
+  .ab-agent { min-height: 44px; display: flex; align-items: center; }
+  .ab-agent input { width: 22px; height: 22px; }
+}
+
+/* A docked sidebar on a tablet: wide enough for five 44px tabs. */
+@media (pointer: coarse) and (min-width: 721px) {
+  .app[data-sidebar="compact"] { --sidebar-w: clamp(244px, var(--sidebar-compact), 340px); }
 }
