@@ -11,7 +11,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { link, mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { LoadedFlowPackage } from './flow-package';
+import type { FlowPackage, LoadedFlowPackage } from './flow-package';
 import { applyFlowRunEvent, createFlowRun, type FlowRunAction, type FlowRunEvent, type FlowRunInput, type FlowRunState, type FlowRunStatus } from './flow-run';
 import { keepAnalystSections, markerOf, readFlowRunDocument, readFlowRunMeta, renderFlowRunDocument, type FlowRunDocMeta, type FlowRunSeal } from './flow-run-markdown';
 import type { Registry, Root } from './roots';
@@ -102,8 +102,14 @@ const RUNS_LISTED = 500;
 const ANCESTRY_KEPT = 256;
 const REV = /^[0-9a-f]{4,40}$/;
 const ROOT_SLUG = (id: string): string => id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^[^a-z]+|-+$/g, '').slice(0, 100).replace(/-+$/, '') || 'project';
-/** Packages this host can run: it supplies their first evidence label (the commit range) itself. */
-export const RUNNABLE: ReadonlySet<string> = new Set(['recent-commits-review']);
+/** The required-evidence label that names the commit range: the host reads the range from git and supplies exactly that one. */
+export const rangeLabel = (m: FlowPackage): string | undefined => m.evidence.required.find((l) => /\brange\b/i.test(l));
+/**
+ * A package this host runs with no code of its own: an explicit-baseline range, analysis-only steps (no consequential
+ * effect, no approval) and a required evidence label that names the range. Adding such a flow is its package files.
+ */
+export const runnableFlow = (m: FlowPackage): boolean =>
+  m.defaults.range === 'explicit-baseline' && m.steps.length > 0 && m.steps.every((s) => s.effect === 'analysis' && s.approval === 'none') && rangeLabel(m) !== undefined;
 const sha256 = (s: string): string => createHash('sha256').update(s).digest('hex');
 const fail = (reason: FlowErrorCode, error: string, extra: Partial<FlowError> = {}): FlowError => ({ error, reason, ...extra });
 const isError = (v: unknown): v is FlowError => typeof v === 'object' && v !== null && 'reason' in v && 'error' in v;
@@ -203,7 +209,7 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
   if (!req) return fail('invalid', 'expected {rootId, packageId, range, trigger}');
   const root = deps.registry.get(req.rootId);
   if (!root || root.kind === 'reference') return fail('no-root', 'no such project');
-  const pkg = RUNNABLE.has(req.packageId) ? (await deps.catalog()).find((p) => p.manifest.id === req.packageId) : undefined;
+  const pkg = (await deps.catalog()).find((p) => p.manifest.id === req.packageId && runnableFlow(p.manifest));
   if (!pkg) return fail('unknown-package', 'no such flow package');
   const manifest = pkg.manifest;
   const repo = await deps.git.repoOf(root);
@@ -256,8 +262,8 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
       dirtySourceIds: dirtySources.map((s) => s.id),
     },
     // The host established the range itself; every other label is the analyst's to supply.
-    evidence: manifest.evidence.required.map((label, i) =>
-      i === 0 ? { label, status: 'supplied' as const, sourceIds: [RANGE_SOURCE], note: `${commits.length} commits, read by mdhouse from git` } : { label, status: 'missing' as const, sourceIds: [], note: 'Not yet supplied' },
+    evidence: manifest.evidence.required.map((label) =>
+      label === rangeLabel(manifest) ? { label, status: 'supplied' as const, sourceIds: [RANGE_SOURCE], note: `${commits.length} commits, read by mdhouse from git` } : { label, status: 'missing' as const, sourceIds: [], note: 'Not yet supplied' },
     ),
     questions: [],
   };
@@ -337,7 +343,7 @@ export async function startFlowRun(deps: FlowHostDeps, io: FlowWrite, start: { t
   if (!root.writable) return fail('not-writable', 'the project is read-only');
   // The actor is whoever starts, as at preview: another author makes the document differ — stale.
   if ('token' in start) req = { ...req, trigger: { kind: 'manual', actor: await start.actor(root) } };
-  const pkg = RUNNABLE.has(req.packageId) ? (await deps.catalog()).find((p) => p.manifest.id === req.packageId) : undefined;
+  const pkg = (await deps.catalog()).find((p) => p.manifest.id === req.packageId && runnableFlow(p.manifest));
   if (!pkg) return fail('unknown-package', 'no such flow package');
   const dest = await deps.registry.resolve(`${root.id}/${pkg.manifest.defaults.destination}`);
   if (!dest) return fail('invalid', 'the package destination is outside the project');
@@ -398,7 +404,7 @@ export async function verifyRun(deps: FlowHostDeps, root: Root, rel: string, sta
   if (got.length !== want.length || !timingSafeEqual(got, want)) return tampered('its run input was changed');
   if (sel.sources.find((x) => x.id === RANGE_SOURCE)?.digest !== sha256(meta.commits.join('\n'))) return tampered('its commit list was changed');
   if (!rel.startsWith(`${runsDir(id)}/`)) return tampered('it is not in its package’s runs folder');
-  const pkg = RUNNABLE.has(id) ? (await deps.catalog()).find((p) => p.manifest.id === id) : undefined;
+  const pkg = (await deps.catalog()).find((p) => p.manifest.id === id && runnableFlow(p.manifest));
   if (!pkg) return tampered('its package is not installed or not runnable');
   if (stable(input.package) !== stable(pkg.manifest) || input.packageDigest !== digestOf(pkg)) return tampered('it was made with another version of its package');
   const d = pkg.manifest.defaults;

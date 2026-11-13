@@ -64,18 +64,16 @@ describe('/api/flow routes', () => {
     try {
       const [st, cat] = await body(await t.get(`/api/flow/catalog?root=${t.root.id}`));
       expect(st).toBe(200);
-      expect(cat).toEqual({
-        packages: [
-          {
-            id: PKG,
-            family: 'commit-review',
-            title: expect.any(String),
-            ranges: ['since-last-run', 'baseline'],
-            defaults: expect.objectContaining({ destination: 'Plans/flows/recent-commits-review.md' }),
-            lastRun: null,
-            openRun: null,
-          },
-        ],
+      const pkgs = (cat as { packages: Array<Record<string, unknown>> }).packages;
+      expect(pkgs.map((p) => p.id).sort()).toEqual(['docs-refresh-verify', 'engineering-delivery-sync', 'project-review', PKG]);
+      expect(pkgs.find((p) => p.id === PKG)).toEqual({
+        id: PKG,
+        family: 'commit-review',
+        title: expect.any(String),
+        ranges: ['since-last-run', 'baseline'],
+        defaults: expect.objectContaining({ destination: 'Plans/flows/recent-commits-review.md' }),
+        lastRun: null,
+        openRun: null,
       });
 
       expect(await body(await t.preview({ kind: 'since-last-run' }))).toEqual([409, { error: expect.any(String), reason: 'no-baseline', why: 'first-run' }]);
@@ -102,7 +100,7 @@ describe('/api/flow routes', () => {
 
       const [, cat2] = await body(await t.get(`/api/flow/catalog?root=${t.root.id}`));
       const url = t.registry.docUrl(t.root, pv.runPath);
-      expect(cat2.packages[0]).toMatchObject({ lastRun: { url, status: 'held', at: expect.any(String) }, openRun: { url, status: 'held' } });
+      expect(cat2.packages.find((p: { id: string }) => p.id === PKG)).toMatchObject({ lastRun: { url, status: 'held', at: expect.any(String) }, openRun: { url, status: 'held' } });
 
       const pv2 = (await (await t.preview()).json()) as { token: string };
       expect(await body(await t.post('/api/flow/start', { token: pv2.token }))).toEqual([409, { error: expect.any(String), reason: 'open-run', run: { url, status: 'held' } }]);
@@ -158,6 +156,23 @@ describe('/api/flow routes', () => {
       expect((await t.post('/api/settings', { mode: 'viewer' })).status).toBe(200);
       expect((await t.preview()).status).toBe(200);
       expect(await body(await t.post('/api/flow/start', { token: pv.token }))).toEqual([403, { error: 'read-only: this mdhouse is a Viewer', reason: 'viewer' }]);
+    } finally {
+      t.stop();
+    }
+  });
+
+  test('another runnable package starts the same way: the host supplies its range label, wherever it sits', async () => {
+    const t = await start();
+    try {
+      const pv = (await (await t.post('/api/flow/preview', { rootId: t.root.id, packageId: 'docs-refresh-verify', range: { kind: 'baseline', commit: t.c[0] } })).json()) as { token: string; runPath: string };
+      expect(pv.runPath).toMatch(/^Plans\/flows\/runs\/docs-refresh-verify\//);
+      expect(await body(await t.post('/api/flow/start', { token: pv.token }))).toEqual([200, { status: 'held', runPath: pv.runPath, url: expect.any(String) }]);
+      const page = (await (await t.get(`/api/doc?p=${encodeURIComponent(`${t.root.id}/${pv.runPath}`)}`)).json()) as { flow: { canAct: boolean; evidence: Array<{ label: string; status: string }> } };
+      expect(page.flow.canAct).toBe(true);
+      expect(page.flow.evidence.filter((e) => e.status === 'supplied').map((e) => e.label)).toEqual(['explicit change range']);
+      // One open run per package: recent-commits-review still starts.
+      const other = (await (await t.preview()).json()) as { token: string };
+      expect((await t.post('/api/flow/start', { token: other.token })).status).toBe(200);
     } finally {
       t.stop();
     }

@@ -37,7 +37,7 @@ import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits, repoHead } from './lib/git';
-import { applyFlowAction, docFlow, isFlowError, verifyRun, isOpenRun, listRuns, planFlowRun, RUNNABLE, runsDir, sealKeyAt, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, verifyRun, isOpenRun, listRuns, planFlowRun, runnableFlow, runsDir, sealKeyAt, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
 import { advanceDestination, readFlowRunDocument, readFlowRunMeta } from './lib/flow-run-markdown';
 import { loadFlowCatalog, type LoadedFlowPackage } from './lib/flow-package';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
@@ -1959,7 +1959,7 @@ export async function serve(opts: ServeOptions) {
         GET: async (req) => {
           const root = registry.get(new URL(req.url).searchParams.get('root') ?? '');
           if (!root || root.kind === 'reference') return flowFail({ error: 'no such project', reason: 'no-root' });
-          const pkgs = (await flowDeps.catalog()).filter((p) => RUNNABLE.has(p.manifest.id));
+          const pkgs = (await flowDeps.catalog()).filter((p) => runnableFlow(p.manifest));
           const packages = await Promise.all(
             pkgs.map(async ({ manifest: m }) => {
               const runs = await listRuns(registry, root, m.id);

@@ -347,7 +347,7 @@ consistency, not authenticity or semantic truth. `lib/flow-run-markdown.ts` rend
 unsaved preview with supplied data in inert JSON fences. Both grant no authority and perform no
 filesystem/provider/HTTP work; materialization, actual approvals and marker updates are separate.
 
-`lib/flow-host.ts` (MW.3.3 A) — packages only from `<reference>/flows`, runnable: `RUNNABLE` (`recent-commits-review`).
+`lib/flow-host.ts` (MW.3.3 A) — packages only from `<reference>/flows`, runnable: `runnableFlow(m)` — `explicit-baseline` range, every step `analysis` + approval `none`, a required evidence label matching `/\brange\b/i` (`rangeLabel`, the one the host supplies); now recent-commits-review, project-review, docs-refresh-verify, engineering-delivery-sync.
 - `planFlowRun` reads git (HEAD, base, `base..HEAD`, uncommitted paths apart, any file type) and returns the exact run document + HMAC token (per process) over `{req, runId, startedAt, sha256(doc)}`; writes nothing
 - Range: `since-last-run` = `last-commit-id` of `defaults.destination` (none → 409 `no-baseline` `why: first-run | marker-missing | marker-unreachable`); `baseline` = `/^[0-9a-f]{4,40}$/`, a commit, ancestor of HEAD, else 400 `bad-baseline`
 - `startFlowRun` — RO → 403 `not-writable` first; then queue `flow:<root>:<package>` + `queueWrite(<destination abs>)`; inside: open run (`running`/`held`) → 409 `open-run` + `run`; re-plan with the token's id/time and the starting actor, other bytes → 409 `stale`; `registry.writeFile(…, {parents})` to `Plans/flows/runs/<package>/<UTC>-<runId8>.md`. Token 10 min (`TOKEN_TTL_MS`). Schedule: `run-` + sha256(`<id>:<slot>`)[0:16]; a repeat returns its run
