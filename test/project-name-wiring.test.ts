@@ -290,15 +290,19 @@ describe('names over the control socket', () => {
       }
       expect(t.registry.list().some((r) => r.path === four)).toBe(false); // refused before adding
 
-      chmodSync(controlDir(), 0o755);
+      // The socket's folder opened to others: a caller no longer looks there at all, and the daemon refuses a name.
+      const dir = controlDir();
+      const sock = controlPath(testPort(61755));
+      chmodSync(dir, 0o755);
       try {
-        expect(await askDaemon(testPort(61755), { dirs: [t.two], name: 'X' })).toMatchObject({ error: expect.stringContaining('not private') });
-        const raw = await fetch('http://localhost/add', { unix: controlPath(testPort(61755)), method: 'POST', body: JSON.stringify({ dirs: [t.two], name: 'X' }) });
+        expect(await askDaemon(testPort(61755), { dirs: [t.two], name: 'X' })).toBeNull();
+        expect(await askDaemon(testPort(61755), { dirs: [t.two] })).toBeNull();
+        const raw = await fetch('http://localhost/add', { unix: sock, method: 'POST', body: JSON.stringify({ dirs: [t.two], name: 'X' }) });
         expect(raw.status).toBe(403);
-        expect(await askDaemon(testPort(61755), { dirs: [t.two] })).not.toHaveProperty('error'); // unnamed add as before
       } finally {
-        chmodSync(controlDir(), 0o700);
+        chmodSync(dir, 0o700);
       }
+      expect(await askDaemon(testPort(61755), { dirs: [t.two] })).not.toHaveProperty('error'); // reached again once private
       expect((await t.roots()).some((r) => 'customName' in r)).toBe(false);
     } finally {
       t.stop();

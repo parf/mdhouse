@@ -104,21 +104,25 @@ export interface Handlers {
   admin?: AdminHandlers;
 }
 
+/** A real directory (not a link) this user owns with no group or other access. */
+function privateDirAt(path: string, uid: number | undefined): boolean | 'missing' {
+  try {
+    const st = lstatSync(path);
+    return st.isDirectory() && st.uid === uid && (st.mode & 0o077) === 0;
+  } catch {
+    return 'missing';
+  }
+}
+
 /**
  * Where a daemon listens: `$XDG_RUNTIME_DIR/mdhouse` — else `/run/user/<uid>/mdhouse`, for a caller without the
- * variable (cron, `su`) — when that base is a directory this user owns; else the config dir.
+ * variable (cron, `su`) — when that base is an absolute, private directory of this user and its `mdhouse` folder is
+ * private too or not made yet; else the config dir (checked again by `controlInsecurity` before every call and bind).
  */
 export function controlDir(env: Record<string, string | undefined> = process.env): string {
   const uid = process.getuid?.();
   const base = env.XDG_RUNTIME_DIR || (uid !== undefined ? `/run/user/${uid}` : '');
-  if (base.startsWith('/')) {
-    try {
-      const st = lstatSync(base);
-      if (st.isDirectory() && st.uid === uid) return `${base}/mdhouse`;
-    } catch {
-      /* no runtime dir */
-    }
-  }
+  if (base.startsWith('/') && privateDirAt(base, uid) === true && privateDirAt(`${base}/mdhouse`, uid) !== false) return `${base}/mdhouse`;
   return CONFIG_DIR;
 }
 
@@ -130,9 +134,12 @@ export function controlPath(port: number): string {
 /** Before 2.4 every daemon listened in the config dir: a caller looks there too, for one release. */
 const legacyPath = (port: number): string => `${CONFIG_DIR}/control-${port}.sock`;
 
+/** Where a caller looks for the daemon on `port`: the current place, then the old one. */
+const candidates = (port: number): string[] => [...new Set([controlPath(port), legacyPath(port)])];
+
 /** The socket a caller talks to on `port`: the current place, else the old one; null when neither exists. */
 export function socketOf(port: number): string | null {
-  for (const p of [controlPath(port), legacyPath(port)]) if (existsSync(p)) return p;
+  for (const p of candidates(port)) if (existsSync(p)) return p;
   return null;
 }
 
@@ -162,16 +169,20 @@ export function knownPorts(): number[] {
  * makes a control caller the daemon's OS owner.
  */
 export function controlInsecurity(port: number, socket = true): string | null {
+  return pathInsecurity(socketOf(port) ?? controlPath(port), socket);
+}
+
+/** `controlInsecurity` for the socket at `path` (and its folder). */
+function pathInsecurity(path: string, socket: boolean): string | null {
   const uid = process.getuid?.();
   if (uid === undefined) return 'no OS user ids on this platform';
-  const look = (path: string) => {
+  const look = (p: string) => {
     try {
-      return lstatSync(path);
+      return lstatSync(p);
     } catch {
       return null;
     }
   };
-  const path = socketOf(port) ?? controlPath(port);
   const where = dirname(path);
   const dir = look(where);
   if (!dir || dir.isSymbolicLink() || !dir.isDirectory()) return `${where} is not a directory`;
@@ -202,8 +213,20 @@ const SLOW_MS = 60_000;
  * (stopped with Ctrl+Z, hung) is `{error}`, and its socket is kept.
  */
 async function call<T>(port: number, path: string, body: unknown = {}, ms = QUICK_MS): Promise<T | { error: string } | null> {
-  const sock = socketOf(port);
-  if (!sock) return null;
+  // A stale socket at the current place: the old place may still hold a live daemon (the one-release window).
+  for (const sock of candidates(port)) {
+    if (!existsSync(sock)) continue;
+    // Never a word to a socket another user could have put there: its folder is private, so all in it is this user's.
+    const why = pathInsecurity(sock, false);
+    if (why) return { error: `control socket is not private: ${why}` };
+    const got = await callAt<T>(sock, port, path, body, ms);
+    if (got !== null) return got;
+  }
+  return null;
+}
+
+/** One call to the socket at `sock`; null when nothing is behind it (the stale file removed). */
+async function callAt<T>(sock: string, port: number, path: string, body: unknown, ms: number): Promise<T | { error: string } | null> {
 
   try {
     const res = await fetch(`http://localhost${path}`, {
@@ -315,6 +338,12 @@ export async function askExit(port: number): Promise<PingReply | { error: string
 export async function serveControl(port: number, handlers: Handlers): Promise<{ stop: () => void } | null> {
   await mkdir(controlDir(), { recursive: true, mode: 0o700 });
   const path = controlPath(port);
+  // A folder another user can reach (made before this process, or loosened): no socket there at all.
+  const why = pathInsecurity(path, false);
+  if (why) {
+    console.error(`mdhouse: no control socket — ${why}`);
+    return null;
+  }
 
   // A socket file with nobody behind it is left by a killed process. The ping clears it; one
   // still there after it is a live daemon's.

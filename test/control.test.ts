@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from 'bun:test';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CONFIG_DIR } from '../src/lib/prefs';
@@ -171,5 +171,53 @@ describe('the control socket', () => {
     if (!existsSync(old)) writeFileSync(old, '');
     expect(await askPing(port)).toBeNull();
     expect(existsSync(old)).toBe(false);
+  });
+
+  test('a runtime dir or its mdhouse folder another user can reach is not used: the config dir instead', () => {
+    const open = mkdtempSync(join(tmpdir(), 'mdhouse-run-open-'));
+    chmodSync(open, 0o777);
+    expect(controlDir({ XDG_RUNTIME_DIR: open })).toBe(CONFIG_DIR);
+    const own = mkdtempSync(join(tmpdir(), 'mdhouse-run-own-'));
+    mkdirSync(join(own, 'mdhouse'), { mode: 0o777 });
+    chmodSync(join(own, 'mdhouse'), 0o777); // made by someone else in a moment when the base was open
+    expect(controlDir({ XDG_RUNTIME_DIR: own })).toBe(CONFIG_DIR);
+    const linked = mkdtempSync(join(tmpdir(), 'mdhouse-run-link-'));
+    symlinkSync(own, join(linked, 'mdhouse'));
+    expect(controlDir({ XDG_RUNTIME_DIR: linked })).toBe(CONFIG_DIR);
+  });
+
+  test('no bind in a folder another user can reach; a call there is refused with the reason', async () => {
+    const port = testPort(61773);
+    const before = process.env.XDG_RUNTIME_DIR;
+    const open = mkdtempSync(join(tmpdir(), 'mdhouse-run-open-'));
+    chmodSync(open, 0o777);
+    process.env.XDG_RUNTIME_DIR = open; // falls back to the config dir…
+    mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+    chmodSync(CONFIG_DIR, 0o755); // …which is open too
+    try {
+      expect(await serveControl(port, handlers())).toBeNull();
+      expect(existsSync(`${CONFIG_DIR}/control-${port}.sock`)).toBe(false);
+      writeFileSync(`${CONFIG_DIR}/control-${port}.sock`, '');
+      expect(await askPing(port)).toEqual({ error: expect.stringContaining('not private') });
+    } finally {
+      chmodSync(CONFIG_DIR, 0o700);
+      unlinkSync(`${CONFIG_DIR}/control-${port}.sock`);
+      process.env.XDG_RUNTIME_DIR = before;
+    }
+  });
+
+  test('a stale socket at the new place does not hide a live daemon at the old one', async () => {
+    const port = testPort(61774);
+    const old = `${CONFIG_DIR}/control-${port}.sock`;
+    mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+    mkdirSync(controlDir(), { recursive: true, mode: 0o700 });
+    writeFileSync(controlPath(port), ''); // left by a killed daemon
+    const server = Bun.serve({ unix: old, fetch: () => Response.json({ pid: 2, url: 'old', roots: [] }) });
+    try {
+      expect(await askPing(port)).toEqual({ pid: 2, url: 'old', roots: [] });
+      expect(existsSync(controlPath(port))).toBe(false);
+    } finally {
+      server.stop(true);
+    }
   });
 });

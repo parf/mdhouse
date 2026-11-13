@@ -291,43 +291,49 @@ describe('admin control transport must be private to the OS owner', () => {
   const raw = (port: number, path: string) =>
     fetch(`http://localhost${path}`, { unix: controlPath(port), method: 'POST', body: '{}' }).then(async (r) => ({ status: r.status, body: (await r.json()) as Record<string, unknown> }));
 
-  test('a group/other-accessible config dir or socket, or a symlinked config dir, refuses admin ops; ping still answers', async () => {
+  test('a group/other-accessible socket folder or socket, or a symlinked folder, refuses admin ops; a caller stops looking there', async () => {
     const t = await start(testPort(61766));
+    // Fixed now: an unprivate folder makes controlDir() fall back to the config dir.
+    const dir = controlDir();
+    const sock = controlPath(testPort(61766));
+    const raw = (_port: number, path: string) =>
+      fetch(`http://localhost${path}`, { unix: sock, method: 'POST', body: '{}' }).then(async (r) => ({ status: r.status, body: (await r.json()) as Record<string, unknown> }));
     try {
       expect(controlInsecurity(testPort(61766))).toBeNull();
       expect((await raw(testPort(61766), '/admin/mint')).status).toBe(200);
 
-      chmodSync(controlDir(), 0o755);
+      chmodSync(dir, 0o755);
       try {
-        expect(controlInsecurity(testPort(61766))).toContain('open to other users');
-        expect(await askAdminMint(testPort(61766))).toMatchObject({ error: expect.stringContaining('not private') }); // client refuses
-        const served = await raw(testPort(61766), '/admin/mint'); // and so does the daemon
+        expect(controlDir()).toBe(CONFIG_DIR);
+        expect(await askAdminMint(testPort(61766))).toBeNull(); // the client does not look there
+        const served = await raw(testPort(61766), '/admin/mint'); // and the daemon refuses
         expect(served.status).toBe(403);
         expect(served.body).not.toHaveProperty('proof');
         expect((await raw(testPort(61766), '/admin/revoke')).status).toBe(403);
         expect((await raw(testPort(61766), '/admin/list')).status).toBe(403);
-        expect(await askPing(testPort(61766))).toMatchObject({ pid: process.pid }); // existing control unchanged
+        expect(await askPing(testPort(61766))).toBeNull();
       } finally {
-        chmodSync(controlDir(), 0o700);
+        chmodSync(dir, 0o700);
       }
+      expect(await askPing(testPort(61766))).toMatchObject({ pid: process.pid });
 
-      chmodSync(controlPath(testPort(61766)), 0o666);
+      chmodSync(sock, 0o666);
       try {
         expect(controlInsecurity(testPort(61766))).toContain('open to other users');
         expect((await raw(testPort(61766), '/admin/mint')).status).toBe(403);
       } finally {
-        chmodSync(controlPath(testPort(61766)), 0o600);
+        chmodSync(sock, 0o600);
       }
 
-      const real = `${controlDir()}.real`;
-      renameSync(controlDir(), real);
-      symlinkSync(real, controlDir());
+      const real = `${dir}.real`;
+      renameSync(dir, real);
+      symlinkSync(real, dir);
       try {
-        expect(controlInsecurity(testPort(61766))).toContain('is not a directory');
+        expect(controlDir()).toBe(CONFIG_DIR);
         expect((await raw(testPort(61766), '/admin/mint')).status).toBe(403);
       } finally {
-        unlinkSync(controlDir());
-        renameSync(real, controlDir());
+        unlinkSync(dir);
+        renameSync(real, dir);
       }
       expect((await raw(testPort(61766), '/admin/mint')).status).toBe(200);
     } finally {
