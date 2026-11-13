@@ -82,6 +82,7 @@
 
 - Local install = administrator: with no users configured, a request reaching mdhouse from this computer (loopback, a local proxy included) needs no `mdhouse admin` sign-in
 - Agent Bus traffic (page requests and `mdhouse-rag-sync`) goes through the `ai-agent-bus-sdk` client
+- Agent Bus client 1.0.59: no busy polling while waiting
 
 - Document HTML is passive on the server and at browser sinks. Passive classes, IDs, tables, details and code colours stay; scripts, handlers, frames, forms, inline SVG/MathML and unsafe URLs/styles are removed. Raw HTML opens sandboxed without scripts
 - Q&A write controls use generated-action provenance; double-click selection is on an item's glyph or row. Mermaid uses constrained inert images: diagram labels are no longer selectable and diagram links/callbacks are inactive
