@@ -72,3 +72,9 @@
   - [ ] one Search with a scope switch Files | Index (the RAG page becomes "Index"; [R] stays as a shortcut)
 
 - [№Q-R3-AUTO1](DECISIONS.md#Q-R3-AUTO1) <a id="Q-R3-AUTO1"></a>
+
+- ❓ Q-R3-AUTO2 Automation registrations are team data (`$PROJECT/.mdhouse/automation/`, Git). When one arrives by a pull or a commit from someone else, who lets it run on this machine? <a id="Q-R3-AUTO2"></a>
+  Design in [AUTOMATION.md](../AUTOMATION.md#3-registration). Temp CTO chose the first: the usual practice (CI, git hooks, direnv) is that committed definitions do not run until a person approves their content.
+  - ( ) the instance administrator approves the file's content hash on this machine; a changed file stops firing until approved again 🌟
+  - ( ) a registration found in a project runs at once, its schedule created by whoever pulled it (a pull can then start jobs)
+  - ( ) only registrations created from this machine's page run; files from others are shown, never run

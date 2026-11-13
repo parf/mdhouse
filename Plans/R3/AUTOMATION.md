@@ -1,7 +1,6 @@
 # Automation — Agent Bus Cron/At for AI pipelines
 
-Status: draft — owner decisions pending in [QUESTIONS.md Q-R3-AUTO1](workspaces/QUESTIONS.md#Q-R3-AUTO1). Design only: nothing here is implemented and no schedule exists.
-Defaults below are the temporary CTO's; the owner may override any of them. Task: [№MW.11](workspaces/TODO.md#MW.11); rule: [№AUTO-W1](workspaces/DECISIONS.md#AUTO-W1).
+Status: draft — [№Q-R3-AUTO1](workspaces/DECISIONS.md#Q-R3-AUTO1) decided; [№Q-R3-AUTO2](workspaces/QUESTIONS.md#Q-R3-AUTO2) (who may run a committed registration) open. Design only: nothing here is implemented and no schedule exists. Task: [№MW.11](workspaces/TODO.md#MW.11); rule: [№AUTO-W1](workspaces/DECISIONS.md#AUTO-W1).
 
 ## 1. Principle
 
@@ -22,14 +21,18 @@ Defaults below are the temporary CTO's; the owner may override any of them. Task
 
 ## 3. Registration
 
-A firing runs only if the project holds a matching registration, kept in the project's settings ([№MW.14](workspaces/TODO.md#MW.14) data placement), never in the Markdown tree:
-`{ scheduleId, project, flow, scope, maxLate, overlap: "skip" | "queue1", enabled, approvedBy, approvedAt, notify?: <one agent> }`.
+A registration is team data ([№DATA-W1](workspaces/DECISIONS.md#DATA-W1)): one file per pipeline in `$PROJECT/.mdhouse/automation/<id>.json`, under Git with the project, never in the Markdown tree:
+`{ id, flow, scope, when, maxLate, overlap: "skip" | "queue1", notify?: <one agent> }` — what to run, when, over what, and who hears of it.
+Where it runs is not in the file: the bus schedule on this instance's `#mdhouse` record is only the timer, and it exists only where an administrator enabled the registration.
+
+- A firing runs only if the project holds the registration file the schedule was made from and the administrator's approval of that file's content hash (user data, `$HOME/.config/mdhouse`, per instance) still matches; a file changed by a pull or a commit stops firing until it is approved again
+- The page shows a registration it finds in a project but nobody enabled here as "not scheduled on this machine", with an **Enable** that shows the file's content and asks for the approval
 
 - No registration: the reply is `{ ok: false, code: "unregistered" }` and the firing is logged; a bus schedule alone can never make mdhouse run anything
 - Three separate checks apply: the creator's reach (bus), the registration (mdhouse), the project's effective access (mdhouse)
 - Who may register: the instance administrator only; a Viewer never
 - The flow must be a package in `doc/flows/catalog.json` with no consequential node in v1; consequential nodes stay `unsupported`/held as in [FLOW-RUNTIME-CORE.md](FLOW-RUNTIME-CORE.md)
-- Schedules live on the instance's `#mdhouse` record, so one place lists and disables them
+- Schedules live on the instance's `#mdhouse` record, so one place lists and disables them; the run index and the approvals are per instance (user data), the run documents and the registrations are the project's
 
 ## 4. Scope and outputs
 
@@ -49,7 +52,7 @@ A firing runs only if the project holds a matching registration, kept in the pro
 
 - Overlap per registration, default `skip`: a firing while the same registration has an open run (its document says running or held) is answered `skipped: overlap` — the runner's `running` — and recorded; the open run stays visible to finish, mark partial or cancel; `queue1` keeps at most one pending
 - No retry in mdhouse or the bus; a failed run is outcome `failed` plus a warning on the project page
-- Auto-disable: after 3 consecutive failures the registration is disabled and mdhouse answers `disabled`; the bus's own five-refusals rule then disables the schedule (mdhouse disables the bus schedule itself only if it maintains that record)
+- Auto-disable: after 3 consecutive failures this machine's approval of the registration is withdrawn (the file stays) and mdhouse answers `disabled`; the bus's own five-refusals rule then disables the schedule (mdhouse disables the bus schedule itself only if it maintains that record)
 - Cap: 10 runs per day per registration, and a minimum interval of 5 minutes, enforced by mdhouse whatever the cron says
 - mdhouse down at the slot: the bus holds the message to its time to live; a one-off fires once at start, a repeating one gets one catch-up with a missed count; no special code, the marker model covers it
 - Restart mid-run: nothing is cut — analysis is not an in-process job, an agent or a person works against the run document; a run whose document says running or held is an open run, and the marker moves only when it completes
@@ -71,8 +74,8 @@ A firing runs only if the project holds a matching registration, kept in the pro
 Project → Settings → Automation (or a ⏰ entry on a flow page): registrations with state, the schedule in words (`weekdays 09:00 UTC`, shown in the user's zone), the last 5 outcomes, **Run now**, **Disable/Enable**.
 
 - Create: flow → scope (default since last run) → when (presets: daily, weekdays, hourly, in…, once at; or custom cron) → overlap → optional agent to notify → a preview "what will run, reading what, writing where" → Save
-- Save stores the registration and creates the bus schedule as the user's own account, showing the exact `agent-bus` command; if the bus refuses, the registration is saved disabled with the reason
-- Disable turns off the registration and the bus schedule, and says which one failed if either does
+- Save writes `.mdhouse/automation/<id>.json` (an uncommitted change in the project: the page does not commit it; it is committed and shared like any file) and, as the administrator's approval of that content, creates the bus schedule as the user's own account, showing the exact `agent-bus` command; if the bus refuses, the file is kept and the registration stays not scheduled, with the reason
+- Disable removes this machine's bus schedule and approval; the file stays in the project for the team (deleting a pipeline is deleting the file); the page says which step failed if one does
 - **Run now** calls the same handler entry with origin `manual:<user>`, not through the bus
 - On touch: the same form as a bottom sheet, presets first
 
@@ -91,9 +94,9 @@ Project → Settings → Automation (or a ⏰ entry on a flow page): registratio
 
 Steps 1–2 need nothing from the runner.
 
-## Defaults awaiting the owner ❓
+## Decided, and open ❓
 
-Q-R3-AUTO1, temporary CTO defaults written into the text above:
+Q-R3-AUTO1, decided by the owner (the temporary CTO's defaults kept), written into the text above:
 
 1. v1 scheduled runs are analysis only
 2. Registration is by the instance administrator; a Viewer never
@@ -102,3 +105,5 @@ Q-R3-AUTO1, temporary CTO defaults written into the text above:
 5. QA v1 is document-level; running tests needs a later, separate approval
 6. Runs land in the project tree at `Plans/flows/runs/<package>/<UTC>-<runId8>.md`, the same as manual runs (not a registration field)
 7. Notifications: the page, plus an optional agent message to one chosen agent
+
+Open: [№Q-R3-AUTO2](workspaces/QUESTIONS.md#Q-R3-AUTO2) — a registration committed by someone else runs on this machine only after an approval of its content hash (§3); the owner decides whether that is the rule.
