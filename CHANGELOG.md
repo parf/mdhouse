@@ -17,6 +17,7 @@
 ### Changed
 
 - The Q&A playground is a test fixture (`test/fixtures/qa-playground.md`), no longer part of the installed reference
+- `doc/skills/markup.md` is folded into `doc/agent-markup.md` (section “Suggested markup”); the old path stays as a short pointer
 
 ### Fixed
 
