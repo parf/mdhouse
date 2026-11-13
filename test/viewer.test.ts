@@ -181,6 +181,9 @@ describe('a Viewer over HTTP', () => {
       expect(((await (await fetch(`${t.origin}/api/settings`)).json()) as { mode: string }).mode).toBe('viewer');
       expect(await t.writable()).toBe(false);
 
+      // read() routes with external effects are listed by hand: a Viewer serves them (reading).
+      const readsWithEffects = ['/api/rag/search'];
+      for (const p of readsWithEffects) expect(t.routes.find((r) => r.path === p)).toMatchObject({ family: null });
       const refused = t.routes.filter((r) => r.family && VIEWER_REFUSED.has(r.family));
       expect(refused.length).toBeGreaterThan(10);
       for (const r of refused) {

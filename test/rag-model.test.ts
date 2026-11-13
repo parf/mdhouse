@@ -32,6 +32,11 @@ describe('highlighting a query in text', () => {
     expect(runs('<b>x.*</b> x', 'x.*')).toBe('<b>[x.*]</b> x');
     expect(highlight('<img src=x onerror=alert(1)>', 'img').map((r) => r.text).join('')).toBe('<img src=x onerror=alert(1)>');
   });
+
+  test('a character whose lower case is longer shifts nothing: marks sit on the matched words', () => {
+    expect(runs('İstanbul word İİ word', 'word')).toBe('İstanbul [word] İİ [word]');
+    expect(runs('İ Straße STRASSE', 'straße')).toBe('İ [Straße] STRASSE');
+  });
 });
 
 describe('labels', () => {

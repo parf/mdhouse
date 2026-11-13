@@ -120,8 +120,9 @@ async function start(port: number, o: { ab?: boolean } = {}) {
     bus.kv.set('rag/last/notes/md', last);
   };
   const get = (path: string, headers: Record<string, string> = {}) => fetch(origin + path, { headers });
-  const search = (q: string, extra = '', headers: Record<string, string> = {}) => get(`/api/rag/search?root=${rid}&q=${encodeURIComponent(q)}${extra}`, headers);
-  return { origin, bus, root, rid, otherId: idOf(other), refId: idOf(ref), source, last, register, get, search, registry };
+  const search = (q: string, extra = '', headers: Record<string, string> = {}) =>
+    get(`/api/rag/search?root=${rid}&q=${encodeURIComponent(q)}${extra}`, { 'x-mdhouse': '1', ...headers });
+  return { origin, bus, root, rid, otherId: idOf(other), refId: idOf(ref), source, last, register, get, search, registry, prefs };
 }
 
 const answer = (records: unknown[]) => JSON.stringify({ mode: 'keyword', records });
@@ -205,7 +206,7 @@ describe('GET /api/rag/search', () => {
     expect((await t.search('')).status).toBe(400);
     expect((await t.search('   ')).status).toBe(400);
     expect((await t.search('x'.repeat(1025))).status).toBe(400);
-    expect((await t.get('/api/rag/search?root=nope&q=a')).status).toBe(404);
+    expect((await t.get('/api/rag/search?root=nope&q=a', { 'x-mdhouse': '1' })).status).toBe(404);
     expect((await t.search('plan')).status).toBe(404);
     expect(t.bus.asked).toEqual([]);
   });
@@ -276,6 +277,45 @@ describe('GET /api/rag/search', () => {
     expect((await t.search('plan', '', { origin: 'http://evil.example' })).status).toBe(403);
     expect(t.bus.asked).toEqual([]);
     expect((await t.search('plan', '', { origin: t.origin })).status).toBe(200);
+  });
+
+  test('without the page\'s x-mdhouse: 1 header it is 403 before anything is sent', async () => {
+    const t = await start(61871);
+    t.register();
+    t.bus.state.answer = () => answer([]);
+    for (const h of [undefined, '', '0', 'yes']) {
+      const res = await t.get(`/api/rag/search?root=${t.rid}&q=plan`, h === undefined ? {} : { 'x-mdhouse': h });
+      expect(res.status).toBe(403);
+    }
+    expect(t.bus.asked).toEqual([]);
+  });
+
+  test('a Viewer still searches: searching is reading', async () => {
+    const t = await start(61872);
+    t.register();
+    t.bus.state.answer = () => answer([]);
+    await t.prefs.setMode('viewer');
+    const res = await t.search('plan');
+    expect(res.status).toBe(200);
+    expect(t.bus.asked).toHaveLength(1);
+  });
+
+  test('the source is found past the 50th of 60 registered ones', async () => {
+    const t = await start(61873);
+    for (let i = 0; i < 59; i++) t.bus.kv.set(`rag/source/ns${String(i).padStart(2, '0')}/md`, { ...t.source, root: { path: `/elsewhere/${i}` }, namespace: `ns${String(i).padStart(2, '0')}` });
+    t.register(); // rag/source/notes/md sorts after every ns..
+    expect([...t.bus.kv.keys()].filter((k) => k.startsWith('rag/source/')).indexOf('rag/source/notes/md')).toBe(59);
+    const status = (await (await t.get(`/api/rag?root=${t.rid}`)).json()) as { source: { sid: string } | null };
+    expect(status.source?.sid).toBe('notes/md');
+  });
+
+  test('concurrent first requests share one KV lookup', async () => {
+    const t = await start(61874);
+    t.register();
+    const all = await Promise.all(Array.from({ length: 5 }, () => t.get(`/api/rag?root=${t.rid}`)));
+    for (const r of all) expect(r.status).toBe(200);
+    expect(t.bus.calls.filter((c) => c === 'GET /kv/list')).toHaveLength(1);
+    expect(t.bus.calls.filter((c) => c === 'GET /kv').length).toBe(2); // the source, its last run
   });
 
   test('at most two searches run at once; the third is 429 and the first two finish', async () => {

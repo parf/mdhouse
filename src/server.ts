@@ -435,19 +435,39 @@ export async function serve(opts: ServeOptions) {
   const RAG_ANSWER_MS = 60_000;
   const RAG_SEARCHES = 2;
   let ragSearching = 0;
-  const ragCache = new Map<string, { at: number; state: { source: RagSource | null; last: RagLast | null } }>();
-  /** The source registered for `root`'s folder and its latest run; a failure throws and is not kept. */
-  const ragState = async (root: Root): Promise<{ source: RagSource | null; last: RagLast | null }> => {
+  /** `rag/source/*` values read at once while looking for a project's source. */
+  const RAG_SOURCE_BATCH = 16;
+  type RagState = { source: RagSource | null; last: RagLast | null };
+  const ragCache = new Map<string, { at: number; state: RagState }>();
+  /** One KV lookup per project at a time: concurrent requests share it. */
+  const ragLookups = new Map<string, Promise<RagState>>();
+  /** Reads every `rag/source/*` value, a batch at a time, until the one for `root`'s folder; then its latest run. */
+  const ragLookup = async (root: Root): Promise<RagState> => {
+    const ep = instanceBus();
+    const names = (await bus.kvNames('rag/source/', ep)).filter(isSourceKey);
+    let source: RagSource | null = null;
+    for (let i = 0; i < names.length && !source; i += RAG_SOURCE_BATCH) {
+      const batch = names.slice(i, i + RAG_SOURCE_BATCH);
+      source = sourceFor(await Promise.all(batch.map(async (name) => ({ name, value: await bus.kvJson(name, ep) }))), root.path);
+    }
+    const last = source ? lastOf(await bus.kvJson(lastKeyOf(source.sid), ep)) : null;
+    return { source, last };
+  };
+  /** The source registered for `root`'s folder and its latest run, kept 15 s; a failure throws and is not kept. */
+  const ragState = async (root: Root): Promise<RagState> => {
     const kept = ragCache.get(root.path);
     if (kept && Date.now() - kept.at < RAG_STATE_MS) return kept.state;
-    const ep = instanceBus();
-    const names = (await bus.kvNames('rag/source/', ep)).filter(isSourceKey).slice(0, 50);
-    const entries = await Promise.all(names.map(async (name) => ({ name, value: await bus.kvJson(name, ep) })));
-    const source = sourceFor(entries, root.path);
-    const last = source ? lastOf(await bus.kvJson(lastKeyOf(source.sid), ep)) : null;
-    const state = { source, last };
-    ragCache.set(root.path, { at: Date.now(), state });
-    return state;
+    let lookup = ragLookups.get(root.path);
+    if (!lookup) {
+      lookup = ragLookup(root)
+        .then((state) => {
+          ragCache.set(root.path, { at: Date.now(), state });
+          return state;
+        })
+        .finally(() => ragLookups.delete(root.path));
+      ragLookups.set(root.path, lookup);
+    }
+    return lookup;
   };
   /** Open tabs learn that root metadata changed; they read it again from `/api/roots`. */
   const publishRoots = () => server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
@@ -1080,10 +1100,12 @@ export async function serve(opts: ServeOptions) {
       /**
        * A keyword search of the project's registered RAG, as `#mdhouse`: the target and the mode are the
        * source's and `keyword`, never the request's. Read-only, but it costs a bus message, so a cross-site
-       * request is refused. Hits are cited from the local file (`citeRecords`).
+       * request is refused, and the page's `x-mdhouse: 1` header is required: a cross-site page cannot send
+       * it without a CORS preflight, which mdhouse never grants. Hits are cited from the local file
+       * (`citeRecords`). A Viewer serves it: searching is reading.
        */
       '/api/rag/search': read(async (req) => {
-        if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+        if (!sameOrigin(req) || req.headers.get('x-mdhouse') !== '1') return fail(403, 'cross-origin request refused');
         if (!prefs.agentBus.enabled) return fail(404, 'the agent bus is off — mdhouse --agent-bus');
         const url = new URL(req.url);
         const root = rootOf(url);

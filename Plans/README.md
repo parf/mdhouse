@@ -451,9 +451,11 @@ registers or writes KV/log (the bin runs only on explicit demand).
 
 - `GET /api/rag?root=` — Agent Bus off → `{enabled:false}`; unknown/reference root 404; else `{enabled, path, guide?, source, last}`:
   the source registered for this root's real path (`rag/source/*` in the `#mdhouse@<host>` KV on the **instance** bus, through
-  the live `AgentBus` connection — no second identity, never `AGENT_BUS_*`) and `rag/last/<sid>`; 15 s per-root cache of successes;
+  the live `AgentBus` connection — no second identity, never `AGENT_BUS_*`) and `rag/last/<sid>`, every `rag/source/*` read 16 at a time
+  until the match; 15 s per-root cache of successes, one in-flight lookup per root shared by concurrent requests;
   a bus failure is `{enabled:true, error}` (200, safe words). The RAG/FileScan names never reach the page.
-- `GET /api/rag/search?root=&q=&limit=` — `sameOrigin` (a cross-site GET costs a bus message) → 403; Agent Bus off → 404; q 1–1024
+- `GET /api/rag/search?root=&q=&limit=` — `sameOrigin` and header `x-mdhouse: 1` (a cross-site page needs a CORS preflight for it, never granted;
+  a cross-site GET costs a bus message) → 403; served in a Viewer (reading); Agent Bus off → 404; q 1–1024
   chars, limit 1–16 (default 8); no registered source → 404. **Keyword mode and the target (`source.rag`, namespace, table) are the
   server's, never the request's.** Reply through `decodeSearchReply`, then `citeRecords` (jailed local file, hash → `lines`/
   `heading_path`/`stale`); hit `url` = `registry.docUrl` + `#L<line>`; excerpt cut at 600 chars; ≤2 searches in flight (429);

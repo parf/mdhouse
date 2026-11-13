@@ -34,6 +34,7 @@ mdhouse --workspace     # projects writable by their own RW/RO again
 - Refused (403): document writes, git commit/reset/pull/push, marks, author name, Agent Bus send
 - The administrator still changes settings and projects — `mode` in `POST /api/settings` switches back
 - Each project keeps its RW/RO; the web page still shows write controls (refused on use)
+- RAG search stays available — searching is reading
 - Downgrade: a Viewer prefs.json is version 3 — mdhouse ≤ 2.3.3 finds no saved RW project, a version-2
   mdhouse reads it read-only and never rewrites it; run `mdhouse --workspace` before downgrading
 

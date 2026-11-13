@@ -206,13 +206,17 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 /** An array value is a repeated parameter (`k=a&k=b`) — a value may itself contain a comma. */
-async function get<T>(path: string, params: Record<string, string | number | boolean | string[] | undefined> = {}): Promise<T> {
+async function get<T>(
+  path: string,
+  params: Record<string, string | number | boolean | string[] | undefined> = {},
+  headers: Record<string, string> = {},
+): Promise<T> {
   const url = new URL(path, location.origin);
   for (const [k, v] of Object.entries(params)) {
     if (Array.isArray(v)) for (const one of v) url.searchParams.append(k, one);
     else if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
   }
-  const res = await fetch(url);
+  const res = await fetch(url, { headers });
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
     throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
@@ -466,8 +470,8 @@ export const api = {
   abInfo: () => get<AbInfo>('/api/ab'),
   /** The project's registered RAG source and latest sync — `/api/rag`. */
   rag: (root: string) => get<RagStatus>('/api/rag', { root }),
-  /** A keyword search of the project's RAG — `/api/rag/search`. */
-  ragSearch: (root: string, q: string) => get<RagSearch>('/api/rag/search', { root, q }),
+  /** A keyword search of the project's RAG — `/api/rag/search`; the server requires `x-mdhouse: 1`. */
+  ragSearch: (root: string, q: string) => get<RagSearch>('/api/rag/search', { root, q }, { 'x-mdhouse': '1' }),
   /** The root's bus: connects to it — only on the reader's request. */
   abRootInfo: (root: string) => get<AbRootInfo>('/api/ab', { root }),
   /** The stored Agent Bus settings: no bus is reached. */

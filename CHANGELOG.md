@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- RAG search: a cross-site page can no longer start a search from a browser that sends no `Sec-Fetch-Site`; concurrent status reads share one lookup; a project's source is found however many are registered; query marks no longer shift after letters like `İ`
 - Settings: an ⓘ also opens on a click or tap and closes on Escape, without moving focus to the field; a stored list of several default agents is shown and dropping names asks first; the instance pick no longer snaps back while saving; saving the names filter refreshes the agent lists; the local administrator is shown as such
 - Agent Bus: mdhouse no longer reads its inbox when it connects, so it can never take a reply meant for another process talking as `#mdhouse` (another mdhouse, `mdhouse-rag-sync`)
 - Settings: every help moved into an ⓘ tooltip (mouseover or keyboard focus), rewritten to say what each setting does; only statuses and errors stay on the page

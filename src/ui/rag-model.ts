@@ -24,12 +24,16 @@ export function queryTerms(q: string): string[] {
   return (kept.length ? kept : words).sort((a, b) => b.length - a.length);
 }
 
-/** `text` as plain and highlighted runs: every occurrence of a query word, any case. Built as runs, never as HTML. */
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+
+/**
+ * `text` as plain and highlighted runs: every occurrence of a query word, any case. Matched on `text`
+ * itself, so a character whose lower case is longer (`İ`) shifts nothing. Built as runs, never as HTML.
+ */
 export function highlight(text: string, q: string): Array<{ text: string; hit: boolean }> {
-  const lower = text.toLowerCase();
   const ranges: Array<[number, number]> = [];
   for (const term of queryTerms(q)) {
-    for (let at = lower.indexOf(term); at >= 0; at = lower.indexOf(term, at + term.length)) ranges.push([at, at + term.length]);
+    for (const m of text.matchAll(new RegExp(escapeRe(term), 'giu'))) ranges.push([m.index, m.index + m[0].length]);
   }
   return highlightRanges(text, ranges);
 }
