@@ -584,6 +584,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 - [ ] MW.16 Define and create a stripped-down standalone Markdown web viewer with Git <a id="MW.16"></a>
   Separate product/version for people who need viewing with Git only; define the retained and excluded scope before implementation.
+  - When: right after the next release (owner, 2026-11-12)
   Keep a useful standalone viewer with quick startup, minimal setup and Git. Prefer shared rendering/file/search/Git core with Workspace-only editing, agents and automations.
   Sequence: define scope → implement new MD / All files / Git views in mdhouse → create the standalone viewer.
   Views build on the broader [№MW.13.1](#MW.13.1) UX exploration; do not extract the viewer before the new views are implemented.
