@@ -218,6 +218,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - The conversation per document: a module `Map` keyed by the wire path, saved to that key; live events reach it through `src/ui/api.ts` `liveListeners`. A kept job still waiting that `/api/ab/job` no longer knows (404 — mdhouse restarted) is shown `lost`
 - A restart of mdhouse drops every waiting job: reply first, then restart
 - `agentBus.filter` — a regex per line against the name without `#` (default `^claude ^codex ^opencode`), narrows `/api/ab` agents; a default agent always stays; `POST /api/ab/filter` refuses a line that is not a regex
+- Control (MW.7, not wired yet): `src/lib/ab-control.ts` `Control` answers topic `mdhouse.ctl` `{v:1, op, requestId}` — `inventory` → roots + tabs; `open {rootId, path, clientId}` → `{url, opened, reason?: gone|busy|team}`, one tab only, never broadcast; reads only. Sender: daemon `@owner`, then `agentBus.control` (`off` | whole-name regexes; empty = no narrowing; a bad regex refuses all). Path: `registryDocUrl` (`registry.resolve`, `.md`/`.mdx` file, no `.git`). Replay by sender + `requestId` (500, 10 min); other params → `conflict`. Audit line per request
 
 ### Agent skills read the page's states
 
