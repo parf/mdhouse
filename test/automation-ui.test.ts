@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { ApiError } from '../src/ui/api';
 import { automationApi } from '../src/ui/automation-api';
 import {
-  APPROVAL_WORDS, automationUrl, onAutomation, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
+  APPROVAL_WORDS, automationUrl, onAutomation, rangeWords, scheduleLine, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
   type AutoRegistration, type AutomationState,
 } from '../src/ui/automation-model';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
@@ -39,6 +39,11 @@ describe('what the page says', () => {
     expect(runLine({ at: '2026-11-13T08:30:05Z', outcome: 'started', status: 'held' })).toBe('▶ 2026-11-13 08:30 UTC · started — held');
     expect(runLine({ at: '2026-11-13T08:30:05Z', outcome: 'ok' })).toBe('✅ 2026-11-13 08:30 UTC · ok');
   });
+  test('the range as the server writes it, and as a bare word', () => {
+    expect(rangeWords({ kind: 'since-last-run' })).toBe('since the last run');
+    expect(rangeWords('since-last-run')).toBe('since the last run');
+    expect(rangeWords({ kind: 'baseline', commit: 'abc1234' })).toBe('from commit abc1234');
+  });
   test('what an approval lets run: the flow, when, over what, how late, where it writes, who is told', () => {
     const lines = willRun(reg({ notify: '#claude/x@host', range: { kind: 'baseline', commit: 'abc1234' }, maxLate: '30m' }));
     expect(lines[0]).toBe('Start the flow recent-commits-review weekdays at 08:30 UTC');
@@ -50,19 +55,24 @@ describe('what the page says', () => {
   test('the approval states say what happens', () => {
     expect(APPROVAL_WORDS.none).toMatch(/will not run/);
     expect(APPROVAL_WORDS.changed).toMatch(/changed since it was approved/);
+    expect(APPROVAL_WORDS.unknown).toMatch(/cannot be reached/);
+    expect(scheduleLine(reg())).toBe('');
+    expect(scheduleLine(reg({ schedule: { id: 's1', enabled: true, next: '2026-11-14T08:30:00Z' } }))).toBe('bus schedule s1 — next 2026-11-14 08:30 UTC');
+    expect(scheduleLine(reg({ schedule: { id: 's1', enabled: false } }))).toBe('bus schedule s1 — disabled on the bus');
     expect(shortHash('a'.repeat(64))).toBe('a'.repeat(12));
   });
   test('approve and revoke are the administrator\'s, and only where they change something', () => {
     const admin = { canApprove: true } as AutomationState;
     const reader = { canApprove: false } as AutomationState;
-    expect([canApproveReg(admin, reg({ approval: 'none' })), canApproveReg(admin, reg({ approval: 'changed' })), canApproveReg(admin, reg({ approval: 'approved' }))]).toEqual([true, true, false]);
-    expect([canRevokeReg(admin, reg({ approval: 'none' })), canRevokeReg(admin, reg({ approval: 'changed' })), canRevokeReg(admin, reg({ approval: 'approved' }))]).toEqual([false, true, true]);
-    for (const a of ['none', 'changed', 'approved'] as const) expect([canApproveReg(reader, reg({ approval: a })), canRevokeReg(reader, reg({ approval: a }))]).toEqual([false, false]);
+    expect([canApproveReg(admin, reg({ approval: 'none' })), canApproveReg(admin, reg({ approval: 'changed' })), canApproveReg(admin, reg({ approval: 'approved' })), canApproveReg(admin, reg({ approval: 'unknown' }))]).toEqual([true, true, false, false]);
+    expect([canRevokeReg(admin, reg({ approval: 'none' })), canRevokeReg(admin, reg({ approval: 'changed' })), canRevokeReg(admin, reg({ approval: 'approved' })), canRevokeReg(admin, reg({ approval: 'unknown' }))]).toEqual([false, true, true, false]);
+    for (const a of ['none', 'changed', 'approved', 'unknown'] as const) expect([canApproveReg(reader, reg({ approval: a })), canRevokeReg(reader, reg({ approval: a }))]).toEqual([false, false]);
   });
   test('refusals: the page\'s words for stale and admin, the server\'s own for the rest', () => {
     expect(autoReasonText('stale', 'x')).toMatch(/reload/);
     expect(autoReasonText('admin', 'x')).toMatch(/mdhouse admin/);
-    expect(autoReasonText('not-decided', 'Who may approve is not decided yet')).toBe('Who may approve is not decided yet');
+    expect(autoReasonText('exposed', 'x')).toMatch(/open to the network/);
+    expect(autoReasonText(undefined, 'the bus is off')).toBe('the bus is off');
     expect(autoReasonText(undefined, 'fallback')).toBe('fallback');
   });
   test('the page is a flag on the project\'s address', () => {
@@ -90,7 +100,7 @@ beforeAll(() => {
       if (url.pathname === '/api/automation/approve') {
         if (body!.root === 'viewer') return json(403, { error: 'read-only', reason: 'viewer' });
         if (body!.hash !== 'a'.repeat(64)) return json(409, { error: 'the file changed', reason: 'stale' });
-        if (body!.root === 'undecided') return json(409, { error: 'who may approve is not decided yet', reason: 'not-decided' });
+        if (body!.root === 'undecided') return json(409, { error: 'the agent bus is off' });
         approvedHash = body!.hash!;
         return json(200, { registration: body!.registration, approval: 'approved', hash: approvedHash });
       }
@@ -115,10 +125,10 @@ describe('against the fake routes', () => {
     expect((await api().state('p')).registrations[0]!.approval).toBe('approved');
     expect(await api().revoke('p', 'weekly')).toEqual({ registration: 'weekly', approval: 'none' });
   });
-  test('a stale hash, an undecided rule and an unknown project are refused with their reasons', async () => {
+  test('a stale hash, a bus that is off and an unknown project are refused with their reasons', async () => {
     expect((await api().approve('p', 'weekly', 'b'.repeat(64)).catch((e) => e)).reason).toBe('stale');
     const e = await api().approve('undecided', 'weekly', 'a'.repeat(64)).catch((x) => x);
-    expect([e instanceof ApiError, e.reason, e.message]).toEqual([true, 'not-decided', 'who may approve is not decided yet']);
+    expect([e instanceof ApiError, e.reason, e.message]).toEqual([true, undefined, 'the agent bus is off']);
     expect((await api().state('nope').catch((x) => x)).reason).toBe('no-root');
   });
   test('a Viewer\'s refusal tells the app to re-read the mode and speaks as a Viewer', async () => {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError } from './api';
 import { automationApi } from './automation-api';
 import {
-  APPROVAL_WORDS, autoReasonText, canApproveReg, canRevokeReg, rangeWords, runLine, shortHash, whenWords, willRun,
+  APPROVAL_WORDS, autoReasonText, canApproveReg, canRevokeReg, rangeWords, runLine, scheduleLine, shortHash, whenWords, willRun,
   type AutoRegistration, type AutomationState,
 } from './automation-model';
 import { Ago } from './Ago';
@@ -79,7 +79,12 @@ export function AutomationPage({ rootId, rootName, gear }: Props) {
         </p>
       )}
       {!state && !error && <div class="spinner" />}
-      {state && !state.canApprove && <p class="settings-hint">You can read this; approving is the administrator’s — sign in with <code>mdhouse admin</code>.</p>}
+      {state?.busError && (
+        <p class="settings-error" role="alert">
+          The approvals are kept on the Agent Bus and it cannot be read: {state.busError}. Nothing runs meanwhile.
+        </p>
+      )}
+      {state && !state.canApprove && !state.busError && <p class="settings-hint">You can read this; approving needs the administrator and the Agent Bus on.</p>}
       {state?.errors.map((e) => (
         <p class="settings-error auto-file-error" key={e.file}>
           <code>{e.file}</code> is not a registration: {e.error}
@@ -111,7 +116,7 @@ function Registration({ reg, state, asking, busy, onAsk, onApprove, onRevoke }: 
     <section class={`auto-reg approval-${reg.approval}${reg.disabled ? ' stopped' : ''}`} aria-label={`Registration ${reg.id}`}>
       <header class="auto-head">
         <b>{reg.id}</b>
-        <span class={`auto-state s-${reg.approval}`}>{reg.approval === 'approved' ? 'approved' : reg.approval === 'changed' ? 'changed' : 'not approved'}</span>
+        <span class={`auto-state s-${reg.approval}`}>{reg.approval === 'approved' ? 'approved' : reg.approval === 'changed' ? 'changed' : reg.approval === 'unknown' ? 'unknown' : 'not approved'}</span>
         {reg.disabled && <span class="auto-state s-stopped">stopped after {reg.failures} failures</span>}
       </header>
       <dl class="auto-facts">
@@ -140,6 +145,12 @@ function Registration({ reg, state, asking, busy, onAsk, onApprove, onRevoke }: 
         <dt>State</dt>
         <dd>
           {APPROVAL_WORDS[reg.approval]}
+          {reg.approved && (
+            <>
+              {' '}
+              — by {reg.approved.by}, <Ago at={Date.parse(reg.approved.at)} flame={false} />
+            </>
+          )}
           {reg.lastStartAt && (
             <>
               {' '}
@@ -147,6 +158,12 @@ function Registration({ reg, state, asking, busy, onAsk, onApprove, onRevoke }: 
             </>
           )}
         </dd>
+        {reg.schedule && (
+          <>
+            <dt>Timer</dt>
+            <dd>{scheduleLine(reg)}</dd>
+          </>
+        )}
       </dl>
       {(canApproveReg(state, reg) || canRevokeReg(state, reg)) && (
         <div class="auto-actions">

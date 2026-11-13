@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only), automationreal (real routes, needs a sandbox bus), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -405,6 +405,29 @@ if (only.includes('automation')) {
     await sleep(900);
     say('  after revoke: ' + await ev("document.querySelector('.auto-state')?.textContent"));
   }
+}
+if (only.includes('automationreal')) {
+  // The real routes and a sandbox bus: approve (a schedule is made), change the file (it says changed), revoke.
+  const f = `${R}/.mdhouse/automation/weekly.json`;
+  const body = { id: 'weekly', flow: 'recent-commits-review', range: 'since-last-run', when: { cron: '30 8 * * 1-5' }, notify: '#claude/x@host' };
+  execSync(`mkdir -p ${R}/.mdhouse/automation`);
+  await Bun.write(f, JSON.stringify(body, null, 2));
+  await go('/repo/?automation');
+  say('  state: ' + await ev("document.querySelector('.auto-state')?.textContent") + ' | errors: ' + await ev("[...document.querySelectorAll('.settings-error')].map(e => e.textContent).join(' ; ') || 'none'"));
+  await audit('automationreal');
+  await tap('.auto-actions .rag-act', 0);
+  say('  confirm: ' + await ev("document.querySelector('.auto-confirm')?.innerText.replace(/\\n/g, ' ')"));
+  await tap('.auto-confirm .rag-act.primary', 0);
+  await sleep(2000);
+  say('  after approve: ' + await ev("document.querySelector('.auto-state')?.textContent + ' | ' + [...document.querySelectorAll('.auto-facts dd')].map(d => d.textContent.trim()).slice(-2).join(' || ') + ' | errors: ' + ([...document.querySelectorAll('.settings-error')].map(e => e.textContent).join(' ; ') || 'none')"));
+  await audit('automationreal-approved');
+  await Bun.write(f, JSON.stringify({ ...body, maxLate: '30m' }, null, 2));
+  await go('/repo/?automation');
+  say('  after the file changed: ' + await ev("document.querySelector('.auto-state')?.textContent + ' | buttons ' + [...document.querySelectorAll('.auto-actions .rag-act')].map(b => b.textContent.trim()).join(' | ')"));
+  await tap('.auto-actions .rag-act:last-child', 0);
+  await sleep(1500);
+  say('  after revoke: ' + await ev("document.querySelector('.auto-state')?.textContent"));
+  execSync(`rm -rf ${R}/.mdhouse`);
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

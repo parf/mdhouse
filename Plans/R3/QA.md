@@ -1053,3 +1053,17 @@ Note: the walk's `commit` step needs the doc header's Commit as before; it did n
 | Touch 390/768 light/dark | pass: touch-audit clean (ticks and path links 44px), no horizontal scroll; 1280 light/dark checked |
 
 Evidence: W2 scratchpad `chs/` (`all-1280-light-1.png`, `t-{390,768}-{light,dark}.png`, `d-390-light.png`, `push-3.png`, `ro-1.png`, `walk/`).
+
+## Automation page {#automation-ui}
+
+[№MW.11](workspaces/TODO.md#MW.11) slice 2 UI, `/<project>/?automation`. Touch walk and audit (`scripts/touch-walk.ts`), 390 light and 1280 dark.
+
+| Step | Result | Evidence |
+| --- | --- | --- |
+| Page (fake routes, `automation` step) | registration with its flow and range, `weekdays at 08:30 UTC — 30 8 * * 1-5`, late rule, who is told, file and hash, state words, last runs; a bad file named with its reason; audit clean | `au-<w>-<scheme>-01-automation.png` |
+| Review and approve (fake) | lists what the approval lets run (flow, when, over what, how late, analysis only and where it writes, who is told); Approve this file → approved, Revoke → not approved | `-02-automation-confirm.png`, `-03-automation-approved.png` |
+| Read only (fake, `TW_CAN=0`) | no Approve/Revoke, a line saying approving needs the administrator | `ro-390-dark-01-automation.png` |
+| **Real routes** (`a4739ab`/`f318717`/`2972024`, `automationreal` step) | a sandbox Agent Bus (scratch `agent-busd` on a short socket under /tmp, temp HOME/XDG, `MDHOUSE_AB_SOCKET_DIRS` restricted to it; the real bus never reached): a committed `.mdhouse/automation/weekly.json` shows *not approved*; Approve → *approved — by local, just now* with a bus timer (`bus schedule <id> — next 2026-11-13 08:30 UTC`); editing the file → *changed*, Review and approve again / Revoke; Revoke → *not approved*; audit clean | `ar-<w>-<scheme>-*.png` |
+
+The real run found one mismatch the fake hid: the server writes the range as `{kind:'since-last-run'}`, the page read a bare word and said "from commit undefined" — fixed (both forms read). Not exercised in a browser: the Viewer and non-admin refusals (GET is admin-only: 401 `admin`; the words are unit-tested), the `unknown` state (the bus's store unreachable) and `exposed`.
+
