@@ -211,6 +211,7 @@ export class RunIndex {
 
 // ---------------------------------------------------------------- the handler
 
+/** The daemon's `ScheduleStamp` (`src/internal/protocol/envelope.go`): `by` is the schedule's creator, `slot` an RFC 3339 UTC instant, `missed` the slots a catch-up passed over. */
 export interface ScheduleStamp {
   id: string;
   by: string;
@@ -255,13 +256,17 @@ export function readStamp(raw: unknown): ScheduleStamp | null {
   return { id, by, slot, ...(late_by !== undefined ? { late_by } : {}), ...(typeof missed === 'number' ? { missed } : {}) };
 }
 
-/** `late_by` as milliseconds: a number is seconds, a string a `90s`/`2m`/`1h` duration (fractions allowed); null when unreadable. */
+/**
+ * `late_by` as milliseconds. The daemon writes a Go duration truncated to the second (`30s`, `1m30s`, `2h0m5s`) and leaves it out when
+ * the firing was under a second late (`ai-agent-bus` src/internal/core/schedule.go `lateBy`); a number is read as seconds. Anything
+ * else is null — a lateness that cannot be read is not taken to be none.
+ */
 export function lateMs(v: string | number | undefined): number | null {
   if (v === undefined) return 0;
   if (typeof v === 'number') return Number.isFinite(v) && v >= 0 ? v * 1000 : null;
-  const m = /^(\d+(?:\.\d+)?)(ms|s|m|h|d)$/.exec(v);
-  if (!m) return null;
-  return Number(m[1]) * { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 }[m[2] as 'ms' | 's' | 'm' | 'h' | 'd'];
+  const m = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(v);
+  if (!m || (m[1] === undefined && m[2] === undefined && m[3] === undefined)) return null;
+  return ((Number(m[1] ?? 0) * 60 + Number(m[2] ?? 0)) * 60 + Number(m[3] ?? 0)) * 1000;
 }
 
 export class Automation {

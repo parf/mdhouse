@@ -51,11 +51,13 @@ describe('the bus stamp', () => {
   const stamp = { id: 's1', by: '#claude/x@h', slot: '2026-11-13T08:30:00Z' };
   test('only the daemon-shaped one counts', () => {
     expect(readStamp(stamp)).toEqual(stamp);
-    expect(readStamp({ ...stamp, late_by: '90s', missed: 2 })).toMatchObject({ late_by: '90s', missed: 2 });
+    expect(readStamp({ ...stamp, late_by: '1m30s', missed: 2 })).toMatchObject({ late_by: '1m30s', missed: 2 });
     for (const bad of [null, 'x', [], {}, { ...stamp, id: '' }, { ...stamp, slot: 'tomorrow' }, { ...stamp, by: '' }, { ...stamp, late_by: {} }]) expect(readStamp(bad)).toBeNull();
   });
-  test('late_by: seconds as a number, a duration, nothing — and an unreadable one is not zero', () => {
-    expect([lateMs(undefined), lateMs(90), lateMs('90s'), lateMs('1.5m'), lateMs('2h'), lateMs('soon'), lateMs(-1)]).toEqual([0, 90_000, 90_000, 90_000, 7_200_000, null, null]);
+  test('late_by is what the daemon writes: a Go duration truncated to the second, absent under a second', () => {
+    expect([lateMs(undefined), lateMs('30s'), lateMs('1m30s'), lateMs('2m0s'), lateMs('1h0m5s'), lateMs('2h0m0s'), lateMs('1h2m3s')]).toEqual([0, 30_000, 90_000, 120_000, 3_605_000, 7_200_000, 3_723_000]);
+    expect([lateMs(90), lateMs('')]).toEqual([90_000, null]);
+    for (const bad of ['soon', '-5s', '1.5m', '2d', '90', 'm', '1s2m', -1]) expect([bad, lateMs(bad as never)]).toEqual([bad, null]);
   });
 });
 
@@ -167,9 +169,9 @@ describe('a firing that is approved (a test double: none exists yet)', () => {
   });
   test('late beyond maxLate, or unreadable, is skipped; within it runs', async () => {
     const r = rig();
-    expect((await r.fire({ schedule: { id: 's1', by: 'b', slot: '2026-11-13T08:30:00Z', late_by: '2h' } })).skipped).toBe('late');
+    expect((await r.fire({ schedule: { id: 's1', by: 'b', slot: '2026-11-13T08:30:00Z', late_by: '2h0m0s' } })).skipped).toBe('late');
     expect((await r.fire({ schedule: { id: 's2', by: 'b', slot: '2026-11-13T08:31:00Z', late_by: 'soon' } })).skipped).toBe('late');
-    expect((await r.fire({ schedule: { id: 's3', by: 'b', slot: '2026-11-13T08:32:00Z', late_by: '5m' } })).ok).toBe(true);
+    expect((await r.fire({ schedule: { id: 's3', by: 'b', slot: '2026-11-13T08:32:00Z', late_by: '5m0s' } })).ok).toBe(true);
     expect(r.calls).toHaveLength(1);
   });
   test('at most one start per five minutes, and ten per UTC day', async () => {

@@ -12,7 +12,7 @@ Status: draft — [№Q-R3-AUTO1](workspaces/DECISIONS.md#Q-R3-AUTO1) decided; [
 
 `agent-bus schedule add <record> '<cron>' <mdhouse-endpoint> '<json>'`, or `at` / `in` for one-offs.
 
-- The bus delivers from `#bus`, topic `schedule`, tag `by <creator>`, with a bus-set stamp: id, creator, slot, `late_by`, `missed`; the stamp is the only provenance mdhouse trusts, the body is untrusted input
+- The bus delivers from `#bus`, topic `schedule`, tag `by <creator>`, with a bus-set stamp `{id, by, slot, late_by?, missed?}` — `by` the creator, `slot` an RFC 3339 UTC instant, `late_by` a Go duration cut to the second (`1m30s`, absent under a second), `missed` a count (checked in the daemon's source, `envelope.go`/`schedule.go`); the stamp is the only provenance mdhouse trusts, the body is untrusted input
 - Body v1 (at most 4 KiB): `{ "v": 1, "op": "run", "project": "<root id>", "registration": "<id>" }` — it names a project and a registration and nothing else: no flow, range, path or trigger (an unknown key is refused); the request id is the stamp's `<scheduleId>:<slot>`, never the body's
 - The topic is always `schedule`, so mdhouse dispatches on the stamp's schedule id plus `body.op`, and refuses a schedule id it has no registration for
 - `requestId` is the schedule id plus slot, so a replay or a catch-up never starts one slot twice
