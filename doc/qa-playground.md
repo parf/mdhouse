@@ -1,5 +1,7 @@
 # Q&A playground
 
+Copy this file to a writable folder first — the installed reference (`_mdhouse`) is read-only.
+
 A page to try answering in the browser. Serve it writable and open it:
 
 ```bash
