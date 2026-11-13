@@ -554,6 +554,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - [ ] MW.13.1 Explore navigation and views for mdhouse as a project workspace beyond a Markdown viewer <a id="MW.13.1"></a>
     - [x] MW.13.1a Capture current journeys and compare navigation options <a id="MW.13.1a"></a>
       [Research proposal](../UX-NAVIGATION.md): source inventory, 18 scratch journey captures, five IA alternatives and phased recommendation; nonauthor fact-check PASS. Direction/implementation and parent review remain open.
+    - [ ] MW.13.1b Phone UX fixes from the touch journey ([proposal, QA](../QA.md#touch-ux)); order 2, 5, 1 approved; 3 (one Changes destination) and 4 (Files|Index search, IA option B) await the owner <a id="MW.13.1b"></a>
+      - [x] MW.13.1b.2 One ⋯ per heading on touch: Edit section · Add below · Add at end · Copy link; desktop unchanged
     Owner starting points: explicit MD view (default), All project files with highlighting and matching left-panel tree, and Git pages for branches/commits/authors.
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.

@@ -784,32 +784,85 @@ export function Doc({
       if (!own) continue;
       const actions = document.createElement('span');
       actions.className = 'heading-actions';
+      // On touch the three actions sit behind one ⋯ (see .heading-menu); with a pointer they are the row they always were.
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'heading-more';
+      more.textContent = '⋯';
+      more.title = 'Section actions';
+      more.setAttribute('aria-label', 'Section actions');
+      more.setAttribute('aria-haspopup', 'true');
+      more.setAttribute('aria-expanded', 'false');
+      const menu = document.createElement('span');
+      menu.className = 'heading-menu';
+      const label = (el: HTMLElement, glyph: string, text: string) => {
+        const g = document.createElement('span');
+        g.className = 'ga';
+        g.textContent = glyph;
+        g.setAttribute('aria-hidden', 'true');
+        const t = document.createElement('span');
+        t.className = 'tl';
+        t.textContent = text;
+        el.append(g, t);
+      };
       if (editHref) {
         const line = own.line + (doc.lineOffset ?? 0);
         const edit = document.createElement('a');
         edit.className = 'heading-act heading-edit';
         edit.href = `${editHref}:${line}`;
-        edit.textContent = '✎';
+        label(edit, '✎', 'Edit section');
         edit.title = `Edit at line ${line}`;
-        actions.append(edit);
+        menu.append(edit);
       }
-      for (const [where, glyph, title] of [
-        ['below', '↓', 'Add a block right under this heading'],
-        ['end', '⇊', 'Add a block at the end of this section'],
+      for (const [where, glyph, text, title] of [
+        ['below', '↓', 'Add below', 'Add a block right under this heading'],
+        ['end', '⇊', 'Add at end', 'Add a block at the end of this section'],
       ] as const) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'heading-act heading-add';
         b.dataset.where = where;
         made.set(b, { line: own.line, hash: own.hash });
-        b.textContent = glyph;
+        label(b, glyph, text);
         b.title = title;
-        actions.append(b);
+        menu.append(b);
       }
+      if (h.id) {
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'heading-act heading-copy';
+        copy.dataset.id = h.id;
+        label(copy, '🔗', 'Copy link');
+        menu.append(copy);
+      }
+      actions.append(more, menu);
       (h.querySelector('.header-anchor') ?? h.lastChild)?.after(actions);
     }
+    const closeMenus = (except?: Element | null) => {
+      for (const m of el.querySelectorAll('.heading-actions.open')) {
+        if (m === except) continue;
+        m.classList.remove('open');
+        m.querySelector('.heading-more')?.setAttribute('aria-expanded', 'false');
+      }
+    };
     const click = (e: Event) => {
-      const b = (e.target as HTMLElement).closest<HTMLElement>('.heading-add');
+      const target = e.target as HTMLElement;
+      const toggle = target.closest<HTMLElement>('.heading-more');
+      if (toggle) {
+        const box = toggle.closest('.heading-actions')!;
+        closeMenus(box);
+        toggle.setAttribute('aria-expanded', String(box.classList.toggle('open')));
+        return;
+      }
+      const copy = target.closest<HTMLElement>('.heading-copy');
+      if (copy?.dataset.id) {
+        void navigator.clipboard?.writeText(`${location.origin}${doc.url.split('#')[0]}#${copy.dataset.id}`);
+        copy.querySelector('.tl')!.textContent = 'Copied';
+        setTimeout(() => copy.isConnected && (copy.querySelector('.tl')!.textContent = 'Copy link'), 1500);
+        return;
+      }
+      closeMenus();
+      const b = target.closest<HTMLElement>('.heading-add');
       const own = b && made.get(b);
       if (!b || !own) return;
       e.preventDefault();

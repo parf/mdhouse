@@ -79,7 +79,9 @@ if (want('doc')) {
   await tap('.md input[type=checkbox]', 0);
   await sleep(600);
   say(`  task ticked on disk: ${/- \[x\] first task/.test(read('README.md'))}`);
-  await tap('.md .heading-add', 0);
+  await tap('.md .heading-more', 0);
+  await audit('heading-menu');
+  await tap('.md .heading-menu .heading-add', 0);
   await audit('heading-add-form');
   await tap('.md .add-kind', 0);
   await audit('heading-add-kind');

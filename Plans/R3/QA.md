@@ -930,3 +930,11 @@ when the chips wrapped. Tablet widths keep the chips.
 Remaining: real-device virtual keyboard and viewport behaviour (iOS Safari, Chrome Android), long-press Copy ([№MW.5c.1](workspaces/TODO.md#MW.5c.1)); the glyph of an open question's form
 is 21px (the row itself is the target).
 
+## Phone UX fixes from the touch journey {#touch-ux}
+
+[№MW.13.1b](workspaces/TODO.md#MW.13.1b). Same scratch setup and audit as the [touch walk](#touch-walk) (`scripts/touch-walk.ts`), 390×844 and 768×1024, light and dark.
+
+| Item | Result at 390 / 768, light / dark | Evidence |
+| --- | --- | --- |
+| 2 One ⋯ per heading | pass, 4/4: ⋯ opens Edit section · Add below · Add at end · Copy link (44px rows with text); Add below opens the form; `#` stays a link; audit clean (the open menu covers the next heading's ⋯ by design) | `h3-<w>-<scheme>-02-heading-menu.png` |
+
