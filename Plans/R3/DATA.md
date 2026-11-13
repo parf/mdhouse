@@ -58,9 +58,9 @@ Decided: [№DATA-W1](workspaces/DECISIONS.md#DATA-W1), [№DATA-W2](workspaces/
 - ✅ documents, task ticks, answers, inserts
 - ✅ `.mdhouseignore` — stays top-level
 - ✅ flow run documents `Plans/flows/runs/<package>/…`, flow reports `Plans/flows/<package>.md` (`last-commit-id`) — MW.3.3
-- [ ] automation registrations `.mdhouse/automation/<id>.json` — fire only after per-machine approval ([№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2))
-- [ ] project id `.mdhouse/project.json` — created on the first team write (step 4)
-- [ ] other shared definitions: default agents, RAG source id
+- [x] automation registrations `.mdhouse/automation/<id>.json` — fire only after per-machine approval ([№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2))
+- [x] project id `.mdhouse/project.json` — created on the first team write (step 4)
+- [x] other shared definitions: default agents, RAG source id
 
 Never in Git: RW/RO, secrets, access, machine state.
 
