@@ -23,7 +23,7 @@ Defaults below are the temporary CTO's; the owner may override any of them. Task
 ## 3. Registration
 
 A firing runs only if the project holds a matching registration, kept in the project's settings ([№MW.14](workspaces/TODO.md#MW.14) data placement), never in the Markdown tree:
-`{ scheduleId, project, flow, scope, outputs: { folder: "runs/" }, maxLate, overlap: "skip" | "queue1", enabled, approvedBy, approvedAt, notify?: <one agent> }`.
+`{ scheduleId, project, flow, scope, maxLate, overlap: "skip" | "queue1", enabled, approvedBy, approvedAt, notify?: <one agent> }`.
 
 - No registration: the reply is `{ ok: false, code: "unregistered" }` and the firing is logged; a bus schedule alone can never make mdhouse run anything
 - Three separate checks apply: the creator's reach (bus), the registration (mdhouse), the project's effective access (mdhouse)
@@ -35,9 +35,9 @@ A firing runs only if the project holds a matching registration, kept in the pro
 
 - Inputs come from the request and the registration only: project, flow, git range (since the `last-commit-id` marker; a first run takes an explicit baseline the owner picks once), uncommitted files kept separate
 - No free text from the message reaches a prompt except the registered scope fields; no analysis text is executed
-- Outputs: the flow's run Markdown (inputs, owner, plan, evidence, findings, decisions, outcome) in the registration's output folder, default `runs/` in the project tree — visible and committable; plus one routed notice (the page, and the optional agent message)
+- Outputs: the flow's run Markdown (inputs, owner, plan, evidence, findings, decisions, outcome) at `Plans/flows/runs/<package>/<UTC>-<runId8>.md` in the project tree — the same place as a manual run, visible and committable; plus one routed notice (the page, and the optional agent message)
 - The marker advances only after every write and routed output succeeded; a failed or partial run leaves it, so the next slot covers the range
-- Writes go through the existing jail and only inside the output folder
+- Writes go through the existing jail and only to that run path (the runner's, never one chosen by the message)
 
 ## 5. Run history
 
@@ -57,7 +57,7 @@ A firing runs only if the project holds a matching registration, kept in the pro
 ## 7. Consequential actions
 
 - A scheduled run is analysis only in v1: no code execution, no commit, no push
-- Anything else — writing outside the output folder, committing, pushing, filing tickets, messaging people, running code — is a consequential node: the run ends `held: needs approval` with the proposed action as an open question
+- Anything else — writing outside the run document, committing, pushing, filing tickets, messaging people, running code — is a consequential node: the run ends `held: needs approval` with the proposed action as an open question
 - A human approval turn is required per action, bound to the run id and exact target SHA; a new commit invalidates it
 - Registering or enabling a schedule approves none of its future actions; an agent's reply never counts as approval
 
@@ -70,7 +70,7 @@ A firing runs only if the project holds a matching registration, kept in the pro
 
 Project → Settings → Automation (or a ⏰ entry on a flow page): registrations with state, the schedule in words (`weekdays 09:00 UTC`, shown in the user's zone), the last 5 outcomes, **Run now**, **Disable/Enable**.
 
-- Create: flow → scope (default since last run) → when (presets: daily, weekdays, hourly, in…, once at; or custom cron) → overlap → output folder → optional agent to notify → a preview "what will run, reading what, writing where" → Save
+- Create: flow → scope (default since last run) → when (presets: daily, weekdays, hourly, in…, once at; or custom cron) → overlap → optional agent to notify → a preview "what will run, reading what, writing where" → Save
 - Save stores the registration and creates the bus schedule as the user's own account, showing the exact `agent-bus` command; if the bus refuses, the registration is saved disabled with the reason
 - Disable turns off the registration and the bus schedule, and says which one failed if either does
 - **Run now** calls the same handler entry with origin `manual:<user>`, not through the bus
@@ -78,7 +78,7 @@ Project → Settings → Automation (or a ⏰ entry on a flow page): registratio
 
 ## 10. First two pipelines
 
-- **Code review of recent commits** — flow `recent-commits-review`; weekdays 08:30 UTC; scope since the marker, at most 30 commits per run (a larger range is split); output `runs/review-YYYY-MM-DD.md`; findings as ❓/issue items for the Q&A strip; overlap skip; `maxLate` 1h
+- **Code review of recent commits** — flow `recent-commits-review`; weekdays 08:30 UTC; scope since the marker, at most 30 commits per run (a larger range is split); its run document under `Plans/flows/runs/<package>/<UTC>-<runId8>.md`; findings as ❓/issue items for the Q&A strip; overlap skip; `maxLate` 1h
 - **QA** — document-level in v1: nightly 02:00 UTC at the default branch HEAD, bound to that exact SHA; it analyses the project's QA matrix and the changes since the last QA run and writes a QA run document; running tests is a later capability that needs its own approval decision
 
 ## 11. Delivery order, after the owner answers
@@ -100,5 +100,5 @@ Q-R3-AUTO1, temporary CTO defaults written into the text above:
 3. Auto-disable after 3 consecutive failures; 10 runs/day per registration
 4. Schedules live on the instance's `#mdhouse` record
 5. QA v1 is document-level; running tests needs a later, separate approval
-6. Runs land in the project tree under a `runs/` folder, a registration field
+6. Runs land in the project tree at `Plans/flows/runs/<package>/<UTC>-<runId8>.md`, the same as manual runs (not a registration field)
 7. Notifications: the page, plus an optional agent message to one chosen agent
