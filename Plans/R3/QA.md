@@ -1073,3 +1073,5 @@ Review fixes ([№MW.11](workspaces/TODO.md#MW.11), #md/w2): a stale approve (th
 
 `no-timer` ([№MW.11](workspaces/TODO.md#MW.11), server `af50931`): approved, but the bus schedule is gone or was made with an older body — the state chip says *no timer*, the line "approved, but nothing fires it — approve again", and Review and approve again / Revoke are offered (walk `automation` with `TW_NOTIMER=1`, fake routes, 390 and 1280, audit clean) — and for real on a sandbox bus (`automationnotimer`: approve, delete the schedule with `agent-bus --addr=<sandbox> schedule delete` behind the page, reload → *no timer* with the line and Review and approve again / Revoke, approve again → *approved* with a new timer, revoke → *not approved*; 390 and 1280, audit clean; the real bus never reached). Approve can also answer `no-git` / `read-only`, which have their words.
 
+Revoke ([№MW.11](workspaces/TODO.md#MW.11), #md/w2 ⚪): it depends only on viewer / exposed / bus-off, not on everything approving needs — a project that became read-only or runs with `--no-git` still offers Revoke on an approved registration (`canRevokeNow`; unit-tested, not driven in a browser).
+

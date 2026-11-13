@@ -72,6 +72,18 @@ describe('what the page says', () => {
     expect([canRevokeReg(admin, reg({ approval: 'none' })), canRevokeReg(admin, reg({ approval: 'changed' })), canRevokeReg(admin, reg({ approval: 'approved', schedule: { id: 's1', enabled: true } })), canRevokeReg(admin, reg({ approval: 'unknown' }))]).toEqual([false, true, true, false]);
     for (const a of ['none', 'changed', 'approved', 'unknown'] as const) expect([canApproveReg(reader, reg({ approval: a, schedule: null })), canRevokeReg(reader, reg({ approval: a }))]).toEqual([false, false]);
   });
+  test('revoke depends only on viewer / exposed / bus-off: a read-only or git-less project can still be revoked', () => {
+    const approved = reg({ approval: 'approved', schedule: { id: 's', enabled: true } });
+    const state = (canApprove: boolean, why?: string) => ({ canApprove, canApproveWhy: why }) as AutomationState;
+    expect(canRevokeReg(state(true), approved)).toBe(true);
+    expect(canRevokeReg(state(false, 'read-only'), approved)).toBe(true);
+    expect(canRevokeReg(state(false, 'no-git'), approved)).toBe(true);
+    for (const why of ['viewer', 'exposed', 'bus-off', undefined]) expect([why, canRevokeReg(state(false, why), approved)]).toEqual([why, false]);
+    // approving still needs all of it
+    expect([canApproveReg(state(false, 'read-only'), reg({ approval: 'none' })), canApproveReg(state(false, 'no-git'), reg({ approval: 'changed' }))]).toEqual([false, false]);
+    // and there is nothing to revoke when nothing is approved
+    expect(canRevokeReg(state(false, 'read-only'), reg({ approval: 'none' }))).toBe(false);
+  });
   test('refusals: the page\'s words for stale and admin, the server\'s own for the rest', () => {
     expect(autoReasonText('stale', 'x')).toMatch(/changed while you were reviewing/);
     expect(autoReasonText('admin', 'x')).toMatch(/mdhouse admin/);

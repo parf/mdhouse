@@ -142,7 +142,10 @@ export const shortHash = (hash: string): string => hash.slice(0, 12);
 /** Approve is for an administrator, for a registration that is not already approved at its current hash. */
 export const canApproveReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval' | 'schedule'>): boolean =>
   state.canApprove && (reg.approval === 'none' || reg.approval === 'changed' || needsReapprove(reg));
-export const canRevokeReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval'>): boolean => state.canApprove && (reg.approval === 'approved' || reg.approval === 'changed' || reg.approval === 'no-timer');
+/** Revoking only removes: a project that became read-only, or runs without git, can still be revoked. A Viewer, an exposed bind and a bus that is off cannot. */
+export const canRevokeNow = (state: Pick<AutomationState, 'canApprove' | 'canApproveWhy'>): boolean => state.canApprove || state.canApproveWhy === 'no-git' || state.canApproveWhy === 'read-only';
+export const canRevokeReg = (state: Pick<AutomationState, 'canApprove' | 'canApproveWhy'>, reg: Pick<AutoRegistration, 'approval'>): boolean =>
+  canRevokeNow(state) && (reg.approval === 'approved' || reg.approval === 'changed' || reg.approval === 'no-timer');
 
 const REASON_WORDS: Partial<Record<AutoReason, string>> = {
   stale: 'The file changed while you were reviewing it. It is shown again below — review it, then approve.',
