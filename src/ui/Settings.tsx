@@ -4,7 +4,8 @@ import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
 import { abConfirmLine, spaceSummary, splitNames, syncDraft } from './ab-targets';
 import { isViewer, switchConfirm, VIEWER_SIGN_IN, type InstanceMode } from './viewer-text';
-import { ADD_PATH_MAX, accessBadge, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
+import { ADD_PATH_MAX, accessBadge, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject, storedTitle } from './project-groups';
+import { StoredRwTag } from './viewer';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
 const EDIT_HELP = `https://www.google.com/search?q=${encodeURIComponent(
@@ -45,7 +46,11 @@ function savedAccess(root: RootInfo): string {
 }
 
 /** What a mode change does, for its confirmation. */
-function modeChange(root: RootInfo, to: 'rw' | 'ro'): string {
+function modeChange(root: RootInfo, to: 'rw' | 'ro', viewer: boolean): string {
+  if (viewer) {
+    const stored = accessMode(root) === 'rw' ? 'read and write' : 'read-only';
+    return `Store project ${root.name} as ${to === 'ro' ? 'read-only' : 'read and write'}?\n\nFolder: ${root.path}\nStored now: ${stored}\n\nThis mdhouse is a Viewer: the project stays read-only; the stored mode takes effect in Workspace.`;
+  }
   const now = `${root.writable ? 'read and write' : 'read-only'} — ${accessSource(root)}`;
   const after = to === 'ro' ? 'read-only, whatever auto-RW covers' : 'read and write';
   const lasts = root.saved ? 'Kept on every start.' : 'Lasts until mdhouse stops, unless the project is saved.';
@@ -207,9 +212,9 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
 
   // The mode is apart from the name: a name still being typed is saved by its own blur.
   const setMode = async (root: RootInfo) => {
-    const to = modeTarget(root);
+    const to = modeTarget(root, viewer);
     const rev = (root as { accessRev?: unknown }).accessRev;
-    if (!to || typeof rev !== 'string' || !confirm(modeChange(root, to))) return;
+    if (!to || typeof rev !== 'string' || !confirm(modeChange(root, to, viewer))) return;
     setBusy(root.id);
     setError('');
     try {
@@ -515,6 +520,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   >
                     <span class="name">{root.name}</span>
                     {!viewer && accessBadge(root) && <span class="tag ro" title="Read-only">RO</span>}
+                    {viewer && <StoredRwTag root={root} tag />}
                   </button>
                 ))}
               </div>
@@ -570,7 +576,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 <dd class="path" title={project.path}>
                   {project.path}
                 </dd>
-                {!viewer && (
+                {(!viewer || isAdmin || accessMode(project) === 'rw') && (
                   <>
                 <dt>
                   Access{' '}
@@ -584,6 +590,23 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   {project.kind === 'reference' ? (
                     <span class="project-access">
                       <span class="tag">read-only</span>
+                    </span>
+                  ) : viewer && !isAdmin ? (
+                    <span class="project-access">
+                      <StoredRwTag root={project} tag />
+                    </span>
+                  ) : viewer ? (
+                    <span class="project-access">
+                      <button
+                        type="button"
+                        class="tag project-mode stored"
+                        disabled={busy !== null || !modeTarget(project, true)}
+                        onClick={() => void setMode(project)}
+                        title={storedTitle(project)}
+                      >
+                        {accessMode(project) === 'rw' ? '[RW]' : '[RO]'}
+                      </button>{' '}
+                      stored {accessMode(project) === 'rw' ? 'read and write' : 'read-only'} — takes effect in Workspace
                     </span>
                   ) : (
                     <span class="project-access">

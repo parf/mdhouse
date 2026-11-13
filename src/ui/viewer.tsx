@@ -1,5 +1,7 @@
 import { createContext } from 'preact';
 import { useContext } from 'preact/hooks';
+import type { RootInfo } from './api';
+import { storedTitle, viewerAccessTag } from './project-groups';
 import { VIEWER_BADGE, VIEWER_TITLE } from './viewer-text';
 
 /** Whether the instance is a Viewer — set once at the root of the app from the settings. */
@@ -13,4 +15,14 @@ export function ViewerBadge() {
       {VIEWER_BADGE}
     </span>
   );
+}
+
+/** A Viewer's tag for a project stored as RW: gray, never a control. Nothing for any other project. */
+export function StoredRwTag({ root, tag = false }: { root: RootInfo | undefined; tag?: boolean }) {
+  const text = viewerAccessTag(root);
+  return text && root ? (
+    <span class={tag ? 'tag stored-rw' : 'stored-rw'} title={storedTitle(root)}>
+      {text}
+    </span>
+  ) : null;
 }

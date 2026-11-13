@@ -14,6 +14,8 @@
 
 ### Fixed
 
+- Viewer: a project stored as RW shows a gray `RW (stored)` tag (headers, Settings) — it takes effect in Workspace; the administrator still switches the stored RW/RO in Settings, everyone stays read-only
+
 - Copy: a folded Q&A item's "▾ show all" no longer lands in the copied text
 
 - Touch: a document on a phone or a portrait tablet starts with its text — title, Edit and one ⋯ (a sheet with every other action, in words), one line of facts, then the page; the contents, history and Commit are behind one Context row

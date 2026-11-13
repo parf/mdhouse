@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { RootInfo } from '../src/ui/api';
-import { groupProjects, removable, selectedProject, accessMode, accessSource, modeTarget, rootWritable } from '../src/ui/project-groups';
+import { groupProjects, removable, selectedProject, accessMode, accessSource, modeTarget, rootWritable, storedTitle, viewerAccessTag } from '../src/ui/project-groups';
 
 const root = (id: string, extra: Partial<RootInfo> = {}): RootInfo => ({ id, name: id, path: `/p/${id}`, writable: false, ...extra });
 const roots = [root('ref', { kind: 'reference' }), root('s1', { saved: true }), root('t1'), root('s2', { saved: true, writable: true })];
@@ -56,5 +56,31 @@ describe('project groups', () => {
   test('rootWritable: by the live list; reference and unlisted projects never', () => {
     const live = [root('a', { writable: true }), root('b'), root('ref', { kind: 'reference', writable: true })];
     expect(['a', 'b', 'ref', 'gone'].map((id) => rootWritable(live, id))).toEqual([true, false, false, false]);
+  });
+});
+
+describe('Viewer access presentation', () => {
+  const rev = 'a'.repeat(64);
+  test('only a project stored as RW is tagged; RO, inherit, the reference and an unlisted project say nothing', () => {
+    expect(viewerAccessTag(root('a', { mode: 'rw', writable: false } as Partial<RootInfo>))).toBe('RW (stored)');
+    expect(viewerAccessTag(root('a', { mode: 'ro' } as Partial<RootInfo>))).toBeNull();
+    expect(viewerAccessTag(root('a', { mode: 'inherit' } as Partial<RootInfo>))).toBeNull();
+    expect(viewerAccessTag(root('r', { kind: 'reference', mode: 'rw' } as Partial<RootInfo>))).toBeNull();
+    expect(viewerAccessTag(undefined)).toBeNull();
+  });
+
+  test('the tooltip names the stored mode and that it takes effect in Workspace', () => {
+    expect(storedTitle(root('a', { mode: 'rw' } as Partial<RootInfo>))).toStartWith('Stored as read and write — takes effect in Workspace');
+    expect(storedTitle(root('a', { mode: 'inherit' } as Partial<RootInfo>))).toStartWith('Stored as read-only — takes effect in Workspace');
+  });
+
+  test('in a Viewer the switch flips the stored mode, not the effective read-only', () => {
+    const rw = root('a', { mode: 'rw', writable: false, accessRev: rev } as Partial<RootInfo>);
+    expect(modeTarget(rw)).toBeNull();
+    expect(modeTarget(rw, true)).toBe('ro');
+    expect(modeTarget(root('a', { mode: 'ro', accessRev: rev } as Partial<RootInfo>), true)).toBe('rw');
+    expect(modeTarget(root('a', { mode: 'inherit', accessRev: rev } as Partial<RootInfo>), true)).toBe('rw');
+    expect(modeTarget(root('a', { mode: 'rw' } as Partial<RootInfo>), true)).toBeNull();
+    expect(modeTarget(root('r', { kind: 'reference', mode: 'rw', accessRev: rev } as Partial<RootInfo>), true)).toBeNull();
   });
 });

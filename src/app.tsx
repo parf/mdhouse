@@ -6,7 +6,7 @@ import { hasUnsaved, openTarget } from './ui/tab-presence';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
 import { accessBadge, customName } from './ui/project-groups';
-import { ViewerBadge, ViewerContext } from './ui/viewer';
+import { StoredRwTag, ViewerBadge, ViewerContext } from './ui/viewer';
 import { isViewer, VIEWER_DENIED } from './ui/viewer-text';
 import { parentScope } from './ui/git-state';
 import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from './ui/doc-refresh';
@@ -600,6 +600,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
                 RO
               </span>
             )}
+            {viewer && tree && <StoredRwTag root={roots.find((r) => r.id === tree.root.id)} />}
           </span>
           {/* Outside the brand, whose name gives way when the line is short: the badge keeps its words. */}
           {viewer && <ViewerBadge />}

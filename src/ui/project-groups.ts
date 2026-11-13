@@ -63,11 +63,15 @@ export function accessMode(root: RootInfo): 'inherit' | 'rw' | 'ro' | null {
   return root.kind !== 'reference' && (mode === 'inherit' || mode === 'rw' || mode === 'ro') ? mode : null;
 }
 
-/** The mode a change sets: the opposite of the access the project has now. Null when there is nothing to set. */
-export function modeTarget(root: RootInfo): 'rw' | 'ro' | null {
+/**
+ * The mode a change sets: the opposite of the access the project has now. In a Viewer, where every
+ * project is read-only, the opposite of the stored mode (`inherit` counts as not RW). Null when there is nothing to set.
+ */
+export function modeTarget(root: RootInfo, viewer = false): 'rw' | 'ro' | null {
   const mode = accessMode(root);
   const rev = (root as { accessRev?: unknown }).accessRev;
   if (!mode || typeof rev !== 'string' || !/^[0-9a-f]{64}$/.test(rev)) return null;
+  if (viewer) return mode === 'rw' ? 'ro' : 'rw';
   const to = root.writable ? 'ro' : 'rw';
   return to === mode ? null : to;
 }
@@ -94,6 +98,22 @@ export const rootWritable = (roots: readonly RootInfo[], id: string): boolean =>
 export function accessBadge(root: RootInfo | undefined): 'RO' | null {
   if (!root || root.kind === 'reference' || typeof (root as { writable?: unknown }).writable !== 'boolean') return null;
   return root.writable ? null : 'RO';
+}
+
+/** The Viewer access tag. */
+export const STORED_RW = 'RW (stored)';
+
+/** A Viewer's words for a project's stored mode, for the tag's and the Settings switch's tooltip. */
+export function storedTitle(root: RootInfo): string {
+  return `Stored as ${accessMode(root) === 'rw' ? 'read and write' : 'read-only'} — takes effect in Workspace; a Viewer writes nothing`;
+}
+
+/**
+ * The Viewer access tag: a Viewer makes every project read-only, so read-only says nothing (the Viewer
+ * badge covers it) and a project stored as RW is the exception. The reference and a project not listed make no claim.
+ */
+export function viewerAccessTag(root: RootInfo | undefined): typeof STORED_RW | null {
+  return root && accessMode(root) === 'rw' ? STORED_RW : null;
 }
 
 /** The longest folder path the add form sends. */

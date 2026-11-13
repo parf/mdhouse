@@ -977,3 +977,17 @@ Viewer: a scratch Viewer instance (`--viewer`), 390/768 light and dark — no Ru
 
 Not verified: the real routes.
 
+
+## Access badge presentation — Viewer {#access-badge-viewer}
+
+[№MW.12.2](workspaces/TODO.md#MW.12.2), [№BADGE-W1](workspaces/DECISIONS.md#BADGE-W1). Scratch Viewer (`--viewer`, CLI-started): `repo` stored RW, `ro` inherit, the reference; administrator via a minted
+`mdhouse admin` session, and a browser without one. Chrome 1280 light/dark, 390 light/dark. `GET /api/roots` already carries the stored `mode` in a Viewer (`writable: false`) — no server change.
+
+| Surface | Result |
+| --- | --- |
+| Sidebar header, top strip | pass: gray `RW (stored)` beside a stored-RW project, nothing for RO/inherit; one `Viewer — read-only` badge; at ≤480px the top strip shows the Viewer badge only (the drawer header keeps the tag) |
+| Settings project list | pass: gray `RW (stored)` on `repo` only, never green, never a control |
+| Settings Access, administrator | pass: gray `[RW]`/`[RO]` = stored mode, "stored … — takes effect in Workspace"; RW→RO→RW stored via `/api/roots/mode`, `writable` stayed false |
+| Settings Access, not administrator | pass: gray tag for stored RW; no row for RO/inherit |
+
+Evidence: W2 scratchpad `v/admin-{light,dark,390}-1.png`, `v/toggle-3.png`, `v/a2-390-1.png`.

@@ -4,7 +4,7 @@ import type { RootInfo } from './api';
 import type { RecentEntry } from '../lib/store';
 import type { UiTree } from './api';
 import { accessBadge } from './project-groups';
-import { useViewer, ViewerBadge } from './viewer';
+import { StoredRwTag, useViewer, ViewerBadge } from './viewer';
 import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import type { SearchResult } from '../lib/search';
@@ -179,6 +179,7 @@ export function Sidebar(props: SidebarProps) {
               RO
             </span>
           )}
+          {viewer && tree && <StoredRwTag root={props.roots.find((r) => r.id === tree.root.id)} />}
         </span>
         <RagLink rootId={props.rootId} active={props.ragActive} onOpen={props.onRag} />
         {!wide && (
