@@ -5,7 +5,16 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const SCRIPT = resolve(import.meta.dir, '../scripts/safe-smoke.ts');
-const P = [61741, 61742, 61743, 61744, 61745];
+/**
+ * Ports free on this machine now, one per role. The kernel hands each bind on port 0 a distinct
+ * ephemeral port, so a concurrent run of this file gets other ones; fixed numbers collided.
+ */
+const P = (() => {
+  const held = Array.from({ length: 5 }, () => Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: () => new Response('') }));
+  const ports = held.map((s) => s.port!);
+  for (const s of held) s.stop(true);
+  return ports;
+})();
 
 /**
  * A stand-in for `src/cli.ts`: `FIX` picks what it does. It serves `/api/roots` like mdhouse, and
@@ -41,12 +50,18 @@ Bun.serve({ hostname: '127.0.0.1', port, fetch: () => Response.json({ Browser: '
 `;
 
 let dir: string;
+/** This run's own temp dir: the launcher's `mdhouse-smoke-*` dirs land here, not beside a concurrent run's. */
+let temps: string;
+const outerTmp = process.env.TMPDIR;
 let fixture: string;
 let fakeChrome: string;
 let root: string;
 
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), 'safe-smoke-test-'));
+  temps = join(dir, 'tmp');
+  mkdirSync(temps);
+  process.env.TMPDIR = temps;
   fixture = join(dir, 'fixture');
   mkdirSync(join(fixture, 'src'), { recursive: true });
   writeFileSync(join(fixture, 'src/cli.ts'), FIXTURE);
@@ -57,7 +72,11 @@ beforeAll(() => {
   mkdirSync(root);
   writeFileSync(join(root, 'a.md'), '# A\n');
 });
-afterAll(() => rmSync(dir, { recursive: true, force: true }));
+afterAll(() => {
+  if (outerTmp === undefined) delete process.env.TMPDIR;
+  else process.env.TMPDIR = outerTmp;
+  rmSync(dir, { recursive: true, force: true });
+});
 
 const alive = (pid: number) => {
   try {
@@ -68,7 +87,7 @@ const alive = (pid: number) => {
   }
 };
 const listening = (port: number) => spawnSync('ss', ['-ltnH', `sport = :${port}`], { encoding: 'utf8' }).stdout.trim() !== '';
-const ownTemps = () => readdirSync(tmpdir()).filter((f) => f.startsWith('mdhouse-smoke-'));
+const ownTemps = () => readdirSync(temps).filter((f) => f.startsWith('mdhouse-smoke-'));
 /** Stops groups this test captured itself, whatever the launcher under test managed. */
 const killGroups = (...pgids: (number | undefined)[]) => {
   for (const g of pgids) {
