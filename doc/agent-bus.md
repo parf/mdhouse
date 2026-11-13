@@ -55,13 +55,22 @@ An agent sends `#mdhouse@<host>` a JSON request on topic `mdhouse.ctl`; `ask hel
 - Each request → a line in the log and in mdhouse's agent log
 - One mdhouse per host serves it (a bus lock); another one logs *served by another mdhouse*
 
-Who may send — the daemon admits only the owner's agents; narrow it further or turn it off:
+Who may send — the agents and people the `#mdhouse` record's bus ACL admits; narrow it further or turn it off:
 
 ```sh
 mdhouse --ab-control 'claude/.*,codex/w1'   # whole names without #, regexes
 mdhouse --ab-control off                    # nobody
 mdhouse --ab-control reset                  # every agent the daemon admits
 ```
+
+## Scheduled runs
+
+A project's `.mdhouse/automation/<id>.json` names an analysis flow and a timer. It fires on this machine only after its administrator approves the file:
+
+- Approve → a bus schedule on `#mdhouse@<host>` (topic `schedule`); the approval keeps the file's content hash
+- A changed file (a pull, a commit) stops firing until approved again; revoke deletes the schedule
+- A firing writes a run document under `Plans/flows/runs/<flow>/`
+- Approvals and the run history live in the bus KV of `#mdhouse@<host>` — per host, not in the project
 
 ## Remote Agent Bus
 

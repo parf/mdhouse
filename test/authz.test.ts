@@ -163,6 +163,9 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/api/flow/preview', '*', null],
   ['/api/flow/start', 'POST', 'flow'],
   ['/api/flow/event', 'POST', 'flow'],
+  ['/api/automation', '*', null],
+  ['/api/automation/approve', 'POST', 'automation'],
+  ['/api/automation/revoke', 'POST', 'automation'],
   ['/api/marks', 'GET', null],
   ['/api/marks', 'POST', 'shared-prefs'],
 ];

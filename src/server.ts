@@ -37,7 +37,11 @@ import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits, repoHead } from './lib/git';
-import { applyFlowAction, docFlow, isFlowError, verifyRun, listRuns, openRunOf, planFlowRun, runnableFlow, runsDir, sealKeyAt, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, verifyRun, listRuns, openRunOf, planFlowRun, runnableFlow, runsDir, sealKeyAt, startFlowRun, type FlowError, type FlowHostDeps, type FlowWrite } from './lib/flow-host';
+import { AUTO_TOPIC, AUTO_VERSION, Automation, RunIndex, type LoadedRegistration } from './lib/automation';
+import { Approvals, busStore, folderKey } from './lib/automation-state';
+import { loadRegistrations, readRegistration, registrationLookup } from './lib/automation-registry';
+import type { Schedule } from 'ai-agent-bus-sdk';
 import { advanceDestination, readFlowRunDocument, readFlowRunMeta } from './lib/flow-run-markdown';
 import { loadFlowCatalog, type LoadedFlowPackage } from './lib/flow-package';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
@@ -385,6 +389,80 @@ export async function serve(opts: ServeOptions) {
   };
   const flowFail = (e: FlowError): Response => noStore(json(e, FLOW_STATUS[e.reason]));
   const flowNoGit = (): Response => flowFail({ error: 'git is off', reason: 'no-git' });
+  /** How a start writes: the per-file queue and the only write to a tree. */
+  const flowIo: FlowWrite = { queue: queueWrite, writeFile: (p, text) => registry.writeFile(p, text, { parents: true }) };
+
+  /**
+   * Scheduled runs (MW.11): a firing from the instance's own bus schedule starts a run only for a registration this
+   * machine's administrator approved, by the file's content hash and the schedule made at approval (Q-R3-AUTO2).
+   * Approvals and the run index live in the key-value store of the instance's own bus record (DATA-W2); audit lines
+   * also go to its log.
+   */
+  const autoStore = busStore(bus);
+  const approvals = new Approvals(autoStore);
+  const runIndex = new RunIndex(autoStore, Date.now, (id) => {
+    const root = registry.get(id);
+    return root ? folderKey(root.path) : `root-${id}`;
+  });
+  const automation = new Automation({
+    registration: registrationLookup(registry, flowDeps.catalog),
+    approval: approvals.check((id) => registry.get(id)?.path ?? null),
+    start: (request) => (opts.noGit ? Promise.resolve({ error: 'git is off', reason: 'no-git' as const }) : startFlowRun(flowDeps, flowIo, { request })),
+    index: runIndex,
+    audit: (level, line) => {
+      console.log(`mdhouse  ${level}: ${line}`);
+      void bus.agentLog(level === 'notice' ? 'notice' : 'warning', line);
+    },
+    notify: (agent, text) => bus.tell(agent, text),
+  });
+  const stopAutomation = bus.control({
+    topic: AUTO_TOPIC,
+    lock: 'auto',
+    name: 'automation',
+    // A Viewer starts nothing on anyone's behalf.
+    handle: async (from, body, envelope) =>
+      prefs.mode() === 'viewer'
+        ? JSON.stringify({ v: AUTO_VERSION, ok: false, error: { code: 'viewer', msg: 'this mdhouse is a Viewer' } })
+        : automation.handle({ from, body, schedule: envelope.schedule }),
+    wanted: () => prefs.agentBus.enabled,
+    log: (line) => console.log(`mdhouse  agent-bus ${line}`),
+    help: JSON.stringify({ v: AUTO_VERSION, topic: AUTO_TOPIC, body: '{v:1, op:"run", project, registration} — from a bus schedule only' }),
+  });
+  /**
+   * A registration as the automation page lists it: this machine's approval of the file as it is now; without the
+   * bus (`schedules` null) its state is `unknown`.
+   */
+  const autoView = async (root: Root, reg: LoadedRegistration, schedules: Map<string, Schedule> | null) => {
+    const file = {
+      id: reg.reg.id,
+      file: `.mdhouse/automation/${reg.reg.id}.json`,
+      flow: reg.reg.flow,
+      range: reg.reg.range,
+      when: reg.reg.when,
+      maxLateMs: reg.reg.maxLateMs,
+      ...(reg.reg.notify ? { notify: reg.reg.notify } : {}),
+      hash: reg.hash,
+    };
+    if (!schedules) return { ...file, approval: 'unknown', schedule: null, disabled: false, failures: 0, history: [] };
+    const ok = await approvals.get(root.path, reg.reg.id);
+    const st = await runIndex.state(root.id, reg.reg.id);
+    const sched = ok ? schedules.get(ok.scheduleId) : undefined;
+    return {
+      ...file,
+      approval: !ok ? 'none' : ok.hash === reg.hash ? 'approved' : 'changed',
+      ...(ok ? { approved: { at: ok.at, by: ok.by, scheduleId: ok.scheduleId } } : {}),
+      schedule: sched ? { id: sched.id, enabled: sched.enabled, next: sched.next ?? null, last: sched.last ?? null } : null,
+      disabled: st.disabled,
+      failures: st.failures,
+      history: await runIndex.history(root.id, reg.reg.id, 5),
+    };
+  };
+  /** The bus schedule a registration fires by: its timer, its body, its lateness. */
+  const scheduleSpec = (rootId: string, reg: LoadedRegistration['reg']) => ({
+    ...('cron' in reg.when ? { expr: reg.when.cron } : { at: reg.when.at }),
+    body: JSON.stringify({ v: AUTO_VERSION, op: 'run', project: rootId, registration: reg.id }),
+    max_late: `${Math.round(reg.maxLateMs / 1000)}s`,
+  });
 
   /** `git ls-remote` answers, 30 seconds each — see `/api/git/remote`. */
   const remoteCache = new Map<string, { at: number; state: ReturnType<typeof remoteState> }>();
@@ -770,7 +848,9 @@ export async function serve(opts: ServeOptions) {
         out[path] = Object.fromEntries(
           Object.entries(route).map(([m, h]) => {
             const f = family.get(`${m} ${path}`);
-            const gated = f && ADMIN_FAMILIES.has(f) ? adminOnly(h as Handler) : f && VIEWER_REFUSED.has(f) ? viewerGate(h as Handler) : (h as Handler);
+            // An administrator family a Viewer also refuses (`automation`) passes both gates, the Viewer's (and exposure's) first.
+            const admin = f && ADMIN_FAMILIES.has(f) ? adminOnly(h as Handler) : (h as Handler);
+            const gated = f && VIEWER_REFUSED.has(f) ? viewerGate(admin) : admin;
             return [m, check(gated)];
           }),
         );
@@ -2055,7 +2135,7 @@ export async function serve(opts: ServeOptions) {
           const body = (await req.json().catch(() => null)) as { token?: unknown } | null;
           if (typeof body?.token !== 'string') return flowFail({ error: 'expected {token}', reason: 'invalid' });
           const actor = async (root: Root) => (await authorOf(req, { root, rel: '' })).name;
-          const res = await startFlowRun(flowDeps, { queue: queueWrite, writeFile: (p, text) => registry.writeFile(p, text, { parents: true }) }, { token: body.token, actor });
+          const res = await startFlowRun(flowDeps, flowIo, { token: body.token, actor });
           if (isFlowError(res)) return flowFail(res);
           return noStore(json({ status: res.status, runPath: res.runPath, url: res.url }));
         }),
@@ -2101,6 +2181,109 @@ export async function serve(opts: ServeOptions) {
             }
             if (res.doc !== null) await registry.writeFile(`${loc.root.id}/${loc.rel}`, res.doc);
             return noStore(json({ status: res.state.status, version: res.state.version, url: registry.docUrl(loc.root, loc.rel) }));
+          });
+        }),
+      },
+
+      /**
+       * This project's registrations and this machine's approval of each (administrator only): the file as it is now,
+       * approved / changed / none, its bus schedule, the run index. Files that are no registration are listed with why.
+       */
+      '/api/automation': read(async (req) => {
+        if (!actorOf(req).admin) return adminRequired();
+        const root = registry.get(new URL(req.url).searchParams.get('root') ?? '');
+        if (!root || root.kind === 'reference') return fail(404, 'no such project');
+        const { loaded, errors } = await loadRegistrations(registry, root.id, await flowDeps.catalog());
+        let schedules: Map<string, Schedule> | null = null;
+        let busError: string | undefined;
+        if (prefs.agentBus.enabled) {
+          try {
+            schedules = new Map((await bus.schedules()).map((s) => [s.id, s]));
+          } catch (err) {
+            busError = safeError(err);
+          }
+        } else busError = 'the Agent Bus integration is off';
+        let registrations;
+        try {
+          registrations = await Promise.all(loaded.map((r) => autoView(root, r, schedules)));
+        } catch (err) {
+          busError = safeError(err);
+          registrations = await Promise.all(loaded.map((r) => autoView(root, r, null)));
+        }
+        // Approve/revoke would pass the gates: not a Viewer, the bus on.
+        const canApprove = prefs.mode() !== 'viewer' && prefs.agentBus.enabled;
+        return noStore(json({ root: root.id, canApprove, registrations, errors, ...(busError ? { busError } : {}) }));
+      }),
+
+      /**
+       * Approves a registration file as it is now (`hash` as the page showed it): creates its bus schedule on the
+       * instance's record, then keeps the approval with that schedule's id; a previous schedule of it is deleted.
+       * Clears a stop after failures. A bus refusal keeps nothing; the bus unreachable → 503.
+       */
+      '/api/automation/approve': {
+        POST: mutation('automation', async (req) => {
+          const body = (await req.json().catch(() => null)) as { root?: unknown; registration?: unknown; hash?: unknown } | null;
+          if (typeof body?.root !== 'string' || typeof body.registration !== 'string' || typeof body.hash !== 'string') return fail(400, 'expected {root, registration, hash}');
+          const root = registry.get(body.root);
+          if (!root || root.kind === 'reference') return fail(404, 'no such project');
+          if (!prefs.agentBus.enabled) return fail(409, 'the Agent Bus integration is off — mdhouse --agent-bus on');
+          const id = body.registration;
+          const hash = body.hash;
+          return queueWrite(`automation:${root.path}:${id}`, async () => {
+            const found = await readRegistration(registry, root.id, id, await flowDeps.catalog());
+            if (!found) return fail(404, 'no such registration');
+            if ('error' in found) return fail(409, `not a registration: ${found.error}`);
+            if (found.loaded.hash !== hash) return noStore(json({ error: 'the file changed since it was shown — have a look again', reason: 'stale' }, 409));
+            let before;
+            try {
+              before = await approvals.get(root.path, id);
+            } catch (err) {
+              return fail(503, safeError(err));
+            }
+            let made: Schedule;
+            try {
+              made = await bus.scheduleAdd(scheduleSpec(root.id, found.loaded.reg));
+            } catch (err) {
+              return fail(409, `the Agent Bus refused the schedule: ${safeError(err)}`);
+            }
+            try {
+              await approvals.set(root.path, id, { hash, scheduleId: made.id, at: new Date().toISOString(), by: actorOf(req).user ?? actorOf(req).via });
+              const st = await runIndex.state(root.id, id);
+              await runIndex.save(root.id, id, { ...st, failures: 0, disabled: false });
+            } catch (err) {
+              await bus.scheduleDelete(made.id).catch(() => false);
+              return fail(503, safeError(err));
+            }
+            if (before && before.scheduleId !== made.id) await bus.scheduleDelete(before.scheduleId).catch(() => false);
+            return noStore(json({ approved: { hash, scheduleId: made.id }, schedule: { id: made.id, enabled: made.enabled, next: made.next ?? null } }));
+          });
+        }),
+      },
+
+      /** Withdraws this machine's approval and deletes its bus schedule; the file stays in the project. */
+      '/api/automation/revoke': {
+        POST: mutation('automation', async (req) => {
+          const body = (await req.json().catch(() => null)) as { root?: unknown; registration?: unknown } | null;
+          if (typeof body?.root !== 'string' || typeof body.registration !== 'string') return fail(400, 'expected {root, registration}');
+          const root = registry.get(body.root);
+          if (!root || root.kind === 'reference') return fail(404, 'no such project');
+          if (!prefs.agentBus.enabled) return fail(409, 'the Agent Bus integration is off — mdhouse --agent-bus on');
+          const id = body.registration;
+          return queueWrite(`automation:${root.path}:${id}`, async () => {
+            let was;
+            try {
+              was = await approvals.drop(root.path, id);
+            } catch (err) {
+              return fail(503, safeError(err));
+            }
+            if (!was) return fail(404, 'not approved on this machine');
+            let scheduleError: string | undefined;
+            try {
+              await bus.scheduleDelete(was.scheduleId);
+            } catch (err) {
+              scheduleError = safeError(err);
+            }
+            return noStore(json({ revoked: true, ...(scheduleError ? { scheduleError } : {}) }));
           });
         }),
       },
@@ -2344,7 +2527,7 @@ export async function serve(opts: ServeOptions) {
     watcher.close();
     control?.stop();
     // The control lock is released so a restarted mdhouse serves at once, not after its TTL.
-    void Promise.race([stopAbControl(), Bun.sleep(1_500)]).finally(() => {
+    void Promise.race([Promise.all([stopAbControl(), stopAutomation()]), Bun.sleep(1_500)]).finally(() => {
       server.stop(true);
       process.exit(0);
     });
@@ -2376,5 +2559,5 @@ export async function serve(opts: ServeOptions) {
     },
   });
 
-  return { server, store, watcher, control, shutdown, routes, setRootName, abControl, stopAbControl };
+  return { server, store, watcher, control, shutdown, routes, setRootName, abControl, stopAbControl, automation, stopAutomation, approvals, runIndex };
 }

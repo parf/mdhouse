@@ -14,6 +14,8 @@ import { createHash } from 'node:crypto';
 import type { FlowError, FlowRange, FlowStarted, FlowStartRequest } from './flow-host';
 
 export const AUTO_VERSION = 1;
+/** The topic a bus schedule delivers on, always. */
+export const AUTO_TOPIC = 'schedule';
 export const AUTO_MAX_BODY = 4096;
 export const AUTO_MAX_FILE = 16 * 1024;
 export const AUTO_REPLAY_KEPT = 500;
@@ -170,11 +172,18 @@ export interface RegState {
 }
 const emptyState = (): RegState => ({ v: 1, failures: 0, disabled: false, lastStartMs: 0, day: '', started: 0 });
 
-/** `automation/<root>/<id>/state` and `…/hist/<time>-<hex>`: the newest `AUTO_HISTORY_CAP` kept. */
+/**
+ * `automation/<root>/<id>/state` and `…/hist/<time>-<hex>`: the newest `AUTO_HISTORY_CAP` kept. `<root>` is
+ * `rootKey(rootId)` — a key that survives a restart (root ids are order-dependent slugs).
+ */
 export class RunIndex {
-  constructor(private readonly store: AutoStore, private readonly now: () => number = Date.now) {}
+  constructor(
+    private readonly store: AutoStore,
+    private readonly now: () => number = Date.now,
+    private readonly rootKey: (rootId: string) => string = (id) => id,
+  ) {}
 
-  private prefix = (rootId: string, id: string): string => `automation/${rootId}/${id}/`;
+  private prefix = (rootId: string, id: string): string => `automation/${this.rootKey(rootId)}/${id}/`;
 
   async state(rootId: string, id: string): Promise<RegState> {
     const s = (await this.store.get(`${this.prefix(rootId, id)}state`)) as RegState | null;
@@ -227,7 +236,7 @@ export interface Firing {
   body: string;
 }
 
-export type AutoErrorCode = 'bad-request' | 'denied' | 'unregistered' | 'not-approved' | 'disabled' | 'conflict' | 'failed' | 'internal';
+export type AutoErrorCode = 'bad-request' | 'denied' | 'unregistered' | 'not-approved' | 'disabled' | 'conflict' | 'failed' | 'viewer' | 'internal';
 
 export interface AutoDeps {
   /** The registrations a project holds now (re-read each firing: a file may have changed). Null: no such project. */

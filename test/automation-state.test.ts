@@ -1,47 +1,70 @@
 import { describe, expect, test } from 'bun:test';
-import { mkdtemp, readFile, realpath, stat } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { RunIndex } from '../src/lib/automation';
-import { Approvals, fileStore, stateDir } from '../src/lib/automation-state';
+import { memoryStore, RunIndex } from '../src/lib/automation';
+import { Approvals, busStore, folderKey, type BusKV } from '../src/lib/automation-state';
 
-const tmp = async () => realpath(await mkdtemp(join(tmpdir(), 'mdhouse-auto-state-')));
+/** mdhouse's JSON values as the bus keeps them. */
+function fakeKV(): BusKV & { names: () => string[] } {
+  const m = new Map<string, Record<string, unknown>>();
+  return {
+    kvJson: async (n) => (m.has(n) ? structuredClone(m.get(n)!) : null),
+    kvSet: async (n, v) => void m.set(n, structuredClone(v)),
+    kvDelete: async (n) => m.delete(n),
+    kvNames: async (p) => [...m.keys()].filter((k) => k.startsWith(p)),
+    names: () => [...m.keys()].sort(),
+  };
+}
 
-describe('automation machine state', () => {
-  test('stateDir: $XDG_STATE_HOME/mdhouse, else ~/.local/state/mdhouse', () => {
-    expect(stateDir({ XDG_STATE_HOME: '/s' })).toBe('/s/mdhouse');
-    expect(stateDir({})).toEndWith('/.local/state/mdhouse');
-  });
-
-  test('approvals: kept across instances, 0600 in a 0700 folder; a firing needs the same hash and schedule', async () => {
-    const dir = join(await tmp(), 'st');
-    const path = join(dir, 'automation.json');
-    const a = new Approvals(path);
+describe('automation state on the bus', () => {
+  test('approvals: by folder and id under auto/approval/; a firing needs the same hash and schedule', async () => {
+    const kv = fakeKV();
+    const a = new Approvals(busStore(kv));
     expect(await a.get('/p', 'r')).toBeNull();
-    await a.set('/p', 'r', { hash: 'h1', scheduleId: 's1', at: 't', by: 'admin' });
-    expect((await stat(path)).mode & 0o777).toBe(0o600);
-    expect((await stat(dir)).mode & 0o777).toBe(0o700);
-    const again = new Approvals(path);
-    expect(await again.get('/p', 'r')).toEqual({ hash: 'h1', scheduleId: 's1', at: 't', by: 'admin' });
+    await a.set('/p', 'r', { hash: 'h1', scheduleId: 's1', at: 't', by: 'local' });
+    expect(kv.names()).toEqual([expect.stringMatching(/^auto\/approval\/[0-9a-f]{16}\/r$/)]);
+    const again = new Approvals(busStore(kv));
+    expect(await again.get('/p', 'r')).toEqual({ hash: 'h1', scheduleId: 's1', at: 't', by: 'local' });
+    expect(await again.get('/q', 'r')).toBeNull();
     const check = again.check((id) => (id === 'p' ? '/p' : null));
     const ask = { rootId: 'p', registration: 'r', hash: 'h1', scheduleId: 's1' };
     expect(await check(ask)).toBe(true);
-    expect(await check({ ...ask, hash: 'h2' })).toBe(false);
-    expect(await check({ ...ask, scheduleId: 's2' })).toBe(false);
-    expect(await check({ ...ask, registration: 'other' })).toBe(false);
-    expect(await check({ ...ask, rootId: 'unknown' })).toBe(false);
+    for (const over of [{ hash: 'h2' }, { scheduleId: 's2' }, { registration: 'other' }, { rootId: 'unknown' }]) expect([over, await check({ ...ask, ...over })]).toEqual([over, false]);
     expect(await again.drop('/p', 'r')).toMatchObject({ hash: 'h1' });
     expect(await check(ask)).toBe(false);
-    expect(await new Approvals(path).get('/p', 'r')).toBeNull();
+    expect(kv.names()).toEqual([]);
   });
 
-  test('fileStore under RunIndex: concurrent writes all kept, read back by a new instance', async () => {
-    const path = join(await tmp(), 'automation-index.json');
-    const index = new RunIndex(fileStore(path));
-    await Promise.all(Array.from({ length: 20 }, (_, i) => index.record('root', 'reg', { requestId: `s:${i}`, outcome: 'skipped', why: 'late' })));
-    expect((await new RunIndex(fileStore(path)).history('root', 'reg', 50)).length).toBe(20);
+  test('fail-closed: a store error is no approval', async () => {
+    const store = memoryStore();
+    const a = new Approvals({ ...store, get: () => Promise.reject(new Error('bus down')) });
+    expect(await a.check(() => '/p')({ rootId: 'p', registration: 'r', hash: 'h', scheduleId: 's' })).toBe(false);
+  });
+
+  test('RunIndex keys by rootKey: a renamed root id keeps its history', async () => {
+    const store = memoryStore();
+    const path = new Map([['a', '/p']]);
+    const index = new RunIndex(store, Date.now, (id) => folderKey(path.get(id) ?? id));
+    await index.record('a', 'reg', { requestId: 'x', outcome: 'skipped', why: 'late' });
+    path.set('a-2', '/p');
+    expect((await index.history('a-2', 'reg', 5)).length).toBe(1);
+    expect(await store.keys(`automation/${folderKey('/p')}/reg/`)).toHaveLength(1);
+  });
+
+  test('a malformed stored value is no approval', async () => {
+    const store = memoryStore();
+    const a = new Approvals(store);
+    await a.set('/p', 'r', { hash: 'h', scheduleId: 's', at: 't', by: 'b' });
+    const [key] = await store.keys('auto/approval/');
+    await store.put(key!, { hash: 'h' });
+    expect(await a.get('/p', 'r')).toBeNull();
+  });
+
+  test('busStore under RunIndex: entries and state read back', async () => {
+    const kv = fakeKV();
+    const index = new RunIndex(busStore(kv));
+    for (let i = 0; i < 3; i++) await index.record('root', 'reg', { requestId: `s:${i}`, outcome: 'skipped', why: 'late' });
     await index.outcome('root', 'reg', 'failed', {});
-    expect((await new RunIndex(fileStore(path)).state('root', 'reg')).failures).toBe(1);
-    expect(JSON.parse(await readFile(path, 'utf8'))).toBeObject();
+    const fresh = new RunIndex(busStore(kv));
+    expect((await fresh.history('root', 'reg', 50)).length).toBe(4);
+    expect((await fresh.state('root', 'reg')).failures).toBe(1);
   });
 });

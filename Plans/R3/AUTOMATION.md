@@ -25,14 +25,14 @@ A registration is team data ([№DATA-W1](workspaces/DECISIONS.md#DATA-W1)): one
 `{ id, flow, range, when, maxLate?, overlap?, notify? }` — strict, no other key; `id` is the file's name; `flow` a runnable package (`runnableFlow`); `range` `"since-last-run"` or `{"kind":"baseline","commit":"<4-40 hex>"}`; `when` `{"cron":"<5 or 6 fields>"}` or `{"at":"<RFC 3339 UTC>"}`; `maxLate` `"30m"` (1 s to 7 d, default 1 h); `overlap` only `"skip"` is built; `notify` `"#name@host"` — what to run, when, over what, and who hears of it.
 Where it runs is not in the file: the bus schedule on this instance's `#mdhouse` record is only the timer, and it exists only where an administrator enabled the registration.
 
-- A firing runs only if the project holds the registration file the schedule was made from and the administrator's approval of that file's content hash (user data, `$HOME/.config/mdhouse`, per instance) still matches; a file changed by a pull or a commit stops firing until it is approved again
+- A firing runs only if the project holds the registration file the schedule was made from and the administrator's approval of that file's content hash (the KV of the instance's `#mdhouse` record, [№DATA-W2](workspaces/DECISIONS.md#DATA-W2)) still matches; a file changed by a pull or a commit stops firing until it is approved again
 - The page shows a registration it finds in a project but nobody enabled here as "not scheduled on this machine", with an **Enable** that shows the file's content and asks for the approval
 
 - No registration: the reply is `{ ok: false, code: "unregistered" }` and the firing is logged; a bus schedule alone can never make mdhouse run anything
 - Three separate checks apply: the creator's reach (bus), the registration (mdhouse), the project's effective access (mdhouse)
 - Who may register: the instance administrator only; a Viewer never
 - The flow must be a package in `doc/flows/catalog.json` with no consequential node in v1; consequential nodes stay `unsupported`/held as in [FLOW-RUNTIME-CORE.md](FLOW-RUNTIME-CORE.md)
-- Schedules live on the instance's `#mdhouse` record, so one place lists and disables them; the run index and the approvals are per instance (user data), the run documents and the registrations are the project's
+- Schedules live on the instance's `#mdhouse` record, so one place lists and disables them; the run index and the approvals are per instance (its record's KV), the run documents and the registrations are the project's
 
 ## 4. Scope and outputs
 
@@ -88,6 +88,8 @@ Project → Settings → Automation (or a ⏰ entry on a flow page): registratio
 
 Slice 1 (steps 1–2) is built — `src/lib/automation.ts` (schema, `Automation` handler, `RunIndex`, `notApproved`), `src/lib/automation-registry.ts` (the jailed loader), tests with a fake runner — and fails closed: the approval it ships answers no, so a firing is `not-approved` and reaches nothing. Not wired to `serve()`.
 
+Slice 2 is built — wired in `serve()` (bus control topic `schedule`, lock `auto`), approvals and the run index in the record's KV (`src/lib/automation-state.ts`), `GET /api/automation`, `POST /api/automation/approve|revoke` (step 5); the page (step 4) is next.
+
 1. Contract: body v1, registration schema and a pure handler with tests (validate, replay cache, dispatch to a stub), like `ab-control`
 2. Registry and run index, in the `rag-registry` pattern
 3. Handler wired to the MW.3.3 entry `startFlowRun({ rootId, packageId, range, trigger: { kind: 'manual', actor } | { kind: 'schedule', id, slot } })` returning `{ status, runPath, url }` (agreed with #md/w1); for a schedule trigger the run id is a hash of the request id, so a repeated start finds the existing run document and returns its status; manual runs keep a random id; the marker never advances on blocked, failed, partial or cancelled; consequential nodes stay `unsupported` until approvals exist, then `held: needs-approval`
@@ -108,4 +110,4 @@ Q-R3-AUTO1, decided by the owner (the temporary CTO's defaults kept), written in
 6. Runs land in the project tree at `Plans/flows/runs/<package>/<UTC>-<runId8>.md`, the same as manual runs (not a registration field)
 7. Notifications: the page, plus an optional agent message to one chosen agent
 
-Open: [№Q-R3-AUTO2](workspaces/QUESTIONS.md#Q-R3-AUTO2) — a registration committed by someone else runs on this machine only after an approval of its content hash (§3); the owner decides whether that is the rule.
+Decided: [№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2) — the instance administrator approves the file's content hash on this machine (§3).

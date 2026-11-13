@@ -9,7 +9,7 @@
  */
 import { existsSync } from 'node:fs';
 import { hostname, userInfo } from 'node:os';
-import { Bus, BusError as ClientError, BusTimeout, BusUnreachable, KVNotFound } from 'ai-agent-bus-sdk';
+import { Bus, BusError as ClientError, BusTimeout, BusUnreachable, KVNotFound, type Schedule, type ScheduleSpec } from 'ai-agent-bus-sdk';
 
 /** One message as the daemon hands it out. A receipt (`ack` / `done`) is not an answer. */
 export interface Envelope {
@@ -323,12 +323,42 @@ export class AgentBus {
     }
   }
 
+  /** Sets one JSON value of mdhouse's own key-value store at the instance endpoint. */
+  async kvSet(name: string, value: Record<string, unknown>): Promise<void> {
+    await (await this.connect()).record(this.me).kv.set('json', name, value as never, { mode: 'set' });
+  }
+
+  /** Deletes one JSON value of mdhouse's own key-value store; false when there was none. */
+  async kvDelete(name: string): Promise<boolean> {
+    return (await (await this.connect()).record(this.me).kv.delete('json', name)) === true;
+  }
+
   /** The names of mdhouse's own JSON values that start with `prefix`. */
   async kvNames(prefix: string, ep?: Endpoint): Promise<string[]> {
     const d = await this.connect(ep);
     const listed: unknown = await d.record(this.me).kv.list();
     const json = typeof listed === 'object' && listed !== null && Array.isArray((listed as { json?: unknown }).json) ? (listed as { json: unknown[] }).json : [];
     return json.flatMap((e) => (typeof e === 'object' && e !== null && typeof (e as { name?: unknown }).name === 'string' && (e as { name: string }).name.startsWith(prefix) ? [(e as { name: string }).name] : []));
+  }
+
+  /** The schedules on mdhouse's own record at the instance endpoint. */
+  async schedules(): Promise<Schedule[]> {
+    return (await this.connect()).record(this.me).schedules.list();
+  }
+
+  /** A schedule on mdhouse's own record that sends to mdhouse itself; returns it. */
+  async scheduleAdd(spec: Omit<ScheduleSpec, 'target'>): Promise<Schedule> {
+    return (await (await this.connect()).record(this.me).schedules.add({ ...spec, target: this.me })).schedule;
+  }
+
+  /** Deletes one schedule of mdhouse's own record; false when there was none. */
+  async scheduleDelete(id: string): Promise<boolean> {
+    return (await this.connect()).record(this.me).schedules.delete(id);
+  }
+
+  /** One message to `to`, no answer awaited. */
+  async tell(to: string, body: string): Promise<void> {
+    await (await this.connect()).send(to, body, { topic: TOPIC });
   }
 
   /** One request to `to` and its answer's text; null when no answer came within `timeoutMs`. */

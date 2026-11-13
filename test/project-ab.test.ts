@@ -239,6 +239,9 @@ async function start(port: number, o: { echo?: boolean; hold?: boolean } = {}) {
   const registry = await Registry.create([keep, ses]);
   await registry.addReference(join(dir, 'ref'), '_ref');
   const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
+  // Scheduled runs serve their own topic (automation-routes.test.ts); stopped here so only the routes' traffic counts.
+  await s.stopAutomation();
+  inst.calls.length = 0;
   const origin = `http://127.0.0.1:${port}`;
   const idOf = (path: string) => registry.list().find((r) => r.path === path)!.id;
   const config = async () => (await (await fetch(`${origin}/api/ab/config`)).json()) as Cfg;

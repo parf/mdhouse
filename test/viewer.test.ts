@@ -150,10 +150,12 @@ describe('an older mdhouse reading a Viewer file', () => {
 });
 
 test('every mutation family is classified for a Viewer: refused, or administrator-only', () => {
-  expect([...VIEWER_REFUSED].sort()).toEqual(['attribution', 'doc-write', 'external-send', 'flow', 'git-sync', 'git-write', 'shared-prefs']);
+  expect([...VIEWER_REFUSED].sort()).toEqual(['attribution', 'automation', 'doc-write', 'external-send', 'flow', 'git-sync', 'git-write', 'shared-prefs']);
   // Kept: the administrator switches the mode and manages roots on the web; `control` is the OS-owner socket.
+  // `automation` is both: administrator-only, and refused by a Viewer.
   const kept = ['admin-session', 'control', ...ADMIN_FAMILIES];
-  expect([...VIEWER_REFUSED, ...kept].sort()).toEqual([...FAMILIES].sort());
+  expect([...new Set([...VIEWER_REFUSED, ...kept])].sort()).toEqual([...FAMILIES].sort());
+  expect([...ADMIN_FAMILIES].filter((f) => VIEWER_REFUSED.has(f))).toEqual(['automation']);
 });
 
 describe('a Viewer over HTTP', () => {
@@ -196,6 +198,7 @@ describe('a Viewer over HTTP', () => {
       expect(refused.length).toBeGreaterThan(10);
       for (const r of refused) {
         const res = await t.post(r.path, {});
+        // An administrator family a Viewer refuses (`automation`) is refused as a Viewer first.
         expect([r.path, res.status, await res.json()]).toEqual([r.path, 403, { error: 'read-only: this mdhouse is a Viewer', reason: 'viewer' }]);
       }
       expect(readFileSync(join(t.proj, 'a.md'), 'utf8')).toBe('- [ ] t\n');

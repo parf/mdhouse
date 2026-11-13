@@ -18,13 +18,14 @@ export const FAMILIES = [
   'root-admin', // which folders are served, and how
   'shared-prefs', // per-root marks shared by every browser
   'flow', // flow runs
+  'automation', // this machine's approval of a project's scheduled runs, and their bus schedules
   'control', // process lifecycle and root changes over the control socket
   'admin-session', // browser-administrator session exchange and logout
 ] as const;
 export type Family = (typeof FAMILIES)[number];
 
 /** Families whose every HTTP write requires an administrator actor. */
-export const ADMIN_FAMILIES: ReadonlySet<Family> = new Set<Family>(['instance-config', 'root-admin']);
+export const ADMIN_FAMILIES: ReadonlySet<Family> = new Set<Family>(['instance-config', 'root-admin', 'automation']);
 
 /**
  * Families a Viewer refuses (403 `reason: viewer`). The rest stay as in a workspace — administrator
@@ -38,6 +39,7 @@ export const VIEWER_REFUSED: ReadonlySet<Family> = new Set<Family>([
   'shared-prefs',
   'attribution',
   'flow',
+  'automation',
 ]);
 
 /**
