@@ -133,6 +133,12 @@ function App({ entry: first }: { entry: AdminEntry }) {
   useEffect(() => {
     if (!narrowScreen()) save(LS_STATE, sidebar);
   }, [sidebar]);
+  // On a phone, choosing a page from the drawer shows the page: the drawer closes when the address changes.
+  const firstPath = useRef(true);
+  useEffect(() => {
+    if (firstPath.current) firstPath.current = false;
+    else if (narrowScreen()) setSidebar('off');
+  }, [path]);
 
   // `/` is the root's git view: `/<root>/?git`.
   useEffect(() => {
