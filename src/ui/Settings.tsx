@@ -3,6 +3,7 @@ import { ApiError, api, isAdminDenial, type AbConfig, type AbInfo, type AdminSta
 import type { AdminEntry } from './admin-entry';
 import { IconTrash } from './icons';
 import { abConfirmLine, spaceSummary, splitNames, syncDraft } from './ab-targets';
+import { isViewer, switchConfirm, VIEWER_SIGN_IN, type InstanceMode } from './viewer-text';
 import { ADD_PATH_MAX, accessBadge, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject } from './project-groups';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
@@ -77,6 +78,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   const [admin, setAdmin] = useState<AdminState | null>(null);
   const [adminError, setAdminError] = useState('');
   const isAdmin = admin?.admin === true;
+  const viewer = isViewer(options);
   const loadAdmin = () =>
     api.admin().then(
       (a) => setAdmin(a),
@@ -365,9 +367,33 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     }
   };
 
+  // The mode switch: the administrator only, after a confirmation that names what changes.
+  const [modeBusy, setModeBusy] = useState(false);
+  const [modeError, setModeError] = useState('');
+  const mode: InstanceMode = viewer ? 'viewer' : 'workspace';
+  const switchMode = async (to: InstanceMode) => {
+    const question = switchConfirm(mode, to);
+    if (!question || modeBusy || !isAdmin || !confirm(question)) return;
+    setModeBusy(true);
+    setModeError('');
+    try {
+      onOptions(await api.setSettings({ mode: to }));
+      onChanged();
+    } catch (err) {
+      setModeError(refused(err));
+    } finally {
+      setModeBusy(false);
+    }
+  };
+
   const authorCard = (
     <>
-        {author && (
+        {author && viewer && (
+          <p class="settings-hint">
+            Your name: <b>{author.name}</b> <Info label="About your name">Signs your replies and quotes. A Viewer writes none, so it is shown, not edited.</Info>
+          </p>
+        )}
+        {author && !viewer && (
           <div class="settings-option">
             <label class="settings-scheme-field">
               <b>Your name</b>
@@ -401,6 +427,39 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         <h1>Settings</h1>
         <span class="head-gear">{gear}</span>
       </header>
+
+      <section class="settings-mode">
+        <h2>
+          Mode <span class="scope">all projects</span>
+        </h2>
+        <div class="mode-switch" role="group" aria-label="Mode">
+          {(['workspace', 'viewer'] as const).map((m) => (
+            <button
+              type="button"
+              class="mode-btn"
+              aria-pressed={mode === m}
+              disabled={mode === m || !isAdmin || modeBusy}
+              title={mode === m ? 'The current mode' : !isAdmin ? NEEDS_ADMIN : undefined}
+              onClick={() => void switchMode(m)}
+            >
+              {m === 'workspace' ? 'Workspace' : 'Viewer'}
+            </button>
+          ))}
+          <Info label="About the mode">
+            <b>Workspace</b>: each project is writable by its own RW/RO setting. <b>Viewer</b>: every project is read-only for everyone and the
+            controls that change anything are gone. Each project keeps its setting; Workspace brings it back. From a terminal:{' '}
+            <code>mdhouse --viewer</code> / <code>mdhouse --workspace</code>.
+          </Info>
+        </div>
+        {viewer && !isAdmin && (
+          <p class="settings-hint">
+            {VIEWER_SIGN_IN[0]}
+            <code>{VIEWER_SIGN_IN[1]}</code>
+            {VIEWER_SIGN_IN[2]}
+          </p>
+        )}
+        {modeError && <p class="settings-error">{modeError}</p>}
+      </section>
 
       <section class="settings-admin">
         <h2>
@@ -455,7 +514,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     title={root.path}
                   >
                     <span class="name">{root.name}</span>
-                    {accessBadge(root) && <span class="tag ro" title="Read-only">RO</span>}
+                    {!viewer && accessBadge(root) && <span class="tag ro" title="Read-only">RO</span>}
                   </button>
                 ))}
               </div>
@@ -511,6 +570,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 <dd class="path" title={project.path}>
                   {project.path}
                 </dd>
+                {!viewer && (
+                  <>
                 <dt>
                   Access{' '}
                   <Info label="About access">
@@ -547,6 +608,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     </span>
                   )}
                 </dd>
+                  </>
+                )}
                 <dt>
                   Kept{' '}
                   <Info label="About kept">
@@ -705,15 +768,17 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             title={isAdmin ? undefined : NEEDS_ADMIN}
             onInput={(e) => setAddPath((e.target as HTMLInputElement).value)}
           />
-          <label class="project-add-mode" title="Ticked: read and write; else read-only">
-            <input
-              type="checkbox"
-              checked={addRw}
-              disabled={!isAdmin || busy !== null}
-              onChange={(e) => setAddRw((e.target as HTMLInputElement).checked)}
-            />{' '}
-            RW
-          </label>
+          {!viewer && (
+            <label class="project-add-mode" title="Ticked: read and write; else read-only">
+              <input
+                type="checkbox"
+                checked={addRw}
+                disabled={!isAdmin || busy !== null}
+                onChange={(e) => setAddRw((e.target as HTMLInputElement).checked)}
+              />{' '}
+              RW
+            </label>
+          )}
           <button
             type="submit"
             class="project-add-btn"
@@ -793,7 +858,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           {options.editLink && schemeError && <span class="settings-error">{schemeError}</span>}
         </div>
         {/* The paths are set from the CLI; here only the switch. */}
-        {!!options.autoRwPaths?.length && (
+        {!viewer && !!options.autoRwPaths?.length && (
           <div class="settings-option">
             <label>
               <input

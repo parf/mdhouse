@@ -1,6 +1,7 @@
 /** Server calls and the live-update socket. */
 
 import type { TreePayload, RecentEntry, Digest } from '../lib/store';
+import { refusalText, VIEWER_DENIED, type InstanceMode } from './viewer-text';
 
 /** What the server adds to a tree for ignored browsing; optional until every server sends it. */
 export interface TreeReveal {
@@ -39,6 +40,8 @@ export interface Settings {
   me: string;
   /** Set from the CLI, `mdhouse --auto-rw`; shown, not edited, here. */
   autoRwPaths?: string[];
+  /** `viewer`: every project is read-only and the page offers nothing to change. Absent from an older server. */
+  mode?: InstanceMode;
 }
 
 export interface RootInfo {
@@ -187,10 +190,16 @@ export interface AdminState {
   expiresAt?: number;
 }
 
+/** The page's words for a refused write; a Viewer's refusal also tells the app to re-read the mode. */
+function refusedText(res: Response, body: { error?: unknown; reason?: unknown } | null): string {
+  if (body?.reason === 'viewer') dispatchEvent(new Event(VIEWER_DENIED));
+  return refusalText(body, `${res.status} ${res.statusText}`);
+}
+
 async function refusal(res: Response): Promise<ApiError> {
   const body = (await res.json().catch(() => null)) as { error?: string; reason?: string; id?: unknown } | null;
   return new ApiError(
-    body?.error ?? `${res.status} ${res.statusText}`,
+    refusedText(res, body),
     res.status,
     typeof body?.reason === 'string' ? body.reason : undefined,
     typeof body?.id === 'string' ? body.id : undefined,
@@ -307,8 +316,8 @@ export class GitRefusal extends Error {
 
 async function gitPost(path: string, body: unknown): Promise<{ ok: true; output: string }> {
   const res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  const data = (await res.json().catch(() => null)) as { error?: string; files?: GitInfo['dirty']; confirm?: boolean; output?: string } | null;
-  if (!res.ok) throw new GitRefusal(data?.error ?? `${res.status} ${res.statusText}`, res.status, data?.files, !!data?.confirm);
+  const data = (await res.json().catch(() => null)) as { error?: string; reason?: string; files?: GitInfo['dirty']; confirm?: boolean; output?: string } | null;
+  if (!res.ok) throw new GitRefusal(refusedText(res, data), res.status, data?.files, !!data?.confirm);
   return { ok: true, output: data?.output ?? '' };
 }
 
@@ -358,7 +367,7 @@ export const api = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ root, path, mark, on }),
     });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    if (!res.ok) throw new Error(refusedText(res, (await res.json().catch(() => null)) as { error?: string; reason?: string } | null));
   },
 
   settings: () => get<Settings>('/api/settings'),
@@ -380,8 +389,8 @@ export const api = {
       body: JSON.stringify(req),
     });
     if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+      const body = (await res.json().catch(() => null)) as { error?: string; reason?: string } | null;
+      throw Object.assign(new Error(refusedText(res, body)), { status: res.status });
     }
   },
 
@@ -393,8 +402,8 @@ export const api = {
       body: JSON.stringify(req),
     });
     if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+      const body = (await res.json().catch(() => null)) as { error?: string; reason?: string } | null;
+      throw Object.assign(new Error(refusedText(res, body)), { status: res.status });
     }
   },
 
@@ -409,8 +418,8 @@ export const api = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ p, line, hash }),
     });
-    const body = (await res.json().catch(() => null)) as { checked?: boolean; error?: string } | null;
-    if (!res.ok) throw Object.assign(new Error(body?.error ?? `${res.status} ${res.statusText}`), { status: res.status });
+    const body = (await res.json().catch(() => null)) as { checked?: boolean; error?: string; reason?: string } | null;
+    if (!res.ok) throw Object.assign(new Error(refusedText(res, body)), { status: res.status });
     return { checked: body?.checked === true };
   },
 
@@ -424,8 +433,8 @@ export const api = {
       body: JSON.stringify({ name }),
     });
     if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
+      const body = (await res.json().catch(() => null)) as { error?: string; reason?: string } | null;
+      throw new Error(refusedText(res, body));
     }
     return res.json() as Promise<AuthorInfo>;
   },

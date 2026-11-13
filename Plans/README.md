@@ -391,6 +391,16 @@ Viewer (`prefs.mode() === 'viewer'`, `lib/authz.ts` `VIEWER_REFUSED`): `doc-writ
 `external-send`, `shared-prefs`, `attribution`, `flow` → 403 `{reason: 'viewer'}` in `guard()` before the
 handler; `Root.writable` caps again at the write. `instance-config`, `root-admin`, `admin-session` stay admin-only.
 
+Viewer UI (`ui/viewer-text.ts` pure strings/helpers, `ui/viewer.tsx` context + badge): `options.mode === 'viewer'` from
+`GET /api/settings`, re-read in every tab on a `roots` event and on any refused write (`reason: viewer` →
+`VIEWER_DENIED`, one message from `refusedText()` in `api.ts`). A Viewer *removes* (does not disable) what changes
+something: tree/document marks, the Agent Bus button/panel/`a` key, `editHref` (✎ and per-block edit links), Settings
+"Your name" (shown as text), the per-project `[RW]/[RO]` row, Auto-RW and the Add-project RW box; per-project RO badges
+give way to a `Viewer — read-only` badge (own line under the sidebar header, inline in the top strip). Everything that
+keys on `root.writable` (ticks, Q&A, insert, editor, git actions) is already off. Settings → Mode: two buttons,
+administrator only, `confirm()` before a switch (to Viewer: "You will need mdhouse admin to switch back."); a Viewer
+without a session shows "Viewer — sign in with `mdhouse admin` to switch back". RAG search stays.
+
 ## User session history (pure model)
 
 `lib/user-session-model.ts` — pure transitions, caller-supplied `now`, no storage, routes or

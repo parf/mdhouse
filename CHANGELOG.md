@@ -4,6 +4,8 @@
 
 ### Added
 
+- Viewer UI: while mdhouse is a Viewer the page drops every control that changes anything — marks, the Agent Bus button and panel, the ✎ edit links, "Your name", the per-project RW/RO toggle — shows a `Viewer — read-only` badge instead of per-project RO, and a refused write says so; Settings has a Workspace/Viewer switch for the administrator (a Viewer needs `mdhouse admin`)
+
 - RAG search page: a colored `R` button in the sidebar header opens `/rag` — the project's index status (source, last sync, confirmed/total) and a keyword search with cited hits (file, lines, heading, query words marked); when RAG is not set up it explains step by step how to enable it
 
 - Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API switches back; projects keep their RW/RO. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))

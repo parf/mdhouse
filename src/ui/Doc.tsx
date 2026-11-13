@@ -9,6 +9,7 @@ import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './ap
 import type { Mark } from '../lib/prefs';
 import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff, IconBus } from './icons';
 import { AgentBusPanel, type AbState } from './AgentBusPanel';
+import { useViewer } from './viewer';
 import { fileSize, timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -510,10 +511,13 @@ export function Doc({
   /** The ✎ link: at the line the page landed on, if any. */
   const editAt = editHref && atLine !== null ? `${editHref}:${atLine}` : editHref;
 
+  const viewer = useViewer();
+
   /** The Agent Bus popup — only while the integration is on (the payload names the page's agents), never on reference material. */
   const [abOpen, setAbOpen] = useState(false);
   const [abState, setAbState] = useState<AbState>('idle');
-  const abOn = doc?.kind === 'md' && !!doc.ab && !doc.reference;
+  // A Viewer sends nothing to agents, so the button, the panel and the `a` key are not there at all.
+  const abOn = !viewer && doc?.kind === 'md' && !!doc.ab && !doc.reference;
   /** The panel takes the right side; the left sidebar closes to make room. */
   const openAb = () => {
     setAbOpen(true);
@@ -1214,22 +1218,26 @@ export function Doc({
                 &lt;/&gt;
               </button>
             )}
-            <button
-              class="icon-btn"
-              title={isFav ? 'Unfavorite' : 'Favorite'}
-              aria-pressed={isFav}
-              onClick={() => onMark(doc.rel, 'favorite', !isFav)}
-            >
-              <IconStar size={15} filled={isFav} />
-            </button>
-            <button
-              class="icon-btn"
-              title={isMuted ? 'Unmute' : 'Mute'}
-              aria-pressed={isMuted}
-              onClick={() => onMark(doc.rel, 'muted', !isMuted)}
-            >
-              <IconMute size={15} />
-            </button>
+            {!viewer && (
+              <>
+                <button
+                  class="icon-btn"
+                  title={isFav ? 'Unfavorite' : 'Favorite'}
+                  aria-pressed={isFav}
+                  onClick={() => onMark(doc.rel, 'favorite', !isFav)}
+                >
+                  <IconStar size={15} filled={isFav} />
+                </button>
+                <button
+                  class="icon-btn"
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                  aria-pressed={isMuted}
+                  onClick={() => onMark(doc.rel, 'muted', !isMuted)}
+                >
+                  <IconMute size={15} />
+                </button>
+              </>
+            )}
             {abOn && (
               <button
                 class={`icon-btn ab-btn ${abState}`}

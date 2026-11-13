@@ -2026,7 +2026,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-add h3 { flex-basis: 100%; margin: 0; font-size: 13px; }
 .project-add .project-add-path { flex: 1 1 22em; width: auto; min-width: 0; }
 .project-add-mode { display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; }
-:is(.project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act):disabled { opacity: .6; cursor: not-allowed; }
+:is(.project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn):disabled { opacity: .6; cursor: not-allowed; }
 .project-add :is(.settings-hint, .settings-error) { flex-basis: 100%; }
 .project-list { display: flex; flex-direction: column; gap: 10px; }
 .project-group h3 { margin: 0 0 4px; font-size: 11px; font-weight: 600; color: var(--fg-faint); text-transform: uppercase; letter-spacing: .04em; }
@@ -2057,10 +2057,10 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-ab-editor .settings-scheme { flex: 1 1 18em; width: auto; min-width: 0; }
 .project-ab-actions { display: flex; gap: 8px; }
 .project-access .settings-hint { display: block; }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act) { min-height: 32px; padding: 5px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act):hover:not(:disabled) { background: var(--bg-hover); }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act):active:not(:disabled) { box-shadow: none; transform: translateY(1px); }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn) { min-height: 32px; padding: 5px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn):hover:not(:disabled) { background: var(--bg-hover); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn):active:not(:disabled) { box-shadow: none; transform: translateY(1px); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .project-ab-row { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .project-ab-row .project-ab-value { margin-left: 0; }
 .ab-select { min-height: 32px; max-width: 100%; padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; font-size: 13px; }
@@ -2121,3 +2121,13 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .rag-enable ol { margin: 0; padding-left: 1.4em; display: grid; gap: 12px; }
 .rag-cmd { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 10px; margin: 6px 0; }
 .rag-cmd pre { flex: 1 1 22em; min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }
+
+/* ── Viewer ─────────────────────────────────────────────────────────────── */
+
+.viewer-badge { flex: none; white-space: nowrap; }
+/* In the sidebar the badge has a line of its own: beside the project name there is no room for its words. */
+.viewer-strip { padding: 5px 8px 0; }
+.viewer-strip .viewer-badge { display: inline-block; margin: 0; font-weight: 600; font-size: 11px; letter-spacing: 0.02em; color: var(--warn); border: 1px solid currentColor; border-radius: 3px; padding: 1px 6px; }
+.mode-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 8px; }
+.mode-btn[aria-pressed="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); opacity: 1; font-weight: 600; }
+.mode-btn[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); }

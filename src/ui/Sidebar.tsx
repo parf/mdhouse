@@ -4,6 +4,7 @@ import type { RootInfo } from './api';
 import type { RecentEntry } from '../lib/store';
 import type { UiTree } from './api';
 import { accessBadge } from './project-groups';
+import { useViewer, ViewerBadge } from './viewer';
 import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import type { SearchResult } from '../lib/search';
@@ -114,6 +115,7 @@ export function Sidebar(props: SidebarProps) {
   const { state, tree, query } = props;
   const wide = state === 'open';
   const StateIcon = STATE_ICON[state];
+  const viewer = useViewer();
 
   // a view's tab: the tree narrowed to its folders and files, muted ones left out
   const entries = props.tab === 'V1' || props.tab === 'V2' ? props.views[props.tab] : null;
@@ -171,7 +173,8 @@ export function Sidebar(props: SidebarProps) {
             {(tree && (props.roots.find((r) => r.id === tree.root.id)?.name ?? tree.root.name)) || 'mdhouse'}
           </button>
           {/* Read and write is the default and says nothing; read-only does. */}
-          {tree && accessBadge(props.roots.find((r) => r.id === tree.root.id)) && (
+          {/* A Viewer's badge has its own line below: beside the name there is no room for its words. */}
+          {!viewer && tree && accessBadge(props.roots.find((r) => r.id === tree.root.id)) && (
             <span class="ro" title="Read-only: mdhouse does not write to this project">
               RO
             </span>
@@ -184,6 +187,12 @@ export function Sidebar(props: SidebarProps) {
           </button>
         )}
       </div>
+
+      {viewer && (
+        <div class="viewer-strip">
+          <ViewerBadge />
+        </div>
+      )}
 
       {props.roots.length > 1 && (
         <div class="root-switch">

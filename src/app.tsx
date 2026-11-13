@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
 import { accessBadge, customName } from './ui/project-groups';
+import { ViewerBadge, ViewerContext } from './ui/viewer';
+import { isViewer, VIEWER_DENIED } from './ui/viewer-text';
 import { parentScope } from './ui/git-state';
 import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from './ui/doc-refresh';
 import { loadViews, noViews, revealNote, revealScopes, saveViews, toggle, type ViewId } from './ui/views';
@@ -64,6 +66,14 @@ function App({ entry: first }: { entry: AdminEntry }) {
         .finally(() => setOptionsLoaded(true)),
     [],
   );
+  // A Viewer drops every control that changes anything; a mode switch elsewhere reaches this tab as a
+  // `roots` event, a refused write as VIEWER_DENIED — both re-read the settings.
+  const viewer = isViewer(options);
+  const rereadSettings = useCallback(() => void api.settings().then(setOptions).catch(() => {}), []);
+  useEffect(() => {
+    addEventListener(VIEWER_DENIED, rereadSettings);
+    return () => removeEventListener(VIEWER_DENIED, rereadSettings);
+  }, [rereadSettings]);
   const [rootId, setRootId] = useState('');
   const [tree, setTree] = useState<UiTree | null>(null);
   // The folders the tree request reveals (see `revealScopes`), kept in a ref so a reload always sends the latest.
@@ -331,6 +341,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
     // a change made while the socket was down reached no one here, so it re-reads too.
     if (msg.t === 'roots' || msg.t === 'hello') {
       void reloadRoots();
+      rereadSettings();
       return;
     }
 
@@ -550,11 +561,12 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const nameOf = (id: string, fallback: string) => roots.find((r) => r.id === id)?.name ?? fallback;
   // Each segment encoded on its own: `encodeURI` leaves `#` and `?` alone, which cut the path.
   const editHref =
-    optionsLoaded && options.editLink && doc && docRoot && !doc.reference
+    optionsLoaded && !viewer && options.editLink && doc && docRoot && !doc.reference
       ? editUrl(options.editScheme, `${docRoot.path}/${doc.rel}`)
       : null;
 
   return (
+    <ViewerContext.Provider value={viewer}>
     <div class="app" data-sidebar={sidebar}>
       {sidebar === 'off' && (
         <div class="topstrip">
@@ -565,12 +577,14 @@ function App({ entry: first }: { entry: AdminEntry }) {
             <button class="mark brand-mark" onClick={() => setAboutOpen(true)} title="About mdhouse" aria-label="About mdhouse" />
             {crumb || (tree && nameOf(tree.root.id, tree.root.name)) || 'mdhouse'}
             {/* The sidebar header's access badge, while the sidebar is off. */}
-            {tree && accessBadge(roots.find((r) => r.id === tree.root.id)) && (
+            {!viewer && tree && accessBadge(roots.find((r) => r.id === tree.root.id)) && (
               <span class="ro" title="Read-only: mdhouse does not write to this project">
                 RO
               </span>
             )}
           </span>
+          {/* Outside the brand, whose name gives way when the line is short: the badge keeps its words. */}
+          {viewer && <ViewerBadge />}
           <RagLink rootId={rootId} active={onRag} onOpen={go} />
           <button
             class="icon-btn"
@@ -738,6 +752,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
+    </ViewerContext.Provider>
   );
 }
 

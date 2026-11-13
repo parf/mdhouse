@@ -1,3 +1,4 @@
+import { useViewer } from './viewer';
 import type { Node, DirNode, FileNode } from './tree-model';
 import type { Mark } from '../lib/prefs';
 import { IconChevron, IconFolder, IconStar, IconMute } from './icons';
@@ -63,6 +64,7 @@ export function SizeMark({ size, end }: { size: number | undefined; end?: boolea
 const INDENT_STEP = 18;
 
 function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
+  const viewer = useViewer();
   const indent = 8 + depth * INDENT_STEP;
 
   if (node.kind === 'dir') {
@@ -164,7 +166,8 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       )}
       {(!p.compact || small !== 'tiny') && <span class={`badge size${small ? ` ${small}` : ''}`}>{fileSize(size)}</span>}
 
-      {!p.compact && (
+      {/* The marks are shared settings, which a Viewer does not change: no buttons. */}
+      {!p.compact && !viewer && (
         <span class="marks">
           <MarkButton
             label={isFav ? 'Unfavorite' : 'Favorite'}
