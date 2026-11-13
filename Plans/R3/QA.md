@@ -1071,3 +1071,5 @@ Review fixes ([№MW.11](workspaces/TODO.md#MW.11), #md/w2): a stale approve (th
 
 `canApproveWhy` ([№MW.11](workspaces/TODO.md#MW.11), from the server's GET): when approving is not possible the page says why in words instead of one generic hint — viewer, exposed, bus-off, no-git, read-only (a reason it does not know is shown as sent). Checked on real scratch instances, 390 and 1280, no action buttons: bus off → "The Agent Bus integration is off: approvals and timers live on the bus (mdhouse --agent-bus)."; exposed bind → "This mdhouse is open to the network with no users and no allow list, so it is read-only — add a user (mdhouse user-add) or an allow list (mdhouse --allow)."
 
+`no-timer` ([№MW.11](workspaces/TODO.md#MW.11), server `af50931`): approved, but the bus schedule is gone or was made with an older body — the state chip says *no timer*, the line "approved, but nothing fires it — approve again", and Review and approve again / Revoke are offered (walk `automation` with `TW_NOTIMER=1`, fake routes, 390 and 1280, audit clean; not produced by a real bus here). Approve can also answer `no-git` / `read-only`, which have their words.
+

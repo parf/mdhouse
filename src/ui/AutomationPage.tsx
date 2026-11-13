@@ -143,7 +143,7 @@ function Registration({ reg, state, asking, busy, onAsk, onApprove, onRevoke }: 
     <section class={`auto-reg approval-${reg.approval}${reg.disabled ? ' stopped' : ''}`} aria-label={`Registration ${reg.id}`}>
       <header class="auto-head">
         <b>{reg.id}</b>
-        <span class={`auto-state s-${reg.approval}`}>{reg.approval === 'approved' ? 'approved' : reg.approval === 'changed' ? 'changed' : reg.approval === 'unknown' ? 'unknown' : 'not approved'}</span>
+        <span class={`auto-state s-${reg.approval}`}>{reg.approval === 'approved' ? 'approved' : reg.approval === 'changed' ? 'changed' : reg.approval === 'unknown' ? 'unknown' : reg.approval === 'no-timer' ? 'no timer' : 'not approved'}</span>
         {reg.disabled && <span class="auto-state s-stopped">stopped after {reg.failures} failures</span>}
       </header>
       <dl class="auto-facts">

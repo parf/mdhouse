@@ -68,6 +68,7 @@ describe('what the page says', () => {
     expect([canApproveReg(admin, reg({ approval: 'none' })), canApproveReg(admin, reg({ approval: 'changed' })), canApproveReg(admin, reg({ approval: 'approved', schedule: timer })), canApproveReg(admin, reg({ approval: 'unknown' }))]).toEqual([true, true, false, false]);
     // approved but the bus has no timer: it will not fire, so approving again is offered
     expect(canApproveReg(admin, reg({ approval: 'approved', schedule: null }))).toBe(true);
+    expect([canApproveReg(admin, reg({ approval: 'no-timer' })), canRevokeReg(admin, reg({ approval: 'no-timer' }))]).toEqual([true, true]);
     expect([canRevokeReg(admin, reg({ approval: 'none' })), canRevokeReg(admin, reg({ approval: 'changed' })), canRevokeReg(admin, reg({ approval: 'approved', schedule: { id: 's1', enabled: true } })), canRevokeReg(admin, reg({ approval: 'unknown' }))]).toEqual([false, true, true, false]);
     for (const a of ['none', 'changed', 'approved', 'unknown'] as const) expect([canApproveReg(reader, reg({ approval: a, schedule: null })), canRevokeReg(reader, reg({ approval: a }))]).toEqual([false, false]);
   });
@@ -75,6 +76,8 @@ describe('what the page says', () => {
     expect(autoReasonText('stale', 'x')).toMatch(/changed while you were reviewing/);
     expect(autoReasonText('admin', 'x')).toMatch(/mdhouse admin/);
     expect(autoReasonText('exposed', 'x')).toMatch(/open to the network/);
+    expect(autoReasonText('no-git', 'x')).toMatch(/without git/);
+    expect(autoReasonText('read-only', 'x')).toMatch(/read-only/);
     expect(autoReasonText(undefined, 'the bus is off')).toBe('the bus is off');
     expect(autoReasonText(undefined, 'fallback')).toBe('fallback');
   });
@@ -86,6 +89,8 @@ describe('what the page says', () => {
     expect(actionFailure(undefined, 'the agent bus is off')).toEqual({ text: 'the agent bus is off', reset: false });
   });
   test('approved without a timer is its own state; a revoke that left a timer says so', () => {
+    expect(needsReapprove(reg({ approval: 'no-timer', schedule: null }))).toBe(true);
+    expect(APPROVAL_WORDS['no-timer']).toBe('approved, but nothing fires it — approve again');
     expect(needsReapprove(reg({ approval: 'approved', schedule: null }))).toBe(true);
     expect(needsReapprove(reg({ approval: 'approved' }))).toBe(true);
     expect(needsReapprove(reg({ approval: 'approved', schedule: { id: 's', enabled: true } }))).toBe(false);
@@ -105,7 +110,7 @@ describe('what the page says', () => {
   });
   test('an exposed or bus-less instance offers nothing: canApprove false, whatever the registration says', () => {
     const closed = { canApprove: false } as AutomationState;
-    for (const approval of ['none', 'changed', 'approved', 'unknown'] as const) {
+    for (const approval of ['none', 'changed', 'approved', 'no-timer', 'unknown'] as const) {
       expect(canApproveReg(closed, reg({ approval, schedule: null }))).toBe(false);
       expect(canRevokeReg(closed, reg({ approval }))).toBe(false);
     }

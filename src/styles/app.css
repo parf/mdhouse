@@ -2436,7 +2436,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .auto-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
 .auto-state { font: 600 11px/1 var(--mono); padding: 3px 8px; border-radius: 10px; color: var(--fg-muted); background: var(--bg-hover); }
 .auto-state.s-approved { color: #fff; background: var(--ok); }
-.auto-state.s-changed { color: #fff; background: var(--warn); }
+.auto-state:is(.s-changed, .s-no-timer) { color: #fff; background: var(--warn); }
 .auto-state.s-stopped { color: #fff; background: var(--danger); }
 .auto-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0 0 10px; font-size: 13px; }
 .auto-facts dt { color: var(--fg-muted); }

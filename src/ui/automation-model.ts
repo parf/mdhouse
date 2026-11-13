@@ -1,7 +1,7 @@
 /** The Automation page's contract with the server (MW.11 slice 2) and the words it shows. */
 
-/** `unknown`: the bus's key-value store could not be read, so what this machine approved cannot be said (the state's `busError` says why). */
-export type ApprovalState = 'none' | 'approved' | 'changed' | 'unknown';
+/** `no-timer`: approved, but the bus schedule is gone or was made with an older body, so nothing fires it. `unknown`: the bus's key-value store could not be read, so what this machine approved cannot be said (the state's `busError` says why). */
+export type ApprovalState = 'none' | 'approved' | 'changed' | 'no-timer' | 'unknown';
 export type RunOutcome = 'started' | 'skipped' | 'refused' | 'failed' | 'ok' | 'held';
 
 export interface AutoRun {
@@ -54,7 +54,7 @@ export interface AutomationState {
   busError?: string;
 }
 
-export type AutoReason = 'viewer' | 'admin' | 'exposed' | 'no-root' | 'not-found' | 'stale' | 'invalid';
+export type AutoReason = 'viewer' | 'admin' | 'exposed' | 'no-root' | 'no-git' | 'read-only' | 'not-found' | 'stale' | 'invalid';
 
 // ---------------------------------------------------------------- words
 
@@ -96,6 +96,7 @@ export const APPROVAL_WORDS: Record<ApprovalState, string> = {
   none: 'not approved on this machine — it will not run',
   approved: 'approved on this machine',
   changed: 'the file changed since it was approved — it will not run until approved again',
+  'no-timer': 'approved, but nothing fires it — approve again',
   unknown: 'not known — the bus that keeps the approvals cannot be reached; nothing runs meanwhile',
 };
 
@@ -141,13 +142,15 @@ export const shortHash = (hash: string): string => hash.slice(0, 12);
 /** Approve is for an administrator, for a registration that is not already approved at its current hash. */
 export const canApproveReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval' | 'schedule'>): boolean =>
   state.canApprove && (reg.approval === 'none' || reg.approval === 'changed' || needsReapprove(reg));
-export const canRevokeReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval'>): boolean => state.canApprove && (reg.approval === 'approved' || reg.approval === 'changed');
+export const canRevokeReg = (state: Pick<AutomationState, 'canApprove'>, reg: Pick<AutoRegistration, 'approval'>): boolean => state.canApprove && (reg.approval === 'approved' || reg.approval === 'changed' || reg.approval === 'no-timer');
 
 const REASON_WORDS: Partial<Record<AutoReason, string>> = {
   stale: 'The file changed while you were reviewing it. It is shown again below — review it, then approve.',
   admin: 'Only the administrator sees and approves scheduled runs — sign in with mdhouse admin.',
   exposed: 'This mdhouse is open to the network: scheduled runs are managed only from the machine it runs on.',
   'no-root': 'That project is not served.',
+  'no-git': 'This mdhouse runs without git, so no run can be made.',
+  'read-only': 'This project is read-only: a run would write its document here.',
   'not-found': 'That registration is gone.',
 };
 /** The page's words for a refusal; the server's own text for the rest (a bus that is off, a schedule it refused). */
@@ -160,8 +163,8 @@ export function actionFailure(reason: string | undefined, message: string): { te
 }
 
 /** Approved, but the bus has no timer for it (the schedule was removed or lost): it will not fire until approved again. */
-export const needsReapprove = (reg: Pick<AutoRegistration, 'approval' | 'schedule'>): boolean => reg.approval === 'approved' && !reg.schedule;
-export const REAPPROVE_WORDS = 'approved, but the bus has no timer for it — approve again to make one';
+export const needsReapprove = (reg: Pick<AutoRegistration, 'approval' | 'schedule'>): boolean => reg.approval === 'no-timer' || (reg.approval === 'approved' && !reg.schedule);
+export const REAPPROVE_WORDS = 'approved, but nothing fires it — approve again';
 
 /** What a revoke leaves to say: the bus timer that could not be removed. */
 export const revokeNote = (r: { scheduleError?: string }): string | null => (r.scheduleError ? `Revoked here, but the bus timer could not be removed: ${r.scheduleError}` : null);
