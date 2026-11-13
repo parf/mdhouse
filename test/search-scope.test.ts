@@ -3,9 +3,9 @@ import { TARGETS, indexUrl, loadTarget, placeholder, saveTarget } from '../src/u
 
 const store = new Map<string, string>();
 const real = (globalThis as { localStorage?: unknown }).localStorage;
-Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) } });
+Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) } });
 afterEach(() => store.clear());
-afterAll(() => Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: real }));
+afterAll(() => Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: real }));
 
 describe('one search, two scopes', () => {
   test('Files and Index, Files first', () => expect(TARGETS.map((t) => t.id)).toEqual(['files', 'index']));
@@ -27,9 +27,9 @@ describe('one search, two scopes', () => {
     expect(placeholder('index')).toMatch(/index — Enter/);
   });
   test('a blocked storage is Files, and saving does not throw', () => {
-    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } } });
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } } });
     expect(loadTarget()).toBe('files');
     expect(() => saveTarget('index')).not.toThrow();
-    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: real });
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: real });
   });
 });
