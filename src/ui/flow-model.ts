@@ -76,7 +76,7 @@ export const noBaselineText = (why: string | undefined): string =>
   why === 'marker-missing' ? 'The last run left no commit to start from: choose one.' : why === 'marker-unreachable' ? 'The last run’s commit is no longer in the history (rewritten?): choose where to start.' : 'This flow has not run here yet: choose the commit to start from.';
 
 /** The server's reasons for a refusal (`{ error, reason }`, as every write route). */
-export type FlowReason = 'viewer' | 'read-only' | 'no-root' | 'no-git' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
+export type FlowReason = 'viewer' | 'read-only' | 'not-writable' | 'no-root' | 'no-git' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
 
 const TERMINAL: FlowRunStatus[] = ['complete', 'blocked', 'failed', 'cancelled', 'partial', 'unsupported'];
 export const isTerminal = (status: FlowRunStatus): boolean => TERMINAL.includes(status);
@@ -104,6 +104,7 @@ export function defaultRange(p: FlowCatalogEntry): FlowRangeKind {
 const REASON_WORDS: Record<FlowReason, string> = {
   viewer: VIEWER_MESSAGE,
   'read-only': 'This project is read-only, so a run document cannot be written.',
+  'not-writable': 'This project is read-only, so a run document cannot be written.',
   'no-root': 'That project is not served.',
   'no-git': 'This project is not in a git repository, so there is no history to review.',
   'unknown-package': 'That flow is not installed.',

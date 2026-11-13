@@ -148,8 +148,10 @@ describe('against the fake routes', () => {
   });
   test('a Viewer\'s catalog is refused as viewer', async () => {
     const seen: string[] = [];
-    (globalThis as any).dispatchEvent = (e: Event) => seen.push(e.type);
+    const on = () => seen.push(VIEWER_DENIED);
+    addEventListener(VIEWER_DENIED, on);
     const e = await api().catalog('viewer').catch((x) => x);
+    removeEventListener(VIEWER_DENIED, on);
     expect(e.reason).toBe('viewer');
     expect(e.message).toBe(VIEWER_MESSAGE);
     expect(seen).toEqual([VIEWER_DENIED]);
