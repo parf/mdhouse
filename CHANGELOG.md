@@ -14,6 +14,8 @@
 
 ### Fixed
 
+- Touch: a document on a phone or a portrait tablet starts with its text — title, Edit and one ⋯ (a sheet with every other action, in words), one line of facts, then the page; the contents, history and Commit are behind one Context row
+
 - Touch: a drawer row is its name and one git badge (a small file is muted, not struck through); the Q&A form shows 💬, ✅, 🚫 and Cancel with the other actions behind More ▾; the Agent Bus panel is a bottom sheet and the bus address sits behind Connection
 
 - Touch: each heading has one ⋯ button instead of four (Edit section, Add below, Add at end, Copy link); with a mouse nothing changes

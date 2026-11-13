@@ -20,6 +20,7 @@ import type { QaAction, QaChange } from '../lib/qa';
 import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
+import { usePhone } from './phone';
 import { follow } from './PageHead';
 import { editTarget, isPageHref } from '../lib/urls';
 import { DocCommit } from './GitPanel';
@@ -187,6 +188,9 @@ export function Doc({
   };
   const kept = doc?.kind === 'md' && !sourceOpen ? loadDraft(`${doc.root}/${doc.rel}`) : null;
   const canEdit = !!doc && doc.kind === 'md' && !doc.reference && (writable || !!kept);
+  const phone = usePhone();
+  const [moreOpen, setMoreOpen] = useState(false);
+  useEffect(() => setMoreOpen(false), [doc?.url, phone]);
   const [tocOpen, setTocOpen] = useState(true);
   /** Deepest heading level the contents list shows. H1–H2 by default; the H3 chip widens it. */
   const [tocDepth, setTocDepth] = useState(2);
@@ -1114,6 +1118,128 @@ export function Doc({
     </button>
   );
 
+  const gitLinkEl = rootInRepo && rootGitUrl && (
+    <a
+      class="icon-btn git-link"
+      href={rootGitUrl}
+      title="The git view — what changed, by commit"
+      aria-label="Git view"
+      onClick={(e) => {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        e.preventDefault();
+        onOpenRootGit?.();
+      }}
+    >
+      <IconGitMark />
+      <span class="lbl">Git view</span>
+    </a>
+  );
+  const extEditEl = editAt && (
+    <a class="icon-btn edit-link" href={editAt} title={`Edit ${editTarget(editAt)} (e)`} aria-label="Edit">
+      <IconEdit />
+      <span class="lbl">Edit in an external editor</span>
+    </a>
+  );
+  /** Commit this one file, without leaving it for the git view. */
+  const commitEl = writable && rootInRepo && (
+    <DocCommit p={`${doc.root}/${doc.rel}`} name={name} dirty={dirty} onDone={() => onReload?.()} />
+  );
+  const actionBtns = (
+    <>
+        <button
+          class="icon-btn"
+          aria-pressed={fullWidth}
+          title={fullWidth ? 'Back to a reading column' : 'Use the full window width'}
+          onClick={() => setFullWidth((w) => !w)}
+        >
+          <IconWide size={15} inward={fullWidth} />
+          <span class="lbl">{fullWidth ? 'Reading column' : 'Full width'}</span>
+        </button>
+        {/* Two ways to look at the same change: the patch, and the document with the
+            change marked on it. Either one toggles back to the plain document. */}
+        {diffButtons && (
+          <>
+            <button
+              class="icon-btn"
+              aria-pressed={view === 'patch'}
+              title={view === 'patch' ? 'Show the document' : whatDiff(dirty, 'as a patch')}
+              onClick={() => pick('patch')}
+            >
+              <IconDiff size={15} />
+          <span class="lbl">{view === 'patch' ? 'Show the document' : 'Compare as a patch'}</span>
+            </button>
+            {md && (
+              <button
+                class="icon-btn"
+                aria-pressed={view === 'marked'}
+                title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
+                onClick={() => pick('marked')}
+              >
+                <IconDiffDoc size={15} />
+          <span class="lbl">{view === 'marked' ? 'Show the document' : 'Compare, marked on the page'}</span>
+              </button>
+            )}
+          </>
+        )}
+        {doc.kind === 'html' && (
+          <button
+            class="icon-btn src-toggle"
+            aria-pressed={source}
+            title={source ? 'Show the page' : 'Show the source'}
+            onClick={() => setSource((v) => !v)}
+          >
+            &lt;/&gt;
+          <span class="lbl">{source ? 'Show the page' : 'Show the source'}</span>
+          </button>
+        )}
+        {!viewer && (
+          <>
+            <button
+              class="icon-btn"
+              title={isFav ? 'Unfavorite' : 'Favorite'}
+              aria-pressed={isFav}
+              onClick={() => onMark(doc.rel, 'favorite', !isFav)}
+            >
+              <IconStar size={15} filled={isFav} />
+          <span class="lbl">{isFav ? 'Unfavorite' : 'Favorite'}</span>
+            </button>
+            <button
+              class="icon-btn"
+              title={isMuted ? 'Unmute' : 'Mute'}
+              aria-pressed={isMuted}
+              onClick={() => onMark(doc.rel, 'muted', !isMuted)}
+            >
+              <IconMute size={15} />
+          <span class="lbl">{isMuted ? 'Unmute' : 'Mute'}</span>
+            </button>
+          </>
+        )}
+        {abOn && (
+          <button
+            class={`icon-btn ab-btn ${abState}`}
+            aria-pressed={abOpen}
+            title={`Ask an agent (a)${abState === 'waiting' ? ' — waiting for a reply' : abState === 'answered' ? ' — a reply came' : ''}`}
+            onClick={() => (abOpen ? setAbOpen(false) : openAb())}
+          >
+            <IconBus size={15} />
+          <span class="lbl">Ask an agent</span>
+          </button>
+        )}
+        <button
+          class="icon-btn"
+          title="Copy link"
+          onClick={() => void navigator.clipboard?.writeText(location.origin + doc.url)}
+        >
+          <IconLink size={15} />
+          <span class="lbl">Copy link</span>
+        </button>
+    </>
+  );
+  const sections = doc.headings.filter((h) => h.level <= 3).length;
+  const contextCounts = [sections > 1 && `${sections} sections`, log?.commits.length ? `${log.commits.length} commits` : false, dirty && 'uncommitted']
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <article class={`doc-wrap${fullWidth ? ' full' : ''}`}>
       <header class="doc-head">
@@ -1156,34 +1282,20 @@ export function Doc({
               </span>
             );
           })}
-          {dirs.length > 0 && crumbChips}
+          {dirs.length > 0 && !phone && crumbChips}
         </div>
 
         {/* The ⚙ shares the title's line: the top of a document is the breadcrumb, and a gear
             pinned to the corner floated beside that instead. */}
         <div class="doc-title-row">
           <h1 class="doc-title">
-            <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />
+            {!phone && <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />}
             {title}
-            {chips}
+            {!phone && chips}
           </h1>
           {/* Hands the file to whatever handles `edit:` URLs — an editor, set up outside mdhouse.
               Settings turns it off where nothing does. */}
-          {rootInRepo && rootGitUrl && (
-            <a
-              class="icon-btn git-link"
-              href={rootGitUrl}
-              title="The git view — what changed, by commit"
-              aria-label="Git view"
-              onClick={(e) => {
-                if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-                e.preventDefault();
-                onOpenRootGit?.();
-              }}
-            >
-              <IconGitMark />
-            </a>
-          )}
+          {!phone && gitLinkEl}
           {canEdit && (
             <button
               type="button"
@@ -1195,10 +1307,19 @@ export function Doc({
               {sourceOpen ? 'Page' : 'Edit'}
             </button>
           )}
-          {editAt && (
-            <a class="icon-btn edit-link" href={editAt} title={`Edit ${editTarget(editAt)} (e)`} aria-label="Edit">
-              <IconEdit />
-            </a>
+          {!phone && extEditEl}
+          {phone && (
+            <button
+              type="button"
+              class="icon-btn doc-more"
+              aria-haspopup="true"
+              aria-expanded={moreOpen}
+              aria-label="More actions"
+              title="More actions"
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              ⋯
+            </button>
           )}
           {gear}
         </div>
@@ -1219,98 +1340,32 @@ export function Doc({
             </button>
           )}
           {/* Commit this one file, without leaving it for the git view. */}
-          {writable && rootInRepo && (
-            <DocCommit p={`${doc.root}/${doc.rel}`} name={name} dirty={dirty} onDone={() => onReload?.()} />
-          )}
+          {!phone && commitEl}
           {doc.tasks.total > 0 && (
             <span>
               {doc.tasks.done}/{doc.tasks.total} done
             </span>
           )}
 
-          <span class="doc-actions">
-            <button
-              class="icon-btn"
-              aria-pressed={fullWidth}
-              title={fullWidth ? 'Back to a reading column' : 'Use the full window width'}
-              onClick={() => setFullWidth((w) => !w)}
-            >
-              <IconWide size={15} inward={fullWidth} />
-            </button>
-            {/* Two ways to look at the same change: the patch, and the document with the
-                change marked on it. Either one toggles back to the plain document. */}
-            {diffButtons && (
-              <>
-                <button
-                  class="icon-btn"
-                  aria-pressed={view === 'patch'}
-                  title={view === 'patch' ? 'Show the document' : whatDiff(dirty, 'as a patch')}
-                  onClick={() => pick('patch')}
-                >
-                  <IconDiff size={15} />
-                </button>
-                {md && (
-                  <button
-                    class="icon-btn"
-                    aria-pressed={view === 'marked'}
-                    title={view === 'marked' ? 'Show the document' : whatDiff(dirty, 'marked on the whole document')}
-                    onClick={() => pick('marked')}
-                  >
-                    <IconDiffDoc size={15} />
-                  </button>
-                )}
-              </>
-            )}
-            {doc.kind === 'html' && (
-              <button
-                class="icon-btn src-toggle"
-                aria-pressed={source}
-                title={source ? 'Show the page' : 'Show the source'}
-                onClick={() => setSource((v) => !v)}
-              >
-                &lt;/&gt;
-              </button>
-            )}
-            {!viewer && (
-              <>
-                <button
-                  class="icon-btn"
-                  title={isFav ? 'Unfavorite' : 'Favorite'}
-                  aria-pressed={isFav}
-                  onClick={() => onMark(doc.rel, 'favorite', !isFav)}
-                >
-                  <IconStar size={15} filled={isFav} />
-                </button>
-                <button
-                  class="icon-btn"
-                  title={isMuted ? 'Unmute' : 'Mute'}
-                  aria-pressed={isMuted}
-                  onClick={() => onMark(doc.rel, 'muted', !isMuted)}
-                >
-                  <IconMute size={15} />
-                </button>
-              </>
-            )}
-            {abOn && (
-              <button
-                class={`icon-btn ab-btn ${abState}`}
-                aria-pressed={abOpen}
-                title={`Ask an agent (a)${abState === 'waiting' ? ' — waiting for a reply' : abState === 'answered' ? ' — a reply came' : ''}`}
-                onClick={() => (abOpen ? setAbOpen(false) : openAb())}
-              >
-                <IconBus size={15} />
-              </button>
-            )}
-            <button
-              class="icon-btn"
-              title="Copy link"
-              onClick={() => void navigator.clipboard?.writeText(location.origin + doc.url)}
-            >
-              <IconLink size={15} />
-            </button>
-          </span>
+          {!phone && <span class="doc-actions">{actionBtns}</span>}
         </div>
       </header>
+      {phone && moreOpen && (
+        <>
+          <div class="sheet-scrim" onClick={() => setMoreOpen(false)} />
+          <div class="doc-sheet" role="dialog" aria-label="More actions" onClick={() => setMoreOpen(false)}>
+            {chips && (
+              <div class="sheet-row">
+                <span class="sheet-lbl">Views</span>
+                {chips}
+              </div>
+            )}
+            {actionBtns}
+            {gitLinkEl}
+            {extEditEl}
+          </div>
+        </>
+      )}
       {abOn && (
         <AgentBusPanel
           key={doc.url}
@@ -1323,61 +1378,68 @@ export function Doc({
         />
       )}
 
-      <div class="doc-aside">
-        {gitStateOf(doc) && (
-          <div class="doc-git">
-            <GitStateBadge item={doc} full />
-          </div>
-        )}
-        {doc.headings.filter((h) => h.level <= 3).length > 1 && (
-          <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
-            <summary>
-              Table of contents
-              {hasSubs && (
-                <button
-                  class="depth"
-                  aria-pressed={tocDepth === 3}
-                  title={tocDepth === 3 ? 'Show H1–H2 only' : 'Include H3 headings'}
-                  // Inside a <summary>, a click would otherwise fold the whole section away.
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setTocDepth((d) => (d === 3 ? 2 : 3));
-                  }}
-                >
-                  H3
-                </button>
-              )}
-            </summary>
-            <ul>
-              {listed.map((h) => (
-                <li data-level={h.level} key={h.slug}>
-                  <a href={`#${h.slug}`}>{h.text}</a>
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-        <History
-          shown={historyShown}
-          log={log}
-          failed={logFailed}
-          activeRev={diffOn ? diffRev : null}
-          local={dirty ? { ...(local ?? { added: 0, removed: 0 }), loading: !local, at: doc.mtime, isNew: doc.status === 'untracked' } : null}
-          localOn={diffOn && diffRev === null}
-          onPickLocal={() => {
-            const showing = diffOn && diffRev === null;
-            setDiffRev(null);
-            setView(showing ? 'doc' : doc.kind === 'md' ? diffView : 'patch');
-          }}
-          onPickRev={(hash) => {
-            // Clicking the revision already on screen puts the document back.
-            const showing = diffOn && diffRev === hash;
-            setDiffRev(showing ? null : hash);
-            setView(showing ? 'doc' : doc.kind === 'md' ? diffView : 'patch');
-          }}
-        />
-      </div>
+      <details class="doc-context" open={!phone}>
+        <summary>
+          Context
+          {contextCounts && <span class="ctx-n"> · {contextCounts}</span>}
+        </summary>
+        {phone && commitEl}
+        <div class="doc-aside">
+          {gitStateOf(doc) && (
+            <div class="doc-git">
+              <GitStateBadge item={doc} full />
+            </div>
+          )}
+          {doc.headings.filter((h) => h.level <= 3).length > 1 && (
+            <details class="toc" open={tocOpen} onToggle={(e) => setTocOpen((e.target as HTMLDetailsElement).open)}>
+              <summary>
+                Table of contents
+                {hasSubs && (
+                  <button
+                    class="depth"
+                    aria-pressed={tocDepth === 3}
+                    title={tocDepth === 3 ? 'Show H1–H2 only' : 'Include H3 headings'}
+                    // Inside a <summary>, a click would otherwise fold the whole section away.
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTocDepth((d) => (d === 3 ? 2 : 3));
+                    }}
+                  >
+                    H3
+                  </button>
+                )}
+              </summary>
+              <ul>
+                {listed.map((h) => (
+                  <li data-level={h.level} key={h.slug}>
+                    <a href={`#${h.slug}`}>{h.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          <History
+            shown={historyShown}
+            log={log}
+            failed={logFailed}
+            activeRev={diffOn ? diffRev : null}
+            local={dirty ? { ...(local ?? { added: 0, removed: 0 }), loading: !local, at: doc.mtime, isNew: doc.status === 'untracked' } : null}
+            localOn={diffOn && diffRev === null}
+            onPickLocal={() => {
+              const showing = diffOn && diffRev === null;
+              setDiffRev(null);
+              setView(showing ? 'doc' : doc.kind === 'md' ? diffView : 'patch');
+            }}
+            onPickRev={(hash) => {
+              // Clicking the revision already on screen puts the document back.
+              const showing = diffOn && diffRev === hash;
+              setDiffRev(showing ? null : hash);
+              setView(showing ? 'doc' : doc.kind === 'md' ? diffView : 'patch');
+            }}
+          />
+        </div>
+      </details>
 
       {view === 'marked' && diff && diff.kind !== 'none' && (
         <DiffHead diff={diff}>

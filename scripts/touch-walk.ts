@@ -73,6 +73,18 @@ if (want('nav')) {
   await tap('.sidebar a[href="/repo/notes/plan.md"]', 0);
   say(`  nav: tapped plan.md; location=${await ev('location.pathname')} drawer=${await ev("document.querySelector('.app').dataset.sidebar")}`);
 }
+if (want('head')) {
+  await go('/repo/README.md');
+  const r = await audit('doc-phone-header');
+  say('  first heading top: ' + await ev(`Math.round(document.querySelector('.md h1, .md h2').getBoundingClientRect().top)`) + 'px; header controls: ' + await ev(`document.querySelectorAll('.doc-head :is(button,a[href],input)').length`));
+  await tap('.doc-more', 0);
+  await audit('doc-sheet');
+  say('  sheet: ' + await ev(`[...document.querySelectorAll('.doc-sheet .icon-btn')].map(e=>e.textContent.trim()).join(' | ')`));
+  await tap('.doc-sheet .icon-btn', 0);
+  await tap('.doc-context > summary', 0);
+  await audit('doc-context');
+  say('  context: ' + await ev(`document.querySelector('.doc-context').open + ' commit btn visible: ' + !!document.querySelector('.doc-context .doc-commit .git-btn')`));
+}
 if (want('doc')) {
   await go('/repo/README.md');
   await audit('doc');
@@ -130,6 +142,7 @@ if (want('diff')) {
 if (want('commit')) {
   await go('/repo/README.md');
   await audit('commit-doc');
+  if (await ev("getComputedStyle(document.querySelector('.doc-context > summary')).display !== 'none'")) await tap('.doc-context > summary', 0);
   await tap('.doc-commit .git-btn', 0);
   await audit('commit-open');
   await tap('.doc-commit .git-message', 0);
@@ -146,7 +159,7 @@ if (want('commit')) {
 }
 if (want('ab')) {
   await go('/repo/README.md');
-  await tap('.ab-btn', 0);
+  if (await ev("!!document.querySelector('.doc-more')")) { await tap('.doc-more', 0); await tap('.doc-sheet .ab-btn', 0); } else await tap('.ab-btn', 0);
   await sleep(900);
   await audit('ab-panel');
   await tap('.ab-pick', 0);

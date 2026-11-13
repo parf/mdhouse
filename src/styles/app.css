@@ -897,6 +897,8 @@ main {
 .doc-meta .who { color: var(--fg-muted); }
 .doc-meta .who .born { margin-left: 4px; color: var(--fg-faint); }
 .doc-actions { display: flex; gap: 4px; margin-left: auto; }
+.doc-context > summary { display: none; }
+.icon-btn .lbl { display: none; }
 
 /* Contents on the left, history on the right; they stack when the column is narrow. */
 .doc-aside { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
@@ -2261,3 +2263,27 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .ab-where > summary { display: list-item; cursor: pointer; min-height: 44px; line-height: 44px; }
 }
 @keyframes abRise { from { transform: translateY(24px); opacity: 0; } }
+
+/* ── The phone's document: the page first ───────────────────────────────── */
+
+/* Title, Edit, ⋯, one meta line, then the text. Secondary actions are the ⋯ sheet; the contents, history and the commit are one "Context" disclosure. */
+@media (pointer: coarse) and (max-width: 900px) {
+  .doc-context > summary { display: flex; align-items: center; min-height: 44px; padding: 0 12px; margin-bottom: 8px; cursor: pointer; list-style: none; font-size: 13px; font-weight: 600; color: var(--fg-muted); background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; }
+  .doc-context > summary::-webkit-details-marker { display: none; }
+  .doc-context > summary::after { content: '▾'; margin-left: auto; }
+  .doc-context[open] > summary::after { content: '▴'; }
+  .doc-context > summary .ctx-n { font-weight: 400; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .doc-context > .doc-commit { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+  .doc-title-row { align-items: center; }
+  .doc-title { margin-bottom: 0; }
+  .sheet-scrim { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, #000 40%, transparent); }
+  .doc-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; display: grid; max-height: 75dvh; overflow-y: auto; padding: 8px 8px max(8px, env(safe-area-inset-bottom)); box-sizing: border-box; background: var(--bg-raised); border-top: 1px solid var(--border-strong); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px color-mix(in srgb, #000 25%, transparent); }
+  .doc-sheet .icon-btn { display: flex; align-items: center; justify-content: flex-start; gap: 14px; width: 100%; min-height: 48px; padding: 0 14px; box-sizing: border-box; font-size: 15px; color: var(--fg); background: none; border: 0; border-radius: 8px; text-align: left; text-decoration: none; }
+  .doc-sheet .icon-btn[aria-pressed="true"] { color: var(--accent); }
+  .doc-sheet .icon-btn .lbl { display: inline; }
+  .doc-sheet .icon-btn svg { flex: none; }
+  .doc-sheet .sheet-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 4px 14px 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .doc-sheet .sheet-lbl { font-size: 13px; color: var(--fg-muted); margin-right: 4px; }
+  .doc-sheet .view-chips { margin-left: 0; }
+  .doc-sheet .view-chip { min-height: 44px; padding-inline: 12px; }
+}
