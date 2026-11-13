@@ -1218,8 +1218,11 @@ export async function serve(opts: ServeOptions) {
             const served = registry.list().find((r) => r.path === prep.abs);
             if (served) return servedAs(served);
             const stale = () => json({ error: 'the folder changed since it was asked for — look again', reason: 'stale' }, 409);
+            /** A blocked file (newer or malformed) is 409 `reason: blocked`, like `/api/settings`; any other failure is 500. */
             const unreadable = (blocked: string | null) =>
-              fail(500, blocked ? `prefs.json is ${blocked} — nothing added` : 'prefs.json could not be read — nothing added');
+              blocked
+                ? noStore(json({ error: `prefs.json is ${blocked} — nothing added`, reason: 'blocked' }, 409))
+                : fail(500, 'prefs.json could not be read — nothing added');
             let refused: string | null;
             try {
               // The file as it is under the lock: saved by another process means a re-add with its own

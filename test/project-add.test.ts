@@ -265,10 +265,10 @@ describe('POST /api/roots/add', () => {
     }
   });
 
-  test('a newer or broken prefs file refuses (500) and is left byte for byte — not set aside, not migrated; nothing added', async () => {
-    for (const [port, text] of [
-      [61779, JSON.stringify({ version: 9, saved: [] }) + '\n'],
-      [61780, '{ "version": 2, "saved": [ \n'],
+  test('a newer prefs file is 409 blocked, a broken one 500; either is left byte for byte — not set aside, not migrated; nothing added', async () => {
+    for (const [port, text, status] of [
+      [61779, JSON.stringify({ version: 9, saved: [] }) + '\n', 409],
+      [61780, '{ "version": 2, "saved": [ \n', 500],
     ] as const) {
       const t = await start(port);
       try {
@@ -276,7 +276,8 @@ describe('POST /api/roots/add', () => {
         await writeFile(t.prefsPath, text);
         const before = await t.snapshot();
         const res = await t.add({ path: t.fresh, mode: 'ro' }, cookie);
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(status);
+        if (status === 409) expect(await res.json()).toEqual({ error: 'prefs.json is version 9, from a newer mdhouse — nothing added', reason: 'blocked' });
         expect(await t.snapshot()).toEqual(before);
         expect(readFileSync(t.prefsPath, 'utf8')).toBe(text);
       } finally {

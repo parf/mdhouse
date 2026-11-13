@@ -627,6 +627,7 @@ administrator checks for every path. The absolute path must resolve to an existi
 relative paths and tilde expansion are refused. Web add refuses reference roots and descendants.
 The canonical directory preparation/registration is shared with CLI/control. Web add never changes
 an already served canonical root: 409 `reason: served` includes its id, with its current mode intact.
+A blocked prefs file (newer or malformed) is 409 `reason: blocked` with the reason text; an unreadable one is 500.
 A successful add returns `{roots,id}`, publishes roots metadata and serves the directory for this
 session only with its explicit mode already installed. No directory or project file is created.
 Settings requires an explicit mode selection, preserves refused drafts and selects the added project.

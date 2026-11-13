@@ -222,8 +222,12 @@ describe('unsupported or malformed access data fails closed', () => {
   });
 });
 
+/** Is `rev` in this clone's history? A shallow clone or an exported tree has none. */
+const hasRev = (rev: string): boolean =>
+  Bun.spawnSync(['git', 'cat-file', '-e', `${rev}^{commit}`], { cwd: import.meta.dir, stdout: 'ignore', stderr: 'ignore' }).exitCode === 0;
+
 describe('an older mdhouse reading a version-2 file (base code eec91ac)', () => {
-  test('never broadens effective writes: no auto-rw, only explicit RW kept, and it refuses to write the file', async () => {
+  test.skipIf(!hasRev('eec91ac'))('never broadens effective writes: no auto-rw, only explicit RW kept, and it refuses to write the file', async () => {
     const dir = await tmp('mdhouse-access-old-');
     try {
       const old = join(dir, 'old');
