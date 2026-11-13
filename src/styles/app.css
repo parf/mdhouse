@@ -1140,6 +1140,8 @@ main {
 .md .qa-edit .bar button:disabled { opacity: 0.45; cursor: default; }
 .md .qa-edit .bar .n { font: 600 10px/1 var(--mono); color: var(--fg-muted); border: 1px solid var(--border); border-radius: 3px; padding: 1px 3px; margin-right: 1px; }
 .md .qa-edit .bar .default .n { color: inherit; border-color: currentColor; }
+.md .qa-edit .bar span.xtra { display: contents; }
+.md .qa-edit .bar :is(.more, .tc) { display: none; }
 .md .qa-edit .bar .sign { margin-left: auto; font-size: 12px; color: var(--fg-muted); display: inline-flex; gap: 4px; align-items: center; cursor: pointer; position: relative; }
 .md .qa-edit .bar .sign[data-tip]:hover::after { left: auto; right: 0; }
 .md .answer-cancel { color: var(--fg-muted); background: transparent; border: 1px solid var(--border-strong); }
@@ -1873,6 +1875,7 @@ button.sync-chip { cursor: pointer; }
 .ab-chip.unavailable { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); text-decoration: line-through; }
 .ab-chip.unavailable::before { background: var(--danger); }
 .ab-where { margin: 2px 12px; font-size: 11.5px; color: var(--fg-muted); }
+.ab-where > summary { display: none; }
 .ab-chip.none::before { display: none; }
 .ab-pick { margin-left: auto; font: inherit; font-size: 11.5px; color: var(--accent); background: none; border: 0; cursor: pointer; padding: 1px 4px; }
 .ab-pick:hover { text-decoration: underline; }
@@ -2231,3 +2234,30 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 @media (pointer: coarse) and (min-width: 721px) {
   .app[data-sidebar="compact"] { --sidebar-w: clamp(244px, var(--sidebar-compact), 340px); }
 }
+
+/* ── Touch: quieter rows ────────────────────────────────────────────────── */
+
+/* A drawer row is its name and one git badge; size, age, the heat flame and the ∅ belong to the wide sidebar. */
+@media (pointer: coarse) {
+  .sidebar:not(.open) .row.file :is(.badge.size, .badge.age, .recent-heat, .size-mark, .badge.modified, .badge.untracked, .badge.staged, .badge.deleted) { display: none; }
+  /* A struck name reads as "deleted": a small file is muted instead (its size is in the row's title and in the wide sidebar). */
+  :is(.row.tiny > .label, .row.small > .label, .hit.tiny .hit-name, .hit.small .hit-name, .dir-table tr:is(.tiny, .small) .link, .dir-table td.size.small, .badge.size:is(.small, .tiny), .size-num.small) { text-decoration: none; }
+  :is(.row.small > .label, .hit.small .hit-name, .dir-table tr.small .link) { color: var(--fg-muted); }
+}
+
+/* The Q&A form on touch: 💬 and the one or two actions that close an item; the other five sit behind More ▾ (Alt+number still works). */
+@media (pointer: coarse) {
+  .md .qa-edit .bar .more { display: inline-flex; align-items: center; }
+  .md .qa-edit .bar .cancel .kb { display: none; }
+  .md .qa-edit .bar .cancel .tc { display: inline; }
+  .md .qa-edit .bar:not(.more-open) :is(.xtra, span.xtra) { display: none; }
+  .md .qa-edit .bar.more-open .sign { margin-left: 0; }
+}
+
+/* The Agent Bus panel on a phone: a bottom sheet about 60% high, so the page stays in view while you ask; the bus address is behind "Connection". */
+@media (pointer: coarse) and (max-width: 720px) {
+  .ab-panel { top: auto; width: 100vw; height: 60dvh; border-left: 0; border-top: 1px solid var(--border-strong); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent); animation: abRise 0.16s ease-out; }
+  .app:has(.ab-panel) main { padding-bottom: 60dvh; }
+  .ab-where > summary { display: list-item; cursor: pointer; min-height: 44px; line-height: 44px; }
+}
+@keyframes abRise { from { transform: translateY(24px); opacity: 0; } }

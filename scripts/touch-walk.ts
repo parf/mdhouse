@@ -91,6 +91,10 @@ if (want('qa')) {
   await audit('qa-doc');
   await tap('.md .g-btn:not(.dis)', 0);
   await audit('qa-form');
+  say('  qa form buttons: ' + await ev(`[...document.querySelectorAll('.qa-edit .bar button, .qa-edit .bar label')].filter(e=>e.getBoundingClientRect().height>0).map(e=>e.textContent.trim()).join(' | ')`));
+  await tap('.qa-edit .bar .more', 0);
+  await audit('qa-form-more');
+  await tap('.qa-edit .bar .more', 0);
   await tap('.qa-edit textarea', 0);
   await type('Answered from the touch walk.');
   await audit('qa-form-typed');

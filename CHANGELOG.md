@@ -14,6 +14,8 @@
 
 ### Fixed
 
+- Touch: a drawer row is its name and one git badge (a small file is muted, not struck through); the Q&A form shows 💬, ✅, 🚫 and Cancel with the other actions behind More ▾; the Agent Bus panel is a bottom sheet and the bus address sits behind Connection
+
 - Touch: each heading has one ⋯ button instead of four (Edit section, Add below, Add at end, Copy link); with a mouse nothing changes
 
 - Touch: the primary journey (open, document, tick, Q&A, editor, diff, commit, Agent Bus, RAG search) is usable on a phone and a tablet — 44px buttons, links and rows, 16px fields so the page does not zoom, wrapping page chrome, and the sidebar drawer closes when you choose a page

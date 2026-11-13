@@ -45,6 +45,8 @@ const ISSUE_PROPOSAL: Action[] = [
   ['no', '✗ ignore', 'Ignore — the issue is closed 🚫'],
 ];
 const ELABORATE: Action = ['elaborate', '🔍 more', "Ask for more: a reply 'elaborate — …'; the item stays open"];
+/** On touch the form shows 💬 and these; the rest sit behind More ▾ (a CSS matter: every button stays in the page for Alt+number). */
+const PRIMARY = new Set(['✅', 'yes', '🚫', 'no', 'pick']);
 /** One number per action, the same in every form — Alt+number presses it. */
 const NUM: Record<string, number> = { '✅': 1, yes: 1, '🚫': 2, no: 2, '⏸️': 3, '⏳': 4, partial: 5, '⚠️': 5, '🎫': 6, elaborate: 7, pick: 8, '🎯': 9 };
 
@@ -99,6 +101,7 @@ export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCan
   const [sign, setSign] = useState(loadSign);
   const [need, setNeed] = useState(false);
   const [opened, setOpened] = useState(false);
+  const [more, setMore] = useState(false);
   const voice = useVoiceInput(
     text,
     (value) => {
@@ -201,7 +204,7 @@ export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCan
       </div>
       {note && <p class="answer-note">{note}</p>}
       {voice.error && <p class="answer-note">{voice.error}</p>}
-      <div class="bar" ref={bar} hidden={voice.listening}>
+      <div class={`bar${more ? ' more-open' : ''}`} ref={bar} hidden={voice.listening}>
         <button
           type="button"
           class={`save${save ? '' : ' default'}`}
@@ -215,7 +218,7 @@ export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCan
           <button
             type="button"
             key={a}
-            class={a === save ? 'default' : ''}
+            class={`${a === save ? 'default' : ''}${PRIMARY.has(a) ? '' : ' xtra'}`.trim()}
             disabled={saving}
             data-n={NUM[a]}
             data-tip={`${tip ? `${tip} — ` : ''}Alt+${NUM[a]}`}
@@ -225,11 +228,21 @@ export function QaEditor({ kind, first, issue, initial, me, onText, onAct, onCan
           </button>
         ))}
         <button type="button" class="cancel" disabled={saving} onClick={onCancel} data-tip="Cancel — Esc">
-          ESC
+          <span class="kb">ESC</span>
+          <span class="tc">Cancel</span>
         </button>
-        {editHref && <EditLink href={editHref} onOpen={() => setOpened(true)} />}
+        {actions.some(([a]) => !PRIMARY.has(a)) && (
+          <button type="button" class="more" aria-expanded={more} onClick={() => setMore((v) => !v)}>
+            More {more ? '▴' : '▾'}
+          </button>
+        )}
+        {editHref && (
+          <span class="xtra">
+            <EditLink href={editHref} onOpen={() => setOpened(true)} />
+          </span>
+        )}
         {kind !== 'edit' && (
-          <label class="sign" data-tip={`Sign the reply: it starts with 👤${me}`}>
+          <label class="sign xtra" data-tip={`Sign the reply: it starts with 👤${me}`}>
             <input
               type="checkbox"
               checked={sign}

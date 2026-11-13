@@ -937,4 +937,9 @@ is 21px (the row itself is the target).
 | Item | Result at 390 / 768, light / dark | Evidence |
 | --- | --- | --- |
 | 2 One ⋯ per heading | pass, 4/4: ⋯ opens Edit section · Add below · Add at end · Copy link (44px rows with text); Add below opens the form; `#` stays a link; audit clean (the open menu covers the next heading's ⋯ by design) | `h3-<w>-<scheme>-02-heading-menu.png` |
+| 5a Drawer row = name + one git badge | pass: size, age, heat flame, ∅ and the M/U/S/D letter are hidden in the drawer on touch (they stay in the widened sidebar); a small file is muted, not struck through; the size stays in the row's title | `f5-390-light-03-drawer-folder-open.png` |
+| 5b Q&A form on touch | pass, 4/4: 💬 · 1 ✅ settled · 2 🚫 drop · Cancel · More ▾ (the other actions, the edit link and 👤 sign), 44px; Alt+number still finds every button; answer saved to disk | `f5-<w>-<scheme>-09-qa-form.png`, `-10-qa-form-more.png` |
+| 5c Agent Bus panel on a phone | pass, 4/4 at 390 (sheet ≤720px): 60dvh bottom sheet, the page above it stays in view and scrolls (padding-bottom), the bus address behind Connection; desktop panel unchanged | `f5-390-light-26-ab-typed.png`, `-24-ab-panel.png` |
+
+Not changed: the strikethrough for small files on a pointer device (desktop), and the full-width Agent Bus panel at tablet widths above 720px.
 

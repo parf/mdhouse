@@ -4,6 +4,9 @@ import { resolveTargets, type TargetLevel } from './ab-targets';
 import { IconBus, IconX } from './icons';
 import { VoiceInputControls, useVoiceInput } from './VoiceInput';
 
+/** A phone shows the panel as a bottom sheet and keeps the connection's address behind a toggle. */
+const SHEET = '(pointer: coarse) and (max-width: 720px)';
+
 /** The buttons, numbered for Alt+1…5, in two rows; the first is the default — Ctrl+Enter. */
 const ACTIONS: Array<[AbAction, string, string]> = [
   ['updated', 'Updated — reply', 'The page changed: read it and reply'],
@@ -325,9 +328,10 @@ export function AgentBusPanel({ open, onClose, p, root, named, onState }: Props)
         </div>
       )}
       {info?.enabled && info.endpoint !== undefined && (
-        <p class="ab-where">
+        <details class="ab-where" open={!matchMedia(SHEET).matches}>
+          <summary>Connection</summary>
           via <code>{info.endpoint}</code> · {info.source === 'space' ? "this project's bus" : "the instance's bus"}
-        </p>
+        </details>
       )}
       {infoError && <p class="ab-error">{infoError}</p>}
       {info?.enabled && !info.connected && <p class="ab-error">Not connected: {info.error}</p>}
