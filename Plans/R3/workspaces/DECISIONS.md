@@ -169,6 +169,18 @@
   Credentials stay server-only; endpoint change discards the old credential.
   [Verified-source clarification](resolved.md#Q-R3-AB1).
 
+- 📌 Q-R3-VIEWADMIN1 Viewer: no local administrator — sign in with `mdhouse admin`. <a id="Q-R3-VIEWADMIN1"></a>
+  [History](resolved.md#Q-R3-VIEWADMIN1).
+
+- 📌 Q-R3-EXPOSE1 Non-loopback bind with no users, no allow list and no host names: every project RO; the start line says why. <a id="Q-R3-EXPOSE1"></a>
+  [History](resolved.md#Q-R3-EXPOSE1).
+
+- 📌 Q-R3-HOSTNAME1 `--host-name` (a proxy on this host) is an explicit access policy. <a id="Q-R3-HOSTNAME1"></a>
+  [History](resolved.md#Q-R3-HOSTNAME1).
+
+- 📌 Q-R3-VIEWPROXY1 Viewer behind `--host-name`: switch back by CLI only (`mdhouse --workspace`). <a id="Q-R3-VIEWPROXY1"></a>
+  [History](resolved.md#Q-R3-VIEWPROXY1).
+
 ## Editor, retrieval and automations direction
 
 - 📌 EDIT-W2 Integrate an existing Markdown editor component; do not build an editor engine. <a id="EDIT-W2"></a>
@@ -177,6 +189,10 @@
   [Owner history](resolved.md#RAG-W2).
 - 📌 AUTO-W1 Use Agent Bus Cron/At to invoke agents and AI pipelines, including code review and QA. <a id="AUTO-W1"></a>
   No separate mdhouse scheduler; live schedules require separate authorization.
+
+- 📌 Q-R3-AUTO1 Scheduled pipelines v1: analysis only (no code execution, commit or push); the instance administrator registers, a Viewer never; <a id="Q-R3-AUTO1"></a>
+  3 failures in a row disable, ≤ 10 runs a day; bus schedules on the instance's `#mdhouse`; QA v1 = documents and changes;
+  runs in `Plans/flows/runs/`; notify on the page + optionally one agent. [History](resolved.md#Q-R3-AUTO1).
 
 ## Access badges
 
@@ -189,3 +205,13 @@
 
 - 📌 CONFIG-W1 `$PROJECT_HOME/.mdhouse/` is Git-controlled. <a id="CONFIG-W1"></a>
   [Owner history](resolved.md#CONFIG-W1).
+
+- 📌 DATA-W1 User data (`$HOME/.config/mdhouse`): each user's own — e.g. favorites, agent setup. Team data (`$PROJECT/.mdhouse/`, Git): common — e.g. automation. <a id="DATA-W1"></a>
+  [Owner comment](QUESTIONS.md#Q-R3-DATA1).
+
+## Installed reference
+
+- 📌 Q-R3-REFDOC1 The installed reference holds only end-user docs; testing docs live outside it. <a id="Q-R3-REFDOC1"></a>
+  End goal: ONE line with a URL for a project's AGENTS.md that teaches an AI how to write plans, which glyphs, which markup — so mdhouse understands.
+  `skills/markup.md` folds into `agent-markup.md` (5-line pointer kept); `plans.md` keeps only the portable Plans convention;
+  `mdhouse docs` prints the reference path; glyph/sample copies stay. [History](resolved.md#Q-R3-REFDOC1).

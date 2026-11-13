@@ -583,3 +583,52 @@ below is historical, superseded by verified 0.3 capabilities and the current RAG
     - small-file citations (heading/lines): computed by mdhouse from the file at `content_hash`; mismatch → stale, no citation
   - ( ) keep open — wait for a provider job/history API
   > 💬 👤parf закрой сам
+
+## Owner decisions — 2026-11-12
+
+- ✅ Q-R3-VIEWADMIN1 In a Viewer, is there a local administrator? <a id="Q-R3-VIEWADMIN1"></a>
+  Done as the temp CTO decided (`4ee3733`): a proxied request could switch a Viewer back to Workspace in one request.
+  - (x) no — Viewer: sign in with `mdhouse admin` 🌟
+  - ( ) yes — local install = admin, Viewer too
+
+- ✅ Q-R3-EXPOSE1 Served on a network address (`--host 0.0.0.0`), no users, no allow list — today every RW project is writable by the network. <a id="Q-R3-EXPOSE1"></a>
+  - ( ) A — as is: a non-loopback address was chosen on purpose
+  - (x) B — every project RO; the start line says why 🌟
+  - ( ) C — refuse to start; name what to configure
+
+- ✅ Q-R3-HOSTNAME1 Does `--host-name` (a proxy on this host) count as an explicit access policy for Q-R3-EXPOSE1? <a id="Q-R3-HOSTNAME1"></a>
+  - (x) yes — `md` keeps working as today 🌟
+  - ( ) no — same as a network address
+
+- ✅ Q-R3-VIEWPROXY1 A Viewer behind `--host-name`: `mdhouse admin` cannot mint (localhost is refused), so switching back is CLI only (`mdhouse --workspace`). <a id="Q-R3-VIEWPROXY1"></a>
+  - (x) keep — CLI only 🌟
+  - ( ) allow minting for the loopback name even with host names set
+
+- ✅ Q-R3-SUBSYS1 `Plans/subsystems.md`: new files match no prefix. <a id="Q-R3-SUBSYS1"></a>
+  - (x) J "agent bus & RAG ⚠️" (agent-bus, rag-*, rag-sync-cli); authz/admin-session → A; install.md → I 🌟
+  - ( ) leave as is
+
+- ✅ Q-R3-REFDOC1 Installed reference (`_mdhouse`, MW.17) — these rewrite your docs: <a id="Q-R3-REFDOC1"></a>
+  - [x] fold `skills/markup.md` into `agent-markup.md`, keep a 5-line pointer
+  - [x] split `plans.md`: portable Plans convention stays; this repo's commit rules go to CLAUDE.md (your file — you edit it)
+  - [ ] one home per glyph table (`glyphs.md`) and per Q&A sample set (`qa-playground.md`); the others link
+  - [x] add `mdhouse docs` — prints the reference path
+  > 💬 i want to separate MD files we export to users and ones we use for testing; qa-playground is useless for normal end
+  >
+  > 💬 at the end i need ONE line with URL to be inserted into AGENTS.md file for a project i work with
+  > and it should know how to 
+  > 1. write plans
+  > 2. what glyphs 
+  > 3, what markup to use
+  >
+  >  so mdhouse will understand
+  > ^^ thats the END goal
+
+- ✅ Q-R3-AUTO1 MW.11 scheduled AI pipelines (design `Plans/R3/AUTOMATION.md` by #opencode/md-api; bus schedules fire a run in mdhouse). Temp CTO defaults — untick what you disagree with: <a id="Q-R3-AUTO1"></a>
+  - [x] v1 = analysis only: no code execution, commit or push
+  - [x] only the instance administrator registers a schedule; a Viewer never
+  - [x] auto-disable after 3 failures in a row; at most 10 runs a day per schedule
+  - [x] schedules live on the instance's `#mdhouse` record
+  - [x] QA v1 = review of documents and changes; running the project's tests comes later, approved separately
+  - [x] run results land in the project under `Plans/flows/runs/` (visible, committable) — same place as manual runs (MW.3.3)
+  - [x] notify on the page, plus optionally one chosen agent

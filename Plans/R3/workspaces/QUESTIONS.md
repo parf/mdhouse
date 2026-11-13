@@ -26,33 +26,17 @@
 
 ## Owner decisions — 2026-11-12
 
-- ❓ Q-R3-VIEWADMIN1 In a Viewer, is there a local administrator? <a id="Q-R3-VIEWADMIN1"></a>
-  Done as the temp CTO decided (`4ee3733`): a proxied request could switch a Viewer back to Workspace in one request.
-  - ( ) no — Viewer: sign in with `mdhouse admin` 🌟
-  - ( ) yes — local install = admin, Viewer too
+- [№Q-R3-VIEWADMIN1](DECISIONS.md#Q-R3-VIEWADMIN1) <a id="Q-R3-VIEWADMIN1"></a>
 
-- ❓ Q-R3-EXPOSE1 Served on a network address (`--host 0.0.0.0`), no users, no allow list — today every RW project is writable by the network. <a id="Q-R3-EXPOSE1"></a>
-  - ( ) A — as is: a non-loopback address was chosen on purpose
-  - ( ) B — every project RO; the start line says why 🌟
-  - ( ) C — refuse to start; name what to configure
+- [№Q-R3-EXPOSE1](DECISIONS.md#Q-R3-EXPOSE1) <a id="Q-R3-EXPOSE1"></a>
 
-- ❓ Q-R3-HOSTNAME1 Does `--host-name` (a proxy on this host) count as an explicit access policy for Q-R3-EXPOSE1? <a id="Q-R3-HOSTNAME1"></a>
-  - ( ) yes — `md` keeps working as today 🌟
-  - ( ) no — same as a network address
+- [№Q-R3-HOSTNAME1](DECISIONS.md#Q-R3-HOSTNAME1) <a id="Q-R3-HOSTNAME1"></a>
 
-- ❓ Q-R3-VIEWPROXY1 A Viewer behind `--host-name`: `mdhouse admin` cannot mint (localhost is refused), so switching back is CLI only (`mdhouse --workspace`). <a id="Q-R3-VIEWPROXY1"></a>
-  - ( ) keep — CLI only 🌟
-  - ( ) allow minting for the loopback name even with host names set
+- [№Q-R3-VIEWPROXY1](DECISIONS.md#Q-R3-VIEWPROXY1) <a id="Q-R3-VIEWPROXY1"></a>
 
-- ❓ Q-R3-SUBSYS1 `Plans/subsystems.md`: new files match no prefix. <a id="Q-R3-SUBSYS1"></a>
-  - ( ) J "agent bus & RAG ⚠️" (agent-bus, rag-*, rag-sync-cli); authz/admin-session → A; install.md → I 🌟
-  - ( ) leave as is
+- [№Q-R3-SUBSYS1](resolved.md#Q-R3-SUBSYS1) <a id="Q-R3-SUBSYS1"></a>
 
-- ❓ Q-R3-REFDOC1 Installed reference (`_mdhouse`, MW.17) — these rewrite your docs: <a id="Q-R3-REFDOC1"></a>
-  - [ ] fold `skills/markup.md` into `agent-markup.md`, keep a 5-line pointer
-  - [ ] split `plans.md`: portable Plans convention stays; this repo's commit rules go to CLAUDE.md (your file — you edit it)
-  - [ ] one home per glyph table (`glyphs.md`) and per Q&A sample set (`qa-playground.md`); the others link
-  - [ ] add `mdhouse docs` — prints the reference path
+- [№Q-R3-REFDOC1](DECISIONS.md#Q-R3-REFDOC1) <a id="Q-R3-REFDOC1"></a>
 
 - ❓ Q-R3-DATA1 Where mdhouse data belongs (MW.14, inventory by #md/w1): <a id="Q-R3-DATA1"></a>
   - [ ] shared project definitions in `$PROJECT/.mdhouse/` (Git): ignore rules, default agents, RAG source id, flows
@@ -67,6 +51,13 @@
   > personal marks are user state, only deliberately shared lists go in Git; secrets: 0600 file now (works headless), keyring later;
   > path stays the local key, a committed id only for what must survive a clone; sockets → `XDG_RUNTIME_DIR` with a read-both release;
   > keep `.mdhouseignore` top-level.
+  >
+  > 💬 we have a task to decide what is user DATA ($HOME/.config/mdhouse) and what is team data ($PROJECT/.mdhouse/...)
+  > Ex:
+  >  favorites / agent-setup - user data - every can have its own
+  >  automation - common - and must be under git
+  >
+  > 💬👾 → [№DATA-W1](DECISIONS.md#DATA-W1). Next: #md/w1 classifies every item of the MW.14 inventory as user or team data by this rule and proposes the layout here.
 
 - ❓ Q-R3-CTL1 MW.7 (an agent opens a file in a given mdhouse tab): who may send control commands by default? <a id="Q-R3-CTL1"></a>
   Temp CTO chose the first one (being built by #md/w1); worst case is navigation within readable projects, never a write.
@@ -80,11 +71,4 @@
   - [ ] phone navigation = 4 labelled destinations: Files · Changes · Search · Ask
   - [ ] one Search with a scope switch Files | Index (the RAG page becomes "Index"; [R] stays as a shortcut)
 
-- ❓ Q-R3-AUTO1 MW.11 scheduled AI pipelines (design `Plans/R3/AUTOMATION.md` by #opencode/md-api; bus schedules fire a run in mdhouse). Temp CTO defaults — untick what you disagree with: <a id="Q-R3-AUTO1"></a>
-  - [x] v1 = analysis only: no code execution, commit or push
-  - [x] only the instance administrator registers a schedule; a Viewer never
-  - [x] auto-disable after 3 failures in a row; at most 10 runs a day per schedule
-  - [x] schedules live on the instance's `#mdhouse` record
-  - [x] QA v1 = review of documents and changes; running the project's tests comes later, approved separately
-  - [x] run results land in the project under `Plans/flows/runs/` (visible, committable) — same place as manual runs (MW.3.3)
-  - [x] notify on the page, plus optionally one chosen agent
+- [№Q-R3-AUTO1](DECISIONS.md#Q-R3-AUTO1) <a id="Q-R3-AUTO1"></a>
