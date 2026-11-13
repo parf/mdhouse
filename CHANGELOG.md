@@ -4,6 +4,8 @@
 
 ### Added
 
+- Scheduled flow runs: a project's `.mdhouse/automation/<id>.json` runs its analysis flow on a timer once this machine's administrator approves the file (`POST /api/automation/approve`) — an Agent Bus schedule on `#mdhouse@<host>`; a changed file stops firing until approved again; approvals and run history live in that record's bus KV
+
 - Changes: one place per project for uncommitted files (`?git=changes`) — each file's state and diff, a tick each (untracked files start unticked), a message and a button that says what it commits ("Commit 2 files" / "Commit README.md"); Push is its own step, shown only when the branch has a remote branch. A document shows one status chip ("modified · Changes") that opens Changes for that file, in place of Commit / Commit+Push and "uncommitted file". Read-only projects and a Viewer see files and diffs only
 
 - Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's R and magnifier are these places now

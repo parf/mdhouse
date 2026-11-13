@@ -44,9 +44,9 @@ Decided: [№DATA-W1](workspaces/DECISIONS.md#DATA-W1), [№DATA-W2](workspaces/
 - ✅ RAG registry `rag/source/<sid>`, `rag/last/<sid>`, `rag/hist/<sid>/…` (KV) — `mdhouse-rag-sync`
 - ✅ control lock `ctl` + `ctl.owner` nonce (KV) — MW.7
 - ✅ agent log lines (notice / warning / alert) — not readable back
-- [ ] automation approvals — content hash per registration, `auto/approval/…` (KV) — [№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2), MW.11 slice 2
-- [ ] automation run index and schedule state — last / next, failures, `auto/…` (KV) + lock `auto` — MW.11 slice 2
-- [ ] bus schedules — the timer for automation, MW.11 slice 2
+- ✅ automation approvals — content hash per registration, `auto/approval/…` (KV) — [№Q-R3-AUTO2](workspaces/DECISIONS.md#Q-R3-AUTO2), MW.11 slice 2
+- ✅ automation run index and schedule state — last / next, failures, `automation/…` (KV) + lock `auto` — MW.11 slice 2
+- ✅ bus schedules — the timer for automation, MW.11 slice 2
 
 > 💬 Suggestion:
 >  IF Automation controlles by agent-bus - then use its KV storage / locks / LOGS !
@@ -81,6 +81,6 @@ Never in Git: RW/RO, secrets, access, machine state.
 - [ ] 2 control socket → `$XDG_RUNTIME_DIR/mdhouse/` (the CLI tries new, then old)
 - 🚫 3 `$XDG_STATE_HOME/mdhouse/` — automation state lives on the bus instead ([№DATA-W2](workspaces/DECISIONS.md#DATA-W2))
 - [ ] 4 `.mdhouse/project.json` on the first team write; prefs stay keyed by path
-- [ ] 5 `.mdhouse/automation/` with approvals on the bus (MW.11 slice 2)
+- ✅ 5 `.mdhouse/automation/` with approvals on the bus (MW.11 slice 2)
 
 Marks and `.mdhouseignore` do not move.
