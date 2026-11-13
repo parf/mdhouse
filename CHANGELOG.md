@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Touch: the primary journey (open, document, tick, Q&A, editor, diff, commit, Agent Bus, RAG search) is usable on a phone and a tablet — 44px buttons, links and rows, 16px fields so the page does not zoom, wrapping page chrome, and the sidebar drawer closes when you choose a page
+
 - Settings and RAG search on a phone or tablet: the sidebar drawer no longer covers them on load (it starts closed at 720px and below), the ⓘ tips open as a sheet along the bottom of the screen instead of running off it, controls are 44px high on touch, and the project list stacks above its details up to 900px
 
 - RAG search: a cross-site page can no longer start a search from a browser that sends no `Sec-Fetch-Site`; concurrent status reads share one lookup; a project's source is found however many are registered; query marks no longer shift after letters like `İ`

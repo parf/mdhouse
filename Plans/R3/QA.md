@@ -897,3 +897,32 @@ Chromium 390×2800 and 768×2000, light and dark, `/settings` and `/rag` with a 
   hit area; project list stacks to 900px. `scrollWidth == width` on every cell; no element past the right edge; Viewer instance: same, Mode buttons disabled with the sign-in line.
 - Not covered: real iOS Safari keyboard/viewport behaviour, ⓘ tap on a physical device. No full suite beyond the tests named in the commit.
 
+## Primary journey on a phone and a tablet — touch walk {#touch-walk}
+
+[№MW.5c.2](workspaces/TODO.md#MW.5c.2). Scratch instance (CLI-started, local administrator, Agent Bus on a scratch fake bus, a scratch git repo with the Q&A playground
+copied in), Chromium with touch emulation (`mobile` + touch events, real touch taps at element centres, `prefers-color-scheme`), 390×844 and 768×1024, light and dark.
+An in-page audit after every step reports interactive elements whose size **with their hit area** is under 44px on either axis, controls cut off or past the viewport,
+controls that overlap or are covered at their centre, controls kept invisible until hover, text fields under 16px (iOS zoom) and `scrollWidth` against the width.
+Each step also checks the result on disk (tick, answer, edit, commit) or in the page (diff, Agent Bus reply, search hit).
+
+| Step | Result at 390 / 768, light / dark | Found before → fixed |
+| --- | --- | --- |
+| Open project (drawer, tabs, folder, file) | pass, 4/4 | tabs 27–28px, tree rows 24px, root select 22px, logo 22×13; compact sidebar 220px too narrow for five 44px tabs at 768 → `8ff0a3b` |
+| Open a document from the drawer | pass, 4/4 | the drawer stayed open over the page it opened → closes on navigation at ≤720px `f175d6e` |
+| Read a document (header, TOC, history, chips) | pass, 4/4 | header icons 26px, +V1/+V2 33×21, breadcrumbs 14px, Edit 28px, TOC links 20px, summaries 18px, title row ran into the Edit button → `8ff0a3b` |
+| Tick a task | pass, 4/4 (box 32px) | 13px box → 32px; a native checkbox takes no hit area, so 44px stays **remaining** |
+| Add a block under a heading (↓ ⇊) | pass, 4/4 | kind buttons 28px, 14px font → `8ff0a3b` |
+| Q&A answer (❓ → 💬 save) | pass, 4/4, answer on disk | action buttons and 💬 22px, textarea 14px (zoom), mic 32px overlapping the text, options 24px → `8ff0a3b` |
+| Full editor edit + save | pass, 4/4, edit on disk | Save/Close/Discard 32px → `8ff0a3b`; CodeMirror was already 16px |
+| Diff (uncommitted) | pass, 4/4 | Reset 21px, inline links 15px → `8ff0a3b` |
+| Commit (doc, then the git page) | pass, 4/4, commit in `git log` | Commit buttons 21px, message field 12px/24px, file rows 15px → `8ff0a3b` |
+| Agent Bus panel (pick agent, note, action, reply) | pass, 4/4, reply shown | action buttons 30px, 14px-less note field 13px, pick 19px, agent rows 24px, mic → `8ff0a3b` |
+| `/rag` (R button, search, open a hit at its line) | pass, 4/4 | already clean after the Settings pass |
+
+Hover-only and keyboard-only: the tree rows' ★/mute buttons exist only on `:hover` (`.row:hover .marks`) — the same two actions are visible in the document header, so no action
+depends on hover. Every desktop shortcut used in the journey has a visible control: `a` (Agent Bus button), `e` (✎ and the Edit button), `/` (search icon), Alt+1…9 and Ctrl+Enter
+(the numbered action buttons and 💬 Save), Ctrl+Shift+Space (the mic).
+
+Remaining: real-device virtual keyboard and viewport behaviour (iOS Safari, Chrome Android), long-press Copy ([№MW.5c.1](workspaces/TODO.md#MW.5c.1)); the task box is 32px;
+the sticky Q&A filter strip takes about 100px of a 390px screen when its chips wrap; the glyph of an open question's form is 21px (the row itself is the target).
+
