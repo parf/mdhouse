@@ -72,3 +72,10 @@
   Temp CTO chose the first one (being built by #md/w1); worst case is navigation within readable projects, never a write.
   - ( ) the daemon's rule — only your own agents (`@owner`); `--ab-control '<pat>'` narrows, `--ab-control off` stops it 🌟
   - ( ) nobody until `--ab-control '<pat>'` is set (opt-in)
+
+- ❓ Q-R3-UX1 Phone/tablet UX review (MW.13, #opencode/md-api; screenshots in its touch walk) — structural changes: <a id="Q-R3-UX1"></a>
+  Being done now without asking: one ⋯ per heading on touch, lighter tree rows/Q&A form/AB bottom sheet, reading-first phone header.
+  - [ ] one "Changes" destination: file list + diff + message + "Commit 2 files"; the document shows only a status chip; Push only when a remote exists (no raw git error)
+  - [ ] untracked files in "Changes": listed, unticked by default
+  - [ ] phone navigation = 4 labelled destinations: Files · Changes · Search · Ask
+  - [ ] one Search with a scope switch Files | Index (the RAG page becomes "Index"; [R] stays as a shortcut)
