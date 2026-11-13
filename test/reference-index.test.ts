@@ -29,3 +29,16 @@ describe('doc/README.md is the one start file', () => {
     expect(index).toContain('/api/raw?p=_mdhouse/<file>');
   });
 });
+
+describe('for-agents.md is the one page an AI is pointed at', () => {
+  const start = readFileSync(join(doc, 'for-agents.md'), 'utf8');
+  test('is short and covers plans, glyphs and markup', () => {
+    expect(start.split('\n').length).toBeLessThanOrEqual(40);
+    for (const t of ['plans.md', 'skills/glyphs.md', 'agent-markup.md', 'syntax.md']) expect(start).toContain(`](${t})`);
+  });
+  test('every link in it exists', () => {
+    const links = [...start.matchAll(/\]\(([^)\s#?]+)/g)].map((m) => m[1]!);
+    expect(links.length).toBeGreaterThan(6);
+    for (const t of links) expect([t, existsSync(join(doc, t))]).toEqual([t, true]);
+  });
+});
