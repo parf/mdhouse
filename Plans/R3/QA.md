@@ -971,4 +971,7 @@ activation (the command the context menu runs — the native menu itself cannot 
 | Run flow on a project's home → dialog | pass, 4/4: button on the root's page (not in folders, not for a Viewer); bottom sheet ≤900px, centred dialog above; select, range radios and fields 44px, 16px | `fl-<w>-<scheme>-02-flow-dialog.png` |
 | Since last run with no history | pass, 4/4: server's `no-baseline` switches to "From a commit" with the reason in words | `-03-flow-no-baseline.png` |
 | Preview → Confirm | pass, 4/4: path, range, uncommitted files kept apart, warnings, server HTML through safe-html (a `<script>` in it is dropped); Confirm is sticky; start navigates to the run document and closes the dialog | `-04-flow-preview.png` |
+| Flow bar on a run document | pass, 4/4 (fake `doc.flow` and `/api/flow/event`, stateful): status, current node, holds, evidence and question assertions (Mark supplied / Mark answered, with the note as turn), Complete / Blocked / Failed, Cancel run (two taps); Blocked without a note is refused in words; each action is one event with a fresh client id; after Complete the run is terminal and the bar goes; 44px, 16px note field | `fb2-<w>-<scheme>-01-flowbar.png`, `-02-flowbar-asserted.png`, `-03-flowbar-typed.png` |
+
+Not verified in a browser: the Viewer's absence of the button and the bar (it is `useViewer()` in both components, like the other write controls); the real routes.
 

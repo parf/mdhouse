@@ -112,6 +112,8 @@ export interface DocPayload {
   status?: FileStatus;
   /** The agents the document names (`<!-- AB: … -->`); present only while the Agent Bus integration is on. */
   ab?: string[];
+  /** On a flow run document: the server's reading of the run's own state; the page never parses the document for it. */
+  flow?: import('./flow-model').DocFlow;
 }
 
 /** Metadata replies carry no rendered body or renderer control token. */

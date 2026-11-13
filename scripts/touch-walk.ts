@@ -17,8 +17,25 @@ let id = 0;
 const pending = new Map<number, (v: any) => void>();
 ws.onmessage = (e) => { const m = JSON.parse(e.data as string); if (m.id && pending.has(m.id)) pending.get(m.id)!(m.result ?? m.error); if (m.method === 'Fetch.requestPaused') fake(m.params); };
 const send = (method: string, params: object = {}) => new Promise<any>((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); });
-// The flow step answers /api/flow/* itself (a fake of the contract) until the real routes are on main.
-const fake = (p: any) => {
+// The flow step answers /api/flow/* itself (a fake of the contract, stateful for the run bar) until the real routes are on main.
+const bar: any = { version: 1, status: 'running', ev: 'missing', q: 'unanswered', events: [] as any[] };
+const docFlow = () => ({ runId: 'r1', version: bar.version, status: bar.status, node: { id: 'review', title: 'Review the commits', outcomes: ['complete', 'blocked', 'failed'] }, holds: bar.q === 'unanswered' ? ['A required question is open'] : [], evidence: [{ label: 'git log', status: bar.ev, note: '', required: true }], questions: [{ id: 'Q1', title: 'Is the baseline right?', required: true, status: bar.q }], canAct: bar.status === 'running' || bar.status === 'held' });
+const fake = async (p: any) => {
+  if (p.responseStatusCode !== undefined && new URL(p.request.url).pathname === '/api/doc') {
+    const r = await send('Fetch.getResponseBody', { requestId: p.requestId });
+    const j = JSON.parse(r.base64Encoded ? Buffer.from(r.body, 'base64').toString() : r.body);
+    if (j.rel === 'notes/plan.md') j.flow = docFlow();
+    const headers = (p.responseHeaders ?? []).filter((h: any) => !/content-length|content-encoding/i.test(h.name));
+    return send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: p.responseStatusCode, responseHeaders: headers, body: Buffer.from(JSON.stringify(j)).toString('base64') });
+  }
+  if (new URL(p.request.url).pathname === '/api/flow/event') {
+    const b = JSON.parse(p.request.postData); bar.events.push(b);
+    let status = 200; let out: any;
+    if (b.expectedVersion !== bar.version) { status = 409; out = { error: 'moved', reason: 'stale' }; }
+    else { bar.version++; const a = b.action; if (a.type === 'outcome') bar.status = a.outcome === 'complete' ? 'complete' : a.outcome; if (a.type === 'cancel') bar.status = 'cancelled'; if (a.type === 'evidence') bar.ev = a.status; if (a.type === 'question') bar.q = a.status; out = { status: bar.status, version: bar.version, url: '/repo/notes/plan.md' }; }
+    return send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: status, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body: Buffer.from(JSON.stringify(out)).toString('base64') });
+  }
+  if (p.request.url.includes('/api/doc')) return send('Fetch.continueRequest', { requestId: p.requestId });
   const u = new URL(p.request.url); const body = p.request.postData ? JSON.parse(p.request.postData) : {};
   let status = 200; let out: any = {};
   if (u.pathname === '/api/flow/catalog') out = { packages: [{ id: 'recent-commits-review', family: 'commit-review', title: 'Recent commits review', ranges: ['since-last-run', 'baseline'], lastRun: null, openRun: null }, { id: 'project-review', family: 'project', title: 'Project review', ranges: ['since-last-run', 'baseline'], lastRun: null, openRun: { url: '/repo/Plans/flows/runs/project-review/x.md', status: 'running' } }] };
@@ -30,7 +47,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceSc
 await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
 await send('Page.enable'); await send('Runtime.enable');
-if (only.includes('flow')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }] });
+if (only.includes('flow') || only.includes('flowbar')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
 const sleep = (ms: number) => Bun.sleep(ms);
 export const ev = async (expression: string): Promise<any> => {
   const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -237,6 +254,23 @@ if (only.includes('flow')) {
   say('  script in pane: ' + await ev("!!document.querySelector('.flow-html script')") + ' items: ' + await ev("document.querySelectorAll('.flow-html li').length"));
   await tap('.flow-go.primary', 0);
   say('  after confirm location=' + await ev('location.pathname') + ' dialog open: ' + await ev("!!document.querySelector('.flow-dialog')"));
+}
+if (only.includes('flowbar')) {
+  await go('/repo/notes/plan.md');
+  await audit('flowbar');
+  say('  bar: ' + await ev("document.querySelector('.flow-bar')?.innerText.replace(/\\n/g,' | ')"));
+  await tap('.flow-items .flow-mini', 0);
+  await tap('.flow-items .flow-mini', 1);
+  await audit('flowbar-asserted');
+  say('  bar after assertions: ' + await ev("document.querySelector('.flow-bar')?.innerText.replace(/\\n/g,' | ')"));
+  await tap('.flow-bar-actions .flow-go', 1);
+  say('  blocked without a note: ' + await ev("document.querySelector('.flow-error')?.textContent"));
+  await tap('.flow-text', 0);
+  await type('Reviewed all of it.');
+  await audit('flowbar-typed');
+  await tap('.flow-bar-actions .flow-go.primary', 0);
+  await sleep(700);
+  say('  after Complete: bar shown ' + await ev("!!document.querySelector('.flow-bar')") + '; events sent: ' + JSON.stringify(bar.events.map((e: any) => e.action.type + (e.action.outcome ? ':' + e.action.outcome : ''))));
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

@@ -21,6 +21,7 @@ import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
 import { usePhone } from './phone';
+import { FlowBar } from './FlowBar';
 import { follow } from './PageHead';
 import { editTarget, isPageHref } from '../lib/urls';
 import { DocCommit } from './GitPanel';
@@ -1366,6 +1367,7 @@ export function Doc({
           </div>
         </>
       )}
+      {doc.flow && <FlowBar flow={doc.flow} root={doc.root} path={doc.rel} onChanged={() => onReload?.()} />}
       {abOn && (
         <AgentBusPanel
           key={doc.url}

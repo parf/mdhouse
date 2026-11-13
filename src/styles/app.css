@@ -2143,6 +2143,8 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .viewer-badge { flex: none; white-space: nowrap; }
 /* A Viewer's stored-RW tag: gray — it grants nothing while the Viewer lasts. */
 :is(.side-head, .topstrip) .stored-rw { flex: none; white-space: nowrap; font-size: 10.5px; color: var(--fg-muted); border: 1px solid var(--border-strong); border-radius: 3px; padding: 0 4px; margin-left: 6px; }
+/* A phone's top strip has room for the Viewer badge only; the drawer header and Settings keep the tag. */
+@media (max-width: 480px) { .topstrip .stored-rw { display: none; } }
 /* In the sidebar the badge has a line of its own: beside the project name there is no room for its words. */
 .viewer-strip { padding: 5px 8px 0; }
 .viewer-strip .viewer-badge { display: inline-block; margin: 0; font-weight: 600; font-size: 11px; letter-spacing: 0.02em; color: var(--warn); border: 1px solid currentColor; border-radius: 3px; padding: 1px 6px; }
@@ -2323,4 +2325,27 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 }
 @media (pointer: coarse) and (max-width: 900px) {
   .flow-dialog { top: auto; bottom: 0; left: 0; transform: none; width: 100vw; max-height: 80dvh; border-radius: 14px 14px 0 0; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+
+/* ── The flow bar on a run document ─────────────────────────────────────── */
+
+.flow-bar { display: grid; gap: 8px; margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-panel); }
+.flow-bar-head { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.flow-status { font: 600 11px/1 var(--mono); text-transform: uppercase; padding: 3px 7px; border-radius: 10px; color: var(--accent-fg); background: var(--accent); }
+.flow-status:is(.s-held, .s-blocked, .s-partial, .s-unsupported) { background: var(--warn); }
+.flow-status:is(.s-failed, .s-cancelled) { background: var(--danger); }
+.flow-status.s-complete { background: var(--ok); }
+.flow-node { color: var(--fg-muted); }
+.flow-holds { margin: 0; padding-left: 18px; font-size: 13px; color: var(--warn); }
+.flow-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.flow-items li { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.flow-label { min-width: 0; overflow-wrap: anywhere; }
+.flow-mini { flex: none; font: inherit; font-size: 12px; padding: 2px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); cursor: pointer; }
+.flow-text { font: inherit; width: 100%; box-sizing: border-box; padding: 6px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); resize: vertical; }
+.flow-bar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.flow-go.quiet { margin-left: auto; color: var(--fg-muted); }
+.flow-go.danger { margin-left: auto; color: #fff; background: var(--danger); border-color: var(--danger); }
+@media (pointer: coarse) {
+  .flow-mini { min-height: 44px; min-width: 44px; padding-inline: 12px; font-size: 14px; }
+  .flow-items li { min-height: 44px; }
 }
