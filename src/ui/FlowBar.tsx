@@ -1,6 +1,7 @@
 import { useRef, useState } from 'preact/hooks';
 import { FlowApiError, flowApi } from './flow-api';
-import { assertionError, barOutcomes, flowReasonText, isTerminal, newClientId, outcomeError, showsBar, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
+import { ApiError } from './api';
+import { actionIds, assertionError, barOutcomes, flowReasonText, isTerminal, outcomeError, showsBar, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
 import { useViewer } from './viewer';
 
 const api = flowApi();
@@ -24,6 +25,7 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const going = useRef(false);
+  const ids = useRef(actionIds()).current;
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   if (viewer || !showsBar(flow)) return null;
@@ -36,11 +38,18 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
     setBusy(true);
     setError(null);
     try {
-      await api.event({ root, path, expectedVersion: flow.version, clientId: newClientId(), action });
+      await api.event({ root, path, expectedVersion: flow.version, clientId: ids.idFor(JSON.stringify([root, path, flow.version, action])), action });
+      ids.settle();
       setText('');
       setCancelling(false);
       onChanged();
     } catch (e) {
+      if (!(e instanceof ApiError)) {
+        // No answer at all: the same press, with the same id, may be sent again — the server replays what it recorded.
+        setError('No answer from the server — press again to retry.');
+        return;
+      }
+      ids.settle();
       const err = e as FlowApiError;
       setError(flowReasonText(err.reason, err.message));
       if (err.reason === 'stale') onChanged();

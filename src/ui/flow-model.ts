@@ -133,5 +133,23 @@ export const barOutcomes = (flow: DocFlow): FlowOutcome[] => (flow.canAct && !is
 /** The bar is for someone who can act on the run: one rule, used by the page and by the bar itself. */
 export const showsBar = (flow: DocFlow | undefined | null): flow is DocFlow => !!flow && flow.canAct;
 
-/** One id per intended action: a retry after a lost answer is the same event, not a second one. */
+/** A fresh id for one action. */
 export const newClientId = (): string => crypto.randomUUID();
+
+/**
+ * One client id per intended action, kept until the server has given a definite answer: a retry after a lost response
+ * sends the same id (the server replays its record), a different action or a later version a new one.
+ */
+export function actionIds(make: () => string = newClientId) {
+  let pending: { key: string; id: string } | null = null;
+  return {
+    idFor(key: string): string {
+      if (pending?.key !== key) pending = { key, id: make() };
+      return pending.id;
+    },
+    /** The server answered (accepted or refused): the next press is a new action. */
+    settle(): void {
+      pending = null;
+    },
+  };
+}

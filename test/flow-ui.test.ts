@@ -3,7 +3,7 @@ import { ApiError } from '../src/ui/api';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
 import { FlowApiError, flowApi } from '../src/ui/flow-api';
 import {
-  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, assertionError, noBaselineText, outcomeError, rangeOf, showsBar, startable,
+  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, assertionError, noBaselineText, actionIds, outcomeError, rangeOf, showsBar, startable,
   type DocFlow, type FlowCatalogEntry,
 } from '../src/ui/flow-model';
 
@@ -124,6 +124,32 @@ describe('the run bar', () => {
     expect(flowReasonText('stale', 'the preview expired — preview again')).toBe('the preview expired — preview again');
     expect(flowReasonText('weird', 'server words')).toBe('server words');
     expect(flowReasonText(undefined, 'fallback')).toBe('fallback');
+  });
+});
+
+describe('one client id per intended action', () => {
+  test('the same press is the same id until the server answers; a new action or version is a new id', () => {
+    let n = 0;
+    const ids = actionIds(() => `id-${++n}`);
+    const a = ids.idFor('complete@1');
+    expect(ids.idFor('complete@1')).toBe(a);
+    expect(ids.idFor('complete@1')).toBe(a);
+    expect(ids.idFor('blocked@1')).not.toBe(a);
+    const b = ids.idFor('complete@1');
+    ids.settle();
+    expect(ids.idFor('complete@1')).not.toBe(b);
+  });
+  test('a retry after a lost answer replays the record instead of going stale', async () => {
+    const api = flowApi(base);
+    const ids = actionIds();
+    const key = 'outcome complete';
+    const req = (v: number) => ({ root: 'p', path: 'x.md', expectedVersion: v, clientId: ids.idFor(key), action: { type: 'outcome' as const, outcome: 'complete' as const, text: 'ok' } });
+    const v = version;
+    const first = await api.event(req(v)); // the answer is "lost": the caller never settles
+    const retry = await api.event(req(v)); // same id, same version
+    expect(retry).toEqual(first);
+    ids.settle();
+    expect((await api.event({ ...req(v), clientId: ids.idFor(key) }).catch((e) => e)).reason).toBe('stale'); // a NEW press on the old version is stale
   });
 });
 
