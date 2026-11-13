@@ -298,6 +298,8 @@ External mutations are separate, previewed actions. A report may propose an edit
 deploy, but it does not execute one implicitly. Provider integrations are adapters, and every result
 remains useful as Markdown without a connected tracker.
 
+The pure analysis-run core (checkpoint A) is specified in [`FLOW-RUNTIME-CORE.md`](FLOW-RUNTIME-CORE.md).
+
 ### Feature and delivery flows
 
 The core delivery package covers:
