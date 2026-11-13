@@ -62,3 +62,8 @@
   - [ ] control sockets → `$XDG_RUNTIME_DIR/mdhouse/`; history/state → `$XDG_STATE_HOME/mdhouse/`
   - ( ) marks: per user (prefs)
   - ( ) marks: team-shared (`.mdhouse/`, Git)
+  > 💬👾 Common practice (#md/w1, sources: XDG basedir, git protected config, VS Code Workspace Trust, JetBrains `.idea`, direnv, Bun.secrets):
+  > a repo never grants itself permissions (RW/RO stays per user); committed definitions run only after per-user trust;
+  > personal marks are user state, only deliberately shared lists go in Git; secrets: 0600 file now (works headless), keyring later;
+  > path stays the local key, a committed id only for what must survive a clone; sockets → `XDG_RUNTIME_DIR` with a read-both release;
+  > keep `.mdhouseignore` top-level.
