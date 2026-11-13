@@ -190,6 +190,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: Team web add outside `~/mdhouse` and all project-property changes (RW/RO, name/default/endpoint where applicable) require configured admin, not Editor/RW; no broader inside-workspace permission is inferred
   - Acceptance: project-property APIs use an explicit allowlist/schema; direct/stale non-admin calls fail, effective access updates immediately and stored/effective modes remain distinct; Personal owner management and OS-owner CLI remain available
   - Builds: `install.md`; `~/mdhouse/<project>` as the standard always-RW development workspace
+  - Progress: [install.md](../../../install.md) followed with npm `mdhouse@2.3.3` in a temp HOME/XDG on a spare port — workspace RW + saved, task write, `service install/uninstall --port` verified; clean-account run (no Bun) still open. Symlink write escape: `test/roots.test.ts` (path jail, file not yet existing)
   - Depends: [№MW.0](#MW.0), [№MW.0f](#MW.0f), [№MW.0g](#MW.0g), [№Q-W1](DECISIONS.md#Q-W1), [№Q-W2](DECISIONS.md#Q-W2)
   - Acceptance: from a clean account, an AI follows `install.md`, creates one project workspace and opens it writable in mdhouse
   - Acceptance: a symlink from the workspace cannot write outside the workspace root
