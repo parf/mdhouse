@@ -332,6 +332,8 @@ export const api = {
   gitCommit: (p: string, message: string, files: string[], nonMd: boolean) => gitPost('/api/git/commit', { p, message, files, nonMd }),
   /** One file, from its own page — `git commit -- <file>`; `p` is `<rootId>/<rel>`. */
   gitCommitFile: (p: string, message: string) => gitPost('/api/git/commit-file', { p, message }),
+  /** The ticked files of a folder's repo (`p` = `<rootId>/<dir>`), each as the page saw it: repo-relative path and porcelain code. */
+  gitCommitFiles: (p: string, message: string, files: Array<{ path: string; code: string }>) => gitPost('/api/git/commit-files', { p, message, files }),
   gitSync: (p: string, action: 'pull' | 'push', confirmed: boolean) => gitPost(`/api/git/${action}`, { p, confirmed }),
   /** Back to the last commit — only if the file is still the one `hash` (the shown diff's) was taken from. */
   gitReset: (p: string, hash: string) => gitPost('/api/git/reset', { p, hash }),

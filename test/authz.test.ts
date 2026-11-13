@@ -145,6 +145,7 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/api/git/remote', '*', null],
   ['/api/git/commit', 'POST', 'git-write'],
   ['/api/git/commit-file', 'POST', 'git-write'],
+  ['/api/git/commit-files', 'POST', 'git-write'],
   ['/api/git/reset', 'POST', 'git-write'],
   ['/api/git/pull', 'POST', 'git-sync'],
   ['/api/git/push', 'POST', 'git-sync'],

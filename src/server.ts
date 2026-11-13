@@ -1682,6 +1682,45 @@ export async function serve(opts: ServeOptions) {
           }));
         }),
       },
+      /**
+       * The files the Changes view ticked, as the page showed them (`{path, code}`, repo-relative, porcelain
+       * XY): each must still be uncommitted with that code, inside the folder's root and in no read-only root,
+       * and no rename, copy or conflict. Untracked ones are added, then `git commit -- <those paths>` takes
+       * them from the working tree — deletions included — and leaves anything else staged alone.
+       */
+      '/api/git/commit-files': {
+        POST: mutation('git-write', async (req) => {
+          const body = (await req.json().catch(() => null)) as { p?: string; message?: string; files?: unknown } | null;
+          const at = await gitWrite(req, body?.p);
+          if ('error' in at) return at.error;
+          const message = typeof body?.message === 'string' ? body.message.trim() : '';
+          if (!message) return fail(400, 'a commit message is needed');
+          if (message.length > 100_000) return fail(413, 'the commit message is too long');
+          const asked = Array.isArray(body?.files) ? (body.files as Array<{ path?: unknown; code?: unknown }>) : null;
+          const valid = (f: { path?: unknown; code?: unknown }) => typeof f?.path === 'string' && f.path.length > 0 && f.path.length <= 4096 && !f.path.includes('\0') && typeof f.code === 'string' && /^[ -~]{2}$/.test(f.code);
+          if (!asked?.length || asked.length > 1000 || !asked.every(valid)) return fail(400, 'expected {p, message, files: [{path, code}]}');
+          const chosen = asked as Array<{ path: string; code: string }>;
+          if (new Set(chosen.map((f) => f.path)).size !== chosen.length) return fail(400, 'a file is listed twice');
+          return queueWrite(`git:${at.repo}`, async () => {
+            const denied = gitStillWritable(at);
+            if (denied) return denied;
+            const dirty = await dirtyFiles(at.repo);
+            const now = new Map(dirty.map((f) => [f.path, f.code]));
+            if (chosen.some((f) => now.get(f.path) !== f.code)) return json({ error: 'the files changed meanwhile — have a look', files: dirty }, 409);
+            const tangled = chosen.filter((f) => /[RCU]/.test(f.code) || f.code === 'AA' || f.code === 'DD');
+            if (tangled.length) return json({ error: 'a rename, copy or conflict — commit in a terminal', files: tangled }, 409);
+            const foreign = chosen.filter((f) => {
+              const abs = `${at.repo}/${f.path}`;
+              return !within(abs, at.root.path) || registry.list().some((r) => !r.writable && within(abs, r.path));
+            });
+            if (foreign.length) return json({ error: `changes outside ${at.root.name} or in a read-only folder — commit in a terminal`, files: foreign }, 409);
+            const untracked = chosen.filter((f) => f.code === '??').map((f) => literal(f.path));
+            if (untracked.length && (await run(at.repo, ['add', '--', ...untracked])).code !== 0) return fail(500, 'could not add the new files');
+            const r = await run(at.repo, ['commit', '-m', message, '--', ...chosen.map((f) => literal(f.path))]);
+            return r.code === 0 ? json({ ok: true, output: r.out.trim() }) : fail(500, (r.err || r.out).trim());
+          });
+        }),
+      },
       /** One document back to its last commit — its uncommitted changes thrown away. */
       '/api/git/reset': {
         POST: mutation('git-write', async (req) => {
