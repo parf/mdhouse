@@ -378,8 +378,10 @@ export async function serve(opts: ServeOptions) {
    */
   const admins = new AdminSessions();
   const adminScope = (): AdminCookieScope => ({ port: cookiePort(), secure: false });
+  /** The ADMIN-W1 local administrator — never in a Viewer, a blocked prefs file included: there only a minted session is. */
+  const isLocalAdmin = (req: Request): boolean => localAdmins.has(req) && prefs.mode() !== 'viewer';
   const actorOf = (req: Request): Actor =>
-    localAdmins.has(req)
+    isLocalAdmin(req)
       ? { admin: true, via: 'local' }
       : admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope())).ok
         ? { admin: true, via: 'session' }
@@ -627,9 +629,17 @@ export async function serve(opts: ServeOptions) {
     if (!actorOf(req).admin) return adminRequired();
     return h(req);
   };
-  /** A write a Viewer refuses, before the handler reads anything. Root writability caps it again at the write itself. */
-  const viewerGate = (h: Handler): Handler => (req) =>
-    prefs.mode() === 'viewer' ? noStore(json({ error: 'read-only: this mdhouse is a Viewer', reason: 'viewer' }, 403)) : h(req);
+  /**
+   * A write a Viewer refuses, before the handler reads anything; a blocked prefs file is refused the same
+   * way (`reason: blocked`). Root writability caps it again at the write itself.
+   */
+  const viewerGate = (h: Handler): Handler => (req) => {
+    if (prefs.mode() !== 'viewer') return h(req);
+    const blocked = prefs.accessBlocked();
+    return blocked
+      ? noStore(json({ error: `read-only: prefs.json is ${blocked}`, reason: 'blocked' }, 403))
+      : noStore(json({ error: 'read-only: this mdhouse is a Viewer', reason: 'viewer' }, 403));
+  };
   function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
     routes = inventory(table);
     const family = new Map(routes.map((r) => [`${r.method} ${r.path}`, r.family]));
@@ -897,7 +907,7 @@ export async function serve(opts: ServeOptions) {
 
       /** Whether this browser holds an administrator session, and until when at most. No secret. */
       '/api/admin': read((req) => {
-        if (localAdmins.has(req)) return noStore(json({ admin: true, local: true }));
+        if (isLocalAdmin(req)) return noStore(json({ admin: true, local: true }));
         const v = admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope()));
         return noStore(json(v.ok ? { admin: true, expiresAt: v.expiresAt } : { admin: false }));
       }),
@@ -943,8 +953,13 @@ export async function serve(opts: ServeOptions) {
           if ('mode' in body && body.mode !== 'workspace' && body.mode !== 'viewer') return fail(400, "mode: 'workspace' or 'viewer'");
           const before = prefs.settings.autoRw;
           const beforeMode = prefs.mode();
-          await prefs.updateSettings(body);
-          if ((body.mode === 'workspace' || body.mode === 'viewer') && body.mode !== beforeMode) await prefs.setMode(body.mode);
+          try {
+            await prefs.updateSettings(body);
+          } catch (err) {
+            const blocked = prefs.accessBlocked();
+            if (!blocked) throw err;
+            return noStore(json({ error: `prefs.json is ${blocked} — not changed`, reason: 'blocked' }, 409));
+          }
           // Auto-rw or the mode changes which folders are writable: every tab shows it.
           if (prefs.settings.autoRw !== before || prefs.mode() !== beforeMode) {
             server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));

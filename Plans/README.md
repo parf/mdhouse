@@ -389,7 +389,9 @@ Other families retain existing behavior; marks admin policy is decided, not enfo
 
 Viewer (`prefs.mode() === 'viewer'`, `lib/authz.ts` `VIEWER_REFUSED`): `doc-write`, `git-write`, `git-sync`,
 `external-send`, `shared-prefs`, `attribution`, `flow` → 403 `{reason: 'viewer'}` in `guard()` before the
-handler; `Root.writable` caps again at the write. `instance-config`, `root-admin`, `admin-session` stay admin-only.
+handler; `Root.writable` caps again at the write. `instance-config`, `root-admin`, `admin-session` stay admin-only,
+and a Viewer has no ADMIN-W1 local administrator (`isLocalAdmin`): only a minted `mdhouse admin` session. A blocked
+prefs file is a Viewer (`reason: 'blocked'`); `POST /api/settings` writes settings + `mode` in one mutate, blocked → 409.
 
 Viewer UI (`ui/viewer-text.ts` pure strings/helpers, `ui/viewer.tsx` context + badge): `options.mode === 'viewer'` from
 `GET /api/settings`, re-read in every tab on a `roots` event and on any refused write (`reason: viewer` →

@@ -8,7 +8,7 @@
 
 - RAG search page: a colored `R` button in the sidebar header opens `/rag` — the project's index status (source, last sync, confirmed/total) and a keyword search with cited hits (file, lines, heading, query words marked); when RAG is not set up it explains step by step how to enable it
 
-- Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API switches back; projects keep their RW/RO. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
+- Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API (a `mdhouse admin` session — a Viewer has no local administrator) switches back; projects keep their RW/RO; an unreadable prefs.json counts as a Viewer. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
 
 ### Fixed
 

@@ -627,13 +627,18 @@ export class Prefs {
     return { ...this.data.settings };
   }
 
-  /** Change some settings; unknown keys and values of the wrong type are ignored. */
+  /**
+   * Change some settings, and the instance mode when `patch.mode` is `workspace` or `viewer`, in one
+   * write; unknown keys and values of the wrong type are ignored.
+   */
   async updateSettings(patch: Record<string, unknown>): Promise<Settings> {
     await this.mutate((data) => {
       for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
         const ok = validSetting(key, patch[key]);
         if (ok !== undefined) data.settings[key] = ok as never;
       }
+      if (patch.mode === 'viewer') data.mode = 'viewer';
+      if (patch.mode === 'workspace') data.mode = undefined;
     });
     return this.settings;
   }
@@ -681,10 +686,10 @@ export class Prefs {
     return this.access;
   }
 
-  /** The instance mode as the file holds it now. */
+  /** The instance mode as the file holds it now; a blocked file (newer or malformed) is a Viewer. */
   mode(): InstanceMode {
     this.refresh();
-    return this.data.mode === 'viewer' ? 'viewer' : 'workspace';
+    return this.data.mode === 'viewer' || blockedBy.has(this.data) ? 'viewer' : 'workspace';
   }
 
   /** Set the instance mode: Viewer writes the file as version 3, workspace as version 2. */

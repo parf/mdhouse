@@ -23,6 +23,7 @@ mdhouse --allow reset             # every address again
 - No users configured: a request that reaches mdhouse from loopback is the administrator — no `mdhouse admin` needed
 - Loopback includes a proxy on this host (`--host-name` deployments too), `ssh -L` and other local OS users
 - To require a sign-in, configure users: `mdhouse user-add ann`
+- Not in a Viewer — there sign in with `mdhouse admin`
 
 ## Viewer — read-only for everyone
 
@@ -32,9 +33,11 @@ mdhouse --workspace     # projects writable by their own RW/RO again
 ```
 
 - Refused (403): document writes, git commit/reset/pull/push, marks, author name, Agent Bus send
-- The administrator still changes settings and projects — `mode` in `POST /api/settings` switches back
-- Each project keeps its RW/RO; the web page still shows write controls (refused on use)
-- RAG search stays available — searching is reading
+- No local administrator: sign in with `mdhouse admin` to change settings or projects, or switch back from
+  Settings; with `--host-name` set no session can be minted — switch back with `mdhouse --workspace`
+- Each project keeps its RW/RO; the page removes write controls and shows a Viewer — read-only badge
+- Reads stay available — RAG search and the Agent Bus status page may message the bus
+- A prefs.json this mdhouse cannot read (newer or malformed) is treated as a Viewer
 - Downgrade: a Viewer prefs.json is version 3 — mdhouse ≤ 2.3.3 finds no saved RW project, a version-2
   mdhouse reads it read-only and never rewrites it; run `mdhouse --workspace` before downgrading
 
