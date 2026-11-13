@@ -544,6 +544,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   Code review, QA and other agent pipelines; define triggers, scope, outputs, run history, overlap/failure handling and separate action approvals.
   Reuse Agent Bus scheduling; no custom scheduler or live jobs during design ([№AUTO-W1](DECISIONS.md#AUTO-W1)).
   - Progress: design drafted in [AUTOMATION.md](../AUTOMATION.md); owner decisions pending ([Q-R3-AUTO1](QUESTIONS.md#Q-R3-AUTO1)); no implementation until answered
+  - Progress: slice 1 built, not wired — the registration schema and jailed loader (`.mdhouse/automation/<id>.json`), the schedule handler (bus stamp as provenance, replay by `<scheduleId>:<slot>`, overlap skip, 5-minute interval and 10/day caps, 3 failures stop it) and the run index, tested on a fake runner; the approval refuses always until [№Q-R3-AUTO2](QUESTIONS.md#Q-R3-AUTO2) is answered
 
 ## Access badge presentation
 

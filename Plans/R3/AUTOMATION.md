@@ -1,6 +1,6 @@
 # Automation — Agent Bus Cron/At for AI pipelines
 
-Status: draft — [№Q-R3-AUTO1](workspaces/DECISIONS.md#Q-R3-AUTO1) decided; [№Q-R3-AUTO2](workspaces/QUESTIONS.md#Q-R3-AUTO2) (who may run a committed registration) open. Design only: nothing here is implemented and no schedule exists. Task: [№MW.11](workspaces/TODO.md#MW.11); rule: [№AUTO-W1](workspaces/DECISIONS.md#AUTO-W1).
+Status: draft — [№Q-R3-AUTO1](workspaces/DECISIONS.md#Q-R3-AUTO1) decided; [№Q-R3-AUTO2](workspaces/QUESTIONS.md#Q-R3-AUTO2) (who may run a committed registration) open. Slice 1 built and tested, not wired to the server (§11): no schedule exists, and every firing is refused until Q-R3-AUTO2 is answered. Task: [№MW.11](workspaces/TODO.md#MW.11); rule: [№AUTO-W1](workspaces/DECISIONS.md#AUTO-W1).
 
 ## 1. Principle
 
@@ -13,7 +13,7 @@ Status: draft — [№Q-R3-AUTO1](workspaces/DECISIONS.md#Q-R3-AUTO1) decided; [
 `agent-bus schedule add <record> '<cron>' <mdhouse-endpoint> '<json>'`, or `at` / `in` for one-offs.
 
 - The bus delivers from `#bus`, topic `schedule`, tag `by <creator>`, with a bus-set stamp: id, creator, slot, `late_by`, `missed`; the stamp is the only provenance mdhouse trusts, the body is untrusted input
-- Body v1 (at most 4 KiB): `{ "v": 1, "op": "run", "project": "<root id>", "flow": "recent-commits-review", "scope": { "range": "since-marker" }, "requestId": "<scheduleId>:<slot>" }`
+- Body v1 (at most 4 KiB): `{ "v": 1, "op": "run", "project": "<root id>", "registration": "<id>" }` — it names a project and a registration and nothing else: no flow, range, path or trigger (an unknown key is refused); the request id is the stamp's `<scheduleId>:<slot>`, never the body's
 - The topic is always `schedule`, so mdhouse dispatches on the stamp's schedule id plus `body.op`, and refuses a schedule id it has no registration for
 - `requestId` is the schedule id plus slot, so a replay or a catch-up never starts one slot twice
 - A catch-up (`missed > 0`) is one run over the whole range since the marker; a firing later than the registration's `maxLate` is recorded `skipped: late` (set `--max-late` on the schedule too)
@@ -22,7 +22,7 @@ Status: draft — [№Q-R3-AUTO1](workspaces/DECISIONS.md#Q-R3-AUTO1) decided; [
 ## 3. Registration
 
 A registration is team data ([№DATA-W1](workspaces/DECISIONS.md#DATA-W1)): one file per pipeline in `$PROJECT/.mdhouse/automation/<id>.json`, under Git with the project, never in the Markdown tree:
-`{ id, flow, scope, when, maxLate, overlap: "skip" | "queue1", notify?: <one agent> }` — what to run, when, over what, and who hears of it.
+`{ id, flow, range, when, maxLate?, overlap?, notify? }` — strict, no other key; `id` is the file's name; `flow` a runnable package (`runnableFlow`); `range` `"since-last-run"` or `{"kind":"baseline","commit":"<4-40 hex>"}`; `when` `{"cron":"<5 or 6 fields>"}` or `{"at":"<RFC 3339 UTC>"}`; `maxLate` `"30m"` (1 s to 7 d, default 1 h); `overlap` only `"skip"` is built; `notify` `"#name@host"` — what to run, when, over what, and who hears of it.
 Where it runs is not in the file: the bus schedule on this instance's `#mdhouse` record is only the timer, and it exists only where an administrator enabled the registration.
 
 - A firing runs only if the project holds the registration file the schedule was made from and the administrator's approval of that file's content hash (user data, `$HOME/.config/mdhouse`, per instance) still matches; a file changed by a pull or a commit stops firing until it is approved again
@@ -85,6 +85,8 @@ Project → Settings → Automation (or a ⏰ entry on a flow page): registratio
 - **QA** — document-level in v1: nightly 02:00 UTC at the default branch HEAD, bound to that exact SHA; it analyses the project's QA matrix and the changes since the last QA run and writes a QA run document; running tests is a later capability that needs its own approval decision
 
 ## 11. Delivery order, after the owner answers
+
+Slice 1 (steps 1–2) is built — `src/lib/automation.ts` (schema, `Automation` handler, `RunIndex`, `notApproved`), `src/lib/automation-registry.ts` (the jailed loader), tests with a fake runner — and fails closed: the approval it ships answers no, so a firing is `not-approved` and reaches nothing. Not wired to `serve()`.
 
 1. Contract: body v1, registration schema and a pure handler with tests (validate, replay cache, dispatch to a stub), like `ab-control`
 2. Registry and run index, in the `rag-registry` pattern
