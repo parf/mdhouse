@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only; TW_STALE=1 answers the first approve with stale; TW_NOTIMER=1 makes an approved registration `no-timer`), automationreal (real routes, needs a sandbox bus), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only; TW_STALE=1 answers the first approve with stale; TW_NOTIMER=1 makes an approved registration `no-timer`), automationreal (real routes, needs a sandbox bus), automationnotimer (real; TW_AB_SOCK = the sandbox socket: deletes the schedule behind the page), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -447,6 +447,32 @@ if (only.includes('automationgap')) {
   say('  words: ' + await ev("[...document.querySelectorAll('.auto .settings-error, .auto .settings-hint')].map(e => e.textContent.trim().replace(/\\s+/g, ' ')).join(' ## ') || 'none'"));
   say('  states: ' + await ev("[...document.querySelectorAll('.auto-state')].map(e => e.textContent).join(', ') || 'none'") + '; action buttons: ' + await ev("document.querySelectorAll('.auto-actions .rag-act').length"));
   await audit('automationgap');
+}
+if (only.includes('automationnotimer')) {
+  // Real routes, a sandbox bus: approve, delete the bus schedule behind the page's back (the CLI, explicit --addr), see no-timer, approve again.
+  const sock = process.env.TW_AB_SOCK ?? '';
+  if (!sock.startsWith('/tmp/') || !require('node:fs').existsSync(sock)) throw new Error('automationnotimer needs TW_AB_SOCK, the sandbox bus socket under /tmp');
+  const f = `${R}/.mdhouse/automation/weekly.json`;
+  execSync(`mkdir -p ${R}/.mdhouse/automation`);
+  await Bun.write(f, JSON.stringify({ id: 'weekly', flow: 'recent-commits-review', range: 'since-last-run', when: { cron: '30 8 * * 1-5' } }, null, 2));
+  await go('/repo/?automation');
+  await tap('.auto-actions .rag-act', 0);
+  await tap('.auto-confirm .rag-act.primary', 0);
+  await sleep(2000);
+  const id = await ev("(document.body.innerText.match(/bus schedule ([0-9a-f]+)/) || [])[1] || ''");
+  say('  approved; timer ' + id + '; state ' + await ev("document.querySelector('.auto-state')?.textContent"));
+  say('  deleted behind the page: ' + execSync(`agent-bus --addr=${sock} schedule delete ${id} 2>&1`).toString().trim().slice(0, 120));
+  await go('/repo/?automation');
+  say('  state now: ' + await ev("document.querySelector('.auto-state')?.textContent + ' | ' + [...document.querySelectorAll('.auto-facts dd')].map(d => d.textContent.trim()).slice(-2).join(' || ') + ' | buttons ' + [...document.querySelectorAll('.auto-actions .rag-act')].map(b => b.textContent.trim()).join(' | ')"));
+  await audit('automation-notimer');
+  await tap('.auto-actions .rag-act', 0);
+  await tap('.auto-confirm .rag-act.primary', 0);
+  await sleep(2000);
+  say('  approved again: ' + await ev("document.querySelector('.auto-state')?.textContent + ' | ' + (document.body.innerText.match(/bus schedule [0-9a-f]+/) || [''])[0]"));
+  await tap('.auto-actions .rag-act:last-child', 0);
+  await sleep(1500);
+  say('  revoked: ' + await ev("document.querySelector('.auto-state')?.textContent"));
+  execSync(`rm -rf ${R}/.mdhouse`);
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);
