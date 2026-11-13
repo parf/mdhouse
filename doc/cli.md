@@ -72,6 +72,7 @@ asks for the password; on non-interactive stdin it reads the first line.
 | `--viewer` | Viewer: every project read-only, no writes from the web; saved. Projects keep their own RW/RO. |
 | `--workspace` | Back to a workspace: projects writable by their own modes (the default); saved. |
 | `--agent-bus [on\|off\|<socket>\|<url>]` | Configure Agent Bus; saved. A remote HTTP(S) daemon asks for its token. |
+| `--ab-control <re,…\|off\|reset>` | Who may open a page in a tab over the Agent Bus: regexes narrow the owner's agents; `off` nobody; saved. |
 | `-o`, `--open` | Open the page in a browser after starting. |
 | `-a`, `--all` | Include gitignored Markdown while serving; with `exit`, stop every mdhouse. |
 | `--fg`, `--foreground` | Stay in the foreground; Ctrl+C stops it. |

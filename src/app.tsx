@@ -2,6 +2,7 @@
 import { adminEntry, onAdminEntry, type AdminEntry } from './ui/admin-entry';
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { hasUnsaved, openTarget } from './ui/tab-presence';
 import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
 import { accessBadge, customName } from './ui/project-groups';
@@ -345,6 +346,12 @@ function App({ entry: first }: { entry: AdminEntry }) {
   onLive.current = (msg) => {
     for (const l of liveListeners) l(msg);
     if (msg.t === 'pong' || msg.t === 'ab') return;
+    // Agent Bus control: an in-app document path, and never over unsaved editor text.
+    if (msg.t === 'open') {
+      const url = openTarget(msg.url);
+      if (url && !hasUnsaved()) go(url);
+      return;
+    }
 
     // Another `mdhouse` handed this one a directory, or a project was renamed: pick up the new
     // root list, but stay where the reader is — the tree they are looking at has not changed.

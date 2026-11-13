@@ -435,6 +435,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: inventory/query and browser opening independently check sender/root/user authorization; document paths remain jailed
   - Acceptance: control IDs are opaque identifiers, not credentials; authorization is checked independently on inventory and command requests
   - Acceptance: commands are idempotent by request id, produce an audit record, and have integration tests for replay, denial, path escape, stale client IDs, multiple roots and multiple browsers
+  - Progress: Personal slice — handler `8fd12ab`, wiring (tabs, lock-held serving, `--ab-control`); browser-checked on a scratch instance. Open: per-user root check after [№MW.0b](#MW.0b) (until then `opened:false reason:team`), a real-daemon end-to-end run
   - Home: [Agent Bus control](README.md#agent-bus-control)
 
 ## W6 — Passive document content

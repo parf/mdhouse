@@ -25,6 +25,7 @@ import { DEFAULT_EDIT_SCHEME, normalizeEditScheme } from './urls';
 import { normalizeProjectName } from './project-name';
 import type { AccessMode } from './roots';
 import { validEndpoint, validTarget } from './agent-bus';
+import { parseControl, type ControlSetting } from './ab-control';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -209,6 +210,8 @@ export interface AgentBusConfig {
   default: string[];
   /** Which agents the lists show: a regex per line, against the name without its `#`; none — every one. */
   filter: string[];
+  /** Agent Bus control senders (MW.7): `off`, or whole-name regexes narrowing what the daemon admits; empty — no narrowing. */
+  control: ControlSetting;
 }
 
 /** Coding agents: Claude, Codex, OpenCode sessions. */
@@ -339,7 +342,7 @@ const fresh = (): PrefsFile => ({
   access: { allow: [], users: {}, hostNames: [] },
   autoRwRules: [],
   autoRw: [],
-  agentBus: { enabled: false, socket: '', token: '', default: [], filter: [...DEFAULT_AB_FILTER] },
+  agentBus: { enabled: false, socket: '', token: '', default: [], filter: [...DEFAULT_AB_FILTER], control: [] },
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
@@ -460,6 +463,7 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
       token: typeof parsed.agentBus?.token === 'string' ? parsed.agentBus.token : '',
       default: Array.isArray(parsed.agentBus?.default) ? parsed.agentBus.default.filter((n) => typeof n === 'string') : [],
       filter: Array.isArray(parsed.agentBus?.filter) ? parsed.agentBus.filter.filter((n) => typeof n === 'string') : [...DEFAULT_AB_FILTER],
+      control: parseControl((parsed.agentBus as { control?: unknown } | undefined)?.control),
     },
   };
   if (problem) blockedBy.set(data, problem);
@@ -734,7 +738,8 @@ export class Prefs {
   /** The Agent Bus settings as the file holds them now. */
   get agentBus(): AgentBusConfig {
     this.refresh();
-    return { ...this.data.agentBus, default: [...this.data.agentBus.default], filter: [...this.data.agentBus.filter] };
+    const { control } = this.data.agentBus;
+    return { ...this.data.agentBus, default: [...this.data.agentBus.default], filter: [...this.data.agentBus.filter], control: control === 'off' ? 'off' : [...control] };
   }
 
   /** Change the Agent Bus settings. */

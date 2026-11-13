@@ -28,6 +28,31 @@ mdhouse --agent-bus          # off: mdhouse --agent-bus off
 
 Settings → Agent Bus: the default agents, which names to list.
 
+## Open a page from an agent
+
+An agent sends `#mdhouse@<host>` a JSON request on topic `mdhouse.ctl`; `ask help` lists the ops.
+
+```json
+{"v":1, "op":"inventory", "requestId":"i1"}
+{"v":1, "op":"open", "requestId":"o1", "rootId":"notes", "path":"plans/a.md", "clientId":"…"}
+```
+
+- `inventory` → projects (`rootId`, name) and open browser tabs (`clientId`, browser · title, page)
+- `open` → `{url, opened}`: that one tab goes to the document; no other tab moves
+- `opened: false` + `reason`: `gone` (tab closed), `busy` (unsaved editor text), `team` (users configured)
+- Reads only: no writes, settings, projects or users; the path stays inside its project, Markdown only
+- The same `requestId` again → the first reply, the tab is not moved twice
+- Each request → a line in the log and in mdhouse's agent log
+- One mdhouse per host serves it (a bus lock); another one logs *served by another mdhouse*
+
+Who may send — the daemon admits only the owner's agents; narrow it further or turn it off:
+
+```sh
+mdhouse --ab-control 'claude/.*,codex/w1'   # whole names without #, regexes
+mdhouse --ab-control off                    # nobody
+mdhouse --ab-control reset                  # every agent the daemon admits
+```
+
 ## Remote Agent Bus
 
 Over TCP, with a token:

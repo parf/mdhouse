@@ -12,6 +12,7 @@ import { tags as t } from '@lezer/highlight';
 import { markdownLanguage } from '@codemirror/lang-markdown';
 import { ApiError, api } from './api';
 import { dropDraft, forEditor, fromEditor, loadDraft, saveDraft, type EditorSource } from './edit-source';
+import { setUnsaved } from './tab-presence';
 
 interface Props {
   /** The document, as a wire path `root/rel`. */
@@ -165,6 +166,12 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
       live = false;
     };
   }, [revision]);
+
+  // Agent Bus control does not move a tab away from unsaved text.
+  useEffect(() => {
+    setUnsaved(host, dirty);
+    return () => setUnsaved(host, false);
+  }, [dirty]);
 
   // Leaving the page with unsaved text asks first — only while there is some.
   useEffect(() => {

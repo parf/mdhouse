@@ -38,9 +38,10 @@ export interface CtlRoot {
 
 export interface CtlClient {
   clientId: string;
+  /** Browser family and the page title. */
   label: string;
-  rootId?: string;
-  path?: string;
+  /** The page the tab shows, as its pathname. */
+  page?: string;
   /** The tab has unsaved editor text; it is not moved. */
   busy: boolean;
   since: number;
@@ -62,6 +63,13 @@ export interface CtlDeps {
   team(): boolean;
   audit(level: 'notice' | 'warning', line: string): void;
   now?(): number;
+}
+
+/** `agentBus.control` as stored: absent — no narrowing; a list of strings; anything else is `off`. */
+export function parseControl(raw: unknown): ControlSetting {
+  if (raw === undefined) return [];
+  if (Array.isArray(raw) && raw.every((p) => typeof p === 'string')) return [...raw];
+  return 'off';
 }
 
 /** Whether `from` may send control requests under `setting`. A pattern is a whole-name regex without the `#`, any case; an invalid one refuses everyone. */

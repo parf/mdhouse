@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Control, CTL_MAX_BODY, CTL_REPLAY_MS, registryDocUrl, senderAllowed, type ControlSetting, type CtlClient, type CtlDeps } from '../src/lib/ab-control';
+import { Control, CTL_MAX_BODY, CTL_REPLAY_MS, parseControl, registryDocUrl, senderAllowed, type ControlSetting, type CtlClient, type CtlDeps } from '../src/lib/ab-control';
 import { Registry } from '../src/lib/roots';
+import { Prefs } from '../src/lib/prefs';
+import { openTarget } from '../src/ui/tab-presence';
 
 const ME = '#claude/agent@host';
 
@@ -228,4 +230,57 @@ describe('registryDocUrl — the path jail', () => {
     expect(await url('nosuch', 'sub/a.md')).toBeNull();
     expect(await url(other!.id, 'secret.md')).toBe(`/${other!.id}/secret.md`);
   });
+});
+
+describe('stored rule', () => {
+  test('absent — no narrowing; a string list kept; anything else is off', () => {
+    expect(parseControl(undefined)).toEqual([]);
+    expect(parseControl(['a', 'b'])).toEqual(['a', 'b']);
+    for (const bad of ['off', 'on', null, 3, {}, ['a', 1], true]) expect(parseControl(bad)).toBe('off');
+  });
+
+  test('prefs keep it across a reload', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'abctl-prefs-'));
+    const prefs = await Prefs.load(join(dir, 'prefs.json'));
+    expect(prefs.agentBus.control).toEqual([]);
+    await prefs.setAgentBus({ control: ['claude/.*'] });
+    expect((await Prefs.load(join(dir, 'prefs.json'))).agentBus.control).toEqual(['claude/.*']);
+    await prefs.setAgentBus({ control: 'off' });
+    expect((await Prefs.load(join(dir, 'prefs.json'))).agentBus.control).toBe('off');
+    writeFileSync(join(dir, 'prefs.json'), JSON.stringify({ version: 2, agentBus: { enabled: true, control: 'nope' } }));
+    expect((await Prefs.load(join(dir, 'prefs.json'))).agentBus.control).toBe('off');
+  });
+});
+
+describe('openTarget — what a page navigates to', () => {
+  const O = 'http://127.0.0.1:7777';
+  test('an in-app path is its pathname', () => {
+    expect(openTarget('/notes/a.md', O)).toBe('/notes/a.md');
+    expect(openTarget('/notes/a%20b.md', O)).toBe('/notes/a%20b.md');
+  });
+  test('anything else is null', () => {
+    for (const u of ['//evil.example/x', 'http://evil.example/', 'javascript:alert(1)', 'notes/a.md', '/\\evil.example', '', 7, null, '/' + 'x'.repeat(3000)])
+      expect(openTarget(u, O)).toBeNull();
+  });
+});
+
+test('CLI: --ab-control saves patterns, off and reset; refuses a bad regex', () => {
+  const cfg = mkdtempSync(join(tmpdir(), 'abctl-cli-'));
+  const cli = (...args: string[]) =>
+    Bun.spawnSync([process.execPath, join(import.meta.dir, '../src/cli.ts'), ...args], {
+      env: { ...process.env, XDG_CONFIG_HOME: cfg, MDHOUSE_PORT: '', MDHOUSE_HOST: '', MDHOUSE_SERVICE: '', MDHOUSE_DAEMON: '' },
+    });
+  const stored = () => JSON.parse(readFileSync(join(cfg, 'mdhouse', 'prefs.json'), 'utf8')).agentBus.control;
+  const set = cli('--ab-control', 'claude/.*,codex/w1');
+  expect([set.exitCode, set.stdout.toString()]).toEqual([0, 'mdhouse  agent-bus control:  claude/.*, codex/w1  (the Agent Bus is off — mdhouse --agent-bus)\n']);
+  expect(stored()).toEqual(['claude/.*', 'codex/w1']);
+  expect(cli('--ab-control', 'off').exitCode).toBe(0);
+  expect(stored()).toBe('off');
+  const reset = cli('--ab-control', 'reset');
+  expect(reset.stdout.toString()).toContain("every agent the daemon admits (the owner's)");
+  expect(stored()).toEqual([]);
+  const bad = cli('--ab-control', 'a(');
+  expect([bad.exitCode, bad.stderr.toString()]).toEqual([2, 'mdhouse: --ab-control: not a regex: a(\n']);
+  expect(stored()).toEqual([]);
+  rmSync(cfg, { recursive: true, force: true });
 });

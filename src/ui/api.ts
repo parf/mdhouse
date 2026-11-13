@@ -22,6 +22,7 @@ import type { QaChange } from '../lib/qa';
 import type { Kind } from '../lib/filetypes';
 import type { GitState } from './git-state';
 import { routeOf } from '../lib/urls';
+import { atFrame, keepClient, savedClient, watchPresence } from './tab-presence';
 
 export interface AuthorInfo {
   name: string;
@@ -515,7 +516,10 @@ export const api = {
 };
 
 export type LiveMessage =
-  | { t: 'hello'; roots: string[] }
+  /** Every connection opens with it; `clientId`/`resume` name this tab for Agent Bus control. */
+  | { t: 'hello'; roots: string[]; clientId?: string; resume?: string }
+  /** Agent Bus control sends this tab to a document. */
+  | { t: 'open'; url: string }
   | { t: 'pong' }
   | { t: 'fs'; root: string; paths: string[] }
   | { t: 'git'; root: string; paths: string[] }
@@ -537,19 +541,24 @@ export function connectLive(onMessage: (msg: LiveMessage) => void, onStatus: (li
   let attempt = 0;
   let retry: ReturnType<typeof setTimeout> | null = null;
   let heartbeat: ReturnType<typeof setInterval> | null = null;
+  let stopPresence: (() => void) | null = null;
 
   const open = () => {
     if (closed) return;
-    socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
+    const client = savedClient();
+    socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws${client ? `?client=${encodeURIComponent(client)}` : ''}`);
 
     socket.onopen = () => {
       attempt = 0;
       onStatus(true);
+      stopPresence?.();
+      stopPresence = watchPresence(() => socket?.readyState === WebSocket.OPEN && socket.send(atFrame()));
       heartbeat = setInterval(() => socket?.readyState === WebSocket.OPEN && socket.send('ping'), 30_000);
     };
     socket.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data as string) as LiveMessage;
+        if (msg.t === 'hello' && msg.clientId && msg.resume) keepClient(msg.clientId, msg.resume);
         onMessage(msg);
         // Topics are subscribed to when the socket opens, so a root added since then has
         // nobody listening to it. Reconnecting — the backoff path that already exists — is
@@ -561,6 +570,8 @@ export function connectLive(onMessage: (msg: LiveMessage) => void, onStatus: (li
     };
     socket.onclose = () => {
       if (heartbeat) clearInterval(heartbeat);
+      stopPresence?.();
+      stopPresence = null;
       onStatus(false);
       if (closed) return;
       retry = setTimeout(open, Math.min(500 * 2 ** attempt++, 15_000));
@@ -573,6 +584,7 @@ export function connectLive(onMessage: (msg: LiveMessage) => void, onStatus: (li
     closed = true;
     if (retry) clearTimeout(retry);
     if (heartbeat) clearInterval(heartbeat);
+    stopPresence?.();
     socket?.close();
   };
 }

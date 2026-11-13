@@ -69,6 +69,25 @@ const ALIVE_MS = 90_000;
 const JOBS_KEPT = 50;
 /** Connections kept, one per endpoint and credential; one with exchanges under way is never dropped. */
 const CONNECTIONS_KEPT = 16;
+/** The lock on mdhouse's own record that one process per agent name holds while it serves control. */
+const CONTROL_LOCK = 'ctl';
+/** The holder's per-process nonce, in mdhouse's own KV: processes that share the agent name are one lock holder. */
+const CONTROL_OWNER = 'ctl.owner';
+
+/** Control serving (`AgentBus.control`). */
+export interface ControlServing {
+  topic: string;
+  /** Answers one request; never throws. */
+  handle: (from: string, body: string) => Promise<string>;
+  /** Asked each tick: serve now? */
+  wanted: () => boolean;
+  /** A serving change, in safe words. */
+  log: (line: string) => void;
+  /** An `ask help` reply. */
+  help: string;
+  tickMs?: number;
+  ttlMs?: number;
+}
 
 /**
  * `<!-- AB: #claude/x@host -->` in a document: the agents it asks, in order, no repeats. One shown
@@ -290,6 +309,114 @@ export class AgentBus {
     const d = await this.connect(ep);
     const out = await d.call(to, body, { topic: TOPIC, timeout: timeoutMs });
     return out.kind === 'answer' ? out.message.body : null;
+  }
+
+  /** One line to mdhouse's own agent log at the instance endpoint; failures are dropped. */
+  async agentLog(level: 'notice' | 'warning', text: string): Promise<void> {
+    try {
+      const d = await this.connect();
+      await d.send('#bus', `write ${this.me} ${level} ${text}`);
+    } catch {
+      /* the journal line stays */
+    }
+  }
+
+  /** Counts a long-lived user of the connection at `key`, so it is not dropped. */
+  private hold(key: string, by: 1 | -1): void {
+    const n = (this.active.get(key) ?? 0) + by;
+    if (n > 0) this.active.set(key, n);
+    else this.active.delete(key);
+  }
+
+  /**
+   * Serves `o.topic` on the instance endpoint while `o.wanted()` and this process holds the control
+   * lock; checked every tick. The lock alone cannot tell two processes with one agent name apart,
+   * so the winner writes its nonce to `ctl.owner` and stops when the nonce there is not its own, or
+   * when the lock cannot be extended. Returns the stop, which releases the lock it holds.
+   */
+  control(o: ControlServing): () => Promise<void> {
+    const tickMs = o.tickMs ?? 20_000;
+    const ttl = o.ttlMs ?? 60_000;
+    const nonce = crypto.randomUUID();
+    let cur: { key: string; d: Bus; abort: AbortController; done: Promise<void> } | null = null;
+    let refused = '';
+    let running: Promise<void> | null = null;
+    let stopped = false;
+
+    const halt = async (release: boolean, why: string) => {
+      const c = cur;
+      if (!c) return;
+      cur = null;
+      c.abort.abort();
+      await c.done.catch(() => {});
+      if (release) await c.d.record(this.me).locks.release(CONTROL_LOCK).catch(() => {});
+      this.hold(c.key, -1);
+      o.log(`control: stopped — ${why}`);
+    };
+
+    const step = async () => {
+      const want = !stopped && o.wanted();
+      const ep = this.where();
+      const key = `${ep.addr}\n${ep.token}`;
+      if (cur && (!want || cur.key !== key)) await halt(true, want ? 'endpoint changed' : 'turned off');
+      if (cur) {
+        const rec = cur.d.record(this.me);
+        const owner = await rec.kv.get('string', CONTROL_OWNER).then((v) => (v.kind === 'string' ? String(v.value) : null), () => null);
+        if (owner !== nonce) return halt(false, 'another mdhouse serves control');
+        await rec.locks.extend(CONTROL_LOCK, ttl).catch((err: unknown) => halt(false, `lock lost: ${safeError(err)}`));
+        return;
+      }
+      if (!want) return;
+      const d = await this.connect(ep);
+      const rec = d.record(this.me);
+      try {
+        await rec.locks.tryAcquire(CONTROL_LOCK, { ttl });
+      } catch (err) {
+        const held = await rec.locks.holders().then((hs) => hs.some((h) => h.name === CONTROL_LOCK), () => false);
+        const why = held ? 'control: served by another mdhouse' : `control: not served — ${safeError(err)}`;
+        if (refused !== why) o.log(why);
+        refused = why;
+        return;
+      }
+      refused = '';
+      try {
+        await rec.kv.set('string', CONTROL_OWNER, nonce, { mode: 'set' });
+      } catch (err) {
+        await rec.locks.release(CONTROL_LOCK).catch(() => {});
+        throw err;
+      }
+      const abort = new AbortController();
+      this.hold(key, 1);
+      const done = d.serve(async (m) => (m.ask ? o.help : o.handle(m.from, m.body)), { topic: o.topic, workers: 1, signal: abort.signal, drainTimeout: 2_000 });
+      cur = { key, d, abort, done };
+      o.log(`control: serving topic ${o.topic}`);
+      done
+        .catch((err: unknown) => o.log(`control: serving ended — ${safeError(err)}`))
+        .finally(() => {
+          if (cur?.done !== done) return;
+          cur = null;
+          this.hold(key, -1);
+          void rec.locks.release(CONTROL_LOCK).catch(() => {});
+        });
+    };
+
+    const tick = () => {
+      running ??= step()
+        .catch((err: unknown) => o.log(`control: ${safeError(err)}`))
+        .finally(() => {
+          running = null;
+        });
+      return running;
+    };
+    void tick();
+    const timer = setInterval(() => void tick(), tickMs);
+    timer.unref?.();
+    return async () => {
+      stopped = true;
+      clearInterval(timer);
+      await running;
+      await halt(true, 'shutdown');
+    };
   }
 
   /** A job's events so far; null when it is not (or no longer) kept. */

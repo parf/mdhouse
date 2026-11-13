@@ -233,7 +233,8 @@ async function start(port: number, o: { echo?: boolean; hold?: boolean } = {}) {
   const prefsPath = join(dir, 'prefs.json');
   const prefs = await Prefs.load(prefsPath);
   await prefs.addSaved(keep);
-  await prefs.setAgentBus({ enabled: true, socket: inst.socket, token: 'inst-cred', default: ['#claude/inst@h'] });
+  // control off: these tests count the routes' own daemon traffic; serving is ab-control-serve.test.ts
+  await prefs.setAgentBus({ enabled: true, socket: inst.socket, token: 'inst-cred', default: ['#claude/inst@h'], control: 'off' });
   const registry = await Registry.create([keep, ses]);
   await registry.addReference(join(dir, 'ref'), '_ref');
   const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });

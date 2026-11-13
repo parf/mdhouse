@@ -19,6 +19,7 @@ import { ownStopCommand, ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
 import { checkNameArgs } from './lib/project-name';
+import { badPatterns } from './lib/agent-bus';
 
 const USAGE = `mdhouse — a Markdown workspace on your own machine
 
@@ -54,6 +55,9 @@ Options
       --agent-bus [on|off|<x.sock>|<http://host:port>]  the Agent Bus integration:
                        a page asks an AI session to read it and reply; saved. A remote
                        daemon asks for its token (or reads it from stdin)
+      --ab-control <re,…|off|reset>  who may send a tab to a document over the Agent Bus:
+                       whole-name regexes narrow the owner's agents; off: nobody;
+                       reset: every agent the daemon admits (the default); saved
       --name <text>    a human name for the one project named (display only); with -p, saved;
                        --name reset: the directory's own name again
   -o, --open           open a browser on start
@@ -92,6 +96,8 @@ interface Options {
   hostNames: string[] | null;
   /** `--agent-bus`: on, off, or a daemon socket (turns it on); null when not given. */
   agentBus: string | null;
+  /** `--ab-control`: the patterns, `off` or `reset` as given; null when not given. */
+  abControl: string[] | null;
   /** `--auto-rw`: the paths to save, or null when not given. */
   autoRw: string[] | null;
   /** `--viewer` / `--workspace`: the instance mode to save, or null when not given. */
@@ -122,6 +128,7 @@ function parse(argv: string[]): Options {
     autoRw: null,
     mode: null,
     agentBus: null,
+    abControl: null,
     startOnly: new Set(),
   };
 
@@ -160,6 +167,7 @@ function parse(argv: string[]): Options {
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       // the value is optional: only on / off / a .sock path is taken — anything else is a folder
       case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$|^https?:\/\//.test(argv[i + 1] ?? '') ? next() : 'on'; break;
+      case '--ab-control': o.abControl = [...(o.abControl ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--viewer': o.mode = 'viewer'; break;
       case '--workspace': o.mode = 'workspace'; break;
       case '--host-name': o.hostNames = [...(o.hostNames ?? []), ...next().split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)]; break;
@@ -513,6 +521,20 @@ if (opts.agentBus) {
   }
   const ab = await prefs.setAgentBus({ enabled: !off, ...(socket ? { socket } : {}), ...(token !== undefined ? { token } : {}) });
   console.log(`mdhouse  agent-bus:  ${ab.enabled ? `on  ${ab.socket || '(default socket)'}` : 'off'}`);
+  if (!opts.dirs.length) process.exit(0);
+}
+
+if (opts.abControl) {
+  const off = opts.abControl.length === 1 && opts.abControl[0] === 'off';
+  const patterns = off || isReset(opts.abControl) ? [] : opts.abControl;
+  const bad = badPatterns(patterns);
+  if (!opts.abControl.length || bad.length) {
+    console.error(`mdhouse: --ab-control: ${bad.length ? `not a regex: ${bad.join(', ')}` : 'give patterns, off or reset'}`);
+    process.exit(2);
+  }
+  const ab = await prefs.setAgentBus({ control: off ? 'off' : patterns });
+  const who = ab.control === 'off' ? 'off' : ab.control.length ? ab.control.join(', ') : "every agent the daemon admits (the owner's)";
+  console.log(`mdhouse  agent-bus control:  ${who}${ab.enabled ? '' : '  (the Agent Bus is off — mdhouse --agent-bus)'}`);
   if (!opts.dirs.length) process.exit(0);
 }
 

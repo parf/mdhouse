@@ -6,6 +6,8 @@
  */
 
 import type { ServerWebSocket } from 'bun';
+import { Control, CTL_TOPIC, CTL_VERSION, registryDocUrl } from './lib/ab-control';
+import { Tabs } from './lib/ws-tabs';
 import index from './index.html';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
@@ -41,6 +43,13 @@ import { createHash } from 'node:crypto';
 import { citeRecords } from './lib/rag-cite';
 import { decodeSearchReply } from './lib/rag-sync-runtime';
 import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, sourceFor, type RagLast, type RagSource } from './lib/rag-ui';
+
+/** A `/ws` socket: the tab id it asked for (`<id>.<proof>`), its User-Agent, and the id it got. */
+interface WsData {
+  asked: string | null;
+  ua: string;
+  clientId: string;
+}
 
 export interface ServeOptions {
   registry: Registry;
@@ -216,6 +225,42 @@ export async function serve(opts: ServeOptions) {
   /** The Agent Bus integration — on and off from the CLI (`--agent-bus`); its events go to every tab. */
   const instanceBus = (): Endpoint => ({ addr: prefs.agentBus.socket || defaultSocket(), token: prefs.agentBus.token });
   const bus = new AgentBus(instanceBus, (ev) => server.publish('ab', JSON.stringify({ t: 'ab', ...ev })));
+  /** The browser tabs on `/ws`, by the id Agent Bus control names them with. */
+  const tabs = new Tabs();
+  /** One journal line, and the same line to mdhouse's agent log while the Agent Bus is on. */
+  const ctlAudit = (level: 'notice' | 'warning', line: string) => {
+    console.log(`mdhouse  ${line}`);
+    if (prefs.agentBus.enabled) void bus.agentLog(level, line);
+  };
+  /** Agent Bus control (MW.7): reads only — the roots, the tabs, and one tab sent to one document. */
+  const abControl = new Control({
+    setting: () => prefs.agentBus.control,
+    roots: () =>
+      registry.list().map((r) => ({ rootId: r.id, label: customName(r.path) ?? r.name, kind: r.kind ?? 'project', writable: r.writable })),
+    docUrl: registryDocUrl(registry),
+    clients: () => tabs.list(),
+    navigate: (id, url) => tabs.navigate(id, url),
+    // A tab's reader is not checked against a root yet (MW.0b): with users configured no tab is moved.
+    team: () => Object.keys(prefs.access.users).length > 0,
+    audit: ctlAudit,
+  });
+  const stopAbControl = bus.control({
+    topic: CTL_TOPIC,
+    handle: (from, body) => abControl.handle(from, body),
+    wanted: () => {
+      const ab = prefs.agentBus;
+      return ab.enabled && ab.control !== 'off';
+    },
+    log: (line) => console.log(`mdhouse  agent-bus ${line}`),
+    help: JSON.stringify({
+      v: CTL_VERSION,
+      topic: CTL_TOPIC,
+      ops: {
+        inventory: '{v:1, op:"inventory", requestId} → {roots:[{rootId,label,kind,writable}], clients:[{clientId,label,page,busy,since,lastSeen}]}',
+        open: '{v:1, op:"open", requestId, rootId, path, clientId} → {url, opened, reason?: gone|busy|team}',
+      },
+    }),
+  });
   /**
    * Writes to documents in flight, per file, so they apply one after another — two quick clicks
    * (a tick and an answer, or two ticks) each run against the file the previous one left.
@@ -659,7 +704,7 @@ export async function serve(opts: ServeOptions) {
     return out as Bun.Serve.Routes<undefined, R>;
   }
 
-  const server = Bun.serve({
+  const server = Bun.serve<WsData>({
     port,
     hostname,
     development: false,
@@ -1880,25 +1925,32 @@ export async function serve(opts: ServeOptions) {
         // A cross-site page must not subscribe to the live channel: it names every root and
         // every file as it changes.
         if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
-        if (srv.upgrade(req)) return undefined as unknown as Response;
+        const data: WsData = { asked: url.searchParams.get('client'), ua: req.headers.get('user-agent') ?? '', clientId: '' };
+        if (srv.upgrade(req, { data })) return undefined as unknown as Response;
         return fail(400, 'websocket upgrade failed');
       }
       return rootPage(req);
     },
 
     websocket: {
-      open(ws: ServerWebSocket<undefined>) {
+      open(ws: ServerWebSocket<WsData>) {
         const rootIds = registry.list().map((r) => r.id);
         for (const id of rootIds) ws.subscribe(`root:${id}`);
         ws.subscribe('roots');
         ws.subscribe('ab');
-        ws.send(JSON.stringify({ t: 'hello', roots: rootIds }));
+        const tab = tabs.open(ws, ws.data.asked, ws.data.ua);
+        ws.data.clientId = tab.clientId;
+        ws.send(JSON.stringify({ t: 'hello', roots: rootIds, ...tab }));
       },
-      message(ws: ServerWebSocket<undefined>, raw: string | Buffer) {
-        // The only client message is a liveness ping; everything else flows server -> client.
-        if (raw.toString() === 'ping') ws.send(JSON.stringify({ t: 'pong' }));
+      // Client frames: a liveness ping, and `at` — the page the tab shows (Agent Bus control labels).
+      message(ws: ServerWebSocket<WsData>, raw: string | Buffer) {
+        const text = raw.toString();
+        tabs.message(ws.data.clientId, text);
+        if (text === 'ping') ws.send(JSON.stringify({ t: 'pong' }));
       },
-      close() {},
+      close(ws: ServerWebSocket<WsData>) {
+        tabs.close(ws.data.clientId, ws);
+      },
     },
 
     error(err) {
@@ -2068,8 +2120,11 @@ export async function serve(opts: ServeOptions) {
   const shutdown = () => {
     watcher.close();
     control?.stop();
-    server.stop(true);
-    process.exit(0);
+    // The control lock is released so a restarted mdhouse serves at once, not after its TTL.
+    void Promise.race([stopAbControl(), Bun.sleep(1_500)]).finally(() => {
+      server.stop(true);
+      process.exit(0);
+    });
   };
 
   const control = await serveControl(port, {
@@ -2098,5 +2153,5 @@ export async function serve(opts: ServeOptions) {
     },
   });
 
-  return { server, store, watcher, control, shutdown, routes, setRootName };
+  return { server, store, watcher, control, shutdown, routes, setRootName, abControl, stopAbControl };
 }

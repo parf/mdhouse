@@ -29,7 +29,9 @@
   // `--agent-bus http://host:6767` — a remote daemon: socket holds the URL, token its credential (asked for)
   // default — the agents a page asks when it names none (<!-- AB: … -->); set on the settings page
   // filter — which agents the lists show: a regex per line, against the name without its #; [] — all
-  "agentBus": { "enabled": false, "socket": "", "token": "", "default": [], "filter": ["^claude", "^codex", "^opencode"] },
+  // control — who may open pages in a tab over the bus (`--ab-control`): [] — every sender the daemon
+  // admits (the owner's agents); whole-name regexes narrow it; "off" — none
+  "agentBus": { "enabled": false, "socket": "", "token": "", "default": [], "filter": ["^claude", "^codex", "^opencode"], "control": [] },
   // A saved project's own Agent Bus, by its path; the settings page sets endpoint and default.
   // endpoint — a socket path or http(s)://host:port, nothing secret in it; none — the instance's
   // credential — for that endpoint, written here only, never through a page; a new endpoint drops it
