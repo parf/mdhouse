@@ -215,3 +215,14 @@
   End goal: ONE line with a URL for a project's AGENTS.md that teaches an AI how to write plans, which glyphs, which markup — so mdhouse understands.
   `skills/markup.md` folds into `agent-markup.md` (5-line pointer kept); `plans.md` keeps only the portable Plans convention;
   `mdhouse docs` prints the reference path; glyph/sample copies stay. [History](resolved.md#Q-R3-REFDOC1).
+
+## Agent Bus control, automation trust, phone navigation
+
+- 📌 Q-R3-CTL1 Agent Bus control (MW.7): only agents/people the `#mdhouse` record's bus ACL admits; mdhouse adds no list by default (`--ab-control` narrows, `off` stops). <a id="Q-R3-CTL1"></a>
+  [History](resolved.md#Q-R3-CTL1).
+
+- 📌 Q-R3-AUTO2 A committed automation registration fires only after the instance administrator approves its content hash on this machine; a changed file stops until approved again. <a id="Q-R3-AUTO2"></a>
+  [History](resolved.md#Q-R3-AUTO2).
+
+- 📌 Q-R3-UX1 Do now, adjust later: one "Changes" destination (files + diff + message + "Commit N files"; the document shows a status chip; Push only with a remote, no raw git error; untracked listed, unticked); <a id="Q-R3-UX1"></a>
+  phone navigation = Files · Changes · Search · Ask; one Search with a scope switch Files | Index (the RAG page is "Index"; [R] stays a shortcut). [History](resolved.md#Q-R3-UX1).
