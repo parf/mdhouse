@@ -42,11 +42,11 @@ networks only admit.
 mdhouse docs [--path]
 ```
 
-Print where the installed reference is. Without `--path`, also the one line to paste into a
-project's `AGENTS.md`, so an AI knows how to write plans, which glyphs and which markup to use: it
-points at `for-agents.md` on the mdhouse of the selected port, and at GitHub for a machine without
-mdhouse. `--path` prints the path alone, for `$(mdhouse docs --path)`. No daemon is needed and
-nothing is written.
+Print the one line to paste into a project's `AGENTS.md`, so an AI knows how to write plans, which
+glyphs and which markup to use: it points at `for-agents.md` on GitHub, which works on any machine
+with or without mdhouse. Below it, for offline use: where the installed reference is, and the raw
+URL of the same page on the mdhouse of the selected port. `--path` prints the path alone, for
+`$(mdhouse docs --path)`. No daemon is needed and nothing is written.
 
 ```text
 mdhouse service install [--port <n>]

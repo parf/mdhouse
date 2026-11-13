@@ -13,12 +13,11 @@ export function clientHost(host: string): string {
 /** The raw, plain-text URL of the start file on the daemon at `host:port`. */
 export const startUrl = (host: string, port: number): string => `http://${clientHost(host)}:${port}/api/raw?p=_mdhouse/${START_FILE}`;
 
-/** The one line an owner pastes into a project's AGENTS.md. */
-export const agentsLine = (host: string, port: number): string =>
-  `Plans, questions and issues in this project follow mdhouse conventions (how to write plans, which glyphs, which markup): fetch and follow ${startUrl(host, port)} — without mdhouse running: ${GITHUB_RAW}`;
+/** The one line an owner pastes into a project's AGENTS.md: the GitHub raw URL works for any AI, with or without mdhouse running. */
+export const agentsLine = (): string => `Plans, questions and issues in this project follow mdhouse conventions — fetch and follow ${GITHUB_RAW}`;
 
-/** What `mdhouse docs` prints: the path first, then the line to paste; `pathOnly` is the path alone, for `$(…)`. */
+/** What `mdhouse docs` prints: the line to paste, then the reference path and the daemon's raw URL for offline use; `pathOnly` is the path alone, for `$(…)`. */
 export function docsText(reference: string, host: string, port: number, pathOnly: boolean): string {
   if (pathOnly) return `${reference}\n`;
-  return `${reference}\n\nPaste this line into a project's AGENTS.md:\n\n${agentsLine(host, port)}\n`;
+  return `${agentsLine()}\n\nOffline: the reference is ${reference}\nOn this machine's mdhouse: ${startUrl(host, port)}\n`;
 }

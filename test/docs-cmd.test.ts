@@ -17,17 +17,18 @@ describe('mdhouse docs, the pure parts', () => {
     expect(startUrl('127.0.0.1', 8080)).toBe('http://127.0.0.1:8080/api/raw?p=_mdhouse/for-agents.md');
     expect(GITHUB_RAW).toBe('https://raw.githubusercontent.com/parf/mdhouse/main/doc/for-agents.md');
   });
-  test('the line is one line with both addresses', () => {
-    const line = agentsLine('127.0.0.1', 7777);
+  test('the line is one line with the one URL', () => {
+    const line = agentsLine();
     expect(line).not.toContain('\n');
-    expect(line).toContain(startUrl('127.0.0.1', 7777));
-    expect(line).toContain(GITHUB_RAW);
+    expect(line).toBe(`Plans, questions and issues in this project follow mdhouse conventions — fetch and follow ${GITHUB_RAW}`);
+    expect(line.match(/https?:\/\//g)).toHaveLength(1);
   });
-  test('the path alone, or the path and the line', () => {
+  test('the line first, then the offline extras; or the path alone', () => {
     expect(docsText('/x/doc', '127.0.0.1', 7777, true)).toBe('/x/doc\n');
     const full = docsText('/x/doc', '127.0.0.1', 7777, false).split('\n');
-    expect(full[0]).toBe('/x/doc');
-    expect(full).toContain(agentsLine('127.0.0.1', 7777));
+    expect(full[0]).toBe(agentsLine());
+    expect(full).toContain('Offline: the reference is /x/doc');
+    expect(full).toContain(`On this machine's mdhouse: ${startUrl('127.0.0.1', 7777)}`);
   });
 });
 
@@ -40,10 +41,11 @@ describe('mdhouse docs, the command', () => {
     });
     return { code: await p.exited, out: await new Response(p.stdout).text(), err: await new Response(p.stderr).text() };
   };
-  test('prints the installed reference and the line, needing no daemon', async () => {
+  test('prints the line and the offline extras, needing no daemon', async () => {
     const r = await run();
     expect(r.code).toBe(0);
-    expect(r.out.split('\n')[0]).toBe(REF);
+    expect(r.out.split('\n')[0]).toBe(agentsLine());
+    expect(r.out).toContain(`Offline: the reference is ${REF}`);
     expect(r.out).toContain('http://127.0.0.1:7777/api/raw?p=_mdhouse/for-agents.md');
   });
   test('--path prints only the path', async () => {
