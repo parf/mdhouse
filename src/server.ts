@@ -17,7 +17,7 @@ import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
 import { SOURCE_MAX, sourceHash, sourceOf } from './lib/source';
-import { Prefs, MARKS, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
+import { CONFIG_DIR, Prefs, MARKS, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
 import { gitStateIn, parseReveal, Store } from './lib/store';
 import { isExplicitlyDenied } from './lib/ignore';
 import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
@@ -224,6 +224,14 @@ export async function serve(opts: ServeOptions) {
     prefs.refresh();
     return !exposureOk(hostname, prefs.access);
   };
+  // The instance's own files (prefs, password hashes, sockets, the flow seal key) are never served.
+  const xdg = (v: string | undefined, home: string) => `${v || `${homedir()}/${home}`}/mdhouse`;
+  await registry.hide([
+    dirname(prefs.path),
+    CONFIG_DIR,
+    xdg(process.env.XDG_STATE_HOME, '.local/state'),
+    ...(process.env.XDG_RUNTIME_DIR ? [`${process.env.XDG_RUNTIME_DIR}/mdhouse`] : []),
+  ]);
   /** The settings page's options, and the auto-rw paths its switch is about (set from the CLI). */
   const settingsPayload = () => {
     prefs.refresh();
@@ -349,7 +357,7 @@ export async function serve(opts: ServeOptions) {
       commitOf,
       isAncestor,
       commits: rangeCommits,
-      dirty: (repo, root) => dirtyPaths(repo, root.path),
+      dirty: async (repo, root) => (await dirtyPaths(repo, root.path)).filter((p) => !registry.hidden(root.path, join(root.path, p))),
     },
     key: randomBytes(32),
     sealKey: () =>
@@ -359,6 +367,8 @@ export async function serve(opts: ServeOptions) {
       })),
     ancestry: new Map(),
   };
+  // Made at start, not at a first preview: a config dir inside a project would otherwise change its uncommitted set.
+  await flowDeps.sealKey().catch((err: unknown) => console.error(`mdhouse: flow seal key: ${err instanceof Error ? err.message : String(err)}`));
   const FLOW_STATUS: Record<FlowError['reason'], number> = {
     invalid: 400,
     'bad-baseline': 400,
@@ -2133,8 +2143,11 @@ export async function serve(opts: ServeOptions) {
 
   const watcher = new Watcher((events) => {
     for (const ev of events) {
+      const root = registry.get(ev.rootId);
+      const paths = root ? ev.paths.filter((p) => !registry.hidden(root.path, join(root.path, p))) : ev.paths;
+      if (ev.paths.length && !paths.length) continue;
       store.invalidate(ev.rootId, ev.kind === 'git');
-      server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths: ev.paths }));
+      server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths }));
     }
   });
   const watchTree = async (root: Root): Promise<void> => {

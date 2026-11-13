@@ -818,8 +818,8 @@ describe('/api/files', () => {
       const root = (await (await fetch(`http://127.0.0.1:${port}/api/roots`)).json()).roots[0].id;
       const list = async (p: string) => fetch(`http://127.0.0.1:${port}/api/files?p=${root}/${p}`);
       const all = (await (await list('')).json()) as { files: { rel: string }[]; capped: boolean };
-      // prefs.json is the test's own config, written into the folder
-      expect(all.files.map((f) => f.rel).filter((r) => r !== 'prefs.json')).toEqual(['a.md', 'sub/b.txt', 'sub/c.png', 'sub/deep/d.js']);
+      // prefs.json and flow-seal.key are the test's own config, written into the folder (served as named)
+      expect(all.files.map((f) => f.rel).filter((r) => r !== 'prefs.json' && r !== 'flow-seal.key')).toEqual(['a.md', 'sub/b.txt', 'sub/c.png', 'sub/deep/d.js']);
       const sub = (await (await list('sub')).json()) as { files: { rel: string; dir: string }[] };
       expect(sub.files.map((f) => f.rel)).toEqual(['sub/b.txt', 'sub/c.png', 'sub/deep/d.js']);
       expect((await list('a.md')).status).toBe(404);

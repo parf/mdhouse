@@ -113,6 +113,11 @@ textual one (no `..`, no NUL) and a filesystem one — the nearest existing ance
 symlink is judged by where it would really land. Nothing outside `src/lib/roots.ts` may join a request
 string onto a root path.
 
+Instance dirs (`Registry.hide`, at `serve()` start): `dirname(prefs.path)`, `CONFIG_DIR`,
+`$XDG_STATE_HOME/mdhouse`, `$XDG_RUNTIME_DIR/mdhouse`, by real location — when one lies strictly inside a
+root, `resolve()` → null for anything in it (a root that is or is inside one is served as named), so every read/write route, the tree, files and search refuse it as a jailed path;
+watcher events and the flow `dirty` list drop their paths.
+
 ### URL shape
 
 - `/<rootId>/<rel>` — a file's page; the root id always leads, also with one root.

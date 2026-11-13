@@ -92,6 +92,8 @@ files remain separate. Markers advance only after all writes and routed outputs 
 no-content-change success, and none advance after failed/partial runs. These are runtime obligations,
 not implemented by loading templates. Template placeholders carry no verified SHA or approval.
 
+A run document is sealed by the host that started it: moving the project folder makes earlier runs read-only (seal binds the path).
+
 Manual/scheduled execution, permission enforcement and full Feature/delivery acceptance remain open.
 Adding other flow families should extend packages and routing rather than create domain screens.
 

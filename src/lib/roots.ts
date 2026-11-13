@@ -91,15 +91,18 @@ function isUnder(parent: string, child: string): boolean {
  * file would really be created.
  */
 async function jailedPath(rootPath: string, candidate: string): Promise<string | null> {
+  const abs = await realLocation(candidate);
+  return abs !== null && isUnder(rootPath, abs) ? abs : null;
+}
+
+/** Where `candidate` really is or would be created: its nearest existing ancestor resolved, the tail rebuilt onto it. */
+async function realLocation(candidate: string): Promise<string | null> {
   const tail: string[] = [];
   let at = candidate;
 
   for (;;) {
     const real = await realpath(at).catch(() => null);
-    if (real !== null) {
-      const abs = tail.length ? resolvePath(real, ...tail.reverse()) : real;
-      return isUnder(rootPath, abs) ? abs : null;
-    }
+    if (real !== null) return tail.length ? resolvePath(real, ...tail.reverse()) : real;
     const parent = dirname(at);
     // Ran out of filesystem before finding anything that exists.
     if (parent === at) return null;
@@ -158,6 +161,26 @@ export class Registry {
 
   /** Is it served on a network address with no access policy? Then no root is writable. Set by the server (`exposureOk`). */
   exposed: () => boolean = () => false;
+
+  /** The instance's own directories (config, state, runtime), real locations: never served through a root that holds them. */
+  private readonly hiddenDirs: string[] = [];
+
+  /** Hides `dirs` from every path a request names (`resolve`), so from every route; each by its real location. */
+  async hide(dirs: string[]): Promise<void> {
+    for (const d of dirs) {
+      const abs = resolvePath(d);
+      for (const at of [abs, await realLocation(abs)]) if (at && !this.hiddenDirs.includes(at)) this.hiddenDirs.push(at);
+    }
+  }
+
+  /**
+   * Whether the real path `abs`, served from `rootPath`, is in a hidden instance directory that lies
+   * strictly inside that root (`mdhouse ~`). A root that is, or is inside, an instance directory was
+   * asked for by name and is served as asked.
+   */
+  hidden(rootPath: string, abs: string): boolean {
+    return this.hiddenDirs.some((d) => d !== rootPath && isUnder(rootPath, d) && isUnder(d, abs));
+  }
 
   /**
    * Serve one more directory, for the lifetime of the process.
@@ -318,7 +341,7 @@ export class Registry {
   }
 
   /**
-   * Turn a wire path into a real location, or null if it is malformed or escapes its root.
+   * Turn a wire path into a real location, or null if it is malformed, escapes its root or lands in a hidden instance directory.
    *
    * Two gates: a textual one (no `..` segments, no NUL) and a filesystem one (the resolved
    * path, symlinks followed, must still be inside the root). The second is what actually
@@ -337,7 +360,7 @@ export class Registry {
 
     const candidate = resolvePath(root.path, rel);
     const abs = await jailedPath(root.path, candidate);
-    if (abs === null) return null;
+    if (abs === null || this.hidden(root.path, abs)) return null;
 
     return { root, rel: relative(root.path, abs).split(sep).join('/'), abs };
   }

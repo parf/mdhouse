@@ -401,7 +401,7 @@ export async function verifyRun(deps: FlowHostDeps, root: Root, rel: string, sta
   if (meta.seal.key !== sealId(key)) return fail('foreign', 'this run was started on another machine — read-only here');
   const want = Buffer.from(sealMac(key, sealData(root.path, input, rel)));
   const got = Buffer.from(meta.seal.mac);
-  if (got.length !== want.length || !timingSafeEqual(got, want)) return tampered('its run input was changed');
+  if (got.length !== want.length || !timingSafeEqual(got, want)) return tampered('its run input was changed, or the project folder moved (the seal binds the path)');
   if (sel.sources.find((x) => x.id === RANGE_SOURCE)?.digest !== sha256(meta.commits.join('\n'))) return tampered('its commit list was changed');
   if (!rel.startsWith(`${runsDir(id)}/`)) return tampered('it is not in its package’s runs folder');
   const pkg = (await deps.catalog()).find((p) => p.manifest.id === id && runnableFlow(p.manifest));
