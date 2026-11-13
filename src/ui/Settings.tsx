@@ -5,6 +5,8 @@ import { IconTrash } from './icons';
 import { abConfirmLine, spaceSummary, splitNames, syncDraft } from './ab-targets';
 import { isViewer, switchConfirm, VIEWER_SIGN_IN, type InstanceMode } from './viewer-text';
 import { ADD_PATH_MAX, accessBadge, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject, storedTitle } from './project-groups';
+import { automationUrl } from './automation-model';
+import { follow } from './PageHead';
 import { StoredRwTag } from './viewer';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
@@ -686,6 +688,16 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     </span>
                   )}
                 </dd>
+                {project.kind !== 'reference' && (
+                  <>
+                    <dt>Automation</dt>
+                    <dd>
+                      <a href={automationUrl(project.id)} onClick={(e) => follow(e, () => go(automationUrl(project.id)))}>
+                        Scheduled runs
+                      </a>
+                    </dd>
+                  </>
+                )}
               </dl>
               {abOpen && project.kind !== 'reference' && (
                 <div class="project-ab-editor" role="group" aria-label={`Agent Bus for ${project.name}`}>

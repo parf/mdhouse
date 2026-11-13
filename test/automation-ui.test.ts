@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { ApiError } from '../src/ui/api';
 import { automationApi } from '../src/ui/automation-api';
 import {
-  APPROVAL_WORDS, automationUrl, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
+  APPROVAL_WORDS, automationUrl, onAutomation, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
   type AutoRegistration, type AutomationState,
 } from '../src/ui/automation-model';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
@@ -65,7 +65,10 @@ describe('what the page says', () => {
     expect(autoReasonText('not-decided', 'Who may approve is not decided yet')).toBe('Who may approve is not decided yet');
     expect(autoReasonText(undefined, 'fallback')).toBe('fallback');
   });
-  test('the page address', () => expect(automationUrl('my repo')).toBe('/automation?root=my%20repo'));
+  test('the page is a flag on the project\'s address', () => {
+    expect(automationUrl('repo')).toBe('/repo/?automation');
+    expect([onAutomation('?automation'), onAutomation('?git=changes'), onAutomation(''), onAutomation('?x=1&automation')]).toEqual([true, false, false, true]);
+  });
 });
 
 /** A fake of the routes: the shapes and refusals, none of the server. */

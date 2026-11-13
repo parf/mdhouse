@@ -2426,3 +2426,28 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .nav-ico { position: relative; display: block; line-height: 0; }
   .nav-badge { position: absolute; top: -5px; left: 100%; margin-left: -6px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; font: 700 10px/16px var(--sans, inherit); text-align: center; color: #fff; background: var(--warn, #b45309); border-radius: 8px; }
 }
+
+/* ── Automation: a project's scheduled runs ─────────────────────────────── */
+
+.auto-reg { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-panel); }
+.auto-reg.approval-approved { border-left: 4px solid var(--ok); }
+.auto-reg.approval-changed { border-left: 4px solid var(--warn); }
+.auto-reg.stopped { opacity: 0.85; border-left: 4px solid var(--danger); }
+.auto-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.auto-state { font: 600 11px/1 var(--mono); padding: 3px 8px; border-radius: 10px; color: var(--fg-muted); background: var(--bg-hover); }
+.auto-state.s-approved { color: #fff; background: var(--ok); }
+.auto-state.s-changed { color: #fff; background: var(--warn); }
+.auto-state.s-stopped { color: #fff; background: var(--danger); }
+.auto-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0 0 10px; font-size: 13px; }
+.auto-facts dt { color: var(--fg-muted); }
+.auto-facts dd { margin: 0; overflow-wrap: anywhere; }
+.auto-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.auto-confirm { margin: 8px 0; padding: 10px 12px; font-size: 13px; background: var(--bg-raised); border: 1px solid var(--border-strong); border-radius: 8px; }
+.auto-confirm p { margin: 0 0 6px; }
+.auto-confirm ul { margin: 0 0 8px; padding-left: 20px; }
+.auto-runs-h { margin: 12px 0 4px; font-size: 13px; color: var(--fg-muted); }
+.auto-runs { margin: 0; padding: 0; list-style: none; font: 12.5px/1.7 var(--mono); }
+.auto-file-error code { font-weight: 600; }
+@media (pointer: coarse) {
+  .auto-actions .rag-act { min-height: 44px; padding-inline: 14px; }
+}

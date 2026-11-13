@@ -122,4 +122,7 @@ const REASON_WORDS: Partial<Record<AutoReason, string>> = {
 /** The page's words for a refusal; the server's own text for `not-decided` and the rest. */
 export const autoReasonText = (reason: string | undefined, fallback: string): string => (reason && REASON_WORDS[reason as AutoReason]) || fallback;
 
-export const automationUrl = (rootId: string): string => `/automation?root=${encodeURIComponent(rootId)}`;
+/** The page: a flag on the project's own address, like `?git`, so it needs no server route. */
+export const automationUrl = (rootId: string): string => `/${rootId}/?automation`;
+/** Whether an address's query asks for it. */
+export const onAutomation = (search: string): boolean => new URLSearchParams(search).has('automation');

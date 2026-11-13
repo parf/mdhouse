@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -20,7 +20,15 @@ const send = (method: string, params: object = {}) => new Promise<any>((r) => { 
 // The flow step answers /api/flow/* itself (a fake of the contract, stateful for the run bar) until the real routes are on main.
 const bar: any = { version: 1, status: 'running', ev: 'missing', q: 'unanswered', events: [] as any[] };
 const docFlow = () => ({ runId: 'r1', version: bar.version, status: bar.status, node: { id: 'review', title: 'Review the commits', outcomes: ['complete', 'blocked', 'failed'] }, holds: bar.q === 'unanswered' ? ['A required question is open'] : [], evidence: [{ label: 'git log', status: bar.ev, note: '', required: true }], questions: [{ id: 'Q1', title: 'Is the baseline right?', required: true, status: bar.q }], canAct: bar.status === 'running' || bar.status === 'held' });
+const auto: any = { approved: false, can: process.env.TW_CAN !== '0' };
+const autoState = () => ({ root: 'repo', canApprove: auto.can, errors: [{ file: 'bad.json', error: 'unknown key "command"' }], registrations: [{ id: 'weekly', file: '.mdhouse/automation/weekly.json', flow: 'recent-commits-review', range: 'since-last-run', when: { cron: '30 8 * * 1-5' }, maxLate: '1h', overlap: 'skip', notify: '#claude/x@host', hash: 'ab12cd34'.repeat(8), approval: auto.approved ? 'approved' : 'none', disabled: false, failures: 0, startedToday: 1, lastStartAt: new Date(Date.now() - 3600_000).toISOString(), runs: [{ at: '2026-11-13T08:30:05Z', outcome: 'refused', why: 'not approved' }, { at: '2026-11-12T08:30:05Z', outcome: 'started', status: 'held' }] }] });
 const fake = async (p: any) => {
+  if (new URL(p.request.url).pathname.startsWith('/api/automation')) {
+    const path = new URL(p.request.url).pathname; let out: any = autoState();
+    if (path.endsWith('/approve')) { auto.approved = true; out = { registration: 'weekly', approval: 'approved', hash: 'x' }; }
+    if (path.endsWith('/revoke')) { auto.approved = false; out = { registration: 'weekly', approval: 'none' }; }
+    return send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: 200, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body: Buffer.from(JSON.stringify(out)).toString('base64') });
+  }
   if (p.responseStatusCode !== undefined && new URL(p.request.url).pathname === '/api/doc') {
     const r = await send('Fetch.getResponseBody', { requestId: p.requestId });
     const j = JSON.parse(r.base64Encoded ? Buffer.from(r.body, 'base64').toString() : r.body);
@@ -47,7 +55,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceSc
 await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
 await send('Page.enable'); await send('Runtime.enable');
-if (only.includes('flowbar') || only.includes('flowviewer')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
+if (only.includes('flowbar') || only.includes('flowviewer') || only.includes('automation')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/automation*' }, { urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
 const sleep = (ms: number) => Bun.sleep(ms);
 export const ev = async (expression: string): Promise<any> => {
   const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -376,6 +384,27 @@ if (only.includes('nav4')) {
   say('  Changes: ' + await ev('location.pathname + location.search') + '; current ' + await ev("document.querySelector('.phone-nav .nav-dest.on')?.textContent.trim()"));
   await tap('.phone-nav .nav-dest', 1);
   await audit('nav4-changes');
+}
+if (only.includes('automation')) {
+  // The routes are a fake (stateful); TW_CAN=0 is a session that may only read.
+  await go('/repo/?automation');
+  say('  page: ' + await ev("document.querySelector('.auto h1')?.textContent + ' | regs ' + document.querySelectorAll('.auto-reg').length + ' | file errors ' + document.querySelectorAll('.auto-file-error').length"));
+  say('  words: ' + await ev("[...document.querySelectorAll('.auto-facts dd')].slice(0,2).map(d => d.textContent.trim()).join(' / ')"));
+  await audit('automation');
+  const buttons = await ev("[...document.querySelectorAll('.auto-actions .rag-act')].map(b => b.textContent.trim()).join(' | ') || 'none'");
+  say('  buttons: ' + buttons);
+  if (buttons !== 'none') {
+    await tap('.auto-actions .rag-act', 0);
+    say('  confirm: ' + await ev("[...document.querySelectorAll('.auto-confirm li')].map(l => l.textContent).join(' ; ')"));
+    await audit('automation-confirm');
+    await tap('.auto-confirm .rag-act.primary', 0);
+    await sleep(900);
+    say('  after approve: ' + await ev("document.querySelector('.auto-state')?.textContent + ' | buttons ' + [...document.querySelectorAll('.auto-actions .rag-act')].map(b => b.textContent.trim()).join(' | ')"));
+    await audit('automation-approved');
+    await tap('.auto-actions .rag-act', 0);
+    await sleep(900);
+    say('  after revoke: ' + await ev("document.querySelector('.auto-state')?.textContent"));
+  }
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

@@ -24,6 +24,8 @@ import { Settings } from './ui/Settings';
 import { RagPage } from './ui/RagPage';
 import { indexUrl, loadTarget, saveTarget, type SearchTarget } from './ui/search-scope';
 import { PhoneNav } from './ui/PhoneNav';
+import { AutomationPage } from './ui/AutomationPage';
+import { onAutomation as wantsAutomation } from './ui/automation-model';
 import { changeSummary } from './ui/git-state';
 import { usePhone } from './ui/phone';
 import { ASK_EVENT, ASK_STATE, onChanges } from './ui/nav';
@@ -145,6 +147,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   currentDocPath.current = docPath;
   const onSettings = route.kind === 'settings';
   const onRag = route.kind === 'rag';
+  const onAutomation = route.kind === 'dir' && !route.dir && wantsAutomation(full.includes('?') ? full.slice(full.indexOf('?')) : '');
 
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
@@ -750,6 +753,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
             go={go}
             entry={entry}
           />
+        ) : onAutomation && dirTarget ? (
+          <AutomationPage rootId={dirTarget.rootId} rootName={nameOf(dirTarget.rootId, tree?.root.name ?? '')} gear={pageGear} />
         ) : dirTarget && gitView ? (
           <Home
             rootId={dirTarget.rootId}
