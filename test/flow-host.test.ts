@@ -3,15 +3,16 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits } from '../src/lib/git';
-import { isFlowError, planFlowRun, runIdFor, startFlowRun, type FlowHostDeps, type FlowStartRequest, type FlowWrite } from '../src/lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, planFlowRun, runIdFor, startFlowRun, TOKEN_TTL_MS, type FlowActed, type FlowHostDeps, type FlowStartRequest, type FlowWrite } from '../src/lib/flow-host';
 import { loadFlowCatalog } from '../src/lib/flow-package';
-import { readFlowRunDocument } from '../src/lib/flow-run-markdown';
+import { advanceDestination, markerOf, readFlowRunDocument } from '../src/lib/flow-run-markdown';
 import { Registry } from '../src/lib/roots';
 import { repoToplevel } from '../src/lib/scan';
 
 const DOC = resolve(import.meta.dir, '../doc');
 const PKG = 'recent-commits-review';
 const DEST = 'Plans/flows/recent-commits-review.md';
+const tester = async () => 'tester';
 
 function git(cwd: string, ...args: string[]): string {
   const r = Bun.spawnSync(['git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], { cwd });
@@ -66,7 +67,7 @@ async function setup(opts: { writable?: boolean } = {}) {
       queues.set(key, next.catch(() => {}));
       return next;
     },
-    writeFile: (path, text) => registry.writeFile(path, text),
+    writeFile: (path, text) => registry.writeFile(path, text, { parents: true }),
   };
   const req = (range: FlowStartRequest['range'], packageId = PKG): FlowStartRequest => ({ rootId: root.id, packageId, range, trigger: { kind: 'manual', actor: 'tester' } });
   const plan = async (r: FlowStartRequest) => {
@@ -149,21 +150,21 @@ describe('startFlowRun', () => {
   test('writes exactly the previewed document, held on missing evidence; a second start is open-run', async () => {
     const t = await setup();
     const p = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
-    const started = await startFlowRun(t.deps, t.io, { token: p.token });
+    const started = await startFlowRun(t.deps, t.io, { token: p.token, actor: tester });
     expect(started).toEqual({ status: 'held', runPath: p.runPath, url: t.registry.docUrl(t.root, p.runPath), created: true });
     expect(await readFile(join(t.p, p.runPath), 'utf8')).toBe(p.doc);
 
     const again = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
-    expect(await startFlowRun(t.deps, t.io, { token: again.token })).toMatchObject({ reason: 'open-run', run: { url: t.registry.docUrl(t.root, p.runPath), status: 'held' } });
+    expect(await startFlowRun(t.deps, t.io, { token: again.token, actor: tester })).toMatchObject({ reason: 'open-run', run: { url: t.registry.docUrl(t.root, p.runPath), status: 'held' } });
     // The same token twice: its run is the open one.
-    expect(await startFlowRun(t.deps, t.io, { token: p.token })).toMatchObject({ reason: 'open-run' });
+    expect(await startFlowRun(t.deps, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'open-run' });
   });
 
   test('two starts at once: one writes, the other is open-run — never stale, whatever the timing', async () => {
     const t = await setup();
     const a = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
     const b = await t.plan(t.req({ kind: 'baseline', commit: c[1]! }));
-    const out = await Promise.all([startFlowRun(t.deps, t.io, { token: a.token }), startFlowRun(t.deps, t.io, { token: b.token })]);
+    const out = await Promise.all([startFlowRun(t.deps, t.io, { token: a.token, actor: tester }), startFlowRun(t.deps, t.io, { token: b.token, actor: tester })]);
     expect(out.map((r) => (isFlowError(r) ? r.reason : r.status)).sort()).toEqual(['held', 'open-run']);
   });
 
@@ -173,12 +174,12 @@ describe('startFlowRun', () => {
 
     let p = await fresh();
     await writeFile(join(t.p, 'later.md'), '# later\n');
-    expect(await startFlowRun(t.deps, t.io, { token: p.token })).toMatchObject({ reason: 'stale' });
+    expect(await startFlowRun(t.deps, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'stale' });
 
     p = await fresh();
     git(t.p, 'add', '-A');
     git(t.p, 'commit', '-qm', 'c4');
-    expect(await startFlowRun(t.deps, t.io, { token: p.token })).toMatchObject({ reason: 'stale' });
+    expect(await startFlowRun(t.deps, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'stale' });
   });
 
   test('a forged or altered token is invalid; nothing is written', async () => {
@@ -189,17 +190,33 @@ describe('startFlowRun', () => {
     body.req.trigger = { kind: 'manual', actor: 'someone else' };
     const altered = `${Buffer.from(JSON.stringify(body)).toString('base64url')}.${mac}`;
     for (const token of ['', 'x', `${data}.`, `${data}.${'A'.repeat(mac.length)}`, altered]) {
-      expect(await startFlowRun(t.deps, t.io, { token })).toMatchObject({ reason: 'invalid' });
+      expect(await startFlowRun(t.deps, t.io, { token, actor: tester })).toMatchObject({ reason: 'invalid' });
     }
     const other = { ...t.deps, key: Buffer.alloc(32, 8) };
-    expect(await startFlowRun(other, t.io, { token: p.token })).toMatchObject({ reason: 'invalid' });
+    expect(await startFlowRun(other, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'invalid' });
     expect(await Bun.file(join(t.p, p.runPath)).exists()).toBe(false);
   });
 
-  test('a read-only project is not-writable', async () => {
+  test('a read-only project is not-writable, before an open run is looked for', async () => {
+    const rw = await setup();
+    const open = await rw.plan(rw.req({ kind: 'baseline', commit: c[0]! }));
     const t = await setup({ writable: false });
+    await mkdir(join(t.p, 'Plans/flows/runs', PKG), { recursive: true });
+    await writeFile(join(t.p, open.runPath), open.doc);
     const p = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
-    expect(await startFlowRun(t.deps, t.io, { token: p.token })).toMatchObject({ reason: 'not-writable' });
+    expect(await startFlowRun(t.deps, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'not-writable' });
+  });
+
+  test('a token is good for 10 minutes, and for the actor who previewed', async () => {
+    const t = await setup();
+    const p = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
+    const at = Date.parse(p.startedAt);
+    const late = { ...t.deps, now: () => new Date(at + TOKEN_TTL_MS + 1) };
+    expect(await startFlowRun(late, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'stale', error: 'the preview expired — preview again' });
+    const early = { ...t.deps, now: () => new Date(at - 1) };
+    expect(await startFlowRun(early, t.io, { token: p.token, actor: tester })).toMatchObject({ reason: 'stale' });
+    expect(await startFlowRun(t.deps, t.io, { token: p.token, actor: async () => 'someone else' })).toMatchObject({ reason: 'stale' });
+    expect(await startFlowRun({ ...t.deps, now: () => new Date(at + TOKEN_TTL_MS) }, t.io, { token: p.token, actor: tester })).toMatchObject({ status: 'held' });
   });
 
   test('a schedule slot runs once: a repeat returns its run, its id fixed by the slot', async () => {
@@ -214,5 +231,130 @@ describe('startFlowRun', () => {
     expect(await startFlowRun(t.deps, t.io, { request: sched('2026-11-13') })).toMatchObject({ reason: 'open-run' });
     // A request start is for schedules only.
     expect(await startFlowRun(t.deps, t.io, { request: t.req({ kind: 'baseline', commit: c[0]! }) })).toMatchObject({ reason: 'invalid' });
+  });
+});
+
+describe('applyFlowAction: one assertion on an open run', () => {
+  /** A run document for c0..c2 and a stepper that applies actions in order, failing on a refusal. */
+  async function run() {
+    const t = await setup();
+    const p = await t.plan(t.req({ kind: 'baseline', commit: c[0]! }));
+    const at = { rootId: t.root.id, rel: p.runPath };
+    let doc = p.doc;
+    let n = 0;
+    const act = (action: unknown, over: Record<string, unknown> = {}) => {
+      const state = readFlowRunDocument(doc)!.state;
+      return applyFlowAction(doc, at, { expectedVersion: state.version, clientId: `client-${String(++n).padStart(4, '0')}`, action, ...over });
+    };
+    const ok = (action: unknown) => {
+      const r = act(action);
+      if (isFlowError(r)) throw new Error(`${r.reason}: ${r.error}`);
+      doc = r.doc!;
+      return r;
+    };
+    return { t, p, at, act, ok, doc: () => doc, setDoc: (d: string) => (doc = d) };
+  }
+  const supplyAll = (r: Awaited<ReturnType<typeof run>>) => {
+    r.ok({ type: 'evidence', label: 'diffs and reproduction evidence', status: 'supplied', note: 'diffs read' });
+    return r.ok({ type: 'evidence', label: 'linked plans documentation and task state', status: 'supplied', note: 'TODO read' });
+  };
+
+  test('evidence releases the hold; the page view follows', async () => {
+    const r = await run();
+    const first = docFlow(readFlowRunDocument(r.doc())!.state, true);
+    expect(first).toMatchObject({ version: 0, status: 'held', node: { id: 'scope', outcomes: ['complete', 'blocked', 'failed'] }, canAct: true });
+    expect(first.evidence.map((e) => [e.status, e.required])).toEqual([['supplied', true], ['missing', true], ['missing', true]]);
+    const done = supplyAll(r);
+    expect([done.state.status, done.state.version, done.state.holds]).toEqual(['running', 2, []]);
+    expect(done.state.evidence[1]).toEqual({ label: 'diffs and reproduction evidence', status: 'supplied', sourceIds: ['run-document'], note: 'diffs read' });
+    expect(docFlow(done.state, false).canAct).toBe(false);
+  });
+
+  test('complete while held is `held`; every step complete ends the run and advances the marker to the target', async () => {
+    const r = await run();
+    expect(r.act({ type: 'outcome', outcome: 'complete', text: 'done' })).toMatchObject({ reason: 'held' });
+    supplyAll(r);
+    let last: FlowActed | undefined;
+    for (const step of ['scope', 'summaries', 'risks', 'delivery-sync', 'report']) {
+      expect(readFlowRunDocument(r.doc())!.state.nodeId).toBe(step);
+      last = r.ok({ type: 'outcome', outcome: 'complete', text: `${step} done` });
+      if (step !== 'report') expect(last.advance).toBeNull();
+    }
+    expect([last!.state.status, last!.advance]).toEqual(['complete', c[2]!]);
+    expect(markerOf(r.doc())).toBe(c[2]!);
+    expect(docFlow(last!.state, true).canAct).toBe(false);
+    // Ended: any further action is stale.
+    expect(r.act({ type: 'cancel', reason: 'late' })).toMatchObject({ reason: 'stale' });
+  });
+
+  test('blocked and cancel end the run; the marker stays the base', async () => {
+    const a = await run();
+    expect(a.ok({ type: 'outcome', outcome: 'blocked', text: 'cannot read diffs' }).state.status).toBe('blocked');
+    expect(markerOf(a.doc())).toBe(c[0]!);
+    const b = await run();
+    const x = b.ok({ type: 'cancel', reason: 'wrong range' });
+    expect([x.state.status, x.advance]).toEqual(['cancelled', null]);
+  });
+
+  test('a retry of the same action is answered from the record; another action with that clientId, or an old version, is refused', async () => {
+    const r = await run();
+    const action = { type: 'evidence', label: 'diffs and reproduction evidence', status: 'supplied', note: 'n' };
+    const first = applyFlowAction(r.doc(), r.at, { expectedVersion: 0, clientId: 'retry-0001', action }) as FlowActed;
+    r.setDoc(first.doc!);
+    expect(applyFlowAction(r.doc(), r.at, { expectedVersion: 0, clientId: 'retry-0001', action })).toMatchObject({ doc: null, state: { version: 1 } });
+    expect(applyFlowAction(r.doc(), r.at, { expectedVersion: 0, clientId: 'retry-0001', action: { ...action, note: 'other' } })).toMatchObject({ reason: 'invalid' });
+    expect(applyFlowAction(r.doc(), r.at, { expectedVersion: 0, clientId: 'retry-0002', action })).toMatchObject({ reason: 'stale' });
+    expect(applyFlowAction(r.doc(), r.at, { expectedVersion: 2, clientId: 'retry-0003', action })).toMatchObject({ reason: 'stale' });
+  });
+
+  test('malformed requests are invalid', async () => {
+    const r = await run();
+    const good = { type: 'cancel', reason: 'x' };
+    for (const over of [{ clientId: 'short' }, { clientId: 'has space here' }, { clientId: 7 }, { expectedVersion: '0' }, { action: null }, { action: { type: 'merge' } }]) {
+      expect([over, r.act(good, over)]).toMatchObject([over, { reason: 'invalid' }]);
+    }
+    expect(r.act({ type: 'evidence', label: 'not a label', status: 'missing', note: 'n' })).toMatchObject({ reason: 'invalid' });
+    expect(r.act({ type: 'cancel', reason: '' })).toMatchObject({ reason: 'invalid' });
+    expect(r.act({ type: 'question', questionId: 'Q1', status: 'answered', turn: 'yes' })).toMatchObject({ reason: 'invalid' });
+  });
+
+  test('the analyst sections survive; a document without them, moved, or with an edited state is refused', async () => {
+    const r = await run();
+    const mine = '## Findings\n\n- 🟠 something found, with `code`\n\n## Checks\n\n- bun test: 12 pass\n\n';
+    r.setDoc(r.doc().replace(/^## Findings$[\s\S]*?(?=^## Transitions$)/m, mine));
+    r.ok({ type: 'evidence', label: 'diffs and reproduction evidence', status: 'supplied', note: 'n' });
+    expect(r.doc()).toContain(mine);
+    expect(readFlowRunDocument(r.doc())!.state.version).toBe(1);
+
+    const gone = r.doc().replace('## Transitions', '## Moves');
+    expect(applyFlowAction(gone, r.at, { expectedVersion: 1, clientId: 'gone-0001', action: { type: 'cancel', reason: 'x' } })).toMatchObject({ reason: 'invalid' });
+    expect(applyFlowAction(r.doc(), { ...r.at, rel: 'elsewhere.md' }, { expectedVersion: 1, clientId: 'moved-001', action: { type: 'cancel', reason: 'x' } })).toMatchObject({ reason: 'invalid' });
+    const edited = r.doc().replace('"version": 1', '"version": 5');
+    expect(applyFlowAction(edited, r.at, { expectedVersion: 1, clientId: 'edit-0001', action: { type: 'cancel', reason: 'x' } })).toMatchObject({ reason: 'invalid' });
+    expect(applyFlowAction('# just a page\n', r.at, { expectedVersion: 0, clientId: 'page-0001', action: { type: 'cancel', reason: 'x' } })).toMatchObject({ reason: 'invalid' });
+  });
+});
+
+describe('markers', () => {
+  const A = 'a'.repeat(40);
+  const B = 'b'.repeat(40);
+  test('a marker in fenced code is not the document\'s', () => {
+    expect(markerOf(`# x\n\n\`\`\`\n<!-- last-commit-id: ${A} -->\n\`\`\`\n`)).toBeNull();
+    expect(markerOf(`# x\n\n~~~md\n<!-- last-commit-id: ${A} -->\n~~~\n\n<!-- last-commit-id: ${B} -->\n`)).toBe(B);
+    expect(markerOf(`# x\n\n> <!-- last-commit-id: ${A} -->\n`)).toBeNull();
+    expect(markerOf(`<!-- last-commit-id: ${A} -->`)).toBe(A);
+  });
+
+  test('advanceDestination: created, replaced in place, inserted under the title; a fenced marker untouched', () => {
+    const run = { title: 'Review recent commits', target: B, base: A, runId: 'run-1', url: '/p/Plans/flows/runs/x/r.md' };
+    const last = `Last run: [run-1](</p/Plans/flows/runs/x/r.md>) — complete · \`${A.slice(0, 12)}..${B.slice(0, 12)}\``;
+    const created = advanceDestination(null, run);
+    expect(created).toBe(`# Review recent commits\n\n<!-- last-commit-id: ${B} -->\n\n${last}\n`);
+    const older = created.replace(new RegExp(B, 'g'), A).replace('run-1', 'run-0') + '\nMy notes.\n';
+    const again = advanceDestination(older, run);
+    expect(again).toBe(`${created}\nMy notes.\n`);
+    const fencedOnly = `# Mine\n\n\`\`\`\n<!-- last-commit-id: ${A} -->\n\`\`\`\n`;
+    expect(advanceDestination(fencedOnly, run)).toBe(`# Mine\n\n<!-- last-commit-id: ${B} -->\n\n${last}\n\n\`\`\`\n<!-- last-commit-id: ${A} -->\n\`\`\`\n`);
+    expect(markerOf(advanceDestination(fencedOnly, run))).toBe(B);
   });
 });

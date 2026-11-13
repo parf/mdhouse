@@ -350,8 +350,11 @@ filesystem/provider/HTTP work; materialization, actual approvals and marker upda
 `lib/flow-host.ts` (MW.3.3 A) — packages only from `<reference>/flows`, runnable: `RUNNABLE` (`recent-commits-review`).
 - `planFlowRun` reads git (HEAD, base, `base..HEAD`, uncommitted paths apart, any file type) and returns the exact run document + HMAC token (per process) over `{req, runId, startedAt, sha256(doc)}`; writes nothing
 - Range: `since-last-run` = `last-commit-id` of `defaults.destination` (none → 409 `no-baseline` `why: first-run | marker-missing | marker-unreachable`); `baseline` = `/^[0-9a-f]{4,40}$/`, a commit, ancestor of HEAD, else 400 `bad-baseline`
-- `startFlowRun` — queue `flow:<root>:<package>`; inside it: open run (`running`/`held`) → 409 `open-run` + `run`; re-plan with the token's id/time, other bytes → 409 `stale`; `registry.writeFile` to `Plans/flows/runs/<package>/<UTC>-<runId8>.md`. Schedule: `run-` + sha256(`<id>:<slot>`)[0:16]; a repeat returns its run
-- First evidence label (commit range) supplied by mdhouse, the rest `missing` → a new run is `held`
+- `startFlowRun` — RO → 403 `not-writable` first; then queue `flow:<root>:<package>` + `queueWrite(<destination abs>)`; inside: open run (`running`/`held`) → 409 `open-run` + `run`; re-plan with the token's id/time and the starting actor, other bytes → 409 `stale`; `registry.writeFile(…, {parents})` to `Plans/flows/runs/<package>/<UTC>-<runId8>.md`. Token 10 min (`TOKEN_TTL_MS`). Schedule: `run-` + sha256(`<id>:<slot>`)[0:16]; a repeat returns its run
+- First evidence label (commit range) supplied by mdhouse, the rest `missing` → a new run is `held`; page-asserted evidence cites source `run-document`
+- Run document: host sections from the replayed state + ```` ```json mdhouse-flow-meta ```` (rootId, runPath, trigger, marker, commits, dirty); `## Findings`…`## Checks` are the analyst's, kept on every rewrite (gone → 400). `last-commit-id`: first line of its own outside fenced code
+- `/api/doc` → `flow` (`docFlow`) for a valid run under `Plans/flows/runs/`; `canAct` = writable and open
+- `POST /api/flow/event {root, path, expectedVersion, clientId, action}` — doc-write order (sameOrigin · body · run path → 404 · RO → 403 · `queueWrite` · re-read: version/ended → 409 `stale`, complete while held → 409 `held`, moved/copied → 400). Event id = `ev-` + sha256(clientId)[0:16]: the same action again → current state. Complete → the run's marker and then the destination's `last-commit-id` + `Last run:` → target (`advanceDestination`)
 - `GET /api/flow/catalog?root=` → `{packages:[{id, family, title, ranges, defaults, lastRun, openRun}]}`; `POST /api/flow/preview {rootId, packageId, range}` — bare `read()`, POST + sameOrigin, Viewer allowed → `{token, runPath, base, target, dirty, warnings, html}` (`render()`); `POST /api/flow/start {token}` → `{status, runPath, url}`. Trigger = manual, actor = `authorOf(req)`. Errors `{error, reason}`; `opts.noGit` → 404 `no-git`
 
 ## Local browser administration
@@ -396,7 +399,7 @@ Other families retain existing behavior; marks admin policy is decided, not enfo
 | `external-send` | `/api/ab/send` |
 | `root-admin` | `/api/roots/ab`, `/api/roots/add`, `/api/roots/remove`, `/api/roots/name`, `/api/roots/save`, `/api/roots/mode` |
 | `shared-prefs` | `/api/marks` — admin-only decided, not enforced ([№Q-R3-ADMIN1](R3/workspaces/DECISIONS.md#Q-R3-ADMIN1)) |
-| `flow` | `/api/flow/start` |
+| `flow` | `/api/flow/start`, `/api/flow/event` |
 | `control` | no HTTP route |
 
 Viewer (`prefs.mode() === 'viewer'`, `lib/authz.ts` `VIEWER_REFUSED`): `doc-write`, `git-write`, `git-sync`,

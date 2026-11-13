@@ -6,7 +6,7 @@
  * `resolve()` is the only door, and `writeFile()` is the only write.
  */
 
-import { chmod, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
 import { fileUrl, RESERVED } from './urls';
 
@@ -341,12 +341,13 @@ export class Registry {
 
   /**
    * The only write to a served tree — every document write route goes through it, so none can
-   * reach a read-only tree by forgetting a check.
+   * reach a read-only tree by forgetting a check. `parents` creates missing folders on the way.
    */
-  async writeFile(p: string, data: string | Uint8Array): Promise<Resolved> {
+  async writeFile(p: string, data: string | Uint8Array, opts: { parents?: boolean } = {}): Promise<Resolved> {
     const loc = await this.resolve(p);
     if (!loc) throw new Error(`path outside any root: ${p}`);
     if (!this.writableAt(loc)) throw new ReadOnlyError(loc.abs);
+    if (opts.parents) await mkdir(dirname(loc.abs), { recursive: true });
     // Whole or not at all: a temp file beside the document, renamed over it — a write cut short
     // (disk full, a crash) leaves the document as it was. Through a symlink to its target; the
     // file keeps its mode.

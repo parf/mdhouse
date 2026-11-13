@@ -186,6 +186,73 @@ describe('/api/flow routes', () => {
     }
   });
 
+  test('a run page: doc.flow, events to the end, the destination marker advances, the next run starts where this ended', async () => {
+    const t = await start();
+    try {
+      const pv = (await (await t.preview()).json()) as { token: string; runPath: string };
+      await t.post('/api/flow/start', { token: pv.token });
+      const doc = async () => (await (await t.get(`/api/doc?p=${encodeURIComponent(`${t.root.id}/${pv.runPath}`)}`)).json()) as { flow?: { version: number; status: string; canAct: boolean; node: { id: string } } };
+      expect((await doc()).flow).toMatchObject({ version: 0, status: 'held', canAct: true, node: { id: 'scope' } });
+      expect((await (await t.get(`/api/doc?p=${t.root.id}/n1.md`)).json()) as object).not.toHaveProperty('flow');
+
+      let n = 0;
+      const event = async (action: unknown) => {
+        const v = (await doc()).flow!.version;
+        return body(await t.post('/api/flow/event', { root: t.root.id, path: pv.runPath, expectedVersion: v, clientId: `page-${String(++n).padStart(4, '0')}`, action }));
+      };
+      expect(await event({ type: 'outcome', outcome: 'complete', text: 'x' })).toEqual([409, { error: expect.stringContaining('held'), reason: 'held' }]);
+      for (const label of ['diffs and reproduction evidence', 'linked plans documentation and task state']) {
+        expect((await event({ type: 'evidence', label, status: 'supplied', note: 'read' }))[0]).toBe(200);
+      }
+      let last: readonly [number, unknown] = [0, null];
+      for (let i = 0; i < 5; i++) last = await event({ type: 'outcome', outcome: 'complete', text: `step ${i}` });
+      expect(last).toEqual([200, { status: 'complete', version: 7, url: t.registry.docUrl(t.root, pv.runPath) }]);
+      expect((await doc()).flow).toMatchObject({ status: 'complete', canAct: false });
+
+      const dest = await readFile(join(t.proj, 'Plans/flows/recent-commits-review.md'), 'utf8');
+      expect(dest).toContain(`<!-- last-commit-id: ${t.c[1]} -->`);
+      expect(dest).toContain(`Last run: [`);
+      expect(await body(await t.post('/api/flow/event', { root: t.root.id, path: pv.runPath, expectedVersion: 7, clientId: 'page-late-1', action: { type: 'cancel', reason: 'x' } }))).toEqual([409, { error: expect.any(String), reason: 'stale' }]);
+
+      // The next run: since the last one, from its target.
+      const next = (await (await t.preview({ kind: 'since-last-run' })).json()) as { base: string; target: string };
+      expect([next.base, next.target]).toEqual([t.c[1]!, t.c[1]!]);
+    } finally {
+      t.stop();
+    }
+  });
+
+  test('event refusals: cross-origin, not a run document, read-only, malformed', async () => {
+    const t = await start();
+    try {
+      const pv = (await (await t.preview()).json()) as { token: string; runPath: string };
+      await t.post('/api/flow/start', { token: pv.token });
+      const ev = { root: t.root.id, path: pv.runPath, expectedVersion: 0, clientId: 'page-0001', action: { type: 'cancel', reason: 'x' } };
+      expect((await t.post('/api/flow/event', ev, { origin: 'http://evil.example' })).status).toBe(403);
+      expect(await body(await t.post('/api/flow/event', { ...ev, path: 'n1.md' }))).toEqual([404, { error: expect.any(String), reason: 'no-root' }]);
+      expect(await body(await t.post('/api/flow/event', { ...ev, path: '../x/Plans/flows/runs/a.md' }))).toEqual([404, { error: expect.any(String), reason: 'no-root' }]);
+      expect((await body(await t.post('/api/flow/event', { root: t.root.id })))[1]).toMatchObject({ reason: 'invalid' });
+      expect((await body(await t.post('/api/flow/event', { ...ev, clientId: 'x' })))[1]).toMatchObject({ reason: 'invalid' });
+      const before = await readFile(join(t.proj, pv.runPath), 'utf8');
+      // Copied elsewhere in the runs folder: refused, the copy unchanged.
+      const copy = pv.runPath.replace(/\.md$/, '-copy.md');
+      await writeFile(join(t.proj, copy), before);
+      expect((await body(await t.post('/api/flow/event', { ...ev, path: copy })))[1]).toMatchObject({ reason: 'invalid' });
+      expect(await readFile(join(t.proj, copy), 'utf8')).toBe(before);
+      expect(await body(await t.post('/api/flow/event', ev))).toEqual([200, { status: 'cancelled', version: 1, url: expect.any(String) }]);
+    } finally {
+      t.stop();
+    }
+    const ro = await start({ mode: 'ro' });
+    try {
+      await mkdir(join(ro.proj, 'Plans/flows/runs', PKG), { recursive: true });
+      await writeFile(join(ro.proj, 'Plans/flows/runs', PKG, 'r.md'), '# r\n');
+      expect(await body(await ro.post('/api/flow/event', { root: ro.root.id, path: `Plans/flows/runs/${PKG}/r.md`, expectedVersion: 0, clientId: 'page-0001', action: { type: 'cancel', reason: 'x' } }))).toEqual([403, { error: expect.any(String), reason: 'not-writable' }]);
+    } finally {
+      ro.stop();
+    }
+  });
+
   test('the reference root is no project', async () => {
     const t = await start();
     try {

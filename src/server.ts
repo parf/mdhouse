@@ -37,7 +37,8 @@ import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits, repoHead } from './lib/git';
-import { isFlowError, isOpenRun, listRuns, planFlowRun, RUNNABLE, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, isOpenRun, listRuns, planFlowRun, RUNNABLE, runsDir, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { advanceDestination, readFlowRunDocument } from './lib/flow-run-markdown';
 import { loadFlowCatalog, type LoadedFlowPackage } from './lib/flow-package';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
@@ -356,6 +357,7 @@ export async function serve(opts: ServeOptions) {
     'no-git': 404,
     'no-baseline': 409,
     'open-run': 409,
+    held: 409,
     stale: 409,
   };
   const flowFail = (e: FlowError): Response => noStore(json(e, FLOW_STATUS[e.reason]));
@@ -1778,7 +1780,10 @@ export async function serve(opts: ServeOptions) {
 
         // the agents the document asks — sent only while the integration is on
         const ab = prefs.agentBus.enabled ? { ab: abTargets(src) } : {};
-        return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab, contentHash });
+        // a run document: its validated state, as the run page acts on it
+        const run = loc.root.kind !== 'reference' && loc.rel.startsWith('Plans/flows/runs/') ? readFlowRunDocument(src) : null;
+        const flow = run ? { flow: docFlow(run.state, registry.writableAt(loc)) } : {};
+        return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab, ...flow, contentHash });
       }),
 
       /** A file's bytes, with its type — `rawHeaders`. `/api/asset` is the old name. */
@@ -1983,9 +1988,46 @@ export async function serve(opts: ServeOptions) {
           if (opts.noGit) return flowNoGit();
           const body = (await req.json().catch(() => null)) as { token?: unknown } | null;
           if (typeof body?.token !== 'string') return flowFail({ error: 'expected {token}', reason: 'invalid' });
-          const res = await startFlowRun(flowDeps, { queue: queueWrite, writeFile: (p, text) => registry.writeFile(p, text) }, { token: body.token });
+          const actor = async (root: Root) => (await authorOf(req, { root, rel: '' })).name;
+          const res = await startFlowRun(flowDeps, { queue: queueWrite, writeFile: (p, text) => registry.writeFile(p, text, { parents: true }) }, { token: body.token, actor });
           if (isFlowError(res)) return flowFail(res);
           return noStore(json({ status: res.status, runPath: res.runPath, url: res.url }));
+        }),
+      },
+
+      /**
+       * One assertion on an open run, from its page: an outcome, evidence, a question's answer or cancel.
+       * The run document is rewritten from its replayed state, the analyst's sections kept. A run that
+       * completes advances its destination's `last-commit-id` to the run's target, after the run's write.
+       */
+      '/api/flow/event': {
+        POST: mutation('flow', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          if (!body || typeof body.root !== 'string' || typeof body.path !== 'string' || body.path.length > 4096) {
+            return flowFail({ error: 'expected {root, path, expectedVersion, clientId, action}', reason: 'invalid' });
+          }
+          const loc = await registry.resolve(`${body.root}/${body.path}`);
+          if (!loc || loc.root.kind === 'reference' || !loc.rel.startsWith(`${runsDir('')}`) || !loc.rel.endsWith('.md')) return flowFail({ error: 'no such run document', reason: 'no-root' });
+          if (!registry.writableAt(loc)) return flowFail({ error: `${loc.root.name} is read-only`, reason: 'not-writable' });
+          return queueWrite(loc.abs, async () => {
+            const text = await Bun.file(loc.abs).text().catch(() => null);
+            if (text === null) return flowFail({ error: 'no such run document', reason: 'no-root' });
+            const res = applyFlowAction(text, { rootId: loc.root.id, rel: loc.rel }, { expectedVersion: body.expectedVersion, clientId: body.clientId, action: body.action });
+            if (isFlowError(res)) return flowFail(res);
+            if (res.doc !== null) await registry.writeFile(`${loc.root.id}/${loc.rel}`, res.doc);
+            if (res.advance) {
+              const sel = res.state.input.selection;
+              const dest = await registry.resolve(`${loc.root.id}/${sel.destination}`);
+              if (!dest) return fail(500, 'the destination is outside the project');
+              await queueWrite(dest.abs, async () => {
+                const prev = await Bun.file(dest.abs).text().catch(() => null);
+                const next = advanceDestination(prev, { title: res.state.input.package.title, target: sel.target, base: sel.base, runId: res.state.input.runId, url: registry.docUrl(loc.root, loc.rel) });
+                await registry.writeFile(`${loc.root.id}/${dest.rel}`, next, { parents: true });
+              });
+            }
+            return noStore(json({ status: res.state.status, version: res.state.version, url: registry.docUrl(loc.root, loc.rel) }));
+          });
         }),
       },
 

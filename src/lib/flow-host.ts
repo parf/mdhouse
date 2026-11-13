@@ -9,11 +9,10 @@
  * the package) is `stale`. Manual and scheduled starts share it.
  */
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { mkdir, readdir, stat } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { readdir, stat } from 'node:fs/promises';
 import type { LoadedFlowPackage } from './flow-package';
-import { createFlowRun, type FlowRunInput, type FlowRunStatus } from './flow-run';
-import { markerOf, readFlowRunDocument, renderFlowRunDocument } from './flow-run-markdown';
+import { applyFlowRunEvent, createFlowRun, type FlowRunAction, type FlowRunEvent, type FlowRunInput, type FlowRunState, type FlowRunStatus } from './flow-run';
+import { keepAnalystSections, markerOf, readFlowRunDocument, readFlowRunMeta, renderFlowRunDocument } from './flow-run-markdown';
 import type { Registry, Root } from './roots';
 
 export type FlowRange = { kind: 'since-last-run' } | { kind: 'baseline'; commit: string };
@@ -34,7 +33,8 @@ export type FlowErrorCode =
   | 'bad-baseline'
   | 'open-run'
   | 'stale'
-  | 'not-writable';
+  | 'not-writable'
+  | 'held';
 export interface FlowError {
   error: string;
   reason: FlowErrorCode;
@@ -89,6 +89,8 @@ export interface FlowStarted {
 /** Where a package's run documents go, root-relative. */
 export const runsDir = (packageId: string): string => `Plans/flows/runs/${packageId}`;
 const DIRTY_KEPT = 120;
+/** Run documents read per package, newest first: the open run and a repeated schedule slot are found among them. */
+const RUNS_LISTED = 500;
 const REV = /^[0-9a-f]{4,40}$/;
 const ROOT_SLUG = (id: string): string => id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^[^a-z]+|-+$/g, '').slice(0, 100).replace(/-+$/, '') || 'project';
 /** Packages this host can run: it supplies their first evidence label (the commit range) itself. */
@@ -121,7 +123,7 @@ function validRequest(v: unknown): FlowStartRequest | null {
 }
 
 /** Each run document of `packageId` under `root`, newest first, with its replayed status. */
-export async function listRuns(registry: Registry, root: Root, packageId: string, limit = 50): Promise<Array<{ path: string; status: FlowRunStatus; runId: string; at: string }>> {
+export async function listRuns(registry: Registry, root: Root, packageId: string, limit = RUNS_LISTED): Promise<Array<{ path: string; status: FlowRunStatus; runId: string; at: string }>> {
   const dir = await registry.resolve(`${root.id}/${runsDir(packageId)}`);
   if (!dir) return [];
   const names = (await readdir(dir.abs).catch(() => [] as string[])).filter((n) => /^\d{8}T\d{6}Z-[a-z0-9-]+\.md$/.test(n)).sort().reverse().slice(0, limit);
@@ -183,6 +185,8 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
   const runPath = `${runsDir(manifest.id)}/${stamp(startedAt)}-${runId.slice(4, 12)}.md`;
   const packageDigest = sha256(JSON.stringify([manifest, [...pkg.documents], pkg.example]));
   const rangeSource = { id: 'commit-range', path: `commits/${base.slice(0, 12)}-${target.slice(0, 12)}`, digest: sha256(commits.join('\n')) };
+  // Evidence asserted on the run page is recorded in the run document itself; its digest is of the path, as the text changes.
+  const runSource = { id: 'run-document', path: runPath, digest: sha256(runPath) };
   const dirtySources = dirty.slice(0, 120).map((p, i) => ({ id: `uncommitted-${i + 1}`, path: p.replace(/[\\:%?#\x00-\x1f\x7f]/g, '_'), digest: sha256(p) }));
   const input: FlowRunInput = {
     runId,
@@ -192,7 +196,7 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
     selection: {
       ...manifest.defaults,
       root: ROOT_SLUG(root.id),
-      sources: [rangeSource, ...dirtySources],
+      sources: [rangeSource, runSource, ...dirtySources],
       base,
       target,
       dirtySourceIds: dirtySources.map((s) => s.id),
@@ -245,18 +249,25 @@ export interface FlowWrite {
   writeFile(p: string, text: string): Promise<unknown>;
 }
 
+/** How long a preview token starts a run. */
+export const TOKEN_TTL_MS = 10 * 60_000;
+
 /**
- * Starts the run a plan token (manual) or a request (scheduled) names. A manual start needs the
- * token of a preview and writes exactly the previewed document. A scheduled slot that already has
- * its run returns it. One open run per package and project: another start is `open-run`.
+ * Starts the run a plan token (manual) or a request (scheduled) names. A manual start needs a fresh
+ * preview token and writes exactly the previewed document, by `actor` — another actor is `stale`. A
+ * scheduled slot that already has its run returns it. One open run per package and project: another
+ * start is `open-run`. Planned again under the package's queue and the destination's, so a start
+ * sees every earlier start and no destination write lands in between.
  */
-export async function startFlowRun(deps: FlowHostDeps, io: FlowWrite, start: { token: string } | { request: FlowStartRequest }): Promise<FlowStarted | FlowError> {
+export async function startFlowRun(deps: FlowHostDeps, io: FlowWrite, start: { token: string; actor: (root: Root) => Promise<string> } | { request: FlowStartRequest }): Promise<FlowStarted | FlowError> {
   let req: FlowStartRequest;
   let fixed: { runId: string; startedAt: string; doc: string } | undefined;
   if ('token' in start) {
     const body = verify(deps.key, start.token);
     const valid = body && validRequest(body.req);
-    if (!body || !valid) return fail('invalid', 'not a valid preview token');
+    if (!body || !valid || valid.trigger.kind !== 'manual') return fail('invalid', 'not a valid preview token');
+    const age = (deps.now?.() ?? new Date()).getTime() - Date.parse(body.startedAt);
+    if (!(age >= 0 && age <= TOKEN_TTL_MS)) return fail('stale', 'the preview expired — preview again');
     req = valid;
     fixed = { runId: body.runId, startedAt: body.startedAt, doc: body.doc };
   } else {
@@ -264,27 +275,139 @@ export async function startFlowRun(deps: FlowHostDeps, io: FlowWrite, start: { t
     if (!valid || valid.trigger.kind !== 'schedule') return fail('invalid', 'a request start is for a schedule trigger');
     req = valid;
   }
-  // Planned again inside the queue: a start sees every earlier start's document.
-  return io.queue(`flow:${req.rootId}:${req.packageId}`, async () => {
-    const found = deps.registry.get(req.rootId);
-    const root = found && found.kind !== 'reference' ? found : null;
-    if (root) {
-      const runs = await listRuns(deps.registry, root, req.packageId, 500);
+  const found = deps.registry.get(req.rootId);
+  const root = found && found.kind !== 'reference' ? found : null;
+  if (!root) return fail('no-root', 'no such project');
+  if (!root.writable) return fail('not-writable', 'the project is read-only');
+  // The actor is whoever starts, as at preview: another author makes the document differ — stale.
+  if ('token' in start) req = { ...req, trigger: { kind: 'manual', actor: await start.actor(root) } };
+  const pkg = RUNNABLE.has(req.packageId) ? (await deps.catalog()).find((p) => p.manifest.id === req.packageId) : undefined;
+  if (!pkg) return fail('unknown-package', 'no such flow package');
+  const dest = await deps.registry.resolve(`${root.id}/${pkg.manifest.defaults.destination}`);
+  if (!dest) return fail('invalid', 'the package destination is outside the project');
+
+  return io.queue(`flow:${root.id}:${pkg.manifest.id}`, () =>
+    io.queue(dest.abs, async () => {
+      const runs = await listRuns(deps.registry, root, pkg.manifest.id);
       const runId = fixed ? null : runIdFor(req.trigger);
       const same = runs.find((r) => r.runId === runId);
       if (same) return { status: same.status, runPath: same.path, url: deps.registry.docUrl(root, same.path), created: false };
       const open = runs.find((r) => isOpenRun(r.status));
       if (open) return fail('open-run', 'a run of this flow is still open', { run: { url: deps.registry.docUrl(root, open.path), status: open.status } });
-    }
-    const plan = await planFlowRun(deps, req, fixed);
-    if (isError(plan) || !root) return isError(plan) ? plan : fail('no-root', 'no such project');
-    if (fixed && sha256(plan.doc) !== fixed.doc) return fail('stale', 'something changed since the preview — preview again');
-    if (!root.writable) return fail('not-writable', 'the project is read-only');
-    const loc = await deps.registry.resolve(`${root.id}/${plan.runPath}`);
-    if (!loc) return fail('invalid', 'the run path is outside the project');
-    if (await stat(loc.abs).catch(() => null)) return fail('stale', 'that run document already exists');
-    await mkdir(dirname(loc.abs), { recursive: true });
-    await io.writeFile(`${root.id}/${plan.runPath}`, plan.doc);
-    return { status: readFlowRunDocument(plan.doc)!.state.status, runPath: plan.runPath, url: deps.registry.docUrl(root, plan.runPath), created: true };
-  });
+      const plan = await planFlowRun(deps, req, fixed);
+      if (isError(plan)) return plan;
+      if (fixed && sha256(plan.doc) !== fixed.doc) return fail('stale', 'something changed since the preview — preview again');
+      const loc = await deps.registry.resolve(`${root.id}/${plan.runPath}`);
+      if (!loc) return fail('invalid', 'the run path is outside the project');
+      if (await stat(loc.abs).catch(() => null)) return fail('stale', 'that run document already exists');
+      await io.writeFile(`${root.id}/${plan.runPath}`, plan.doc);
+      return { status: readFlowRunDocument(plan.doc)!.state.status, runPath: plan.runPath, url: deps.registry.docUrl(root, plan.runPath), created: true };
+    }),
+  );
+}
+
+/** The run as the run page shows it (`/api/doc` `flow`). */
+export interface DocFlow {
+  runId: string;
+  version: number;
+  status: FlowRunStatus;
+  node: { id: string; title: string; outcomes: Array<'complete' | 'blocked' | 'failed'> };
+  holds: string[];
+  evidence: Array<{ label: string; status: 'supplied' | 'missing'; note: string; required: boolean }>;
+  questions: Array<{ id: string; title: string; required: boolean; status: 'unanswered' | 'answered' }>;
+  canAct: boolean;
+}
+
+/** The page's view of a run state; `canAct` only while the run is open and `writable`. */
+export function docFlow(state: FlowRunState, writable: boolean): DocFlow {
+  const node = state.input.package.steps.find((s) => s.id === state.nodeId)!;
+  const required = new Set(state.input.package.evidence.required);
+  return {
+    runId: state.input.runId,
+    version: state.version,
+    status: state.status,
+    node: { id: node.id, title: node.id, outcomes: (['complete', 'blocked', 'failed'] as const).filter((o) => node.on[o]) },
+    holds: [...state.holds],
+    evidence: state.evidence.map((e) => ({ label: e.label, status: e.status, note: e.note, required: required.has(e.label) })),
+    questions: state.questions.map((q) => ({ id: q.id, title: q.title, required: q.required, status: q.status })),
+    canAct: writable && isOpenRun(state.status),
+  };
+}
+
+/** What the run page sends: one assertion; the host adds the node, sources and time. */
+export type FlowPageAction =
+  | { type: 'outcome'; outcome: 'complete' | 'blocked' | 'failed'; text: string }
+  | { type: 'evidence'; label: string; status: 'supplied' | 'missing'; note: string }
+  | { type: 'question'; questionId: string; status: 'unanswered' | 'answered'; turn: string }
+  | { type: 'cancel'; reason: string };
+
+const CLIENT_ID = /^[A-Za-z0-9_-]{8,64}$/;
+
+function coreAction(state: FlowRunState, a: unknown): FlowRunAction | null {
+  if (typeof a !== 'object' || a === null) return null;
+  const v = a as Record<string, unknown>;
+  switch (v.type) {
+    case 'outcome':
+      return { type: 'outcome', nodeId: state.nodeId, outcome: v.outcome as 'complete', text: v.text as string, sourceIds: [], questionIds: [] };
+    case 'evidence':
+      return { type: 'evidence', evidence: { label: v.label as string, status: v.status as 'supplied', sourceIds: v.status === 'supplied' ? ['run-document'] : [], note: v.note as string } };
+    case 'question':
+      return { type: 'question', questionId: v.questionId as string, status: v.status as 'answered', turn: v.turn as string };
+    case 'cancel':
+      return { type: 'cancel', reason: v.reason as string };
+    default:
+      return null;
+  }
+}
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
+export interface FlowActed {
+  /** The new document text; null for a retry already recorded. */
+  doc: string | null;
+  state: FlowRunState;
+  /** Set when this event completed the run: the commit the destination's marker advances to. */
+  advance: string | null;
+}
+
+/**
+ * Applies one page action to a run document's text. The event id comes from `clientId`, so a retry
+ * of the same action is answered with the recorded state; another action at an old version is
+ * `stale`. Completing while held is `held`. The analyst's sections are kept; a document that lost
+ * them, or its state or host block, is refused.
+ */
+export function applyFlowAction(text: string, at: { rootId: string; rel: string }, req: { expectedVersion: unknown; clientId: unknown; action: unknown }, now: Date = new Date()): FlowActed | FlowError {
+  const read = readFlowRunDocument(text);
+  const meta = readFlowRunMeta(text);
+  if (!read || !meta) return fail('invalid', 'not a run document, or its run state was edited');
+  if (meta.rootId !== at.rootId || meta.runPath !== at.rel) return fail('invalid', 'this run document was moved or copied — act on the original');
+  const { state } = read;
+  if (typeof req.clientId !== 'string' || !CLIENT_ID.test(req.clientId)) return fail('invalid', 'clientId: 8-64 letters, digits, - or _');
+  if (!Number.isSafeInteger(req.expectedVersion)) return fail('invalid', 'expectedVersion is a version number');
+  const action = coreAction(state, req.action);
+  if (!action) return fail('invalid', 'action: outcome | evidence | question | cancel');
+  const id = `ev-${sha256(req.clientId).slice(0, 16)}`;
+  const recorded = state.events.find((e) => e.id === id);
+  if (recorded) return same(recorded.action, action) ? { doc: null, state, advance: null } : fail('invalid', 'clientId reused for another action');
+  if (req.expectedVersion !== state.version || !isOpenRun(state.status)) return fail('stale', 'the run moved on — reload the page');
+  if (action.type === 'outcome' && action.outcome === 'complete' && state.holds.length) return fail('held', `the run is held: ${state.holds.join('; ')}`);
+  const lastAt = state.events.at(-1)?.at ?? state.input.startedAt;
+  const nowAt = now.toISOString();
+  const event: FlowRunEvent = { id, expectedVersion: state.version, at: nowAt < lastAt ? lastAt : nowAt, action };
+  let next: FlowRunState;
+  try {
+    next = applyFlowRunEvent(state, event).state;
+  } catch (err) {
+    return fail('invalid', err instanceof Error ? err.message : 'invalid event');
+  }
+  const advance = next.status === 'complete' ? next.input.selection.target : null;
+  let doc: string;
+  try {
+    doc = renderFlowRunDocument(next, advance ? { ...meta, marker: advance } : meta);
+  } catch (err) {
+    return fail('invalid', err instanceof Error ? err.message : 'invalid run');
+  }
+  const kept = keepAnalystSections(text, doc);
+  if (kept === null) return fail('invalid', 'the Findings … Transitions sections are gone — restore them first');
+  return { doc: kept, state: next, advance };
 }

@@ -51,7 +51,29 @@ export function previewFlowRun(value: unknown): string {
 
 /** The info string of the fenced block that holds a run document's state. */
 export const FLOW_STATE_INFO = 'json mdhouse-flow-state';
-const MARKER = /^<!-- last-commit-id: ([0-9a-f]{40}) -->$/m;
+/** The info string of the fenced block that holds the host's facts about a run (`FlowRunDocMeta`). */
+export const FLOW_META_INFO = 'json mdhouse-flow-meta';
+const MARKER_LINE = /^<!-- last-commit-id: ([0-9a-f]{40}) -->$/;
+
+/** The first marker line outside fenced code: its line index and commit; null when none. */
+function markerAt(lines: string[]): { at: number; commit: string } | null {
+  let fence: string | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const open = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+    if (fence) {
+      if (open && open[0] === fence[0] && open.length >= fence.length && line.trim() === open) fence = null;
+      continue;
+    }
+    if (open) {
+      fence = open;
+      continue;
+    }
+    const m = MARKER_LINE.exec(line);
+    if (m) return { at: i, commit: m[1]! };
+  }
+  return null;
+}
 
 /** What the host knows about a materialized run, beside its state. */
 export interface FlowRunDocMeta {
@@ -115,27 +137,84 @@ export function renderFlowRunDocument(value: unknown, meta: FlowRunDocMeta): str
     '## Run state', '',
     'Maintained by mdhouse; edits here are rejected by replay.', '',
     fenced(FLOW_STATE_INFO, JSON.stringify(state, null, 2)), '',
+    fenced(FLOW_META_INFO, JSON.stringify(meta)), '',
   ];
   const result = lines.join('\n');
   if (new TextEncoder().encode(result).length > FLOW_RUN_LIMITS.preview) throw new Error('Flow run document exceeds size limit');
   return result;
 }
 
+/** The JSON of the first fenced block with `info`; undefined when there is none or it does not parse. */
+function fencedJson(text: string, info: string): unknown {
+  const lines = text.split('\n');
+  const at = lines.findIndex((l) => /^`{3,}/.test(l) && l.replace(/^`+/, '') === info);
+  if (at === -1) return undefined;
+  const fence = lines[at]!.slice(0, lines[at]!.length - info.length);
+  const end = lines.findIndex((l, i) => i > at && l === fence);
+  if (end === -1) return undefined;
+  try {
+    return JSON.parse(lines.slice(at + 1, end).join('\n')) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
 /** A run document's validated state and marker; null when the text holds none, or one that does not replay. */
 export function readFlowRunDocument(text: string): { state: ReturnType<typeof validateFlowRunState>; marker: string | null } | null {
-  const lines = text.split('\n');
-  const at = lines.findIndex((l) => /^`{3,}json mdhouse-flow-state$/.test(l));
-  if (at === -1) return null;
-  const fence = lines[at]!.slice(0, lines[at]!.indexOf('json'));
-  const end = lines.findIndex((l, i) => i > at && l === fence);
-  if (end === -1) return null;
+  const raw = fencedJson(text, FLOW_STATE_INFO);
+  if (raw === undefined) return null;
   try {
-    const state = validateFlowRunState(JSON.parse(lines.slice(at + 1, end).join('\n')));
-    return { state, marker: MARKER.exec(text)?.[1] ?? null };
+    return { state: validateFlowRunState(raw), marker: markerOf(text) };
   } catch {
     return null;
   }
 }
 
-/** The `last-commit-id` a document names; null when none. */
-export const markerOf = (text: string): string | null => MARKER.exec(text)?.[1] ?? null;
+const STR = (v: unknown): v is string => typeof v === 'string';
+const STRS = (v: unknown): v is string[] => Array.isArray(v) && v.every(STR);
+
+/** The host's facts a run document carries; null when the block is missing or malformed. */
+export function readFlowRunMeta(text: string): FlowRunDocMeta | null {
+  const m = fencedJson(text, FLOW_META_INFO) as Record<string, unknown> | undefined;
+  if (!m || typeof m !== 'object') return null;
+  const t = m.trigger as Record<string, unknown> | undefined;
+  const trigger =
+    t?.kind === 'manual' && STR(t.actor) ? { kind: 'manual' as const, actor: t.actor }
+    : t?.kind === 'schedule' && STR(t.id) && STR(t.slot) ? { kind: 'schedule' as const, id: t.id, slot: t.slot }
+    : null;
+  if (!trigger || !STR(m.rootId) || !STR(m.runPath) || !STR(m.marker) || !/^[0-9a-f]{40}$/.test(m.marker) || !STRS(m.commits) || !STRS(m.dirty)) return null;
+  return { rootId: m.rootId, runPath: m.runPath, trigger, marker: m.marker, commits: m.commits, dirty: m.dirty };
+}
+
+const ANALYST = /^## Findings$[\s\S]*?(?=^## Transitions$)/m;
+
+/**
+ * `next` with the analyst's sections (`## Findings` through `## Checks`, up to `## Transitions`)
+ * taken from `previous`; null when `previous` no longer has them, so no text is lost.
+ */
+export function keepAnalystSections(previous: string, next: string): string | null {
+  const kept = ANALYST.exec(previous)?.[0];
+  if (kept === undefined || !ANALYST.test(next)) return null;
+  return next.replace(ANALYST, () => kept);
+}
+
+/**
+ * The destination document after a complete run: its `last-commit-id` set to `target` and its
+ * `Last run:` line to the run; created with a title when there is none. Everything else stays.
+ */
+export function advanceDestination(text: string | null, run: { title: string; target: string; base: string; runId: string; url: string }): string {
+  const marker = `<!-- last-commit-id: ${run.target} -->`;
+  const last = `Last run: [${run.runId}](<${run.url}>) — complete · \`${run.base.slice(0, 12)}..${run.target.slice(0, 12)}\``;
+  if (text === null) return `# ${run.title}\n\n${marker}\n\n${last}\n`;
+  const lines = text.split('\n');
+  const found = markerAt(lines);
+  if (found) lines[found.at] = marker;
+  else lines.splice(1, 0, '', marker);
+  const at = found?.at ?? 2;
+  if (lines[at + 1] === '' && lines[at + 2]?.startsWith('Last run: ')) lines[at + 2] = last;
+  else lines.splice(at + 1, 0, '', last);
+  return lines.join('\n');
+}
+
+/** The `last-commit-id` a document names on a line of its own, outside fenced code; null when none. */
+export const markerOf = (text: string): string | null => markerAt(text.split('\n'))?.commit ?? null;
