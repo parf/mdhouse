@@ -41,6 +41,7 @@
     "src",
     "doc",
     "!doc/*.png",
+    "doc/agent-bus.png",
     "README.md",
     "CHANGELOG.md",
     "LICENSE.md",

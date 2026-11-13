@@ -47,6 +47,8 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     expect(entries).toContain('package/doc/rag-sync.md');
     expect(entries).toContain('package/doc/install.md');
     expect(entries).toContain('package/doc/README.md');
+    // the one image a reference page embeds ships; the README's other pictures stay on GitHub
+    expect(entries.filter((e) => e.endsWith('.png'))).toEqual(['package/doc/agent-bus.png']);
     const readme = await read('README.md');
     expect(readme).toContain('PolyForm Strict License 1.0.0');
     expect(readme).toContain('[`LICENSE.md`](LICENSE.md)');
