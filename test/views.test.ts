@@ -114,6 +114,17 @@ describe('a V tab is its selection only', () => {
     expect(rels(['Plans/'])).toEqual(['Plans/DONE.md', 'Plans/R3/QA.md', 'Plans/R3/workspaces/TODO.md', 'Plans/README.md', 'Plans/TODO.md', 'Plans/hidden.md']);
   });
 
+  test('the tree: a selected file shows only its ancestor folders, a selected folder all its files', () => {
+    const all = (nodes: Node[]): string[] => nodes.flatMap((n) => (n.kind === 'file' ? [n.path] : [n.path, ...all(n.children)])).sort();
+    // a deep file: its folders to reach it, none of the sibling files or folders
+    expect(all(buildTree(tabFiles(files, ['Plans/R3/workspaces/TODO.md'], false))).filter((x) => !x.endsWith('.md'))).toEqual(['Plans/R3/workspaces']);
+    expect(all(buildTree(tabFiles(files, ['Plans/R3/workspaces/TODO.md'], false)))).toEqual(['Plans/R3/workspaces', 'Plans/R3/workspaces/TODO.md']);
+    // a folder: every file at any depth
+    expect(paths(buildTree(tabFiles(files, ['Plans/R3/'], false)))).toEqual(['Plans/R3/QA.md', 'Plans/R3/workspaces/TODO.md']);
+    // a file and a folder: the folder's files plus only that file
+    expect(paths(buildTree(tabFiles(files, ['Plans/R3/', 'Plans/TODO.md'], false)))).toEqual(['Plans/R3/QA.md', 'Plans/R3/workspaces/TODO.md', 'Plans/TODO.md']);
+  });
+
   test('files and folders together; the other view does not count', () => {
     expect(rels(['README.md', 'doc/'])).toEqual(['README.md', 'doc/cli.md']);
     // V2 holds one file even though V1 holds its folder: the tab is built from its own entries only
