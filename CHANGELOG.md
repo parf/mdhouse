@@ -4,6 +4,8 @@
 
 ### Added
 
+- `mdhouse docs` prints the installed reference path and the one line to paste into a project's `AGENTS.md` (`--path`: the path alone)
+
 - `for-agents.md` in the reference: one page an AI reads first — how to write plans, which glyphs, which markup — at `/api/raw?p=_mdhouse/for-agents.md`
 
 - Flows (server): `/api/flow/catalog`, `/api/flow/preview`, `/api/flow/start` — start the Recent commits review on a project; the run document lands in `Plans/flows/runs/recent-commits-review/`; a first run asks for a baseline commit; one open run at a time

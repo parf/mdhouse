@@ -8,6 +8,7 @@
  * `mdhouse exit` rather than Ctrl+C. `--fg` keeps everything in one process instead.
  */
 
+import { docsText } from './lib/docs-cmd';
 import { accessSync, constants, existsSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +29,7 @@ const USAGE = `mdhouse — a Markdown workspace on your own machine
   mdhouse exit --all              stop every mdhouse, whatever its port
   mdhouse admin [--port <n>]      print a single-use browser administrator link (terminal only)
   mdhouse admin --list|--revoke   list, or end every, browser administrator session
+  mdhouse docs [--path]           print where the reference is, and the line for a project's AGENTS.md
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
   mdhouse user-add <login>        ask for a login from then on (any user turns it on);
@@ -199,7 +201,9 @@ const ADMIN_ACTIONS = ['--list', '--revoke'];
 const command =
   argv[0] === 'exit' || argv[0] === 'stop'
     ? 'exit'
-    : argv[0] === 'admin'
+    : argv[0] === 'docs'
+      ? 'docs'
+      : argv[0] === 'admin'
       ? 'admin'
       : argv[0] === 'service'
         ? 'service'
@@ -215,7 +219,9 @@ const opts = parse(
     ? argv
     : command === 'service'
       ? argv.slice(1).filter((a) => a !== serviceAction)
-      : command === 'access'
+      : command === 'docs'
+        ? argv.slice(1).filter((a) => a !== '--path')
+        : command === 'access'
         ? argv.slice(2).filter((a) => a.startsWith('-'))
         : command === 'admin'
           ? argv.slice(1).filter((a) => !ADMIN_ACTIONS.includes(a))
@@ -401,6 +407,20 @@ if (command === 'exit') {
     if (live.length) console.error(`         Running on: ${live.join(', ')}  (mdhouse exit --port <n>)`);
     process.exit(1);
   }
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------- mdhouse docs
+
+if (command === 'docs') {
+  let reference: string;
+  try {
+    reference = realpathSync(fileURLToPath(new URL('../doc', import.meta.url)));
+  } catch {
+    console.error('mdhouse: the reference (doc/) is missing — a broken install');
+    process.exit(1);
+  }
+  process.stdout.write(docsText(reference, opts.host, opts.port, argv.includes('--path')));
   process.exit(0);
 }
 
