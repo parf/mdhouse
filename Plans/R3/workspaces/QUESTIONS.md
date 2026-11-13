@@ -67,3 +67,8 @@
   > personal marks are user state, only deliberately shared lists go in Git; secrets: 0600 file now (works headless), keyring later;
   > path stays the local key, a committed id only for what must survive a clone; sockets → `XDG_RUNTIME_DIR` with a read-both release;
   > keep `.mdhouseignore` top-level.
+
+- ❓ Q-R3-CTL1 MW.7 (an agent opens a file in a given mdhouse tab): who may send control commands by default? <a id="Q-R3-CTL1"></a>
+  Temp CTO chose the first one (being built by #md/w1); worst case is navigation within readable projects, never a write.
+  - ( ) the daemon's rule — only your own agents (`@owner`); `--ab-control '<pat>'` narrows, `--ab-control off` stops it 🌟
+  - ( ) nobody until `--ab-control '<pat>'` is set (opt-in)
