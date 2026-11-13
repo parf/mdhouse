@@ -904,6 +904,7 @@ copied in), Chromium with touch emulation (`mobile` + touch events, real touch t
 An in-page audit after every step reports interactive elements whose size **with their hit area** is under 44px on either axis, controls cut off or past the viewport,
 controls that overlap or are covered at their centre, controls kept invisible until hover, text fields under 16px (iOS zoom) and `scrollWidth` against the width.
 Each step also checks the result on disk (tick, answer, edit, commit) or in the page (diff, Agent Bus reply, search hit).
+Re-run: `scripts/touch-walk.ts` (usage in its first line; scratch instances only, refuses :7777) with `scripts/touch-audit.js`.
 
 | Step | Result at 390 / 768, light / dark | Found before → fixed |
 | --- | --- | --- |

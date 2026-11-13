@@ -1,0 +1,195 @@
+// bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip.
+// After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
+import { readFileSync, mkdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+const [W, H, scheme, tag, ...only] = process.argv.slice(2);
+const w = Number(W), h = Number(H);
+const base = process.env.TW_BASE ?? 'http://localhost:7801';
+if (new URL(base).port === '7777') throw new Error('refusing :7777 — scratch instances only');
+const OUT = process.env.TW_OUT ?? '/tmp/opencode/touch-walk';
+const HERE = import.meta.dir;
+mkdirSync(OUT, { recursive: true });
+const tab = await (await fetch(`http://127.0.0.1:9333/json/new?about:blank`, { method: 'PUT' })).json();
+const ws = new WebSocket(tab.webSocketDebuggerUrl);
+await new Promise((r) => (ws.onopen = r));
+let id = 0;
+const pending = new Map<number, (v: any) => void>();
+ws.onmessage = (e) => { const m = JSON.parse(e.data as string); if (m.id && pending.has(m.id)) pending.get(m.id)!(m.result ?? m.error); };
+const send = (method: string, params: object = {}) => new Promise<any>((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); });
+await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: true });
+await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
+await send('Page.enable'); await send('Runtime.enable');
+const sleep = (ms: number) => Bun.sleep(ms);
+export const ev = async (expression: string): Promise<any> => {
+  const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+  if (r?.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? 'eval failed');
+  return r?.result?.value;
+};
+let n = 0;
+const log: string[] = [];
+const say = (s: string) => { log.push(s); console.log(s); };
+const shot = async (name: string) => {
+  const r = await send('Page.captureScreenshot', { format: 'png' });
+  const f = `${OUT}/${tag}-${w}-${scheme}-${String(++n).padStart(2, '0')}-${name}.png`;
+  await Bun.write(f, Buffer.from(r.data, 'base64'));
+  return f;
+};
+const AUDIT = readFileSync(`${HERE}/touch-audit.js`, 'utf8');
+const audit = async (name: string) => {
+  const r = JSON.parse(await ev(AUDIT));
+  const f = await shot(name);
+  say(`[${name}] ${f.split('/').pop()} sw=${r.sw}/${r.iw} small=${r.small.length} cut=${r.cut.length} overlap=${r.overlap.length} hidden=${r.hidden.length} covered=${r.covered.length} zoom=${r.zoom.length} drawer=${r.drawer}`);
+  for (const k of ['small', 'cut', 'overlap', 'hidden', 'covered', 'zoom'] as const) for (const x of r[k].slice(0, 60)) say(`    ${k}: ${x}`);
+  return r;
+};
+// a real tap at the centre of the first visible match; reports an element that would take it instead
+const tap = async (sel: string, nth = 0) => {
+  const r = await ev(`(() => { const all=[...document.querySelectorAll(${JSON.stringify(sel)})].filter(e=>{const r=e.getBoundingClientRect(); return r.width>0&&r.height>0}); const e=all[${nth}]; if(!e) return null; e.scrollIntoView({block:'center'}); const r=e.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2; const top=document.elementFromPoint(cx,cy); return {cx,cy,w:r.width,h:r.height,ok: top===e||e.contains(top)||(top&&top.contains(e)&&top!==document.body&&top!==document.documentElement), by: top? top.tagName.toLowerCase()+'.'+String(top.className).slice(0,30):null}; })()`);
+  if (!r) { say(`  TAP ${sel}[${nth}]: not found`); return false; }
+  if (!r.ok) say(`  TAP ${sel}: covered by ${r.by}`);
+  if (r.h < 44 || r.w < 44) say(`  TAP ${sel}: ${Math.round(r.w)}x${Math.round(r.h)}`);
+  await sleep(150);
+  const rr = await ev(`(() => { const all=[...document.querySelectorAll(${JSON.stringify(sel)})].filter(e=>{const r=e.getBoundingClientRect(); return r.width>0&&r.height>0}); const e=all[${nth}]; const r=e.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; })()`);
+  await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: rr[0], y: rr[1] }] });
+  await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(500);
+  return true;
+};
+const type = async (text: string) => { await send('Input.insertText', { text }); await sleep(200); };
+const go = async (path: string) => { await send('Page.navigate', { url: base + path }); await sleep(1800); };
+const want = (s: string) => !only.length || only.includes(s) || only.includes('all');
+const R = process.env.TW_REPO ?? '/tmp/opencode/journey/repo';
+const read = (f: string) => readFileSync(`${R}/${f}`, 'utf8');
+
+if (want('nav')) {
+  await go('/repo/README.md');
+  await audit('doc-closed-drawer');
+  await tap('.topstrip .icon-btn[aria-label="Show sidebar"]');
+  await audit('drawer-open');
+  await tap('.sidebar button.row.dir', 0);
+  await audit('drawer-folder-open');
+  await tap('.sidebar a[href="/repo/notes/plan.md"]', 0);
+  say(`  nav: tapped plan.md; location=${await ev('location.pathname')} drawer=${await ev("document.querySelector('.app').dataset.sidebar")}`);
+}
+if (want('doc')) {
+  await go('/repo/README.md');
+  await audit('doc');
+  await tap('.md input[type=checkbox]', 0);
+  await sleep(600);
+  say(`  task ticked on disk: ${/- \[x\] first task/.test(read('README.md'))}`);
+  await tap('.md .heading-add', 0);
+  await audit('heading-add-form');
+  await tap('.md .add-kind', 0);
+  await audit('heading-add-kind');
+}
+if (want('qa')) {
+  await go('/repo/qa-playground.md');
+  await audit('qa-doc');
+  await tap('.md .g-btn:not(.dis)', 0);
+  await audit('qa-form');
+  await tap('.qa-edit textarea', 0);
+  await type('Answered from the touch walk.');
+  await audit('qa-form-typed');
+  await tap('.qa-edit .bar .save', 0);
+  await sleep(900);
+  say(`  answer on disk: ${read('qa-playground.md').includes('Answered from the touch walk.')}`);
+  await audit('qa-after');
+}
+if (want('edit')) {
+  await go('/repo/notes/plan.md');
+  await audit('plan-doc');
+  await tap('.doc-edit-btn', 0);
+  await sleep(1200);
+  await audit('editor-open');
+  await tap('.cm-content', 0);
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'End', code: 'End', windowsVirtualKeyCode: 35, modifiers: 2 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'End', code: 'End', modifiers: 2 });
+  await type('\n\nEdited on a phone.\n');
+  await audit('editor-typed');
+  await tap('.doc-editor-save', 0);
+  await sleep(900);
+  say(`  edit on disk: ${read('notes/plan.md').includes('Edited on a phone.')}`);
+  await audit('editor-saved');
+}
+if (want('diff')) {
+  await go('/repo/README.md');
+  await audit('doc-uncommitted');
+  await tap('button.uncommitted', 0);
+  await sleep(700);
+  await audit('diff');
+  say('  diff view: ' + await ev(`(document.querySelector('.diff, .doc-diff, [class*=diff]')||{}).className||'none'`));
+}
+if (want('commit')) {
+  await go('/repo/README.md');
+  await audit('commit-doc');
+  await tap('.doc-commit .git-btn', 0);
+  await audit('commit-open');
+  await tap('.doc-commit .git-message', 0);
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: 2 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'a', code: 'KeyA', modifiers: 2 });
+  await type('touch walk commit');
+  await audit('commit-typed');
+  await tap('.doc-commit .git-btn.primary', 0);
+  await sleep(1200);
+  say('  git log: ' + execSync(`git -C ${R} log --oneline -2`).toString().replace(/\n/g, ' | '));
+  await audit('commit-done');
+  await go('/repo/?git');
+  await audit('git-home');
+}
+if (want('ab')) {
+  await go('/repo/README.md');
+  await tap('.ab-btn', 0);
+  await sleep(900);
+  await audit('ab-panel');
+  await tap('.ab-pick', 0);
+  await audit('ab-pick');
+  await tap('.ab-pick', 0);
+  await tap('.ab-panel textarea', 0);
+  await type('please review');
+  await audit('ab-typed');
+  await tap('.ab-panel button.default', 0);
+  await sleep(1800);
+  say('  ab reply shown: ' + await ev(`document.querySelector('.ab-log')?.innerText.includes('I read the page')`));
+  await audit('ab-sent');
+}
+if (want('rag')) {
+  await go('/repo/README.md');
+  await tap('.topstrip .rag-btn, .side-head .rag-btn', 0);
+  say(`  rag location=${await ev('location.pathname+location.search')}`);
+  await audit('rag');
+  await tap('input.rag-q', 0);
+  await type('notes');
+  await tap('.rag-form button[type=submit]', 0);
+  await sleep(1200);
+  await audit('rag-results');
+  await tap('.rag-src', 0);
+  say(`  hit opened: ${await ev('location.pathname+location.hash')}`);
+  await audit('rag-hit-doc');
+}
+if (want('folder')) { await go('/repo/notes/'); await audit('folder'); }
+
+if (want('kbd')) {
+  await go('/repo/README.md');
+  await ev("document.querySelector('.md input.task-checkbox:not(:checked)').focus(); 1");
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32, text: ' ' });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+  await sleep(900);
+  say(`  keyboard tick on disk: ${/- \[x\] (first|second) task/.test(read('README.md'))}`);
+  await audit('kbd-after');
+}
+if (want('strip')) {
+  await go('/repo/qa-playground.md');
+  await audit('strip-collapsed');
+  say('  strip: ' + await ev(`document.querySelector('.qa-strip')?.className + ' h=' + Math.round(document.querySelector('.qa-strip').getBoundingClientRect().height)`));
+  await tap('.qa-toggle', 0);
+  await audit('strip-open');
+  say('  strip open h=' + await ev(`Math.round(document.querySelector('.qa-strip').getBoundingClientRect().height)`));
+  await tap('.qa-strip .qa-chips .chip', 2);
+  await audit('strip-filtered');
+  say('  strip after pick: ' + await ev(`document.querySelector('.qa-toggle').textContent + ' hidden rows=' + document.querySelectorAll('.qa-hide').length + ' expanded=' + document.querySelector('.qa-toggle').getAttribute('aria-expanded')`));
+}
+
+await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
+process.exit(0);
