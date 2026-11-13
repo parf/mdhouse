@@ -2141,6 +2141,8 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 /* ── Viewer ─────────────────────────────────────────────────────────────── */
 
 .viewer-badge { flex: none; white-space: nowrap; }
+/* A Viewer's stored-RW tag: gray — it grants nothing while the Viewer lasts. */
+:is(.side-head, .topstrip) .stored-rw { flex: none; white-space: nowrap; font-size: 10.5px; color: var(--fg-muted); border: 1px solid var(--border-strong); border-radius: 3px; padding: 0 4px; margin-left: 6px; }
 /* In the sidebar the badge has a line of its own: beside the project name there is no room for its words. */
 .viewer-strip { padding: 5px 8px 0; }
 .viewer-strip .viewer-badge { display: inline-block; margin: 0; font-weight: 600; font-size: 11px; letter-spacing: 0.02em; color: var(--warn); border: 1px solid currentColor; border-radius: 3px; padding: 1px 6px; }
@@ -2286,4 +2288,39 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .doc-sheet .sheet-lbl { font-size: 13px; color: var(--fg-muted); margin-right: 4px; }
   .doc-sheet .view-chips { margin-left: 0; }
   .doc-sheet .view-chip { min-height: 44px; padding-inline: 12px; }
+}
+
+/* ── Run flow: the button on a project's home and its dialog ────────────── */
+
+.flow-btn { white-space: nowrap; font: inherit; font-size: 13px; padding: 3px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
+.flow-btn:hover { border-color: var(--accent); color: var(--accent); }
+.flow-scrim { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, #000 40%, transparent); }
+.flow-dialog { position: fixed; z-index: 61; top: 8vh; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 24px)); max-height: 84vh; overflow-y: auto; box-sizing: border-box; padding: 12px 16px 16px; background: var(--bg-raised); color: var(--fg); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 12px 40px color-mix(in srgb, #000 30%, transparent); }
+.flow-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.flow-form { display: grid; gap: 10px; }
+.flow-field { display: grid; gap: 4px; font-size: 13px; color: var(--fg-muted); }
+.flow-field select, .flow-commit { font: inherit; padding: 5px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); width: 100%; box-sizing: border-box; }
+.flow-range { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+.flow-range legend { font-size: 13px; color: var(--fg-muted); padding: 0; margin-bottom: 4px; }
+.flow-opt { display: flex; align-items: center; gap: 8px; }
+.flow-summary, .flow-open, .flow-where, .flow-dirty { margin: 0; font-size: 13px; color: var(--fg-muted); }
+.flow-note, .flow-warn { margin: 0; font-size: 13px; color: var(--warn); }
+.flow-error { margin: 10px 0 0; font-size: 13px; color: var(--danger); }
+.flow-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.flow-go { font: inherit; font-size: 14px; padding: 5px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); color: var(--fg); cursor: pointer; }
+.flow-go.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.flow-go:disabled { opacity: 0.5; cursor: default; }
+.flow-preview { display: grid; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+.flow-preview .flow-actions { position: sticky; bottom: -16px; padding: 8px 0; background: var(--bg-raised); }
+.flow-html { max-height: 40vh; overflow: auto; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); font-size: 13px; }
+
+/* Touch: the dialog is a bottom sheet, every control 44px. */
+@media (pointer: coarse) {
+  .flow-btn, .flow-go { min-height: 44px; padding-inline: 14px; }
+  .flow-field select, .flow-commit { min-height: 44px; font-size: 16px; }
+  .flow-opt { min-height: 44px; }
+  .flow-opt input { width: 22px; height: 22px; }
+}
+@media (pointer: coarse) and (max-width: 900px) {
+  .flow-dialog { top: auto; bottom: 0; left: 0; transform: none; width: 100vw; max-height: 80dvh; border-radius: 14px 14px 0 0; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 }

@@ -1,3 +1,4 @@
+import { RunFlow } from './FlowRun';
 import { IconClock, IconDoc, IconGit, IconGitMark, IconStar, IconUser } from './icons';
 
 export type HomeView = 'favorites' | 'recent' | 'mine' | 'commits' | 'files';
@@ -61,6 +62,8 @@ interface Props {
   gear?: preact.ComponentChildren;
   /** The view chips on the title (`ViewChips`). */
   chips?: preact.ComponentChildren;
+  /** The project's id: with it, the root's page offers Run flow. */
+  rootId?: string;
 }
 
 /**
@@ -68,7 +71,7 @@ interface Props {
  * between them moves nothing. The name leads to the other view; the tabs on the right are
  * GIT, then the git view's own tabs.
  */
-export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear, chips }: Props) {
+export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear, chips, rootId }: Props) {
   const segments = dir ? dir.split('/') : [];
   const name = segments.at(-1) ?? rootName;
   const onGit = view !== null;
@@ -118,6 +121,7 @@ export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAb
             </Link>
           ))}
         </div>
+        {rootId && !dir && repo && <RunFlow rootId={rootId} go={go} />}
         {gear}
         </div>
       </header>

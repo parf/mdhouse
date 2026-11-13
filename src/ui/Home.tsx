@@ -142,6 +142,7 @@ export function Home(props: Props) {
         onAbout={props.onAbout}
         gear={props.gear}
         chips={props.chips}
+        rootId={props.rootId}
       />
 
       {(() => {

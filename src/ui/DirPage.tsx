@@ -166,6 +166,7 @@ export function DirPage({ tree, dir, onOpen, fileUrl, dirUrl, go, onAbout, gear,
         onAbout={onAbout}
         gear={gear}
         chips={chips}
+        rootId={rootId}
       />
 
       <div class="dir-meta">

@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip.
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow (named only: answers /api/flow/* with a fake).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -15,12 +15,22 @@ const ws = new WebSocket(tab.webSocketDebuggerUrl);
 await new Promise((r) => (ws.onopen = r));
 let id = 0;
 const pending = new Map<number, (v: any) => void>();
-ws.onmessage = (e) => { const m = JSON.parse(e.data as string); if (m.id && pending.has(m.id)) pending.get(m.id)!(m.result ?? m.error); };
+ws.onmessage = (e) => { const m = JSON.parse(e.data as string); if (m.id && pending.has(m.id)) pending.get(m.id)!(m.result ?? m.error); if (m.method === 'Fetch.requestPaused') fake(m.params); };
 const send = (method: string, params: object = {}) => new Promise<any>((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); });
+// The flow step answers /api/flow/* itself (a fake of the contract) until the real routes are on main.
+const fake = (p: any) => {
+  const u = new URL(p.request.url); const body = p.request.postData ? JSON.parse(p.request.postData) : {};
+  let status = 200; let out: any = {};
+  if (u.pathname === '/api/flow/catalog') out = { packages: [{ id: 'recent-commits-review', family: 'commit-review', title: 'Recent commits review', ranges: ['since-last-run', 'baseline'], lastRun: null, openRun: null }, { id: 'project-review', family: 'project', title: 'Project review', ranges: ['since-last-run', 'baseline'], lastRun: null, openRun: { url: '/repo/Plans/flows/runs/project-review/x.md', status: 'running' } }] };
+  else if (u.pathname === '/api/flow/preview') { if (body.range.kind === 'since-last-run') { status = 409; out = { error: 'first', reason: 'no-baseline', why: 'first-run' }; } else out = { token: 't1', runPath: 'Plans/flows/runs/recent-commits-review/20261112-ab12cd34.md', base: 'a'.repeat(40), target: 'b'.repeat(40), dirty: ['README.md'], warnings: ['2 files are uncommitted and stay out of the range.'], html: '<h1>Flow analysis preview</h1><p>Unsaved. <b>Scope</b>: last 12 commits.</p><script>alert(1)</script><ul><li>README.md</li><li>notes/plan.md</li></ul>' }; }
+  else if (u.pathname === '/api/flow/start') out = { status: 'running', runPath: 'x', url: '/repo/notes/plan.md' };
+  send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: status, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body: Buffer.from(JSON.stringify(out)).toString('base64') });
+};
 await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: true });
 await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
 await send('Page.enable'); await send('Runtime.enable');
+if (only.includes('flow')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }] });
 const sleep = (ms: number) => Bun.sleep(ms);
 export const ev = async (expression: string): Promise<any> => {
   const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -210,5 +220,23 @@ if (want('strip')) {
   say('  strip after pick: ' + await ev(`document.querySelector('.qa-toggle').textContent + ' hidden rows=' + document.querySelectorAll('.qa-hide').length + ' expanded=' + document.querySelector('.qa-toggle').getAttribute('aria-expanded')`));
 }
 
+if (only.includes('flow')) {
+  await go('/repo/?git');
+  await audit('home');
+  await tap('.flow-btn', 0);
+  await audit('flow-dialog');
+  say('  baseline field shown: ' + await ev("!!document.querySelector('.flow-commit')"));
+  await tap('.flow-opt input', 0);
+  await tap('.flow-go', 0);
+  await audit('flow-no-baseline');
+  say('  note: ' + await ev("document.querySelector('.flow-note')?.textContent"));
+  await tap('.flow-commit', 0);
+  await type('abc1234');
+  await tap('.flow-go', 0);
+  await audit('flow-preview');
+  say('  script in pane: ' + await ev("!!document.querySelector('.flow-html script')") + ' items: ' + await ev("document.querySelectorAll('.flow-html li').length"));
+  await tap('.flow-go.primary', 0);
+  say('  after confirm location=' + await ev('location.pathname') + ' dialog open: ' + await ev("!!document.querySelector('.flow-dialog')"));
+}
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

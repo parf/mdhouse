@@ -284,6 +284,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - [x] MW.3.1 Slice: strict package schema/loader and four Feature/delivery authoring packages; no execution/manual/schedule completion claim <a id="MW.3.1"></a>
   - [x] MW.3.2 Pure manual analysis-run core and deterministic Markdown preview; no filesystem/provider/HTTP/UI or execution authority <a id="MW.3.2"></a>
     - Owner: W3; independent exact-SHA architecture review before integration; materialization remains a separate gated slice
+  - Progress: MW.3.3 UI — Run flow dialog on a project's home (package, range, passive preview, confirm; bottom sheet on touch; none for a Viewer) built against the agreed route contract with a fake server; real `/api/flow/*` routes and the run-document flow bar follow server slice A/B
   - Builds: discoverable packages of Markdown documents plus routing; common scope, change range, audience, output and destination controls; optional schedules; run history
   - Depends: [№MW.2](#MW.2)
   - Acceptance: every flow leaves its inputs, plan, source evidence, findings, checks and outcome in project Markdown

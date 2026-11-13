@@ -961,3 +961,14 @@ activation (the command the context menu runs — the native menu itself cannot 
 - Firefox plain-text layout differs from Chrome (blank line after a heading, indented list items, no break between a Q&A glyph and its text); Firefox also copies a collapsed item's hidden text. Both are browser serializers, not mdhouse chrome.
 - A folded Q&A item copies what it shows (state glyph `?`/`!?`, first reply line), not its Markdown source; open it, or use ✎ / the source, for authored text.
 - Edge and Safari are not installed on this machine — unverified. Native context-menu Copy and real devices — unverified.
+
+## Run flow dialog {#run-flow}
+
+[№MW.3](workspaces/TODO.md#MW.3) MW.3.3 UI. The routes `/api/flow/*` are answered by a fake of the agreed contract (`scripts/touch-walk.ts … flow`), not the real server yet. Touch walk and audit, 390×844 and 768×1024, light and dark.
+
+| Step | Result at 390 / 768, light / dark | Evidence |
+| --- | --- | --- |
+| Run flow on a project's home → dialog | pass, 4/4: button on the root's page (not in folders, not for a Viewer); bottom sheet ≤900px, centred dialog above; select, range radios and fields 44px, 16px | `fl-<w>-<scheme>-02-flow-dialog.png` |
+| Since last run with no history | pass, 4/4: server's `no-baseline` switches to "From a commit" with the reason in words | `-03-flow-no-baseline.png` |
+| Preview → Confirm | pass, 4/4: path, range, uncommitted files kept apart, warnings, server HTML through safe-html (a `<script>` in it is dropped); Confirm is sticky; start navigates to the run document and closes the dialog | `-04-flow-preview.png` |
+
