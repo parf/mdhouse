@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { ApiError } from '../src/ui/api';
 import { automationApi } from '../src/ui/automation-api';
 import {
-  APPROVAL_WORDS, actionFailure, automationUrl, latest, needsReapprove, onAutomation, rangeWords, REAPPROVE_WORDS, revokeNote, scheduleLine, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
+  APPROVAL_WORDS, actionFailure, approveWhyWords, automationUrl, latest, needsReapprove, onAutomation, rangeWords, REAPPROVE_WORDS, revokeNote, scheduleLine, autoReasonText, canApproveReg, canRevokeReg, cronWords, runLine, shortHash, whenWords, willRun,
   type AutoRegistration, type AutomationState,
 } from '../src/ui/automation-model';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
@@ -109,6 +109,15 @@ describe('what the page says', () => {
       expect(canApproveReg(closed, reg({ approval, schedule: null }))).toBe(false);
       expect(canRevokeReg(closed, reg({ approval }))).toBe(false);
     }
+  });
+  test('why approving is not possible, in words; an unknown reason is shown as sent; none says nothing', () => {
+    expect(approveWhyWords(undefined)).toBeNull();
+    expect(approveWhyWords('viewer')).toMatch(/Viewer/);
+    expect(approveWhyWords('exposed')).toMatch(/user-add.*--allow/);
+    expect(approveWhyWords('bus-off')).toMatch(/--agent-bus/);
+    expect(approveWhyWords('no-git')).toMatch(/--no-git/);
+    expect(approveWhyWords('read-only')).toMatch(/read-only/);
+    expect(approveWhyWords('quota')).toBe('Approving is not possible now: quota.');
   });
   test('the page is a flag on the project\'s address', () => {
     expect(automationUrl('repo')).toBe('/repo/?automation');

@@ -48,6 +48,8 @@ export interface AutomationState {
   canApprove: boolean;
   registrations: AutoRegistration[];
   errors: Array<{ file: string; error: string }>;
+  /** Why approving would be refused now; absent when it would pass. */
+  canApproveWhy?: string;
   /** Why the approvals could not be read, when they could not. */
   busError?: string;
 }
@@ -113,6 +115,16 @@ export function runLine(r: AutoRun): string {
   const detail = r.why ?? r.status ?? '';
   return `${OUTCOME_GLYPH[r.outcome]} ${when} UTC · ${r.outcome}${detail ? ` — ${detail}` : ''}`;
 }
+
+const WHY_WORDS: Record<string, string> = {
+  viewer: 'This mdhouse is a Viewer: it accepts no changes, so nothing here can be approved.',
+  exposed: 'This mdhouse is open to the network with no users and no allow list, so it is read-only — add a user (mdhouse user-add) or an allow list (mdhouse --allow).',
+  'bus-off': 'The Agent Bus integration is off: approvals and timers live on the bus (mdhouse --agent-bus).',
+  'no-git': 'This mdhouse runs without git (--no-git), so no run can be made.',
+  'read-only': 'This project is read-only: a run would write its document here.',
+};
+/** The server's reason approving is not possible, in words; a reason this page does not know is shown as sent. */
+export const approveWhyWords = (why: string | undefined): string | null => (why ? (WHY_WORDS[why] ?? `Approving is not possible now: ${why}.`) : null);
 
 /** What a firing of this registration will do, as the Approve confirmation says it. */
 export function willRun(reg: AutoRegistration): string[] {

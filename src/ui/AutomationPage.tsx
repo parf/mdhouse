@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError } from './api';
 import { automationApi } from './automation-api';
 import {
-  APPROVAL_WORDS, REAPPROVE_WORDS, actionFailure, autoReasonText, canApproveReg, canRevokeReg, latest, needsReapprove, rangeWords, revokeNote, runLine, scheduleLine, shortHash, whenWords, willRun,
+  APPROVAL_WORDS, approveWhyWords, REAPPROVE_WORDS, actionFailure, autoReasonText, canApproveReg, canRevokeReg, latest, needsReapprove, rangeWords, revokeNote, runLine, scheduleLine, shortHash, whenWords, willRun,
   type AutoRegistration, type AutomationState,
 } from './automation-model';
 import { Ago } from './Ago';
@@ -108,7 +108,10 @@ export function AutomationPage({ rootId, rootName, gear }: Props) {
           The approvals are kept on the Agent Bus and it cannot be read: {state.busError}. Nothing runs meanwhile.
         </p>
       )}
-      {state && !state.canApprove && !state.busError && <p class="settings-hint">You can read this; approving needs the administrator, the Agent Bus on, and an mdhouse that is not open to the network.</p>}
+      {state && !state.canApprove && !state.busError && (
+        <p class="settings-hint">{approveWhyWords(state.canApproveWhy) ?? 'You can read this; approving needs the administrator, the Agent Bus on, and an mdhouse that is not open to the network.'}</p>
+      )}
+      {state && !state.canApprove && state.busError && state.canApproveWhy && <p class="settings-hint">{approveWhyWords(state.canApproveWhy)}</p>}
       {state?.errors.map((e) => (
         <p class="settings-error auto-file-error" key={e.file}>
           <code>{e.file}</code> is not a registration: {e.error}
