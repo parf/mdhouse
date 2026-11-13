@@ -1294,8 +1294,6 @@ export function Doc({
             {title}
             {!phone && chips}
           </h1>
-          {/* Hands the file to whatever handles `edit:` URLs — an editor, set up outside mdhouse.
-              Settings turns it off where nothing does. */}
           {!phone && gitLinkEl}
           {canEdit && (
             <button
@@ -1308,7 +1306,6 @@ export function Doc({
               {sourceOpen ? 'Page' : 'Edit'}
             </button>
           )}
-          {!phone && extEditEl}
           {phone && (
             <button
               type="button"
@@ -1348,7 +1345,14 @@ export function Doc({
             </span>
           )}
 
-          {!phone && <span class="doc-actions">{actionBtns}</span>}
+          {/* ✎ hands the file to whatever handles `edit:` URLs (Settings turns it off where nothing does);
+              it sits with the other actions, so the title row keeps one Edit. */}
+          {!phone && (
+            <span class="doc-actions">
+              {actionBtns}
+              {extEditEl}
+            </span>
+          )}
         </div>
       </header>
       {phone && moreOpen && (

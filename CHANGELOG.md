@@ -16,6 +16,8 @@
 
 ### Fixed
 
+- Document header: one Edit beside the title — the external editor's ✎ moved to the actions row (a long title no longer pushes it to its own line); in a Viewer a phone's top strip shows a short `Viewer` badge with the full words in its tooltip
+
 - Viewer: a project stored as RW shows a gray `RW (stored)` tag (headers, Settings) — it takes effect in Workspace; the administrator still switches the stored RW/RO in Settings, everyone stays read-only
 
 - Copy: a folded Q&A item's "▾ show all" no longer lands in the copied text

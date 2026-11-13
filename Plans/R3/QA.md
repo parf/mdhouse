@@ -991,3 +991,16 @@ Not verified: the real routes.
 | Settings Access, not administrator | pass: gray tag for stored RW; no row for RO/inherit |
 
 Evidence: W2 scratchpad `v/admin-{light,dark,390}-1.png`, `v/toggle-3.png`, `v/a2-390-1.png`.
+
+## Touch polish — header and Viewer badge {#touch-polish}
+
+Follow-up to the [phone UX fixes](#touch-ux). Scratch instances only; `scripts/touch-walk.ts` (`head`, `qa`) at 390×844 and 768×1024 light/dark, Chrome 1280 light/dark, a scratch Viewer at 390/768.
+
+| Item | Result |
+| --- | --- |
+| (a) Q&A filter toggle in the document header row | not changed: at 390 title + Edit + ⋯ + `Filter · 22 ▾` ≈ 387px of ~358px — crowds the title; the strip stays its own sticky row |
+| (b) ✎ beside Edit | fixed: the title row has one Edit; ✎ (external editor, `e`) sits at the end of the actions row on desktop; touch already had it in the ⋯ sheet |
+| (c) Viewer badge squeezing the project name at 390 | fixed: ≤480px top strip shows eye + `Viewer`, title `Viewer — read-only. Every project is read-only — …`; the sidebar line keeps the full words |
+
+Audit before = after: clean except the known 21px glyph of an open question's form ([touch walk](#touch-walk) remaining).
+Evidence: W2 scratchpad `pol/before/`, `pol/after/` (`a-<w>-<scheme>-*.png`), `pol/before-desk/b-1280-*.png` → `pol/after/a-1280-*.png`, `pol/after/viewer-{390,768}-{light,dark}-0.png`.
