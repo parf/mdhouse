@@ -253,6 +253,89 @@ describe('/api/flow routes', () => {
     }
   });
 
+  test('a forged run document is refused: destination, range, package, folder — and the page cannot act on it', async () => {
+    const t = await start();
+    try {
+      const pv = (await (await t.preview()).json()) as { token: string; runPath: string };
+      await t.post('/api/flow/start', { token: pv.token });
+      // Supply the evidence, then four steps: the next Complete would finish the run.
+      let n = 0;
+      const send = async (path: string, action: unknown, v: number) => body(await t.post('/api/flow/event', { root: t.root.id, path, expectedVersion: v, clientId: `forge-${String(++n).padStart(4, '0')}`, action }));
+      await send(pv.runPath, { type: 'evidence', label: 'diffs and reproduction evidence', status: 'supplied', note: 'n' }, 0);
+      await send(pv.runPath, { type: 'evidence', label: 'linked plans documentation and task state', status: 'supplied', note: 'n' }, 1);
+      for (let v = 2; v < 6; v++) await send(pv.runPath, { type: 'outcome', outcome: 'complete', text: 'ok' }, v);
+      const good = await readFile(join(t.proj, pv.runPath), 'utf8');
+      const readme = '# readme\n';
+      await writeFile(join(t.proj, 'README.md'), readme);
+
+      /** The document with its state's input changed (it still replays) and, optionally, its host block. */
+      const forge = (edit: (input: Record<string, any>) => void, meta?: (m: Record<string, any>) => void) => {
+        const lines = good.split('\n');
+        const at = lines.indexOf('```json mdhouse-flow-state');
+        const end = lines.indexOf('```', at + 1);
+        const state = JSON.parse(lines.slice(at + 1, end).join('\n'));
+        edit(state.input);
+        let out = [...lines.slice(0, at + 1), JSON.stringify(state, null, 2), ...lines.slice(end)].join('\n');
+        if (meta) {
+          const m = /^```json mdhouse-flow-meta\n(.*)\n```$/m.exec(out)!;
+          const obj = JSON.parse(m[1]!);
+          meta(obj);
+          out = out.replace(m[0], `\`\`\`json mdhouse-flow-meta\n${JSON.stringify(obj)}\n\`\`\``);
+        }
+        return out;
+      };
+      const finish = { type: 'outcome', outcome: 'complete', text: 'ok' };
+      const cases: Array<[string, string, string]> = [
+        ['destination', forge((i) => (i.selection.destination = 'README.md')), pv.runPath],
+        ['unknown target', forge((i) => (i.selection.target = 'ab'.repeat(20))), pv.runPath],
+        ['range off history', forge((i) => ([i.selection.base, i.selection.target] = [i.selection.target, i.selection.base])), pv.runPath],
+        ['package text', forge((i) => (i.package.title = 'Something else')), pv.runPath],
+        ['package digest', forge((i) => (i.packageDigest = 'cd'.repeat(32))), pv.runPath],
+      ];
+      for (const [what, doc, path] of cases) {
+        await writeFile(join(t.proj, path), doc);
+        const page = (await (await t.get(`/api/doc?p=${encodeURIComponent(`${t.root.id}/${path}`)}`)).json()) as { flow?: { canAct: boolean; refused?: string } };
+        expect([what, page.flow?.canAct, page.flow?.refused]).toEqual([what, false, expect.stringContaining('cannot be acted on')]);
+        expect([what, ...(await send(path, finish, 6))]).toEqual([what, 409, { error: expect.any(String), reason: 'tampered' }]);
+        expect([what, await readFile(join(t.proj, path), 'utf8')]).toEqual([what, doc]);
+      }
+      expect(await readFile(join(t.proj, 'README.md'), 'utf8')).toBe(readme);
+      expect(await Bun.file(join(t.proj, 'Plans/flows/recent-commits-review.md')).exists()).toBe(false);
+
+      // Moved, host block and all, into another package's runs folder.
+      const other = `Plans/flows/runs/other/${pv.runPath.split('/').pop()}`;
+      await mkdir(join(t.proj, 'Plans/flows/runs/other'), { recursive: true });
+      await writeFile(join(t.proj, other), forge(() => {}, (m) => (m.runPath = other)));
+      expect((await send(other, finish, 6))[1]).toMatchObject({ reason: 'tampered' });
+
+      // The real one still completes.
+      await writeFile(join(t.proj, pv.runPath), good);
+      expect(await send(pv.runPath, finish, 6)).toEqual([200, { status: 'complete', version: 7, url: expect.any(String) }]);
+    } finally {
+      t.stop();
+    }
+  });
+
+  test('completing writes the destination first: when it cannot be written, the run stays as it was', async () => {
+    const t = await start();
+    try {
+      const pv = (await (await t.preview()).json()) as { token: string; runPath: string };
+      await t.post('/api/flow/start', { token: pv.token });
+      let n = 0;
+      const send = async (action: unknown, v: number) => body(await t.post('/api/flow/event', { root: t.root.id, path: pv.runPath, expectedVersion: v, clientId: `order-${String(++n).padStart(4, '0')}`, action }));
+      await send({ type: 'evidence', label: 'diffs and reproduction evidence', status: 'supplied', note: 'n' }, 0);
+      await send({ type: 'evidence', label: 'linked plans documentation and task state', status: 'supplied', note: 'n' }, 1);
+      for (let v = 2; v < 6; v++) await send({ type: 'outcome', outcome: 'complete', text: 'ok' }, v);
+      const before = await readFile(join(t.proj, pv.runPath), 'utf8');
+      // A folder where the destination file goes: its write fails.
+      await mkdir(join(t.proj, 'Plans/flows/recent-commits-review.md'), { recursive: true });
+      expect(await send({ type: 'outcome', outcome: 'complete', text: 'ok' }, 6)).toEqual([500, { error: expect.stringContaining('not complete'), reason: 'partial' }]);
+      expect(await readFile(join(t.proj, pv.runPath), 'utf8')).toBe(before);
+    } finally {
+      t.stop();
+    }
+  });
+
   test('the reference root is no project', async () => {
     const t = await start();
     try {

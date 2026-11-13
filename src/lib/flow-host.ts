@@ -34,7 +34,8 @@ export type FlowErrorCode =
   | 'open-run'
   | 'stale'
   | 'not-writable'
-  | 'held';
+  | 'held'
+  | 'tampered';
 export interface FlowError {
   error: string;
   reason: FlowErrorCode;
@@ -99,6 +100,16 @@ const sha256 = (s: string): string => createHash('sha256').update(s).digest('hex
 const fail = (reason: FlowErrorCode, error: string, extra: Partial<FlowError> = {}): FlowError => ({ error, reason, ...extra });
 const isError = (v: unknown): v is FlowError => typeof v === 'object' && v !== null && 'reason' in v && 'error' in v;
 export { isError as isFlowError };
+
+/** The digest a run declares for its package: manifest, documents and example. */
+const digestOf = (pkg: LoadedFlowPackage): string => sha256(JSON.stringify([pkg.manifest, [...pkg.documents], pkg.example]));
+
+/** JSON with sorted keys: equal data, equal text. */
+function stable(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(stable).join(',')}]`;
+  if (v && typeof v === 'object') return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`).join(',')}}`;
+  return JSON.stringify(v);
+}
 
 /** The run id a trigger gets: random for a manual start, fixed by the slot for a scheduled one. */
 export function runIdFor(trigger: FlowTrigger): string {
@@ -183,7 +194,7 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
   const runId = fixed?.runId ?? runIdFor(req.trigger);
   const startedAt = fixed?.startedAt ?? (deps.now?.() ?? new Date()).toISOString();
   const runPath = `${runsDir(manifest.id)}/${stamp(startedAt)}-${runId.slice(4, 12)}.md`;
-  const packageDigest = sha256(JSON.stringify([manifest, [...pkg.documents], pkg.example]));
+  const packageDigest = digestOf(pkg);
   const rangeSource = { id: 'commit-range', path: `commits/${base.slice(0, 12)}-${target.slice(0, 12)}`, digest: sha256(commits.join('\n')) };
   // Evidence asserted on the run page is recorded in the run document itself; its digest is of the path, as the text changes.
   const runSource = { id: 'run-document', path: runPath, digest: sha256(runPath) };
@@ -316,21 +327,52 @@ export interface DocFlow {
   evidence: Array<{ label: string; status: 'supplied' | 'missing'; note: string; required: boolean }>;
   questions: Array<{ id: string; title: string; required: boolean; status: 'unanswered' | 'answered' }>;
   canAct: boolean;
+  refused?: string;
 }
 
-/** The page's view of a run state; `canAct` only while the run is open and `writable`. */
-export function docFlow(state: FlowRunState, writable: boolean): DocFlow {
+/** A step's words: the package's steps carry only an id (`delivery-sync` → `Delivery sync`). */
+const stepTitle = (id: string): string => id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, ' ');
+
+/**
+ * Whether a run document may be acted on: its input must be what this host would have written — under
+ * its package's runs folder, the installed runnable package (same manifest and digest), the package's
+ * own selection defaults, and a base and target that are commits on HEAD's history. Else `tampered`.
+ */
+export async function verifyRun(deps: FlowHostDeps, root: Root, rel: string, state: FlowRunState): Promise<FlowError | null> {
+  const { input } = state;
+  const sel = input.selection;
+  const id = input.package.id;
+  const tampered = (why: string) => fail('tampered', `this run document cannot be acted on: ${why}`);
+  if (!rel.startsWith(`${runsDir(id)}/`)) return tampered('it is not in its package’s runs folder');
+  const pkg = RUNNABLE.has(id) ? (await deps.catalog()).find((p) => p.manifest.id === id) : undefined;
+  if (!pkg) return tampered('its package is not installed or not runnable');
+  if (stable(input.package) !== stable(pkg.manifest) || input.packageDigest !== digestOf(pkg)) return tampered('it was made with another version of its package');
+  const d = pkg.manifest.defaults;
+  if (sel.scope !== d.scope || sel.range !== d.range || sel.audience !== d.audience || sel.output !== d.output || sel.destination !== d.destination) {
+    return tampered('its selection differs from the package’s');
+  }
+  const repo = await deps.git.repoOf(root);
+  const head = repo ? await deps.git.head(repo) : null;
+  if (!repo || !head) return fail('no-git', 'the project is not in a git repository');
+  // An unknown commit is no ancestor either.
+  if (!(await deps.git.isAncestor(repo, sel.target, head)) || !(await deps.git.isAncestor(repo, sel.base, sel.target))) return tampered('its range is not on the history of HEAD');
+  return null;
+}
+
+/** The page's view of a run state; `canAct` only while the run is open and `writable`; `refused` says why a run cannot be acted on. */
+export function docFlow(state: FlowRunState, writable: boolean, refused?: string): DocFlow {
   const node = state.input.package.steps.find((s) => s.id === state.nodeId)!;
   const required = new Set(state.input.package.evidence.required);
   return {
     runId: state.input.runId,
     version: state.version,
     status: state.status,
-    node: { id: node.id, title: node.id, outcomes: (['complete', 'blocked', 'failed'] as const).filter((o) => node.on[o]) },
+    node: { id: node.id, title: stepTitle(node.id), outcomes: (['complete', 'blocked', 'failed'] as const).filter((o) => node.on[o]) },
     holds: [...state.holds],
     evidence: state.evidence.map((e) => ({ label: e.label, status: e.status, note: e.note, required: required.has(e.label) })),
     questions: state.questions.map((q) => ({ id: q.id, title: q.title, required: q.required, status: q.status })),
-    canAct: writable && isOpenRun(state.status),
+    canAct: writable && !refused && isOpenRun(state.status),
+    ...(refused ? { refused } : {}),
   };
 }
 

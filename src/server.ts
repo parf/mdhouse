@@ -37,7 +37,7 @@ import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits, repoHead } from './lib/git';
-import { applyFlowAction, docFlow, isFlowError, isOpenRun, listRuns, planFlowRun, RUNNABLE, runsDir, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, verifyRun, isOpenRun, listRuns, planFlowRun, RUNNABLE, runsDir, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
 import { advanceDestination, readFlowRunDocument } from './lib/flow-run-markdown';
 import { loadFlowCatalog, type LoadedFlowPackage } from './lib/flow-package';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
@@ -362,6 +362,7 @@ export async function serve(opts: ServeOptions) {
     'no-baseline': 409,
     'open-run': 409,
     held: 409,
+    tampered: 409,
     stale: 409,
   };
   const flowFail = (e: FlowError): Response => noStore(json(e, FLOW_STATUS[e.reason]));
@@ -1786,7 +1787,8 @@ export async function serve(opts: ServeOptions) {
         const ab = prefs.agentBus.enabled ? { ab: abTargets(src) } : {};
         // a run document: its validated state, as the run page acts on it
         const run = loc.root.kind !== 'reference' && loc.rel.startsWith('Plans/flows/runs/') ? readFlowRunDocument(src) : null;
-        const flow = run ? { flow: docFlow(run.state, registry.writableAt(loc)) } : {};
+        const refused = run ? await verifyRun(flowDeps, loc.root, loc.rel, run.state) : null;
+        const flow = run ? { flow: docFlow(run.state, registry.writableAt(loc), refused?.error) } : {};
         return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab, ...flow, contentHash });
       }),
 
@@ -2017,19 +2019,26 @@ export async function serve(opts: ServeOptions) {
           return queueWrite(loc.abs, async () => {
             const text = await Bun.file(loc.abs).text().catch(() => null);
             if (text === null) return flowFail({ error: 'no such run document', reason: 'no-root' });
+            const before = readFlowRunDocument(text);
+            const refused = before && (await verifyRun(flowDeps, loc.root, loc.rel, before.state));
+            if (refused) return flowFail(refused);
             const res = applyFlowAction(text, { rootId: loc.root.id, rel: loc.rel }, { expectedVersion: body.expectedVersion, clientId: body.clientId, action: body.action });
             if (isFlowError(res)) return flowFail(res);
-            if (res.doc !== null) await registry.writeFile(`${loc.root.id}/${loc.rel}`, res.doc);
+            // Completing: the destination's marker first; if it cannot be written, the run stays as it was.
             if (res.advance) {
               const sel = res.state.input.selection;
               const dest = await registry.resolve(`${loc.root.id}/${sel.destination}`);
-              if (!dest) return fail(500, 'the destination is outside the project');
-              await queueWrite(dest.abs, async () => {
-                const prev = await Bun.file(dest.abs).text().catch(() => null);
-                const next = advanceDestination(prev, { title: res.state.input.package.title, target: sel.target, base: sel.base, runId: res.state.input.runId, url: registry.docUrl(loc.root, loc.rel) });
-                await registry.writeFile(`${loc.root.id}/${dest.rel}`, next, { parents: true });
-              });
+              const wrote = dest
+                ? await queueWrite(dest.abs, async () => {
+                    const prev = await Bun.file(dest.abs).text().catch(() => null);
+                    const next = advanceDestination(prev, { title: res.state.input.package.title, target: sel.target, base: sel.base, runId: res.state.input.runId, url: registry.docUrl(loc.root, loc.rel) });
+                    await registry.writeFile(`${loc.root.id}/${dest.rel}`, next, { parents: true });
+                    return true;
+                  }).catch(() => false)
+                : false;
+              if (!wrote) return noStore(json({ error: `${sel.destination} could not be written — the run is not complete; try again`, reason: 'partial' }, 500));
             }
+            if (res.doc !== null) await registry.writeFile(`${loc.root.id}/${loc.rel}`, res.doc);
             return noStore(json({ status: res.state.status, version: res.state.version, url: registry.docUrl(loc.root, loc.rel) }));
           });
         }),

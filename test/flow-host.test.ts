@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits } from '../src/lib/git';
-import { applyFlowAction, docFlow, isFlowError, planFlowRun, runIdFor, startFlowRun, TOKEN_TTL_MS, type FlowActed, type FlowHostDeps, type FlowStartRequest, type FlowWrite } from '../src/lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, verifyRun, planFlowRun, runIdFor, startFlowRun, TOKEN_TTL_MS, type FlowActed, type FlowHostDeps, type FlowStartRequest, type FlowWrite } from '../src/lib/flow-host';
 import { loadFlowCatalog } from '../src/lib/flow-package';
 import { advanceDestination, markerOf, readFlowRunDocument } from '../src/lib/flow-run-markdown';
 import { Registry } from '../src/lib/roots';
@@ -287,7 +287,7 @@ describe('applyFlowAction: one assertion on an open run', () => {
   test('evidence releases the hold; the page view follows', async () => {
     const r = await run();
     const first = docFlow(readFlowRunDocument(r.doc())!.state, true);
-    expect(first).toMatchObject({ version: 0, status: 'held', node: { id: 'scope', outcomes: ['complete', 'blocked', 'failed'] }, canAct: true });
+    expect(first).toMatchObject({ version: 0, status: 'held', node: { id: 'scope', title: 'Scope', outcomes: ['complete', 'blocked', 'failed'] }, canAct: true });
     expect(first.evidence.map((e) => [e.status, e.required])).toEqual([['supplied', true], ['missing', true], ['missing', true]]);
     const done = supplyAll(r);
     expect([done.state.status, done.state.version, done.state.holds]).toEqual(['running', 2, []]);
@@ -341,6 +341,13 @@ describe('applyFlowAction: one assertion on an open run', () => {
     expect(r.act({ type: 'evidence', label: 'not a label', status: 'missing', note: 'n' })).toMatchObject({ reason: 'invalid' });
     expect(r.act({ type: 'cancel', reason: '' })).toMatchObject({ reason: 'invalid' });
     expect(r.act({ type: 'question', questionId: 'Q1', status: 'answered', turn: 'yes' })).toMatchObject({ reason: 'invalid' });
+  });
+
+  test('verifyRun: the run’s own document passes; a package no longer installed or runnable does not', async () => {
+    const r = await run();
+    const state = readFlowRunDocument(r.doc())!.state;
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, state)).toBeNull();
+    expect(await verifyRun({ ...r.t.deps, catalog: async () => [] }, r.t.root, r.p.runPath, state)).toMatchObject({ reason: 'tampered', error: expect.stringContaining('not installed') });
   });
 
   test('the analyst sections survive; a document without them, moved, or with an edited state is refused', async () => {
