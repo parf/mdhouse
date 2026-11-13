@@ -229,3 +229,8 @@
 
 - 📌 Q-R3-UX1 Do now, adjust later: one "Changes" destination (files + diff + message + "Commit N files"; the document shows a status chip; Push only with a remote, no raw git error; untracked listed, unticked); <a id="Q-R3-UX1"></a>
   phone navigation = Files · Changes · Search · Ask; one Search with a scope switch Files | Index (the RAG page is "Index"; [R] stays a shortcut). [History](resolved.md#Q-R3-UX1).
+
+## Release
+
+- 📌 Q-R3-REL1 Publish after #md/review's independent pass of everything since the last release. <a id="Q-R3-REL1"></a>
+  [History](resolved.md#Q-R3-REL1).
