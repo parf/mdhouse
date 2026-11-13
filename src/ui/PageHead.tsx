@@ -64,6 +64,8 @@ interface Props {
   chips?: preact.ComponentChildren;
   /** The project's id: with it, the root's page offers Run flow. */
   rootId?: string;
+  /** The root can be written: a flow run is a document in it. */
+  writable?: boolean;
 }
 
 /**
@@ -71,7 +73,7 @@ interface Props {
  * between them moves nothing. The name leads to the other view; the tabs on the right are
  * GIT, then the git view's own tabs.
  */
-export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear, chips, rootId }: Props) {
+export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear, chips, rootId, writable }: Props) {
   const segments = dir ? dir.split('/') : [];
   const name = segments.at(-1) ?? rootName;
   const onGit = view !== null;
@@ -121,7 +123,7 @@ export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAb
             </Link>
           ))}
         </div>
-        {rootId && !dir && repo && <RunFlow rootId={rootId} go={go} />}
+        {rootId && writable && !dir && repo && <RunFlow rootId={rootId} go={go} />}
         {gear}
         </div>
       </header>

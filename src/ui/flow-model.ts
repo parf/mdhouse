@@ -101,7 +101,7 @@ export function defaultRange(p: FlowCatalogEntry): FlowRangeKind {
   return p.ranges.includes('baseline') ? 'baseline' : (p.ranges[0] ?? 'baseline');
 }
 
-const REASON_WORDS: Record<FlowReason, string> = {
+const REASON_WORDS: Partial<Record<FlowReason, string>> = {
   viewer: VIEWER_MESSAGE,
   'read-only': 'This project is read-only, so a run document cannot be written.',
   'not-writable': 'This project is read-only, so a run document cannot be written.',
@@ -111,9 +111,9 @@ const REASON_WORDS: Record<FlowReason, string> = {
   'no-baseline': 'This flow has not run here yet: choose the commit to start from.',
   'bad-baseline': 'That commit is not in this project’s history.',
   'open-run': 'A run of this flow is already open.',
-  stale: 'The run moved on since this page loaded: reload it first.',
   invalid: 'The server did not accept that.',
 };
+/** The page's words for a refusal; a `stale` is the server's own (a preview that went out of date and a run that moved on need different things). */
 export const flowReasonText = (reason: string | undefined, fallback: string): string => (reason && REASON_WORDS[reason as FlowReason]) || fallback;
 
 /** Blocked and failed say why; completing may add a note. Every text is bounded like the server's (16 KiB). */
@@ -127,8 +127,8 @@ export function outcomeError(outcome: FlowOutcome, text: string): string | null 
 
 /** The outcomes the bar offers: those the node allows, and only while the run is open and the user can act. */
 export const barOutcomes = (flow: DocFlow): FlowOutcome[] => (flow.canAct && !isTerminal(flow.status) ? flow.node.outcomes : []);
-/** The bar shows at all while the user can act or the run has something to read. */
-export const showsBar = (flow: DocFlow | undefined | null): flow is DocFlow => !!flow && (flow.canAct || flow.holds.length > 0);
+/** The bar is for someone who can act on the run: one rule, used by the page and by the bar itself. */
+export const showsBar = (flow: DocFlow | undefined | null): flow is DocFlow => !!flow && flow.canAct;
 
 /** One id per intended action: a retry after a lost answer is the same event, not a second one. */
 export const newClientId = (): string => crypto.randomUUID();

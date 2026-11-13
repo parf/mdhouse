@@ -279,5 +279,11 @@ if (only.includes('flowviewer')) {
   say('  doc.flow injected with canAct=true; flow bar: ' + await ev("!!document.querySelector('.flow-bar')"));
   await audit('viewer-run-doc');
 }
+if (only.includes('flowro')) {
+  await go('/repo/?git');
+  say('  writable project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')"));
+  await go('/ro/?git');
+  say('  read-only project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')") + ' (page: ' + await ev("location.pathname") + ')');
+}
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

@@ -89,11 +89,11 @@ describe('the run bar', () => {
     expect(barOutcomes(flow({ status: 'complete' }))).toEqual([]);
     expect(barOutcomes(flow({ node: { id: 'n', title: 't', outcomes: ['complete'] } }))).toEqual(['complete']);
   });
-  test('shows when there is something to do or to read', () => {
+  test('shows only to someone who can act on the run', () => {
     expect(showsBar(undefined)).toBe(false);
     expect(showsBar(flow())).toBe(true);
     expect(showsBar(flow({ canAct: false }))).toBe(false);
-    expect(showsBar(flow({ canAct: false, holds: ['a question is open'] }))).toBe(true);
+    expect(showsBar(flow({ canAct: false, holds: ['a question is open'] }))).toBe(false);
   });
   test('blocked and failed need words; a text has a size limit', () => {
     expect(outcomeError('complete', '')).toBeNull();
@@ -114,7 +114,7 @@ describe('the run bar', () => {
     for (const s of ['complete', 'blocked', 'failed', 'cancelled', 'partial', 'unsupported'] as const) expect(isTerminal(s)).toBe(true);
   });
   test('refusals have words, an unknown reason keeps the server\'s', () => {
-    expect(flowReasonText('stale', 'x')).toMatch(/reload/);
+    expect(flowReasonText('stale', 'the preview expired — preview again')).toBe('the preview expired — preview again');
     expect(flowReasonText('weird', 'server words')).toBe('server words');
     expect(flowReasonText(undefined, 'fallback')).toBe('fallback');
   });

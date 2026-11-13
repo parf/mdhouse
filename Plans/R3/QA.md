@@ -977,6 +977,8 @@ Viewer: a scratch Viewer instance (`--viewer`), 390/768 light and dark — no Ru
 
 Real server (`df04925`, `TW_REAL=1`), 390 light: catalog → no-baseline note → preview (server HTML, run path, range, uncommitted files kept apart) → Confirm → the run document `Plans/flows/runs/recent-commits-review/<UTC>-<runId8>.md` is written in the scratch repo and opened; the catalog then lists the package's open run. `real-390-light-0N-*.png`.
 
+Read-only project: no Run flow button (`flowro` step: the writable project shows it, a `ro` one does not). Review fixes: a stale preview shows the server's words and offers **Preview again**; a start that meets an open run shows the package's open run with its link instead of jumping; busy guards are refs. Not exercised in a browser: the stale-start path (the server needs a changed HEAD between preview and start).
+
 Not verified: completing a run from the page and the next "since last run" (the flow bar needs `doc.flow` and `/api/flow/event`, server part B).
 
 

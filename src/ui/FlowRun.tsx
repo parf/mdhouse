@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { flowApi, FlowApiError } from './flow-api';
 import {
   defaultRange, flowReasonText, noBaselineText, rangeOf, startable,
@@ -38,6 +38,9 @@ function FlowDialog({ rootId, go, onClose }: Props & { onClose: () => void }) {
   const [note, setNote] = useState<string | null>(null);
   const [preview, setPreview] = useState<FlowPreview | null>(null);
   const [busy, setBusy] = useState(false);
+  const going = useRef(false);
+  /** The last preview went out of date: say so and offer to preview again. */
+  const [again, setAgain] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -70,17 +73,20 @@ function FlowDialog({ rootId, go, onClose }: Props & { onClose: () => void }) {
     setPreview(null);
     setError(null);
     setNote(null);
+    setAgain(false);
     const p = packages?.find((x) => x.id === id);
     if (p) setKind(defaultRange(p));
   };
 
   const doPreview = async () => {
-    if (!current || busy) return;
+    if (!current || going.current) return;
     const r = rangeOf(kind, commit);
     if ('error' in r) return setError(r.error);
+    going.current = true;
     setBusy(true);
     setError(null);
     setNote(null);
+    setAgain(false);
     try {
       setPreview(await api.preview(rootId, current.id, r.range));
     } catch (e) {
@@ -89,16 +95,16 @@ function FlowDialog({ rootId, go, onClose }: Props & { onClose: () => void }) {
       if (err.reason === 'no-baseline') {
         setKind('baseline');
         setNote(noBaselineText(err.why));
-      } else if (err.reason === 'open-run' && err.run) {
-        setPackages((ps) => ps?.map((p) => (p.id === current.id ? { ...p, openRun: { url: err.run!.url, status: err.run!.status as never } } : p)) ?? null);
       } else setError(flowReasonText(err.reason, err.message));
     } finally {
+      going.current = false;
       setBusy(false);
     }
   };
 
   const confirm = async () => {
-    if (!preview || busy) return;
+    if (!preview || going.current) return;
+    going.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -107,14 +113,18 @@ function FlowDialog({ rootId, go, onClose }: Props & { onClose: () => void }) {
       go(started.url);
     } catch (e) {
       const err = e as FlowApiError;
-      if (err.reason === 'open-run' && err.run) {
-        onClose();
-        go(err.run.url);
-        return;
-      }
       setPreview(null);
-      setError(flowReasonText(err.reason, err.message));
+      if (err.reason === 'open-run' && err.run) {
+        // The package now shows its open run, with the words and the link — no silent jump.
+        const url = err.run.url;
+        setPackages((ps) => ps?.map((p) => (p.id === current?.id ? { ...p, openRun: { url, status: err.run!.status as never } } : p)) ?? null);
+      } else {
+        setError(flowReasonText(err.reason, err.message));
+        // A preview that went out of date (or a document that appeared meanwhile): the way on is a fresh one.
+        if (err.reason === 'stale') setAgain(true);
+      }
     } finally {
+      going.current = false;
       setBusy(false);
     }
   };
@@ -181,7 +191,7 @@ function FlowDialog({ rootId, go, onClose }: Props & { onClose: () => void }) {
                   {note && <p class="flow-note">{note}</p>}
                   <div class="flow-actions">
                     <button type="button" class="flow-go" disabled={busy} onClick={doPreview}>
-                      {busy && !preview ? '…' : 'Preview'}
+                      {busy && !preview ? '…' : again ? 'Preview again' : 'Preview'}
                     </button>
                   </div>
                 </>

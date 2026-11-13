@@ -143,6 +143,7 @@ export function Home(props: Props) {
         gear={props.gear}
         chips={props.chips}
         rootId={props.rootId}
+        writable={props.roots.find((r) => r.id === props.rootId)?.writable ?? props.tree?.root.writable}
       />
 
       {(() => {

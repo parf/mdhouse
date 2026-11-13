@@ -1,6 +1,6 @@
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { FlowApiError, flowApi } from './flow-api';
-import { barOutcomes, flowReasonText, isTerminal, newClientId, outcomeError, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
+import { barOutcomes, flowReasonText, isTerminal, newClientId, outcomeError, showsBar, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
 import { useViewer } from './viewer';
 
 const api = flowApi();
@@ -23,14 +23,16 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
   const viewer = useViewer();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const going = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  if (viewer || !flow.canAct) return null;
+  if (viewer || !showsBar(flow)) return null;
   const open = !isTerminal(flow.status);
   const outcomes = barOutcomes(flow);
 
   const send = async (action: FlowAction) => {
-    if (busy) return;
+    if (going.current) return;
+    going.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -43,6 +45,7 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
       setError(flowReasonText(err.reason, err.message));
       if (err.reason === 'stale') onChanged();
     } finally {
+      going.current = false;
       setBusy(false);
     }
   };
