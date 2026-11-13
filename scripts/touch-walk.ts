@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -350,6 +350,32 @@ if (only.includes('search')) {
   await sleep(1000);
   say('  back to Files: ' + await ev('location.pathname') + '; sidebar field: ' + await ev("document.querySelector('[data-search-input]')?.value") + '; scope: ' + await ev("[...document.querySelectorAll('.sidebar .scope-opt')].map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' ')"));
   await audit('search-files-again');
+}
+if (only.includes('nav4')) {
+  await go('/repo/README.md');
+  say('  bar: ' + await ev("[...document.querySelectorAll('.phone-nav .nav-dest')].map(b => b.textContent.trim() + (b.classList.contains('on') ? '*' : '')).join(' | ') || 'none'"));
+  await audit('nav4-doc');
+  await tap('.phone-nav .nav-dest', 0);
+  say('  Files: drawer ' + await ev("document.querySelector('.app').dataset.sidebar"));
+  await audit('nav4-files');
+  await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: w - 20, y: 400 }] });
+  await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(400);
+  say('  scrim closes the drawer: ' + await ev("document.querySelector('.app').dataset.sidebar"));
+  await tap('.phone-nav .nav-dest', 2);
+  await sleep(500);
+  say('  Search: drawer ' + await ev("document.querySelector('.app').dataset.sidebar") + '; field focused ' + await ev("document.activeElement?.matches('[data-search-input]')") + '; bar hidden while typing ' + await ev("!document.querySelector('.phone-nav')"));
+  await audit('nav4-search');
+  await go('/repo/README.md');
+  await tap('.phone-nav .nav-dest', 3);
+  await sleep(700);
+  say('  Ask: panel ' + await ev("!!document.querySelector('.ab-panel')") + '; bar hidden while its field has the keyboard ' + await ev("!document.querySelector('.phone-nav')"));
+  await audit('nav4-ask');
+  await tap('.ab-panel .icon-btn[aria-label=Close]', 0);
+  await go('/repo/?git=changes');
+  say('  Changes: ' + await ev('location.pathname + location.search') + '; current ' + await ev("document.querySelector('.phone-nav .nav-dest.on')?.textContent.trim()"));
+  await tap('.phone-nav .nav-dest', 1);
+  await audit('nav4-changes');
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

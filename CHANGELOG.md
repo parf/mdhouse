@@ -4,6 +4,8 @@
 
 ### Added
 
+- Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's R and magnifier are these places now
+
 - One search with a scope switch: `Files | Index` on the sidebar's search box and on the `/rag` page — Files is the search as before, Index searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); `R` opens the Index scope; on a phone the search box, results and the switch are 44px targets
 
 - Agent Bus out of the box: a new mdhouse config starts with `--agent-bus auto` — on while the login's Agent Bus socket exists, checked again on every request; an existing config keeps its value and an older mdhouse reads `auto` as off; the start line says `agent-bus: on — <socket> (found)`, `auto — not installed (no <path>)` or `off — found <socket>: mdhouse --agent-bus on`

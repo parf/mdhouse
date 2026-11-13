@@ -1034,4 +1034,7 @@ A run document the host refuses (tampered, foreign, made before runs were sealed
 | Search: Files | switch `Files* Index` above the search box; the box, tabs and results as before; box, clear and result rows 44px on touch | `sr3-390-light-01-search-files.png` |
 | Search: Index | typing shows "Press Enter to search the project's index…", Enter opens `/rag?q=notes&root=repo`, the page shows the same switch with Index chosen and the index status / how to enable it when it is not indexed | `sr3-390-light-02-search-index.png` |
 | Index → Files | the switch's Files returns to the page the search came from with the sidebar open (also on a phone) and the same query in Files scope | `sr3-390-light-03-search-files-again.png` |
+| Phone bar | 390 and 768, light and dark: Files · Changes · Search · Ask at the bottom (56px, labelled); Files opens/closes the drawer; Search opens it with the field focused (the bar steps aside while typing); Ask opens the Agent Bus sheet (only on a Markdown page of a project with the bus on, never for a Viewer — else three places); Changes links to `/<root>/?git=changes` and is marked there; the top strip's R and magnifier are hidden; audit clean in every step | `nv2-390-light-01-nav4-doc.png`, `-03-nav4-search.png`, `nv2-768-dark-*` |
+
+Note: the walk's `commit` step needs the doc header's Commit as before; it did not commit on a tree that carries #md/w2's unlanded Changes work (the step is theirs to update when it lands).
 

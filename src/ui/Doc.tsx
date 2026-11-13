@@ -21,6 +21,7 @@ import { AddEditor } from './AddEditor';
 import type { FileDiff } from '../lib/git';
 import { QaStrip } from './QaStrip';
 import { usePhone } from './phone';
+import { ASK_EVENT, ASK_STATE } from './nav';
 import { FlowBar } from './FlowBar';
 import { follow } from './PageHead';
 import { editTarget, isPageHref } from '../lib/urls';
@@ -539,6 +540,20 @@ export function Doc({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [abOn]);
+  // The phone's bottom bar asks the page to open or close the panel, and is told whether it is open.
+  const abOpenNow = useRef(false);
+  abOpenNow.current = abOpen;
+  useEffect(() => {
+    if (!abOn) return;
+    const onAsk = () => (abOpenNow.current ? setAbOpen(false) : openAb());
+    window.addEventListener(ASK_EVENT, onAsk);
+    return () => window.removeEventListener(ASK_EVENT, onAsk);
+  }, [abOn]);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(ASK_STATE, { detail: abOpen }));
+    return () => void window.dispatchEvent(new CustomEvent(ASK_STATE, { detail: false }));
+  }, [abOpen]);
+
 
   /** `e` opens the file in the editor, as the ✎ beside the title does — not while typing. */
   useEffect(() => {

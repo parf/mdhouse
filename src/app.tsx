@@ -23,6 +23,9 @@ import { AboutModal } from './ui/AboutModal';
 import { Settings } from './ui/Settings';
 import { RagPage } from './ui/RagPage';
 import { indexUrl, loadTarget, saveTarget, type SearchTarget } from './ui/search-scope';
+import { PhoneNav } from './ui/PhoneNav';
+import { usePhone } from './ui/phone';
+import { ASK_EVENT, ASK_STATE, onChanges } from './ui/nav';
 import { DirPage } from './ui/DirPage';
 import { ancestors } from './ui/tree-model';
 import { dirUrl, editUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
@@ -100,6 +103,14 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const setSearchTarget = useCallback((t: SearchTarget) => {
     saveTarget(t);
     setSearchTargetState(t);
+  }, []);
+  const phone = usePhone();
+  // The page's Agent Bus panel, as its document reports it: the bar's Ask shows when it is open.
+  const [askOpen, setAskOpen] = useState(false);
+  useEffect(() => {
+    const on = (e: Event) => setAskOpen(!!(e as CustomEvent<boolean>).detail);
+    addEventListener(ASK_STATE, on);
+    return () => removeEventListener(ASK_STATE, on);
   }, []);
   const [searchIn, setSearchIn] = useState<SearchIn>({ names: true, text: true });
   const [searchScope, setSearchScope] = useState<SearchScope>('all');
@@ -809,6 +820,24 @@ function App({ entry: first }: { entry: AdminEntry }) {
         />
         )}
       </main>
+
+      {phone && (
+        <PhoneNav
+          rootId={rootId}
+          go={go}
+          askAvailable={!viewer && route.kind === 'file' && doc?.kind === 'md' && !!doc.ab && !doc.reference}
+          askOpen={askOpen}
+          changes={onChanges(full.includes('?') ? full.slice(full.indexOf('?')) : '')}
+          rag={onRag}
+          drawerOpen={sidebar !== 'off'}
+          onFiles={() => {
+            setTab('files');
+            setSidebar((s) => (s === 'off' ? 'compact' : 'off'));
+          }}
+          onSearch={openSearch}
+          onAsk={() => dispatchEvent(new Event(ASK_EVENT))}
+        />
+      )}
 
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
