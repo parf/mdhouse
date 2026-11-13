@@ -1,11 +1,11 @@
 import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { RagBusError, type BusOptions, type RagBus } from '../src/lib/rag-sync-bus';
-import { BACKOFF, citeRecords, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
+import { BACKOFF, citeRecords, STALLED_ROUNDS, EXCLUDE_GLOBS, EXIT, inventory, main, parseArgs, planInput, REPLY_MS, resultExit, untilDone } from '../src/rag-sync-cli';
 
 const base = mkdtempSync(join(tmpdir(), 'mdhouse-rag-sync-'));
 afterAll(() => rmSync(base, { recursive: true, force: true }));
@@ -360,6 +360,161 @@ describe('sync and search through the runtime, against a fake bus', () => {
     const w: number[] = [];
     expect(await untilDone(once, io().io, async (ms) => void w.push(ms))).toBe(EXIT.ok);
     expect(Math.max(...w)).toBe(BACKOFF.maxMs);
+  });
+
+  describe('--until-done', () => {
+    const rep = (result: 'incomplete' | 'unknown' | 'failed' | 'confirmed', confirmed: number) => ({
+      effect: 'reported' as const,
+      result,
+      reason: null,
+      report: { result, confirmed, remaining: result === 'confirmed' ? 0 : 1, sent: 1, capped: false, files: [] },
+    });
+    const script = (rounds: Array<ReturnType<typeof rep>>) => {
+      let i = 0;
+      return async () => {
+        if (i > 100) throw new Error('still looping after 100 rounds');
+        return rounds[Math.min(i++, rounds.length - 1)]!;
+      };
+    };
+    const waitsOf = async (once: () => Promise<never>) => {
+      const waits: number[] = [];
+      const a = io();
+      const code = await untilDone(once, a.io, async (ms) => void waits.push(ms));
+      return { code, waits, out: a.out.join(''), err: a.err.join('') };
+    };
+
+    test.each([
+      ['incomplete', EXIT.incomplete],
+      ['unknown', EXIT.unknown],
+      ['failed', EXIT.runtime],
+    ] as const)('%s with nothing more confirmed: gives up after the rounds at the cap, with the last result and exit %p', async (result, exit) => {
+      const r = await waitsOf(script([rep(result, 1)]) as never);
+      expect(r.code).toBe(exit);
+      const atCap = r.waits.filter((w) => w === BACKOFF.maxMs);
+      expect(atCap).toHaveLength(STALLED_ROUNDS);
+      expect(r.waits).toEqual([5_000, 10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 900_000, 900_000, 900_000]);
+      expect(JSON.parse(r.out)).toMatchObject({ effect: 'reported', result });
+      expect(r.err).toContain('giving up');
+    });
+
+    test('a round that confirms more resets the count and the wait', async () => {
+      const seq = Array.from({ length: 9 }, () => rep('incomplete', 1));
+      const rounds = [...seq, rep('incomplete', 1), rep('incomplete', 1), rep('incomplete', 2), ...Array.from({ length: 20 }, () => rep('incomplete', 2))];
+      const r = await waitsOf(script(rounds) as never);
+      expect(r.code).toBe(EXIT.incomplete);
+      const i = r.waits.indexOf(5_000, 1);
+      expect(i).toBeGreaterThan(8);
+      expect(r.waits.slice(i)).toEqual([5_000, 10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 900_000, 900_000, 900_000, 900_000].slice(0, r.waits.length - i));
+      expect(r.waits.slice(i).filter((w) => w === BACKOFF.maxMs)).toHaveLength(STALLED_ROUNDS);
+    });
+
+    test('a first round with nothing confirmed is not progress', async () => {
+      const r = await waitsOf(script([rep('incomplete', 0), rep('incomplete', 0), rep('incomplete', 1), rep('incomplete', 1), rep('confirmed', 2)]) as never);
+      expect(r.code).toBe(EXIT.ok);
+      expect(r.waits).toEqual([10_000, 20_000, 5_000, 10_000]);
+    });
+
+    const untilBus = (root: string, syncs: unknown[]) => {
+      const bus = fakeBus(root, preflightThen(null));
+      const answer = preflightThen(null);
+      let configs = 0;
+      const openBus = async (o: BusOptions) => {
+        const b = await bus.openBus(o);
+        return {
+          ...b,
+          ownerConfig: async (f: string) => (configs++, b.ownerConfig(f)),
+          request: async (r: Req) => (bus.reqs.push(r), (typeof r.body === 'string' && r.body.startsWith('sync ') ? syncs.shift() : answer(r)) as never),
+        };
+      };
+      const syncCount = () => bus.reqs.filter((q) => typeof q.body === 'string' && q.body.startsWith('sync ')).length;
+      return { openBus, configs: () => configs, syncCount };
+    };
+    const incomplete = reply({ result: 'incomplete', confirmed: 1, remaining: 1, capped: false, sent: 1, files: [] });
+    const confirmed = reply({ result: 'confirmed', confirmed: 2, remaining: 0, capped: false, sent: 1, files: [] });
+
+    test('every round lists the root, plans and reads the owner configuration again', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const t = untilBus(root, [incomplete, confirmed]);
+      const a = io();
+      let sleeps = 0;
+      const code = await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, {
+        openBus: t.openBus,
+        sleep: async () => {
+          // a file that grows past the sync limit between rounds is caught by the new plan, not sent
+          if (++sleeps === 1) writeFileSync(join(root, 'big.md'), 'x'.repeat(1_048_577));
+          else unlinkSync(join(root, 'big.md'));
+        },
+      });
+      expect(code).toBe(EXIT.ok);
+      expect(t.configs()).toBe(3);
+      expect(t.syncCount()).toBe(2);
+      expect(a.err.join('')).toContain('sync-preflight-refused');
+    });
+
+    test('a listing that becomes incomplete stops it like round 1: exit 1, nothing more sent', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const t = untilBus(root, [incomplete, confirmed]);
+      const a = io();
+      const code = await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, {
+        openBus: t.openBus,
+        sleep: async () => symlinkSync(join(root, 'a.md'), join(root, 'link.md')),
+      });
+      expect(code).toBe(EXIT.runtime);
+      expect(t.syncCount()).toBe(1);
+      expect(a.err.join('')).toContain('the listing is incomplete');
+      expect(a.out.join('')).toBe('');
+    });
+
+    test('another directory at the root path stops it', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const t = untilBus(root, [incomplete, confirmed]);
+      const a = io();
+      const code = await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, {
+        openBus: t.openBus,
+        sleep: async () => {
+          renameSync(root, `${root}.old`);
+          mkdirSync(root);
+          writeFileSync(join(root, 'a.md'), 'a');
+        },
+      });
+      expect(code).toBe(EXIT.runtime);
+      expect(t.syncCount()).toBe(1);
+      expect(a.err.join('')).toContain('the root changed');
+    });
+
+    test('the owner configuration read for a round is the one it is checked against', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const t = untilBus(root, [incomplete, confirmed]);
+      let n = 0;
+      const openBus = async (o: BusOptions) => {
+        const b = await t.openBus(o);
+        return {
+          ...b,
+          ownerConfig: async (f: string) => {
+            const c = await b.ownerConfig(f);
+            return ++n > 1 ? { ...c, config: { ...c.config, namespace: 'other' } } : c;
+          },
+        };
+      };
+      const a = io();
+      expect(await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus, sleep: async () => {} })).toBe(EXIT.runtime);
+      expect(t.syncCount()).toBe(1);
+      expect(a.err.join('')).toContain('sync-preflight-refused');
+    });
+
+    test('a refused owner configuration mid-run stops it with exit 1', async () => {
+      const root = tree({ 'a.md': 'a' });
+      const t = untilBus(root, [incomplete, confirmed]);
+      let n = 0;
+      const openBus = async (o: BusOptions) => {
+        const b = await t.openBus(o);
+        return { ...b, ownerConfig: async (f: string) => (++n > 1 ? Promise.reject(new RagBusError('owner config', 'unavailable')) : b.ownerConfig(f)) };
+      };
+      const a = io();
+      expect(await main(['sync', '--root', root, ...TARGET, '--apply', '--until-done'], a.io, { openBus, sleep: async () => {} })).toBe(EXIT.runtime);
+      expect(t.syncCount()).toBe(1);
+      expect(a.err.join('')).toContain('owner config: unavailable');
+    });
   });
 
   test('sync always asks the FileScan to resend unconfirmed files', async () => {

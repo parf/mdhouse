@@ -37,8 +37,10 @@ mdhouse-rag-sync --help
 - `sync` needs `--apply`. It reads the FileScan's Configuration as the login, checks it against the
   plan (root identity, include/exclude, namespace, table, `mode` `demand`), then sends one finite
   `sync`. A file sent before with no confirmation is sent again; each send is paid.
-- `--until-done` repeats the sync until every file is confirmed: 5 s after progress, doubling to
-  15 min while nothing moves (provider down or throttled); a refusal stops it.
+- `--until-done` repeats the sync until every file is confirmed: 5 s after a round that confirmed more,
+  else doubling to 15 min (provider down or throttled). Each round lists the root, plans and reads the owner
+  configuration again; a refusal, an incomplete listing or another root stops it (exit 1). Three rounds in a
+  row at the 15 min wait with nothing more confirmed stop it with the last result and its exit code.
 - `search` sends one query to the RAG; `keyword` (default) is free, `semantic` and `hybrid` need `--paid`.
 - A record the RAG returns without `lines`/`heading_path` gets them from the local file at its `content_hash`; a changed file marks the record `stale: true`, with no citation.
 - Each request waits for its answer by its own random topic and tag; acks and other messages are

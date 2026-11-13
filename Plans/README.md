@@ -416,7 +416,9 @@ local metadata through a read-only Registry. Recursive `*.md` is case-sensitive;
 node_modules/bower_components/jspm_packages are excluded, symlinks/special files are not followed.
 Incomplete listing is visible with nonzero exit; >32 KiB files are annotated, not silently dropped.
 `sync --until-done` repeats until confirmed: FileScan's failed/unknown files are the fail queue; back-off
-5 s after progress, doubling to 15 min without; a first-round refusal stops it.
+5 s after progress (more confirmed than any round before), doubling to 15 min without; each round re-lists,
+re-plans and re-reads the owner config; a refusal, incomplete listing or changed root stops it; 3 rounds in
+a row at the cap with no progress stop it with the last result and exit code.
 `lib/rag-sync-plan.ts` strictly validates bounded metadata/root device+inode/target/selection and
 produces a deterministic full-metadata digest, not content hash, auth or atomic-folder proof.
 `lib/rag-sync-runtime.ts` validates finite sync preflights/results and scoped search citations through

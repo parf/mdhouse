@@ -277,18 +277,31 @@ export interface Deps {
 /** `--until-done` pacing: the wait after a round with progress, and the cap it doubles to without. */
 export const BACKOFF = { baseMs: 5_000, maxMs: 900_000 } as const;
 
+/** Rounds that end a wait at the cap with nothing confirmed after the last one before `--until-done` gives up. */
+export const STALLED_ROUNDS = 3;
+
+/** One `--until-done` round: the sync's result, or why no round can be made any more (said, then exit 1). */
+export type Round = SyncRunResult | { refused: string };
+
 /**
  * Repeats `once` until the sync is confirmed. Retries a reported or unknown outcome, and a refusal
  * before sending once a round has reached the FileScan (the provider went down); a first-round
- * refusal stops it. Waits `baseMs` after a round that confirmed more, else doubles up to `maxMs`.
- * Prints one progress line per round to stderr and the last result to stdout.
+ * refusal stops it. Waits `baseMs` after a round that confirmed more than any before it, else doubles
+ * up to `maxMs`; after `STALLED_ROUNDS` rounds in a row that ended a wait at the cap with nothing
+ * more confirmed it stops with the last result and its exit code. A round that cannot be made
+ * (`refused`) stops with exit 1. Prints one progress line per round to stderr and the last result to stdout.
  */
-export async function untilDone(once: () => Promise<SyncRunResult>, io: Io, sleep: (ms: number) => Promise<void>, backoff: { baseMs: number; maxMs: number } = BACKOFF): Promise<number> {
+export async function untilDone(once: () => Promise<Round>, io: Io, sleep: (ms: number) => Promise<void>, backoff: { baseMs: number; maxMs: number } = BACKOFF): Promise<number> {
   let delay = backoff.baseMs;
-  let best = -1;
+  let best = 0;
   let reached = false;
+  let stalled = 0;
   for (let round = 1; ; round++) {
     const res = await once();
+    if ('refused' in res) {
+      io.err(`mdhouse-rag-sync: ${res.refused}\n`);
+      return EXIT.runtime;
+    }
     const code = resultExit('sync', res);
     const r = res.report;
     io.err(`round ${round}: ${res.result ?? res.effect}${r ? ` — confirmed ${r.confirmed}, remaining ${r.remaining}, sent ${r.sent}` : ''}${res.reason ? ` (${res.reason})` : ''}\n`);
@@ -300,6 +313,12 @@ export async function untilDone(once: () => Promise<SyncRunResult>, io: Io, slee
     if (res.effect !== 'notsent') reached = true;
     const progress = !!r && r.confirmed > best;
     if (r) best = Math.max(best, r.confirmed);
+    stalled = !progress && delay === backoff.maxMs ? stalled + 1 : 0;
+    if (stalled >= STALLED_ROUNDS) {
+      io.err(`no progress for ${STALLED_ROUNDS} rounds at the ${backoff.maxMs / 60_000} min wait; giving up\n`);
+      io.out(`${JSON.stringify(res, null, 2)}\n`);
+      return code;
+    }
     delay = progress ? backoff.baseMs : Math.min(delay * 2, backoff.maxMs);
     await sleep(delay);
   }
@@ -384,12 +403,16 @@ export async function main(argv: readonly string[], io: Io = stdio, deps: Deps =
     if (!(err instanceof UsageError)) throw err;
     return fail(err.message, EXIT.usage);
   }
-  let inv: Inventory;
-  try {
-    inv = await inventory(args.root);
-  } catch (err) {
-    return fail(err instanceof InventoryError ? err.message : `cannot list the root: ${(err as NodeJS.ErrnoException).code ?? 'error'}`);
-  }
+  const list = async (): Promise<Inventory | string> => {
+    try {
+      return await inventory(args.root);
+    } catch (err) {
+      return err instanceof InventoryError ? err.message : `cannot list the root: ${(err as NodeJS.ErrnoException).code ?? 'error'}`;
+    }
+  };
+  const listed = await list();
+  if (typeof listed === 'string') return fail(listed);
+  const inv = listed;
   const input = planInput(args, inv, ownName());
 
   if (cmd === 'plan') {
@@ -410,9 +433,31 @@ export async function main(argv: readonly string[], io: Io = stdio, deps: Deps =
     const bus = await deps.openBus({ replyMs: REPLY_MS[cmd], root: inv.root, targets: [args.filescan, args.rag] });
     if (cmd === 'sync') {
       const ownerConfig = await bus.ownerConfig(args.filescan);
-      const once = () => runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
-      if (args.untilDone) return await untilDone(once, io, deps.sleep ?? ((ms) => Bun.sleep(ms)));
-      const res = await once();
+      if (args.untilDone) {
+        // Round 1 is the listing and config above; each later round lists and reads again, and stops on
+        // what round 1 would have refused: an unreadable or incomplete listing, or another root.
+        let first = true;
+        const round = async (): Promise<Round> => {
+          if (first) {
+            first = false;
+            return runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
+          }
+          const now = await list();
+          if (typeof now === 'string') return { refused: now };
+          if (now.root.path !== inv.root.path || now.root.dev !== inv.root.dev || now.root.ino !== inv.root.ino) return { refused: 'the root changed since the first round; nothing was sent' };
+          if (!now.complete) return { refused: 'the listing is incomplete — run plan to see why; nothing was sent' };
+          let config: Awaited<ReturnType<RagBus['ownerConfig']>>;
+          try {
+            config = await bus.ownerConfig(args.filescan);
+          } catch (err) {
+            if (err instanceof RagBusError) return { refused: `the owner configuration is refused: ${err.message}` };
+            throw err;
+          }
+          return runSync({ plan: planInput(args, now, ownName()), ownerConfig: config, intent: { apply: args.apply } }, bus);
+        };
+        return await untilDone(round, io, deps.sleep ?? ((ms) => Bun.sleep(ms)));
+      }
+      const res = await runSync({ plan: input, ownerConfig, intent: { apply: args.apply } }, bus);
       io.out(`${JSON.stringify(res, null, 2)}\n`);
       return resultExit('sync', res);
     }
