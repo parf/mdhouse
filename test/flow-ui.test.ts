@@ -3,7 +3,7 @@ import { ApiError } from '../src/ui/api';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
 import { FlowApiError, flowApi } from '../src/ui/flow-api';
 import {
-  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, assertionError, noBaselineText, actionIds, outcomeError, rangeOf, showsBar, startable,
+  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, assertionError, refusedNote, noBaselineText, actionIds, outcomeError, rangeOf, showsBar, startable,
   type DocFlow, type FlowCatalogEntry,
 } from '../src/ui/flow-model';
 
@@ -114,6 +114,11 @@ describe('the run bar', () => {
     expect(noBaselineText('marker-unreachable')).toMatch(/no longer/);
     expect(noBaselineText('marker-missing')).toMatch(/left no commit/);
     expect(noBaselineText(undefined)).toMatch(/not run here yet/);
+  });
+  test('a run the host refuses says why; a closed run says nothing', () => {
+    expect(refusedNote(flow({ canAct: false, refused: 'not this host’s run (foreign)' }))).toBe('This run cannot be acted on: not this host’s run (foreign)');
+    expect(refusedNote(flow({ canAct: false, status: 'complete' }))).toBeNull();
+    expect(refusedNote(undefined)).toBeNull();
   });
   test('terminal statuses', () => {
     expect(isTerminal('running')).toBe(false);

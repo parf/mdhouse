@@ -49,6 +49,8 @@ export interface DocFlow {
   evidence: Array<{ label: string; status: 'supplied' | 'missing'; note: string; required: boolean }>;
   questions: Array<{ id: string; title: string; required: boolean; status: 'unanswered' | 'answered' }>;
   canAct: boolean;
+  /** Why this run cannot be acted on: not the host's own (tampered, foreign, made before runs were sealed). */
+  refused?: string;
 }
 
 /** `POST /api/flow/event` */
@@ -130,6 +132,9 @@ export function outcomeError(outcome: FlowOutcome, text: string): string | null 
 
 /** The outcomes the bar offers: those the node allows, and only while the run is open and the user can act. */
 export const barOutcomes = (flow: DocFlow): FlowOutcome[] => (flow.canAct && !isTerminal(flow.status) ? flow.node.outcomes : []);
+/** What the page says of a run the host refuses to act on; nothing for a run that is merely closed. */
+export const refusedNote = (flow: DocFlow | undefined | null): string | null => (flow?.refused ? `This run cannot be acted on: ${flow.refused}` : null);
+
 /** The bar is for someone who can act on the run: one rule, used by the page and by the bar itself. */
 export const showsBar = (flow: DocFlow | undefined | null): flow is DocFlow => !!flow && flow.canAct;
 

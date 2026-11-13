@@ -6,6 +6,7 @@
 
 - Agent Bus out of the box: a new mdhouse config starts with `--agent-bus auto` — on while the login's Agent Bus socket exists, checked again on every request; an existing config keeps its value and an older mdhouse reads `auto` as off; the start line says `agent-bus: on — <socket> (found)`, `auto — not installed (no <path>)` or `off — found <socket>: mdhouse --agent-bus on`
 
+- Run flow lists every analysis-only package that names a commit range in its evidence, not one hard-coded flow: `docs-refresh-verify` (docs drift over a commit range), `project-review` and `engineering-delivery-sync` run beside `recent-commits-review`; a run that is not the host's own says why instead of showing a bar
 - Run flow: a button on a project's page runs a flow (package, range since the last run or from a commit, a preview, Confirm); the run document has a bar to supply evidence, answer questions and Complete, Block, Fail or Cancel it; a finished run records its last commit so the next one starts there. Not for a Viewer or a read-only project
 
 - `mdhouse docs` prints the one line to paste into a project's `AGENTS.md` (it points at `for-agents.md` on GitHub), then the installed reference path and the local raw URL for offline use (`--path`: the path alone)
@@ -30,6 +31,8 @@
 - `doc/plans.md` is the portable Plans convention only; this repository's own commit rules are in `CLAUDE.md`
 
 ### Fixed
+
+- mdhouse's own config folder (prefs, password hashes, control sockets, the flow seal key) is never served, even when a served folder holds it (`mdhouse ~`)
 
 - Document header: one Edit beside the title — the external editor's ✎ moved to the actions row (a long title no longer pushes it to its own line); in a Viewer a phone's top strip shows a short `Viewer` badge with the full words in its tooltip
 

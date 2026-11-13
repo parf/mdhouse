@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo, flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -240,10 +240,14 @@ if (want('strip')) {
 if (only.includes('flow')) {
   // The whole round trip on the real routes: Run flow -> preview -> confirm -> evidence -> Complete at each step ->
   // the report records last-commit-id = the run's target -> the next "since the last run" starts there. Needs a clean scratch repo.
+  const pk = process.env.TW_PACKAGE ?? 'recent-commits-review';
+  const pick = async () => { await ev(`(() => { const s = document.querySelector('.flow-dialog select'); s.value = ${JSON.stringify(pk)}; s.dispatchEvent(new Event('change', { bubbles: true })); })()`); await sleep(300); };
   const first = execSync(`git -C ${R} rev-list --max-parents=0 HEAD`).toString().trim().slice(0, 8);
   await go('/repo/?git');
   await audit('home');
   await tap('.flow-btn', 0);
+  say('  flows listed: ' + await ev("[...document.querySelectorAll('.flow-dialog select option')].map(o => o.value).join(', ')"));
+  await pick();
   await audit('flow-dialog');
   await tap('.flow-opt input', 0);
   await tap('.flow-go', 0);
@@ -277,11 +281,12 @@ if (only.includes('flow')) {
   say('  bar after the last step: ' + await ev("!!document.querySelector('.flow-bar')"));
   await audit('flow-done');
   const head = execSync(`git -C ${R} rev-parse HEAD`).toString().trim();
-  const report = read('Plans/flows/recent-commits-review.md');
+  const report = read(`Plans/flows/${pk}.md`);
   say(`  report last-commit-id = HEAD: ${report.includes('last-commit-id: ' + head)}`);
   execSync(`git -C ${R} add -A && git -C ${R} -c user.email=t@t -c user.name=t commit -qm "after the run"`);
   await go('/repo/?git');
   await tap('.flow-btn', 0);
+  await pick();
   say('  next range preselected: ' + await ev("document.querySelector('.flow-opt input:checked')?.parentElement?.textContent.trim()"));
   await tap('.flow-go', 0);
   const newHead = execSync(`git -C ${R} rev-parse HEAD`).toString().trim();

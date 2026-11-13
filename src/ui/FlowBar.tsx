@@ -1,7 +1,7 @@
 import { useRef, useState } from 'preact/hooks';
 import { FlowApiError, flowApi } from './flow-api';
 import { ApiError } from './api';
-import { actionIds, assertionError, barOutcomes, flowReasonText, isTerminal, outcomeError, showsBar, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
+import { actionIds, assertionError, barOutcomes, flowReasonText, isTerminal, refusedNote, outcomeError, showsBar, type DocFlow, type FlowAction, type FlowOutcome } from './flow-model';
 import { useViewer } from './viewer';
 
 const api = flowApi();
@@ -28,7 +28,15 @@ export function FlowBar({ flow, root, path, onChanged }: Props) {
   const ids = useRef(actionIds()).current;
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  if (viewer || !showsBar(flow)) return null;
+  if (viewer) return null;
+  const refused = refusedNote(flow);
+  if (refused)
+    return (
+      <section class="flow-bar refused" aria-label="Flow run">
+        <p class="flow-error">{refused}</p>
+      </section>
+    );
+  if (!showsBar(flow)) return null;
   const open = !isTerminal(flow.status);
   const outcomes = barOutcomes(flow);
 

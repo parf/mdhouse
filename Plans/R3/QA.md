@@ -1011,3 +1011,17 @@ Follow-up to the [phone UX fixes](#touch-ux). Scratch instances only; `scripts/t
 
 Audit before = after: clean except the known 21px glyph of an open question's form ([touch walk](#touch-walk) remaining).
 Evidence: W2 scratchpad `pol/before/`, `pol/after/` (`a-<w>-<scheme>-*.png`), `pol/before-desk/b-1280-*.png` → `pol/after/a-1280-*.png`, `pol/after/viewer-{390,768}-{light,dark}-0.png`.
+
+## A second flow with no code of its own {#second-flow}
+
+[№MW.3](workspaces/TODO.md#MW.3) acceptance "adding a flow is a package, not code", [№MW.3a](workspaces/TODO.md#MW.3a). After `713414c` (`runnableFlow`: explicit-baseline range, analysis-only steps, an evidence label that names the range) the catalog lists four packages: `project-review`, `docs-refresh-verify`, `recent-commits-review`, `engineering-delivery-sync`. `docs-refresh-verify` has its range label third, so the host supplies that label, not the first.
+
+Real round trip (`flow` step with `TW_PACKAGE`, scratch git repo, no fake), 390 light and 1280 dark, audit clean in every step:
+
+| Flow | Result in both cells | Evidence |
+| --- | --- | --- |
+| `docs-refresh-verify` | Run flow lists the four; first run asks for a baseline; preview; Confirm; evidence supplied with notes; Complete at Scope → Compare → Resolve → Report; the bar goes; `Plans/flows/docs-refresh-verify.md` has `last-commit-id` = HEAD; after a new commit the next preview is previous HEAD..new HEAD | `two-docs-refresh-verify-<w>-<scheme>-*.png` |
+| `recent-commits-review` | unchanged: Scope → Summaries → Risks → Delivery sync → Report, destination at HEAD, next range from it | `two-recent-commits-review-*.png` |
+
+A run document the host refuses (tampered, foreign, made before runs were sealed) carries `flow.refused`; the page shows "This run cannot be acted on: …" instead of the bar (unit-tested; not made in a browser).
+

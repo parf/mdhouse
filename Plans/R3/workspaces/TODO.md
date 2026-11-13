@@ -313,6 +313,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: refresh cites code/config/API/change evidence, distinguishes verified claims from inference and reports unresolved contradictions
   - Acceptance: generated docs can be organized as tutorial, how-to, reference or explanation rather than one undifferentiated document
   - Home: [Documentation](README.md#documentation)
+  - Progress: refresh/verify — `docs-refresh-verify` runs end to end from Run flow with no code of its own (a package under the derived `runnableFlow` rule, [№MW.3](#MW.3) acceptance "a flow is a package"): range → evidence → four steps → `Plans/flows/docs-refresh-verify.md` records `last-commit-id`, the next run starts there ([QA](../QA.md#second-flow)); the other documentation packages stay unlisted until they name a range
 
 - [ ] MW.3b Add Recent commits review <a id="MW.3b"></a>
   - Builds: project/user/developer/operations change summaries; changelog; author review; error and risk findings; task/ticket generation; plan-vs-delivery report
