@@ -1074,9 +1074,9 @@ main {
 .md h1:hover .header-anchor, .md h2:hover .header-anchor,
 .md h3:hover .header-anchor, .md h4:hover .header-anchor { opacity: 1; }
 
-/* Copy leaves out what mdhouse injects: heading # and ✎ ↓ ⇊, Q&A buttons and chips, footnote
+/* Copy leaves out what mdhouse injects: heading # and ✎ ↓ ⇊, Q&A buttons, chips and "▾ show all", footnote
    back-links, removed-text overlays. Glyphs written in the Markdown are text nodes outside these. */
-.md :is(.header-anchor, .heading-actions, .tgt, .c-btn, .c-done, .s-act, .btn, .footnote-backref, .chg-del) {
+.md :is(.header-anchor, .heading-actions, .tgt, .c-btn, .c-done, .s-act, .btn, summary > .more, .footnote-backref, .chg-del) {
   -webkit-user-select: none;
   user-select: none;
 }

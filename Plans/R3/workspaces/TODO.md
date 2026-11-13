@@ -397,7 +397,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
 
 - [ ] MW.5b Keep mdhouse controls out of copied document text <a id="MW.5b"></a>
   - [x] MW.5b.1 Copy-exclusion implementation and scratch Chrome verification; integrated `d7b0ef7` <a id="MW.5b.1"></a>
-  - Remaining: supported Safari/Edge/context-menu and Firefox fallback verification; parent acceptance stays open ([QA](../QA.md))
+  - [x] MW.5b.2 Firefox 158 + Chrome baseline, keyboard and `execCommand('copy')`: controls left out, source glyphs kept; `▾ show all` left out ([QA](../QA.md#copy-browsers)) <a id="MW.5b.2"></a>
+  - Remaining: Safari/Edge (not on this machine), native context menu, real devices; parent acceptance stays open ([QA](../QA.md))
   - Why: selecting a rendered heading currently copies injected controls such as `#`, `✎`, `↓` and `⇊` together with the authored title
   - Builds: one copy-exclusion contract for mdhouse-injected heading links, edit/add actions, badges and other document controls
   - Acceptance: normal selection and Copy produce the authored document text without mdhouse UI chrome

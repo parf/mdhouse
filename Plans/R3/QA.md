@@ -943,3 +943,21 @@ is 21px (the row itself is the target).
 | 1 Reading-first document header | pass, 4/4 (touch ≤900px, so also the 768 tablet with its docked sidebar): first heading at 333px at 390 and 262px at 768 (was 590 and 780); 4 header controls (crumb, Edit, ⋯, state chip); ⋯ sheet lists Full width · Compare as a patch · Compare, marked · Favorite · Mute · Ask an agent · Copy link · Git view · external editor, plus the +V1/+V2 chips, all ≥44px with words; Context row ("4 sections · 1 commits · uncommitted") opens contents, History and Commit; Agent Bus and Commit reached through them in the full walk | `f1-<w>-<scheme>-03/04-doc-phone-header.png`, `-doc-sheet.png`, `-doc-context.png` |
 
 Not changed: the strikethrough for small files on a pointer device (desktop), and the full-width Agent Bus panel at tablet widths above 720px.
+
+## Copy without mdhouse controls — Firefox and Chrome {#copy-browsers}
+
+[№MW.5b](workspaces/TODO.md#MW.5b). Scratch instance (CLI-started, `--rw`), 1280×900; headless Chrome 156.0.8078.47 via CDP (baseline) and headless Firefox 158.0.1 via WebDriver BiDi. Each case: a
+range set over the blocks, Copy, then a real Ctrl+V into a sink whose `paste` handler reads `text/plain` and `text/html`. Keyboard = Ctrl+C key event; menu = `execCommand('copy')` with user
+activation (the command the context menu runs — the native menu itself cannot be driven headless). Controls present in the DOM during the run: `#⋯✎↓⇊🔗` per heading.
+
+| Case | Chrome key / menu | Firefox key / menu |
+| --- | --- | --- |
+| Heading with controls + its paragraph | pass: `Plain heading` + body, no `#⋯✎↓⇊🔗` | pass, same |
+| Heading and paragraph whose source has `# ✎ ↓ ⇊ ⋯` | pass: source glyphs kept, controls left out | pass, same |
+| Q&A item (folded, answered) | pass: no buttons; copies the folded summary (`?` state glyph, `💬` first line) | pass, same; glyph and text run together (`?Question…`) |
+| Multi-block (headings, Q&A, paragraphs) | pass | pass |
+| Whole `qa-playground.md` | fixed: `▾ show all` was copied → left out | fixed, same |
+
+- Firefox plain-text layout differs from Chrome (blank line after a heading, indented list items, no break between a Q&A glyph and its text); Firefox also copies a collapsed item's hidden text. Both are browser serializers, not mdhouse chrome.
+- A folded Q&A item copies what it shows (state glyph `?`/`!?`, first reply line), not its Markdown source; open it, or use ✎ / the source, for authored text.
+- Edge and Safari are not installed on this machine — unverified. Native context-menu Copy and real devices — unverified.
