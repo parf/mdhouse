@@ -1,5 +1,5 @@
 import { useMemo } from 'preact/hooks';
-import { inViewTab, VIEW_IDS, type RootViews, type ViewId } from './views';
+import { tabFiles, VIEW_IDS, type RootViews, type ViewId } from './views';
 import type { RootInfo } from './api';
 import type { RecentEntry } from '../lib/store';
 import type { UiTree } from './api';
@@ -126,10 +126,7 @@ export function Sidebar(props: SidebarProps) {
 
   // a view's tab: the tree narrowed to its folders and files, muted ones left out
   const entries = props.tab === 'V1' || props.tab === 'V2' ? props.views[props.tab] : null;
-  const shown = useMemo(
-    () => (tree?.files ?? []).filter((f) => f.size > 0 && (!entries || (inViewTab(f, entries, props.showIgnored) && !f.marks?.includes('muted')))),
-    [tree, entries, props.showIgnored],
-  );
+  const shown = useMemo(() => tabFiles(tree?.files ?? [], entries, props.showIgnored), [tree, entries, props.showIgnored]);
   const nodes = useMemo<Node[]>(() => buildTree(shown), [shown]);
 
   const sizes = useMemo(() => new Map((tree?.files ?? []).map((f) => [f.rel, f.size])), [tree]);

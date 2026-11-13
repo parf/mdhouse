@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only; TW_STALE=1 answers the first approve with stale; TW_NOTIMER=1 makes an approved registration `no-timer`), automationreal (real routes, needs a sandbox bus), automationnotimer (real; TW_AB_SOCK = the sandbox socket: deletes the schedule behind the page), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, views, automation (fake routes; TW_CAN=0 reads only; TW_STALE=1 answers the first approve with stale; TW_NOTIMER=1 makes an approved registration `no-timer`), automationreal (real routes, needs a sandbox bus), automationnotimer (real; TW_AB_SOCK = the sandbox socket: deletes the schedule behind the page), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -473,6 +473,30 @@ if (only.includes('automationnotimer')) {
   await sleep(1500);
   say('  revoked: ' + await ev("document.querySelector('.auto-state')?.textContent"));
   execSync(`rm -rf ${R}/.mdhouse`);
+}
+if (only.includes('views')) {
+  // V2 holds one file: its tab lists only that file, however the drawer is closed and opened again (the bar's Files included).
+  await go('/repo/README.md');
+  await ev("localStorage.setItem('mdhouse.views', JSON.stringify({ repo: { V1: [], V2: ['notes/plan.md'] } })); 1");
+  await go('/repo/notes/plan.md');
+  const rows = async () => await ev("JSON.stringify([...document.querySelectorAll('.side-body .row')].map(r => r.textContent.trim().replace(/[^A-Za-z0-9._/ -]/g, '').slice(0, 24)))");
+  const tabs = async () => await ev("[...document.querySelectorAll('.sidebar [role=tab]')].map(b => (b.getAttribute('aria-selected') === 'true' ? '*' : '') + (b.title || '').slice(0, 8)).join(' | ')");
+  const phone = await ev("!!document.querySelector('.phone-nav')");
+  await tap(phone ? '.topstrip .icon-btn[aria-label=\"Show sidebar\"]' : '.sidebar [role=tab]', 0);
+  await sleep(400);
+  await tap('.sidebar [role=tab][title^="View V2"]', 0);
+  await sleep(400);
+  say('  V2 tab: ' + await tabs() + '  rows ' + await rows());
+  await audit('views-v2');
+  if (phone) {
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: w - 20, y: 400 }] });
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(400);
+    await tap('.phone-nav .nav-dest', 0);
+    await sleep(500);
+    say('  after the bar\'s Files: ' + await tabs() + '  rows ' + await rows());
+    await audit('views-bar-files');
+  }
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

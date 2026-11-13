@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { inView, inViewTab, MAX_REVEAL, revealNote, revealScopes, scopeOf, toggle } from '../src/ui/views';
+import { inView, inViewTab, MAX_REVEAL, noViews, revealNote, revealScopes, scopeOf, tabFiles, toggle } from '../src/ui/views';
+import { buildTree, type Node } from '../src/ui/tree-model';
+import type { FileEntry } from '../src/lib/store';
 
 describe('views', () => {
   test('inView: the file itself, or under a folder entry', () => {
@@ -77,5 +79,69 @@ describe('ignored browsing scopes', () => {
     expect(revealNote(0, [])).toBeNull();
     expect(revealNote(2)).toMatch(/2 selected folders not revealed/);
     expect(revealNote(0, ['big'])).toMatch(/big/);
+  });
+});
+
+
+describe('a V tab is its selection only', () => {
+  const f = (rel: string, extra: Partial<FileEntry> = {}): FileEntry => {
+    const slash = rel.lastIndexOf('/');
+    return { rel, name: rel.slice(slash + 1), dir: slash === -1 ? '' : rel.slice(0, slash), size: 100, mtime: 0, ...extra } as FileEntry;
+  };
+  const files = [
+    f('README.md'),
+    f('Plans/README.md'),
+    f('Plans/TODO.md'),
+    f('Plans/DONE.md'),
+    f('Plans/R3/QA.md'),
+    f('Plans/R3/workspaces/TODO.md'),
+    f('doc/cli.md'),
+    f('PlansOld/x.md'),
+    f('Plans/empty.md', { size: 0 }),
+    f('Plans/muted.md', { marks: ['muted'] }),
+    f('Plans/hidden.md', { ignored: true }),
+  ];
+  const rels = (entries: string[] | null, showIgnored = false) => tabFiles(files, entries, showIgnored).map((x) => x.rel).sort();
+  const paths = (nodes: Node[]): string[] => nodes.flatMap((n) => (n.kind === 'file' ? [n.path] : paths(n.children))).sort();
+
+  test('one file: exactly that file, not its folder, not its siblings', () => {
+    expect(rels(['Plans/TODO.md'])).toEqual(['Plans/TODO.md']);
+    expect(paths(buildTree(tabFiles(files, ['Plans/TODO.md'], false)))).toEqual(['Plans/TODO.md']);
+  });
+
+  test('a folder: its files at any depth, no neighbour that only starts like it', () => {
+    expect(rels(['Plans/R3/'])).toEqual(['Plans/R3/QA.md', 'Plans/R3/workspaces/TODO.md']);
+    expect(rels(['Plans/'])).toEqual(['Plans/DONE.md', 'Plans/R3/QA.md', 'Plans/R3/workspaces/TODO.md', 'Plans/README.md', 'Plans/TODO.md', 'Plans/hidden.md']);
+  });
+
+  test('files and folders together; the other view does not count', () => {
+    expect(rels(['README.md', 'doc/'])).toEqual(['README.md', 'doc/cli.md']);
+    // V2 holds one file even though V1 holds its folder: the tab is built from its own entries only
+    const views = { V1: ['Plans/'], V2: ['Plans/TODO.md'] };
+    expect(rels(views.V2)).toEqual(['Plans/TODO.md']);
+    expect(rels(views.V1)).toContain('Plans/DONE.md');
+  });
+
+  test('the open document, inside or outside the selection, adds nothing to the tab', () => {
+    const views = { ...noViews(), V2: ['Plans/TODO.md'] };
+    for (const open of ['Plans/TODO.md', 'Plans/DONE.md', 'doc/cli.md', null]) {
+      const dir = open ? open.slice(0, Math.max(0, open.lastIndexOf('/'))) || null : null;
+      // the open folder is revealed to the server (so its ignored files exist), and the tab still lists the selection only
+      const { scopes } = revealScopes(views, dir, 'V2');
+      if (dir) expect(scopes).toContain(dir);
+      expect(rels(views.V2)).toEqual(['Plans/TODO.md']);
+    }
+  });
+
+  test('empty and muted files stay out; an ignored file only with the switch or one of the tab\'s own folders', () => {
+    expect(rels(['Plans/'])).not.toContain('Plans/empty.md');
+    expect(rels(['Plans/'])).not.toContain('Plans/muted.md');
+    expect(rels(['Plans/hidden.md'])).toEqual([]);
+    expect(rels(['Plans/hidden.md'], true)).toEqual(['Plans/hidden.md']);
+    expect(rels(['Plans/'])).toContain('Plans/hidden.md');
+  });
+
+  test('without entries (All files) every non-empty file', () => {
+    expect(rels(null)).toHaveLength(files.length - 1);
   });
 });

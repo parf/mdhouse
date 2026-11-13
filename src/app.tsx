@@ -850,10 +850,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
           changes={onChanges(full.includes('?') ? full.slice(full.indexOf('?')) : '')}
           rag={onRag}
           drawerOpen={sidebar !== 'off'}
-          onFiles={() => {
-            setTab('files');
-            setSidebar((s) => (s === 'off' ? 'compact' : 'off'));
-          }}
+          // The drawer keeps the tab it was left on: a V1/V2 selection must not turn into every file because the bar was tapped.
+          onFiles={() => setSidebar((s) => (s === 'off' ? 'compact' : 'off'))}
           onSearch={openSearch}
           onAsk={() => dispatchEvent(new Event(ASK_EVENT))}
         />

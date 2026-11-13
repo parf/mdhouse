@@ -85,6 +85,15 @@ export function inViewTab(f: { rel: string; ignored?: boolean }, entries: string
   return entries.some((e) => e.endsWith('/') && f.rel.startsWith(e));
 }
 
+/**
+ * The files a sidebar tab lists: with a view's `entries`, exactly the files that view holds (folder entries bring their files, a file
+ * entry only itself; muted ones left out) — never the open document's folder, the other view's folders or a revealed scope.
+ * Without `entries` (the All files tab) every non-empty file.
+ */
+export function tabFiles<T extends { rel: string; size: number; ignored?: boolean; marks?: string[] }>(files: T[], entries: string[] | null, showIgnored: boolean): T[] {
+  return files.filter((f) => f.size > 0 && (!entries || (inViewTab(f, entries, showIgnored) && !f.marks?.includes('muted'))));
+}
+
 /** A short warning when the reveal is incomplete — selections over the request limits, folders cut by the server — else null. */
 export function revealNote(omitted: number, capped: string[] = []): string | null {
   const parts = [

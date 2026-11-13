@@ -44,6 +44,8 @@
 
 ### Fixed
 
+- Views: on a phone the bottom bar's Files no longer turns a V1/V2 tab into every file — the drawer keeps the tab it was left on (a V tab lists only its own selection; a unit test now holds that for files and folders, with the open document inside or outside it)
+
 - mdhouse's own config folder (prefs, password hashes, control sockets, the flow seal key) is never served, even when a served folder holds it (`mdhouse ~`)
 
 - Document header: one Edit beside the title — the external editor's ✎ moved to the actions row (a long title no longer pushes it to its own line); in a Viewer a phone's top strip shows a short `Viewer` badge with the full words in its tooltip
