@@ -42,17 +42,17 @@ A firing runs only if the project holds a matching registration, kept in the pro
 ## 5. Run history
 
 - The bus keeps firing outcomes for 7 days (sent, refused, skipped)
-- mdhouse keeps one index line per run, bounded (last 200): run id, schedule id and slot or `manual:<user>`, start/end, outcome (`ok`, `failed`, `skipped`, `held`, `interrupted`), SHA range, output path; the run documents are the full record
+- mdhouse keeps one index line per run, bounded (last 200): run id, schedule id and slot or `manual:<user>`, start/end, outcome (`ok`, `failed`, `skipped`, `held`, `running`), SHA range, output path; the run documents are the full record
 - The page joins both by schedule id and slot, so "fired but mdhouse refused" and "ran and failed" read differently
 
 ## 6. Overlap and failure
 
-- Overlap per registration, default `skip`: a firing while the same registration runs is answered `skipped: overlap` and recorded; `queue1` keeps at most one pending
+- Overlap per registration, default `skip`: a firing while the same registration has an open run (its document says running or held) is answered `skipped: overlap` — the runner's `running` — and recorded; the open run stays visible to finish, mark partial or cancel; `queue1` keeps at most one pending
 - No retry in mdhouse or the bus; a failed run is outcome `failed` plus a warning on the project page
 - Auto-disable: after 3 consecutive failures the registration is disabled and mdhouse answers `disabled`; the bus's own five-refusals rule then disables the schedule (mdhouse disables the bus schedule itself only if it maintains that record)
 - Cap: 10 runs per day per registration, and a minimum interval of 5 minutes, enforced by mdhouse whatever the cron says
 - mdhouse down at the slot: the bus holds the message to its time to live; a one-off fires once at start, a repeating one gets one catch-up with a missed count; no special code, the marker model covers it
-- Restart mid-run: runs are not resumable in v1 (durable resume is open in [№MW.3](workspaces/TODO.md#MW.3)); the run is marked `interrupted` at the next start and the marker did not move
+- Restart mid-run: nothing is cut — analysis is not an in-process job, an agent or a person works against the run document; a run whose document says running or held is an open run, and the marker moves only when it completes
 
 ## 7. Consequential actions
 
@@ -85,7 +85,7 @@ Project → Settings → Automation (or a ⏰ entry on a flow page): registratio
 
 1. Contract: body v1, registration schema and a pure handler with tests (validate, replay cache, dispatch to a stub), like `ab-control`
 2. Registry and run index, in the `rag-registry` pattern
-3. Handler wired to the MW.3 runner once it exposes a headless entry (`run(flow, project, scope, runId, origin)` returning held/blocked/failed/complete, an output path, an `interrupted` state, never advancing the marker on failure)
+3. Handler wired to the MW.3.3 entry `startFlowRun({ rootId, packageId, range, trigger: { kind: 'manual', actor } | { kind: 'schedule', id, slot } })` returning `{ status, runPath, url }` (agreed with #md/w1); for a schedule trigger the run id is a hash of the request id, so a repeated start finds the existing run document and returns its status; manual runs keep a random id; the marker never advances on blocked, failed, partial or cancelled; consequential nodes stay `unsupported` until approvals exist, then `held: needs-approval`
 4. Automation page, Viewer-safe
 5. Schedule create/disable through the SDK
 
