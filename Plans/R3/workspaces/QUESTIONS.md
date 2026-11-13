@@ -39,6 +39,7 @@
 - [№Q-R3-REFDOC1](DECISIONS.md#Q-R3-REFDOC1) <a id="Q-R3-REFDOC1"></a>
 
 - ❓ Q-R3-DATA1 Where mdhouse data belongs (MW.14, inventory by #md/w1): <a id="Q-R3-DATA1"></a>
+  Everything kept now and planned: [DATA.md](../DATA.md).
   - [ ] shared project definitions in `$PROJECT/.mdhouse/` (Git): ignore rules, default agents, RAG source id, flows
   - [ ] RW/RO stays per user/machine — a repo never grants itself write
   - [ ] secrets (bus token, credentials, user hashes) move out of prefs.json into `secrets.json` 0600 (keyring later)
