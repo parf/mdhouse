@@ -1,4 +1,5 @@
 import { ApiError } from './api';
+import { VIEWER_DENIED, VIEWER_MESSAGE } from './viewer-text';
 import type { FlowCatalog, FlowEventRequest, FlowEventResult, FlowPreview, FlowRange, FlowStarted } from './flow-model';
 
 /** A refused flow request: the reason, plus `why` for a missing baseline and `run` for an open run. */
@@ -14,6 +15,11 @@ async function call<T>(base: string, method: 'GET' | 'POST', path: string, body?
   const got = (await res.json().catch(() => null)) as (T & { error?: string; reason?: string }) | null;
   if (!res.ok || !got) {
     const x = got as { error?: unknown; reason?: unknown; why?: unknown; run?: { url: string; status: string } } | null;
+    // A stale tab that still shows a control: the app re-reads the mode, and the words are the Viewer's.
+    if (x?.reason === 'viewer') {
+      dispatchEvent(new Event(VIEWER_DENIED));
+      throw new FlowApiError(VIEWER_MESSAGE, res.status, 'viewer');
+    }
     throw new FlowApiError(typeof x?.error === 'string' ? x.error : `${res.status} ${res.statusText}`, res.status, typeof x?.reason === 'string' ? x.reason : undefined, typeof x?.why === 'string' ? x.why : undefined, x?.run);
   }
   return got;

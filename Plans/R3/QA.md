@@ -973,5 +973,7 @@ activation (the command the context menu runs — the native menu itself cannot 
 | Preview → Confirm | pass, 4/4: path, range, uncommitted files kept apart, warnings, server HTML through safe-html (a `<script>` in it is dropped); Confirm is sticky; start navigates to the run document and closes the dialog | `-04-flow-preview.png` |
 | Flow bar on a run document | pass, 4/4 (fake `doc.flow` and `/api/flow/event`, stateful): status, current node, holds, evidence and question assertions (Mark supplied / Mark answered, with the note as turn), Complete / Blocked / Failed, Cancel run (two taps); Blocked without a note is refused in words; each action is one event with a fresh client id; after Complete the run is terminal and the bar goes; 44px, 16px note field | `fb2-<w>-<scheme>-01-flowbar.png`, `-02-flowbar-asserted.png`, `-03-flowbar-typed.png` |
 
-Not verified in a browser: the Viewer's absence of the button and the bar (it is `useViewer()` in both components, like the other write controls); the real routes.
+Viewer: a scratch Viewer instance (`--viewer`), 390/768 light and dark — no Run flow button on the root's page and no flow bar on a run document even when the (fake) `doc.flow` says `canAct: true` (`fv-<w>-<scheme>-01-viewer-run-doc.png`). A stale tab that still shows a control and gets `403 reason: viewer` from `/api/flow/*` shows the Viewer's words and tells the app to re-read the mode (`test/flow-ui.test.ts`).
+
+Not verified: the real routes.
 

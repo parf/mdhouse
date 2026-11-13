@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow (named only: answers /api/flow/* with a fake).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; flow, flowbar, flowviewer (named only: answer /api/flow/* with a fake).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -47,7 +47,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceSc
 await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
 await send('Page.enable'); await send('Runtime.enable');
-if (only.includes('flow') || only.includes('flowbar')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
+if (only.includes('flow') || only.includes('flowbar') || only.includes('flowviewer')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
 const sleep = (ms: number) => Bun.sleep(ms);
 export const ev = async (expression: string): Promise<any> => {
   const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -271,6 +271,13 @@ if (only.includes('flowbar')) {
   await tap('.flow-bar-actions .flow-go.primary', 0);
   await sleep(700);
   say('  after Complete: bar shown ' + await ev("!!document.querySelector('.flow-bar')") + '; events sent: ' + JSON.stringify(bar.events.map((e: any) => e.action.type + (e.action.outcome ? ':' + e.action.outcome : ''))));
+}
+if (only.includes('flowviewer')) {
+  await go('/repo/?git');
+  say('  viewer: ' + await ev("document.body.innerText.includes('Viewer')") + '; Run flow button: ' + await ev("!!document.querySelector('.flow-btn')"));
+  await go('/repo/notes/plan.md');
+  say('  doc.flow injected with canAct=true; flow bar: ' + await ev("!!document.querySelector('.flow-bar')"));
+  await audit('viewer-run-doc');
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

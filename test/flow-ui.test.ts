@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { ApiError } from '../src/ui/api';
+import { VIEWER_DENIED, VIEWER_MESSAGE } from '../src/ui/viewer-text';
 import { FlowApiError, flowApi } from '../src/ui/flow-api';
 import {
   barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, noBaselineText, outcomeError, rangeOf, showsBar, startable,
@@ -146,7 +147,13 @@ describe('against the fake routes', () => {
     expect(e.run).toEqual({ url: '/p/x.md', status: 'running' });
   });
   test('a Viewer\'s catalog is refused as viewer', async () => {
-    expect((await api().catalog('viewer').catch((e) => e)).reason).toBe('viewer');
+    const seen: string[] = [];
+    (globalThis as any).dispatchEvent = (e: Event) => seen.push(e.type);
+    const e = await api().catalog('viewer').catch((x) => x);
+    expect(e.reason).toBe('viewer');
+    expect(e.message).toBe(VIEWER_MESSAGE);
+    expect(seen).toEqual([VIEWER_DENIED]);
+    expect(flowReasonText('viewer', 'x')).toBe(VIEWER_MESSAGE);
   });
   test('an event moves the version; a repeat with the same client id is the same event; an old version is stale', async () => {
     const req = (v: number, id: string, action: any = { type: 'outcome', outcome: 'complete', text: '' }) => ({ root: 'p', path: 'x.md', expectedVersion: v, clientId: id, action });

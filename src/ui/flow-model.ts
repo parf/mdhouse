@@ -1,5 +1,7 @@
 /** The flow UI's contract with the server (MW.3.3) and the pure rules the dialog and the run bar follow. */
 
+import { VIEWER_MESSAGE } from './viewer-text';
+
 export type FlowRangeKind = 'since-last-run' | 'baseline';
 export type FlowRange = { kind: 'since-last-run' } | { kind: 'baseline'; commit: string };
 export type FlowOutcome = 'complete' | 'blocked' | 'failed';
@@ -100,7 +102,7 @@ export function defaultRange(p: FlowCatalogEntry): FlowRangeKind {
 }
 
 const REASON_WORDS: Record<FlowReason, string> = {
-  viewer: 'A Viewer cannot run flows.',
+  viewer: VIEWER_MESSAGE,
   'read-only': 'This project is read-only, so a run document cannot be written.',
   'no-root': 'That project is not served.',
   'no-git': 'This project is not in a git repository, so there is no history to review.',
