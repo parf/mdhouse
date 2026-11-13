@@ -52,6 +52,10 @@ describe('sender rule', () => {
   test('patterns match the whole name without #, any case; an invalid pattern refuses everyone', () => {
     expect(senderAllowed(['claude/.*'], ME)).toBe(true);
     expect(senderAllowed(['CLAUDE/AGENT@HOST'], ME)).toBe(true);
+    // A pattern that closes the anchoring group would admit anyone: it is invalid on its own, so it refuses everyone.
+    for (const p of ['md/w1)|(.*', 'x)|(?:.*', '.*)|(x']) expect([p, senderAllowed([p], ME), senderAllowed([p], '#md/w1')]).toEqual([p, false, false]);
+    expect(senderAllowed(['md/w1|claude/.*'], ME)).toBe(true);
+    expect(senderAllowed(['md/w1|claude/x'], ME)).toBe(false);
     expect(senderAllowed(['claude'], ME)).toBe(false);
     expect(senderAllowed(['other/.*'], ME)).toBe(false);
     expect(senderAllowed(['claude/.*', '('], ME)).toBe(false);

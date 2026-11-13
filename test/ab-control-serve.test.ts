@@ -7,6 +7,8 @@ import { AgentBus, type ControlServing } from '../src/lib/agent-bus';
  */
 class FakeDaemon {
   lock: { holder: string; until: number } | null = null;
+  /** Grants the lock again to the name that holds it, as a daemon may. */
+  reentrant = false;
   kv = new Map<string, string>();
   now = 0;
   served: Array<{ topic: string; handler: (m: { from: string; body: string; ask?: string }) => Promise<string | null> }> = [];
@@ -24,7 +26,7 @@ class FakeDaemon {
         },
         locks: {
           tryAcquire: async (_n: string, { ttl }: { ttl: number }) => {
-            if (d.lock && d.lock.until > d.now) throw new Error(`lock held by ${d.lock.holder}`);
+            if (d.lock && d.lock.until > d.now && !(d.reentrant && d.lock.holder === me)) throw new Error(`lock held by ${d.lock.holder}`);
             d.lock = { holder: me, until: d.now + ttl };
           },
           extend: async (_n: string, ttl: number) => {
@@ -166,6 +168,44 @@ describe('AgentBus.control — the tick', () => {
     expect(d.served).toEqual([]);
     expect(a.log.at(-1)).toBe('control: stopped — another mdhouse serves control');
     expect(d.lock).not.toBeNull();
+    await a.stop();
+  });
+
+  test('a daemon that grants the lock again to the same name: a second process never serves, the first keeps serving', async () => {
+    const d = new FakeDaemon();
+    d.reentrant = true;
+    const a = driven(d);
+    await settle();
+    const nonce = d.kv.get('ctl.owner');
+    const b = driven(d);
+    await settle();
+    for (let i = 0; i < 3; i++) {
+      await b.tick();
+      await a.tick();
+    }
+    expect(d.served.length).toBe(1);
+    expect(d.kv.get('ctl.owner')).toBe(nonce!);
+    expect(b.log).toEqual(['control: served by another mdhouse']);
+    expect(a.log).toEqual(['control: serving topic mdhouse.ctl']);
+    await b.stop();
+    await a.stop();
+  });
+
+  test('stopped by another nonce: not taken again while the lock is held; taken once it lapses', async () => {
+    const d = new FakeDaemon();
+    d.reentrant = true;
+    const a = driven(d);
+    await settle();
+    d.kv.set('ctl.owner', 'someone-else');
+    await a.tick();
+    await a.tick();
+    expect(d.served).toEqual([]);
+    expect(d.kv.get('ctl.owner')).toBe('someone-else');
+    expect(a.log.slice(-2)).toEqual(['control: stopped — another mdhouse serves control', 'control: served by another mdhouse']);
+    d.now = 61_000;
+    await a.tick();
+    expect(d.served.length).toBe(1);
+    expect(d.kv.get('ctl.owner')).not.toBe('someone-else');
     await a.stop();
   });
 

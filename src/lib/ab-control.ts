@@ -72,14 +72,20 @@ export function parseControl(raw: unknown): ControlSetting {
   return 'off';
 }
 
-/** Whether `from` may send control requests under `setting`. A pattern is a whole-name regex without the `#`, any case; an invalid one refuses everyone. */
+/**
+ * Whether `from` may send control requests under `setting`. A pattern is a whole-name regex without the `#`, any case;
+ * an invalid one refuses everyone. Each must be a regex on its own, so none closes the anchoring group (`a)|(.*`).
+ */
 export function senderAllowed(setting: ControlSetting, from: string): boolean {
   if (setting === 'off') return false;
   if (!setting.length) return true;
   const name = from.replace(/^#/, '');
   let res: RegExp[];
   try {
-    res = setting.map((p) => new RegExp(`^(?:${p})$`, 'i'));
+    res = setting.map((p) => {
+      void new RegExp(p, 'i'); // throws for `a)|(.*`, which only parses inside the group
+      return new RegExp(`^(?:${p})$`, 'i');
+    });
   } catch {
     return false;
   }

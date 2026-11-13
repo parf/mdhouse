@@ -28,6 +28,8 @@ interface Tab {
 const ID = /^[A-Za-z0-9_-]{22}$/;
 const PAGE_MAX = 1024;
 const TITLE_MAX = 200;
+/** Tabs kept; a new one past it drops the one heard from longest ago, which `open` no longer reaches. */
+export const TABS_MAX = 200;
 
 /** The browser family from a User-Agent: the label part a person recognizes, nothing that identifies them. */
 export function browserOf(ua: string): string {
@@ -68,6 +70,11 @@ export class Tabs {
     const [id = '', proof = ''] = (asked ?? '').split('.');
     const clientId = this.valid(id, proof) && !this.tabs.has(id) ? id : randomBytes(16).toString('base64url');
     const at = this.now();
+    if (this.tabs.size >= TABS_MAX) {
+      let idle: [string, number] | null = null;
+      for (const [id, t] of this.tabs) if (!idle || t.lastSeen < idle[1]) idle = [id, t.lastSeen];
+      this.tabs.delete(idle![0]);
+    }
     this.tabs.set(clientId, { sink, browser: browserOf(ua), busy: false, since: at, lastSeen: at });
     return { clientId, resume: this.proof(clientId) };
   }

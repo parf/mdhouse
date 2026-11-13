@@ -356,9 +356,11 @@ export class AgentBus {
 
   /**
    * Serves `o.topic` on the instance endpoint while `o.wanted()` and this process holds the control
-   * lock; checked every tick. The lock alone cannot tell two processes with one agent name apart,
-   * so the winner writes its nonce to `ctl.owner` and stops when the nonce there is not its own, or
-   * when the lock cannot be extended. Returns the stop, which releases the lock it holds.
+   * lock; checked every tick. The lock alone cannot tell two processes with one agent name apart
+   * (the daemon may grant it again to the same name), so the winner writes its nonce to `ctl.owner`
+   * and stops when the nonce there is not its own, or when the lock cannot be extended; while the
+   * lock is held under another nonce, no process takes it. Returns the stop, which releases the
+   * lock it holds.
    */
   control(o: ControlServing): () => Promise<void> {
     const tickMs = o.tickMs ?? 20_000;
@@ -395,14 +397,20 @@ export class AgentBus {
       if (!want) return;
       const d = await this.connect(ep);
       const rec = d.record(this.me);
+      const say = (why: string) => {
+        if (refused !== why) o.log(why);
+        refused = why;
+      };
+      const held = () => rec.locks.holders().then((hs) => hs.some((h) => h.name === CONTROL_LOCK));
+      // A held lock under another process's nonce: it serves, whether or not the daemon would grant the lock to this name again.
+      if (await held().catch(() => true)) {
+        const owner = await rec.kv.get('string', CONTROL_OWNER).then((v) => (v.kind === 'string' ? String(v.value) : null), () => null);
+        if (owner !== null && owner !== nonce) return say('control: served by another mdhouse');
+      }
       try {
         await rec.locks.tryAcquire(CONTROL_LOCK, { ttl });
       } catch (err) {
-        const held = await rec.locks.holders().then((hs) => hs.some((h) => h.name === CONTROL_LOCK), () => false);
-        const why = held ? 'control: served by another mdhouse' : `control: not served — ${safeError(err)}`;
-        if (refused !== why) o.log(why);
-        refused = why;
-        return;
+        return say((await held().catch(() => false)) ? 'control: served by another mdhouse' : `control: not served — ${safeError(err)}`);
       }
       refused = '';
       try {

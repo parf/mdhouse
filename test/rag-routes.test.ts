@@ -39,7 +39,8 @@ async function fakeDaemon() {
       const token = req.headers.get('x-agent-bus-token') ?? '';
       if (url.pathname === '/identity') return Response.json({ protocol: 1, protocol_min: 1 });
       if (url.pathname === '/status') return Response.json({ you: token === 'agent' && agent ? agent : 'test' });
-      calls.push(`${req.method} ${url.pathname}`);
+      // Control's own lock owner is read apart from RAG's lookups.
+      calls.push(url.pathname === '/kv' && url.searchParams.get('name') === 'ctl.owner' ? `${req.method} /kv ctl.owner` : `${req.method} ${url.pathname}`);
       if (url.pathname === '/register') return new Response('exists', { status: 412 });
       if (url.pathname === '/token') {
         agent = ((await req.json()) as { name: string }).name;

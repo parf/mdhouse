@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { browserOf, Tabs, type TabSink } from '../src/lib/ws-tabs';
+import { browserOf, Tabs, TABS_MAX, type TabSink } from '../src/lib/ws-tabs';
 import { testPort } from './ports';
 
 const KEY = Buffer.alloc(32, 7);
@@ -56,6 +56,24 @@ describe('Tabs — ids', () => {
     tabs.close(a.clientId, s1);
     expect(tabs.navigate(a.clientId, '/r/a.md')).toBe(true);
     expect(s2.got).toEqual([JSON.stringify({ t: 'open', url: '/r/a.md' })]);
+  });
+});
+
+describe('Tabs — a cap', () => {
+  test('past TABS_MAX the tab heard from longest ago is dropped; the rest stay', () => {
+    let now = 0;
+    const tabs = new Tabs(KEY, () => now);
+    const ids = Array.from({ length: TABS_MAX }, () => (now++, tabs.open(sink(), null, CHROME).clientId));
+    // The first tab speaks, so the second is now the longest idle.
+    now++;
+    expect(tabs.message(ids[0]!, 'ping')).toBe(true);
+    const extra = tabs.open(sink(), null, CHROME).clientId;
+    const listed = tabs.list().map((t) => t.clientId);
+    expect(listed.length).toBe(TABS_MAX);
+    expect(listed).toContain(ids[0]!);
+    expect(listed).toContain(extra);
+    expect(listed).not.toContain(ids[1]!);
+    expect(tabs.navigate(ids[1]!, '/x')).toBe(false);
   });
 });
 
