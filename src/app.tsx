@@ -195,7 +195,9 @@ function App({ entry: first }: { entry: AdminEntry }) {
       // `?root=<id>` picks which tree to land on — what a second `mdhouse <dir>` prints when
       // the daemon it handed the directory to was already serving something else.
       const asked = new URLSearchParams(location.search).get('root');
-      const wanted = roots.find((r) => r.id === asked)?.id;
+      // The root the address names comes first: the remembered tab is checked against the root shown.
+      const named = route.kind === 'file' ? missing?.root : dirTarget?.rootId;
+      const wanted = (roots.find((r) => r.id === named) ?? roots.find((r) => r.id === asked))?.id;
       setRootId((current) => current || wanted || (roots[0]?.id ?? ''));
     });
   }, []);
