@@ -99,11 +99,37 @@ export function abTargets(src: string): string[] {
   return [...new Set(names.map((n) => n.trim().toLowerCase()).filter(Boolean))];
 }
 
-/** The account socket: `$XDG_RUNTIME_DIR/agent-bus`, else `/run/agent-bus`. */
-export function defaultSocket(env = process.env, login = userInfo().username): string {
+let systemDir = '/run/agent-bus';
+/** Tests only: where the system-wide account sockets are looked for, so a developer's real daemon is never found. */
+export const useSystemSocketDir = (dir?: string): void => {
+  systemDir = dir ?? '/run/agent-bus';
+};
+
+/** The login's account socket — `$XDG_RUNTIME_DIR/agent-bus/user-<login>.sock`, else the system one — and whether it exists now. */
+export function accountSocket(env = process.env, login = userInfo().username): { path: string; found: boolean; tried: string[] } {
   const file = `user-${login}.sock`;
-  const dirs = [env.XDG_RUNTIME_DIR ? `${env.XDG_RUNTIME_DIR}/agent-bus` : '', '/run/agent-bus'].filter(Boolean);
-  return dirs.map((d) => `${d}/${file}`).find((p) => existsSync(p)) ?? `/run/agent-bus/${file}`;
+  // MDHOUSE_AB_SOCKET_DIRS (colon-separated) replaces the search: a sandbox or a test names the only directories to look in.
+  const dirs = env.MDHOUSE_AB_SOCKET_DIRS ? env.MDHOUSE_AB_SOCKET_DIRS.split(':').filter(Boolean) : [env.XDG_RUNTIME_DIR ? `${env.XDG_RUNTIME_DIR}/agent-bus` : '', systemDir].filter(Boolean);
+  const tried = dirs.map((d) => `${d}/${file}`);
+  const hit = tried.find((p) => existsSync(p));
+  return hit ? { path: hit, found: true, tried } : { path: `${tried.length && env.MDHOUSE_AB_SOCKET_DIRS ? tried[0] : `${systemDir}/${file}`}`, found: false, tried };
+}
+
+/** The account socket: `$XDG_RUNTIME_DIR/agent-bus`, else `/run/agent-bus`. */
+export const defaultSocket = (env = process.env, login = userInfo().username): string => accountSocket(env, login).path;
+
+/**
+ * What the start and status lines say about the Agent Bus: `stored` is the setting as saved (`true`, `false` or
+ * `'auto'`), `socket` the saved daemon address (empty: the account socket).
+ */
+export function abLine(stored: boolean | 'auto', socket: string, env = process.env): string {
+  const account = accountSocket(env);
+  const addr = socket || account.path;
+  const url = isUrl(addr);
+  const found = url ? true : socket ? existsSync(socket) : account.found;
+  if (stored === 'auto') return found ? `on — ${addr} (found; auto)` : `auto — not installed (no ${account.tried.join(' or ')})`;
+  if (stored) return `on — ${addr}${url ? '' : found ? ' (found)' : ' (not found)'}`;
+  return account.found ? `off — found ${account.path}: mdhouse --agent-bus on` : 'off';
 }
 
 /** mdhouse's own agent name: `#mdhouse@<host>`, in the bus's name alphabet. */

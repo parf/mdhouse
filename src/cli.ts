@@ -20,7 +20,7 @@ import { ownStopCommand, ownUnit, runService } from './lib/service';
 import { logHints } from './lib/loghint';
 import { exposedNote, exposureOk, hashPassword, hostIsLocal, parseCidr, validLogin } from './lib/access';
 import { checkNameArgs } from './lib/project-name';
-import { badPatterns } from './lib/agent-bus';
+import { abLine, badPatterns } from './lib/agent-bus';
 
 const USAGE = `mdhouse — a Markdown workspace on your own machine
 
@@ -54,8 +54,9 @@ Options
                        --auto-rw reset: no such paths
       --viewer         every project read-only, no writes from the web; saved
       --workspace      projects writable by their own modes again (the default); saved
-      --agent-bus [on|off|<x.sock>|<http://host:port>]  the Agent Bus integration:
-                       a page asks an AI session to read it and reply; saved. A remote
+      --agent-bus [on|off|auto|<x.sock>|<http://host:port>]  the Agent Bus integration:
+                       a page asks an AI session to read it and reply; saved. auto: on
+                       while the login's Agent Bus socket exists (a new config's default). A remote
                        daemon asks for its token (or reads it from stdin)
       --ab-control <re,…|off|reset>  who may send a tab to a document over the Agent Bus:
                        whole-name regexes narrow the owner's agents; off: nobody;
@@ -168,7 +169,7 @@ function parse(argv: string[]): Options {
         break;
       case '--auto-rw': o.autoRw = [...(o.autoRw ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       // the value is optional: only on / off / a .sock path is taken — anything else is a folder
-      case '--agent-bus': o.agentBus = /^(on|off)$|\.sock$|^https?:\/\//.test(argv[i + 1] ?? '') ? next() : 'on'; break;
+      case '--agent-bus': o.agentBus = /^(on|off|auto)$|\.sock$|^https?:\/\//.test(argv[i + 1] ?? '') ? next() : 'on'; break;
       case '--ab-control': o.abControl = [...(o.abControl ?? []), ...next().split(',').map((c) => c.trim()).filter(Boolean)]; break;
       case '--viewer': o.mode = 'viewer'; break;
       case '--workspace': o.mode = 'workspace'; break;
@@ -541,8 +542,9 @@ if (opts.agentBus) {
     console.error('mdhouse: --agent-bus <url> — no token given (a token for your login on that daemon)');
     process.exit(2);
   }
-  const ab = await prefs.setAgentBus({ enabled: !off, ...(socket ? { socket } : {}), ...(token !== undefined ? { token } : {}) });
-  console.log(`mdhouse  agent-bus:  ${ab.enabled ? `on  ${ab.socket || '(default socket)'}` : 'off'}`);
+  const auto = opts.agentBus === 'auto';
+  const ab = await prefs.setAgentBus({ enabled: auto ? 'auto' : !off, ...(socket ? { socket } : {}), ...(token !== undefined ? { token } : {}) });
+  console.log(`mdhouse  agent-bus:  ${abLine(ab.stored, ab.socket)}`);
   if (!opts.dirs.length) process.exit(0);
 }
 
@@ -818,6 +820,7 @@ if (!opts.fg) {
     console.log('\n  Serve these on every start:  mdhouse <dir> -p');
   }
   console.log(writeNote(live.roots));
+  console.log(`  agent-bus:  ${abLine(prefs.agentBus.stored, prefs.agentBus.socket)}`);
   console.log(`\n  Running in the background (pid ${live.pid}).  Stop it with:  ${stopHint}`);
   console.log(`  Add more projects any time:  mdhouse <dir>`);
   console.log(LOG ? `  Watch what it does:  ${LOG.follow}` : `  Its output is not kept on this system — ${FG_HINT}`);
@@ -890,6 +893,7 @@ printRoots(
   !registry.single,
 );
 console.log(writeNote(registry.list()));
+console.log(`  agent-bus:  ${abLine(prefs.agentBus.stored, prefs.agentBus.socket)}`);
 const unit = ownUnit();
 console.log(
   unit

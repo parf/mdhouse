@@ -19,12 +19,12 @@
 
 import { homedir } from 'node:os';
 import { mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
-import { readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DEFAULT_EDIT_SCHEME, normalizeEditScheme } from './urls';
 import { normalizeProjectName } from './project-name';
 import type { AccessMode } from './roots';
-import { validEndpoint, validTarget } from './agent-bus';
+import { accountSocket, isUrl, validEndpoint, validTarget } from './agent-bus';
 import { parseControl, type ControlSetting } from './ab-control';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
@@ -100,7 +100,7 @@ interface PrefsFile {
    */
   autoRw: string[];
   /** The Agent Bus integration — `mdhouse --agent-bus`; the settings page picks the default agents. */
-  agentBus: AgentBusConfig;
+  agentBus: AgentBusFile;
   /**
    * Canonical path of a saved directory -> its own Agent Bus settings (`SpaceAb`). Kept as read: a
    * malformed entry, or a malformed map, makes that project's Agent Bus unavailable — never the
@@ -199,9 +199,14 @@ function putSpaceAb(data: PrefsFile, dir: string, next: { endpoint: string | nul
   else delete data.agentBusSpaces;
 }
 
+/** The Agent Bus settings as the file holds them: `enabled` may be `'auto'` (on while the account socket exists). */
+export type AgentBusFile = Omit<AgentBusConfig, 'enabled' | 'stored'> & { enabled: boolean | 'auto' };
+
 export interface AgentBusConfig {
-  /** Turned on and off from the CLI only. */
+  /** On now: switched on, or `auto` with the daemon's socket present — read again on every call. Turned on and off from the CLI only. */
   enabled: boolean;
+  /** The setting as saved: `true`, `false`, or `'auto'` — the default of a new prefs file (an older mdhouse reads it as off). */
+  stored: boolean | 'auto';
   /** The daemon: a socket path or `http(s)://host:port`; empty: `/run/agent-bus/user-<login>.sock`. */
   socket: string;
   /** The credential for an `http(s)://` daemon — never sent to the page. */
@@ -342,7 +347,7 @@ const fresh = (): PrefsFile => ({
   access: { allow: [], users: {}, hostNames: [] },
   autoRwRules: [],
   autoRw: [],
-  agentBus: { enabled: false, socket: '', token: '', default: [], filter: [...DEFAULT_AB_FILTER], control: [] },
+  agentBus: { enabled: 'auto', socket: '', token: '', default: [], filter: [...DEFAULT_AB_FILTER], control: [] },
 });
 
 const validPort = (p: unknown): p is number => Number.isInteger(p) && (p as number) > 0 && (p as number) < 65536;
@@ -458,7 +463,8 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
     autoRwRules: v2 ? (strings(parsed.autoRwRules) ? [...parsed.autoRwRules] : []) : legacyAuto,
     autoRw: v2 ? [] : legacyAuto,
     agentBus: {
-      enabled: parsed.agentBus?.enabled === true,
+      // A file that exists keeps what it says; only a file that does not exist yet starts as `auto`.
+      enabled: (parsed.agentBus?.enabled as unknown) === 'auto' ? 'auto' : parsed.agentBus?.enabled === true,
       socket: typeof parsed.agentBus?.socket === 'string' ? parsed.agentBus.socket : '',
       token: typeof parsed.agentBus?.token === 'string' ? parsed.agentBus.token : '',
       default: Array.isArray(parsed.agentBus?.default) ? parsed.agentBus.default.filter((n) => typeof n === 'string') : [],
@@ -738,12 +744,14 @@ export class Prefs {
   /** The Agent Bus settings as the file holds them now. */
   get agentBus(): AgentBusConfig {
     this.refresh();
-    const { control } = this.data.agentBus;
-    return { ...this.data.agentBus, default: [...this.data.agentBus.default], filter: [...this.data.agentBus.filter], control: control === 'off' ? 'off' : [...control] };
+    const { control, enabled: stored, ...rest } = this.data.agentBus;
+    // `auto` is looked at every time: the daemon may be installed, or stopped, while mdhouse runs.
+    const enabled = stored === 'auto' ? (isUrl(rest.socket) ? true : rest.socket ? existsSync(rest.socket) : accountSocket().found) : stored;
+    return { ...rest, enabled, stored, default: [...rest.default], filter: [...rest.filter], control: control === 'off' ? 'off' : [...control] };
   }
 
   /** Change the Agent Bus settings. */
-  async setAgentBus(patch: Partial<AgentBusConfig>): Promise<AgentBusConfig> {
+  async setAgentBus(patch: Partial<Omit<AgentBusConfig, 'enabled' | 'stored'>> & { enabled?: boolean | 'auto' }): Promise<AgentBusConfig> {
     await this.mutate((data) => {
       data.agentBus = { ...data.agentBus, ...patch };
     });

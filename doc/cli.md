@@ -81,7 +81,7 @@ asks for the password; on non-interactive stdin it reads the first line.
 | `--auto-rw <path,...>` | Make projects served from under these paths writable when the settings switch is on, unless set read-only; saved. `reset` clears the paths. |
 | `--viewer` | Viewer: every project read-only, no writes from the web; saved. Projects keep their own RW/RO. |
 | `--workspace` | Back to a workspace: projects writable by their own modes (the default); saved. |
-| `--agent-bus [on\|off\|<socket>\|<url>]` | Configure Agent Bus; saved. A remote HTTP(S) daemon asks for its token. |
+| `--agent-bus [on\|off\|auto\|<socket>\|<url>]` | Configure Agent Bus; saved. `auto`: on while the login's Agent Bus socket exists (a new config's default). A remote HTTP(S) daemon asks for its token. |
 | `--ab-control <re,…\|off\|reset>` | Who may open a page in a tab over the Agent Bus: regexes narrow the owner's agents; `off` nobody; saved. |
 | `-o`, `--open` | Open the page in a browser after starting. |
 | `-a`, `--all` | Include gitignored Markdown while serving; with `exit`, stop every mdhouse. |

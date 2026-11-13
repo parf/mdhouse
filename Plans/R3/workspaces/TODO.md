@@ -223,6 +223,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
 - [ ] MW.2 Make Agent Bus work out of the box <a id="MW.2"></a>
   - [x] MW.2.1 Per-project Settings endpoint/default and root-aware routing; [bounded cohort](../EXECUTION.md#project-agent-bus-cohort) <a id="MW.2.1"></a>
     Integrated reviewed `fe7bac8`; canonical saved/session lifetime, token isolation, no-connect editor and routing accepted. [Evidence](../QA.md#project-agent-bus). Full install/RAG/control scope remains open.
+  - [x] MW.2.2 Out of the box: prefs `agentBus.enabled` gains `auto` — the default of a new prefs file only, on while the account socket exists (re-checked on every request); `--agent-bus auto`; start/status line says on/auto/off; older mdhouse reads auto as off; install.md step 6 and agent-bus.md <a id="MW.2.2"></a>
   - Compatibility checkpoint: canonical Personal tag fix `5736c14` integrated after independent PASS; create-only/owner-only registration preserved. CEO verified local reload/reconnect connected:true,error:null (`ab8cbd08d366ed48`), all roots preserved ([QA](../QA.md#agent-bus-canonical-personal-registration))
   - Builds: install-time Agent Bus setup; a connected mdhouse project ready to ask an agent; optional Agent Bus endpoint and default agents per space/root
   - Depends: [№MW.1](#MW.1), [№MW.1a](#MW.1a)

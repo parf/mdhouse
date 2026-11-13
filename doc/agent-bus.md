@@ -22,9 +22,19 @@ Runs on [Agent Bus](https://github.com/parf/ai-agent-bus) — https://github.com
 
 ## Turn it on
 
+A new mdhouse turns it on by itself while your Agent Bus is installed: `auto` is on while the login's
+account socket (`$XDG_RUNTIME_DIR/agent-bus/user-<login>.sock`, else `/run/agent-bus/user-<login>.sock`) exists, and is looked at again
+on every request. A config that already exists keeps what it says. Otherwise:
+
 ```sh
-mdhouse --agent-bus          # off: mdhouse --agent-bus off
+mdhouse --agent-bus          # on; off: mdhouse --agent-bus off; back to automatic: mdhouse --agent-bus auto
 ```
+
+The start line says which:
+
+- `agent-bus: on — <socket> (found)` — on; `(found; auto)` when automatic
+- `agent-bus: auto — not installed (no <path>)` — automatic, nothing to connect to
+- `agent-bus: off — found <socket>: mdhouse --agent-bus on` — off by your choice, while the socket is there
 
 Settings → Agent Bus: the default agents, which names to list.
 
