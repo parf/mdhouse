@@ -1,5 +1,5 @@
 // bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
-// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only), automationreal (real routes, needs a sandbox bus), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
+// TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, automation (fake routes; TW_CAN=0 reads only), automationreal (real routes, needs a sandbox bus), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -55,6 +55,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceSc
 await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
 await send('Page.enable'); await send('Runtime.enable');
+if (process.env.TW_BASIC) { await send('Network.enable'); await send('Network.setExtraHTTPHeaders', { headers: { Authorization: 'Basic ' + Buffer.from(process.env.TW_BASIC).toString('base64') } }); }
 if (only.includes('flowbar') || only.includes('flowviewer') || only.includes('automation')) await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/automation*' }, { urlPattern: '*/api/flow/*' }, { urlPattern: '*/api/doc*', requestStage: 'Response' }] });
 const sleep = (ms: number) => Bun.sleep(ms);
 export const ev = async (expression: string): Promise<any> => {
@@ -428,6 +429,14 @@ if (only.includes('automationreal')) {
   await sleep(1500);
   say('  after revoke: ' + await ev("document.querySelector('.auto-state')?.textContent"));
   execSync(`rm -rf ${R}/.mdhouse`);
+}
+if (only.includes('automationgap')) {
+  // What the page shows when it may not act: run against a real scratch instance (Viewer, a login-only instance, a bus that is down, an exposed bind).
+  await go('/repo/?automation');
+  await sleep(600);
+  say('  words: ' + await ev("[...document.querySelectorAll('.auto .settings-error, .auto .settings-hint')].map(e => e.textContent.trim().replace(/\\s+/g, ' ')).join(' ## ') || 'none'"));
+  say('  states: ' + await ev("[...document.querySelectorAll('.auto-state')].map(e => e.textContent).join(', ') || 'none'") + '; action buttons: ' + await ev("document.querySelectorAll('.auto-actions .rag-act').length"));
+  await audit('automationgap');
 }
 await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
 process.exit(0);

@@ -84,7 +84,7 @@ export function AutomationPage({ rootId, rootName, gear }: Props) {
           The approvals are kept on the Agent Bus and it cannot be read: {state.busError}. Nothing runs meanwhile.
         </p>
       )}
-      {state && !state.canApprove && !state.busError && <p class="settings-hint">You can read this; approving needs the administrator and the Agent Bus on.</p>}
+      {state && !state.canApprove && !state.busError && <p class="settings-hint">You can read this; approving needs the administrator, the Agent Bus on, and an mdhouse that is not open to the network.</p>}
       {state?.errors.map((e) => (
         <p class="settings-error auto-file-error" key={e.file}>
           <code>{e.file}</code> is not a registration: {e.error}
