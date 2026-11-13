@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits } from '../src/lib/git';
-import { applyFlowAction, docFlow, isFlowError, verifyRun, planFlowRun, runIdFor, startFlowRun, TOKEN_TTL_MS, type FlowActed, type FlowHostDeps, type FlowStartRequest, type FlowWrite } from '../src/lib/flow-host';
+import { applyFlowAction, docFlow, isFlowError, verifyRun, planFlowRun, sealKeyAt, runIdFor, startFlowRun, TOKEN_TTL_MS, type FlowActed, type FlowHostDeps, type FlowStartRequest, type FlowWrite } from '../src/lib/flow-host';
 import { loadFlowCatalog } from '../src/lib/flow-package';
-import { advanceDestination, markerOf, readFlowRunDocument } from '../src/lib/flow-run-markdown';
+import { advanceDestination, markerOf, readFlowRunDocument, readFlowRunMeta } from '../src/lib/flow-run-markdown';
 import { Registry } from '../src/lib/roots';
 import { repoToplevel } from '../src/lib/scan';
 
@@ -59,6 +60,7 @@ async function setup(opts: { writable?: boolean } = {}) {
     catalog: () => catalog,
     git: { repoOf: (r) => repoToplevel(r.path), head: headCommit, commitOf, isAncestor, commits: rangeCommits, dirty: (repo, r) => dirtyPaths(repo, r.path) },
     key: Buffer.alloc(32, 7),
+    sealKey: async () => Buffer.alloc(32, 9),
   };
   const queues = new Map<string, Promise<unknown>>();
   const io: FlowWrite = {
@@ -346,8 +348,55 @@ describe('applyFlowAction: one assertion on an open run', () => {
   test('verifyRun: the run’s own document passes; a package no longer installed or runnable does not', async () => {
     const r = await run();
     const state = readFlowRunDocument(r.doc())!.state;
-    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, state)).toBeNull();
-    expect(await verifyRun({ ...r.t.deps, catalog: async () => [] }, r.t.root, r.p.runPath, state)).toMatchObject({ reason: 'tampered', error: expect.stringContaining('not installed') });
+    const meta = readFlowRunMeta(r.doc());
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, state, meta)).toBeNull();
+    expect(await verifyRun({ ...r.t.deps, catalog: async () => [] }, r.t.root, r.p.runPath, state, meta)).toMatchObject({ reason: 'tampered', error: expect.stringContaining('not installed') });
+  });
+
+  test('verifyRun: the seal binds the run input; another key is another machine; no seal is tampered', async () => {
+    const r = await run();
+    const state = readFlowRunDocument(r.doc())!.state;
+    const meta = readFlowRunMeta(r.doc())!;
+    expect([meta.seal?.key, meta.seal?.mac]).toEqual([expect.stringMatching(/^[0-9a-f]{16}$/), expect.stringMatching(/^[0-9a-f]{64}$/)]);
+    const edited = (f: (s: typeof state) => void) => {
+      const copy = structuredClone(state);
+      f(copy);
+      return copy;
+    };
+    expect(await verifyRun({ ...r.t.deps, sealKey: async () => Buffer.alloc(32, 1) }, r.t.root, r.p.runPath, state, meta)).toMatchObject({ reason: 'foreign', error: expect.stringContaining('another machine') });
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, state, { ...meta, seal: undefined })).toMatchObject({ reason: 'tampered' });
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, state, null)).toMatchObject({ reason: 'tampered' });
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, edited((x) => (x.input.selection.target = c[1]!)), meta)).toMatchObject({ reason: 'tampered', error: expect.stringContaining('input') });
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, edited((x) => (x.input.selection.base = c[1]!)), meta)).toMatchObject({ reason: 'tampered' });
+    expect(await verifyRun(r.t.deps, r.t.root, `${r.p.runPath}x`, state, meta)).toMatchObject({ reason: 'tampered' });
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, state, { ...meta, commits: [] })).toMatchObject({ reason: 'tampered', error: expect.stringContaining('commit list') });
+    // The commit list swapped consistently (its digest too), base and target kept: still the seal.
+    const fewer = [meta.commits[0]!];
+    const swapped = edited((x) => (x.input.selection.sources.find((y) => y.id === 'commit-range')!.digest = createHash('sha256').update(fewer.join('\n')).digest('hex')));
+    expect(await verifyRun(r.t.deps, r.t.root, r.p.runPath, swapped, { ...meta, commits: fewer })).toMatchObject({ reason: 'tampered', error: expect.stringContaining('input') });
+  });
+
+  test('sealKeyAt: created 0600 on first use, read after; a malformed key throws; two first uses agree', async () => {
+    const d = await mkdtemp(join(dir, 'seal-'));
+    const path = join(d, 'cfg', 'flow-seal.key');
+    const [a, b] = await Promise.all([sealKeyAt(path), sealKeyAt(path)]);
+    expect(a.length).toBe(32);
+    expect(b.equals(a)).toBe(true);
+    expect((await stat(path)).mode & 0o777).toBe(0o600);
+    expect((await sealKeyAt(path)).equals(a)).toBe(true);
+    expect((await readdir(join(d, 'cfg'))).sort()).toEqual(['flow-seal.key']);
+    await writeFile(path, 'short');
+    await expect(sealKeyAt(path)).rejects.toThrow('not a flow seal key');
+  });
+
+  test('verifyRun: ancestry is asked once per range and HEAD', async () => {
+    const r = await run();
+    const state = readFlowRunDocument(r.doc())!.state;
+    const meta = readFlowRunMeta(r.doc());
+    let asked = 0;
+    const deps = { ...r.t.deps, ancestry: new Map<string, boolean>(), git: { ...r.t.deps.git, isAncestor: (repo: string, a: string, b: string) => (asked++, isAncestor(repo, a, b)) } };
+    for (let i = 0; i < 3; i++) expect(await verifyRun(deps, r.t.root, r.p.runPath, state, meta)).toBeNull();
+    expect(asked).toBe(2);
   });
 
   test('the analyst sections survive; a document without them, moved, or with an edited state is refused', async () => {

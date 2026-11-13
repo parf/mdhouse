@@ -11,7 +11,7 @@ import { Tabs } from './lib/ws-tabs';
 import index from './index.html';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
-import { resolve as resolvePath } from 'node:path';
+import { dirname, join, resolve as resolvePath } from 'node:path';
 import { ProjectDirError, Registry, ReadOnlyError, type AccessMode, type Resolved, type Root } from './lib/roots';
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
@@ -37,8 +37,8 @@ import { ADMIN_FAMILIES, bundle, inventory, isMethodMap, mutation, read, VIEWER_
 import { AdminSessions, adminCookie, clearAdminCookie, readAdminCookie, type AdminCookieScope } from './lib/admin-session';
 import { commitable, dirtyFiles, folderLog, remoteState, repoRel, run, suggestMessage, syncState, trackedFiles } from './lib/gitpage';
 import { commitOf, dirtyPaths, headCommit, isAncestor, rangeCommits, repoHead } from './lib/git';
-import { applyFlowAction, docFlow, isFlowError, verifyRun, isOpenRun, listRuns, planFlowRun, RUNNABLE, runsDir, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
-import { advanceDestination, readFlowRunDocument } from './lib/flow-run-markdown';
+import { applyFlowAction, docFlow, isFlowError, verifyRun, isOpenRun, listRuns, planFlowRun, RUNNABLE, runsDir, sealKeyAt, startFlowRun, type FlowError, type FlowHostDeps } from './lib/flow-host';
+import { advanceDestination, readFlowRunDocument, readFlowRunMeta } from './lib/flow-run-markdown';
 import { loadFlowCatalog, type LoadedFlowPackage } from './lib/flow-package';
 import { AB_ACTIONS, abTargets, AgentBus, badPatterns, defaultSocket, passes, requestText, safeError, validEndpoint, validTarget, type AbAction, type Endpoint } from './lib/agent-bus';
 import { stat } from 'node:fs/promises';
@@ -326,6 +326,7 @@ export async function serve(opts: ServeOptions) {
    * once; a reference without one has none. Run documents are written into the project.
    */
   let flowCatalog: Promise<LoadedFlowPackage[]> | null = null;
+  let flowSealKey: Promise<Buffer> | null = null;
   const flowDeps: FlowHostDeps = {
     registry,
     catalog: () => {
@@ -351,6 +352,12 @@ export async function serve(opts: ServeOptions) {
       dirty: (repo, root) => dirtyPaths(repo, root.path),
     },
     key: randomBytes(32),
+    sealKey: () =>
+      (flowSealKey ??= sealKeyAt(join(dirname(prefs.path), 'flow-seal.key')).catch((err: unknown) => {
+        flowSealKey = null;
+        throw err;
+      })),
+    ancestry: new Map(),
   };
   const FLOW_STATUS: Record<FlowError['reason'], number> = {
     invalid: 400,
@@ -363,6 +370,7 @@ export async function serve(opts: ServeOptions) {
     'open-run': 409,
     held: 409,
     tampered: 409,
+    foreign: 409,
     stale: 409,
   };
   const flowFail = (e: FlowError): Response => noStore(json(e, FLOW_STATUS[e.reason]));
@@ -1790,7 +1798,7 @@ export async function serve(opts: ServeOptions) {
         const ab = prefs.agentBus.enabled ? { ab: abTargets(src) } : {};
         // a run document: its validated state, as the run page acts on it
         const run = loc.root.kind !== 'reference' && loc.rel.startsWith('Plans/flows/runs/') ? readFlowRunDocument(src) : null;
-        const refused = run ? await verifyRun(flowDeps, loc.root, loc.rel, run.state) : null;
+        const refused = !run ? null : opts.noGit ? { error: 'git is off' } : await verifyRun(flowDeps, loc.root, loc.rel, run.state, readFlowRunMeta(src));
         const flow = run ? { flow: docFlow(run.state, registry.writableAt(loc), refused?.error) } : {};
         return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab, ...flow, contentHash });
       }),
@@ -2012,6 +2020,7 @@ export async function serve(opts: ServeOptions) {
       '/api/flow/event': {
         POST: mutation('flow', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          if (opts.noGit) return flowNoGit();
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
           if (!body || typeof body.root !== 'string' || typeof body.path !== 'string' || body.path.length > 4096) {
             return flowFail({ error: 'expected {root, path, expectedVersion, clientId, action}', reason: 'invalid' });
@@ -2023,7 +2032,7 @@ export async function serve(opts: ServeOptions) {
             const text = await Bun.file(loc.abs).text().catch(() => null);
             if (text === null) return flowFail({ error: 'no such run document', reason: 'no-root' });
             const before = readFlowRunDocument(text);
-            const refused = before && (await verifyRun(flowDeps, loc.root, loc.rel, before.state));
+            const refused = before && (await verifyRun(flowDeps, loc.root, loc.rel, before.state, readFlowRunMeta(text)));
             if (refused) return flowFail(refused);
             const res = applyFlowAction(text, { rootId: loc.root.id, rel: loc.rel }, { expectedVersion: body.expectedVersion, clientId: body.clientId, action: body.action });
             if (isFlowError(res)) return flowFail(res);

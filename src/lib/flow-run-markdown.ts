@@ -87,6 +87,14 @@ export interface FlowRunDocMeta {
   commits: string[];
   /** Uncommitted paths under the root, not part of the range. */
   dirty: string[];
+  /** The starting host's seal over the run input (`verifyRun`). */
+  seal?: FlowRunSeal;
+}
+
+/** `key`: the sealing key's id; `mac`: HMAC-SHA256 over the run input, hex. */
+export interface FlowRunSeal {
+  key: string;
+  mac: string;
 }
 
 function fenced(info: string, body: string): string {
@@ -183,7 +191,9 @@ export function readFlowRunMeta(text: string): FlowRunDocMeta | null {
     : t?.kind === 'schedule' && STR(t.id) && STR(t.slot) ? { kind: 'schedule' as const, id: t.id, slot: t.slot }
     : null;
   if (!trigger || !STR(m.rootId) || !STR(m.runPath) || !STR(m.marker) || !/^[0-9a-f]{40}$/.test(m.marker) || !STRS(m.commits) || !STRS(m.dirty)) return null;
-  return { rootId: m.rootId, runPath: m.runPath, trigger, marker: m.marker, commits: m.commits, dirty: m.dirty };
+  const s = m.seal as Record<string, unknown> | undefined;
+  const seal = s && STR(s.key) && /^[0-9a-f]{16}$/.test(s.key) && STR(s.mac) && /^[0-9a-f]{64}$/.test(s.mac) ? { seal: { key: s.key, mac: s.mac } } : {};
+  return { rootId: m.rootId, runPath: m.runPath, trigger, marker: m.marker, commits: m.commits, dirty: m.dirty, ...seal };
 }
 
 const ANALYST = /^## Findings$[\s\S]*?(?=^## Transitions$)/m;

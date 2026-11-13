@@ -9,10 +9,11 @@
  * the package) is `stale`. Manual and scheduled starts share it.
  */
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readdir, stat } from 'node:fs/promises';
+import { link, mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import type { LoadedFlowPackage } from './flow-package';
 import { applyFlowRunEvent, createFlowRun, type FlowRunAction, type FlowRunEvent, type FlowRunInput, type FlowRunState, type FlowRunStatus } from './flow-run';
-import { keepAnalystSections, markerOf, readFlowRunDocument, readFlowRunMeta, renderFlowRunDocument } from './flow-run-markdown';
+import { keepAnalystSections, markerOf, readFlowRunDocument, readFlowRunMeta, renderFlowRunDocument, type FlowRunDocMeta, type FlowRunSeal } from './flow-run-markdown';
 import type { Registry, Root } from './roots';
 
 export type FlowRange = { kind: 'since-last-run' } | { kind: 'baseline'; commit: string };
@@ -35,7 +36,8 @@ export type FlowErrorCode =
   | 'stale'
   | 'not-writable'
   | 'held'
-  | 'tampered';
+  | 'tampered'
+  | 'foreign';
 export interface FlowError {
   error: string;
   reason: FlowErrorCode;
@@ -60,6 +62,10 @@ export interface FlowHostDeps {
   git: FlowGit;
   /** Signs plan tokens; per process. */
   key: Buffer;
+  /** Seals a run's input at start: per instance, kept 0600 in the config dir (`sealKeyAt`). */
+  sealKey(): Promise<Buffer>;
+  /** Ancestry answers by repo, commits and HEAD: they cannot change while HEAD stays. */
+  ancestry?: Map<string, boolean>;
   now?(): Date;
 }
 
@@ -92,6 +98,8 @@ export const runsDir = (packageId: string): string => `Plans/flows/runs/${packag
 const DIRTY_KEPT = 120;
 /** Run documents read per package, newest first: the open run and a repeated schedule slot are found among them. */
 const RUNS_LISTED = 500;
+/** Ancestry answers kept per host. */
+const ANCESTRY_KEPT = 256;
 const REV = /^[0-9a-f]{4,40}$/;
 const ROOT_SLUG = (id: string): string => id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^[^a-z]+|-+$/g, '').slice(0, 100).replace(/-+$/, '') || 'project';
 /** Packages this host can run: it supplies their first evidence label (the commit range) itself. */
@@ -103,6 +111,41 @@ export { isError as isFlowError };
 
 /** The digest a run declares for its package: manifest, documents and example. */
 const digestOf = (pkg: LoadedFlowPackage): string => sha256(JSON.stringify([pkg.manifest, [...pkg.documents], pkg.example]));
+
+/**
+ * The seal key at `path`: read, or created 0600 on first use (written aside and linked, so a
+ * concurrent start reads a whole key). Not 32 bytes → throws.
+ */
+export async function sealKeyAt(path: string): Promise<Buffer> {
+  const have = await readFile(path).catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT' ? null : Promise.reject(err)));
+  if (have) {
+    if (have.length !== 32) throw new Error(`${path} is not a flow seal key`);
+    return have;
+  }
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  const tmp = `${path}.${randomBytes(6).toString('hex')}`;
+  const key = randomBytes(32);
+  await writeFile(tmp, key, { flag: 'wx', mode: 0o600 });
+  try {
+    await link(tmp, path);
+    return key;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'EEXIST') return sealKeyAt(path);
+    throw err;
+  } finally {
+    await unlink(tmp).catch(() => {});
+  }
+}
+
+const RANGE_SOURCE = 'commit-range';
+/** What a seal binds: the project, package, range, its commits, destination and run document. */
+function sealData(rootPath: string, input: FlowRunInput, runPath: string): string {
+  const sel = input.selection;
+  const range = sel.sources.find((x) => x.id === RANGE_SOURCE)?.digest ?? '';
+  return stable([rootPath, input.runId, input.package.id, input.packageDigest, sel.base, sel.target, range, sel.destination, runPath]);
+}
+const sealId = (key: Buffer): string => sha256(key.toString('hex')).slice(0, 16);
+const sealMac = (key: Buffer, data: string): string => createHmac('sha256', key).update(data).digest('hex');
 
 /** JSON with sorted keys: equal data, equal text. */
 function stable(v: unknown): string {
@@ -195,7 +238,7 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
   const startedAt = fixed?.startedAt ?? (deps.now?.() ?? new Date()).toISOString();
   const runPath = `${runsDir(manifest.id)}/${stamp(startedAt)}-${runId.slice(4, 12)}.md`;
   const packageDigest = digestOf(pkg);
-  const rangeSource = { id: 'commit-range', path: `commits/${base.slice(0, 12)}-${target.slice(0, 12)}`, digest: sha256(commits.join('\n')) };
+  const rangeSource = { id: RANGE_SOURCE, path: `commits/${base.slice(0, 12)}-${target.slice(0, 12)}`, digest: sha256(commits.join('\n')) };
   // Evidence asserted on the run page is recorded in the run document itself; its digest is of the path, as the text changes.
   const runSource = { id: 'run-document', path: runPath, digest: sha256(runPath) };
   const dirtySources = dirty.slice(0, 120).map((p, i) => ({ id: `uncommitted-${i + 1}`, path: p.replace(/[\\:%?#\x00-\x1f\x7f]/g, '_'), digest: sha256(p) }));
@@ -214,14 +257,16 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
     },
     // The host established the range itself; every other label is the analyst's to supply.
     evidence: manifest.evidence.required.map((label, i) =>
-      i === 0 ? { label, status: 'supplied' as const, sourceIds: ['commit-range'], note: `${commits.length} commits, read by mdhouse from git` } : { label, status: 'missing' as const, sourceIds: [], note: 'Not yet supplied' },
+      i === 0 ? { label, status: 'supplied' as const, sourceIds: [RANGE_SOURCE], note: `${commits.length} commits, read by mdhouse from git` } : { label, status: 'missing' as const, sourceIds: [], note: 'Not yet supplied' },
     ),
     questions: [],
   };
+  const sealKey = await deps.sealKey();
+  const seal: FlowRunSeal = { key: sealId(sealKey), mac: sealMac(sealKey, sealData(root.path, input, runPath)) };
   let doc: string;
   try {
     const state = createFlowRun(input);
-    doc = renderFlowRunDocument(state, { rootId: root.id, runPath, trigger: req.trigger, marker: base, commits, dirty });
+    doc = renderFlowRunDocument(state, { rootId: root.id, runPath, trigger: req.trigger, marker: base, commits, dirty, seal });
   } catch (err) {
     return fail('invalid', err instanceof Error ? err.message : 'invalid run');
   }
@@ -334,15 +379,24 @@ export interface DocFlow {
 const stepTitle = (id: string): string => id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, ' ');
 
 /**
- * Whether a run document may be acted on: its input must be what this host would have written — under
- * its package's runs folder, the installed runnable package (same manifest and digest), the package's
- * own selection defaults, and a base and target that are commits on HEAD's history. Else `tampered`.
+ * Whether a run document may be acted on: its input must be what this host wrote — sealed by this
+ * instance's key over the project, package, range, commits, destination and path (another key:
+ * `foreign`, read-only here), under its package's runs folder, the installed runnable package (same
+ * manifest and digest), the package's own selection defaults, and a base and target that are commits
+ * on HEAD's history. Else `tampered`.
  */
-export async function verifyRun(deps: FlowHostDeps, root: Root, rel: string, state: FlowRunState): Promise<FlowError | null> {
+export async function verifyRun(deps: FlowHostDeps, root: Root, rel: string, state: FlowRunState, meta: FlowRunDocMeta | null): Promise<FlowError | null> {
   const { input } = state;
   const sel = input.selection;
   const id = input.package.id;
   const tampered = (why: string) => fail('tampered', `this run document cannot be acted on: ${why}`);
+  if (!meta?.seal) return tampered('it carries no seal from this host');
+  const key = await deps.sealKey();
+  if (meta.seal.key !== sealId(key)) return fail('foreign', 'this run was started on another machine — read-only here');
+  const want = Buffer.from(sealMac(key, sealData(root.path, input, rel)));
+  const got = Buffer.from(meta.seal.mac);
+  if (got.length !== want.length || !timingSafeEqual(got, want)) return tampered('its run input was changed');
+  if (sel.sources.find((x) => x.id === RANGE_SOURCE)?.digest !== sha256(meta.commits.join('\n'))) return tampered('its commit list was changed');
   if (!rel.startsWith(`${runsDir(id)}/`)) return tampered('it is not in its package’s runs folder');
   const pkg = RUNNABLE.has(id) ? (await deps.catalog()).find((p) => p.manifest.id === id) : undefined;
   if (!pkg) return tampered('its package is not installed or not runnable');
@@ -355,7 +409,17 @@ export async function verifyRun(deps: FlowHostDeps, root: Root, rel: string, sta
   const head = repo ? await deps.git.head(repo) : null;
   if (!repo || !head) return fail('no-git', 'the project is not in a git repository');
   // An unknown commit is no ancestor either.
-  if (!(await deps.git.isAncestor(repo, sel.target, head)) || !(await deps.git.isAncestor(repo, sel.base, sel.target))) return tampered('its range is not on the history of HEAD');
+  const onHistory = async (): Promise<boolean> => (await deps.git.isAncestor(repo, sel.target, head)) && (await deps.git.isAncestor(repo, sel.base, sel.target));
+  const seen = `${repo}\0${sel.base}\0${sel.target}\0${head}`;
+  let ok = deps.ancestry?.get(seen);
+  if (ok === undefined) {
+    ok = await onHistory();
+    if (deps.ancestry) {
+      if (deps.ancestry.size >= ANCESTRY_KEPT) deps.ancestry.delete(deps.ancestry.keys().next().value!);
+      deps.ancestry.set(seen, ok);
+    }
+  }
+  if (!ok) return tampered('its range is not on the history of HEAD');
   return null;
 }
 

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, realpath, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
@@ -234,10 +235,10 @@ describe('/api/flow routes', () => {
       expect((await body(await t.post('/api/flow/event', { root: t.root.id })))[1]).toMatchObject({ reason: 'invalid' });
       expect((await body(await t.post('/api/flow/event', { ...ev, clientId: 'x' })))[1]).toMatchObject({ reason: 'invalid' });
       const before = await readFile(join(t.proj, pv.runPath), 'utf8');
-      // Copied elsewhere in the runs folder: refused, the copy unchanged.
+      // Copied elsewhere in the runs folder: its seal names the original path — refused, the copy unchanged.
       const copy = pv.runPath.replace(/\.md$/, '-copy.md');
       await writeFile(join(t.proj, copy), before);
-      expect((await body(await t.post('/api/flow/event', { ...ev, path: copy })))[1]).toMatchObject({ reason: 'invalid' });
+      expect((await body(await t.post('/api/flow/event', { ...ev, path: copy })))[1]).toMatchObject({ reason: 'tampered' });
       expect(await readFile(join(t.proj, copy), 'utf8')).toBe(before);
       expect(await body(await t.post('/api/flow/event', ev))).toEqual([200, { status: 'cancelled', version: 1, url: expect.any(String) }]);
     } finally {
@@ -285,7 +286,28 @@ describe('/api/flow routes', () => {
         return out;
       };
       const finish = { type: 'outcome', outcome: 'complete', text: 'ok' };
+      // A later commit: a forged target past the started one would skip it on the next run.
+      await writeFile(join(t.proj, 'n3.md'), '# 3\n');
+      git(t.proj, 'add', '-A');
+      git(t.proj, 'commit', '-qm', 'c3');
+      const seven = git(t.proj, 'rev-parse', 'HEAD');
+      const commits = [`${t.c[1]} c2`, `${seven} c3`];
+      const digest = createHash('sha256').update(commits.join('\n')).digest('hex');
       const cases: Array<[string, string, string]> = [
+        ['later target', forge((i) => (i.selection.target = seven)), pv.runPath],
+        [
+          'later target, consistently regenerated',
+          forge(
+            (i) => {
+              i.selection.target = seven;
+              const range = i.selection.sources.find((x: { id: string }) => x.id === 'commit-range');
+              range.path = `commits/${t.c[0]!.slice(0, 12)}-${seven.slice(0, 12)}`;
+              range.digest = digest;
+            },
+            (m) => (m.commits = commits),
+          ),
+          pv.runPath,
+        ],
         ['destination', forge((i) => (i.selection.destination = 'README.md')), pv.runPath],
         ['unknown target', forge((i) => (i.selection.target = 'ab'.repeat(20))), pv.runPath],
         ['range off history', forge((i) => ([i.selection.base, i.selection.target] = [i.selection.target, i.selection.base])), pv.runPath],
@@ -312,6 +334,62 @@ describe('/api/flow routes', () => {
       await writeFile(join(t.proj, pv.runPath), good);
       expect(await send(pv.runPath, finish, 6)).toEqual([200, { status: 'complete', version: 7, url: expect.any(String) }]);
     } finally {
+      t.stop();
+    }
+  });
+
+  test('a run sealed by another key is read-only here (another machine, or a lost key); --no-git refuses run pages and events', async () => {
+    const t = await start();
+    const others: Array<{ stop(): void }> = [];
+    try {
+      const pv = (await (await t.preview()).json()) as { token: string; runPath: string };
+      await t.post('/api/flow/start', { token: pv.token });
+      const doc = await readFile(join(t.proj, pv.runPath), 'utf8');
+      const event = { root: t.root.id, path: pv.runPath, expectedVersion: 0, clientId: 'other-0001', action: { type: 'cancel', reason: 'x' } };
+      const keyFile = join(t.proj, '..', 'flow-seal.key');
+      expect(((await readFile(keyFile)).length)).toBe(32);
+
+      /** Another server on the same project: its own config dir (another machine), or this one's. */
+      const again = async (cfg: string, port: number, noGit = false) => {
+        await mkdir(cfg, { recursive: true });
+        const prefs = await Prefs.load(join(cfg, 'prefs.json'));
+        const registry = await Registry.create([{ path: t.proj, mode: 'rw' }]);
+        await registry.addReference(DOC);
+        const s = await serve({ registry, prefs, port: testPort(port), hostname: '127.0.0.1', noGit, localAdmin: true });
+        const stop = () => {
+          s.server.stop(true);
+          s.watcher.close();
+          s.control?.stop();
+        };
+        others.push({ stop });
+        const origin = `http://127.0.0.1:${testPort(port)}`;
+        const root = registry.list().find((r) => r.kind === 'project')!;
+        return {
+          stop,
+          page: async () => ((await (await fetch(`${origin}/api/doc?p=${encodeURIComponent(`${root.id}/${pv.runPath}`)}`)).json()) as { flow?: { canAct: boolean; refused?: string } }).flow,
+          act: async () => body(await fetch(`${origin}/api/flow/event`, { method: 'POST', headers: { 'content-type': 'application/json', origin }, body: JSON.stringify({ ...event, root: root.id }) })),
+        };
+      };
+      const elsewhere = await again(join(t.proj, '..', 'elsewhere'), 61980);
+      expect(await elsewhere.page()).toMatchObject({ canAct: false, refused: expect.stringContaining('another machine') });
+      expect(await elsewhere.act()).toEqual([409, { error: expect.stringContaining('another machine'), reason: 'foreign' }]);
+      elsewhere.stop();
+
+      // The key file gone: a restart makes a new key; the old run is read-only.
+      t.stop();
+      await unlink(keyFile);
+      const restarted = await again(join(t.proj, '..'), 61981);
+      expect(await restarted.page()).toMatchObject({ canAct: false, refused: expect.stringContaining('another machine') });
+      expect((await restarted.act())[1]).toMatchObject({ reason: 'foreign' });
+      expect((await readFile(keyFile)).length).toBe(32);
+      restarted.stop();
+
+      const noGit = await again(join(t.proj, '..'), 61982, true);
+      expect(await noGit.page()).toMatchObject({ canAct: false, refused: 'git is off' });
+      expect(await noGit.act()).toEqual([404, { error: 'git is off', reason: 'no-git' }]);
+      expect(await readFile(join(t.proj, pv.runPath), 'utf8')).toBe(doc);
+    } finally {
+      for (const o of others) o.stop();
       t.stop();
     }
   });

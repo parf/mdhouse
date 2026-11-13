@@ -12,7 +12,7 @@
 
 - `for-agents.md` in the reference: one page an AI reads first — how to write plans, which glyphs, which markup — at `/api/raw?p=_mdhouse/for-agents.md`
 
-- Flows (server): `/api/flow/catalog`, `/api/flow/preview`, `/api/flow/start`, `/api/flow/event` — start the Recent commits review on a project; the run document lands in `Plans/flows/runs/recent-commits-review/`; a first run asks for a baseline commit; one open run at a time; the run page records evidence, outcomes and cancel, keeps your Findings and Checks, and a complete run moves `Plans/flows/recent-commits-review.md`'s `last-commit-id` so the next run starts there
+- Flows (server): `/api/flow/catalog`, `/api/flow/preview`, `/api/flow/start`, `/api/flow/event` — start the Recent commits review on a project; the run document lands in `Plans/flows/runs/recent-commits-review/`; a first run asks for a baseline commit; one open run at a time; the run page records evidence, outcomes and cancel, keeps your Findings and Checks, and a complete run moves `Plans/flows/recent-commits-review.md`'s `last-commit-id` so the next run starts there. A run document edited by hand can't be acted on; one started on another machine (or before its key was lost) is read-only
 
 - Agent Bus control: an owner's agent can list the projects and open browser tabs, and send one tab to a Markdown document (topic `mdhouse.ctl`, `inventory` / `open`); reads only, one tab only, a tab with unsaved editor text stays; `mdhouse --ab-control <regexes|off|reset>` narrows who may
 
