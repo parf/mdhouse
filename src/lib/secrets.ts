@@ -8,7 +8,7 @@
  * while `prefs.json` names the same one.
  */
 import { readFileSync } from 'node:fs';
-import { mkdir, realpath, rename, unlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, open, realpath, rename, stat, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 export const SECRETS_VERSION = 1;
@@ -25,7 +25,7 @@ export interface Secrets {
   users?: Record<string, string>;
 }
 
-/** `secrets.json` in the folder of `prefsPath`. */
+/** `secrets.json` in the folder `prefsPath` names — the config dir, never beside a symlinked prefs.json's target. */
 export const secretsPath = (prefsPath: string): string => join(dirname(prefsPath), 'secrets.json');
 
 const isStr = (v: unknown): v is string => typeof v === 'string' && v !== '';
@@ -69,16 +69,44 @@ export function readSecrets(path: string): Secrets | 'missing' | { problem: stri
 
 let seq = 0;
 
-/** Written aside (0600) and renamed over the file — at a symlink's target, so the link stays. */
-export async function writeSecrets(path: string, s: Secrets): Promise<void> {
-  const target = await realpath(path).catch(() => path);
-  await mkdir(dirname(target), { recursive: true, mode: 0o700 });
+/**
+ * Writes `text` at `target` durably: a temporary file (`mode`), synced, renamed over it, then the directory synced —
+ * after a crash the file is the old one or the new one, never empty.
+ */
+export async function writeDurable(target: string, text: string, mode = 0o600): Promise<void> {
   const tmp = `${target}.${process.pid}.${++seq}.tmp`;
   try {
-    await writeFile(tmp, JSON.stringify({ version: SECRETS_VERSION, ...s }, null, 2) + '\n', { mode: 0o600 });
+    const fh = await open(tmp, 'wx', mode);
+    try {
+      await fh.writeFile(text);
+      await fh.sync();
+    } finally {
+      await fh.close();
+    }
     await rename(tmp, target);
   } catch (err) {
     await unlink(tmp).catch(() => {});
     throw err;
   }
+  const dir = await open(dirname(target), 'r');
+  try {
+    await dir.sync();
+  } finally {
+    await dir.close();
+  }
+}
+
+/** The folder made 0700, or narrowed to it when this user's and looser: it holds the secrets. */
+export async function privateDir(dir: string): Promise<void> {
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  const st = await stat(dir);
+  if (st.mode & 0o077 && st.uid === process.getuid?.()) await chmod(dir, 0o700);
+}
+
+/** Written durably (0600) into the private config dir — at a symlinked secrets.json's target, so the link stays. */
+export async function writeSecrets(path: string, s: Secrets): Promise<void> {
+  await privateDir(dirname(path));
+  const target = await realpath(path).catch(() => path);
+  await mkdir(dirname(target), { recursive: true, mode: 0o700 });
+  await writeDurable(target, JSON.stringify({ version: SECRETS_VERSION, ...s }, null, 2) + '\n');
 }

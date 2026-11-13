@@ -433,12 +433,12 @@ test('a failed save over a broken file leaves the fallback copy in memory untouc
   // Fails exactly one temp-file write; every other call is the real one, so the mock is inert afterwards.
   mock.module('node:fs/promises', () => ({
     ...real,
-    writeFile: async (...args: Parameters<typeof real.writeFile>) => {
-      if (failNext) {
+    open: async (...args: Parameters<typeof real.open>) => {
+      if (failNext && String(args[0]).endsWith('.tmp')) {
         failNext = false;
         throw Object.assign(new Error('injected write failure'), { code: 'EIO' });
       }
-      return real.writeFile(...args);
+      return real.open(...args);
     },
   }));
   try {

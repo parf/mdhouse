@@ -18,7 +18,7 @@
  */
 
 import { homedir } from 'node:os';
-import { mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, open, realpath, rename, stat, unlink } from 'node:fs/promises';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DEFAULT_EDIT_SCHEME, normalizeEditScheme } from './urls';
@@ -26,7 +26,7 @@ import { normalizeProjectName } from './project-name';
 import type { AccessMode } from './roots';
 import { accountSocket, isUrl, validEndpoint, validTarget } from './agent-bus';
 import { parseControl, type ControlSetting } from './ab-control';
-import { readSecrets, SECRET_MOVED, secretsPath, writeSecrets, type Secrets } from './secrets';
+import { privateDir, readSecrets, SECRET_MOVED, secretsPath, writeDurable, writeSecrets, type Secrets } from './secrets';
 
 export type Mark = 'favorite' | 'muted' | 'ignored';
 
@@ -477,14 +477,11 @@ function normalizeFile(parsed: Partial<PrefsFile>): PrefsFile {
   return data;
 }
 
-/** `secrets.json` beside the file `prefsPath` names — beside a symlink's target. */
-const secretsOf = (prefsPath: string): string => {
-  try {
-    return secretsPath(realpathSync(prefsPath));
-  } catch {
-    return secretsPath(prefsPath);
-  }
-};
+/** `secrets.json` in the config dir: beside the name `prefsPath`, never beside a symlinked prefs.json's target (a dotfiles repo). */
+const secretsOf = (prefsPath: string): string => secretsPath(prefsPath);
+
+/** What the instance token is bound to: the daemon address, the account socket when none is set. */
+const tokenEndpoint = (socket: string): string => socket || accountSocket().path;
 
 /**
  * `data` with its secrets from `secrets.json`. A real value in `prefs.json` wins — only an older mdhouse or a hand
@@ -496,7 +493,7 @@ function withSecrets(data: PrefsFile, sec: Secrets): PrefsFile {
   const users: Record<string, string> = {};
   for (const [login, hash] of Object.entries(data.access.users)) users[login] = hash === SECRET_MOVED ? (sec.users?.[login] ?? SECRET_MOVED) : hash;
   data.access.users = users;
-  if (!data.agentBus.token && sec.agentBus && sec.agentBus.endpoint === data.agentBus.socket) data.agentBus.token = sec.agentBus.token;
+  if (!data.agentBus.token && sec.agentBus && sec.agentBus.endpoint === tokenEndpoint(data.agentBus.socket)) data.agentBus.token = sec.agentBus.token;
   const map = spaceMap(data);
   if (map && sec.spaces) {
     const out: Record<string, unknown> = {};
@@ -508,6 +505,24 @@ function withSecrets(data: PrefsFile, sec: Secrets): PrefsFile {
     data.agentBusSpaces = out;
   }
   return data;
+}
+
+/** `data` with every secret gone: each login `SECRET_MOVED`, no token, no project credential. */
+function withoutSecrets(data: PrefsFile): PrefsFile {
+  const { file } = splitSecrets(data);
+  const map = spaceMap(file);
+  if (map) {
+    const out: Record<string, unknown> = {};
+    for (const [key, raw] of Object.entries(map)) {
+      if (raw && typeof raw === 'object' && !Array.isArray(raw) && 'credential' in raw) {
+        const { credential: _gone, ...rest } = raw as Record<string, unknown>;
+        out[key] = rest;
+      } else out[key] = raw;
+    }
+    file.agentBusSpaces = out;
+  }
+  if (blockedBy.has(data)) blockedBy.set(file, blockedBy.get(data)!);
+  return file;
 }
 
 /**
@@ -523,7 +538,7 @@ function splitSecrets(data: PrefsFile): { file: PrefsFile; secrets: Secrets } {
     if (hash !== SECRET_MOVED) users[login] = hash;
   }
   if (Object.keys(users).length) secrets.users = users;
-  if (data.agentBus.token) secrets.agentBus = { endpoint: data.agentBus.socket, token: data.agentBus.token };
+  if (data.agentBus.token) secrets.agentBus = { endpoint: tokenEndpoint(data.agentBus.socket), token: data.agentBus.token };
   const map = spaceMap(data);
   if (map) {
     const out: Record<string, unknown> = {};
@@ -561,7 +576,8 @@ function readNow(path: string): PrefsFile | 'missing' | 'broken' {
   const sec = readSecrets(secretsOf(path));
   if (typeof sec === 'object' && 'problem' in sec) {
     if (!blockedBy.has(found)) blockedBy.set(found, `paired with a secrets.json that is ${sec.problem}`);
-    return withSecrets(found, {});
+    // No secret at all, a real one left in prefs.json included: no login, no token, no credential.
+    return withoutSecrets(found);
   }
   return withSecrets(found, sec === 'missing' ? {} : sec);
 }
@@ -641,8 +657,6 @@ async function withLock<T>(path: string, fn: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Distinguishes this process's temporary files from one another. */
-let tmpSeq = 0;
 
 export class Prefs {
   /**
@@ -701,9 +715,9 @@ export class Prefs {
   }
 
   /**
-   * Written to a temporary file and renamed over the old one, so no reader sees half of it.
-   * Mode 0600 in a directory created 0700: the file holds password hashes. A symlinked file is
-   * written at its target, so the link stays.
+   * Written durably (`writeDurable`: synced temporary file, rename, synced dir), so no reader sees half of it and a
+   * crash leaves the old file or the new one. Mode 0600; the config dir is kept 0700 (`privateDir`). A symlinked file
+   * is written at its target, so the link stays.
    */
   private async write(data: PrefsFile): Promise<void> {
     // The secrets first: a hash moving out of prefs.json is on disk before prefs.json loses it. A failed prefs.json
@@ -711,16 +725,10 @@ export class Prefs {
     const { file, secrets } = splitSecrets(data);
     // No secrets and no file: none is made. An existing one is rewritten, so a removed secret leaves it too.
     if (Object.keys(secrets).length || existsSync(secretsOf(this.path))) await writeSecrets(secretsOf(this.path), secrets);
+    await privateDir(dirname(this.path));
     const target = await realpath(this.path).catch(() => this.path);
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-    const tmp = `${target}.${process.pid}.${++tmpSeq}.tmp`;
-    try {
-      await writeFile(tmp, JSON.stringify(onDisk(file), null, 2) + '\n', { mode: 0o600 });
-      await rename(tmp, target);
-    } catch (err) {
-      await unlink(tmp).catch(() => {});
-      throw err;
-    }
+    await writeDurable(target, JSON.stringify(onDisk(file), null, 2) + '\n');
   }
 
   get settings(): Settings {

@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, test } from 'bun:test';
-import { existsSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { chmodSync, existsSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Users } from '../src/lib/access';
+import { accountSocket } from '../src/lib/agent-bus';
 import { Prefs } from '../src/lib/prefs';
 import { SECRET_MOVED } from '../src/lib/secrets';
 
@@ -127,11 +128,17 @@ describe('secrets.json beside prefs.json', () => {
     await legacy(c);
     await (await Prefs.load(c.prefs)).setSavedName(c.p, 'P');
     writeFileSync(c.secrets, text);
+    // A real hash left in prefs.json (an older writer) admits nobody either while the pair is blocked.
+    const f = json(c.prefs);
+    f.access.users.bob = await Bun.password.hash('pw-bob');
+    writeFileSync(c.prefs, JSON.stringify(f));
     const before = readFileSync(c.prefs, 'utf8');
     const prefs = await Prefs.load(c.prefs);
     expect([prefs.mode(), prefs.accessBlocked()]).toEqual(['viewer', expect.stringContaining('secrets.json')]);
     expect(await new Users().check(basic('ann', 'pw-ann'), prefs.access.users)).toBe(false);
+    expect(await new Users().check(basic('bob', 'pw-bob'), prefs.access.users)).toBe(false);
     expect(prefs.agentBus.token).toBe('');
+    expect(prefs.spaceAb(c.p)?.credential).toBeUndefined();
     await expect(prefs.setSavedName(c.p, 'Q')).rejects.toThrow('secrets.json');
     expect([readFileSync(c.prefs, 'utf8'), readFileSync(c.secrets, 'utf8')]).toEqual([before, text]);
   });
@@ -150,7 +157,7 @@ describe('secrets.json beside prefs.json', () => {
     expect(a.agentBus.token).toBe('tok-2');
   });
 
-  test('a symlinked prefs.json keeps its secrets beside the target', async () => {
+  test('a symlinked prefs.json (a dotfiles repo): secrets.json stays in the config dir, never beside the target', async () => {
     const c = await cfg();
     await mkdir(join(c.dir, 'real'));
     const target = join(c.dir, 'real/prefs.json');
@@ -159,6 +166,45 @@ describe('secrets.json beside prefs.json', () => {
     const prefs = await Prefs.load(join(c.dir, 'link.json'));
     await prefs.addSaved(c.p);
     await prefs.setUser('ann', 'h');
-    expect([existsSync(join(c.dir, 'real/secrets.json')), existsSync(c.secrets)]).toEqual([true, false]);
+    expect([existsSync(join(c.dir, 'real/secrets.json')), existsSync(c.secrets)]).toEqual([false, true]);
+  });
+
+  test('a token with no socket set is bound to the account socket it was for', async () => {
+    const c = await cfg();
+    const prefs = await Prefs.load(c.prefs);
+    await prefs.setAgentBus({ socket: '', token: 'tok-a' });
+    expect(json(c.secrets).agentBus).toEqual({ endpoint: accountSocket().path, token: 'tok-a' });
+    expect((await Prefs.load(c.prefs)).agentBus.token).toBe('tok-a');
+  });
+
+  test('a config dir open to others is narrowed to 0700 on the next save', async () => {
+    const c = await cfg();
+    chmodSync(c.dir, 0o755);
+    await (await Prefs.load(c.prefs)).setUser('ann', 'h');
+    expect(statSync(c.dir).mode & 0o777).toBe(0o700);
+  });
+
+  test('durable: the temporary file is synced before the rename, the folder after it', async () => {
+    const real = { ...(await import('node:fs/promises')) };
+    const seen: string[] = [];
+    mock.module('node:fs/promises', () => ({
+      ...real,
+      open: async (...args: Parameters<typeof real.open>) => {
+        const fh = await real.open(...args);
+        const what = String(args[0]).endsWith('.tmp') ? 'file' : args[1] === 'r' ? 'dir' : 'other';
+        const sync = fh.sync.bind(fh);
+        fh.sync = async () => (seen.push(`sync ${what}`), sync());
+        return fh;
+      },
+      rename: async (...args: Parameters<typeof real.rename>) => (seen.push('rename'), real.rename(...args)),
+    }));
+    try {
+      const { writeDurable } = await import('../src/lib/secrets');
+      const c = await cfg();
+      await writeDurable(c.secrets, '{}');
+      expect(seen).toEqual(['sync file', 'rename', 'sync dir']);
+    } finally {
+      mock.module('node:fs/promises', () => real);
+    }
   });
 });

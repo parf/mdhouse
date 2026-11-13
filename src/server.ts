@@ -232,6 +232,8 @@ export async function serve(opts: ServeOptions) {
   const xdg = (v: string | undefined, home: string) => `${v || `${homedir()}/${home}`}/mdhouse`;
   await registry.hide([
     dirname(prefs.path),
+    // A symlinked prefs.json (a dotfiles repo): the folder its target is in.
+    dirname(await realpath(prefs.path).catch(() => prefs.path)),
     CONFIG_DIR,
     xdg(process.env.XDG_STATE_HOME, '.local/state'),
     ...(process.env.XDG_RUNTIME_DIR ? [`${process.env.XDG_RUNTIME_DIR}/mdhouse`] : []),

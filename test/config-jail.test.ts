@@ -85,6 +85,32 @@ describe('the instance config dir inside a served root', () => {
     }
   });
 
+  test('a symlinked prefs.json (a dotfiles repo inside a served root): the folder of its target is hidden', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-cfgjail-dots-')));
+    try {
+      const proj = join(dir, 'proj');
+      await mkdir(join(proj, 'dots/mdhouse'), { recursive: true });
+      await mkdir(join(dir, 'cfg'));
+      await writeFile(join(proj, 'dots/mdhouse/prefs.json'), '{}\n');
+      await writeFile(join(proj, 'a.md'), '# a\n');
+      await symlink(join(proj, 'dots/mdhouse/prefs.json'), join(dir, 'cfg/prefs.json'));
+      const prefs = await Prefs.load(join(dir, 'cfg/prefs.json'));
+      const registry = await Registry.create([{ path: proj, mode: 'rw' }]);
+      const s = await serve({ registry, prefs, port: testPort(61995), hostname: '127.0.0.1', noGit: true });
+      try {
+        const id = registry.list()[0]!.id;
+        const get = async (p: string) => (await fetch(`http://127.0.0.1:${testPort(61995)}/api/raw?p=${id}/${p}`)).status;
+        expect([await get('a.md'), await get('dots/mdhouse/prefs.json')]).toEqual([200, await get('../x.md')]);
+      } finally {
+        s.server.stop(true);
+        s.watcher.close();
+        s.control?.stop();
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test('outside every root: nothing changes', async () => {
     const t = await start(false, 61984);
     try {
