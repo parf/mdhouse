@@ -6,6 +6,7 @@ This folder is the installed, read-only reference, served as `_mdhouse`. Never w
 
 ## Install and run
 
+- [Install — runbook for an AI](install.md)
 - [CLI reference](cli.md)
 - [Access — users, allowed networks, ssh](access.md)
 - [mdhouse on macOS](mac.md)
