@@ -41,8 +41,9 @@
 
 - Served on a network address (`--host 0.0.0.0`, a LAN IP) with no users and no `--allow` list: every project is read-only — edits, git, flow runs, Agent Bus sends, author and marks are refused — and the start line says why. To write again, add a user (`mdhouse user-add <login>`) or an allow list (`mdhouse --allow <cidr,…>`); `--host-name` and a `/0` allow entry don't count. A reverse proxy on this host binds loopback and works as before ([Access](doc/access.md#network-address--read-only-without-a-policy))
 - The Q&A playground is a test fixture (`test/fixtures/qa-playground.md`), no longer part of the installed reference
-- `doc/skills/markup.md` is folded into `doc/agent-markup.md` (section “Suggested markup”); the old path stays as a short pointer
-- `doc/plans.md` is the portable Plans convention only; this repository's own commit rules are in `CLAUDE.md`
+- `agents/skills/markup.md` is folded into `agents/agent-markup.md` (section “Suggested markup”); the old path stays as a short pointer
+- `agents/plans.md` is the portable Plans convention only; this repository's own commit rules are in `CLAUDE.md`
+- The installed reference `_mdhouse` is `agents/` — what agents need: start file `README.md`, `for-agents.md`, `plans.md`, `agent-markup.md`, the install runbook, `rag-sync.md`, `skills/`, `flows/`. Docs for people stay in `doc/` (GitHub, npm). `mdhouse docs` prints the new AGENTS.md line (`…/main/agents/for-agents.md`); the old `doc/for-agents.md` URL points there
 
 ### Fixed
 

@@ -8,7 +8,7 @@ import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { testPort } from './ports';
 
-const DOC = join(import.meta.dir, '../doc');
+const DOC = join(import.meta.dir, '../agents');
 
 function git(cwd: string, ...args: string[]): string {
   const r = Bun.spawnSync(['git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], { cwd });

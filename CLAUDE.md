@@ -6,9 +6,9 @@ Bun + Preact Markdown workspace for every `.md` under a folder. npm package `mdh
 - Project knowledge (modules, URLs, invariants, prefs, security rules): `Plans/README.md`
 - Open items `TODO.md` · choices `DECISIONS.md` · engineering record `DONE.md` (same folder)
 - User-facing history: `CHANGELOG.md`
-- Planning and document syntax: read [markup](doc/skills/markup.md),
-  [glyphs](doc/skills/glyphs.md), [Q&A states](doc/skills/qa-states.md) and
-  [agent authoring rules](doc/agent-markup.md) before writing plans, questions, decisions or reports.
+- Planning and document syntax: read [markup](agents/skills/markup.md),
+  [glyphs](agents/skills/glyphs.md), [Q&A states](agents/skills/qa-states.md) and
+  [agent authoring rules](agents/agent-markup.md) before writing plans, questions, decisions or reports.
 - File presentation and planning flow: [syntax](doc/syntax.md), [Q&A](doc/qa.md),
   [Markdown](doc/markdown.md). Team initialization: [shared rules](.ai-team/common.md#planning-and-document-syntax).
 
@@ -198,7 +198,7 @@ Only on "publish".
 - [ ] Release commit `mdhouse X.Y.Z` (package.json + CHANGELOG), body = what changed
 - [ ] Pack, smoke-test and publish from a clean checkout of it — `npm pack` / `npm publish` take the
       working tree, uncommitted edits included: `git worktree add $S/rel-src HEAD && cd $S/rel-src && bun install`
-- [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `doc`, one PNG (`doc/agent-bus.png`) —
+- [ ] `npm pack --dry-run` lists `CHANGELOG.md`, `tsconfig.json`, `bin`, `src`, `agents`, `doc`, one PNG (`doc/agent-bus.png`) —
       ~257 files, ~800 kB (2.3.x, flows included); much more means a stray file
 - [ ] **Packed-install smoke test** (every 0.x shipped `500 Build Failed` without `tsconfig.json`):
       ```sh

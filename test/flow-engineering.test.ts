@@ -5,7 +5,7 @@ import { render } from '../src/lib/render';
 import { parseQa } from '../src/lib/qa';
 import { ENGINEERING_COVERAGE, EXPECTED_PACKAGE_IDS } from './flow-library-coverage';
 
-const directory = resolve(import.meta.dir, '../doc/flows');
+const directory = resolve(import.meta.dir, '../agents/flows');
 
 test('both Engineering batches preserve prior families and exact approved coverage', async () => {
   const library = await loadFlowCatalog(directory);
@@ -49,7 +49,7 @@ for (const row of ENGINEERING_COVERAGE) test(`${row.id}: evidence, honest unknow
   const prose = flow.example.replace(/\s+/g, ' ');
   for (const fact of row.exampleFacts) expect(prose).toContain(fact);
   for (const [name, text] of [['workflow.md', workflow], ['example.md', flow.example]] as const) {
-    const out = await render(text, { rootId: 'r', docPath: `doc/flows/${row.id}/${name}`, docUrl: (p) => `/r/${p}` });
+    const out = await render(text, { rootId: 'r', docPath: `agents/flows/${row.id}/${name}`, docUrl: (p) => `/r/${p}` });
     expect(out.html).toContain('id="Q1"');
     expect(parseQa(text, 0).items.length).toBeGreaterThan(0);
     for (const [, id] of text.matchAll(/(?<!\[)№([A-Z][A-Z.-]*\d+[a-z]?(?:\.\d+)?)/g)) expect(out.html).toContain(`id="${id}"`);

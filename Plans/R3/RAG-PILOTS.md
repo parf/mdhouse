@@ -8,7 +8,7 @@ Use [research](RAG-RESEARCH.md) for primary-source practices; [provider history]
 
 - mdhouse source inspected at `f6cf6e0` (2.3.3): [plan](../../src/lib/rag-sync-plan.ts),
   [runtime/decoder](../../src/lib/rag-sync-runtime.ts), [transport](../../src/lib/rag-sync-bus.ts),
-  [CLI/inventory](../../src/rag-sync-cli.ts), [bin guide](../../doc/rag-sync.md).
+  [CLI/inventory](../../src/rag-sync-cli.ts), [bin guide](../../agents/rag-sync.md).
 - Delivered local provider checkout `/usr/local/src/ai-agent-bus` at `36777189`: `src/agents/rag/agent.json`
   declares 0.4.2; `docs/agents/rag.md`, `docs/agents/filescan.md`, `src/agents/filescan/filescan.py` and `scan.py`.
   Static code/docs delivery is established. Dedicated runtime/version/key/collection readiness is unverified here.

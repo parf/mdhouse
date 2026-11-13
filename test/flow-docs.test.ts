@@ -5,7 +5,7 @@ import { parseQa } from '../src/lib/qa';
 import { render } from '../src/lib/render';
 import { DOCUMENTATION_COVERAGE, EXPECTED_PACKAGE_IDS } from './flow-library-coverage';
 
-const directory = resolve(import.meta.dir, '../doc/flows');
+const directory = resolve(import.meta.dir, '../agents/flows');
 
 test('the explicit library covers every approved Documentation package and preserves Feature/delivery', async () => {
   const library = await loadFlowCatalog(directory);
@@ -47,7 +47,7 @@ for (const row of DOCUMENTATION_COVERAGE) test(`${row.id}: concrete defaults, so
   expect(flow.example).not.toMatch(/\b[0-9a-f]{40}\b/);
 
   for (const [name, text] of [['workflow.md', workflow], ['example.md', flow.example]]) {
-    const path = `doc/flows/${row.id}/${name}`;
+    const path = `agents/flows/${row.id}/${name}`;
     const parsed = parseQa(text!, 0);
     expect(parsed.items.length).toBeGreaterThan(0);
     const out = await render(text!, { rootId: 'r', docPath: path, docUrl: (p) => `/r/${p}` });

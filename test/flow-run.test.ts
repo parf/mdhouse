@@ -4,7 +4,7 @@ import { applyFlowRunEvent, createFlowRun, FLOW_RUN_LIMITS, validateFlowRunState
 import type { FlowRunEvent, FlowRunInput, FlowRunState } from '../src/lib/flow-run';
 
 export async function runInput(id = 'project-review'): Promise<FlowRunInput> {
-  const { manifest } = await loadFlowPackage(`${import.meta.dir}/../doc/flows/${id}`);
+  const { manifest } = await loadFlowPackage(`${import.meta.dir}/../agents/flows/${id}`);
   return { runId: 'example-run', startedAt: '2026-11-06T01:00:00.000Z', package: manifest,
     packageDigest: 'a'.repeat(64), selection: { ...manifest.defaults, root: 'project',
       sources: [{ id: 'source-one', path: 'src/example.ts', digest: 'b'.repeat(64) }],

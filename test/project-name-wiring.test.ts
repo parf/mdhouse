@@ -121,7 +121,7 @@ async function start(port: number, base?: string) {
   const prefs = await Prefs.load(prefsPath);
   if (!prefs.isSaved(one)) await prefs.addSaved(one);
   const registry = await Registry.create([one, two]);
-  await registry.addReference(join(import.meta.dir, '../doc'), '_mdhouse', 'mdhouse reference');
+  await registry.addReference(join(import.meta.dir, '../agents'), '_mdhouse', 'mdhouse reference');
   const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
   const origin = `http://127.0.0.1:${port}`;
   const [oneId, twoId] = registry.list().map((r) => r.id);

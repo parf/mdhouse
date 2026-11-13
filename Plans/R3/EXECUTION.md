@@ -382,7 +382,7 @@ proposal before any implementation/worktree. No HTTP/admin/schedule/external-act
 [№MW.3.2](workspaces/TODO.md#MW.3.2), owner W3: checkpoint A approved from exact
 `06a980ce8296bf114d31ccb852ac97e602830f6d` in isolated `r3/flow-run-core`.
 Owned paths: `src/lib/flow-run.ts`, `src/lib/flow-run-markdown.ts`, their two tests,
-`doc/flows/README.md`, CHANGELOG. Pure validated run state/transitions and deterministic preview only;
+`agents/flows/README.md`, CHANGELOG. Pure validated run state/transitions and deterministic preview only;
 no filesystem/provider/HTTP/UI, permissions or real approval/materialization. Existing package schema
 and loader stay unchanged. Caller supplies structured results and source declarations; this headless
 harness is not a manual UI or AI executor.

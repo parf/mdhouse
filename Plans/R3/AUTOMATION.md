@@ -31,7 +31,7 @@ Where it runs is not in the file: the bus schedule on this instance's `#mdhouse`
 - No registration: the reply is `{ ok: false, code: "unregistered" }` and the firing is logged; a bus schedule alone can never make mdhouse run anything
 - Three separate checks apply: the creator's reach (bus), the registration (mdhouse), the project's effective access (mdhouse)
 - Who may register: the instance administrator only; a Viewer never
-- The flow must be a package in `doc/flows/catalog.json` with no consequential node in v1; consequential nodes stay `unsupported`/held as in [FLOW-RUNTIME-CORE.md](FLOW-RUNTIME-CORE.md)
+- The flow must be a package in `agents/flows/catalog.json` with no consequential node in v1; consequential nodes stay `unsupported`/held as in [FLOW-RUNTIME-CORE.md](FLOW-RUNTIME-CORE.md)
 - Schedules live on the instance's `#mdhouse` record, so one place lists and disables them; the run index and the approvals are per instance (its record's KV), the run documents and the registrations are the project's
 
 ## 4. Scope and outputs

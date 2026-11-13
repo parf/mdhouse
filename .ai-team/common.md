@@ -8,15 +8,15 @@ tag is `mdhouse`; your identity is `AGENT_BUS_NAME`.
 
 Before work, read these canonical repository documents, including when resuming in a worktree:
 
-- [Markup](../doc/skills/markup.md), [glyphs](../doc/skills/glyphs.md) and
-  [Q&A states](../doc/skills/qa-states.md) — items, status, authors and threads.
-- [Agent authoring rules](../doc/agent-markup.md) — stable IDs, short titles, indented details,
+- [Markup](../agents/skills/markup.md), [glyphs](../agents/skills/glyphs.md) and
+  [Q&A states](../agents/skills/qa-states.md) — items, status, authors and threads.
+- [Agent authoring rules](../agents/agent-markup.md) — stable IDs, short titles, indented details,
   `№ID` references and linked cross-file references.
 - [Syntax](../doc/syntax.md), [Q&A](../doc/qa.md) and
   [Markdown](../doc/markdown.md) — supported forms, planning flow and file presentation.
-- For questions/answers: [ask-questions](../doc/skills/ask-questions/SKILL.md) and
-  [resolve-questions](../doc/skills/resolve-questions/SKILL.md).
-- For reviews: [review checklist](../doc/skills/review-checklist.md).
+- For questions/answers: [ask-questions](../agents/skills/ask-questions/SKILL.md) and
+  [resolve-questions](../agents/skills/resolve-questions/SKILL.md).
+- For reviews: [review checklist](../agents/skills/review-checklist.md).
 
 Use these forms in plans, questions, decisions, reports and templates. Preserve IDs, wording,
 human answers and quoted history. Keep facts plain, tasks as checkboxes and Q&A choices distinct.

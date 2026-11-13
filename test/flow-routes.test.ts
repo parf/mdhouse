@@ -8,7 +8,7 @@ import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { testPort } from './ports';
 
-const DOC = resolve(import.meta.dir, '../doc');
+const DOC = resolve(import.meta.dir, '../agents');
 const PKG = 'recent-commits-review';
 
 function git(cwd: string, ...args: string[]): string {

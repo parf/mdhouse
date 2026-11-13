@@ -123,7 +123,7 @@ async function start(port: number, o: { dir?: string; sesRw?: boolean; auto?: bo
     { path: ses, writable: !!o.sesRw || prefs.isWritableSaved(ses) },
   ]);
   registry.autoRw = (d) => prefs.autoRwCovers(d);
-  await registry.addReference(join(import.meta.dir, '../doc'), '_mdhouse', 'mdhouse reference');
+  await registry.addReference(join(import.meta.dir, '../agents'), '_mdhouse', 'mdhouse reference');
   const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true });
   const origin = `http://127.0.0.1:${port}`;
   const roots = async () => ((await (await fetch(`${origin}/api/roots`)).json()) as { roots: RootJson[] }).roots;

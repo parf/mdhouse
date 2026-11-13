@@ -45,7 +45,7 @@ switching to the terminal. Agent Bus (`~/src/ai-agent-bus`) already links the se
   1. **Updated — reply** (default, Ctrl+Enter): `<abs path> updated (<url>) — read it and reply.`
   2. **Do 🎯** — act on the 🎯 items of `<path>`.
   3. **Resolve questions** — carry the answered ones over (`/resolve-questions` wording).
-  4. **Review** — review `<path>` with `doc/agent-markup.md`.
+  4. **Review** — review `<path>` with `agents/agent-markup.md`.
   The note is appended to any of them; a note with no button → sent as is.
 - After send: the popup (or a corner panel once it is closed) shows each target: sent → ✓ ack → the
   answer (Markdown, rendered) / ✓ done / ⏳ no reply in 10 min.
@@ -73,7 +73,7 @@ switching to the terminal. Agent Bus (`~/src/ai-agent-bus`) already links the se
 - `src/ui/Doc.tsx` (button, `a` key), `src/ui/Settings.tsx` (section), `src/ui/AboutModal.tsx` (shortcut)
 - `src/styles/app.css` (popup, status rows, light + dark)
 - docs: `Plans/README.md` (module, routes, prefs key, never `AGENT_BUS_*`), `doc/prefs.json.dist`,
-  `README.md` (one line), `doc/agent-markup.md` (`<!-- AB: your bus name -->`), `CHANGELOG.md`,
+  `README.md` (one line), `agents/agent-markup.md` (`<!-- AB: your bus name -->`), `CHANGELOG.md`,
   `Plans/TODO.md` (the item → this plan), `DECISIONS.md` (own client, not `@agent-bus/client`; own agent name)
 
 ## Verification

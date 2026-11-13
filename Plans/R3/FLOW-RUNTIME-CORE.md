@@ -1,6 +1,6 @@
 # Flow runtime — pure analysis-run core (checkpoint A)
 
-Moved verbatim from `doc/flows/README.md` (the installed reference): implementation status of the shared runtime, not reference. The reference keeps the package schema and the [shared execution contract](../../doc/flows/README.md#runtime-boundary).
+Moved verbatim from `agents/flows/README.md` (the installed reference): implementation status of the shared runtime, not reference. The reference keeps the package schema and the [shared execution contract](../../agents/flows/README.md#runtime-boundary).
 
 `createFlowRun(unknown)` validates explicit caller inputs and creates detached state.
 `applyFlowRunEvent(unknown, unknown)` returns fresh state and a duplicate flag;

@@ -4,7 +4,7 @@ import { loadFlowCatalog } from '../src/lib/flow-package';
 import { render } from '../src/lib/render';
 import { FINANCE_COVERAGE, EXPECTED_PACKAGE_IDS } from './flow-library-coverage';
 
-const directory = resolve(import.meta.dir, '../doc/flows');
+const directory = resolve(import.meta.dir, '../agents/flows');
 
 test('Finance packages preserve the exact previous twenty-nine package library', async () => {
   const library = await loadFlowCatalog(directory);
@@ -34,7 +34,7 @@ for (const row of FINANCE_COVERAGE) test(`${row.id}: explicit inputs, uncertaint
   expect(flow.example).not.toMatch(/\b[0-9a-f]{40}\b/);
   for (const fact of row.exampleFacts) expect(flow.example.replace(/\s+/g, ' ')).toContain(fact);
   for (const [name, text] of [['workflow.md', document], ['example.md', flow.example]] as const) {
-    const out = await render(text, { rootId: 'r', docPath: `doc/flows/${row.id}/${name}`, docUrl: (p) => `/r/${p}` });
+    const out = await render(text, { rootId: 'r', docPath: `agents/flows/${row.id}/${name}`, docUrl: (p) => `/r/${p}` });
     expect(out.html).toContain('id="Q1"');
     for (const [, id] of text.matchAll(/(?<!\[)№([A-Z][A-Z.-]*\d+[a-z]?(?:\.\d+)?)/g)) expect(out.html).toContain(`id="${id}"`);
     expect(text).not.toMatch(/^  > (?:💬|💡)(?!👾)/m);

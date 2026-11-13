@@ -39,6 +39,7 @@
   "files": [
     "bin",
     "src",
+    "agents",
     "doc",
     "!doc/*.png",
     "doc/agent-bus.png",

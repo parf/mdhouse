@@ -235,11 +235,11 @@ describe('user-add', () => {
 });
 
 describe('the reference root (MW.0f.2)', () => {
-  const REF = realpathSync(resolve(import.meta.dir, '../doc'));
+  const REF = realpathSync(resolve(import.meta.dir, '../agents'));
   const at = (port: number, path: string, body?: unknown) =>
     fetch(`http://127.0.0.1:${port}${path}`, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 
-  test('every start serves the installed doc/ read-only as _mdhouse, after the projects', async () => {
+  test('every start serves the installed agents/ read-only as _mdhouse, after the projects', async () => {
     const s = scratch();
     const a = s.folder('a');
     const started = s.run([a, '--rw', '--port', String(testPort(61940))]);
@@ -250,9 +250,9 @@ describe('the reference root (MW.0f.2)', () => {
       expect(single).toBe(true);
       expect(roots.map((r) => [r.id, r.kind, r.writable])).toEqual([['a', 'project', true], ['_mdhouse', 'reference', false]]);
       expect(roots[1]!.path).toBe(REF);
-      const doc = (await (await at(testPort(61940), '/api/doc?p=_mdhouse/syntax.md')).json()) as { writable: boolean; reference?: boolean };
+      const doc = (await (await at(testPort(61940), '/api/doc?p=_mdhouse/for-agents.md')).json()) as { writable: boolean; reference?: boolean };
       expect(doc).toMatchObject({ writable: false, reference: true });
-      expect((await at(testPort(61940), '/api/task', { p: '_mdhouse/syntax.md', line: 1, hash: '00000000' })).status).toBe(403);
+      expect((await at(testPort(61940), '/api/task', { p: '_mdhouse/for-agents.md', line: 1, hash: '00000000' })).status).toBe(403);
       expect((await at(testPort(61940), '/api/roots/remove', { id: '_mdhouse' })).status).toBe(403); // local administrator; the reference root stays
       expect(s.run(['--rm', REF, '--port', String(testPort(61940))]).code).toBe(1);
     } finally {
@@ -260,7 +260,7 @@ describe('the reference root (MW.0f.2)', () => {
     }
   });
 
-  test('naming doc/ — or a symlink to it — is refused, and nothing is saved', () => {
+  test('naming agents/ — or a symlink to it — is refused, and nothing is saved', () => {
     const s = scratch();
     const { symlinkSync } = require('node:fs') as typeof import('node:fs');
     symlinkSync(REF, join(s.dir, 'ref-link'));
@@ -272,7 +272,7 @@ describe('the reference root (MW.0f.2)', () => {
     expect(s.prefs().saved).toEqual([]);
   });
 
-  test('a saved doc/ from before is served as the reference only — never as a project, prefs untouched', async () => {
+  test('a saved agents/ from before is served as the reference only — never as a project, prefs untouched', async () => {
     const s = scratch();
     const a = s.folder('a');
     mkdirSync(join(s.cfg, 'mdhouse'), { recursive: true });

@@ -10,7 +10,7 @@ import { advanceDestination, markerOf, readFlowRunDocument, readFlowRunMeta } fr
 import { Registry } from '../src/lib/roots';
 import { repoToplevel } from '../src/lib/scan';
 
-const DOC = resolve(import.meta.dir, '../doc');
+const DOC = resolve(import.meta.dir, '../agents');
 const PKG = 'recent-commits-review';
 const DEST = 'Plans/flows/recent-commits-review.md';
 const tester = async () => 'tester';

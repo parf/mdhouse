@@ -5,7 +5,7 @@ import { render } from '../src/lib/render';
 import { parseQa } from '../src/lib/qa';
 import { CHANGE_REVIEW_COVERAGE, EXPECTED_PACKAGE_IDS } from './flow-library-coverage';
 
-const directory = resolve(import.meta.dir, '../doc/flows');
+const directory = resolve(import.meta.dir, '../agents/flows');
 
 test('change-review batches extend the exact library without dropping prior families', async () => {
   const library = await loadFlowCatalog(directory);
@@ -34,7 +34,7 @@ for (const row of CHANGE_REVIEW_COVERAGE) test(`${row.id}: independent defaults/
   expect(flow.example).toContain('not an executed or verified run');
   expect(flow.example).not.toMatch(/\b[0-9a-f]{40}\b/);
   for (const [name, text] of [['workflow.md', workflow], ['example.md', flow.example]] as const) {
-    const path = `doc/flows/${row.id}/${name}`;
+    const path = `agents/flows/${row.id}/${name}`;
     const out = await render(text, { rootId: 'r', docPath: path, docUrl: (p) => `/r/${p}` });
     expect(out.html).toContain('id="Q1"');
     const parsed = parseQa(text, 0);

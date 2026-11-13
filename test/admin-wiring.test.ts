@@ -70,7 +70,7 @@ async function start(port: number, users: Record<string, string> = {}, localAdmi
   await writeFile(join(base, 'a.md'), '# a\n');
   await writeFile(join(base, 'prefs.json'), JSON.stringify({ access: { allow: [], users, hostNames } }));
   const prefs = await Prefs.load(join(base, 'prefs.json'));
-  const registry = await Registry.create([base, join(import.meta.dir, '../doc')]);
+  const registry = await Registry.create([base, join(import.meta.dir, '../agents')]);
   const s = await serve({ registry, prefs, port, hostname: '127.0.0.1', noGit: true, localAdmin });
   const origin = `http://127.0.0.1:${port}`;
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>

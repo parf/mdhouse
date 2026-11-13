@@ -418,9 +418,9 @@ if (command === 'exit') {
 if (command === 'docs') {
   let reference: string;
   try {
-    reference = realpathSync(fileURLToPath(new URL('../doc', import.meta.url)));
+    reference = realpathSync(fileURLToPath(new URL('../agents', import.meta.url)));
   } catch {
-    console.error('mdhouse: the reference (doc/) is missing — a broken install');
+    console.error('mdhouse: the reference (agents/) is missing — a broken install');
     process.exit(1);
   }
   process.stdout.write(docsText(reference, opts.host, opts.port, argv.includes('--path')));
@@ -618,12 +618,12 @@ const saveServer = async (): Promise<void> => {
 const isDir = (abs: string): boolean => existsSync(abs) && statSync(abs).isDirectory();
 
 /**
- * mdhouse's own reference material, the installed package's `doc/`: every daemon serves it
+ * mdhouse's own reference material, the installed package's `agents/`: every daemon serves it
  * read-only as `_mdhouse`. Null when it is missing — a broken install.
  */
 const REFERENCE = (() => {
   try {
-    return realpathSync(fileURLToPath(new URL('../doc', import.meta.url)));
+    return realpathSync(fileURLToPath(new URL('../agents', import.meta.url)));
   } catch {
     return null;
   }
@@ -841,7 +841,7 @@ const startMode = (path: string): AccessMode => {
 };
 const registry = await Registry.create([...new Set([...named, ...saved.map(canonical)])].map((path) => ({ path, mode: startMode(path) })));
 if (!REFERENCE) {
-  console.error(`mdhouse: the reference material is missing: ${fileURLToPath(new URL('../doc', import.meta.url))} — reinstall mdhouse`);
+  console.error(`mdhouse: the reference material is missing: ${fileURLToPath(new URL('../agents', import.meta.url))} — reinstall mdhouse`);
   process.exit(1);
 }
 // Last, so the project roots keep their ids and the first of them stays the default.

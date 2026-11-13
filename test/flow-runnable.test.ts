@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { loadFlowCatalog } from '../src/lib/flow-package';
 import { rangeLabel, runnableFlow } from '../src/lib/flow-host';
 
-const catalog = await loadFlowCatalog(resolve(import.meta.dir, '../doc/flows'));
+const catalog = await loadFlowCatalog(resolve(import.meta.dir, '../agents/flows'));
 const byId = (id: string) => catalog.find((p) => p.manifest.id === id)!.manifest;
 
 describe('which flows the host runs without code of its own', () => {

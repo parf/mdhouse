@@ -164,7 +164,7 @@ for (const scenario of ['missing', 'empty', 'oversize', 'invalid-utf8', 'directo
 }
 
 test('built-in catalog covers all four Feature/delivery paths with examples and explicit gates', async () => {
-  const packages = (await loadFlowCatalog(resolve(import.meta.dir, '../doc/flows')))
+  const packages = (await loadFlowCatalog(resolve(import.meta.dir, '../agents/flows')))
     .filter((flow) => flow.manifest.family === 'feature-delivery');
   expect(packages.map((p) => p.manifest.id)).toEqual([...FEATURE_PACKAGE_IDS]);
   for (const flow of packages) {

@@ -2,7 +2,7 @@
 
 /** The start file for an AI, in the reference and on GitHub (for a machine without mdhouse). */
 export const START_FILE = 'for-agents.md';
-export const GITHUB_RAW = `https://raw.githubusercontent.com/parf/mdhouse/main/doc/${START_FILE}`;
+export const GITHUB_RAW = `https://raw.githubusercontent.com/parf/mdhouse/main/agents/${START_FILE}`;
 
 /** The address a client uses for a daemon bound to `host`: a wildcard address is this machine. */
 export function clientHost(host: string): string {

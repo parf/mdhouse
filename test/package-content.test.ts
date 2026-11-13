@@ -44,8 +44,8 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     expect(entries).toContain('package/src/lib/rag-sync-plan.ts');
     expect(entries).toContain('package/src/lib/rag-sync-runtime.ts');
     expect(entries).toContain('package/src/lib/rag-sync-bus.ts');
-    expect(entries).toContain('package/doc/rag-sync.md');
-    expect(entries).toContain('package/doc/install.md');
+    expect(entries).toContain('package/agents/rag-sync.md');
+    expect(entries).toContain('package/agents/install.md');
     expect(entries).toContain('package/doc/README.md');
     // the one image a reference page embeds ships; the README's other pictures stay on GitHub
     expect(entries.filter((e) => e.endsWith('.png'))).toEqual(['package/doc/agent-bus.png']);
@@ -57,7 +57,7 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     const changelog = await read('CHANGELOG.md');
     expect(changelog).toContain('R3 and later distributions use the PolyForm Strict License 1.0.0');
     expect(entries).toContain('package/src/lib/flow-package.ts');
-    expect(entries).toContain('package/doc/flows/README.md');
+    expect(entries).toContain('package/agents/flows/README.md');
     const extracted = join(dir, 'extracted');
     await mkdir(extracted);
     await run(['tar', '-xzf', archive, '-C', extracted]);
@@ -69,8 +69,8 @@ test('npm artifact ships the canonical R3 license and loadable flow authoring pa
     expect(help).toContain('--root <dir>');
     expect(help).toContain('--apply');
     expect(help).toContain('--paid');
-    const shipped = await loadFlowCatalog(join(extracted, 'package/doc/flows'));
-    const source = await loadFlowCatalog(join(root, 'doc/flows'));
+    const shipped = await loadFlowCatalog(join(extracted, 'package/agents/flows'));
+    const source = await loadFlowCatalog(join(root, 'agents/flows'));
     expect(shipped.map((flow) => flow.manifest.id)).toEqual([...EXPECTED_PACKAGE_IDS]);
     expect(shipped).toEqual(source);
   } finally {

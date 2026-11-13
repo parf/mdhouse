@@ -159,7 +159,7 @@ describe('passive formatting survives', () => {
 
   test('the shipped docs render exactly as before, apart from comments', async () => {
     const root = resolve(import.meta.dir, '..');
-    for (const f of ['test/fixtures/qa-playground.md', 'doc/syntax.md', 'doc/markdown.md', 'doc/qa.md', 'doc/skills/glyphs.md']) {
+    for (const f of ['test/fixtures/qa-playground.md', 'doc/syntax.md', 'doc/markdown.md', 'doc/qa.md', 'agents/skills/glyphs.md']) {
       const { html } = await render(readFileSync(join(root, f), 'utf8'), ctx);
       expect(passive(html)).toBe(html); // already passive: a second pass changes nothing
       expect(active(html)).toEqual([]);

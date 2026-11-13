@@ -14,5 +14,5 @@ Keep unresolved questions in place and retain the questions file.
 
 ## See also
 
-- [Decisions](agent-markup.md#decisions) · [Q&A](qa.md)
+- [Decisions](agent-markup.md#decisions) · [Q&A](https://github.com/parf/mdhouse/blob/main/doc/qa.md)
 - [Markup](skills/markup.md) · [Q&A states](skills/qa-states.md) · [Glyphs](skills/glyphs.md)

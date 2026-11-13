@@ -3,7 +3,7 @@ import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { agentsLine, clientHost, docsText, GITHUB_RAW, startUrl } from '../src/lib/docs-cmd';
 
-const REF = realpathSync(resolve(import.meta.dir, '../doc'));
+const REF = realpathSync(resolve(import.meta.dir, '../agents'));
 
 describe('mdhouse docs, the pure parts', () => {
   test('a wildcard bind is this machine; an IPv6 address is bracketed', () => {
@@ -15,7 +15,7 @@ describe('mdhouse docs, the pure parts', () => {
   });
   test('the start file is fetched raw from the daemon, and from GitHub without one', () => {
     expect(startUrl('127.0.0.1', 8080)).toBe('http://127.0.0.1:8080/api/raw?p=_mdhouse/for-agents.md');
-    expect(GITHUB_RAW).toBe('https://raw.githubusercontent.com/parf/mdhouse/main/doc/for-agents.md');
+    expect(GITHUB_RAW).toBe('https://raw.githubusercontent.com/parf/mdhouse/main/agents/for-agents.md');
   });
   test('the line is one line with the one URL', () => {
     const line = agentsLine();

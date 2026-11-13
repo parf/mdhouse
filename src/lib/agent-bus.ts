@@ -535,7 +535,7 @@ export class AgentBus {
 export const AB_ACTIONS = ['updated', 'target', 'resolve', 'review', 'note'] as const;
 export type AbAction = (typeof AB_ACTIONS)[number];
 
-const MARKUP = 'https://github.com/parf/mdhouse/blob/main/doc/agent-markup.md';
+const MARKUP = 'https://github.com/parf/mdhouse/blob/main/agents/agent-markup.md';
 
 /** The message a page's request sends: the file by its absolute path, the page by its URL. */
 export function requestText(action: AbAction, abs: string, url: string, note = ''): string {

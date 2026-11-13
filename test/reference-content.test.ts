@@ -6,7 +6,7 @@ import { join, relative, resolve } from 'node:path';
 import { render } from '../src/lib/render';
 
 const root = resolve(import.meta.dir, '..');
-const doc = join(root, 'doc');
+const doc = join(root, 'agents');
 const skills = join(doc, 'skills');
 
 async function run(args: string[], cwd = root): Promise<string> {
@@ -20,11 +20,11 @@ async function run(args: string[], cwd = root): Promise<string> {
 
 const files = (dir: string, pattern = '**/*') => [...new Bun.Glob(pattern).scanSync({ cwd: dir, onlyFiles: true })].sort();
 
-describe('shareable skills live in doc/skills', () => {
-  test('.claude/skills is a committed symlink to ../doc/skills', async () => {
+describe('shareable skills live in agents/skills', () => {
+  test('.claude/skills is a committed symlink to ../agents/skills', async () => {
     const link = join(root, '.claude/skills');
     expect(lstatSync(link).isSymbolicLink()).toBe(true);
-    expect(readlinkSync(link)).toBe('../doc/skills');
+    expect(readlinkSync(link)).toBe('../agents/skills');
     expect((await run(['git', 'ls-files', '-s', '.claude/skills'])).split(/\s/)[0]).toBe('120000');
   });
 
@@ -37,7 +37,7 @@ describe('shareable skills live in doc/skills', () => {
   });
 });
 
-/** Every local link of every doc/**\/*.md, rendered with doc/ as the root, names a file and anchor inside it. */
+/** Every local link of every agents/**\/*.md, rendered with agents/ as the root, names a file and anchor inside it. */
 describe('reference links stay inside the reference root', () => {
   const ctx = (docPath: string) => ({
     rootId: 'ref',
@@ -82,7 +82,7 @@ test('the npm artifact ships the skills byte for byte, and no .claude', async ()
     const entries = (await run(['tar', '-tzf', archive])).trim().split('\n');
     expect(entries.filter((e) => e.startsWith('package/.claude'))).toEqual([]);
     await run(['tar', '-xzf', archive, '-C', dir]);
-    const shipped = join(dir, 'package/doc');
+    const shipped = join(dir, 'package/agents');
     expect(files(join(shipped, 'skills'))).toEqual(files(skills));
     for (const f of files(skills)) expect(readFileSync(join(shipped, 'skills', f))).toEqual(readFileSync(join(skills, f)));
     for (const f of files(doc, '*.md')) expect(readFileSync(join(shipped, f))).toEqual(readFileSync(join(doc, f)));

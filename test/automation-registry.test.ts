@@ -7,7 +7,7 @@ import { loadRegistrations, readRegistration, registrationLookup } from '../src/
 import { loadFlowCatalog } from '../src/lib/flow-package';
 import { Registry } from '../src/lib/roots';
 
-const catalog = await loadFlowCatalog(resolve(import.meta.dir, '../doc/flows'));
+const catalog = await loadFlowCatalog(resolve(import.meta.dir, '../agents/flows'));
 const good = (o: Record<string, unknown> = {}) => JSON.stringify({ id: 'weekly', flow: 'recent-commits-review', range: 'since-last-run', when: { cron: '30 8 * * 1-5' }, ...o });
 
 let dirs: string[] = [];

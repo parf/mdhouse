@@ -608,4 +608,4 @@ No package is done before shared runner/permission checks pass; tracker-free out
   Review `http://md/_mdhouse/*`: determine what belongs in the installed reference, its organization and what should be removed or moved.
   Provide ONE start file for external AI; it MUST contain links to the relevant instructions and reference material.
   Define the content/navigation proposal before restructuring; preserve the immutable reference boundary.
-  - [ ] MW.17.1 Separate docs & exported skills "for-agents", flows, skills, ... — right now we have them combined in "doc" directory; this create a mess <a id="MW.17.1"></a>
+  - [x] MW.17.1 Separate docs & exported skills "for-agents", flows, skills, ... — right now we have them combined in "doc" directory; this create a mess <a id="MW.17.1"></a>

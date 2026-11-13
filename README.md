@@ -69,7 +69,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 ## ✎ Working on docs — with you and your agents
 
 Writes need a project served with `--rw`: `mdhouse -p --rw folder(s)`. The markup is plain GFM —
-[Questions and answers](doc/qa.md). Every syntax on one page: [Syntax](doc/syntax.md). For your agents: [Markup for agents](doc/agent-markup.md) — give it and say "do like this".
+[Questions and answers](doc/qa.md). Every syntax on one page: [Syntax](doc/syntax.md). For your agents: [Markup for agents](agents/agent-markup.md) — give it and say "do like this".
 
 **Edit while reading**
 
@@ -114,7 +114,7 @@ text is kept
 
 ## 👾 Agent skills
 
-- Ask your AI: *use https://github.com/parf/mdhouse/blob/main/doc/agent-markup.md and do a review*
+- Ask your AI: *use https://github.com/parf/mdhouse/blob/main/agents/agent-markup.md and do a review*
 - Or ask Claude: *copy skills from [mdhouse](https://github.com/parf/mdhouse)* — we are pretty sure
   our review skills will trump yours :)
 
