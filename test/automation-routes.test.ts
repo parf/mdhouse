@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { folderKey } from '../src/lib/automation-state';
 import { Prefs } from '../src/lib/prefs';
 import { Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
@@ -74,7 +75,7 @@ afterEach(async () => {
   for (const c of cleanups.splice(0)) await c();
 });
 
-async function start(port: number) {
+async function start(port: number, o: { mode?: 'rw' | 'ro'; noGit?: boolean; hostname?: string } = {}) {
   const dir = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-auto-routes-')));
   const proj = join(dir, 'proj');
   await mkdir(join(proj, '.mdhouse/automation'), { recursive: true });
@@ -98,9 +99,9 @@ async function start(port: number) {
   await mkdir(join(dir, 'cfg'));
   const prefs = await Prefs.load(join(dir, 'cfg/prefs.json'));
   await prefs.setAgentBus({ enabled: true, socket: bus.socket });
-  const registry = await Registry.create([{ path: proj, mode: 'rw' }]);
+  const registry = await Registry.create([{ path: proj, mode: o.mode ?? 'rw' }]);
   await registry.addReference(DOC);
-  const s = await serve({ registry, prefs, port: testPort(port), hostname: '127.0.0.1', localAdmin: true });
+  const s = await serve({ registry, prefs, port: testPort(port), hostname: o.hostname ?? '127.0.0.1', localAdmin: true, noGit: o.noGit });
   cleanups.push(async () => {
     s.server.stop(true);
     s.watcher.close();
@@ -116,17 +117,18 @@ async function start(port: number) {
     const res = await fetch(origin + path, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
     return [res.status, await res.json()] as const;
   };
-  const list = async () => (await (await fetch(`${origin}/api/automation?root=${id}`)).json()) as { root: string; canApprove: boolean; registrations: Array<Record<string, any>>; errors: unknown[]; busError?: string };
-  const fire = (scheduleId: string, slot = '2026-11-13T08:30:00Z') =>
-    s.automation.handle({ from: '#bus', schedule: { id: scheduleId, by: '#mdhouse@h', slot }, body: JSON.stringify({ v: 1, op: 'run', project: id, registration: 'review' }) }).then((r) => JSON.parse(r));
-  return { s, proj, prefs, bus, id, c, post, list, fire, regText };
+  const list = async () => (await (await fetch(`${origin}/api/automation?root=${id}`)).json()) as { root: string; canApprove: boolean; canApproveWhy?: string; registrations: Array<Record<string, any>>; errors: unknown[]; busError?: string };
+  const key = folderKey(proj);
+  const fire = (scheduleId: string, slot = '2026-11-13T08:30:00Z', project = key) =>
+    s.automation.handle({ from: '#bus', schedule: { id: scheduleId, by: '#mdhouse@h', slot }, body: JSON.stringify({ v: 1, op: 'run', project, registration: 'review' }) }).then((r) => JSON.parse(r));
+  return { s, proj, prefs, bus, id, key, c, post, list, fire, regText };
 }
 
 describe('/api/automation — this machine approves a registration file', () => {
   test('listed → approved (a bus schedule made) → fires → a changed file stops it → revoked', async () => {
     const t = await start(61988);
     const first = await t.list();
-    expect([first.root, first.canApprove]).toEqual([t.id, true]);
+    expect([first.root, first.canApprove, first.canApproveWhy]).toEqual([t.id, true, undefined]);
     expect(first.registrations[0]!.file).toBe('.mdhouse/automation/review.json');
     expect(first.errors).toEqual([{ file: 'Bad Name.json', error: expect.any(String) }]);
     expect(first.registrations).toEqual([expect.objectContaining({ id: 'review', flow: 'recent-commits-review', maxLate: '30m', overlap: 'skip', approval: 'none', schedule: null, disabled: false, startedToday: 0, runs: [] })]);
@@ -138,11 +140,13 @@ describe('/api/automation — this machine approves a registration file', () => 
     expect(await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash: 'ab'.repeat(32) })).toEqual([409, { error: expect.stringContaining('changed'), reason: 'stale' }]);
     const [st, ok] = await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash });
     expect([st, ok]).toEqual([200, { registration: 'review', approval: 'approved', hash, approved: { hash, scheduleId: 'sch-1' }, schedule: { id: 'sch-1', enabled: true, next: '2026-11-14T08:30:00Z' } }]);
-    expect(t.bus.added).toEqual([{ record: expect.stringMatching(/^#mdhouse@/), expr: '30 8 * * 1-5', body: JSON.stringify({ v: 1, op: 'run', project: t.id, registration: 'review' }), max_late: '1800s', target: expect.stringMatching(/^#mdhouse@/) }]);
+    expect(t.bus.added).toEqual([{ record: expect.stringMatching(/^#mdhouse@/), expr: '30 8 * * 1-5', body: JSON.stringify({ v: 1, op: 'run', project: t.key, registration: 'review' }), max_late: '1800s', target: expect.stringMatching(/^#mdhouse@/) }]);
     expect((await t.list()).registrations[0]).toMatchObject({ approval: 'approved', approvedHash: hash, approved: { scheduleId: 'sch-1' }, schedule: { id: 'sch-1', enabled: true } });
     // Kept in the record's key-value store, keyed by the folder, not the root id.
     expect([...t.bus.kv.keys()].filter((k) => k.startsWith('auto/approval/'))).toEqual([expect.stringMatching(/^auto\/approval\/[0-9a-f]{16}\/review$/)]);
 
+    // The schedule names the folder; a root id (an older body) names nothing.
+    expect(await t.fire('sch-1', '2026-11-13T08:00:00Z', t.id)).toMatchObject({ ok: false, error: { code: 'unregistered' } });
     // Another schedule on the record is not the approved one.
     expect(await t.fire('sch-other')).toMatchObject({ ok: false, error: { code: 'not-approved' } });
     const ran = await t.fire('sch-1');
@@ -161,6 +165,14 @@ describe('/api/automation — this machine approves a registration file', () => 
     expect((await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash: again }))[1]).toMatchObject({ approved: { scheduleId: 'sch-2' } });
     expect(t.bus.deleted).toEqual(['sch-1']);
 
+    // Its schedule gone from the bus, or made with an older body: approved, but nothing fires it.
+    const sch2 = t.bus.schedules.get('sch-2')!;
+    t.bus.schedules.set('sch-2', { ...sch2, body: JSON.stringify({ v: 1, op: 'run', project: t.id, registration: 'review' }) });
+    expect((await t.list()).registrations[0]!.approval).toBe('no-timer');
+    t.bus.schedules.delete('sch-2');
+    expect((await t.list()).registrations[0]!.approval).toBe('no-timer');
+    t.bus.schedules.set('sch-2', sch2);
+    expect((await t.list()).registrations[0]!.approval).toBe('approved');
     expect(await t.post('/api/automation/revoke', { root: t.id, registration: 'review' })).toEqual([200, { registration: 'review', approval: 'none', revoked: true }]);
     expect(t.bus.deleted).toEqual(['sch-1', 'sch-2']);
     expect((await t.list()).registrations[0]).toMatchObject({ approval: 'none', schedule: null });
@@ -183,6 +195,32 @@ describe('/api/automation — this machine approves a registration file', () => 
     // A Viewer has no local administrator, and its gate refuses an administrator too.
     expect([401, 403]).toContain((await t.post('/api/automation/approve', ask))[0]);
     expect(t.bus.added).toEqual([]);
+  });
+
+  test('read-only here, or git off: not offered, and refused at approve with words', async () => {
+    for (const [o, reason, port] of [[{ mode: 'ro' }, 'read-only', 61991], [{ noGit: true }, 'no-git', 61992]] as const) {
+      const t = await start(port, o);
+      const first = await t.list();
+      expect([first.canApprove, first.canApproveWhy]).toEqual([false, reason]);
+      const [st, res] = await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash: first.registrations[0]!.hash });
+      expect([st, res.reason, t.bus.added.length]).toEqual([409, reason, 0]);
+    }
+  });
+
+  test('exposed with the bus on: not offered (exposed), and approve is refused before anything is made', async () => {
+    const t = await start(61993, { hostname: '0.0.0.0' });
+    const first = await t.list();
+    expect([first.canApprove, first.canApproveWhy]).toEqual([false, 'exposed']);
+    const [st, res] = await t.post('/api/automation/approve', { root: t.id, registration: 'review', hash: first.registrations[0]!.hash });
+    expect([st, res.reason, t.bus.added.length]).toEqual([403, 'exposed', 0]);
+    await t.prefs.setAgentBus({ enabled: false });
+    expect((await t.list()).canApproveWhy).toBe('exposed');
+  });
+
+  test('bus off: not offered (bus-off)', async () => {
+    const t = await start(61994);
+    await t.prefs.setAgentBus({ enabled: false });
+    expect((await t.list()).canApproveWhy).toBe('bus-off');
   });
 
   test('the store unreachable: the list says so, approve keeps no schedule, a firing is refused', async () => {

@@ -405,6 +405,8 @@ export async function serve(opts: ServeOptions) {
     return root ? folderKey(root.path) : `root-${id}`;
   });
   const automation = new Automation({
+    // A schedule names its project by folder (`folderKey`): root ids follow the order roots were added in.
+    project: (key) => registry.list().find((r) => r.kind !== 'reference' && folderKey(r.path) === key)?.id ?? null,
     registration: registrationLookup(registry, flowDeps.catalog),
     approval: approvals.check((id) => registry.get(id)?.path ?? null),
     start: (request) => (opts.noGit ? Promise.resolve({ error: 'git is off', reason: 'no-git' as const }) : startFlowRun(flowDeps, flowIo, { request })),
@@ -449,9 +451,11 @@ export async function serve(opts: ServeOptions) {
     const ok = await approvals.get(root.path, reg.reg.id);
     const st = await runIndex.state(root.id, reg.reg.id);
     const sched = ok ? schedules.get(ok.scheduleId) : undefined;
+    // Approved, but no bus schedule fires it as it is now made (deleted on the bus, or an older body): approve again.
+    const timer = !!sched && sched.body === scheduleSpec(root.path, reg.reg).body;
     return {
       ...file,
-      approval: !ok ? 'none' : ok.hash === reg.hash ? 'approved' : 'changed',
+      approval: !ok ? 'none' : ok.hash !== reg.hash ? 'changed' : timer ? 'approved' : 'no-timer',
       ...(ok ? { approvedHash: ok.hash, approved: { at: ok.at, by: ok.by, scheduleId: ok.scheduleId } } : {}),
       schedule: sched ? { id: sched.id, enabled: sched.enabled, next: sched.next ?? null, last: sched.last ?? null } : null,
       disabled: st.disabled,
@@ -472,9 +476,9 @@ export async function serve(opts: ServeOptions) {
     return parts.join('') || '0s';
   };
   /** The bus schedule a registration fires by: its timer, its body, its lateness. */
-  const scheduleSpec = (rootId: string, reg: LoadedRegistration['reg']) => ({
+  const scheduleSpec = (rootPath: string, reg: LoadedRegistration['reg']) => ({
     ...('cron' in reg.when ? { expr: reg.when.cron } : { at: reg.when.at }),
-    body: JSON.stringify({ v: AUTO_VERSION, op: 'run', project: rootId, registration: reg.id }),
+    body: JSON.stringify({ v: AUTO_VERSION, op: 'run', project: folderKey(rootPath), registration: reg.id }),
     max_late: `${Math.round(reg.maxLateMs / 1000)}s`,
   });
 
@@ -2224,9 +2228,10 @@ export async function serve(opts: ServeOptions) {
           busError = safeError(err);
           registrations = await Promise.all(loaded.map((r) => autoView(root, r, null)));
         }
-        // Approve/revoke would pass the gates: not a Viewer, the bus on.
-        const canApprove = prefs.mode() !== 'viewer' && prefs.agentBus.enabled;
-        return noStore(json({ root: root.id, canApprove, registrations, errors, ...(busError ? { busError } : {}) }));
+        // Why approve would be refused now; none: it would pass every gate.
+        const canApproveWhy =
+          prefs.mode() === 'viewer' ? 'viewer' : registry.exposed() ? 'exposed' : !prefs.agentBus.enabled ? 'bus-off' : opts.noGit ? 'no-git' : !root.writable ? 'read-only' : null;
+        return noStore(json({ root: root.id, canApprove: canApproveWhy === null, ...(canApproveWhy ? { canApproveWhy } : {}), registrations, errors, ...(busError ? { busError } : {}) }));
       }),
 
       /**
@@ -2241,6 +2246,9 @@ export async function serve(opts: ServeOptions) {
           const root = registry.get(body.root);
           if (!root || root.kind === 'reference') return json({ error: 'no such project', reason: 'no-root' }, 404);
           if (!prefs.agentBus.enabled) return fail(409, 'the Agent Bus integration is off — mdhouse --agent-bus on');
+          // A run writes its document into the project and reads its git history: refused now, not after three failed firings.
+          if (opts.noGit) return json({ error: 'git is off here — a scheduled run needs it', reason: 'no-git' }, 409);
+          if (!root.writable) return json({ error: 'the project is read-only here — a scheduled run writes its run document into it', reason: 'read-only' }, 409);
           const id = body.registration;
           const hash = body.hash;
           return queueWrite(`automation:${root.path}:${id}`, async () => {
@@ -2256,7 +2264,7 @@ export async function serve(opts: ServeOptions) {
             }
             let made: Schedule;
             try {
-              made = await bus.scheduleAdd(scheduleSpec(root.id, found.loaded.reg));
+              made = await bus.scheduleAdd(scheduleSpec(root.path, found.loaded.reg));
             } catch (err) {
               return fail(409, `the Agent Bus refused the schedule: ${safeError(err)}`);
             }

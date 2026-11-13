@@ -239,6 +239,8 @@ export interface Firing {
 export type AutoErrorCode = 'bad-request' | 'denied' | 'unregistered' | 'not-approved' | 'disabled' | 'conflict' | 'failed' | 'viewer' | 'internal';
 
 export interface AutoDeps {
+  /** The served root a body's `project` key names now; null refuses the firing. Absent: the key is the root id. */
+  project?(key: string): string | null;
   /** The registrations a project holds now (re-read each firing: a file may have changed). Null: no such project. */
   registration(rootId: string, id: string): Promise<{ loaded: LoadedRegistration } | { error: string } | null>;
   approval: Approval;
@@ -331,9 +333,14 @@ export class Automation {
     return reply;
   }
 
-  private async run(stamp: ScheduleStamp, requestId: string, rootId: string, regId: string): Promise<string> {
+  private async run(stamp: ScheduleStamp, requestId: string, project: string, regId: string): Promise<string> {
     const { deps } = this;
     const out = (reply: Reply) => JSON.stringify(reply);
+    const rootId = deps.project ? deps.project(project) : project;
+    if (rootId === null) {
+      deps.audit('warning', `automation: no served project ${clean(project)} for schedule ${clean(stamp.id)}`);
+      return out(refuse(requestId, 'unregistered', 'no served project has that key'));
+    }
     const found = await deps.registration(rootId, regId);
     if (!found || 'error' in found) {
       deps.audit('warning', `automation: no usable registration ${clean(rootId)}/${clean(regId)} for schedule ${clean(stamp.id)}${found && 'error' in found ? `: ${clean(found.error)}` : ''}`);
