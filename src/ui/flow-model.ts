@@ -10,7 +10,7 @@ export interface FlowCatalogEntry {
   id: string;
   family: string;
   title: string;
-  summary: string;
+  summary?: string;
   ranges: FlowRangeKind[];
   lastRun: { url: string; status: FlowRunStatus; at: string } | null;
   openRun: { url: string; status: FlowRunStatus } | null;
@@ -68,20 +68,25 @@ export interface FlowEventResult {
   url: string;
 }
 
+/** Why a first look has no baseline: nothing ran yet, or the last run's commit is gone. */
+export type FlowNoBaselineWhy = 'first-run' | 'marker-missing' | 'marker-unreachable';
+export const noBaselineText = (why: string | undefined): string =>
+  why === 'marker-missing' ? 'The last run left no commit to start from: choose one.' : why === 'marker-unreachable' ? 'The last run’s commit is no longer in the history (rewritten?): choose where to start.' : 'This flow has not run here yet: choose the commit to start from.';
+
 /** The server's reasons for a refusal (`{ error, reason }`, as every write route). */
-export type FlowReason = 'viewer' | 'not-writable' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
+export type FlowReason = 'viewer' | 'read-only' | 'no-root' | 'no-git' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
 
 const TERMINAL: FlowRunStatus[] = ['complete', 'blocked', 'failed', 'cancelled', 'partial', 'unsupported'];
 export const isTerminal = (status: FlowRunStatus): boolean => TERMINAL.includes(status);
 
-const HEX = /^[0-9a-f]{7,40}$/i;
+const HEX = /^[0-9a-f]{4,40}$/i;
 
-/** The range the user chose; a baseline needs a commit id (7–40 hex digits — the server resolves it to the full one). */
+/** The range the user chose; a baseline needs a commit id (4–40 hex digits — the server resolves it to the full one). */
 export function rangeOf(kind: FlowRangeKind, commit: string): { range: FlowRange } | { error: string } {
   if (kind === 'since-last-run') return { range: { kind } };
   const c = commit.trim();
   if (!c) return { error: 'Give the commit to start from.' };
-  if (!HEX.test(c)) return { error: 'A commit id is 7 to 40 hexadecimal digits.' };
+  if (!HEX.test(c)) return { error: 'A commit id is 4 to 40 hexadecimal digits.' };
   return { range: { kind, commit: c.toLowerCase() } };
 }
 
@@ -96,7 +101,9 @@ export function defaultRange(p: FlowCatalogEntry): FlowRangeKind {
 
 const REASON_WORDS: Record<FlowReason, string> = {
   viewer: 'A Viewer cannot run flows.',
-  'not-writable': 'This project is read-only, so a run document cannot be written.',
+  'read-only': 'This project is read-only, so a run document cannot be written.',
+  'no-root': 'That project is not served.',
+  'no-git': 'This project is not in a git repository, so there is no history to review.',
   'unknown-package': 'That flow is not installed.',
   'no-baseline': 'This flow has not run here yet: choose the commit to start from.',
   'bad-baseline': 'That commit is not in this project’s history.',

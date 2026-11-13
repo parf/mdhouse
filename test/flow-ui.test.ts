@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { ApiError } from '../src/ui/api';
-import { flowApi } from '../src/ui/flow-api';
+import { FlowApiError, flowApi } from '../src/ui/flow-api';
 import {
-  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, outcomeError, rangeOf, showsBar, startable,
+  barOutcomes, defaultRange, flowReasonText, isTerminal, newClientId, noBaselineText, outcomeError, rangeOf, showsBar, startable,
   type DocFlow, type FlowCatalogEntry,
 } from '../src/ui/flow-model';
 
@@ -30,12 +30,13 @@ beforeAll(() => {
       }
       if (url.pathname === '/api/flow/preview') {
         if (body.packageId === 'nope') return reply(404, { error: 'unknown flow', reason: 'unknown-package' });
-        if (body.range.kind === 'since-last-run') return reply(409, { error: 'first run', reason: 'no-baseline' });
+        if (body.range.kind === 'since-last-run') return reply(409, { error: 'first run', reason: 'no-baseline', why: 'first-run' });
         const token = `t${tokens.size}`;
         tokens.set(token, body.packageId);
         return reply(200, { token, runPath: 'Plans/flows/runs/x/a.md', base: 'a'.repeat(40), target: 'b'.repeat(40), dirty: ['README.md'], warnings: [], html: '<p>preview</p>' });
       }
       if (url.pathname === '/api/flow/start') {
+        if (body.token === 'open') return reply(409, { error: 'open', reason: 'open-run', run: { url: '/p/x.md', status: 'running' } });
         if (!tokens.has(body.token)) return reply(400, { error: 'expired', reason: 'invalid' });
         return reply(200, { status: 'running', runPath: 'Plans/flows/runs/x/a.md', url: '/p/Plans/flows/runs/x/a.md' });
       }
@@ -62,10 +63,10 @@ const flow = (over: Partial<DocFlow> = {}): DocFlow => ({
 
 describe('range', () => {
   test('since the last run needs no commit', () => expect(rangeOf('since-last-run', '')).toEqual({ range: { kind: 'since-last-run' } }));
-  test('a baseline needs a hex commit of 7 to 40 digits, lower-cased', () => {
+  test('a baseline needs a hex commit of 4 to 40 digits, lower-cased', () => {
     expect(rangeOf('baseline', '')).toHaveProperty('error');
     expect(rangeOf('baseline', 'xyz1234')).toHaveProperty('error');
-    expect(rangeOf('baseline', 'abc12')).toHaveProperty('error');
+    expect(rangeOf('baseline', 'abc')).toHaveProperty('error');
     expect(rangeOf('baseline', ' ABC1234 ')).toEqual({ range: { kind: 'baseline', commit: 'abc1234' } });
     expect(rangeOf('baseline', 'a'.repeat(41))).toHaveProperty('error');
   });
@@ -100,6 +101,12 @@ describe('the run bar', () => {
     expect(outcomeError('failed', 'why')).toBeNull();
     expect(outcomeError('complete', 'x'.repeat(16 * 1024 + 1))).toMatch(/long/);
   });
+  test('a missing baseline says why', () => {
+    expect(noBaselineText('first-run')).toMatch(/not run here yet/);
+    expect(noBaselineText('marker-unreachable')).toMatch(/no longer/);
+    expect(noBaselineText('marker-missing')).toMatch(/left no commit/);
+    expect(noBaselineText(undefined)).toMatch(/not run here yet/);
+  });
   test('terminal statuses', () => {
     expect(isTerminal('running')).toBe(false);
     expect(isTerminal('held')).toBe(false);
@@ -125,11 +132,18 @@ describe('against the fake routes', () => {
   });
   test('a first run asks for a baseline; an unknown package and a bad token are refused with their reason', async () => {
     const e1 = await api().preview('p', 'recent-commits-review', { kind: 'since-last-run' }).catch((e) => e);
+    expect(e1).toBeInstanceOf(FlowApiError);
     expect(e1).toBeInstanceOf(ApiError);
     expect(e1.reason).toBe('no-baseline');
     expect(e1.status).toBe(409);
+    expect(e1.why).toBe('first-run');
     expect((await api().preview('p', 'nope', { kind: 'since-last-run' }).catch((e) => e)).reason).toBe('unknown-package');
     expect((await api().start('bogus').catch((e) => e)).reason).toBe('invalid');
+  });
+  test('an open run comes back with its link', async () => {
+    const e = await api().start('open').catch((x) => x);
+    expect(e.reason).toBe('open-run');
+    expect(e.run).toEqual({ url: '/p/x.md', status: 'running' });
   });
   test('a Viewer\'s catalog is refused as viewer', async () => {
     expect((await api().catalog('viewer').catch((e) => e)).reason).toBe('viewer');
