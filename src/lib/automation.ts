@@ -199,12 +199,12 @@ export class RunIndex {
   }
 
   /** A run this machine started ended: `failed` counts toward the stop, anything else clears the count. */
-  async outcome(rootId: string, id: string, outcome: 'ok' | 'failed' | 'held', detail: Omit<IndexEntry, 'v' | 'at' | 'outcome'>): Promise<RegState> {
+  async outcome(rootId: string, id: string, outcome: 'ok' | 'failed' | 'held', detail: Partial<Omit<IndexEntry, 'v' | 'at' | 'outcome'>>): Promise<RegState> {
     const s = await this.state(rootId, id);
     s.failures = outcome === 'failed' ? s.failures + 1 : 0;
     if (s.failures >= AUTO_FAILURES_OFF) s.disabled = true;
     await this.save(rootId, id, s);
-    await this.record(rootId, id, { ...detail, outcome });
+    await this.record(rootId, id, { requestId: '', ...detail, outcome });
     return s;
   }
 }
