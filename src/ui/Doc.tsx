@@ -1337,7 +1337,7 @@ export function Doc({
               </span>
             )}
           </h1>
-          {/* The project's places, as its folder page has them: GIT, then Favs … Files. A phone has its bottom bar. */}
+          {/* The project's places, as its folder page has them: GIT, then Recent … Files. A phone has its bottom bar. */}
           {!phone && rootDirUrl && <HeadTabs dirUrl={rootDirUrl} view={null} repo={rootInRepo} go={onNavigate} />}
           {phone && editBtn}
           {phone && (
