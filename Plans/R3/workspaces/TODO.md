@@ -593,7 +593,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.
   Cover desktop/mobile, light/dark, roles/access modes and loading/empty/error/success states; record screenshot-backed findings and prioritize the resulting implementation work.
-  - [ ] MW.13.2 Project actions in the chooser and a Run Flow page with its target <a id="MW.13.2"></a>
+  - [x] MW.13.2 Project actions in the chooser and a Run Flow page with its target <a id="MW.13.2"></a>
     Owner 2026-11-16 via `#md/ceo` (screenshots). W2 frontend + backend (W1 offline). CEO/CTO outside the chain.
     - [x] MW.13.2a Project chooser: an `Actions` group under a separator — `Add new Project…` → Settings' Add project (`/settings#add-project`, focused); `Create new Project…` → `/<root>/?new-project`, a TBD page (the planned questions and flows; it creates nothing)
     - [x] MW.13.2b Header tabs always end with `Run Flow` → `/<root>/?flow=<rel>` (a document's path, a folder's with `/`, `''` = project); the old popup becomes this page — same catalog, range, preview, Confirm and checks; a Viewer / read-only / no-git project is explained there, not hidden

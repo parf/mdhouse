@@ -9,7 +9,7 @@ const SHEET = '(pointer: coarse) and (max-width: 720px)';
 
 /** The buttons, numbered for Alt+1…5, in two rows; the first is the default — Ctrl+Enter. */
 const ACTIONS: Array<[AbAction, string, string]> = [
-  ['updated', 'Updated — reply', 'The page changed: read it and reply'],
+  ['updated', 'Send', 'The page changed: read it and reply'],
   ['note', 'Send note', 'The note alone'],
   ['target', 'Do 🎯', 'Do the 🎯 items, then reply'],
   ['resolve', 'Resolve', 'Carry the answered questions over, then reply'],
@@ -342,7 +342,7 @@ export function AgentBusPanel({ open, onClose, p, root, named, onState }: Props)
             <IconBus size={28} />
             <p>Tell an agent this page changed, or ask it to work on it.</p>
             <p class="ab-keys">
-              <kbd>Ctrl+Enter</kbd> updated — reply · <kbd>Alt+1…5</kbd> a button · <kbd>Esc</kbd> close
+              <kbd>Ctrl+Enter</kbd> [1] Send · <kbd>Alt+1…5</kbd> a button · <kbd>Esc</kbd> close
             </p>
           </div>
         )}
@@ -353,7 +353,8 @@ export function AgentBusPanel({ open, onClose, p, root, named, onState }: Props)
                 you → {s.targets.map(short).join(', ')} · {clock(s.at)}
               </div>
               <div class="ab-text">
-                <b>{LABEL[s.action]}</b>
+                {/* The default send says nothing more than the message itself; another action names itself. */}
+                {s.action !== 'updated' && <b>{LABEL[s.action]}</b>}
                 {s.note.trim() && <div class="ab-note-text">{s.note.trim()}</div>}
               </div>
             </div>
@@ -406,7 +407,7 @@ export function AgentBusPanel({ open, onClose, p, root, named, onState }: Props)
               title={`${tip} — ${i === 0 ? 'Ctrl+Enter · ' : ''}Alt+${i + 1}`}
               onClick={() => void send(a)}
             >
-              <span class="n">{i + 1}</span> {label}
+              <span class="n">[{i + 1}]</span> {label}
             </button>
           ))}
         </div>

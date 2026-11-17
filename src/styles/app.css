@@ -1965,8 +1965,9 @@ button.sync-chip { cursor: pointer; }
 .ab-bar button.default { background: linear-gradient(135deg, var(--qa-answer), color-mix(in srgb, var(--qa-answer) 70%, var(--accent)));
   color: #fff; border-color: transparent; font-weight: 600; text-shadow: 0 1px 1px rgb(0 0 0 / 0.35); }
 .ab-bar button:disabled { opacity: 0.45; cursor: default; }
-.ab-bar .n { font: 600 10px/1 var(--mono); color: var(--fg-muted); border: 1px solid var(--border); border-radius: 3px; padding: 1px 3px; }
-.ab-bar .default .n { color: inherit; border-color: currentColor; }
+/* `[1]`: the brackets frame the number — no box around it. */
+.ab-bar .n { font: 600 11px/1 var(--mono); color: var(--fg-muted); }
+.ab-bar .default .n { color: inherit; }
 .ab-error { color: var(--danger); font-size: 12.5px; margin: 6px 0 0; padding: 0 12px; }
 .ab-compose .ab-error { padding: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;

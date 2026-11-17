@@ -98,6 +98,8 @@
 
 ### Changed
 
+- Agent Bus panel: the default button reads `[1] Send` (every button `[n] …`, Alt+n as before); a sent message shows its note without an "Updated — reply" heading — other actions still name themselves
+
 - R3 and later distributions use the PolyForm Strict License 1.0.0, copyright Sergey Porfiriev; earlier releases retain their distributed licenses
 
 - Local install = administrator: with no users configured, a request reaching mdhouse from this computer (loopback, a local proxy included) needs no `mdhouse admin` sign-in
