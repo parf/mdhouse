@@ -29,6 +29,7 @@ import { onAutomation as wantsAutomation } from './ui/automation-model';
 import { FlowPage } from './ui/FlowRun';
 import { NewProjectPage } from './ui/NewProjectPage';
 import { flowFrom } from './ui/flow-model';
+import { MD_EXT } from './lib/filetypes';
 import { changeSummary } from './ui/git-state';
 import { usePhone } from './ui/phone';
 import { ASK_EVENT, ASK_STATE, onChanges } from './ui/nav';
@@ -424,6 +425,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
     // File notifications may change content; root Git notifications change metadata/history.
     if (doc && msg.root === doc.root) {
       if (msg.t === 'fs' && doc.rel && msg.paths.includes(doc.rel)) refreshDoc(true);
+      // Its wikilinks may name another page now: render again, not "unchanged" — the text is the same.
+      else if (msg.t === 'fs' && doc.wikilinks && msg.paths.some((p) => p !== doc.rel && MD_EXT.test(p))) refreshDoc();
       else if (msg.t === 'git') refreshDocMetadata();
     }
   };

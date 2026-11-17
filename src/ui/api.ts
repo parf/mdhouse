@@ -84,6 +84,8 @@ export interface DocPayload {
   kind: Kind;
   /** Identity of the complete normalized source text, including frontmatter, not rendered HTML. */
   contentHash?: string;
+  /** The document has wikilinks: another page added, removed or renamed may change what they name. */
+  wikilinks?: boolean;
   /** Owning repository HEAD, cached per invalidation; null without a known HEAD. */
   gitRevision?: string | null;
   gitState?: GitState;

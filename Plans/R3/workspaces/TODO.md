@@ -603,6 +603,12 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - [x] MW.13.3 `mdhouse admin --workspace` sets the mode from the terminal — CLI mode = admin <a id="MW.13.3"></a>
     Owner 2026-11-17: `admin --workspace` answered "--host-name is set: localhost is refused…" (it minted a browser link and ignored the flag). Now the OS owner sets the mode in its prefs, no session, no host-name rule; no users → "reload the page", users → a sign-in link on a terminal. Settings' refusal text → `run  mdhouse admin --workspace from cli` (owner, verbatim). `test/admin-wiring.test.ts` (host-name + Viewer → workspace, users case); scratch: host-name Viewer daemon `/api/admin` false → after the command `{"admin":true,"local":true}`.
 
+## Wikilinks
+
+- [x] MW.18 `[[wikilinks]]` in Markdown <a id="MW.18"></a>
+  Owner approved 2026-11-17 via `#md/ceo`: `[[page]]`, `[[path/page]]`, `[[page|label]]`, `[[page#heading]]`; document folder, then project root; bare name → the unique `.md`/`.mdx` basename in the same project; missing / ambiguous marked with a reason, never picked or created; not in code, escaped, Markdown links or `![[embed]]` (later). Path jail, ignore, passive HTML, real hrefs kept; index per scan, no per-link scans.
+  Evidence: `test/wikilinks.test.ts` (resolve, parse, render: code/fence/escape/embed/md link, attrs, Q&A, Unicode, `%`, climb-out, ambiguous, missing); scratch copy of `/home/parf/wiki` (source untouched): 1026 links resolve across 380 pages, the 1 missing is a real `[[wikilinks]]` with no page; shell `[[ -z … ]]` stays text; click → page, Back; creating the named page in the copy turns it into a link live.
+
 ## Configuration ownership
 
 - [ ] MW.14 Decide where all mdhouse data belongs <a id="MW.14"></a>

@@ -28,6 +28,7 @@ import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, new
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
 import { Watcher, type WatchEvent } from './lib/watch';
+import { resolveWiki } from './lib/wikilinks';
 import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-name';
 import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
@@ -1941,6 +1942,11 @@ export async function serve(opts: ServeOptions) {
               }),
             );
             return new Set(files.filter((r): r is string => r !== null));
+          },
+          // [[page]]: this project's Markdown files as the store lists them — never another project, never a raw walk
+          wiki: async (targets) => {
+            const index = await store.wikiIndex(loc.root);
+            return new Map(targets.map((t) => [t, resolveWiki(index, loc.rel, t)]));
           },
         });
 

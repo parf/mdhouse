@@ -4,6 +4,8 @@
 
 ### Added
 
+- Wikilinks: `[[page]]`, `[[path/page]]`, `[[page|label]]`, `[[page#Heading]]` link to a page of the same project — from the document's folder, then the root, `.md` optional; a bare name is the one page of that name anywhere in it. A page that is missing, or a name several pages share, is marked and says which — nothing guessed or created; a page added or renamed shows at once. Not in code; `![[embeds]]` stay text
+
 - Project chooser: `Add new Project…` (Settings' Add project, its path field focused) and `Create new Project…` under a separator, apart from the projects; Create opens a page that says what creating a project will ask — not available yet, it creates nothing
 
 - Changes: one place per project for uncommitted files (`?git=changes`) — each file's state and diff, a tick each (untracked files start unticked), a message and a button that says what it commits ("Commit 2 files" / "Commit README.md"); Push is its own step, shown only when the branch has a remote branch. A document shows one status chip ("modified · Changes") that opens Changes for that file, in place of Commit / Commit+Push and "uncommitted file". Read-only projects and a Viewer see files and diffs only

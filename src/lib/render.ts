@@ -24,6 +24,7 @@ import { qaHtml } from './qa-html';
 export { lineHash };
 import type { DiffHunk } from './git';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
+import { parseWiki, wikiTargets, type WikiTarget } from './wikilinks';
 import { MD_EXT } from './filetypes';
 import { authored, passive } from './passive';
 
@@ -44,6 +45,8 @@ export interface RenderContext {
   docUrl: (rel: string) => string;
   /** Which of these root-relative paths are files: a file named in the text becomes a link to it. */
   exists?: (rels: string[]) => Promise<Set<string>>;
+  /** What each wikilink target names in this project (`resolveWiki`); without it `[[…]]` stays text. */
+  wiki?: (targets: string[]) => Promise<Map<string, WikiTarget>>;
 }
 
 export interface Heading {
@@ -56,6 +59,8 @@ export interface Heading {
 export interface Rendered {
   html: string;
   headings: Heading[];
+  /** The document has wikilinks: a page added, removed or renamed elsewhere may change what they name. */
+  wikilinks: boolean;
   /** Rendered content contains at least one mermaid block — client loads mermaid lazily. */
   hasMermaid: boolean;
   /** Checkbox counts, for the progress badge in the tree. */
@@ -547,6 +552,49 @@ function fileLinkPlugin(md: MarkdownIt, opts: { ctx: RenderContext; files: Map<s
   });
 }
 
+/**
+ * `[[page]]`, `[[path/page]]`, `[[page|label]]`, `[[page#heading]]`, `[[#heading]]`: a link to the page the target
+ * names (`resolveWiki`), at the heading's anchor; a target that names no page, or several, is a marked span that says
+ * which — never a guess, never a new file. Not in code (the code rules run first), not escaped (`\[[`), not `![[…]]`,
+ * not a Markdown link whose text has brackets (`[[x]](url)`).
+ */
+function wikiPlugin(md: MarkdownIt, opts: { ctx: RenderContext; found: Map<string, WikiTarget>; seen: { any: boolean } }): void {
+  const { ctx, found, seen } = opts;
+  md.inline.ruler.before('link', 'mdhouse_wikilink', (state, silent) => {
+    const at = state.pos;
+    const src = state.src;
+    if (src.charCodeAt(at) !== 0x5b || src.charCodeAt(at + 1) !== 0x5b) return false;
+    if (at > 0 && src.charCodeAt(at - 1) === 0x21) return false; // ![[embed]]: not this task
+    const end = src.indexOf(']]', at + 2);
+    if (end === -1 || src.charCodeAt(end + 2) === 0x28) return false;
+    const inner = src.slice(at + 2, end);
+    const w = parseWiki(inner);
+    if (!w) return false;
+    const got: WikiTarget | undefined = w.target ? found.get(w.target) : { rel: ctx.docPath };
+    if (!got) return false; // not resolved (no resolver, or past the limit): left as text
+    seen.any = true;
+    if (!silent) {
+      const shown = w.label ?? inner.split('|')[0]!.trim();
+      if ('rel' in got) {
+        const open = state.push('link_open', 'a', 1);
+        open.attrs = [['href', localHref(ctx, got.rel, w.heading ? slugify(w.heading) : undefined)], ['class', 'md-local-link wikilink']];
+        state.push('text', '', 0).content = shown;
+        state.push('link_close', 'a', -1);
+      } else {
+        const why = 'missing' in got
+          ? `No page “${w.target}” in this project`
+          : `“${w.target}” names ${got.ambiguous.length} pages — write the path: ${got.ambiguous.slice(0, 5).join(', ')}${got.ambiguous.length > 5 ? ', …' : ''}`;
+        const open = state.push('wikilink_open', 'span', 1);
+        open.attrs = [['class', `wikilink ${'missing' in got ? 'wikilink-missing' : 'wikilink-ambiguous'}`], ['title', why]];
+        state.push('text', '', 0).content = shown;
+        state.push('wikilink_close', 'span', -1);
+      }
+    }
+    state.pos = end + 2;
+    return true;
+  });
+}
+
 /** An issue reference in the text: `№A2`, `№D1`, `№H`. */
 const REF = /№(\p{L}[\p{L}\d]*(?:[.-][\p{L}\d]+)*)/gu;
 
@@ -661,6 +709,9 @@ const LINK_TLDS = (
 export async function render(src: string, ctx: RenderContext): Promise<Rendered> {
   await preloadLanguages(src);
   const files = await fileMentions(src, ctx);
+  const targets = ctx.wiki ? wikiTargets(src) : [];
+  const wikiFound = targets.length && ctx.wiki ? await ctx.wiki(targets) : new Map<string, WikiTarget>();
+  const wikiSeen = { any: false };
   const hl = await highlighter();
 
   const headings: Heading[] = [];
@@ -720,6 +771,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
       });
     },
   });
+  md.use(wikiPlugin, { ctx, found: wikiFound, seen: wikiSeen });
   md.use(fileLinkPlugin, { ctx, files });
   md.use(refPlugin);
   md.use(linkPlugin, ctx);
@@ -730,7 +782,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
 
   const actToken = randomBytes(16).toString('hex');
   const html = passive(rewriteHtmlImages(md.render(src, { act: actToken } satisfies ActEnv), ctx));
-  return { html, headings, hasMermaid, tasks, actToken };
+  return { html, headings, hasMermaid, tasks, actToken, wikilinks: wikiSeen.any };
 }
 
 /** A YAML key, the line right after the opening `---`: `title:`, `"a b":`, `tags:`. */

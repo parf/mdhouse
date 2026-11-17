@@ -11,6 +11,7 @@ import type { Registry, Root } from './roots';
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isExplicitlyDenied, loadRootRules, type IgnoreRules } from './ignore';
+import { wikiIndex, type WikiIndex } from './wikilinks';
 import { LIST_CAP, repoToplevel, scanRoot, type MdFile, type ScanResult } from './scan';
 import {
   recentChanges,
@@ -57,6 +58,9 @@ function withGitState<T extends { rel: string; gitState?: GitState }>(repos: rea
     return gs ? { ...r, gitState: gs } : r;
   });
 }
+
+/** Each scan's wikilink index, dropped with the scan. */
+const wikiIndexes = new WeakMap<ScanResult, WikiIndex>();
 
 export function gitStateIn(repos: readonly RepoPaths[], rel: string): GitState | undefined {
   const own = repos.find((r) => !r.prefix || rel === r.prefix || rel.startsWith(`${r.prefix}/`));
@@ -232,6 +236,17 @@ export class Store {
     const result = await scanRoot(root, await this.rules(root), { includeIgnored, noGit: this.opts.noGit, allow });
     s.scans.set(includeIgnored, result);
     return result;
+  }
+
+  /**
+   * The root's Markdown files as wikilinks see them (`wikiIndex`): built once per scan — a rescan after any change
+   * makes a fresh one, so an added, removed or renamed page is never stale. Ignored files are not in it.
+   */
+  async wikiIndex(root: Root): Promise<WikiIndex> {
+    const scan = await this.scan(root, false);
+    let index = wikiIndexes.get(scan);
+    if (!index) wikiIndexes.set(scan, (index = wikiIndex(scan.files.map((f) => f.rel))));
+    return index;
   }
 
   /**

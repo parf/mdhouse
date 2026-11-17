@@ -172,4 +172,16 @@ Markdown inside **still works**.
   whole path (`src/server.ts`, `src/server.ts:557` — that line), a word that is a path with a `/` or
   a Markdown name (`Plans/README.md`, `CHANGELOG.md`); from the document's folder, else from the root.
 
+## Wikilinks
+
+```markdown
+[[page]] · [[path/page]] · [[page|label]] · [[page#Heading]] · [[#Heading]]
+```
+
+- A page of the same project: from the document's folder, then from the root; `.md` / `.mdx` may be left off;
+  a leading `/` — from the root only.
+- A bare name is the one Markdown file of that name anywhere in the project (ignored files not counted).
+- No such page, or several: dashed and muted, its tooltip says which — nothing is created, nothing guessed.
+- Not in code, not escaped (`\[[`), not `[[ … ]]` with spaces inside; `![[embed]]` is text.
+
 `.mdx` files are listed and rendered as Markdown; their JSX is not executed.
