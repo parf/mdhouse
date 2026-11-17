@@ -4,122 +4,31 @@
 
 ### Added
 
-- A document's title has a ★ beside its +1/+2 view chips: filled and yellow when the file is a favorite, an outline on hover otherwise; the ★ in its actions is yellow when set, as in the sidebar
-
-- A document's title row has its project's tabs, as a folder page does: GIT · Recent · Mine · Changes · Commits · Files beside ⚙ (not on a phone, which has its bottom bar)
-
-- Sidebar `MD | ALL`: one button in the sidebar header flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered
-
-- Automation page: `/<project>/?automation` (and Settings → the project → Automation) lists a project's scheduled runs — the pipelines its team keeps in `.mdhouse/automation/`, when each runs in words and UTC, whether this machine approved the file as it is now, the last five runs; an administrator reviews what an approval lets run before approving, and can revoke; everyone else reads
-
-- Scheduled flow runs: a project's `.mdhouse/automation/<id>.json` runs its analysis flow on a timer once this machine's administrator approves the file (`POST /api/automation/approve`) — an Agent Bus schedule on `#mdhouse@<host>`; a changed file stops firing until approved again; approvals and run history live in that record's bus KV
-
 - Changes: one place per project for uncommitted files (`?git=changes`) — each file's state and diff, a tick each (untracked files start unticked), a message and a button that says what it commits ("Commit 2 files" / "Commit README.md"); Push is its own step, shown only when the branch has a remote branch. A document shows one status chip ("modified · Changes") that opens Changes for that file, in place of Commit / Commit+Push and "uncommitted file". Read-only projects and a Viewer see files and diffs only
-
-- Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's magnifier moves into the bar as Search
-
-- One search with a scope switch: `Files | RAG Search` on the sidebar's search box and on the `/rag` page — Files is the search as before, RAG Search searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); on a phone the search box, results and the switch are 44px targets
-
-- Agent Bus out of the box: a new mdhouse config starts with `--agent-bus auto` — on while the login's Agent Bus socket exists, checked again on every request; an existing config keeps its value and an older mdhouse reads `auto` as off; the start line says `agent-bus: on — <socket> (found)`, `auto — not installed (no <path>)` or `off — found <socket>: mdhouse --agent-bus on`
-
-- Run flow lists every analysis-only package that names a commit range in its evidence, not one hard-coded flow: `docs-refresh-verify` (docs drift over a commit range), `project-review` and `engineering-delivery-sync` run beside `recent-commits-review`; a run that is not the host's own says why instead of showing a bar
-- Run flow: a button on a project's page runs a flow (package, range since the last run or from a commit, a preview, Confirm); the run document has a bar to supply evidence, answer questions and Complete, Block, Fail or Cancel it; a finished run records its last commit so the next one starts there. Not for a Viewer or a read-only project
-
-- `mdhouse docs` prints the one line to paste into a project's `AGENTS.md` (it points at `for-agents.md` on GitHub), then the installed reference path and the local raw URL for offline use (`--path`: the path alone)
-
-- `for-agents.md` in the reference: one page an AI reads first — how to write plans, which glyphs, which markup — at `/api/raw?p=_mdhouse/for-agents.md`
-
-- Flows (server): `/api/flow/catalog`, `/api/flow/preview`, `/api/flow/start`, `/api/flow/event` — start a flow on a project (Review recent commits, Review a project or subsystem, Refresh and verify documentation, Compare requirements and delivery); the run document lands in `Plans/flows/runs/<flow>/`; a first run asks for a baseline commit; one open run per flow; the run page records evidence, outcomes and cancel, keeps your Findings and Checks, and a complete run moves its `Plans/flows/<flow>.md` `last-commit-id` so the next run starts there. A run document edited by hand can't be acted on; one started on another machine (or before its key was lost) is read-only
-
-- Agent Bus control: an owner's agent can list the projects and open browser tabs, and send one tab to a Markdown document (topic `mdhouse.ctl`, `inventory` / `open`); reads only, one tab only, a tab with unsaved editor text stays; `mdhouse --ab-control <regexes|off|reset>` narrows who may
-
-- Viewer UI: while mdhouse is a Viewer the page drops every control that changes anything — marks, the Agent Bus button and panel, the ✎ edit links, "Your name", the per-project RW/RO toggle — shows a `Viewer — read-only` badge instead of per-project RO, and a refused write says so; Settings has a Workspace/Viewer switch for the administrator (a Viewer needs `mdhouse admin`)
-
-- RAG search page: the search scope switch opens `/rag` — the project's index status (source, last sync, confirmed/total) and a keyword search with cited hits (file, lines, heading, query words marked); when RAG is not set up it explains step by step how to enable it
-
-- Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API (a `mdhouse admin` session — a Viewer has no local administrator) switches back; projects keep their RW/RO; an unreadable prefs.json counts as a Viewer. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
-
-### Changed
-
-- Header tabs (folder page, git view, document): no Favs tab — favorites are the sidebar's Favorites tab; `?git=favs` still opens
-
-- Sidebar tabs: Files · Recent · My · Favs · 1 · 2 — Favs beside the views; Mine reads My
-
-- Sidebar tree: at every level folders first, then favorite files, other files, muted files — a favorite no longer rises above the folders
-
-- Document header: Edit becomes a `</>` icon, rightmost in the actions row next to ✎ (external edit); while the source is open it shows the page icon; on a phone it stays in the title row
-
-- The control socket (`mdhouse exit`, a second `mdhouse <dir>`) moves from the config dir to `$XDG_RUNTIME_DIR/mdhouse/`; this mdhouse still reaches and stops an older one listening in the config dir, an older `mdhouse` command cannot reach a newer daemon
-
-- Secrets leave `prefs.json`: the Agent Bus token, project Agent Bus credentials and Basic users' password hashes are kept in `secrets.json` (0600) beside it, moved on the next save; an older mdhouse then still asks for a login and admits nobody, and has no Agent Bus token
-
-- Served on a network address (`--host 0.0.0.0`, a LAN IP) with no users and no `--allow` list: every project is read-only — edits, git, flow runs, Agent Bus sends, author and marks are refused — and the start line says why. To write again, add a user (`mdhouse user-add <login>`) or an allow list (`mdhouse --allow <cidr,…>`); `--host-name` and a `/0` allow entry don't count. A reverse proxy on this host binds loopback and works as before ([Access](doc/access.md#network-address--read-only-without-a-policy))
-- The Q&A playground is a test fixture (`test/fixtures/qa-playground.md`), no longer part of the installed reference
-- `agents/skills/markup.md` is folded into `agents/agent-markup.md` (section “Suggested markup”); the old path stays as a short pointer
-- `agents/plans.md` is the portable Plans convention only; this repository's own commit rules are in `CLAUDE.md`
-- The installed reference `_mdhouse` is `agents/` — what agents need: start file `README.md`, `for-agents.md`, `plans.md`, `agent-markup.md`, the install runbook, `rag-sync.md`, `skills/`, `flows/`. Docs for people stay in `doc/` (GitHub, npm). `mdhouse docs` prints the new AGENTS.md line (`…/main/agents/for-agents.md`); the old `doc/for-agents.md` URL points there
-
-### Fixed
-
-- Favorites: a favorite saved through a symlinked folder (`.claude/skills/…` → `agents/skills/…`) is no longer listed as missing — it shows as the file, starred in the tree and on its page, and one ☆ clears it; a file that is really gone still reads missing
-
-- Sidebar: a folder’s file count stays visible and opens its folder page when the folder is expanded
-
-- The sidebar tab is remembered across a reload (per browser); a V1/V2 tab whose view is empty opens as All files
-- Views: on a phone the bottom bar's Files no longer turns a V1/V2 tab into every file — the drawer keeps the tab it was left on (a V tab lists only its own selection; a unit test now holds that for files and folders, with the open document inside or outside it)
-
-- mdhouse's own config folder (prefs, password hashes, control sockets, the flow seal key) is never served, even when a served folder holds it (`mdhouse ~`)
-
-- Document header: one Edit beside the title — the external editor's ✎ moved to the actions row (a long title no longer pushes it to its own line); in a Viewer a phone's top strip shows a short `Viewer` badge with the full words in its tooltip
-
-- Viewer: a project stored as RW shows a gray `RW (stored)` tag (headers, Settings) — it takes effect in Workspace; the administrator still switches the stored RW/RO in Settings, everyone stays read-only
-
-- Copy: a folded Q&A item's "▾ show all" no longer lands in the copied text
-
-- Touch: a document on a phone or a portrait tablet starts with its text — title, Edit and one ⋯ (a sheet with every other action, in words), one line of facts, then the page; the contents, history and Commit are behind one Context row
-
-- Touch: a drawer row is its name and one git badge (a small file is muted, not struck through); the Q&A form shows 💬, ✅, 🚫 and Cancel with the other actions behind More ▾; the Agent Bus panel is a bottom sheet and the bus address sits behind Connection
-
-- Touch: each heading has one ⋯ button instead of four (Edit section, Add below, Add at end, Copy link); with a mouse nothing changes
-
-- Touch: the primary journey (open, document, tick, Q&A, editor, diff, commit, Agent Bus, RAG search) is usable on a phone and a tablet — 44px buttons, links and rows, 16px fields so the page does not zoom, wrapping page chrome, and the sidebar drawer closes when you choose a page
-
-- Touch: a task's checkbox is a 44px target (the native input, so the keyboard and screen readers still work), and on a phone the Q&A filter strip is one row with its chips behind a `Filter · N` toggle
-
-- Settings and RAG search on a phone or tablet: the sidebar drawer no longer covers them on load (it starts closed at 720px and below), the ⓘ tips open as a sheet along the bottom of the screen instead of running off it, controls are 44px high on touch, and the project list stacks above its details up to 900px
-
-- RAG search: a cross-site page can no longer start a search from a browser that sends no `Sec-Fetch-Site`; concurrent status reads share one lookup; a project's source is found however many are registered; query marks no longer shift after letters like `İ`
-- Settings: an ⓘ also opens on a click or tap and closes on Escape, without moving focus to the field; a stored list of several default agents is shown and dropping names asks first; the instance pick no longer snaps back while saving; saving the names filter refreshes the agent lists; the local administrator is shown as such
-- Agent Bus: mdhouse no longer reads its inbox when it connects, so it can never take a reply meant for another process talking as `#mdhouse` (another mdhouse, `mdhouse-rag-sync`)
-- Settings: every help moved into an ⓘ tooltip (mouseover or keyboard focus), rewritten to say what each setting does; only statuses and errors stay on the page
-- Settings: a project's Agent Bus has its own row; the default agent (project and instance) is one, picked from a drop-down of running agents, listed when Settings opens; buttons look like buttons
-- Settings › Add project fits one line: path, an `RW` checkbox (unticked = read-only) and the button
-- `mdhouse-rag-sync` works with newer RAG/FileScan agents: it accepts RAG 0.4.2 or later and ignores reply fields a newer agent adds
-
-- Align page-header first rows across documents, folders, Git, Settings and notices with a shared sidebar/topstrip header band, including narrow screens
-
-- Access indicators hide normal RW and emphasize read-only project exceptions across the sidebar and Settings; default controls and reference statuses stay neutral
-
-- File Git history and empty comparison actions stay hidden for Gitignored files and Untracked files without confirmed history; tracked history and useful current-change actions remain
-
-- Mermaid diagrams with HTML line breaks remain valid inert SVG images and update on real source changes; metadata-only Git refresh and conditional unchanged-source responses preserve body/token/images without flicker
-- Direct opening of ignored Markdown reveals its parent and selects the file in the left tree; Gitignored and Untracked have distinct orange/blue colors and right-panel badges, while tracked and no-repo files stay neutral
-
-- Agent Bus connection uses the canonical Personal tag instead of the retired record field, preserving create-only registration and existing owner settings
-
-- Tree metadata and folder ALL listings preserve explicit exclusions, `.git` protection and Registry path jail, including symlink aliases
-
-### Added
-
-- `mdhouse-rag-sync sync` registers its source (one folder per namespace/table) and keeps its latest run and the last 200 runs in the KV of `#mdhouse@<host>`, with one agent-log line per run; a sync for another folder, FileScan or RAG is refused before anything is sent
-
-- `mdhouse-rag-sync sync --until-done` gives up after three rounds in a row at its 15 min wait with nothing more confirmed, and lists the root, plans and reads the owner configuration again every round, so a changed or incomplete listing stops it
-
-- `mdhouse-rag-sync search` cites a small file's record with `lines` and `heading_path` computed from the local file; a file changed since indexing marks the record `stale` instead
 
 - Edit complete Markdown source with CodeMirror, atomic stale-checked saves and retained drafts when the file changes or becomes read-only
 
+- Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API (a `mdhouse admin` session — a Viewer has no local administrator) switches back; projects keep their RW/RO; an unreadable prefs.json counts as a Viewer. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
+
+- Viewer UI: while mdhouse is a Viewer the page drops every control that changes anything — marks, the Agent Bus button and panel, the ✎ edit links, "Your name", the per-project RW/RO toggle — shows a `Viewer — read-only` badge instead of per-project RO, and a refused write says so; Settings has a Workspace/Viewer switch for the administrator (a Viewer needs `mdhouse admin`)
+
+- Run flow: a button on a project's page runs a flow (package, range since the last run or from a commit, a preview, Confirm); the run document has a bar to supply evidence, answer questions and Complete, Block, Fail or Cancel it; a finished run records its last commit so the next one starts there. Not for a Viewer or a read-only project
+
+- Run flow lists every analysis-only package that names a commit range in its evidence, not one hard-coded flow: `docs-refresh-verify` (docs drift over a commit range), `project-review` and `engineering-delivery-sync` run beside `recent-commits-review`; a run that is not the host's own says why instead of showing a bar
+
+- Flows (server): `/api/flow/catalog`, `/api/flow/preview`, `/api/flow/start`, `/api/flow/event` — start a flow on a project (Review recent commits, Review a project or subsystem, Refresh and verify documentation, Compare requirements and delivery); the run document lands in `Plans/flows/runs/<flow>/`; a first run asks for a baseline commit; one open run per flow; the run page records evidence, outcomes and cancel, keeps your Findings and Checks, and a complete run moves its `Plans/flows/<flow>.md` `last-commit-id` so the next run starts there. A run document edited by hand can't be acted on; one started on another machine (or before its key was lost) is read-only
+
+- Scheduled flow runs: a project's `.mdhouse/automation/<id>.json` runs its analysis flow on a timer once this machine's administrator approves the file (`POST /api/automation/approve`) — an Agent Bus schedule on `#mdhouse@<host>`; a changed file stops firing until approved again; approvals and run history live in that record's bus KV
+
+- Automation page: `/<project>/?automation` (and Settings → the project → Automation) lists a project's scheduled runs — the pipelines its team keeps in `.mdhouse/automation/`, when each runs in words and UTC, whether this machine approved the file as it is now, the last five runs; an administrator reviews what an approval lets run before approving, and can revoke; everyone else reads
+
+- Agent Bus out of the box: a new mdhouse config starts with `--agent-bus auto` — on while the login's Agent Bus socket exists, checked again on every request; an existing config keeps its value and an older mdhouse reads `auto` as off; the start line says `agent-bus: on — <socket> (found)`, `auto — not installed (no <path>)` or `off — found <socket>: mdhouse --agent-bus on`
+
+- Agent Bus control: an owner's agent can list the projects and open browser tabs, and send one tab to a Markdown document (topic `mdhouse.ctl`, `inventory` / `open`); reads only, one tab only, a tab with unsaved editor text stays; `mdhouse --ab-control <regexes|off|reset>` narrows who may
+
 - Per-project Agent Bus endpoint/default editors with server-only credentials, root-aware routing and visible unavailable targets; Settings reads config without connecting
+
+- Local browser administration through `mdhouse admin`: single-use terminal sign-in links, session logout/revocation, and administrator-only instance settings and project removal
 
 - Add an existing project from administrator Settings with an explicit RW/RO choice; new projects stay session-only until separately saved
 
@@ -129,44 +38,161 @@
 
 - Optional Project names through `--name` and administrator Settings, with live labels and reset; unsaved-project names stay temporary until the project is explicitly saved
 
-- Local browser administration through `mdhouse admin`: single-use terminal sign-in links, session logout/revocation, and administrator-only instance settings and project removal
-
 - Settings now groups Projects with selection/details, current access and persistence; browser and all-project options are clearly separate, and served-project terminology is consistent
 
-- Browse gitignored Markdown with Show ignored, direct folder navigation, or folders selected in V1/V2; selected folders also appear in main/default while each V tab keeps its own selection
+- One search with a scope switch: `Files | RAG Search` on the sidebar's search box and on the `/rag` page — Files is the search as before, RAG Search searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); on a phone the search box, results and the switch are 44px targets
+
+- RAG search page: the search scope switch opens `/rag` — the project's index status (source, last sync, confirmed/total) and a keyword search with cited hits (file, lines, heading, query words marked); when RAG is not set up it explains step by step how to enable it
 
 - Standalone `mdhouse-rag-sync` previews local Markdown coverage, explicitly applies finite owner-configured sync and runs scoped searches; paid queries require an explicit flag; each sync resends files with no confirmation; `sync --until-done` repeats with back-off until every file is confirmed; no background sync
 
-- Pure analysis-run state transitions and deterministic unsaved Markdown previews validate bounded caller assertions; no analysis execution, filesystem writes, real approvals or scheduling are included
-- Five Legal authoring packages cover contracts, obligations/renewal, policy comparisons, change impacts and counsel briefs with supplied-source uncertainty and qualified-review stops; execution and legal actions are not included
-- Five Finance authoring packages cover budget/forecast, variance, unit economics, cash/runway and document review with inspectable scenario formulas and evidence gaps; no financial actions or execution are included
-- Five Ideas authoring packages cover clarification, research/synthesis, prioritization, experiment design and project proposals while retaining source history, assumptions and unresolved questions; execution remains future work
-- Five Business authoring packages cover overview, strategy, market/customer evidence, KPI review and decision memos, separating evidence, assumptions and pending decisions; execution remains future work
-- Engineering authoring packages now also cover incident/regression, delivery sync, API/schema impact and maintenance/debt, with evidence-limited synthetic examples and no execution
-- Four Engineering authoring packages cover release readiness, architecture/ownership, project health and onboarding/handoff, preserving missing evidence and unknown status; execution remains future work
-- Recent-commits and incoming-change authoring packages include factual summaries, risk/task reports, PR feedback/readiness and separate merge-approval declarations; execution remains future work
+- `mdhouse-rag-sync sync` registers its source (one folder per namespace/table) and keeps its latest run and the last 200 runs in the KV of `#mdhouse@<host>`, with one agent-log line per run; a sync for another folder, FileScan or RAG is refused before anything is sent
+
+- `mdhouse-rag-sync sync --until-done` gives up after three rounds in a row at its 15 min wait with nothing more confirmed, and lists the root, plans and reads the owner configuration again every round, so a changed or incomplete listing stops it
+
+- `mdhouse-rag-sync search` cites a small file's record with `lines` and `heading_path` computed from the local file; a file changed since indexing marks the record `stale` instead
+
+- Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's magnifier moves into the bar as Search
+
+- Sidebar `MD | ALL`: one button in the sidebar header flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered
+
+- Browse gitignored Markdown with Show ignored, direct folder navigation, or folders selected in V1/V2; selected folders also appear in main/default while each V tab keeps its own selection
+
+- A document's title row has its project's tabs, as a folder page does: GIT · Recent · Mine · Changes · Commits · Files beside ⚙ (not on a phone, which has its bottom bar)
+
+- A document's title has a ★ beside its +1/+2 view chips: filled and yellow when the file is a favorite, an outline on hover otherwise; the ★ in its actions is yellow when set, as in the sidebar
+
 - Settings → Your name: each browser signs its Q&A replies and quotes with its own name (a cookie, attribution only — no access); with none set, signing works as before
-- Five Documentation authoring packages cover deep subsystem docs, refresh/verify, audience overviews, documentation architecture and trust reports, with synthetic examples; execution remains future work
-- Shared flow-package validation and loading, with four Feature/delivery authoring packages and synthetic examples; flow execution is not included
-- mdhouse's own documentation is always served, read-only, as `_mdhouse` (`mdhouse reference` in Settings): no write controls, edit link or agent requests on it, and it cannot be removed or added as a project
-- The reference also carries the plan convention (`plans.md`), an index (`README.md`) and the shareable Q&A skills and markup references (`skills/`)
+
 - Settings → Edit link has a Scheme field: the ✎ link opens `<scheme>:/path:line`, `edit` by default — e.g. `mdedit` for Typora next to `edit:` for your common editor; web and executable schemes (`javascript`, `http`, `file` …) are refused
+
+- mdhouse's own documentation is always served, read-only, as `_mdhouse` (`mdhouse reference` in Settings): no write controls, edit link or agent requests on it, and it cannot be removed or added as a project
+
+- The reference also carries the plan convention (`plans.md`), an index (`README.md`) and the shareable Q&A skills and markup references (`skills/`)
+
+- `for-agents.md` in the reference: one page an AI reads first — how to write plans, which glyphs, which markup — at `/api/raw?p=_mdhouse/for-agents.md`
+
+- `mdhouse docs` prints the one line to paste into a project's `AGENTS.md` (it points at `for-agents.md` on GitHub), then the installed reference path and the local raw URL for offline use (`--path`: the path alone)
+
+- Shared flow-package validation and loading, with four Feature/delivery authoring packages and synthetic examples; flow execution is not included
+
+- Pure analysis-run state transitions and deterministic unsaved Markdown previews validate bounded caller assertions; no analysis execution, filesystem writes, real approvals or scheduling are included
+
+- Recent-commits and incoming-change authoring packages include factual summaries, risk/task reports, PR feedback/readiness and separate merge-approval declarations; execution remains future work
+
+- Four Engineering authoring packages cover release readiness, architecture/ownership, project health and onboarding/handoff, preserving missing evidence and unknown status; execution remains future work
+
+- Engineering authoring packages now also cover incident/regression, delivery sync, API/schema impact and maintenance/debt, with evidence-limited synthetic examples and no execution
+
+- Five Documentation authoring packages cover deep subsystem docs, refresh/verify, audience overviews, documentation architecture and trust reports, with synthetic examples; execution remains future work
+
+- Five Business authoring packages cover overview, strategy, market/customer evidence, KPI review and decision memos, separating evidence, assumptions and pending decisions; execution remains future work
+
+- Five Ideas authoring packages cover clarification, research/synthesis, prioritization, experiment design and project proposals while retaining source history, assumptions and unresolved questions; execution remains future work
+
+- Five Finance authoring packages cover budget/forecast, variance, unit economics, cash/runway and document review with inspectable scenario formulas and evidence gaps; no financial actions or execution are included
+
+- Five Legal authoring packages cover contracts, obligations/renewal, policy comparisons, change impacts and counsel briefs with supplied-source uncertainty and qualified-review stops; execution and legal actions are not included
 
 ### Changed
 
+- R3 and later distributions use the PolyForm Strict License 1.0.0, copyright Sergey Porfiriev; earlier releases retain their distributed licenses
+
 - Local install = administrator: with no users configured, a request reaching mdhouse from this computer (loopback, a local proxy included) needs no `mdhouse admin` sign-in
-- Agent Bus traffic (page requests and `mdhouse-rag-sync`) goes through the `ai-agent-bus-sdk` client
-- Agent Bus client 1.0.59: no busy polling while waiting
+
+- Served on a network address (`--host 0.0.0.0`, a LAN IP) with no users and no `--allow` list: every project is read-only — edits, git, flow runs, Agent Bus sends, author and marks are refused — and the start line says why. To write again, add a user (`mdhouse user-add <login>`) or an allow list (`mdhouse --allow <cidr,…>`); `--host-name` and a `/0` allow entry don't count. A reverse proxy on this host binds loopback and works as before ([Access](doc/access.md#network-address--read-only-without-a-policy))
+
+- Secrets leave `prefs.json`: the Agent Bus token, project Agent Bus credentials and Basic users' password hashes are kept in `secrets.json` (0600) beside it, moved on the next save; an older mdhouse then still asks for a login and admits nobody, and has no Agent Bus token
+
+- The control socket (`mdhouse exit`, a second `mdhouse <dir>`) moves from the config dir to `$XDG_RUNTIME_DIR/mdhouse/`; this mdhouse still reaches and stops an older one listening in the config dir, an older `mdhouse` command cannot reach a newer daemon
 
 - Document HTML is passive on the server and at browser sinks. Passive classes, IDs, tables, details and code colours stay; scripts, handlers, frames, forms, inline SVG/MathML and unsafe URLs/styles are removed. Raw HTML opens sandboxed without scripts
+
 - Q&A write controls use generated-action provenance; double-click selection is on an item's glyph or row. Mermaid uses constrained inert images: diagram labels are no longer selectable and diagram links/callbacks are inactive
-- R3 and later distributions use the PolyForm Strict License 1.0.0, copyright Sergey Porfiriev; earlier releases retain their distributed licenses
+
+- The installed reference `_mdhouse` is `agents/` — what agents need: start file `README.md`, `for-agents.md`, `plans.md`, `agent-markup.md`, the install runbook, `rag-sync.md`, `skills/`, `flows/`. Docs for people stay in `doc/` (GitHub, npm). `mdhouse docs` prints the new AGENTS.md line (`…/main/agents/for-agents.md`); the old `doc/for-agents.md` URL points there
+
+- `agents/skills/markup.md` is folded into `agents/agent-markup.md` (section “Suggested markup”); the old path stays as a short pointer
+
+- `agents/plans.md` is the portable Plans convention only; this repository's own commit rules are in `CLAUDE.md`
+
+- The Q&A playground is a test fixture (`test/fixtures/qa-playground.md`), no longer part of the installed reference
+
+- Agent Bus traffic (page requests and `mdhouse-rag-sync`) goes through the `ai-agent-bus-sdk` client
+
+- Agent Bus client 1.0.59: no busy polling while waiting
+
+- Header tabs (folder page, git view, document): no Favs tab — favorites are the sidebar's Favorites tab; `?git=favs` still opens
+
+- Sidebar tabs: Files · Recent · My · Favs · 1 · 2 — Favs beside the views; Mine reads My
+
+- Sidebar tree: at every level folders first, then favorite files, other files, muted files — a favorite no longer rises above the folders
+
+- Document header: Edit becomes a `</>` icon, rightmost in the actions row next to ✎ (external edit); while the source is open it shows the page icon; on a phone it stays in the title row
 
 ### Fixed
 
-- On touch screens the heading `#` `✎ ↓ ⇊` and the Q&A 🎯 `💬` controls are always visible and at least 44 px, no hover needed; the hover tooltips are off there
-- Copying from a rendered document leaves out mdhouse's own controls — heading `#`, `✎ ↓ ⇊`, Q&A buttons; glyphs written in the Markdown still copy
 - Discard changes (`git reset` of one file) reached a file inside a read-only folder through a writable folder around it — now refused, as commit already was
+
+- RAG search: a cross-site page can no longer start a search from a browser that sends no `Sec-Fetch-Site`; concurrent status reads share one lookup; a project's source is found however many are registered; query marks no longer shift after letters like `İ`
+
+- mdhouse's own config folder (prefs, password hashes, control sockets, the flow seal key) is never served, even when a served folder holds it (`mdhouse ~`)
+
+- Tree metadata and folder ALL listings preserve explicit exclusions, `.git` protection and Registry path jail, including symlink aliases
+
+- Agent Bus: mdhouse no longer reads its inbox when it connects, so it can never take a reply meant for another process talking as `#mdhouse` (another mdhouse, `mdhouse-rag-sync`)
+
+- Agent Bus connection uses the canonical Personal tag instead of the retired record field, preserving create-only registration and existing owner settings
+
+- Favorites: a favorite saved through a symlinked folder (`.claude/skills/…` → `agents/skills/…`) is no longer listed as missing — it shows as the file, starred in the tree and on its page, and one ☆ clears it; a file that is really gone still reads missing
+
+- Direct opening of ignored Markdown reveals its parent and selects the file in the left tree; Gitignored and Untracked have distinct orange/blue colors and right-panel badges, while tracked and no-repo files stay neutral
+
+- File Git history and empty comparison actions stay hidden for Gitignored files and Untracked files without confirmed history; tracked history and useful current-change actions remain
+
+- Mermaid diagrams with HTML line breaks remain valid inert SVG images and update on real source changes; metadata-only Git refresh and conditional unchanged-source responses preserve body/token/images without flicker
+
+- `mdhouse-rag-sync` works with newer RAG/FileScan agents: it accepts RAG 0.4.2 or later and ignores reply fields a newer agent adds
+
+- The sidebar tab is remembered across a reload (per browser); a V1/V2 tab whose view is empty opens as All files
+
+- Views: on a phone the bottom bar's Files no longer turns a V1/V2 tab into every file — the drawer keeps the tab it was left on (a V tab lists only its own selection; a unit test now holds that for files and folders, with the open document inside or outside it)
+
+- Sidebar: a folder’s file count stays visible and opens its folder page when the folder is expanded
+
+- Document header: a long title no longer pushes the edit controls to their own line — ✎ (external editor) sits in the actions row; in a Viewer a phone's top strip shows a short `Viewer` badge with the full words in its tooltip
+
+- Viewer: a project stored as RW shows a gray `RW (stored)` tag (headers, Settings) — it takes effect in Workspace; the administrator still switches the stored RW/RO in Settings, everyone stays read-only
+
+- Access indicators hide normal RW and emphasize read-only project exceptions across the sidebar and Settings; default controls and reference statuses stay neutral
+
+- Copying from a rendered document leaves out mdhouse's own controls — heading `#`, `✎ ↓ ⇊`, Q&A buttons; glyphs written in the Markdown still copy
+
+- Copy: a folded Q&A item's "▾ show all" no longer lands in the copied text
+
+- Touch: the primary journey (open, document, tick, Q&A, editor, diff, commit, Agent Bus, RAG search) is usable on a phone and a tablet — 44px buttons, links and rows, 16px fields so the page does not zoom, wrapping page chrome, and the sidebar drawer closes when you choose a page
+
+- Touch: a document on a phone or a portrait tablet starts with its text — title, Edit and one ⋯ (a sheet with every other action, in words), one line of facts, then the page; the contents, history and Commit are behind one Context row
+
+- Touch: a drawer row is its name and one git badge (a small file is muted, not struck through); the Q&A form shows 💬, ✅, 🚫 and Cancel with the other actions behind More ▾; the Agent Bus panel is a bottom sheet and the bus address sits behind Connection
+
+- Touch: each heading has one ⋯ button instead of four (Edit section, Add below, Add at end, Copy link); with a mouse nothing changes
+
+- Touch: a task's checkbox is a 44px target (the native input, so the keyboard and screen readers still work), and on a phone the Q&A filter strip is one row with its chips behind a `Filter · N` toggle
+
+- On touch screens the heading `#` `✎ ↓ ⇊` and the Q&A 🎯 `💬` controls are always visible and at least 44 px, no hover needed; the hover tooltips are off there
+
+- Settings and RAG search on a phone or tablet: the sidebar drawer no longer covers them on load (it starts closed at 720px and below), the ⓘ tips open as a sheet along the bottom of the screen instead of running off it, controls are 44px high on touch, and the project list stacks above its details up to 900px
+
+- Settings: every help moved into an ⓘ tooltip (mouseover or keyboard focus), rewritten to say what each setting does; only statuses and errors stay on the page
+
+- Settings: an ⓘ also opens on a click or tap and closes on Escape, without moving focus to the field; a stored list of several default agents is shown and dropping names asks first; the instance pick no longer snaps back while saving; saving the names filter refreshes the agent lists; the local administrator is shown as such
+
+- Settings: a project's Agent Bus has its own row; the default agent (project and instance) is one, picked from a drop-down of running agents, listed when Settings opens; buttons look like buttons
+
+- Settings › Add project fits one line: path, an `RW` checkbox (unticked = read-only) and the button
+
+- Align page-header first rows across documents, folders, Git, Settings and notices with a shared sidebar/topstrip header band, including narrow screens
 
 ## 2.3.3 — 2026-11-02
 
