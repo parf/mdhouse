@@ -191,6 +191,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   in a repo (`.gitignore` holds), else (or in a folder its repo ignores) a walk without dot-folders and `node_modules`; at most 5000.
   `src/lib/scan.ts` `listFiles()` preserves explicit root exclusions and resolves each result through
   Registry before stat; `.git`, canonical aliases into exclusions and outside symlinks are refused.
+- Sidebar `MD | ALL` (`src/ui/sidebar-kind.ts`, `mdhouse.sidebar.kind`): one button in the side head; ALL builds the Files tab's tree from
+  `/api/files?p=<root>` merged with the MD tree's entries (`allEntries`), refetched on every tree push; view tabs stay Markdown.
 - Every file has a page. `src/lib/filetypes.ts` `kindOf()`: `md | code | text | image | pdf | html |
   video | audio | binary` — by name; `langOf()` (Shiki ids + aliases + `Dockerfile`, `.h`, `.conf` …)
   → `code`; an unknown name: no NUL in its first 8 kB → `text`, else `binary`.

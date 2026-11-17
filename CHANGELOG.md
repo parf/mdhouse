@@ -4,6 +4,8 @@
 
 ### Added
 
+- Sidebar `MD | ALL`: one button in the sidebar header, where `R` was, flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, the choice is remembered
+
 - Automation page: `/<project>/?automation` (and Settings → the project → Automation) lists a project's scheduled runs — the pipelines its team keeps in `.mdhouse/automation/`, when each runs in words and UTC, whether this machine approved the file as it is now, the last five runs; an administrator reviews what an approval lets run before approving, and can revoke; everyone else reads
 
 - Scheduled flow runs: a project's `.mdhouse/automation/<id>.json` runs its analysis flow on a timer once this machine's administrator approves the file (`POST /api/automation/approve`) — an Agent Bus schedule on `#mdhouse@<host>`; a changed file stops firing until approved again; approvals and run history live in that record's bus KV

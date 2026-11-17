@@ -2116,6 +2116,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .info:hover .info-tip, .info:focus-within .info-tip, .info.open .info-tip { display: block; }
 .info.dismissed .info-tip { display: none; }
 
+/* MD | ALL: what the sidebar's Files tree lists — one button, its word the current mode */
+.kind-btn { width: auto; min-width: 30px; padding: 0 5px; margin-left: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; }
+
 /* ── RAG search ─────────────────────────────────────────────────────────── */
 
 .rag-scope { margin: 0 0 16px; }

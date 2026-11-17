@@ -7,6 +7,7 @@ import { Ago, RecentHeat } from './Ago';
 import { follow } from './PageHead';
 import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
+import { MD_EXT } from '../lib/filetypes';
 
 interface Props {
   nodes: Node[];
@@ -122,7 +123,8 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
   const isMuted = marks.includes('muted');
   const status = shownStatus(file.file.status);
   const size = file.file.size;
-  const small = sizeClass(size);
+  // Nearly empty is a Markdown file's mark: a small other file is not a stub.
+  const small = MD_EXT.test(file.path) ? sizeClass(size) : '';
 
   return (
     <a
@@ -133,7 +135,7 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       onClick={(e) => follow(e, () => p.onOpen(file.path))}
       title={`${file.path} · ${size < 1000 ? `${size} B` : fileSize(size)}`}
     >
-      {/* No page icon: every row here is a Markdown file, so it would say nothing, and no empty
+      {/* No page icon: a Markdown row is the default and an other file's name keeps its extension, and no empty
           chevron slot either — the name starts under the `>` of the folders beside it, as far
           left as the row goes. A favourite's star stands in that spot when there is one. */}
       {isFav && (
@@ -165,7 +167,8 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
       {(!p.compact || small !== 'tiny') && <span class={`badge size${small ? ` ${small}` : ''}`}>{fileSize(size)}</span>}
 
       {/* The marks are shared settings, which a Viewer does not change: no buttons. */}
-      {!p.compact && !viewer && (
+      {/* Marks are a Markdown file's: an ALL tree's other files have none. */}
+      {!p.compact && !viewer && MD_EXT.test(file.path) && (
         <span class="marks">
           <MarkButton
             label={isFav ? 'Unfavorite' : 'Favorite'}

@@ -1,4 +1,7 @@
-import { useMemo } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
+import { api } from './api';
+import type { AnyFile } from '../lib/scan';
+import { allEntries, loadTreeKind, saveTreeKind, type TreeKind } from './sidebar-kind';
 import { tabFiles, VIEW_IDS, type RootViews, type ViewId } from './views';
 import type { RootInfo } from './api';
 import type { RecentEntry } from '../lib/store';
@@ -111,7 +114,34 @@ export function Sidebar(props: SidebarProps) {
 
   // a view's tab: the tree narrowed to its folders and files, muted ones left out
   const entries = props.tab === 'V1' || props.tab === 'V2' ? props.views[props.tab] : null;
-  const shown = useMemo(() => tabFiles(tree?.files ?? [], entries, props.showIgnored), [tree, entries, props.showIgnored]);
+  // MD or ALL: the Files tab's tree lists the Markdown, or every file of the project (a view's tab stays Markdown).
+  const [kind, setKind] = useState<TreeKind>(loadTreeKind);
+  const flipKind = () => {
+    const next = kind === 'md' ? 'all' : 'md';
+    setKind(next);
+    saveTreeKind(next);
+  };
+  const allTree = kind === 'all' && props.tab === 'files';
+  const [listed, setListed] = useState<{ root: string; files: AnyFile[]; capped: boolean } | { root: string; error: string } | null>(null);
+  useEffect(() => {
+    if (!allTree || !tree) return;
+    let live = true;
+    const root = tree.root.id;
+    api.files(root).then(
+      (r) => live && setListed({ root, files: r.files, capped: r.capped }),
+      (e: unknown) => live && setListed({ root, error: e instanceof Error ? e.message : 'could not list the files' }),
+    );
+    return () => {
+      live = false;
+    };
+    // `tree` changes with every rescan: the listing follows it.
+  }, [allTree, tree]);
+  const listing = allTree && listed && listed.root === tree?.root.id ? listed : null;
+  const shown = useMemo(
+    () =>
+      tabFiles(listing && 'files' in listing ? allEntries(listing.files, tree?.files ?? []) : (tree?.files ?? []), entries, props.showIgnored),
+    [tree, entries, props.showIgnored, listing],
+  );
   const nodes = useMemo<Node[]>(() => buildTree(shown), [shown]);
 
   const sizes = useMemo(() => new Map((tree?.files ?? []).map((f) => [f.rel, f.size])), [tree]);
@@ -170,6 +200,14 @@ export function Sidebar(props: SidebarProps) {
           )}
           {viewer && tree && <StoredRwTag root={props.roots.find((r) => r.id === tree.root.id)} />}
         </span>
+        <button
+          class="icon-btn kind-btn"
+          onClick={flipKind}
+          title={kind === 'md' ? 'Markdown files — show all files' : 'All files — show Markdown only'}
+          aria-label={kind === 'md' ? 'Showing Markdown files; show all files' : 'Showing all files; show Markdown only'}
+        >
+          {kind === 'md' ? 'MD' : 'ALL'}
+        </button>
         {!wide && (
           <button class="icon-btn" title="Search (/)" onClick={props.onCycleState}>
             <IconSearch />
@@ -324,6 +362,9 @@ export function Sidebar(props: SidebarProps) {
         ) : props.tab === 'files' || entries ? (
           <>
           {props.revealNote && <p class="empty reveal-note" role="status">⚠️ {props.revealNote}</p>}
+          {allTree && !listing && tree && <p class="empty">Listing every file…</p>}
+          {listing && 'error' in listing && <p class="empty" role="status">⚠️ Could not list every file ({listing.error}) — showing Markdown.</p>}
+          {listing && 'capped' in listing && listing.capped && <p class="empty" role="status">⚠️ Too many files: only the first 5000 are listed.</p>}
           {entries && !nodes.length ? (
             <p class="empty">View {props.tab} is empty — add folders and files with +{props.tab} on a page's title or its breadcrumbs.</p>
           ) : tree ? (
@@ -353,7 +394,7 @@ export function Sidebar(props: SidebarProps) {
         <span class={`dot ${props.live ? 'live' : 'lost'}`} title={props.live ? 'Live — watching for changes' : 'Reconnecting…'} />
         {tree && (
           <span>
-            {entries ? shown.length : tree.files.length} files{tree.repos > 1 ? ` · ${tree.repos} repos` : ''}
+            {entries || listing ? shown.length : tree.files.length} files{tree.repos > 1 ? ` · ${tree.repos} repos` : ''}
           </span>
         )}
         {tree?.degraded && <span title="git was unavailable; the list came from a filesystem walk">no git</span>}
