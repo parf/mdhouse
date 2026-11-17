@@ -21,21 +21,24 @@ export interface WikiIndex {
 export const WIKI_MAX = 500;
 
 const squash = (s: string): string => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
-const nameOf = (rel: string): string => rel.slice(rel.lastIndexOf('/') + 1).replace(MD_EXT, '');
+const ANY_EXT = /\.[^./]+$/;
+const nameOf = (rel: string, ext: RegExp = MD_EXT): string => rel.slice(rel.lastIndexOf('/') + 1).replace(ext, '');
 const add = (m: Map<string, string[]>, k: string, rel: string) => {
   const list = m.get(k);
   if (list) list.push(rel);
   else m.set(k, [rel]);
 };
 
-export function wikiIndex(rels: Iterable<string>): WikiIndex {
+/** The index of Markdown pages — or, `anyFile`, of every listed file, by name without its extension. */
+export function wikiIndex(rels: Iterable<string>, opts: { anyFile?: boolean } = {}): WikiIndex {
   const index: WikiIndex = { rels: new Set(), byName: new Map(), byNameLower: new Map(), bySquash: new Map() };
+  const ext = opts.anyFile ? ANY_EXT : MD_EXT;
   for (const rel of rels) {
-    if (!MD_EXT.test(rel)) continue;
+    if (!opts.anyFile && !MD_EXT.test(rel)) continue;
     index.rels.add(rel);
-    add(index.byName, nameOf(rel), rel);
-    add(index.byNameLower, nameOf(rel).toLowerCase(), rel);
-    const sq = squash(nameOf(rel));
+    add(index.byName, nameOf(rel, ext), rel);
+    add(index.byNameLower, nameOf(rel, ext).toLowerCase(), rel);
+    const sq = squash(nameOf(rel, ext));
     if (sq) add(index.bySquash, sq, rel);
   }
   return index;
@@ -119,40 +122,86 @@ export function wikiTargets(src: string): string[] {
 export interface WikiCandidate {
   rel: string;
   why: 'name' | 'any-case' | 'similar';
+  /** Where it is, from the document's folder. */
+  place: WikiPlace;
 }
 /** How many candidates the choosing page lists. */
 export const CANDIDATES_MAX = 50;
 
+/** Where a candidate is, from the referring document's folder — the owner's order. */
+export type WikiPlace = 'same-folder' | 'parent' | 'subfolder' | 'root' | 'other';
+const PLACES: WikiPlace[] = ['same-folder', 'parent', 'subfolder', 'root', 'other'];
+/** Branches offered first among their peers: archived and wiki pages. */
+const PREFERRED = new Set(['done', 'wiki']);
+
 /**
- * Where a link that names several pages, or none, could go — ranked: the same name, then the same name in any case,
- * then a similar name (letters and digits only); within each, nearer the document's folder (more leading folders in
- * common), then shallower, then A–Z. The name is the target's last segment. Only the index's files: never a guess.
+ * Where a link that names several pages, or none, could go — anywhere in the project, by place first (owner's order):
+ * the document's folder, its parent, its direct subfolders, the project root, everywhere else (deeper, higher, done/ —
+ * no archive penalty). Within a place: the same name, then any case, then a similar name (letters and digits only);
+ * then a `done/` or `wiki/` branch (the first folder after the path it shares with the document's folder); then more
+ * trailing folders in common with the written path (a moved folder); then shallower, then A–Z. Places that are the
+ * same folder (a document at the root) count once. Only the index's files: never a guess.
  */
-export function wikiCandidates(index: WikiIndex, docPath: string, target: string): WikiCandidate[] {
+export function wikiCandidates(index: WikiIndex, docPath: string, target: string, ext?: string): WikiCandidate[] {
   const last = target.trim().replace(/\/+$/, '').split('/').pop() ?? '';
-  const name = last.replace(MD_EXT, '');
+  // `ext` (an `anyFile` index): the type asked for — `.ts` finds `.ts` files only.
+  const name = ext ? (last.toLowerCase().endsWith(ext.toLowerCase()) ? last.slice(0, -ext.length) : last) : last.replace(MD_EXT, '');
   if (!name) return [];
-  const docDirs = docPath.includes('/') ? docPath.slice(0, docPath.lastIndexOf('/')).split('/') : [];
-  const shared = (rel: string) => {
-    const dirs = rel.split('/').slice(0, -1);
+  const docDir = docPath.includes('/') ? docPath.slice(0, docPath.lastIndexOf('/')) : '';
+  const docDirs = docDir ? docDir.split('/') : [];
+  const parentDir = docDirs.slice(0, -1).join('/');
+  const dirOf = (rel: string) => (rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '');
+  const place = (rel: string): WikiPlace => {
+    const dir = dirOf(rel);
+    if (dir === docDir) return 'same-folder';
+    if (docDirs.length && dir === parentDir) return 'parent';
+    if (dirOf(dir) === docDir && dir !== '') return 'subfolder';
+    if (dir === '') return 'root';
+    return 'other';
+  };
+  const branch = (rel: string) => {
+    const dirs = dirOf(rel).split('/').filter(Boolean);
     let n = 0;
     while (n < dirs.length && n < docDirs.length && dirs[n] === docDirs[n]) n++;
+    return PREFERRED.has((dirs[n] ?? '').toLowerCase()) ? 0 : 1;
+  };
+  // The path as the document meant it (`../task.md` from Plans/R3/notes/ is Plans/R3/task.md); a leading `/` is the root.
+  const written = target.trim().startsWith('/') ? target.trim().replace(/^\/+/, '') : (join(docPath, target.trim()) ?? target.trim());
+  const want = written.split('/').filter((seg) => seg && seg !== '.' && seg !== '..').map((seg) => seg.toLowerCase());
+  const strip = ext ? ANY_EXT : MD_EXT;
+  if (want.length) want[want.length - 1] = want[want.length - 1]!.replace(strip, '');
+  const tail = (rel: string) => {
+    const segs = rel.toLowerCase().split('/');
+    segs[segs.length - 1] = segs[segs.length - 1]!.replace(strip, '');
+    let n = 0;
+    while (n < want.length && n < segs.length && segs[segs.length - 1 - n] === want[want.length - 1 - n]) n++;
     return n;
   };
-  const seen = new Set<string>();
-  const out: WikiCandidate[] = [];
-  const tiers: Array<[WikiCandidate['why'], string[] | undefined]> = [
+  const kinds: Array<[WikiCandidate['why'], string[] | undefined]> = [
     ['name', index.byName.get(name)],
     ['any-case', index.byNameLower.get(name.toLowerCase())],
     ['similar', index.bySquash.get(squash(name))],
   ];
-  for (const [why, rels] of tiers) {
-    const fresh = (rels ?? []).filter((r) => !seen.has(r));
-    fresh.sort((a, b) => shared(b) - shared(a) || a.split('/').length - b.split('/').length || a.localeCompare(b));
-    for (const rel of fresh) {
-      seen.add(rel);
-      out.push({ rel, why });
-    }
-  }
-  return out.slice(0, CANDIDATES_MAX);
+  const found = new Map<string, WikiCandidate['why']>();
+  for (const [why, rels] of kinds) for (const rel of rels ?? []) if (!found.has(rel) && (!ext || rel.toLowerCase().endsWith(ext.toLowerCase()))) found.set(rel, why);
+  const KIND = { name: 0, 'any-case': 1, similar: 2 } as const;
+  return [...found]
+    .map(([rel, why]) => ({ rel, why, place: place(rel) }))
+    .sort(
+      (a, b) =>
+        PLACES.indexOf(a.place) - PLACES.indexOf(b.place) ||
+        KIND[a.why] - KIND[b.why] ||
+        branch(a.rel) - branch(b.rel) ||
+        tail(b.rel) - tail(a.rel) ||
+        a.rel.split('/').length - b.rel.split('/').length ||
+        a.rel.localeCompare(b.rel),
+    )
+    .slice(0, CANDIDATES_MAX);
+}
+
+/** A relative file link as written, from the document's folder: the file when the index lists it (no fallback by name). */
+export function exactFile(index: WikiIndex, docPath: string, target: string): string | null {
+  const t = target.trim();
+  const rel = t.startsWith('/') ? join('', t.replace(/^\/+/, '')) : join(docPath, t);
+  return rel && index.rels.has(rel) ? rel : null;
 }

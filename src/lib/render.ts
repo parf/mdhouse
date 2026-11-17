@@ -667,7 +667,7 @@ function linkPlugin(md: MarkdownIt, ctx: RenderContext, missing: Set<string> = n
       const target = pathPart ? resolveRelative(ctx.docPath, pathPart) : null;
 
       if (target && missing.has(target) && ctx.chooseUrl) {
-        // A Markdown page that is not there: the choosing page, by its name — similar names, or a way back.
+        // A file that is not there: the choosing page, by its name and type — candidates, or a way back.
         token.attrSet('href', ctx.chooseUrl(decodeURIComponentSafe(pathPart!), hash));
         token.attrJoin('class', 'md-local-link md-link-missing');
         token.attrSet('title', `No page ${target} — see similar names`);
@@ -805,7 +805,7 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   const actToken = randomBytes(16).toString('hex');
   const env = { act: actToken } satisfies ActEnv;
   const tokens = md.parse(src, env);
-  // A relative link to a Markdown page that is not a file of this root goes to the choosing page instead.
+  // A relative link to a file (any type) that is not a file of this root goes to the choosing page instead.
   if (ctx.exists && ctx.chooseUrl) {
     const wanted = new Set<string>();
     const walk = (list: Token[]) => {
@@ -815,7 +815,8 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
         const href = t.attrGet('href');
         if (!href || isExternal(href) || href.startsWith('#') || href.startsWith('/')) continue;
         const target = resolveRelative(ctx.docPath, href.split('#')[0]!);
-        if (target && MD_EXT.test(target) && wanted.size < 500) wanted.add(target);
+        // a file — any type, named with an extension; a folder link (`dir/`) is left to its page
+        if (target && !href.split('#')[0]!.endsWith('/') && /\.[^./]+$/.test(target) && wanted.size < 500) wanted.add(target);
       }
     };
     walk(tokens);

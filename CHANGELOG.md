@@ -4,7 +4,7 @@
 
 ### Added
 
-- Wikilinks: `[[page]]`, `[[path/page]]`, `[[page|label]]`, `[[page#Heading]]` link to a page of the same project — from the document's folder, then the root, `.md` optional; a bare name is the one page of that name anywhere in it. A page that is missing, or a name several pages share, is marked, and a click opens **Where to go?** — the pages it could mean, best first (same name, any case, similar; nearer the document), or none and the way back; nothing guessed or created; a relative link to a missing `.md` opens it too; a page added or renamed shows at once. Not in code; `![[embeds]]` stay text
+- Wikilinks: `[[page]]`, `[[path/page]]`, `[[page|label]]`, `[[page#Heading]]` link to a page of the same project — from the document's folder, then the root, `.md` optional; a bare name is the one page of that name anywhere in it. A page that is missing, or a name several pages share, is marked, and a click opens **Where to go?** — every file of that name in the project, by place: this folder, its parent, its subfolders (`done/` and `wiki/` first), the root, elsewhere; then same name, any case, similar — or none and the way back; nothing guessed or created; a relative link to a missing file of any type opens it too and offers that type only; a page added or renamed shows at once. Not in code; `![[embeds]]` stay text
 
 - Project chooser: `Add new Project…` (Settings' Add project, its path field focused) and `Create new Project…` under a separator, apart from the projects; Create opens a page that says what creating a project will ask — not available yet, it creates nothing
 

@@ -28,7 +28,7 @@ import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, new
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
 import { Watcher, type WatchEvent } from './lib/watch';
-import { resolveWiki, wikiCandidates } from './lib/wikilinks';
+import { exactFile, resolveWiki, wikiCandidates } from './lib/wikilinks';
 import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-name';
 import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
@@ -1977,13 +1977,16 @@ export async function serve(opts: ServeOptions) {
         const target = url.searchParams.get('target') ?? '';
         const from = url.searchParams.get('from') ?? '';
         if (!target.trim() || target.length > 4096 || from.length > 4096) return fail(400, 'target required');
-        const index = await store.wikiIndex(root);
-        const now = resolveWiki(index, from, target);
         const page = (rel: string) => registry.docUrl(root, rel);
+        // A file of another type (`x.ts`, `a.png`): every listed file, that type only; else the Markdown pages.
+        const last = target.trim().split('/').pop() ?? '';
+        const ext = MD_EXT.test(last) ? null : (/\.[^./]+$/.exec(last)?.[0] ?? null);
+        const index = ext ? await store.fileIndex(root) : await store.wikiIndex(root);
+        const exact = ext ? exactFile(index, from, target) : ((now) => ('rel' in now ? now.rel : null))(resolveWiki(index, from, target));
         return json({
           target,
-          ...('rel' in now ? { exact: { rel: now.rel, url: page(now.rel) } } : {}),
-          candidates: wikiCandidates(index, from, target).map((c) => ({ ...c, url: page(c.rel) })),
+          ...(exact ? { exact: { rel: exact, url: page(exact) } } : {}),
+          candidates: wikiCandidates(index, from, target, ext ?? undefined).map((c) => ({ ...c, url: page(c.rel) })),
         });
       }),
 

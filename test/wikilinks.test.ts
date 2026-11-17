@@ -80,17 +80,31 @@ describe('render: [[wikilinks]]', () => {
 });
 
 describe('choosing where to go', () => {
-  test('candidates: same name, any case, similar; nearer the document, shallower, A–Z', () => {
-    const i = wikiIndex(['a/x/acme.md', 'b/acme.md', 'Acme.md', 'a/ACME.md', 'z/ac-me.md', 'a/x/deep/acme.md']);
-    expect(wikiCandidates(i, 'a/x/doc.md', 'acme')).toEqual([
-      { rel: 'a/x/acme.md', why: 'name' },
-      { rel: 'a/x/deep/acme.md', why: 'name' },
-      { rel: 'b/acme.md', why: 'name' },
-      { rel: 'a/ACME.md', why: 'any-case' },
-      { rel: 'Acme.md', why: 'any-case' },
-      { rel: 'z/ac-me.md', why: 'similar' },
+  test('owner order: this folder, parent, direct subfolders (done/ and wiki/ first), root, elsewhere', () => {
+    const i = wikiIndex([
+      'p/d/acme.md', 'p/acme.md', 'p/d/x/acme.md', 'p/d/done/acme.md', 'p/d/wiki/acme.md', 'acme.md',
+      'p/d/x/y/acme.md', 'q/acme.md', 'p/d/ACME.md', 'p/d/a-c-me.md',
     ]);
-    expect(wikiCandidates(i, 'doc.md', 'gone/nothing-like-it')).toEqual([]);
+    const got = wikiCandidates(i, 'p/d/doc.md', 'acme').map((c) => `${c.place} ${c.why} ${c.rel}`);
+    expect(got).toEqual([
+      'same-folder name p/d/acme.md',
+      'same-folder any-case p/d/ACME.md',
+      'same-folder similar p/d/a-c-me.md',
+      'parent name p/acme.md',
+      'subfolder name p/d/done/acme.md',
+      'subfolder name p/d/wiki/acme.md',
+      'subfolder name p/d/x/acme.md',
+      'root name acme.md',
+      'other name q/acme.md', // elsewhere: shallower first
+      'other name p/d/x/y/acme.md',
+    ]);
+  });
+  test('a document at the root: its folder is the root — counted once; no parent', () => {
+    const i = wikiIndex(['acme.md', 'wiki/acme.md', 'notes/acme.md', 'a/b/acme.md']);
+    expect(wikiCandidates(i, 'index.md', 'acme').map((c) => `${c.place} ${c.rel}`)).toEqual([
+      'same-folder acme.md', 'subfolder wiki/acme.md', 'subfolder notes/acme.md', 'other a/b/acme.md',
+    ]);
+    expect(wikiCandidates(i, 'index.md', 'gone/nothing-like-it')).toEqual([]);
   });
   test('render: with a choosing page, several or none is a real link to it, with the heading', async () => {
     const c = {
@@ -104,5 +118,39 @@ describe('choosing where to go', () => {
     expect(h).toContain('href="/w/?choose=nope&amp;from=index.md" class="md-local-link wikilink wikilink-missing"');
     expect(h).toContain('href="/w/?choose=gone.md&amp;from=index.md#a" class="md-local-link md-link-missing"');
     expect(h).toContain('href="/w/index.md" class="md-local-link"');
+  });
+});
+
+describe('a folder moved: found anywhere, places first, the path\'s tail breaks ties', () => {
+  // Plans/R3/ moved whole into Plans/done/R3/; task.md also exists elsewhere
+  const moved = wikiIndex(['Plans/done/R3/task.md', 'Plans/done/R3/notes/a.md', 'Other/task.md', 'Plans/R4/task.md', 'Plans/done/R2/task.md', 'z/Task.md', 'Plans/done/R3/task-old.md']);
+  test('from Plans/README.md: Plans/R3/task.md is gone — done/R3 first among elsewhere (done/ branch, then its tail)', () => {
+    expect(resolveWiki(moved, 'Plans/README.md', 'R3/task')).toEqual({ missing: true });
+    expect(wikiCandidates(moved, 'Plans/README.md', 'R3/task.md').map((c) => `${c.place} ${c.why} ${c.rel}`)).toEqual([
+      'subfolder name Plans/R4/task.md',
+      'other name Plans/done/R3/task.md',
+      'other name Plans/done/R2/task.md',
+      'other name Other/task.md',
+      'other any-case z/Task.md',
+    ]); // task-old.md: another name, not offered; done/ is not pushed down
+  });
+  test('from inside the moved folder\'s old place: the moved copy is a subfolder hit or elsewhere, ranked by tail', () => {
+    expect(wikiCandidates(moved, 'Plans/R3/notes/a.md', '../task.md')[0]?.rel).toBe('Plans/done/R3/task.md');
+  });
+  test('ordinary file links keep their type: x.ts finds .ts files only, by the same order', () => {
+    const files = wikiIndex(['src/x.ts', 'src/x.md', 'lib/x.ts', 'src/old/x.ts', 'img/a.png'], { anyFile: true });
+    expect(wikiCandidates(files, 'src/README.md', 'x.ts', '.ts').map((c) => `${c.place} ${c.rel}`)).toEqual(['same-folder src/x.ts', 'subfolder src/old/x.ts', 'other lib/x.ts']);
+    expect(wikiCandidates(files, 'doc.md', 'pics/a.png', '.png').map((c) => c.rel)).toEqual(['img/a.png']);
+  });
+  test('render: a link into the moved folder, or to a missing image or code file, opens Where to go? with the path and heading', async () => {
+    const c = {
+      rootId: 'w', docPath: 'Plans/README.md', docUrl: (rel: string) => `/w/${rel}`,
+      chooseUrl: (target: string, hash?: string) => `/w/?choose=${encodeURIComponent(target)}${hash ? `#${hash}` : ''}`,
+      exists: async (rels: string[]) => new Set(rels.filter((r) => moved.rels.has(r))),
+    };
+    const h = (await render('[Task](R3/task.md#Plan) [code](../src/x.ts#L3) [dir](R3/)', c)).html;
+    expect(h).toContain('href="/w/?choose=R3%2Ftask.md#Plan"');
+    expect(h).toContain('href="/w/?choose=..%2Fsrc%2Fx.ts#L3"');
+    expect(h).toContain('href="/w/Plans/R3/"');
   });
 });

@@ -12,7 +12,7 @@ import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isExplicitlyDenied, loadRootRules, type IgnoreRules } from './ignore';
 import { wikiIndex, type WikiIndex } from './wikilinks';
-import { LIST_CAP, repoToplevel, scanRoot, type MdFile, type ScanResult } from './scan';
+import { LIST_CAP, listFiles, repoToplevel, scanRoot, type MdFile, type ScanResult } from './scan';
 import {
   recentChanges,
   repoHead,
@@ -161,6 +161,8 @@ interface RootState {
   /** The root's `.mdhouseignore` and the deny list; reloaded with the scans. */
   rules?: IgnoreRules;
   scans: Map<boolean, ScanResult>;
+  /** Every listed file (any type) as the choosing page searches it; dropped with any invalidate. */
+  files?: WikiIndex;
   /** Revealed scopes by root-relative directory, least recently used first; at most `REVEAL.cached`. */
   scopes: Map<string, ScanResult>;
   status?: Map<string, FileStatus>;
@@ -208,6 +210,7 @@ export class Store {
     const s = this.state.get(rootId);
     if (!s) return;
     delete s.status;
+    delete s.files;
     delete s.gitPaths;
     delete s.changes;
     delete s.head;
@@ -247,6 +250,19 @@ export class Store {
     let index = wikiIndexes.get(scan);
     if (!index) wikiIndexes.set(scan, (index = wikiIndex(scan.files.map((f) => f.rel))));
     return index;
+  }
+
+  /**
+   * Every file of the root an ALL listing shows (`listFiles`: ignore rules, explicit exclusions, the path jail; at most
+   * LIST_CAP), indexed by name for the choosing page of a link to a missing non-Markdown file. Dropped with any change.
+   */
+  async fileIndex(root: Root): Promise<WikiIndex> {
+    const s = await this.stateFor(root);
+    if (s.files) return s.files;
+    const rules = await this.rules(root);
+    const resolve = async (rel: string) => (await this.allowedRel(root, rel))?.abs ?? null;
+    const all = await listFiles(root.path, root.path, { noGit: this.opts.noGit, rules, resolve });
+    return (s.files = wikiIndex(all.files.map((f) => f.rel), { anyFile: true }));
   }
 
   /**

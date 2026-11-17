@@ -18,6 +18,10 @@ test("/api/choose: the project's own pages only — excluded folders and other p
   await writeFile(join(a, 'secret', 'acme.md'), '# s\n');
   await writeFile(join(a, '.mdhouseignore'), 'secret\n');
   await writeFile(join(b, 'acme.md'), '# other project\n');
+  await mkdir(join(a, 'src', 'old'), { recursive: true });
+  await writeFile(join(a, 'src', 'old', 'x.ts'), 'export {};\n');
+  await writeFile(join(a, 'secret', 'x.ts'), 'export {};\n');
+  await writeFile(join(b, 'x.ts'), 'export {};\n');
   const port = testPort(61971);
   const base = `http://127.0.0.1:${port}`;
   const { server, watcher, control } = await serve({ registry: await Registry.create([a, b]), prefs: await Prefs.load(join(dir, 'prefs.json')), port, hostname: '127.0.0.1', noGit: true });
@@ -30,6 +34,9 @@ test("/api/choose: the project's own pages only — excluded folders and other p
     expect(got.candidates[0]!.url).toBe(`/${ra}/x/acme.md`);
     const one = (await (await fetch(`${base}/api/choose?root=${ra}&target=acme&from=x/doc.md`)).json()) as { exact?: { rel: string } };
     expect(one.exact?.rel).toBe('x/acme.md');
+    // a code file moved: that type only, from every listed file; the excluded folder and the other project still out
+    const code = (await (await fetch(`${base}/api/choose?root=${ra}&target=src/x.ts&from=doc.md`)).json()) as { candidates: Array<{ rel: string; place: string }> };
+    expect(code.candidates.map((c) => `${c.place} ${c.rel}`)).toEqual(['other src/old/x.ts']);
     expect((await fetch(`${base}/api/choose?root=${ra}&target=`)).status).toBe(400);
     expect((await fetch(`${base}/api/choose?root=nope&target=acme`)).status).toBe(404);
     // the doc page's own links to it

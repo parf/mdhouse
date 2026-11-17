@@ -3,12 +3,15 @@ import { api } from './api';
 import { follow } from './PageHead';
 
 type Why = 'name' | 'any-case' | 'similar';
+type Place = 'same-folder' | 'parent' | 'subfolder' | 'root' | 'other';
 interface Choice {
   rel: string;
   url: string;
   why: Why;
+  place: Place;
 }
 const WHY: Record<Why, string> = { name: 'same name', 'any-case': 'same name, other case', similar: 'similar name' };
+const PLACE: Record<Place, string> = { 'same-folder': 'this folder', parent: 'parent folder', subfolder: 'a subfolder', root: 'project root', other: 'elsewhere' };
 
 /**
  * Where to go (`/<root>/?choose=<target>&from=<doc>#<heading>`): a link that names several pages, or none, lands
@@ -60,7 +63,9 @@ export function ChoosePage(props: { rootId: string; rootName: string; target: st
         <ol class="choose-list">
           {got.candidates.map((c) => (
             <li key={c.rel}>
-              {link(c.url, <code>{c.rel}</code>)} <span class="choose-why">{WHY[c.why]}</span>
+              {link(c.url, <code>{c.rel}</code>)} <span class="choose-why">
+                {PLACE[c.place]} · {WHY[c.why]}
+              </span>
             </li>
           ))}
         </ol>
