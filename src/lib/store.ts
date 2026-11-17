@@ -28,7 +28,7 @@ import {
 
 /** Who created a file and who last touched it. */
 export type Authorship = { created: Commit | null; last: Commit | null };
-import type { Prefs, Mark } from './prefs';
+import { marksOf, type Prefs, type Mark, type RootPrefs } from './prefs';
 
 /** What git says of a file it does not track; absent for a tracked file or without git evidence. */
 export type GitState = 'ignored' | 'untracked';
@@ -239,6 +239,24 @@ export class Store {
    * when it is outside the root, the root itself, or under `.git` or an explicit exclusion —
    * checked on both the requested and the resolved path.
    */
+  /**
+   * A favorite or muted entry by the path the tree lists it at: an alias (a symlinked folder, `.claude/skills` →
+   * `agents/skills`) becomes its canonical path; an entry that does not resolve stays as written (really missing).
+   */
+  async canonicalMark(root: Root, entry: string): Promise<string> {
+    const dir = entry.endsWith('/');
+    const loc = await this.allowedRel(root, dir ? entry.slice(0, -1) : entry);
+    if (!loc || !loc.rel) return entry;
+    return dir ? `${loc.rel}/` : loc.rel;
+  }
+
+  /** The root's marks with favorite and muted entries at their canonical paths (`canonicalMark`); ignore rules as written. */
+  async marks(root: Root): Promise<RootPrefs> {
+    const raw = this.prefs.get(root.path);
+    const canon = async (list: string[]) => [...new Set(await Promise.all(list.map((e) => this.canonicalMark(root, e))))].sort();
+    return { favorite: await canon(raw.favorite), muted: await canon(raw.muted), ignored: raw.ignored };
+  }
+
   async allowedRel(root: Root, rel: string): Promise<{ rel: string; abs: string } | null> {
     const rules = await this.rules(root);
     if (isExplicitlyDenied(rules, rel)) return null;
@@ -382,8 +400,9 @@ export class Store {
     }
 
     const git = await this.gitPaths(root);
+    const rootMarks = await this.marks(root);
     const entry = (f: MdFile): FileEntry => {
-      const marks = this.prefs.marksFor(root.path, f.rel);
+      const marks = marksOf(rootMarks, f.rel);
       const st = status.get(f.rel);
       const gs = gitStateIn(git, f.rel);
       return { ...f, ...(st ? { status: st } : {}), ...(marks.length ? { marks } : {}), ...(gs ? { gitState: gs } : {}) };
@@ -411,7 +430,7 @@ export class Store {
       includeIgnored,
       user: s.user,
       scannedAt: scan.scannedAt,
-      marks: this.prefs.get(root.path),
+      marks: rootMarks,
       hasIgnored: scan.hasIgnored,
       revealed: revealed.sort(),
       capped: capped.sort(),

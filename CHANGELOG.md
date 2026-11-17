@@ -59,6 +59,8 @@
 
 ### Fixed
 
+- Favorites: a favorite saved through a symlinked folder (`.claude/skills/…` → `agents/skills/…`) is no longer listed as missing — it shows as the file, starred in the tree and on its page, and one ☆ clears it; a file that is really gone still reads missing
+
 - Sidebar: a folder’s file count stays visible and opens its folder page when the folder is expanded
 
 - The sidebar tab is remembered across a reload (per browser); a V1/V2 tab whose view is empty opens as All files

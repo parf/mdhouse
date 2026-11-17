@@ -288,6 +288,9 @@ contents list, so a heading link and its contents entry cannot disagree.
 - **Content search** — `rg --json --hidden` when ripgrep is installed, an in-process scan when it
   is not; hits only in the scanned tree.
   `src/lib/search.ts`.
+- Marks: favorite/muted entries are read at their canonical path (`Store.canonicalMark` via `allowedRel`: an alias such as
+  `.claude/skills` → `agents/skills`; unresolvable stays as written = missing); `POST /api/marks` stores the canonical path and drops
+  alias entries of the same file (favorite ↔ muted included); `ignored` rules stay path rules as written.
 - **Config** — one file, `~/.config/mdhouse/prefs.json` (`$XDG_CONFIG_HOME` respected): marks
   keyed by absolute root path, the saved directories, the settings page's options, and `server`
   (`port`, `host`) saved by `-p --port/--host`, and `access` (`allow` networks, `users` login →

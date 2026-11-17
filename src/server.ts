@@ -17,7 +17,7 @@ import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
 import { SOURCE_MAX, sourceHash, sourceOf } from './lib/source';
-import { CONFIG_DIR, Prefs, MARKS, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
+import { CONFIG_DIR, Prefs, MARKS, marksOf, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
 import { gitStateIn, parseReveal, Store } from './lib/store';
 import { isExplicitlyDenied } from './lib/ignore';
 import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
@@ -1903,7 +1903,7 @@ export async function serve(opts: ServeOptions) {
           ...(registry.inReference(loc.abs) ? { reference: true } : {}),
           mtime: info.mtimeMs,
           size: info.size,
-          marks: prefs.marksFor(loc.root.path, loc.rel),
+          marks: marksOf(await store.marks(loc.root), loc.rel),
           ...(status ? { status } : {}),
           ...(gitState ? { gitState } : {}),
           gitRevision: await store.gitRevision(loc.root, loc.rel),
@@ -2335,10 +2335,25 @@ export async function serve(opts: ServeOptions) {
           const root = body.root ? registry.get(body.root) : registry.defaultRoot();
           if (!root) return fail(404, 'unknown root');
 
-          const marks = await prefs.set(root.path, body.path, body.mark, body.on !== false);
-          // An ignore rule changes what the tree contains.
-          if (body.mark === 'ignored') store.invalidate(root.id);
-          return json(marks);
+          // An ignore rule is a path rule, kept as written. A favorite or mute is the file's: kept at its canonical
+          // path, and any entry naming the same file through an alias goes, so one toggle sets or clears it.
+          if (body.mark === 'ignored') {
+            const marks = await prefs.set(root.path, body.path, body.mark, body.on !== false);
+            // An ignore rule changes what the tree contains.
+            store.invalidate(root.id);
+            return json(marks);
+          }
+          const on = body.on !== false;
+          const canon = await store.canonicalMark(root, body.path);
+          // Setting one clears the other (favorite ↔ muted), aliases included.
+          const clear: Mark[] = on ? [body.mark, body.mark === 'favorite' ? 'muted' : 'favorite'] : [body.mark];
+          for (const mark of clear) {
+            for (const e of prefs.get(root.path)[mark]) {
+              if (e !== canon && (await store.canonicalMark(root, e)) === canon) await prefs.set(root.path, e, mark, false);
+            }
+          }
+          await prefs.set(root.path, canon, body.mark, on);
+          return json(await store.marks(root));
         }),
       },
     }),

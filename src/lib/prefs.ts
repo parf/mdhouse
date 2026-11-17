@@ -32,7 +32,7 @@ export type Mark = 'favorite' | 'muted' | 'ignored';
 
 export const MARKS: Mark[] = ['favorite', 'muted', 'ignored'];
 
-interface RootPrefs {
+export interface RootPrefs {
   favorite: string[];
   muted: string[];
   ignored: string[];
@@ -334,6 +334,11 @@ function normalize(entry: string): string {
 function covers(rule: string, path: string): boolean {
   if (rule.endsWith('/')) return path === rule.slice(0, -1) || path.startsWith(rule);
   return path === rule;
+}
+
+/** Every mark of `prefs` applying to `relPath`, walking directory rules too. */
+export function marksOf(prefs: RootPrefs, relPath: string): Mark[] {
+  return MARKS.filter((mark) => prefs[mark].some((rule) => covers(rule, relPath)));
 }
 
 const fresh = (): PrefsFile => ({
@@ -1085,8 +1090,7 @@ export class Prefs {
   /** Every mark applying to a path, walking directory rules too. */
   marksFor(rootPath: string, relPath: string): Mark[] {
     const prefs = this.data.roots[rootPath];
-    if (!prefs) return [];
-    return MARKS.filter((mark) => prefs[mark].some((rule) => covers(rule, relPath)));
+    return prefs ? marksOf(prefs, relPath) : [];
   }
 
   hasMark(rootPath: string, relPath: string, mark: Mark): boolean {
