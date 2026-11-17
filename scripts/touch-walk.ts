@@ -210,12 +210,17 @@ if (want('ab')) {
   await audit('ab-sent');
 }
 if (want('rag')) {
+  // The way a reader gets there: the bar's Search, the scope switch's RAG Search, a query, Enter.
   await go('/repo/README.md');
-  await tap('.topstrip .rag-btn, .side-head .rag-btn', 0);
-  say(`  rag location=${await ev('location.pathname+location.search')}`);
-  await audit('rag');
-  await tap('input.rag-q', 0);
+  await tap('.phone-nav .nav-dest', 2);
+  await tap('.scope-opt', 1);
   await type('notes');
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+  await sleep(1200);
+  const at = await ev('location.pathname+location.search');
+  say(`  rag location=${at}${at.startsWith('/rag?') ? '' : '  ✗ not the RAG page'}`);
+  await audit('rag');
   await tap('.rag-form button[type=submit]', 0);
   await sleep(1200);
   await audit('rag-results');
