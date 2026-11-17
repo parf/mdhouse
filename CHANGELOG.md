@@ -4,6 +4,8 @@
 
 ### Added
 
+- A document's title has a ★ beside its +1/+2 view chips: filled and yellow when the file is a favorite, an outline on hover otherwise; the ★ in its actions is yellow when set, as in the sidebar
+
 - A document's title row has its project's tabs, as a folder page does: GIT · Favs · Recent · Mine · Changes · Commits · Files beside ⚙ (not on a phone, which has its bottom bar)
 
 - Sidebar `MD | ALL`: one button in the sidebar header, where `R` was, flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered

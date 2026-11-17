@@ -2008,6 +2008,11 @@ button.sync-chip { cursor: pointer; }
 .view-add { display: inline-flex; gap: 4px; opacity: 0; transition: opacity 0.12s; }
 h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1; }
 .crumbs .view-chips { margin-left: 8px; }
+/* A document's favorite beside its view chips, and ★ in its actions: yellow when set, as in the sidebar. */
+.view-chips.fav-chip { margin-left: 4px; }
+.view-chip.fav.on { color: var(--mark-fav); background: none; border: 1px solid transparent; }
+.view-chip.fav.on:hover { opacity: 0.6; }
+.icon-btn.fav-btn[aria-pressed="true"] { color: var(--mark-fav); }
 .crumbs .view-chip { font-size: 10px; padding: 1px 3px; }
 .crumbs .view-chip svg { width: 13px; height: 13px; }
 /* a view's tab in the sidebar: its name, and how many folders / files it holds */

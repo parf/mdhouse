@@ -581,6 +581,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
       Owner 2026-11-16. Project context (the Git link's destination, `/<root>/?git…`); real hrefs, modifier-click; second action/meta row unchanged; phone keeps its bottom bar and ⋯ sheet. Shared `HeadTabs` (`PageHead.tsx`).
     - [ ] MW.13.1e Sidebar tab order Files · Recent · My · Favs · 1 · 2; Mine reads My <a id="MW.13.1e"></a>
       Owner 2026-11-16: Favs beside views 1 and 2. Order/label only; tab ids, state and meanings unchanged.
+    - [ ] MW.13.1f Document favorite: a ★ chip beside +V1/+V2 on the title (filled stays, outline on hover), and the actions' ★ yellow when set <a id="MW.13.1f"></a>
+      Owner 2026-11-16. Same `favorite` mark and action (`onMark`), `--mark-fav` as the sidebar; hidden for a Viewer and on a phone. Scratch: chip ↔ actions ★ ↔ sidebar row stay in step over three toggles; light/dark.
     Owner starting points: explicit MD view (default), All project files with highlighting and matching left-panel tree, and Git pages for branches/commits/authors.
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.

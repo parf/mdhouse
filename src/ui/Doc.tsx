@@ -1224,7 +1224,7 @@ export function Doc({
         {!viewer && (
           <>
             <button
-              class="icon-btn"
+              class="icon-btn fav-btn"
               title={isFav ? 'Unfavorite' : 'Favorite'}
               aria-pressed={isFav}
               onClick={() => onMark(doc.rel, 'favorite', !isFav)}
@@ -1321,6 +1321,21 @@ export function Doc({
             {!phone && <button class="mark" onClick={onAbout} title="About mdhouse" aria-label="About mdhouse" />}
             {title}
             {!phone && chips}
+            {/* The file's favorite beside its views: a filled star stays, the outline one shows on hover — the same mark as ★ in the actions. */}
+            {!phone && !viewer && (
+              <span class={isFav ? 'view-chips fav-chip' : 'view-chips fav-chip view-add'}>
+                <button
+                  type="button"
+                  class={`view-chip fav${isFav ? ' on' : ' add'}`}
+                  title={isFav ? 'Favorite — click to unfavorite' : 'Add to favorites'}
+                  aria-label={isFav ? 'Unfavorite' : 'Favorite'}
+                  aria-pressed={isFav}
+                  onClick={() => onMark(doc.rel, 'favorite', !isFav)}
+                >
+                  <IconStar size={15} filled={isFav} />
+                </button>
+              </span>
+            )}
           </h1>
           {/* The project's places, as its folder page has them: GIT, then Favs … Files. A phone has its bottom bar. */}
           {!phone && rootDirUrl && <HeadTabs dirUrl={rootDirUrl} view={null} repo={rootInRepo} go={onNavigate} />}
