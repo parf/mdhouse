@@ -255,14 +255,16 @@ if (only.includes('flow')) {
   // The whole round trip on the real routes: Run flow -> preview -> confirm -> evidence -> Complete at each step ->
   // the report records last-commit-id = the run's target -> the next "since the last run" starts there. Needs a clean scratch repo.
   const pk = process.env.TW_PACKAGE ?? 'recent-commits-review';
-  const pick = async () => { await ev(`(() => { const s = document.querySelector('.flow-dialog select'); s.value = ${JSON.stringify(pk)}; s.dispatchEvent(new Event('change', { bubbles: true })); })()`); await sleep(300); };
+  const pick = async () => { await ev(`(() => { const s = document.querySelector('.flow-page .flow-field select'); s.value = ${JSON.stringify(pk)}; s.dispatchEvent(new Event('change', { bubbles: true })); })()`); await sleep(300); };
   const first = execSync(`git -C ${R} rev-list --max-parents=0 HEAD`).toString().trim().slice(0, 8);
   await go('/repo/?git');
   await audit('home');
-  await tap('.flow-btn', 0);
-  say('  flows listed: ' + await ev("[...document.querySelectorAll('.flow-dialog select option')].map(o => o.value).join(', ')"));
+  await tap('.flow-tab', 0);
+  await sleep(800);
+  say('  page: ' + await ev('location.pathname + location.search') + '; on: ' + await ev("document.querySelector('.flow-on input:checked')?.parentElement?.textContent.trim()"));
+  say('  flows listed: ' + await ev("[...document.querySelectorAll('.flow-page .flow-field select option')].map(o => o.value).join(', ')"));
   await pick();
-  await audit('flow-dialog');
+  await audit('flow-page');
   await tap('.flow-opt input', 0);
   await tap('.flow-go', 0);
   await audit('flow-no-baseline');
@@ -274,7 +276,7 @@ if (only.includes('flow')) {
   say('  script in pane: ' + await ev("!!document.querySelector('.flow-html script')") + ' items: ' + await ev("document.querySelectorAll('.flow-html li').length"));
   await tap('.flow-go.primary', 0);
   await sleep(1500);
-  say('  run document: ' + await ev('location.pathname') + '; dialog open: ' + await ev("!!document.querySelector('.flow-dialog')"));
+  say('  run document: ' + await ev('location.pathname') + '; run page left: ' + await ev("!document.querySelector('.flow-page')"));
   await audit('flow-run');
   for (let i = 0; i < 6; i++) {
     const idx = await ev(`[...document.querySelectorAll('.flow-mini')].findIndex(b => b.textContent.trim() === 'Mark supplied')`);
@@ -298,8 +300,8 @@ if (only.includes('flow')) {
   const report = read(`Plans/flows/${pk}.md`);
   say(`  report last-commit-id = HEAD: ${report.includes('last-commit-id: ' + head)}`);
   execSync(`git -C ${R} add -A && git -C ${R} -c user.email=t@t -c user.name=t commit -qm "after the run"`);
-  await go('/repo/?git');
-  await tap('.flow-btn', 0);
+  await go('/repo/?flow=');
+  await sleep(800);
   await pick();
   say('  next range preselected: ' + await ev("document.querySelector('.flow-opt input:checked')?.parentElement?.textContent.trim()"));
   await tap('.flow-go', 0);
@@ -330,7 +332,9 @@ if (only.includes('flowbar')) {
 }
 if (only.includes('flowviewer')) {
   await go('/repo/?git');
-  say('  viewer: ' + await ev("document.body.innerText.includes('Viewer')") + '; Run flow button: ' + await ev("!!document.querySelector('.flow-btn')"));
+  say('  viewer: ' + await ev("document.body.innerText.includes('Viewer')") + '; Run Flow tab: ' + await ev("!!document.querySelector('.flow-tab')"));
+  await go('/repo/?flow=');
+  say('  Run Flow page: ' + await ev("document.querySelector('.flow-page .flow-error')?.textContent"));
   await go('/repo/notes/plan.md');
   say('  doc.flow injected with canAct=true; flow bar: ' + await ev("!!document.querySelector('.flow-bar')"));
   await audit('viewer-run-doc');
@@ -341,9 +345,11 @@ if (only.includes('flowviewer')) {
 }
 if (only.includes('flowro')) {
   await go('/repo/?git');
-  say('  writable project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')"));
+  say('  writable project: Run Flow tab: ' + await ev("!!document.querySelector('.flow-tab')"));
   await go('/ro/?git');
-  say('  read-only project: Run flow button: ' + await ev("!!document.querySelector('.flow-btn')") + ' (page: ' + await ev("location.pathname") + ')');
+  say('  read-only project: Run Flow tab: ' + await ev("!!document.querySelector('.flow-tab')"));
+  await go('/ro/?flow=');
+  say('  read-only Run Flow page: ' + await ev("document.querySelector('.flow-page .flow-error')?.textContent"));
 }
 if (only.includes('search')) {
   await go('/repo/README.md');

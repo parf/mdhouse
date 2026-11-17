@@ -18,11 +18,22 @@ import type { Registry, Root } from './roots';
 
 export type FlowRange = { kind: 'since-last-run' } | { kind: 'baseline'; commit: string };
 export type FlowTrigger = { kind: 'manual'; actor: string } | { kind: 'schedule'; id: string; slot: string };
+/** What a run is on: the project, a folder in it or one file — its root-relative path. */
+export type FlowSubject = { kind: 'project' } | { kind: 'directory' | 'page'; path: string };
+/** The package scope each subject kind needs. */
+export const SUBJECT_SCOPE = { project: 'selected-project', directory: 'selected-subsystem', page: 'selected-document' } as const;
+const SCOPE_WORDS: Record<FlowPackage['defaults']['scope'], string> = {
+  'selected-project': 'the whole project',
+  'selected-subsystem': 'a directory',
+  'selected-document': 'one page',
+};
 export interface FlowStartRequest {
   rootId: string;
   packageId: string;
   range: FlowRange;
   trigger: FlowTrigger;
+  /** Absent (a scheduled run): the package's own scope, on the project, as before subjects existed. */
+  subject?: FlowSubject;
 }
 
 export type FlowErrorCode =
@@ -37,7 +48,8 @@ export type FlowErrorCode =
   | 'not-writable'
   | 'held'
   | 'tampered'
-  | 'foreign';
+  | 'foreign'
+  | 'incompatible-scope';
 export interface FlowError {
   error: string;
   reason: FlowErrorCode;
@@ -51,7 +63,8 @@ export interface FlowGit {
   head(repo: string): Promise<string | null>;
   commitOf(repo: string, rev: string): Promise<string | null>;
   isAncestor(repo: string, a: string, b: string): Promise<boolean>;
-  commits(repo: string, base: string, target: string): Promise<string[] | null>;
+  /** The range's commits; with `path` (absolute, inside the repo) only those touching it. */
+  commits(repo: string, base: string, target: string, path?: string): Promise<string[] | null>;
   dirty(repo: string, root: Root): Promise<string[]>;
 }
 
@@ -179,7 +192,12 @@ function validRequest(v: unknown): FlowStartRequest | null {
   const okTrigger =
     (trigger.kind === 'manual' && typeof trigger.actor === 'string') ||
     (trigger.kind === 'schedule' && typeof trigger.id === 'string' && typeof trigger.slot === 'string' && trigger.id.length <= 128 && trigger.slot.length <= 128);
-  return okRange && okTrigger ? (v as FlowStartRequest) : null;
+  const subject = r.subject as Record<string, unknown> | undefined;
+  const okSubject =
+    subject === undefined ||
+    (typeof subject === 'object' && subject !== null &&
+      (subject.kind === 'project' || ((subject.kind === 'directory' || subject.kind === 'page') && typeof subject.path === 'string' && subject.path.length > 0 && subject.path.length <= 4096)));
+  return okRange && okTrigger && okSubject ? (v as FlowStartRequest) : null;
 }
 
 /** Each run document of `packageId` under `root`, newest first, with its replayed status. */
@@ -228,6 +246,21 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
   const pkg = (await deps.catalog()).find((p) => p.manifest.id === req.packageId && runnableFlow(p.manifest));
   if (!pkg) return fail('unknown-package', 'no such flow package');
   const manifest = pkg.manifest;
+  // The subject is the run's input: its kind must be the package's scope, its path a file or folder of this project.
+  let subject: { rel: string; abs: string } | null = null;
+  if (req.subject) {
+    const want = SUBJECT_SCOPE[req.subject.kind];
+    if (manifest.defaults.scope !== want) {
+      return fail('incompatible-scope', `${manifest.title} runs on ${SCOPE_WORDS[manifest.defaults.scope]}, not on ${SCOPE_WORDS[want]}`);
+    }
+    if (req.subject.kind !== 'project') {
+      const loc = await deps.registry.resolve(`${root.id}/${req.subject.path.replace(/\/+$/, '')}`);
+      const info = loc && loc.root.id === root.id && loc.rel ? await stat(loc.abs).catch(() => null) : null;
+      const right = req.subject.kind === 'page' ? info?.isFile() : info?.isDirectory();
+      if (!loc || !right) return fail('invalid', req.subject.kind === 'page' ? 'the page is not a file of this project' : 'the directory is not a folder of this project');
+      subject = { rel: loc.rel, abs: loc.abs };
+    }
+  }
   const repo = await deps.git.repoOf(root);
   if (!repo) return fail('no-git', 'the project is not in a git repository');
   const target = await deps.git.head(repo);
@@ -249,7 +282,7 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
     if (!base) return fail('no-baseline', 'the last run’s commit is gone (history rewritten?): choose a baseline commit', { why: 'marker-unreachable' });
   }
   if (!(await deps.git.isAncestor(repo, base, target))) return fail('bad-baseline', 'the baseline is not an ancestor of HEAD');
-  const commits = await deps.git.commits(repo, base, target);
+  const commits = await deps.git.commits(repo, base, target, subject?.abs);
   if (commits === null) return fail('no-git', 'git could not list the range');
 
   const allDirty = await deps.git.dirty(repo, root);
@@ -264,6 +297,8 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
   // Evidence asserted on the run page is recorded in the run document itself; its digest is of the path, as the text changes.
   const runSource = { id: 'run-document', path: runPath, digest: sha256(runPath) };
   const dirtySources = dirty.slice(0, 120).map((p, i) => ({ id: `uncommitted-${i + 1}`, path: p.replace(/[\\:%?#\x00-\x1f\x7f]/g, '_'), digest: sha256(p) }));
+  // The page or directory the run is on, as one of its declared sources.
+  const subjectSources = subject && req.subject ? [{ id: 'subject', path: subject.rel.replace(/[\\:%?#\x00-\x1f\x7f]/g, '_'), digest: sha256(`${req.subject.kind}:${subject.rel}`) }] : [];
   const input: FlowRunInput = {
     runId,
     startedAt,
@@ -271,15 +306,16 @@ export async function planFlowRun(deps: FlowHostDeps, value: unknown, fixed?: { 
     packageDigest,
     selection: {
       ...manifest.defaults,
+      ...(req.subject ? { scope: SUBJECT_SCOPE[req.subject.kind] } : {}),
       root: ROOT_SLUG(root.id),
-      sources: [rangeSource, runSource, ...dirtySources],
+      sources: [rangeSource, runSource, ...subjectSources, ...dirtySources],
       base,
       target,
       dirtySourceIds: dirtySources.map((s) => s.id),
     },
     // The host established the range itself; every other label is the analyst's to supply.
     evidence: manifest.evidence.required.map((label) =>
-      label === rangeLabel(manifest) ? { label, status: 'supplied' as const, sourceIds: [RANGE_SOURCE], note: `${commits.length} commits, read by mdhouse from git` } : { label, status: 'missing' as const, sourceIds: [], note: 'Not yet supplied' },
+      label === rangeLabel(manifest) ? { label, status: 'supplied' as const, sourceIds: [RANGE_SOURCE], note: `${commits.length} commits${subject ? ` touching ${subject.rel}` : ''}, read by mdhouse from git` } : { label, status: 'missing' as const, sourceIds: [], note: 'Not yet supplied' },
     ),
     questions: [],
   };

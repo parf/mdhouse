@@ -24,6 +24,7 @@ import { usePhone } from './phone';
 import { ASK_EVENT, ASK_STATE } from './nav';
 import { FlowBar } from './FlowBar';
 import { follow, HeadTabs } from './PageHead';
+import { flowPageUrl } from './flow-model';
 import { editTarget, isPageHref } from '../lib/urls';
 import { loadDraft } from './edit-source';
 
@@ -1338,7 +1339,7 @@ export function Doc({
             )}
           </h1>
           {/* The project's places, as its folder page has them: GIT, then Recent … Files. A phone has its bottom bar. */}
-          {!phone && rootDirUrl && <HeadTabs dirUrl={rootDirUrl} view={null} repo={rootInRepo} go={onNavigate} />}
+          {!phone && rootDirUrl && <HeadTabs dirUrl={rootDirUrl} view={null} repo={rootInRepo} go={onNavigate} flowHref={flowPageUrl(rootDirUrl, doc.rel)} />}
           {phone && editBtn}
           {phone && (
             <button

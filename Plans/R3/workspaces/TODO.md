@@ -593,6 +593,14 @@ No package is done before shared runner/permission checks pass; tracker-free out
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.
   Cover desktop/mobile, light/dark, roles/access modes and loading/empty/error/success states; record screenshot-backed findings and prioritize the resulting implementation work.
+  - [ ] MW.13.2 Project actions in the chooser and a Run Flow page with its target <a id="MW.13.2"></a>
+    Owner 2026-11-16 via `#md/ceo` (screenshots). W2 frontend + backend (W1 offline). CEO/CTO outside the chain.
+    - [x] MW.13.2a Project chooser: an `Actions` group under a separator — `Add new Project…` → Settings' Add project (`/settings#add-project`, focused); `Create new Project…` → `/<root>/?new-project`, a TBD page (the planned questions and flows; it creates nothing)
+    - [x] MW.13.2b Header tabs always end with `Run Flow` → `/<root>/?flow=<rel>` (a document's path, a folder's with `/`, `''` = project); the old popup becomes this page — same catalog, range, preview, Confirm and checks; a Viewer / read-only / no-git project is explained there, not hidden
+    - [x] MW.13.2c `Run flow on: Page · Directory · Project` at the top: from a file — the file, its folder, its project; from a folder — that folder, its project (Page unavailable, says why); from the project — Project. The choice is the run's input: `planFlowRun` `subject {kind, path}` → `selection.scope` (page = selected-document, directory = selected-subsystem, project = selected-project), a `subject` source with the path, commits limited to that path; a package whose scope differs is refused before preview (`incompatible-scope`, says which target it takes); no subject (automation) runs as before
+    Verify: flow-host tests (subject jail/kind/scope mismatch, path-limited range, token binds subject), flow-model test for the targets, browser — chooser actions, Run Flow from a doc / folder / project, Viewer + RO messages, preview→Confirm on scratch, back button, light/dark, 390px; one gate; independent review (writes/access).
+    Evidence: `test/flow-host.test.ts` subject (3 tests), `test/flow-targets.test.ts`; scratch: doc → Run Flow → Page `TODO.md` → preview `1 commits touching …` → Confirm → run doc `scope: selected-document` + `subject` source; Back returns; folder (Page off, says why), project, `_mdhouse` read-only message, `--viewer` message with the tab still shown; chooser `Project actions` → `/settings#add-project` (path field focused), `?new-project`; light/dark, 390px.
+
 
 ## Configuration ownership
 

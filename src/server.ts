@@ -378,6 +378,7 @@ export async function serve(opts: ServeOptions) {
   const FLOW_STATUS: Record<FlowError['reason'], number> = {
     invalid: 400,
     'bad-baseline': 400,
+    'incompatible-scope': 400,
     'not-writable': 403,
     'no-root': 404,
     'unknown-package': 404,
@@ -2141,7 +2142,7 @@ export async function serve(opts: ServeOptions) {
         if (!body || typeof body.rootId !== 'string') return flowFail({ error: 'expected {rootId, packageId, range}', reason: 'invalid' });
         const root = registry.get(body.rootId);
         const actor = root && root.kind !== 'reference' ? (await authorOf(req, { root, rel: '' })).name : '';
-        const plan = await planFlowRun(flowDeps, { rootId: body.rootId, packageId: body.packageId, range: body.range, trigger: { kind: 'manual', actor } });
+        const plan = await planFlowRun(flowDeps, { rootId: body.rootId, packageId: body.packageId, range: body.range, ...(body.subject === undefined ? {} : { subject: body.subject }), trigger: { kind: 'manual', actor } });
         if (isFlowError(plan)) return flowFail(plan);
         const { html } = await render(plan.doc, { rootId: plan.rootId, docPath: plan.runPath, docUrl: (rel) => registry.docUrl(root!, rel) });
         return noStore(json({ token: plan.token, runPath: plan.runPath, base: plan.base, target: plan.target, dirty: plan.dirty, warnings: plan.warnings, html }));

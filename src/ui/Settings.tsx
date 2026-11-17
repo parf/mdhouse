@@ -92,6 +92,13 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       () => setAdmin({ admin: false }),
     );
   useEffect(() => void loadAdmin(), [entry]);
+  // `/settings#add-project` (the project chooser's Add new Project): the form in sight, its path field focused once it is usable.
+  useEffect(() => {
+    if (location.hash !== '#add-project' || admin === null) return;
+    const form = document.getElementById('add-project');
+    form?.scrollIntoView({ block: 'center' });
+    form?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
+  }, [admin, entry]);
   /** The refusal's text; an administrator denial also turns the protected controls off. */
   const refused = (err: unknown): string => {
     if (!isAdminDenial(err)) return (err as Error).message;
@@ -776,6 +783,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
         </div>
         {error && <p class="settings-error">{error}</p>}
         <form
+          id="add-project"
           class="project-add"
           aria-label="Add project"
           onSubmit={(e) => {

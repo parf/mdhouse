@@ -4,6 +4,8 @@
 
 ### Added
 
+- Project chooser: `Add new Project…` (Settings' Add project, its path field focused) and `Create new Project…` under a separator, apart from the projects; Create opens a page that says what creating a project will ask — not available yet, it creates nothing
+
 - Changes: one place per project for uncommitted files (`?git=changes`) — each file's state and diff, a tick each (untracked files start unticked), a message and a button that says what it commits ("Commit 2 files" / "Commit README.md"); Push is its own step, shown only when the branch has a remote branch. A document shows one status chip ("modified · Changes") that opens Changes for that file, in place of Commit / Commit+Push and "uncommitted file". Read-only projects and a Viewer see files and diffs only
 
 - Edit complete Markdown source with CodeMirror, atomic stale-checked saves and retained drafts when the file changes or becomes read-only
@@ -12,7 +14,7 @@
 
 - Viewer UI: while mdhouse is a Viewer the page drops every control that changes anything — marks, the Agent Bus button and panel, the ✎ edit links, "Your name", the per-project RW/RO toggle — shows a `Viewer — read-only` badge instead of per-project RO, and a refused write says so; Settings has a Workspace/Viewer switch for the administrator (a Viewer needs `mdhouse admin`)
 
-- Run flow: a button on a project's page runs a flow (package, range since the last run or from a commit, a preview, Confirm); the run document has a bar to supply evidence, answer questions and Complete, Block, Fail or Cancel it; a finished run records its last commit so the next one starts there. Not for a Viewer or a read-only project
+- Run Flow: the last tab of every page header (document, folder, git view) opens the Run Flow page — `Run flow on: Page · Directory · Project` from where it was opened, then a package, a range (since the last run or from a commit), a preview and Confirm; the run is on that target (its commits only, recorded in the run), and a flow made for another target says so before any preview; a Viewer or a read-only project is told why there. The run document has a bar to supply evidence, answer questions and Complete, Block, Fail or Cancel it; a finished run records its last commit so the next one starts there
 
 - Run flow lists every analysis-only package that names a commit range in its evidence, not one hard-coded flow: `docs-refresh-verify` (docs drift over a commit range), `project-review` and `engineering-delivery-sync` run beside `recent-commits-review`; a run that is not the host's own says why instead of showing a bar
 

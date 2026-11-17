@@ -26,6 +26,9 @@ import { indexUrl, loadTarget, saveTarget, type SearchTarget } from './ui/search
 import { PhoneNav } from './ui/PhoneNav';
 import { AutomationPage } from './ui/AutomationPage';
 import { onAutomation as wantsAutomation } from './ui/automation-model';
+import { FlowPage } from './ui/FlowRun';
+import { NewProjectPage } from './ui/NewProjectPage';
+import { flowFrom } from './ui/flow-model';
 import { changeSummary } from './ui/git-state';
 import { usePhone } from './ui/phone';
 import { ASK_EVENT, ASK_STATE, onChanges } from './ui/nav';
@@ -150,6 +153,10 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const onSettings = route.kind === 'settings';
   const onRag = route.kind === 'rag';
   const onAutomation = route.kind === 'dir' && !route.dir && wantsAutomation(full.includes('?') ? full.slice(full.indexOf('?')) : '');
+  /** Create new Project (TBD): `?new-project` on a project's address. */
+  const onNewProject = route.kind === 'dir' && !route.dir && new URLSearchParams(full.includes('?') ? full.slice(full.indexOf('?')) : '').has('new-project');
+  /** The Run Flow page: `?flow=<from>` on a project's address. */
+  const flowAt = route.kind === 'dir' && !route.dir ? flowFrom(full.includes('?') ? full.slice(full.indexOf('?')) : '') : null;
 
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
@@ -712,6 +719,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
           live={live}
           onCycleState={cycle}
           onPickRoot={pickRoot}
+          onProjectAction={(a) => go(a === 'add' ? '/settings#add-project' : `${dirUrl(rootId, '')}?new-project`)}
           onTab={setTab}
           onQuery={setQuery}
           searchIn={searchIn}
@@ -760,6 +768,18 @@ function App({ entry: first }: { entry: AdminEntry }) {
             rootUrl={(id) => dirPageUrl('', id)}
             go={go}
             entry={entry}
+          />
+        ) : onNewProject && dirTarget ? (
+          <NewProjectPage go={go} backUrl={dirUrl(dirTarget.rootId, '')} gear={pageGear} />
+        ) : flowAt !== null && dirTarget ? (
+          <FlowPage
+            rootId={dirTarget.rootId}
+            rootName={nameOf(dirTarget.rootId, tree?.root.name ?? '')}
+            from={flowAt}
+            writable={roots.find((r) => r.id === dirTarget.rootId)?.writable ?? false}
+            go={go}
+            backUrl={!flowAt ? dirUrl(dirTarget.rootId, '') : flowAt.endsWith('/') ? dirUrl(dirTarget.rootId, flowAt) : pageUrl(dirTarget.rootId, flowAt)}
+            gear={pageGear}
           />
         ) : onAutomation && dirTarget ? (
           <AutomationPage rootId={dirTarget.rootId} rootName={nameOf(dirTarget.rootId, tree?.root.name ?? '')} gear={pageGear} />

@@ -1,6 +1,6 @@
 import { ApiError } from './api';
 import { VIEWER_DENIED, VIEWER_MESSAGE } from './viewer-text';
-import type { FlowCatalog, FlowEventRequest, FlowEventResult, FlowPreview, FlowRange, FlowStarted } from './flow-model';
+import type { FlowCatalog, FlowEventRequest, FlowEventResult, FlowPreview, FlowRange, FlowStarted, FlowSubject } from './flow-model';
 
 /** A refused flow request: the reason, plus `why` for a missing baseline and `run` for an open run. */
 export class FlowApiError extends ApiError {
@@ -27,7 +27,7 @@ async function call<T>(base: string, method: 'GET' | 'POST', path: string, body?
 
 export const flowApi = (base = '') => ({
   catalog: (root: string) => call<FlowCatalog>(base, 'GET', `/api/flow/catalog?root=${encodeURIComponent(root)}`),
-  preview: (rootId: string, packageId: string, range: FlowRange) => call<FlowPreview>(base, 'POST', '/api/flow/preview', { rootId, packageId, range }),
+  preview: (rootId: string, packageId: string, range: FlowRange, subject?: FlowSubject) => call<FlowPreview>(base, 'POST', '/api/flow/preview', { rootId, packageId, range, ...(subject ? { subject } : {}) }),
   start: (token: string) => call<FlowStarted>(base, 'POST', '/api/flow/start', { token }),
   event: (req: FlowEventRequest) => call<FlowEventResult>(base, 'POST', '/api/flow/event', req),
 });

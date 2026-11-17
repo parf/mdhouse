@@ -552,8 +552,8 @@ export async function isAncestor(repo: string, a: string, b: string): Promise<bo
 }
 
 /** The commits in `base..target`, oldest first, as `<hash> <subject>` lines; null when git fails. */
-export async function rangeCommits(repo: string, base: string, target: string): Promise<string[] | null> {
-  const out = await git(repo, ['log', '--reverse', '--format=%H %s', '--end-of-options', `${base}..${target}`]);
+export async function rangeCommits(repo: string, base: string, target: string, path?: string): Promise<string[] | null> {
+  const out = await git(repo, ['log', '--reverse', '--format=%H %s', '--end-of-options', `${base}..${target}`, ...(path ? ['--', path] : [])]);
   return out === null ? null : out.split('\n').filter(Boolean);
 }
 

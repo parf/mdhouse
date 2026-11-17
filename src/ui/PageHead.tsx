@@ -1,4 +1,5 @@
-import { RunFlow } from './FlowRun';
+import { dirUrl as rootPageUrl } from '../lib/urls';
+import { flowPageUrl } from './flow-model';
 import { IconClock, IconDiff, IconDoc, IconGit, IconGitMark, IconStar, IconUser } from './icons';
 
 export type HomeView = 'favorites' | 'recent' | 'mine' | 'changes' | 'commits' | 'files';
@@ -50,7 +51,7 @@ function Link(props: { href: string; go: (url: string) => void; class?: string; 
  * GIT, then the git view's tabs, for the folder at `dirUrl` — the folder page's header, and a document's
  * title row for its project. `view` marks the open tab; null marks none.
  */
-export function HeadTabs({ dirUrl, view, repo, go }: { dirUrl: string; view: HomeView | null; repo: boolean; go: (url: string) => void }) {
+export function HeadTabs({ dirUrl, view, repo, go, flowHref, flowOn }: { dirUrl: string; view: HomeView | null; repo: boolean; go: (url: string) => void; flowHref?: string; flowOn?: boolean }) {
   return (
     <div class="tabs head-tabs" role="tablist">
       {repo && (
@@ -66,6 +67,12 @@ export function HeadTabs({ dirUrl, view, repo, go }: { dirUrl: string; view: Hom
           <span>{label}</span>
         </Link>
       ))}
+      {/* Always offered: the page says when this project or this reader cannot run one. */}
+      {flowHref && (
+        <Link class="flow-tab" role="tab" selected={!!flowOn} href={flowHref} go={go} title="Run a flow on this page, its folder or the project">
+          <span>Run Flow</span>
+        </Link>
+      )}
     </div>
   );
 }
@@ -87,10 +94,8 @@ interface Props {
   gear?: preact.ComponentChildren;
   /** The view chips on the title (`ViewChips`). */
   chips?: preact.ComponentChildren;
-  /** The project's id: with it, the root's page offers Run flow. */
+  /** The project's id: with it, the tabs end with Run Flow. */
   rootId?: string;
-  /** The root can be written: a flow run is a document in it. */
-  writable?: boolean;
 }
 
 /**
@@ -98,7 +103,7 @@ interface Props {
  * between them moves nothing. The name leads to the other view; the tabs on the right are
  * GIT, then the git view's own tabs.
  */
-export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear, chips, rootId, writable }: Props) {
+export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAbout, gear, chips, rootId }: Props) {
   const segments = dir ? dir.split('/') : [];
   const name = segments.at(-1) ?? rootName;
   const onGit = view !== null;
@@ -134,8 +139,7 @@ export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAb
           {chips}
         </h1>
         <div class="head-right">
-        <HeadTabs dirUrl={dirUrl} view={view} repo={repo} go={go} />
-        {rootId && writable && !dir && repo && <RunFlow rootId={rootId} go={go} />}
+        <HeadTabs dirUrl={dirUrl} view={view} repo={repo} go={go} flowHref={rootId ? flowPageUrl(rootPageUrl(rootId, ''), dir ? `${dir}/` : '') : undefined} />
         {gear}
         </div>
       </header>

@@ -11,6 +11,9 @@ import { chooserLabels } from './project-groups';
  * With one entry there is nothing to switch between and it renders nothing at all — the widget
  * appears exactly when it means something.
  */
+/** An action's option value: never a project id (ids are slugs, no `:`). */
+const ACTION = 'action:';
+
 export function RootSelect({
   roots,
   rootId,
@@ -19,6 +22,8 @@ export function RootSelect({
   above = 1,
   max = 28,
   home,
+  actions,
+  onAction,
 }: {
   roots: RootInfo[];
   rootId: string;
@@ -29,8 +34,12 @@ export function RootSelect({
   /** Longest label before its left end is cut. */
   max?: number;
   home?: string;
+  /** Project actions after the projects, under a separator: picking one runs it and the choice stays on the project. */
+  actions?: Array<{ id: string; label: string }>;
+  onAction?: (id: string) => void;
 }) {
-  if (roots.length < 2) return null;
+  const acts = actions ?? [];
+  if (roots.length < (acts.length ? 1 : 2)) return null;
 
   const current = roots.find((r) => r.id === rootId);
   const labels = chooserLabels(
@@ -44,13 +53,34 @@ export function RootSelect({
       value={rootId}
       title={current ? `${current.path} — switch project` : 'Switch project'}
       aria-label="Switch project"
-      onChange={(e) => onPick((e.target as HTMLSelectElement).value)}
+      onChange={(e) => {
+        const el = e.target as HTMLSelectElement;
+        const act = acts.find((a) => `${ACTION}${a.id}` === el.value);
+        if (!act) return onPick(el.value);
+        el.value = rootId;
+        onAction?.(act.id);
+      }}
     >
       {roots.map((r) => (
         <option key={r.id} value={r.id} title={r.path}>
           {labels.get(r.id)}
         </option>
       ))}
+      {/* Not a project: a separator, its own group and a trailing "…" set the actions apart — not colour alone. */}
+      {acts.length > 0 && (
+        <>
+          <option disabled value="">
+            ──────────
+          </option>
+          <optgroup label="Project actions">
+            {acts.map((a) => (
+              <option key={a.id} value={`${ACTION}${a.id}`}>
+                {a.label}
+              </option>
+            ))}
+          </optgroup>
+        </>
+      )}
     </select>
   );
 }

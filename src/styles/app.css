@@ -2306,13 +2306,17 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .doc-sheet .view-chip { min-height: 44px; padding-inline: 12px; }
 }
 
-/* ── Run flow: the button on a project's home and its dialog ────────────── */
+/* ── Run Flow: its page (`?flow=`) and the header tab ─────────────────── */
 
-.flow-btn { white-space: nowrap; font: inherit; font-size: 13px; padding: 3px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
-.flow-btn:hover { border-color: var(--accent); color: var(--accent); }
-.flow-scrim { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, #000 40%, transparent); }
-.flow-dialog { position: fixed; z-index: 61; top: 8vh; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 24px)); max-height: 84vh; overflow-y: auto; box-sizing: border-box; padding: 12px 16px 16px; background: var(--bg-raised); color: var(--fg); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 12px 40px color-mix(in srgb, #000 30%, transparent); }
-.flow-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.flow-page { max-width: 760px; }
+/* The header tab: set apart from the views before it, like GIT after them. */
+:is(.home-head, .doc-title-row) .tabs > a.flow-tab { margin-left: 8px; font-weight: 650; }
+.flow-on { display: grid; gap: 6px; margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); }
+.flow-on legend { font-size: 13px; font-weight: 650; padding: 0 4px; }
+.flow-on-opt { display: grid; grid-template-columns: auto 6.5em minmax(0, 1fr); align-items: baseline; gap: 8px; font-size: 14px; }
+.flow-on-path { overflow-wrap: anywhere; font-size: 12.5px; color: var(--fg-muted); }
+.flow-on-opt.off { color: var(--fg-muted); }
+.flow-on-opt.off .flow-on-path { font-family: inherit; font-style: italic; }
 .flow-form { display: grid; gap: 10px; }
 .flow-field { display: grid; gap: 4px; font-size: 13px; color: var(--fg-muted); }
 .flow-field select, .flow-commit { font: inherit; padding: 5px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); width: 100%; box-sizing: border-box; }
@@ -2327,18 +2331,15 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .flow-go.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .flow-go:disabled { opacity: 0.5; cursor: default; }
 .flow-preview { display: grid; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
-.flow-preview .flow-actions { position: sticky; bottom: -16px; padding: 8px 0; background: var(--bg-raised); }
+.flow-preview .flow-actions { position: sticky; bottom: 0; padding: 8px 0; background: var(--bg); }
 .flow-html { max-height: 40vh; overflow: auto; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); font-size: 13px; }
 
-/* Touch: the dialog is a bottom sheet, every control 44px. */
+/* Touch: every control 44px. */
 @media (pointer: coarse) {
-  .flow-btn, .flow-go { min-height: 44px; padding-inline: 14px; }
+  .flow-go { min-height: 44px; padding-inline: 14px; }
   .flow-field select, .flow-commit { min-height: 44px; font-size: 16px; }
-  .flow-opt { min-height: 44px; }
-  .flow-opt input { width: 22px; height: 22px; }
-}
-@media (pointer: coarse) and (max-width: 900px) {
-  .flow-dialog { top: auto; bottom: 0; left: 0; transform: none; width: 100vw; max-height: 80dvh; border-radius: 14px 14px 0 0; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .flow-opt, .flow-on-opt { min-height: 44px; align-items: center; }
+  .flow-opt input, .flow-on-opt input { width: 22px; height: 22px; }
 }
 
 /* ── The flow bar on a run document ─────────────────────────────────────── */

@@ -453,3 +453,35 @@ describe('markers', () => {
     expect(markerOf(advanceDestination(fencedOnly, run))).toBe(B);
   });
 });
+
+describe('planFlowRun: the subject', () => {
+  const DOCS = 'docs-refresh-verify'; // selected-document
+  test('a page subject is the run input: its scope, a subject source, the commits touching it; the token binds it', async () => {
+    const t = await setup();
+    const req = { ...t.req({ kind: 'baseline', commit: c[0]! }, DOCS), subject: { kind: 'page' as const, path: 'n2.md' } };
+    const p = await t.plan(req);
+    expect(p.commits.map((l) => l.split(' ')[0])).toEqual([c[1]!]);
+    const started = await startFlowRun(t.deps, t.io, { token: p.token, actor: tester });
+    expect(isFlowError(started)).toBe(false);
+    const doc = readFlowRunDocument(await readFile(join(t.p, p.runPath), 'utf8'))!;
+    expect(doc.state.input.selection.scope).toBe('selected-document');
+    expect(doc.state.input.selection.sources.find((s) => s.id === 'subject')?.path).toBe('n2.md');
+  });
+  test('a subject the package does not take is refused before any preview, with the target it takes', async () => {
+    const t = await setup();
+    const v = await planFlowRun(t.deps, { ...t.req({ kind: 'baseline', commit: c[0]! }), subject: { kind: 'page', path: 'n2.md' } });
+    expect(v).toMatchObject({ reason: 'incompatible-scope' });
+    expect((v as { error: string }).error).toContain('the whole project');
+    expect(await planFlowRun(t.deps, { ...t.req({ kind: 'baseline', commit: c[0]! }, DOCS), subject: { kind: 'project' } })).toMatchObject({ reason: 'incompatible-scope' });
+  });
+  test('a subject outside the project, missing, or of the wrong kind is invalid; a project subject runs project-wide', async () => {
+    const t = await setup();
+    for (const path of ['../proj/n1.md', 'nope.md', '.git/config']) {
+      expect([path, await planFlowRun(t.deps, { ...t.req({ kind: 'baseline', commit: c[0]! }, DOCS), subject: { kind: 'page', path } })]).toMatchObject([path, { reason: 'invalid' }]);
+    }
+    await mkdir(join(t.p, 'sub'));
+    expect(await planFlowRun(t.deps, { ...t.req({ kind: 'baseline', commit: c[0]! }, DOCS), subject: { kind: 'page', path: 'sub' } })).toMatchObject({ reason: 'invalid' });
+    const whole = await t.plan({ ...t.req({ kind: 'baseline', commit: c[0]! }), subject: { kind: 'project' } });
+    expect(whole.commits.length).toBe(2);
+  });
+});

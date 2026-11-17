@@ -14,6 +14,8 @@ export interface FlowCatalogEntry {
   title: string;
   summary?: string;
   ranges: FlowRangeKind[];
+  /** The package's own defaults; `scope` says what it runs on. */
+  defaults?: { scope: FlowScope };
   lastRun: { url: string; status: FlowRunStatus; at: string } | null;
   openRun: { url: string; status: FlowRunStatus } | null;
 }
@@ -78,7 +80,7 @@ export const noBaselineText = (why: string | undefined): string =>
   why === 'marker-missing' ? 'The last run left no commit to start from: choose one.' : why === 'marker-unreachable' ? 'The last run’s commit is no longer in the history (rewritten?): choose where to start.' : 'This flow has not run here yet: choose the commit to start from.';
 
 /** The server's reasons for a refusal (`{ error, reason }`, as every write route). */
-export type FlowReason = 'viewer' | 'held' | 'read-only' | 'not-writable' | 'no-root' | 'no-git' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
+export type FlowReason = 'incompatible-scope' | 'viewer' | 'held' | 'read-only' | 'not-writable' | 'no-root' | 'no-git' | 'unknown-package' | 'no-baseline' | 'bad-baseline' | 'open-run' | 'stale' | 'invalid';
 
 const TERMINAL: FlowRunStatus[] = ['complete', 'blocked', 'failed', 'cancelled', 'partial', 'unsupported'];
 export const isTerminal = (status: FlowRunStatus): boolean => TERMINAL.includes(status);
@@ -157,4 +159,45 @@ export function actionIds(make: () => string = newClientId) {
       pending = null;
     },
   };
+}
+
+/** What a package runs on (its manifest's `defaults.scope`). */
+export type FlowScope = 'selected-project' | 'selected-subsystem' | 'selected-document';
+/** What a run is on, as the page offers it. */
+export type FlowTargetKind = 'page' | 'directory' | 'project';
+export type FlowSubject = { kind: 'project' } | { kind: 'directory' | 'page'; path: string };
+export const TARGET_SCOPE: Record<FlowTargetKind, FlowScope> = { page: 'selected-document', directory: 'selected-subsystem', project: 'selected-project' };
+export const TARGET_LABEL: Record<FlowTargetKind, string> = { page: 'Page', directory: 'Directory', project: 'Project' };
+const SCOPE_TARGET: Record<FlowScope, FlowTargetKind> = { 'selected-document': 'page', 'selected-subsystem': 'directory', 'selected-project': 'project' };
+
+/** The run page's address: the project, and the page or folder (ending `/`) it was opened from (`''` = the project). */
+export const flowPageUrl = (rootUrl: string, from: string): string => `${rootUrl}?flow=${encodeURIComponent(from)}`;
+/** `?flow=<from>` of an address's query; null when the query is not the run page's. */
+export const flowFrom = (search: string): string | null => new URLSearchParams(search).get('flow');
+
+/**
+ * The targets a run page opened from `from` offers: a file — itself, its folder, the project; a folder (`…/`) — itself and the
+ * project; the project (`''`) — the project. Null = not offered (the page says why). A file at the root has no folder of its own.
+ */
+export function flowTargets(from: string): Record<FlowTargetKind, string | null> {
+  const f = from.replace(/^\/+/, '');
+  if (!f) return { page: null, directory: null, project: '' };
+  if (f.endsWith('/')) return { page: null, directory: f.replace(/\/+$/, ''), project: '' };
+  const cut = f.lastIndexOf('/');
+  return { page: f, directory: cut === -1 ? null : f.slice(0, cut), project: '' };
+}
+
+/** The first target offered, narrowest first: Page, then Directory, then Project. */
+export const defaultTarget = (targets: Record<FlowTargetKind, string | null>): FlowTargetKind =>
+  targets.page !== null ? 'page' : targets.directory !== null ? 'directory' : 'project';
+
+/** The run's subject for a target kind. */
+export const subjectOf = (kind: FlowTargetKind, targets: Record<FlowTargetKind, string | null>): FlowSubject =>
+  kind === 'project' ? { kind } : { kind, path: targets[kind] ?? '' };
+
+/** Null when the package runs on `kind`, else what it does run on, in words. */
+export function scopeMismatch(entry: FlowCatalogEntry, kind: FlowTargetKind): string | null {
+  const scope = entry.defaults?.scope;
+  if (!scope || scope === TARGET_SCOPE[kind]) return null;
+  return `runs on ${SCOPE_TARGET[scope] === 'project' ? 'the whole project' : SCOPE_TARGET[scope] === 'directory' ? 'a directory' : 'one page'}`;
 }

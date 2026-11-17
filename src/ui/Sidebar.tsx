@@ -95,6 +95,8 @@ export interface SidebarProps {
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
   onAbout?: () => void;
+  /** A project action from the chooser: add an existing folder, or create a new project. */
+  onProjectAction: (action: 'add' | 'create') => void;
   /** Changes when only other files than Markdown change: an ALL tree lists them again. */
   filesRev: number;
   /** The root's views: their tabs show the tree narrowed to them. */
@@ -108,6 +110,11 @@ const NEXT_LABEL: Record<SidebarState, string> = {
   compact: 'Widen sidebar',
   open: 'Hide sidebar',
 };
+
+const PROJECT_ACTIONS = [
+  { id: 'add', label: '＋ Add new Project…' },
+  { id: 'create', label: '✦ Create new Project…' },
+];
 
 export function Sidebar(props: SidebarProps) {
   const { state, tree, query } = props;
@@ -224,7 +231,7 @@ export function Sidebar(props: SidebarProps) {
         </div>
       )}
 
-      {props.roots.length > 1 && (
+      {props.roots.length > 0 && (
         <div class="root-switch">
           {/* A select in both widths: a row of chips wraps into a wall once there are a few
               roots, and the select shows more of each path as the sidebar grows. */}
@@ -234,6 +241,8 @@ export function Sidebar(props: SidebarProps) {
             onPick={props.onPickRoot}
             above={wide ? 2 : 1}
             max={wide ? 44 : 28}
+            actions={PROJECT_ACTIONS}
+            onAction={(id) => props.onProjectAction(id as 'add' | 'create')}
           />
         </div>
       )}
