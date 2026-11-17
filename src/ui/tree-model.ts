@@ -32,6 +32,9 @@ const hasMark = (f: FileEntry, m: Mark) => f.marks?.includes(m) ?? false;
 
 function sortNodes(nodes: Node[]): Node[] {
   return nodes.sort((a, b) => {
+    // Folders first at every level; then favorite files, other files, muted files.
+    if (a.kind !== b.kind) return a.kind === 'dir' ? -1 : 1;
+
     const favA = a.kind === 'file' && hasMark(a.file, 'favorite') ? 0 : 1;
     const favB = b.kind === 'file' && hasMark(b.file, 'favorite') ? 0 : 1;
     if (favA !== favB) return favA - favB;
@@ -39,8 +42,6 @@ function sortNodes(nodes: Node[]): Node[] {
     const mutedA = a.kind === 'file' && hasMark(a.file, 'muted') ? 1 : 0;
     const mutedB = b.kind === 'file' && hasMark(b.file, 'muted') ? 1 : 0;
     if (mutedA !== mutedB) return mutedA - mutedB;
-
-    if (a.kind !== b.kind) return a.kind === 'dir' ? -1 : 1;
 
     // README, CLAUDE and AGENTS lead their directory, then TODO and DONE — the order a
     // Plans/<project>/ folder is read in.

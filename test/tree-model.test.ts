@@ -40,3 +40,26 @@ describe('shaping the flat file list into a tree', () => {
     expect(buildTree([file('a/b/c/d/leaf.md')]).map(shape)).toEqual([{ 'a/b/c/d': ['leaf.md'] }]);
   });
 });
+
+describe('order at each level', () => {
+  const marked = (rel: string, ...marks: string[]) => ({ ...file(rel), marks } as FileEntry);
+  test('folders first, then favorite files, then other files, then muted ones — at the root and inside a folder', () => {
+    const files = [
+      marked('README.md', 'favorite'),
+      file('a.md'),
+      marked('z.md', 'muted'),
+      file('docs/x.md'),
+      file('docs/sub/y.md'),
+      file('docs/sub/y2.md'),
+      marked('docs/fav.md', 'favorite'),
+      file('src/b.md'),
+    ];
+    expect(buildTree(files).map(shape)).toEqual([
+      { docs: [{ sub: ['y.md', 'y2.md'] }, 'fav.md', 'x.md'] },
+      { src: ['b.md'] },
+      'README.md',
+      'a.md',
+      'z.md',
+    ]);
+  });
+});
