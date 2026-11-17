@@ -315,8 +315,8 @@ contents list, so a heading link and its contents entry cannot disagree.
   Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.
 - **One header** (`src/ui/PageHead.tsx`) for a folder page and its git view: logo; folder name —
   on the folder page a link to its git view, everywhere else to the folder page; on the right
-  GIT / Favs / Recent / Mine / Commits / Files (GIT, Commits, Files only inside a repo) and ⚙.
-  A document's header has a git button before ✎: the root's git view.
+  GIT / Recent / Mine / Changes / Commits / Files (GIT, Changes, Commits, Files only inside a repo) and ⚙; `?git=favs` has no tab.
+  A document's title row has the same tabs for its project (`HeadTabs`); on a phone, its ⋯ sheet has the git view.
 - **Folder pages** are built in the browser from the tree payload it already holds; they cost
   no request.
 

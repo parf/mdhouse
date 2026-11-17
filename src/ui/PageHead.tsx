@@ -59,7 +59,8 @@ export function HeadTabs({ dirUrl, view, repo, go }: { dirUrl: string; view: Hom
           <span>GIT</span>
         </Link>
       )}
-      {VIEWS.filter((v) => !v.git || repo).map(({ id, label, Icon }) => (
+      {/* Favs has no tab: `?git=favs` still opens, the sidebar's Favorites tab is where favorites live. */}
+      {VIEWS.filter((v) => v.id !== 'favorites' && (!v.git || repo)).map(({ id, label, Icon }) => (
         <Link key={id} role="tab" selected={view === id} href={dirUrl + viewQuery(id)} go={go}>
           <Icon size={12} />
           <span>{label}</span>

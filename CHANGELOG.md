@@ -6,7 +6,7 @@
 
 - A document's title has a ★ beside its +1/+2 view chips: filled and yellow when the file is a favorite, an outline on hover otherwise; the ★ in its actions is yellow when set, as in the sidebar
 
-- A document's title row has its project's tabs, as a folder page does: GIT · Favs · Recent · Mine · Changes · Commits · Files beside ⚙ (not on a phone, which has its bottom bar)
+- A document's title row has its project's tabs, as a folder page does: GIT · Recent · Mine · Changes · Commits · Files beside ⚙ (not on a phone, which has its bottom bar)
 
 - Sidebar `MD | ALL`: one button in the sidebar header, where `R` was, flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered
 
@@ -40,6 +40,8 @@
 - Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API (a `mdhouse admin` session — a Viewer has no local administrator) switches back; projects keep their RW/RO; an unreadable prefs.json counts as a Viewer. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
 
 ### Changed
+
+- Header tabs (folder page, git view, document): no Favs tab — favorites are the sidebar's Favorites tab; `?git=favs` still opens
 
 - Sidebar tabs: Files · Recent · My · Favs · 1 · 2 — Favs beside the views; Mine reads My
 
