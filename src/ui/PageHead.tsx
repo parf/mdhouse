@@ -46,6 +46,29 @@ function Link(props: { href: string; go: (url: string) => void; class?: string; 
   );
 }
 
+/**
+ * GIT, then the git view's tabs, for the folder at `dirUrl` — the folder page's header, and a document's
+ * title row for its project. `view` marks the open tab; null marks none.
+ */
+export function HeadTabs({ dirUrl, view, repo, go }: { dirUrl: string; view: HomeView | null; repo: boolean; go: (url: string) => void }) {
+  return (
+    <div class="tabs head-tabs" role="tablist">
+      {repo && (
+        <Link class="git-tab" role="tab" selected={view !== null} href={`${dirUrl}?git`} go={go} title="What changed here, by commit">
+          <IconGitMark size={13} />
+          <span>GIT</span>
+        </Link>
+      )}
+      {VIEWS.filter((v) => !v.git || repo).map(({ id, label, Icon }) => (
+        <Link key={id} role="tab" selected={view === id} href={dirUrl + viewQuery(id)} go={go}>
+          <Icon size={12} />
+          <span>{label}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 interface Props {
   /** The folder's root name, and its path in the root ('' for the root itself). */
   rootName: string;
@@ -110,20 +133,7 @@ export function PageHead({ rootName, dir, dirUrl, crumbUrl, view, repo, go, onAb
           {chips}
         </h1>
         <div class="head-right">
-        <div class="tabs" role="tablist">
-          {repo && (
-            <Link class="git-tab" role="tab" selected={onGit} href={`${dirUrl}?git`} go={go} title="What changed here, by commit">
-              <IconGitMark size={13} />
-              <span>GIT</span>
-            </Link>
-          )}
-          {VIEWS.filter((v) => !v.git || repo).map(({ id, label, Icon }) => (
-            <Link key={id} role="tab" selected={view === id} href={dirUrl + viewQuery(id)} go={go}>
-              <Icon size={12} />
-              <span>{label}</span>
-            </Link>
-          ))}
-        </div>
+        <HeadTabs dirUrl={dirUrl} view={view} repo={repo} go={go} />
         {rootId && writable && !dir && repo && <RunFlow rootId={rootId} go={go} />}
         {gear}
         </div>

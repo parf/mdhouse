@@ -576,6 +576,11 @@ No package is done before shared runner/permission checks pass; tracker-free out
       W1 owns backend/listing and integration; W2 owns the interface and browser QA. Start when free; coordinate directly. Keep CEO/CTO out of the work chain to preserve Codex usage; report when complete or an owner-only blocker remains.
       Preserve existing ignore/access/path-jail rules, folder-count links, file opening and personal-view scope. No broader navigation redesign or implied all-file content search.
       Acceptance: both directions work with matching file counts and selection; non-Markdown files open through existing renderers; verify live tree updates, bounded listing/error states, desktop/mobile and light/dark. W1/W2 arrange required independent review and one combined verification gate.
+      ⚠️ W2 landed both halves (W1 unreachable): `07c9479` button + ALL tree from `/api/files`, `fd9f490` MD/ALL on the brand baseline, `e36122a` watch `files` event (live non-Markdown add/remove). Scratch browser: MD↔ALL, counts/selection, `notes.txt` opens, live add/remove, light/dark, 390/700px. Open: independent review, combined gate.
+    - [ ] MW.13.1d File page title row shows the project's header tabs (GIT · Favs · Recent · Mine · Changes · Commits · Files) beside ⚙, as the folder page has them <a id="MW.13.1d"></a>
+      Owner 2026-11-16. Project context (the Git link's destination, `/<root>/?git…`); real hrefs, modifier-click; second action/meta row unchanged; phone keeps its bottom bar and ⋯ sheet. Shared `HeadTabs` (`PageHead.tsx`).
+    - [ ] MW.13.1e Sidebar tab order Files · Recent · My · Favs · 1 · 2; Mine reads My <a id="MW.13.1e"></a>
+      Owner 2026-11-16: Favs beside views 1 and 2. Order/label only; tab ids, state and meanings unchanged.
     Owner starting points: explicit MD view (default), All project files with highlighting and matching left-panel tree, and Git pages for branches/commits/authors.
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.

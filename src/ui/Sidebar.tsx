@@ -35,9 +35,10 @@ export type Tab = 'files' | 'favorites' | 'recent' | 'mine' | ViewId;
  */
 const TABS: Array<{ id: Tab; label: string; title: string; Icon: (p: { size?: number }) => preact.JSX.Element }> = [
   { id: 'files', label: 'Files', title: 'All files', Icon: IconDoc },
-  { id: 'favorites', label: 'Favs', title: 'Favorites', Icon: (p) => <IconStar {...p} filled /> },
   { id: 'recent', label: 'Recent', title: 'Uncommitted, then recently committed', Icon: IconClock },
-  { id: 'mine', label: 'Mine', title: 'My uncommitted work and my recent commits', Icon: IconUser },
+  { id: 'mine', label: 'My', title: 'My uncommitted work and my recent commits', Icon: IconUser },
+  // Favs sits beside the views 1 and 2 after it: all three are the reader's own picks.
+  { id: 'favorites', label: 'Favs', title: 'Favorites', Icon: (p) => <IconStar {...p} filled /> },
 ];
 
 /** Which halves of a search are shown: matching file names, matching file contents, or both. */

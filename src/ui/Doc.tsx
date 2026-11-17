@@ -23,7 +23,7 @@ import { QaStrip } from './QaStrip';
 import { usePhone } from './phone';
 import { ASK_EVENT, ASK_STATE } from './nav';
 import { FlowBar } from './FlowBar';
-import { follow } from './PageHead';
+import { follow, HeadTabs } from './PageHead';
 import { editTarget, isPageHref } from '../lib/urls';
 import { loadDraft } from './edit-source';
 
@@ -1322,7 +1322,8 @@ export function Doc({
             {title}
             {!phone && chips}
           </h1>
-          {!phone && gitLinkEl}
+          {/* The project's places, as its folder page has them: GIT, then Favs … Files. A phone has its bottom bar. */}
+          {!phone && rootDirUrl && <HeadTabs dirUrl={rootDirUrl} view={null} repo={rootInRepo} go={onNavigate} />}
           {phone && editBtn}
           {phone && (
             <button

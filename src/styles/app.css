@@ -608,16 +608,16 @@ main {
 .head-crumbs:first-child, .doc-head:first-child > .crumbs:first-child { min-height: var(--head-band); align-content: center; }
 .head-right { display: flex; align-items: center; gap: 14px; margin-left: auto; min-width: 0; }
 .home-head h1 { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; color: var(--doc-title); margin: 0; display: flex; align-items: center; }
-.home-head .tabs { flex: 0 1 auto; flex-wrap: wrap; gap: 3px; }
-.home-head .tabs > a {
+:is(.home-head, .doc-title-row) .tabs { flex: 0 1 auto; flex-wrap: wrap; gap: 3px; }
+:is(.home-head, .doc-title-row) .tabs > a {
   display: flex; align-items: center; gap: 5px; padding: 5px 10px; flex: none;
   font-size: 12px; color: var(--fg-muted); border-radius: var(--radius); white-space: nowrap; text-decoration: none;
 }
-.home-head .tabs > a:hover { background: var(--bg-hover); text-decoration: none; }
-.home-head .tabs > a[aria-selected="true"] { background: var(--bg-raised); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border-strong); }
+:is(.home-head, .doc-title-row) .tabs > a:hover { background: var(--bg-hover); text-decoration: none; }
+:is(.home-head, .doc-title-row) .tabs > a[aria-selected="true"] { background: var(--bg-raised); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border-strong); }
 /* GIT switches pages, the rest are the git view's tabs: a little room between them. */
-.home-head .tabs > a.git-tab { margin-right: 8px; font-weight: 650; letter-spacing: 0.04em; }
-.home-head .tabs > a.git-tab[aria-selected="true"] { color: var(--ok); }
+:is(.home-head, .doc-title-row) .tabs > a.git-tab { margin-right: 8px; font-weight: 650; letter-spacing: 0.04em; }
+:is(.home-head, .doc-title-row) .tabs > a.git-tab[aria-selected="true"] { color: var(--ok); }
 .home-head h1 { min-width: 0; }
 .home-head .head-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .home-head .head-name { color: inherit; text-decoration: none; border-radius: 3px; }
@@ -860,9 +860,11 @@ main {
 /* The folder the document lives in, not the path that leads to it. */
 .crumbs .crumb.here { font-size: 15px; font-weight: 650; color: var(--dir); letter-spacing: -0.01em; }
 .crumbs > span:has(.here) { display: flex; align-items: baseline; }
-/* The title and the ⚙ share one line; the title takes the room. */
-.doc-title-row { display: flex; align-items: center; gap: 8px; }
-.doc-title-row > .doc-title { flex: 1 1 auto; min-width: 0; }
+/* The title, the project's tabs and the ⚙ share one line; the title takes the room, and gives way down to a few
+   words before the tabs and ⚙ go to the next line together, as on a folder page. */
+.doc-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.doc-title-row > .doc-title { flex: 1 1 10em; min-width: 0; }
+.doc-title-row > .head-tabs { margin-left: auto; }
 .notice-gear { float: right; margin-top: calc((var(--head-band) - 26px) / 2); }
 .head-gear { margin-left: auto; }
 .doc-title { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; margin: 4px 0 6px; color: var(--doc-title);

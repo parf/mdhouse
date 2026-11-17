@@ -4,7 +4,9 @@
 
 ### Added
 
-- Sidebar `MD | ALL`: one button in the sidebar header, where `R` was, flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, the choice is remembered
+- A document's title row has its project's tabs, as a folder page does: GIT · Favs · Recent · Mine · Changes · Commits · Files beside ⚙ (not on a phone, which has its bottom bar)
+
+- Sidebar `MD | ALL`: one button in the sidebar header, where `R` was, flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered
 
 - Automation page: `/<project>/?automation` (and Settings → the project → Automation) lists a project's scheduled runs — the pipelines its team keeps in `.mdhouse/automation/`, when each runs in words and UTC, whether this machine approved the file as it is now, the last five runs; an administrator reviews what an approval lets run before approving, and can revoke; everyone else reads
 
@@ -36,6 +38,8 @@
 - Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API (a `mdhouse admin` session — a Viewer has no local administrator) switches back; projects keep their RW/RO; an unreadable prefs.json counts as a Viewer. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
 
 ### Changed
+
+- Sidebar tabs: Files · Recent · My · Favs · 1 · 2 — Favs beside the views; Mine reads My
 
 - Document header: Edit becomes a `</>` icon, rightmost in the actions row next to ✎ (external edit); while the source is open it shows the page icon; on a phone it stays in the title row
 
