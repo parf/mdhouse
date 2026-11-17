@@ -47,6 +47,8 @@
 
 ### Fixed
 
+- Sidebar: a folder’s file count stays visible and opens its folder page when the folder is expanded
+
 - The sidebar tab is remembered across a reload (per browser); a V1/V2 tab whose view is empty opens as All files
 - Views: on a phone the bottom bar's Files no longer turns a V1/V2 tab into every file — the drawer keeps the tab it was left on (a V tab lists only its own selection; a unit test now holds that for files and folders, with the open document inside or outside it)
 

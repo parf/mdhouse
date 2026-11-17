@@ -22,7 +22,7 @@ export interface DirNode {
   name: string;
   path: string;
   children: Node[];
-  /** Total files in the subtree, for the collapsed-count badge. */
+  /** Total files in the subtree, for the directory-count badge. */
   count: number;
 }
 

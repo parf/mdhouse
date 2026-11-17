@@ -91,27 +91,25 @@ function Row({ node, depth, ...p }: Props & { node: Node; depth: number }) {
           <span class="label">{dir.name}</span>
           {/* The name toggles the folder; the count opens its page, every file beneath it. A
               span, not a link: a row is a button, and a button cannot hold another control. */}
-          {!open && (
-            <span
-              class="badge count"
-              role="link"
-              tabIndex={0}
-              title={`Open ${dir.path}/ — all ${dir.count} files`}
-              onClick={(e) => {
-                e.stopPropagation();
-                p.onOpenDirPage(dir.path);
-              }}
-              // Reachable from the keyboard too; the key must not also toggle the row around it.
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter' && e.key !== ' ') return;
-                e.preventDefault();
-                e.stopPropagation();
-                p.onOpenDirPage(dir.path);
-              }}
-            >
-              {dir.count}
-            </span>
-          )}
+          <span
+            class="badge count"
+            role="link"
+            tabIndex={0}
+            title={`Open ${dir.path}/ — all ${dir.count} files`}
+            onClick={(e) => {
+              e.stopPropagation();
+              p.onOpenDirPage(dir.path);
+            }}
+            // Reachable from the keyboard too; the key must not also toggle the row around it.
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              e.stopPropagation();
+              p.onOpenDirPage(dir.path);
+            }}
+          >
+            {dir.count}
+          </span>
         </button>
         {open && dir.children.map((child) => <Row key={child.path} {...p} node={child} depth={depth + 1} />)}
       </>

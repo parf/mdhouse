@@ -253,3 +253,8 @@ exit, live updates, the page over an ssh tunnel; the whole suite.
   never against the live instance. 275 tests.
 - Restarting the live instance re-adds folders that were added for the session only — a bare
   restart brings back just the saved ones.
+
+## Sidebar directory counts
+
+- Expanded folders retain their file-count link to the folder page; the name still toggles children.
+- Verified expand/collapse and count navigation in a scratch browser; light/dark and 700px captures checked. Tree/view tests and TypeScript pass.
