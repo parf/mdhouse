@@ -15,7 +15,7 @@ import { ViewChips } from './ui/ViewChips';
 import type { RecentEntry } from './lib/store';
 import type { SearchResult } from './lib/search';
 import type { Mark } from './lib/prefs';
-import { RagLink, Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
+import { Sidebar, WANTS_RECENTS, type SidebarState, type Tab, type SearchIn, type SearchScope } from './ui/Sidebar';
 import { Doc } from './ui/Doc';
 import { Home } from './ui/Home';
 import { viewOf } from './ui/PageHead';
@@ -672,14 +672,6 @@ function App({ entry: first }: { entry: AdminEntry }) {
           </span>
           {/* Outside the brand, whose name gives way when the line is short: the badge keeps its words. */}
           {viewer && <ViewerBadge />}
-          <RagLink
-            rootId={rootId}
-            active={onRag}
-            onOpen={(url) => {
-              setSearchTarget('index');
-              go(url);
-            }}
-          />
           <button
             class="icon-btn"
             title="Search (/)"
@@ -740,11 +732,6 @@ function App({ entry: first }: { entry: AdminEntry }) {
           onMark={setMark}
           onHome={() => go('/')}
           onAbout={() => setAboutOpen(true)}
-          ragActive={onRag}
-          onRag={(url) => {
-            setSearchTarget('index');
-            go(url);
-          }}
         />
       )}
 

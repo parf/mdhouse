@@ -5,7 +5,7 @@ export type SearchTarget = 'files' | 'index';
 
 export const TARGETS: ReadonlyArray<{ id: SearchTarget; label: string; title: string }> = [
   { id: 'files', label: 'Files', title: 'Search the file names and contents of this project' },
-  { id: 'index', label: 'Index', title: "Search the project's RAG index — what an agent has indexed" },
+  { id: 'index', label: 'RAG Search', title: "Search the project's RAG index — what an agent has indexed" },
 ];
 
 const KEY = 'mdhouse.search.scope';

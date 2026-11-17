@@ -18,7 +18,6 @@ import { highlightRanges, docName } from './format';
 import { Ago } from './Ago';
 import { RootSelect } from './RootSelect';
 import { follow } from './PageHead';
-import { ragUrl } from './rag-model';
 import {
   IconSearch, IconX, IconPanel, IconPanelWide, IconPanelOff,
   IconClock, IconDoc, IconStar, IconEyeOff, IconFolder, IconUser, IconView,
@@ -92,10 +91,6 @@ export interface SidebarProps {
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
   onAbout?: () => void;
-  /** The RAG search page is open. */
-  ragActive: boolean;
-  /** Open the RAG search page for the project on screen. */
-  onRag: (href: string) => void;
   /** The root's views: their tabs show the tree narrowed to them. */
   views: RootViews;
 }
@@ -107,16 +102,6 @@ const NEXT_LABEL: Record<SidebarState, string> = {
   compact: 'Widen sidebar',
   open: 'Hide sidebar',
 };
-
-/** The colored `R` that opens the RAG search page for `rootId`; a plain click stays in the app, a modified one opens a tab. */
-export function RagLink({ rootId, active, onOpen }: { rootId: string; active: boolean; onOpen: (href: string) => void }) {
-  const href = ragUrl({ root: rootId });
-  return (
-    <a class="icon-btn rag-btn" href={href} title="RAG search" aria-label="RAG search" aria-current={active ? 'page' : undefined} onClick={(e) => follow(e, () => onOpen(href))}>
-      R
-    </a>
-  );
-}
 
 export function Sidebar(props: SidebarProps) {
   const { state, tree, query } = props;
@@ -185,7 +170,6 @@ export function Sidebar(props: SidebarProps) {
           )}
           {viewer && tree && <StoredRwTag root={props.roots.find((r) => r.id === tree.root.id)} />}
         </span>
-        <RagLink rootId={props.rootId} active={props.ragActive} onOpen={props.onRag} />
         {!wide && (
           <button class="icon-btn" title="Search (/)" onClick={props.onCycleState}>
             <IconSearch />

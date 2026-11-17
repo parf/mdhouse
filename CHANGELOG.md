@@ -12,7 +12,7 @@
 
 - Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's R and magnifier are these places now
 
-- One search with a scope switch: `Files | Index` on the sidebar's search box and on the `/rag` page — Files is the search as before, Index searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); `R` opens the Index scope; on a phone the search box, results and the switch are 44px targets
+- One search with a scope switch: `Files | RAG Search` on the sidebar's search box and on the `/rag` page — Files is the search as before, RAG Search searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); on a phone the search box, results and the switch are 44px targets
 
 - Agent Bus out of the box: a new mdhouse config starts with `--agent-bus auto` — on while the login's Agent Bus socket exists, checked again on every request; an existing config keeps its value and an older mdhouse reads `auto` as off; the start line says `agent-bus: on — <socket> (found)`, `auto — not installed (no <path>)` or `off — found <socket>: mdhouse --agent-bus on`
 
@@ -29,11 +29,13 @@
 
 - Viewer UI: while mdhouse is a Viewer the page drops every control that changes anything — marks, the Agent Bus button and panel, the ✎ edit links, "Your name", the per-project RW/RO toggle — shows a `Viewer — read-only` badge instead of per-project RO, and a refused write says so; Settings has a Workspace/Viewer switch for the administrator (a Viewer needs `mdhouse admin`)
 
-- RAG search page: a colored `R` button in the sidebar header opens `/rag` — the project's index status (source, last sync, confirmed/total) and a keyword search with cited hits (file, lines, heading, query words marked); when RAG is not set up it explains step by step how to enable it
+- RAG search page: the search scope switch opens `/rag` — the project's index status (source, last sync, confirmed/total) and a keyword search with cited hits (file, lines, heading, query words marked); when RAG is not set up it explains step by step how to enable it
 
 - Viewer mode: `mdhouse --viewer` makes every project read-only and refuses every write from the web (documents, git, marks, author name, Agent Bus send); `--workspace` or `mode` in Settings' API (a `mdhouse admin` session — a Viewer has no local administrator) switches back; projects keep their RW/RO; an unreadable prefs.json counts as a Viewer. A Viewer's prefs.json is version 3 — an older mdhouse finds no write grant in it ([Viewer](doc/access.md#viewer--read-only-for-everyone))
 
 ### Changed
+
+- Search: remove the header’s R shortcut; both scope switches read Files / RAG Search
 
 - The control socket (`mdhouse exit`, a second `mdhouse <dir>`) moves from the config dir to `$XDG_RUNTIME_DIR/mdhouse/`; this mdhouse still reaches and stops an older one listening in the config dir, an older `mdhouse` command cannot reach a newer daemon
 

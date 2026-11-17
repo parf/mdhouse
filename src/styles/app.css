@@ -2118,9 +2118,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 
 /* ── RAG search ─────────────────────────────────────────────────────────── */
 
-.rag-btn { width: 26px; height: 26px; margin-left: 4px; background: var(--accent); color: var(--accent-fg); font-weight: 800; font-size: 13px; line-height: 1; text-decoration: none; }
-.rag-btn:hover { background: var(--accent); color: var(--accent-fg); filter: brightness(1.1); }
-.rag-btn[aria-current="page"] { outline: 2px solid var(--accent); outline-offset: 1px; }
 .rag-scope { margin: 0 0 16px; }
 .rag-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 14px; }
 .rag-q { flex: 1 1 18em; width: auto; min-width: 0; font-family: inherit; font-size: 14px; padding: 6px 10px; }
@@ -2362,7 +2359,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .md details.settled > summary { min-height: 44px; align-items: center; }
 }
 
-/* ── One search, two scopes: Files | Index ──────────────────────────────── */
+/* ── One search, two scopes: Files | RAG Search ──────────────────────────────── */
 
 .scope-switch { display: flex; gap: 2px; padding: 2px; margin: 0 0 6px; background: var(--bg-hover); border-radius: 8px; }
 .scope-opt { flex: 1; font: inherit; font-size: 12px; font-weight: 550; padding: 3px 8px; color: var(--fg-muted); background: none; border: 0; border-radius: 6px; cursor: pointer; }
@@ -2418,7 +2415,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .nav-dest.on { color: var(--accent); }
   .nav-dest.on span { text-decoration: underline; text-underline-offset: 3px; }
   /* The bar has these: the top strip keeps ☰ and ⚙. */
-  .topstrip .rag-btn, .topstrip button[title^="Search"] { display: none; }
+  .topstrip button[title^="Search"] { display: none; }
 }
 @media (pointer: coarse) and (max-width: 900px) {
   .nav-ico { position: relative; display: block; line-height: 0; }
