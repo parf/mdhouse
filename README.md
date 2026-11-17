@@ -146,12 +146,14 @@ text is kept
 | `Ctrl+B` / `⌘B` | cycle the sidebar: bar → compact → open |
 | `/`, `Ctrl+K`, `Ctrl+P` | open the sidebar and focus search |
 | `?` | version, links and this list |
-| `Esc` | clear the search query, or close the dialog |
+| `Esc` | clear the search query, or close the dialog or Agent Bus |
 | `e` | open the document in your editor |
-| `Ctrl+Enter` | in a form: save |
+| `a` | speak with AI: open Agent Bus on the document (when it is on) |
+| `Ctrl+Enter` | in a form: save; in Agent Bus: `[1] Send` |
+| `Ctrl+S` / `⌘S` | in the source editor: save |
 | `Ctrl+Shift+Enter` | in an answer form: save, open the next open question |
 | `Ctrl+Shift+Space` | in Agent Bus or a reply form: start or accept voice input |
-| `Alt+1`…`Alt+9` | in an answer form: the action with that number |
+| `Alt+1`…`Alt+9` | in an answer form or Agent Bus: the button with that number |
 | `Alt+E` | in a form: open the file at that line in your editor |
 
 ## ▸ Running it
