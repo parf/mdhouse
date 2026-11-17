@@ -351,6 +351,31 @@ describe('mdhouse admin — the link goes only to an interactive terminal', () =
     return { exitCode: await p.exited, stdout, stderr };
   };
 
+  test('admin --workspace / --viewer: the terminal sets the mode itself — no link, no session, whatever --host-name says', async () => {
+    const cfg = await mkdtemp(join(tmpdir(), 'mdhouse-admin-mode-'));
+    const prefsFile = join(cfg, 'mdhouse', 'prefs.json');
+    const own = await Prefs.load(prefsFile);
+    await own.setHostNames(['md.example']);
+    await own.setMode('viewer');
+    const run = async (...args: string[]) => {
+      const p = Bun.spawn(['bun', CLI, 'admin', ...args], { env: { ...env, XDG_CONFIG_HOME: cfg }, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' });
+      const [stdout, stderr] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text()]);
+      return { exitCode: await p.exited, stdout, stderr };
+    };
+    const ws = await run('--workspace', '--port', String(testPort(61769)));
+    expect([ws.exitCode, ws.stdout.trim(), ws.stderr]).toEqual([0, "mdhouse  mode:  workspace — reload the page: this computer's browser is the administrator", '']);
+    expect((await Prefs.load(prefsFile)).mode()).toBe('workspace');
+    const vw = await run('--viewer', '--port', String(testPort(61769)));
+    expect(vw.exitCode).toBe(0);
+    expect((await Prefs.load(prefsFile)).mode()).toBe('viewer');
+    expect((await run('--workspace', '--list')).exitCode).toBe(2);
+    // With users a browser is not the administrator by itself: the terminal says how to sign in.
+    await (await Prefs.load(prefsFile)).setUser('ann', await hashPassword('pw'));
+    const withUsers = await run('--workspace', '--port', String(testPort(61769)));
+    expect(withUsers.stdout).toBe('mdhouse  mode:  workspace\nusers are configured: sign in with mdhouse admin, in a terminal\n');
+    await rm(cfg, { recursive: true, force: true });
+  });
+
   test('redirected or piped output is refused before any daemon is asked; nothing secret is printed', async () => {
     // nothing runs on this port: a refusal that came from the daemon would say "nothing running"
     const piped = await cli('--port', String(testPort(61767)));

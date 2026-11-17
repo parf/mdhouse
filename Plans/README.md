@@ -385,6 +385,7 @@ filesystem/provider/HTTP work; materialization, actual approvals and marker upda
 `mdhouse admin` requests a proof through private OS-owner control and prints a loopback fragment URL
 only to an interactive terminal; redirected output refuses before minting. No auto-open or saved secret.
 `--list` lists safe session metadata; `--revoke` ends all sessions and unused proofs. Restart ends them too.
+`mdhouse admin --workspace|--viewer`: the OS owner sets the mode in its prefs (`Prefs.setMode`, read by the daemon at once) — CLI = admin, independent of web admin, Team and Agent Bus, never a browser session or a host-name rule; no users → a loopback browser is the administrator again (no link); users → a minted link on a terminal.
 Control `/admin/mint|list|revoke` requires an owner-only real config directory and socket; existing CLI
 operations retain OS-owner authority. Remote/bootstrap-through-proxy and Team identity remain separate.
 

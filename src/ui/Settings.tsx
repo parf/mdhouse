@@ -64,7 +64,7 @@ const folderName = (path: string) => path.split('/').filter(Boolean).pop() ?? pa
 
 /** How to become the administrator — said wherever a control needs it. */
 const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin in a terminal on this computer';
-const SESSION_ENDED = 'Your administrator session has ended. Run mdhouse admin in a terminal for a new sign-in link.';
+const SESSION_ENDED = 'run  mdhouse admin --workspace from cli';
 
 /** Only a failed sign-in needs a note: a successful one shows as the state itself. */
 const ENTRY_NOTE: Partial<Record<AdminEntry, string>> = {

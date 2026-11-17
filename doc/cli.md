@@ -22,6 +22,7 @@ command prints the exact `systemctl` command instead.
 
 ```text
 mdhouse admin [--port <n>]
+mdhouse admin --workspace | --viewer [--port <n>]
 mdhouse admin --list [--port <n>]
 mdhouse admin --revoke [--port <n>]
 ```
@@ -33,6 +34,9 @@ networks only admit.
 - `admin` prints a single-use link, valid 60 s, to open in a browser on this machine. Printed only
   to an interactive terminal; redirected or piped output is refused before a link exists. Nothing
   is opened, logged or saved. Needs a loopback or any-address `--host` and no `--host-name`.
+- `--workspace` / `--viewer` set the instance mode from the terminal — the OS owner is the administrator, no
+  browser session and no `--host-name` rule involved; the running mdhouse applies it at once. With no users a browser
+  on this machine is then the administrator (reload the page); with users, `--workspace` prints a sign-in link.
 - `--list` prints the session ids and expiry times. `--revoke` ends every session and unused link.
 - Sessions live in memory: a restart ends them. Run `mdhouse admin` again.
 - The config directory and socket must be private to you (`chmod 700 ~/.config/mdhouse`), or these

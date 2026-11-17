@@ -134,6 +134,8 @@
 
 ### Fixed
 
+- `mdhouse admin --workspace` (and `--viewer`) switches the mode from the terminal — it asked for a browser sign-in link instead, refused under `--host-name`; with no users it says to reload the page, with users it prints a sign-in link. Settings, after an administrator refusal: `run  mdhouse admin --workspace from cli`
+
 - Discard changes (`git reset` of one file) reached a file inside a read-only folder through a writable folder around it — now refused, as commit already was
 
 - RAG search: a cross-site page can no longer start a search from a browser that sends no `Sec-Fetch-Site`; concurrent status reads share one lookup; a project's source is found however many are registered; query marks no longer shift after letters like `İ`

@@ -35,7 +35,7 @@ mdhouse --workspace     # projects writable by their own RW/RO again
 
 - Refused (403): document writes, git commit/reset/pull/push, marks, author name, Agent Bus send
 - No local administrator: sign in with `mdhouse admin` to change settings or projects, or switch back from
-  Settings; with `--host-name` set no session can be minted — switch back with `mdhouse --workspace`
+  Settings; with `--host-name` set no session can be minted — switch back with `mdhouse admin --workspace`
 - Each project keeps its RW/RO; the page removes write controls and shows a Viewer — read-only badge
 - Reads stay available — RAG search and the Agent Bus status page may message the bus
 - A prefs.json this mdhouse cannot read (newer or malformed) is treated as a Viewer

@@ -29,6 +29,7 @@ Keep unresolved questions in place and retain the questions file.
 
 ## Shared work rules
 
+- CLI mode = admin (owner, 2026-11-17): the OS owner at the terminal is the administrator — its authority is independent of web admin sessions, Team admin and the Agent Bus; a CLI command never needs a browser session and is never blocked by browser host policy (the web Host/auth guards stay).
 - Group compatible approved small/medium tasks into one integration branch/cohort and one combined gate run; preserve independent author/review ownership and exact frozen security targets. Simple-first within the cohort; no duplicate full gates per task.
 - No version bump per landing. Only an owner-authorized deploy raises PATCH once, with one combined deploy changelog entry; preserve Unreleased facts until release. This grants no push/publish/deploy authority.
 

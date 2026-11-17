@@ -337,11 +337,39 @@ const running = async (): Promise<PingReply | null> => {
  */
 if (command === 'admin') {
   const actions = argv.slice(1).filter((a) => ADMIN_ACTIONS.includes(a));
-  if (opts.dirs.length || actions.length > 1) {
-    console.error('mdhouse: usage: mdhouse admin [--list | --revoke] [--port <n>]');
+  if (opts.dirs.length || actions.length > 1 || (opts.mode && actions.length)) {
+    console.error('mdhouse: usage: mdhouse admin [--workspace | --viewer | --list | --revoke] [--port <n>]');
     process.exit(2);
   }
   const action = actions[0];
+  // The terminal is the OS owner — the administrator: the mode is set here, in this user's prefs, the daemon reads it at
+  // once; no browser session and no host-name rule is involved. A sign-in link only where one is needed: users configured.
+  if (opts.mode) {
+    const mode = await prefs.setMode(opts.mode);
+    const users = Object.keys((await prefs.currentAccess()).users).length;
+    if (mode === 'viewer') {
+      console.log('mdhouse  mode:  viewer — every project read-only; back: mdhouse admin --workspace');
+      process.exit(0);
+    }
+    // No users: a browser on this computer is the administrator already — a link would add nothing.
+    if (!users) {
+      console.log('mdhouse  mode:  workspace — reload the page: this computer\'s browser is the administrator');
+      process.exit(0);
+    }
+    console.log('mdhouse  mode:  workspace');
+    if (!(process.stdin.isTTY && process.stdout.isTTY)) {
+      console.log('users are configured: sign in with mdhouse admin, in a terminal');
+      process.exit(0);
+    }
+    const minted = await askAdminMint(opts.port);
+    if (!minted) console.log(`nothing running on port ${opts.port}: the mode applies when it starts`);
+    else if ('error' in minted) console.log(`users are configured, and no sign-in link can be made: ${minted.error}`);
+    else {
+      const seconds = Math.max(1, Math.round((minted.expiresAt - Date.now()) / 1000));
+      console.log(`Users are configured — sign in: open this link in a browser on this machine within ${seconds} s; it works once:\n\n  ${minted.url}/settings#admin=${minted.proof}\n`);
+    }
+    process.exit(0);
+  }
   if (!action && !(process.stdin.isTTY && process.stdout.isTTY)) {
     console.error('mdhouse admin: prints a secret link, so only to an interactive terminal — run it without redirecting or piping');
     process.exit(2);
