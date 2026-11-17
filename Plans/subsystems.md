@@ -10,7 +10,7 @@ Kept by `/find-issues`: paths → subsystem, first match wins; ⚠️ = scary (t
 | D | `src/lib/prefs.ts`, `src/lib/ignore.ts` | prefs & config ⚠️ | prefs.json: atomic writes, several writers, never lost |
 | E | `src/lib/git.ts`, `src/lib/gitpage.ts`, `src/lib/scan.ts`, `src/lib/store.ts`, `src/lib/search.ts`, `src/lib/watch.ts` | git & data | git as argv, caches invalidated by the watcher, scan limits |
 | F | `src/ui/`, `src/app.tsx`, `src/index.html`, `src/styles/`, `src/types/` | ui | links, localStorage, live reload, the editors |
-| G | `test/`, `bunfig.toml` | tests | they test what they claim; no live config |
+| G | `test/`, `bunfig.toml`, `scripts/` | tests | they test what they claim; no live config |
 | H | `package.json`, `tsconfig.json`, `CHANGELOG.md` | packaging | what ships, the Deploy checklist |
-| I | `CLAUDE.md`, `AGENTS.md`, `.claude/`, `doc/`, `README.md`, `install.md`, `Plans/` | docs & skills | commands that do what they say; docs match the code |
+| I | `CLAUDE.md`, `AGENTS.md`, `.claude/`, `agents/`, `doc/`, `README.md`, `install.md`, `Plans/` | docs & skills | commands that do what they say; docs match the code |
 | J | `src/lib/agent-bus.ts`, `src/lib/ab-control.ts`, `src/lib/rag-`, `src/rag-sync-cli.ts` | agent bus & RAG ⚠️ | never `AGENT_BUS_*`; own topic + tag per call; paid sends only on explicit apply |
