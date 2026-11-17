@@ -8,7 +8,7 @@
 
 - A document's title row has its project's tabs, as a folder page does: GIT · Recent · Mine · Changes · Commits · Files beside ⚙ (not on a phone, which has its bottom bar)
 
-- Sidebar `MD | ALL`: one button in the sidebar header, where `R` was, flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered
+- Sidebar `MD | ALL`: one button in the sidebar header flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered
 
 - Automation page: `/<project>/?automation` (and Settings → the project → Automation) lists a project's scheduled runs — the pipelines its team keeps in `.mdhouse/automation/`, when each runs in words and UTC, whether this machine approved the file as it is now, the last five runs; an administrator reviews what an approval lets run before approving, and can revoke; everyone else reads
 
@@ -16,7 +16,7 @@
 
 - Changes: one place per project for uncommitted files (`?git=changes`) — each file's state and diff, a tick each (untracked files start unticked), a message and a button that says what it commits ("Commit 2 files" / "Commit README.md"); Push is its own step, shown only when the branch has a remote branch. A document shows one status chip ("modified · Changes") that opens Changes for that file, in place of Commit / Commit+Push and "uncommitted file". Read-only projects and a Viewer see files and diffs only
 
-- Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's R and magnifier are these places now
+- Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's magnifier moves into the bar as Search
 
 - One search with a scope switch: `Files | RAG Search` on the sidebar's search box and on the `/rag` page — Files is the search as before, RAG Search searches the project's RAG index (Enter opens `/rag?q=…`, which still works as an address); on a phone the search box, results and the switch are 44px targets
 
@@ -45,9 +45,9 @@
 
 - Sidebar tabs: Files · Recent · My · Favs · 1 · 2 — Favs beside the views; Mine reads My
 
-- Document header: Edit becomes a `</>` icon, rightmost in the actions row next to ✎ (external edit); while the source is open it shows the page icon; on a phone it stays in the title row
+- Sidebar tree: at every level folders first, then favorite files, other files, muted files — a favorite no longer rises above the folders
 
-- Search: remove the header’s R shortcut; both scope switches read Files / RAG Search
+- Document header: Edit becomes a `</>` icon, rightmost in the actions row next to ✎ (external edit); while the source is open it shows the page icon; on a phone it stays in the title row
 
 - The control socket (`mdhouse exit`, a second `mdhouse <dir>`) moves from the config dir to `$XDG_RUNTIME_DIR/mdhouse/`; this mdhouse still reaches and stops an older one listening in the config dir, an older `mdhouse` command cannot reach a newer daemon
 
@@ -60,8 +60,6 @@
 - The installed reference `_mdhouse` is `agents/` — what agents need: start file `README.md`, `for-agents.md`, `plans.md`, `agent-markup.md`, the install runbook, `rag-sync.md`, `skills/`, `flows/`. Docs for people stay in `doc/` (GitHub, npm). `mdhouse docs` prints the new AGENTS.md line (`…/main/agents/for-agents.md`); the old `doc/for-agents.md` URL points there
 
 ### Fixed
-
-- Sidebar tree: folders come first at every level again — favorite files sit right below them, above the other files
 
 - Favorites: a favorite saved through a symlinked folder (`.claude/skills/…` → `agents/skills/…`) is no longer listed as missing — it shows as the file, starred in the tree and on its page, and one ☆ clears it; a file that is really gone still reads missing
 
