@@ -42,6 +42,21 @@ test('a favorite through a symlinked folder is the canonical file: listed, starr
     // Set by the alias: stored at the canonical path.
     await mark('.claude/skills/glyphs.md', true);
     expect(prefs.get(dir).favorite).toEqual(['agents/skills/glyphs.md', 'gone.md']);
+
+    // Muted through the alias, then favorited by the canonical path: the mute goes too (one write).
+    await mark('agents/skills/glyphs.md', false);
+    await prefs.set(dir, '.claude/skills/glyphs.md', 'muted', true);
+    await mark('agents/skills/glyphs.md', true);
+    expect(prefs.get(dir).muted).toEqual([]);
+    expect(prefs.get(dir).favorite).toEqual(['agents/skills/glyphs.md', 'gone.md']);
+    // GET answers the same canonical lists.
+    expect(((await (await fetch(`${base}/api/marks?root=${root}`)).json()) as { favorite: string[] }).favorite).toEqual(['agents/skills/glyphs.md', 'gone.md']);
+
+    // Body shape: a non-string path or a non-boolean `on` is a 400, not a 500 or a set mark.
+    const post = (body: unknown) => fetch(`${base}/api/marks`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    expect((await post({ root, path: ['a.md'], mark: 'favorite' })).status).toBe(400);
+    expect((await post({ root, path: 'gone.md', mark: 'favorite', on: 'false' })).status).toBe(400);
+    expect(prefs.get(dir).favorite).toEqual(['agents/skills/glyphs.md', 'gone.md']);
   } finally {
     server.stop(true);
     watcher.close();

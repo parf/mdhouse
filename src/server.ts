@@ -27,7 +27,7 @@ import { searchContent } from './lib/search';
 import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, newFileDiff, workingDiff, type FileDiff } from './lib/git';
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
-import { Watcher } from './lib/watch';
+import { Watcher, type WatchEvent } from './lib/watch';
 import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-name';
 import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
@@ -2317,7 +2317,7 @@ export async function serve(opts: ServeOptions) {
           const url = new URL(req.url);
           const root = rootOf(url);
           if (!root) return fail(404, 'unknown root');
-          return json(prefs.get(root.path));
+          return json(await store.marks(root));
         },
         POST: mutation('shared-prefs', async (req) => {
           // Bun parses the body whatever its content-type, so a cross-site `text/plain` form
@@ -2329,7 +2329,10 @@ export async function serve(opts: ServeOptions) {
             mark?: Mark;
             on?: boolean;
           } | null;
-          if (!body?.path || !body.mark || !MARKS.includes(body.mark)) return fail(400, 'path and mark are required');
+          if (typeof body?.path !== 'string' || !body.path || !body.mark || !MARKS.includes(body.mark)) return fail(400, 'path and mark are required');
+          if ((body.on !== undefined && typeof body.on !== 'boolean') || (body.root !== undefined && typeof body.root !== 'string')) {
+            return fail(400, 'on must be true or false, root a project id');
+          }
           if (body.path.length > 4096) return fail(413, 'the path is too long');
 
           const root = body.root ? registry.get(body.root) : registry.defaultRoot();
@@ -2347,12 +2350,14 @@ export async function serve(opts: ServeOptions) {
           const canon = await store.canonicalMark(root, body.path);
           // Setting one clears the other (favorite ↔ muted), aliases included.
           const clear: Mark[] = on ? [body.mark, body.mark === 'favorite' ? 'muted' : 'favorite'] : [body.mark];
+          const drop: Partial<Record<Mark, string[]>> = {};
+          const stored = prefs.get(root.path);
           for (const mark of clear) {
-            for (const e of prefs.get(root.path)[mark]) {
-              if (e !== canon && (await store.canonicalMark(root, e)) === canon) await prefs.set(root.path, e, mark, false);
-            }
+            const aliases: string[] = [];
+            for (const e of stored[mark]) if (e !== canon && (await store.canonicalMark(root, e)) === canon) aliases.push(e);
+            drop[mark] = aliases;
           }
-          await prefs.set(root.path, canon, body.mark, on);
+          await prefs.set(root.path, canon, body.mark, on, drop);
           return json(await store.marks(root));
         }),
       },
@@ -2402,14 +2407,25 @@ export async function serve(opts: ServeOptions) {
     },
   });
 
+  const publishChange = (ev: WatchEvent, paths: string[]): void => {
+    // Another file than Markdown: the Markdown scans stand; only git's state (untracked) may be new.
+    store.invalidate(ev.rootId, ev.kind !== 'fs');
+    server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths }));
+  };
   const watcher = new Watcher((events) => {
     for (const ev of events) {
       const root = registry.get(ev.rootId);
       const paths = root ? ev.paths.filter((p) => !registry.hidden(root.path, join(root.path, p))) : ev.paths;
       if (ev.paths.length && !paths.length) continue;
-      // Another file than Markdown: the Markdown scans stand; only git's state (untracked) may be new.
-      store.invalidate(ev.rootId, ev.kind !== 'fs');
-      server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths }));
+      if (ev.kind !== 'files' || !root || !paths.length) {
+        publishChange(ev, paths);
+        continue;
+      }
+      // Other files: only a change an ALL listing can show is told — not an excluded or git-ignored one (a build's output).
+      void store.listable(root, paths).then(
+        (shown) => shown.length && publishChange(ev, shown),
+        () => publishChange(ev, paths),
+      );
     }
   });
   const watchTree = async (root: Root): Promise<void> => {

@@ -133,7 +133,7 @@ watcher events and the flow `dirty` list drop their paths.
   `{rootId: url}`, a document by its own `url`; only when it is still there (`api.pageExists`:
   `HEAD /api/raw`, a folder `/api/files`), else as before.
 - Views V1 / V2 (`src/ui/views.ts`): per root, files `rel` and folders `dir/` — localStorage
-  `mdhouse.views`. Each is a sidebar tab after Mine (`Tab` `V1` / `V2`): the tree narrowed to it,
+  `mdhouse.views`. Each is a sidebar tab after Favs (`Tab` `V1` / `V2`): the tree narrowed to it,
   muted files left out; its count on the tab, an empty one says how to fill it. `ViewChips` on a
   document's and a folder's title, and on a document's breadcrumbs (its folder), adds (`+V1`, on
   hover) and takes out (`V1`).
@@ -194,7 +194,8 @@ contents list, so a heading link and its contents entry cannot disagree.
 - Sidebar `MD | ALL` (`src/ui/sidebar-kind.ts`, `mdhouse.sidebar.kind`): one button in the side head; ALL builds the Files tab's tree from
   `/api/files?p=<root>` merged with the MD tree's entries (`allEntries`), refetched on every tree push and `{t:'files'}`; view tabs stay Markdown.
 - Live: `src/lib/watch.ts` events → `/ws` `{t, root, paths}`: `fs` Markdown/ignore file (rescan), `files` only another file outside dot-folders and
-  `node_modules` (git caches only; not sent beside an `fs`), `git` git's own state.
+  `node_modules`, named in `paths` (≤500, else none), told only when one is listable — not excluded or git-ignored (`Store.listable`);
+  git caches only; not sent beside an `fs`; a tab re-reads only for its own root, `git` git's own state.
 - Every file has a page. `src/lib/filetypes.ts` `kindOf()`: `md | code | text | image | pdf | html |
   video | audio | binary` — by name; `langOf()` (Shiki ids + aliases + `Dockerfile`, `.h`, `.conf` …)
   → `code`; an unknown name: no NUL in its first 8 kB → `text`, else `binary`.
@@ -312,7 +313,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   `/api/git/commit|commit-file|pull|push|reset` (reset: one `.md` file, `git checkout HEAD -- file`, only if it still has the shown diff's `hash` — else 409; commit-file: one file from its own page, `git add` when untracked then `git commit -- file`, 409 when it is clean; commit-files `{p, message, files:[{path, code}]}`: the Changes view's ticked entries as `dirtyFiles` lists them — each still dirty with that code under the queue, else 409 `{error, files}`; R/C/U/AA/DD → 409 terminal; `git add` the `??` ones, then `git commit -- <:(literal) paths>`, other staged files left) — writable folder, same origin, one at a time per repo; commit and commit-file refuse (409) a file outside the root or in a read-only root, pull a repo holding a read-only root or files outside the root; network
   git never prompts (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode`). Files link to their pages (under the root;
   else plain text) — no host links.
-  Tab in the url: `?git` Recent, `?git=favs|mine|commits|files`.
+  Tab in the url: `?git` Recent, `?git=favs|mine|changes[&file=]|commits|files`.
 - **One header** (`src/ui/PageHead.tsx`) for a folder page and its git view: logo; folder name —
   on the folder page a link to its git view, everywhere else to the folder page; on the right
   GIT / Recent / Mine / Changes / Commits / Files (GIT, Changes, Commits, Files only inside a repo) and ⚙; `?git=favs` has no tab.

@@ -85,7 +85,7 @@ test('another file sets off a files event; a dot-folder or node_modules none; wi
     expect(events).toEqual([]);
     writeFileSync(join(dir, 'pic.png'), '1');
     await Bun.sleep(300);
-    expect(events.map((e) => e.kind)).toEqual(['files']);
+    expect(events.map((e) => [e.kind, e.paths])).toEqual([['files', ['pic.png']]]);
     events.length = 0;
     writeFileSync(join(dir, 'b.txt'), '1');
     writeFileSync(join(dir, 'b.md'), '1');

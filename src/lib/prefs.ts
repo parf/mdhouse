@@ -1099,12 +1099,15 @@ export class Prefs {
 
   /**
    * Set or clear one mark on one entry. Favorite and muted are opposites — setting either
-   * clears the other, because holding both is never what anyone meant.
+   * clears the other, because holding both is never what anyone meant. `drop` names entries to
+   * remove in the same write (one durable write: no half-done toggle).
    */
-  async set(rootPath: string, entry: string, mark: Mark, on: boolean): Promise<RootPrefs> {
+  async set(rootPath: string, entry: string, mark: Mark, on: boolean, drop: Partial<Record<Mark, string[]>> = {}): Promise<RootPrefs> {
     const rel = normalize(entry);
     await this.mutate((data) => {
       const prefs = (data.roots[rootPath] ??= empty());
+      // Other spellings of the same entry (aliases), dropped in the same write.
+      for (const m of MARKS) if (drop[m]?.length) prefs[m] = prefs[m].filter((e) => !drop[m]!.includes(e));
       prefs[mark] = prefs[mark].filter((e) => e !== rel);
       if (on) {
         prefs[mark].push(rel);

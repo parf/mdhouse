@@ -78,3 +78,19 @@ test('a root of several repos: status and commits of each', async () => {
   expect(digest.uncommitted.map((e) => e.rel).sort()).toEqual(['r1/new.md', 'r2/new.md']);
   expect(digest.commits.flatMap((c) => c.files.map((f) => f.rel)).sort()).toEqual(['r1/r1.md', 'r2/r2.md']);
 });
+
+test('listable: an other-file change in a git-ignored or excluded folder is not one an ALL listing shows', async () => {
+  const dir = join(base, 'listable');
+  mkdirSync(join(dir, 'dist'), { recursive: true });
+  mkdirSync(join(dir, 'drafts'), { recursive: true });
+  writeFileSync(join(dir, 'a.md'), 'a\n');
+  writeFileSync(join(dir, '.gitignore'), 'dist/\n');
+  writeFileSync(join(dir, '.mdhouseignore'), 'drafts\n');
+  git(dir, 'init', '-q');
+  git(dir, 'add', '.');
+  git(dir, 'commit', '-qm', 'init');
+  writeFileSync(join(dir, 'dist', 'out.js'), '1');
+  const { store, root } = await served(dir);
+  await store.tree(root, false); // asks git once, as a page load does
+  expect(await store.listable(root, ['dist/out.js', 'drafts/x.png', 'pic.png'])).toEqual(['pic.png']);
+});

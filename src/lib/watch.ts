@@ -22,13 +22,16 @@ export interface WatchEvent {
 }
 
 const DEBOUNCE_MS = 120;
+/** At most this many other-file paths named in one `files` event; more → the event names none. */
+const FILES_MAX = 500;
 
 export class Watcher {
   /** Per root, so a root removed at runtime can stop being watched without the others. */
   private readonly watchers = new Map<string, FSWatcher[]>();
   private readonly pending = new Map<string, Set<string>>();
   private readonly gitDirty = new Set<string>();
-  private readonly filesDirty = new Set<string>();
+  /** Per root, the other files changed since the last batch; past FILES_MAX it holds only that there were many (`null`). */
+  private readonly filesDirty = new Map<string, Set<string> | null>();
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly onChange: (events: WatchEvent[]) => void) {}
@@ -83,7 +86,9 @@ export class Watcher {
       if (!MD_EXT.test(rel) && rel !== '.mdhouseignore' && !/(^|\/)\.gitignore$/.test(rel)) {
         // Any other file: only an ALL listing shows it — none under a dot-folder or `node_modules`, as `listFiles` walks.
         if (!rel.split('/').some((seg) => seg.startsWith('.') || seg === 'node_modules')) {
-          this.filesDirty.add(root.id);
+          const set = this.filesDirty.get(root.id);
+          if (set === undefined) this.filesDirty.set(root.id, new Set([rel]));
+          else if (set && set.add(rel).size > FILES_MAX) this.filesDirty.set(root.id, null);
           this.schedule();
         }
         return;
@@ -122,7 +127,8 @@ export class Watcher {
       for (const [rootId, paths] of this.pending) events.push({ kind: 'fs', rootId, paths: [...paths] });
       for (const rootId of this.gitDirty) events.push({ kind: 'git', rootId, paths: [] });
       // A root with a tree change already tells every tab to re-read: no `files` event beside it.
-      for (const rootId of this.filesDirty) if (!this.pending.has(rootId)) events.push({ kind: 'files', rootId, paths: [] });
+      // `paths` empty = too many to name.
+      for (const [rootId, set] of this.filesDirty) if (!this.pending.has(rootId)) events.push({ kind: 'files', rootId, paths: set ? [...set] : [] });
 
       this.pending.clear();
       this.gitDirty.clear();

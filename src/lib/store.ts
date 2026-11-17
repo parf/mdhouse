@@ -78,7 +78,7 @@ export interface TreePayload {
   user: { name: string; email: string } | null;
   scannedAt: number;
   /**
-   * The raw mark lists for this root, as stored. The Favorites view reads these rather than
+   * The mark lists for this root, favorite and muted at their canonical paths (`Store.marks`). The Favorites view reads these rather than
    * deriving them from file marks: a directory rule marks every file beneath it, which would
    * otherwise flood the list with a hundred entries the user never picked individually.
    */
@@ -235,10 +235,15 @@ export class Store {
   }
 
   /**
-   * The served location of the root-relative `rel` as a canonical root-relative path, or null
-   * when it is outside the root, the root itself, or under `.git` or an explicit exclusion —
-   * checked on both the requested and the resolved path.
+   * The root-relative `paths` an ALL listing may show: not explicitly excluded, not git-ignored by the git state
+   * already known (a path git has not been asked about yet counts as shown).
    */
+  async listable(root: Root, paths: string[]): Promise<string[]> {
+    const rules = await this.rules(root);
+    const git = this.state.get(root.id)?.gitPaths ?? [];
+    return paths.filter((p) => !isExplicitlyDenied(rules, p) && gitStateIn(git, p) !== 'ignored');
+  }
+
   /**
    * A favorite or muted entry by the path the tree lists it at: an alias (a symlinked folder, `.claude/skills` →
    * `agents/skills`) becomes its canonical path; an entry that does not resolve stays as written (really missing).
@@ -257,6 +262,11 @@ export class Store {
     return { favorite: await canon(raw.favorite), muted: await canon(raw.muted), ignored: raw.ignored };
   }
 
+  /**
+   * The served location of the root-relative `rel` as a canonical root-relative path, or null
+   * when it is outside the root, the root itself, or under `.git` or an explicit exclusion —
+   * checked on both the requested and the resolved path.
+   */
   async allowedRel(root: Root, rel: string): Promise<{ rel: string; abs: string } | null> {
     const rules = await this.rules(root);
     if (isExplicitlyDenied(rules, rel)) return null;

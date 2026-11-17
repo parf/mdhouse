@@ -406,7 +406,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
     // Only other files: the sidebar's ALL listing re-reads; the Markdown tree and the page stand.
     if (msg.t === 'files') {
-      setFilesRev((n) => n + 1);
+      if (msg.root === rootId) setFilesRev((n) => n + 1);
       return;
     }
 
