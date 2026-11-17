@@ -28,7 +28,7 @@ import { commitDiff, commitInfo, currentUser, fileHistory, gitDirs, literal, new
 import { ADD_KINDS, insertBlock, type AddKind, type AddRequest } from './lib/insert';
 import { convertLegacy } from './lib/legacy';
 import { Watcher, type WatchEvent } from './lib/watch';
-import { resolveWiki } from './lib/wikilinks';
+import { resolveWiki, wikiCandidates } from './lib/wikilinks';
 import { labelled, normalizeProjectName, parseNameRequest } from './lib/project-name';
 import type { PolicyView } from './lib/prefs';
 import { serveControl, type AddReply, type AdminMintReply, type RemoveReply, type RootLine } from './lib/control';
@@ -1948,6 +1948,9 @@ export async function serve(opts: ServeOptions) {
             const index = await store.wikiIndex(loc.root);
             return new Map(targets.map((t) => [t, resolveWiki(index, loc.rel, t)]));
           },
+          // several pages, or none: the choosing page of this project (`/api/choose`), from this document
+          chooseUrl: (target, hash) =>
+            `${dirUrl(loc.root.id, '')}?choose=${encodeURIComponent(target)}&from=${encodeURIComponent(loc.rel)}${hash ? `#${hash}` : ''}`,
         });
 
         // the agents the document asks — sent only while the integration is on
@@ -1962,6 +1965,27 @@ export async function serve(opts: ServeOptions) {
       /** A file's bytes, with its type — `rawHeaders`. `/api/asset` is the old name. */
       '/api/raw': read((req) => raw(req)),
       '/api/asset': read((req) => raw(req)),
+
+      /**
+       * The choosing page's list: where a link that names several pages, or none, could go (`wikiCandidates`) — this
+       * project's index only (ignore rules, the path jail); `exact` when the target names one page now.
+       */
+      '/api/choose': read(async (req) => {
+        const url = new URL(req.url);
+        const root = rootOf(url);
+        if (!root || !url.searchParams.get('root')) return fail(404, 'unknown root');
+        const target = url.searchParams.get('target') ?? '';
+        const from = url.searchParams.get('from') ?? '';
+        if (!target.trim() || target.length > 4096 || from.length > 4096) return fail(400, 'target required');
+        const index = await store.wikiIndex(root);
+        const now = resolveWiki(index, from, target);
+        const page = (rel: string) => registry.docUrl(root, rel);
+        return json({
+          target,
+          ...('rel' in now ? { exact: { rel: now.rel, url: page(now.rel) } } : {}),
+          candidates: wikiCandidates(index, from, target).map((c) => ({ ...c, url: page(c.rel) })),
+        });
+      }),
 
       /** Every file under a folder, not only Markdown — the folder page's ALL view. */
       '/api/files': read(async (req) => {

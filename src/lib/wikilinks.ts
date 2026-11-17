@@ -13,11 +13,14 @@ export interface WikiIndex {
   rels: Set<string>;
   byName: Map<string, string[]>;
   byNameLower: Map<string, string[]>;
+  /** By name with only letters and digits, lower case: `AI Agents` = `ai-agents`. */
+  bySquash: Map<string, string[]>;
 }
 
 /** How many wikilinks one document resolves; past it the rest stay text. */
 export const WIKI_MAX = 500;
 
+const squash = (s: string): string => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 const nameOf = (rel: string): string => rel.slice(rel.lastIndexOf('/') + 1).replace(MD_EXT, '');
 const add = (m: Map<string, string[]>, k: string, rel: string) => {
   const list = m.get(k);
@@ -26,12 +29,14 @@ const add = (m: Map<string, string[]>, k: string, rel: string) => {
 };
 
 export function wikiIndex(rels: Iterable<string>): WikiIndex {
-  const index: WikiIndex = { rels: new Set(), byName: new Map(), byNameLower: new Map() };
+  const index: WikiIndex = { rels: new Set(), byName: new Map(), byNameLower: new Map(), bySquash: new Map() };
   for (const rel of rels) {
     if (!MD_EXT.test(rel)) continue;
     index.rels.add(rel);
     add(index.byName, nameOf(rel), rel);
     add(index.byNameLower, nameOf(rel).toLowerCase(), rel);
+    const sq = squash(nameOf(rel));
+    if (sq) add(index.bySquash, sq, rel);
   }
   return index;
 }
@@ -108,4 +113,46 @@ export function wikiTargets(src: string): string[] {
     if (out.size >= WIKI_MAX) break;
   }
   return [...out];
+}
+
+/** One place a link could mean, and why it is offered. */
+export interface WikiCandidate {
+  rel: string;
+  why: 'name' | 'any-case' | 'similar';
+}
+/** How many candidates the choosing page lists. */
+export const CANDIDATES_MAX = 50;
+
+/**
+ * Where a link that names several pages, or none, could go — ranked: the same name, then the same name in any case,
+ * then a similar name (letters and digits only); within each, nearer the document's folder (more leading folders in
+ * common), then shallower, then A–Z. The name is the target's last segment. Only the index's files: never a guess.
+ */
+export function wikiCandidates(index: WikiIndex, docPath: string, target: string): WikiCandidate[] {
+  const last = target.trim().replace(/\/+$/, '').split('/').pop() ?? '';
+  const name = last.replace(MD_EXT, '');
+  if (!name) return [];
+  const docDirs = docPath.includes('/') ? docPath.slice(0, docPath.lastIndexOf('/')).split('/') : [];
+  const shared = (rel: string) => {
+    const dirs = rel.split('/').slice(0, -1);
+    let n = 0;
+    while (n < dirs.length && n < docDirs.length && dirs[n] === docDirs[n]) n++;
+    return n;
+  };
+  const seen = new Set<string>();
+  const out: WikiCandidate[] = [];
+  const tiers: Array<[WikiCandidate['why'], string[] | undefined]> = [
+    ['name', index.byName.get(name)],
+    ['any-case', index.byNameLower.get(name.toLowerCase())],
+    ['similar', index.bySquash.get(squash(name))],
+  ];
+  for (const [why, rels] of tiers) {
+    const fresh = (rels ?? []).filter((r) => !seen.has(r));
+    fresh.sort((a, b) => shared(b) - shared(a) || a.split('/').length - b.split('/').length || a.localeCompare(b));
+    for (const rel of fresh) {
+      seen.add(rel);
+      out.push({ rel, why });
+    }
+  }
+  return out.slice(0, CANDIDATES_MAX);
 }

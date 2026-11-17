@@ -47,6 +47,8 @@ export interface RenderContext {
   exists?: (rels: string[]) => Promise<Set<string>>;
   /** What each wikilink target names in this project (`resolveWiki`); without it `[[…]]` stays text. */
   wiki?: (targets: string[]) => Promise<Map<string, WikiTarget>>;
+  /** The choosing page for a link that names several pages or none (`target` as written, `hash` the anchor). */
+  chooseUrl?: (target: string, hash?: string) => string;
 }
 
 export interface Heading {
@@ -187,6 +189,9 @@ const decodeSegment = (seg: string): string => {
     return seg; // a lone `%` is a filename character here, not a bad escape
   }
 };
+
+/** A whole href path decoded for display and lookup; a bad escape stays as written. */
+const decodeURIComponentSafe = (p: string): string => p.split('/').map(decodeSegment).join('/');
 
 /**
  * Resolves a link relative to the document, inside the root. Decodes per segment, after the split;
@@ -580,6 +585,17 @@ function wikiPlugin(md: MarkdownIt, opts: { ctx: RenderContext; found: Map<strin
         open.attrs = [['href', localHref(ctx, got.rel, w.heading ? slugify(w.heading) : undefined)], ['class', 'md-local-link wikilink']];
         state.push('text', '', 0).content = shown;
         state.push('link_close', 'a', -1);
+      } else if (ctx.chooseUrl) {
+        // A real link to the page that lists where it could go — never a pick made here.
+        const why = 'missing' in got ? `No page “${w.target}” in this project — see similar names` : `“${w.target}” names ${got.ambiguous.length} pages — choose one`;
+        const open = state.push('link_open', 'a', 1);
+        open.attrs = [
+          ['href', ctx.chooseUrl(w.target, w.heading ? slugify(w.heading) : undefined)],
+          ['class', `md-local-link wikilink ${'missing' in got ? 'wikilink-missing' : 'wikilink-ambiguous'}`],
+          ['title', why],
+        ];
+        state.push('text', '', 0).content = shown;
+        state.push('link_close', 'a', -1);
       } else {
         const why = 'missing' in got
           ? `No page “${w.target}” in this project`
@@ -637,7 +653,7 @@ function refPlugin(md: MarkdownIt): void {
   });
 }
 
-function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
+function linkPlugin(md: MarkdownIt, ctx: RenderContext, missing: Set<string> = new Set()): void {
   const defaultLink =
     md.renderer.rules.link_open ??
     ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
@@ -650,7 +666,12 @@ function linkPlugin(md: MarkdownIt, ctx: RenderContext): void {
       const [pathPart, hash] = href.split('#');
       const target = pathPart ? resolveRelative(ctx.docPath, pathPart) : null;
 
-      if (target) {
+      if (target && missing.has(target) && ctx.chooseUrl) {
+        // A Markdown page that is not there: the choosing page, by its name — similar names, or a way back.
+        token.attrSet('href', ctx.chooseUrl(decodeURIComponentSafe(pathPart!), hash));
+        token.attrJoin('class', 'md-local-link md-link-missing');
+        token.attrSet('title', `No page ${target} — see similar names`);
+      } else if (target) {
         token.attrSet('href', localHref(ctx, target, hash, pathPart!.endsWith('/')));
         token.attrJoin('class', 'md-local-link');
       }
@@ -774,14 +795,36 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   md.use(wikiPlugin, { ctx, found: wikiFound, seen: wikiSeen });
   md.use(fileLinkPlugin, { ctx, files });
   md.use(refPlugin);
-  md.use(linkPlugin, ctx);
+  const missingLinks = new Set<string>();
+  md.use(linkPlugin, ctx, missingLinks);
 
   // A document's own raw HTML loses what only the renderer may write; the renderer's passes as made.
   md.renderer.rules.html_block = (tokens, idx) => (ours.has(tokens[idx]!) ? tokens[idx]!.content : authored(tokens[idx]!.content));
   md.renderer.rules.html_inline = (tokens, idx) => (ours.has(tokens[idx]!) ? tokens[idx]!.content : authored(tokens[idx]!.content));
 
   const actToken = randomBytes(16).toString('hex');
-  const html = passive(rewriteHtmlImages(md.render(src, { act: actToken } satisfies ActEnv), ctx));
+  const env = { act: actToken } satisfies ActEnv;
+  const tokens = md.parse(src, env);
+  // A relative link to a Markdown page that is not a file of this root goes to the choosing page instead.
+  if (ctx.exists && ctx.chooseUrl) {
+    const wanted = new Set<string>();
+    const walk = (list: Token[]) => {
+      for (const t of list) {
+        if (t.children) walk(t.children);
+        if (t.type !== 'link_open') continue;
+        const href = t.attrGet('href');
+        if (!href || isExternal(href) || href.startsWith('#') || href.startsWith('/')) continue;
+        const target = resolveRelative(ctx.docPath, href.split('#')[0]!);
+        if (target && MD_EXT.test(target) && wanted.size < 500) wanted.add(target);
+      }
+    };
+    walk(tokens);
+    if (wanted.size) {
+      const there = await ctx.exists([...wanted]);
+      for (const t of wanted) if (!there.has(t)) missingLinks.add(t);
+    }
+  }
+  const html = passive(rewriteHtmlImages(md.renderer.render(tokens, md.options, env), ctx));
   return { html, headings, hasMermaid, tasks, actToken, wikilinks: wikiSeen.any };
 }
 

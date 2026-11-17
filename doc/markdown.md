@@ -181,7 +181,9 @@ Markdown inside **still works**.
 - A page of the same project: from the document's folder, then from the root; `.md` / `.mdx` may be left off;
   a leading `/` — from the root only.
 - A bare name is the one Markdown file of that name anywhere in the project (ignored files not counted).
-- No such page, or several: dashed and muted, its tooltip says which — nothing is created, nothing guessed.
+- No such page, or several: dashed and muted; a click opens **Where to go?** — the pages it could mean (same name,
+  then any case, then a similar name; nearer the document first), or none and the way back. Nothing is created or picked.
+  A relative link to a `.md` that is not there opens the same page.
 - Not in code, not escaped (`\[[`), not `[[ … ]]` with spaces inside; `![[embed]]` is text.
 
 `.mdx` files are listed and rendered as Markdown; their JSX is not executed.

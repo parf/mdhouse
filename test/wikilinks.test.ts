@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { parseWiki, resolveWiki, wikiIndex, wikiTargets } from '../src/lib/wikilinks';
+import { parseWiki, resolveWiki, wikiCandidates, wikiIndex, wikiTargets } from '../src/lib/wikilinks';
 import { render } from '../src/lib/render';
 
 const FILES = [
@@ -76,5 +76,33 @@ describe('render: [[wikilinks]]', () => {
   test('no resolver (a preview elsewhere): text, unchanged', async () => {
     const r = await render('[[index]]', { rootId: 'w', docPath: 'a.md', docUrl: (x) => `/w/${x}` });
     expect(r.html).toContain('[[index]]');
+  });
+});
+
+describe('choosing where to go', () => {
+  test('candidates: same name, any case, similar; nearer the document, shallower, A–Z', () => {
+    const i = wikiIndex(['a/x/acme.md', 'b/acme.md', 'Acme.md', 'a/ACME.md', 'z/ac-me.md', 'a/x/deep/acme.md']);
+    expect(wikiCandidates(i, 'a/x/doc.md', 'acme')).toEqual([
+      { rel: 'a/x/acme.md', why: 'name' },
+      { rel: 'a/x/deep/acme.md', why: 'name' },
+      { rel: 'b/acme.md', why: 'name' },
+      { rel: 'a/ACME.md', why: 'any-case' },
+      { rel: 'Acme.md', why: 'any-case' },
+      { rel: 'z/ac-me.md', why: 'similar' },
+    ]);
+    expect(wikiCandidates(i, 'doc.md', 'gone/nothing-like-it')).toEqual([]);
+  });
+  test('render: with a choosing page, several or none is a real link to it, with the heading', async () => {
+    const c = {
+      rootId: 'w', docPath: 'index.md', docUrl: (rel: string) => `/w/${rel}`,
+      wiki: async (t: string[]) => new Map(t.map((x) => [x, resolveWiki(idx, 'index.md', x)])),
+      chooseUrl: (target: string, hash?: string) => `/w/?choose=${encodeURIComponent(target)}&from=index.md${hash ? `#${hash}` : ''}`,
+      exists: async (rels: string[]) => new Set(rels.filter((r) => idx.rels.has(r))),
+    };
+    const h = (await render('[[acme#Plan]] [[nope|N]] [x](gone.md#a) [y](index.md)', c)).html;
+    expect(h).toContain('href="/w/?choose=acme&amp;from=index.md#plan" class="md-local-link wikilink wikilink-ambiguous"');
+    expect(h).toContain('href="/w/?choose=nope&amp;from=index.md" class="md-local-link wikilink wikilink-missing"');
+    expect(h).toContain('href="/w/?choose=gone.md&amp;from=index.md#a" class="md-local-link md-link-missing"');
+    expect(h).toContain('href="/w/index.md" class="md-local-link"');
   });
 });

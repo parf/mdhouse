@@ -153,6 +153,7 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/api/doc', '*', null],
   ['/api/raw', '*', null],
   ['/api/asset', '*', null],
+  ['/api/choose', '*', null],
   ['/api/files', '*', null],
   ['/api/search', '*', null],
   ['/api/recents', '*', null],

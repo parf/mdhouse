@@ -346,6 +346,9 @@ export const api = {
   tree: (root: string, ignored: boolean, reveal: string[] = []) => get<UiTree>('/api/tree', { root, ignored: ignored ? 1 : 0, reveal }),
   /** Every file under a folder (`p` = `<root>/<dir>`), not only Markdown. */
   files: (p: string) => get<{ files: AnyFile[]; capped: boolean }>('/api/files', { p }),
+  /** Where a link that names several pages, or none, could go — ranked by the server. */
+  choose: (root: string, target: string, from: string) =>
+    get<{ target: string; exact?: { rel: string; url: string }; candidates: Array<{ rel: string; url: string; why: 'name' | 'any-case' | 'similar' }> }>('/api/choose', { root, target, from }),
 
   /** `d` is the page's pathname, `/<rootId>/<rel>` — the server maps it back to a root and path. */
   /** A file's payload — or, for a folder named without its slash, the folder page's address. */

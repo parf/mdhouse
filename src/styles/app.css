@@ -1039,7 +1039,8 @@ main {
 /* A link mdhouse made from a file named in the text: green, so it never passes for a written one. */
 .md a.md-file-link, .md a.md-file-link code { color: var(--file-link); }
 /* [[wikilink]]: a found page reads as a link; none or several — dashed and muted, its tooltip says which (text too, not colour alone). */
-.md .wikilink-missing, .md .wikilink-ambiguous { color: var(--fg-muted); border-bottom: 1px dashed currentColor; cursor: help; }
+.md .wikilink-missing, .md .wikilink-ambiguous, .md a.md-link-missing { color: var(--fg-muted); border-bottom: 1px dashed currentColor; text-decoration: none; }
+.md a.md-link-missing::after { content: " ?"; font-size: 0.8em; }
 .md .wikilink-missing::after { content: " ?"; font-size: 0.8em; }
 .md .wikilink-ambiguous::after { content: " ⁇"; font-size: 0.8em; }
 
@@ -2310,6 +2311,10 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .doc-sheet .view-chips { margin-left: 0; }
   .doc-sheet .view-chip { min-height: 44px; padding-inline: 12px; }
 }
+
+/* Where to go? — the choosing page (`?choose=`) */
+.choose-list { padding-left: 1.4em; line-height: 1.9; }
+.choose-why { font-size: 12px; color: var(--fg-muted); margin-left: 6px; }
 
 /* ── Run Flow: its page (`?flow=`) and the header tab ─────────────────── */
 

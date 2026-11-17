@@ -28,6 +28,7 @@ import { AutomationPage } from './ui/AutomationPage';
 import { onAutomation as wantsAutomation } from './ui/automation-model';
 import { FlowPage } from './ui/FlowRun';
 import { NewProjectPage } from './ui/NewProjectPage';
+import { ChoosePage } from './ui/ChoosePage';
 import { flowFrom } from './ui/flow-model';
 import { MD_EXT } from './lib/filetypes';
 import { changeSummary } from './ui/git-state';
@@ -156,6 +157,9 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const onAutomation = route.kind === 'dir' && !route.dir && wantsAutomation(full.includes('?') ? full.slice(full.indexOf('?')) : '');
   /** Create new Project (TBD): `?new-project` on a project's address. */
   const onNewProject = route.kind === 'dir' && !route.dir && new URLSearchParams(full.includes('?') ? full.slice(full.indexOf('?')) : '').has('new-project');
+  /** The choosing page: `?choose=<target>&from=<doc>` on a project's address. */
+  const chooseAt = route.kind === 'dir' && !route.dir ? new URLSearchParams(full.includes('?') ? full.slice(full.indexOf('?')) : '') : null;
+  const choose = chooseAt?.get('choose') ?? null;
   /** The Run Flow page: `?flow=<from>` on a project's address. */
   const flowAt = route.kind === 'dir' && !route.dir ? flowFrom(full.includes('?') ? full.slice(full.indexOf('?')) : '') : null;
 
@@ -771,6 +775,17 @@ function App({ entry: first }: { entry: AdminEntry }) {
             rootUrl={(id) => dirPageUrl('', id)}
             go={go}
             entry={entry}
+          />
+        ) : choose !== null && dirTarget ? (
+          <ChoosePage
+            rootId={dirTarget.rootId}
+            rootName={nameOf(dirTarget.rootId, tree?.root.name ?? '')}
+            target={choose}
+            from={chooseAt?.get('from') ?? ''}
+            go={go}
+            backUrl={chooseAt?.get('from') ? pageUrl(dirTarget.rootId, chooseAt.get('from')!) : dirUrl(dirTarget.rootId, '')}
+            rootUrl={dirUrl(dirTarget.rootId, '')}
+            gear={pageGear}
           />
         ) : onNewProject && dirTarget ? (
           <NewProjectPage go={go} backUrl={dirUrl(dirTarget.rootId, '')} gear={pageGear} />
