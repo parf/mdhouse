@@ -7,7 +7,7 @@ import { mermaidImage } from './mermaid-image';
 import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconEye, IconEyeOff, IconBus } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconCode, IconDoc, IconEye, IconEyeOff, IconBus } from './icons';
 import { AgentBusPanel, type AbState } from './AgentBusPanel';
 import { useViewer } from './viewer';
 import { fileSize, timeAgo } from './format';
@@ -1154,6 +1154,18 @@ export function Doc({
       <span class="lbl">Edit in an external editor</span>
     </a>
   );
+  const editBtn = canEdit && (
+    <button
+      type="button"
+      class="icon-btn doc-src-btn"
+      aria-pressed={sourceOpen}
+      onClick={() => (sourceOpen ? setSourceOpen(false) : openEditor())}
+      title={sourceOpen ? 'Back to the page — unsaved text is kept' : 'Edit the whole source here'}
+    >
+      {sourceOpen ? <IconDoc size={15} /> : <IconCode size={15} />}
+      <span class="lbl">{sourceOpen ? 'Page' : 'Edit source'}</span>
+    </button>
+  );
   /** The file's uncommitted state: one chip that opens Changes scoped to this file, where it is reviewed and committed. */
   const changesUrl = rootInRepo && rootDirUrl ? `${rootDirUrl}?git=changes&file=${encodeURIComponent(doc.rel)}` : null;
   const statusChip = dirty && changesUrl && (
@@ -1311,17 +1323,7 @@ export function Doc({
             {!phone && chips}
           </h1>
           {!phone && gitLinkEl}
-          {canEdit && (
-            <button
-              type="button"
-              class={`doc-edit-btn${sourceOpen ? ' on' : ''}`}
-              aria-pressed={sourceOpen}
-              onClick={() => (sourceOpen ? setSourceOpen(false) : openEditor())}
-              title={sourceOpen ? 'Back to the page — unsaved text is kept' : 'Edit the whole source here'}
-            >
-              {sourceOpen ? 'Page' : 'Edit'}
-            </button>
-          )}
+          {phone && editBtn}
           {phone && (
             <button
               type="button"
@@ -1350,12 +1352,13 @@ export function Doc({
             </span>
           )}
 
-          {/* ✎ hands the file to whatever handles `edit:` URLs (Settings turns it off where nothing does);
-              it sits with the other actions, so the title row keeps one Edit. */}
+          {/* ✎ hands the file to whatever handles `edit:` URLs (Settings turns it off where nothing does).
+              The in-page Edit sits right of it, last in the row; on a phone it stays in the title row. */}
           {!phone && (
             <span class="doc-actions">
               {actionBtns}
               {extEditEl}
+              {editBtn}
             </span>
           )}
         </div>

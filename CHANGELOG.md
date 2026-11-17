@@ -37,6 +37,8 @@
 
 ### Changed
 
+- Document header: Edit becomes a `</>` icon, rightmost in the actions row next to ✎ (external edit); while the source is open it shows the page icon; on a phone it stays in the title row
+
 - Search: remove the header’s R shortcut; both scope switches read Files / RAG Search
 
 - The control socket (`mdhouse exit`, a second `mdhouse <dir>`) moves from the config dir to `$XDG_RUNTIME_DIR/mdhouse/`; this mdhouse still reaches and stops an older one listening in the config dir, an older `mdhouse` command cannot reach a newer daemon

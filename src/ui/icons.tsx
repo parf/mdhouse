@@ -278,3 +278,14 @@ export const IconEdit = (p: Props) =>
     </>,
     p,
   );
+
+/** `</>` — the document's source. */
+export const IconCode = (p: Props) =>
+  svg(
+    <>
+      <polyline points="5,4.5 1.75,8 5,11.5" />
+      <polyline points="11,4.5 14.25,8 11,11.5" />
+      <line x1="9.25" y1="3" x2="6.75" y2="13" />
+    </>,
+    p,
+  );

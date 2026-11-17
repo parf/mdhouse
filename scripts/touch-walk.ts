@@ -155,7 +155,7 @@ if (want('qa')) {
 if (want('edit')) {
   await go('/repo/notes/plan.md');
   await audit('plan-doc');
-  await tap('.doc-edit-btn', 0);
+  await tap('.doc-src-btn', 0);
   await sleep(1200);
   await audit('editor-open');
   await tap('.cm-content', 0);
