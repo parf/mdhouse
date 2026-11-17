@@ -100,6 +100,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   /** Bumped by every live event, so the front page can refetch without a prop for each field. */
   const [revision, setRevision] = useState(0);
+  /** Bumped when only other files than Markdown change: the sidebar's ALL listing follows it. */
+  const [filesRev, setFilesRev] = useState(0);
 
   const [query, setQuery] = useState('');
   const [searchTarget, setSearchTargetState] = useState<SearchTarget>(loadTarget);
@@ -399,6 +401,12 @@ function App({ entry: first }: { entry: AdminEntry }) {
     if (msg.t === 'roots' || msg.t === 'hello') {
       void reloadRoots();
       rereadSettings();
+      return;
+    }
+
+    // Only other files: the sidebar's ALL listing re-reads; the Markdown tree and the page stand.
+    if (msg.t === 'files') {
+      setFilesRev((n) => n + 1);
       return;
     }
 
@@ -732,6 +740,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
           onMark={setMark}
           onHome={() => go('/')}
           onAbout={() => setAboutOpen(true)}
+          filesRev={filesRev}
         />
       )}
 

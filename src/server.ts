@@ -2392,7 +2392,8 @@ export async function serve(opts: ServeOptions) {
       const root = registry.get(ev.rootId);
       const paths = root ? ev.paths.filter((p) => !registry.hidden(root.path, join(root.path, p))) : ev.paths;
       if (ev.paths.length && !paths.length) continue;
-      store.invalidate(ev.rootId, ev.kind === 'git');
+      // Another file than Markdown: the Markdown scans stand; only git's state (untracked) may be new.
+      store.invalidate(ev.rootId, ev.kind !== 'fs');
       server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths }));
     }
   });

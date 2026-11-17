@@ -68,3 +68,31 @@ test('an edited .mdhouseignore or .gitignore sets off an fs event', async () => 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('another file sets off a files event; a dot-folder or node_modules none; with Markdown, fs alone', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mdhouse-watch-files-'));
+  const root: Root = { id: 'r', name: 'r', path: dir, writable: false };
+  const events: WatchEvent[] = [];
+  const watcher = new Watcher((e) => events.push(...e));
+  try {
+    mkdirSync(join(dir, 'node_modules'));
+    mkdirSync(join(dir, '.cache'));
+    watcher.watchRoot(root);
+    await Bun.sleep(150);
+    writeFileSync(join(dir, 'node_modules', 'x.js'), '1');
+    writeFileSync(join(dir, '.cache', 'y'), '1');
+    await Bun.sleep(300);
+    expect(events).toEqual([]);
+    writeFileSync(join(dir, 'pic.png'), '1');
+    await Bun.sleep(300);
+    expect(events.map((e) => e.kind)).toEqual(['files']);
+    events.length = 0;
+    writeFileSync(join(dir, 'b.txt'), '1');
+    writeFileSync(join(dir, 'b.md'), '1');
+    await Bun.sleep(300);
+    expect(events.map((e) => e.kind)).toEqual(['fs']);
+  } finally {
+    watcher.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

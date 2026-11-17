@@ -527,6 +527,8 @@ export type LiveMessage =
   | { t: 'pong' }
   | { t: 'fs'; root: string; paths: string[] }
   | { t: 'git'; root: string; paths: string[] }
+  /** Only other files than Markdown changed: an ALL listing re-reads, the Markdown tree stands. */
+  | { t: 'files'; root: string; paths: string[] }
   /** The served directories changed: one added by a second `mdhouse`, or one removed. */
   | { t: 'roots'; roots: string[] }
   /** An Agent Bus request's progress — every tab gets it; a page keeps its own jobs'. */

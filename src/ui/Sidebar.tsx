@@ -94,6 +94,8 @@ export interface SidebarProps {
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
   onAbout?: () => void;
+  /** Changes when only other files than Markdown change: an ALL tree lists them again. */
+  filesRev: number;
   /** The root's views: their tabs show the tree narrowed to them. */
   views: RootViews;
 }
@@ -134,8 +136,8 @@ export function Sidebar(props: SidebarProps) {
     return () => {
       live = false;
     };
-    // `tree` changes with every rescan: the listing follows it.
-  }, [allTree, tree]);
+    // `tree` changes with every rescan, `filesRev` when only other files change: the listing follows both.
+  }, [allTree, tree, props.filesRev]);
   const listing = allTree && listed && listed.root === tree?.root.id ? listed : null;
   const shown = useMemo(
     () =>

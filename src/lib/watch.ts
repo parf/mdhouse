@@ -12,7 +12,8 @@ import { isAbsolute, relative, sep } from 'node:path';
 import type { Root } from './roots';
 import { MD_EXT } from './filetypes';
 
-export type ChangeKind = 'fs' | 'git';
+/** `fs` a Markdown or ignore file (the tree changes), `files` only other files (an ALL listing changes), `git` git's own state. */
+export type ChangeKind = 'fs' | 'files' | 'git';
 
 export interface WatchEvent {
   kind: ChangeKind;
@@ -27,6 +28,7 @@ export class Watcher {
   private readonly watchers = new Map<string, FSWatcher[]>();
   private readonly pending = new Map<string, Set<string>>();
   private readonly gitDirty = new Set<string>();
+  private readonly filesDirty = new Set<string>();
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly onChange: (events: WatchEvent[]) => void) {}
@@ -78,7 +80,14 @@ export class Watcher {
         return;
       }
       // The ignore files change what the tree lists: the root's `.mdhouseignore`, any `.gitignore`.
-      if (!MD_EXT.test(rel) && rel !== '.mdhouseignore' && !/(^|\/)\.gitignore$/.test(rel)) return;
+      if (!MD_EXT.test(rel) && rel !== '.mdhouseignore' && !/(^|\/)\.gitignore$/.test(rel)) {
+        // Any other file: only an ALL listing shows it — none under a dot-folder or `node_modules`, as `listFiles` walks.
+        if (!rel.split('/').some((seg) => seg.startsWith('.') || seg === 'node_modules')) {
+          this.filesDirty.add(root.id);
+          this.schedule();
+        }
+        return;
+      }
 
       let set = this.pending.get(root.id);
       if (!set) this.pending.set(root.id, (set = new Set()));
@@ -101,6 +110,7 @@ export class Watcher {
     this.watchers.delete(rootId);
     this.pending.delete(rootId);
     this.gitDirty.delete(rootId);
+    this.filesDirty.delete(rootId);
   }
 
   private schedule(): void {
@@ -111,9 +121,12 @@ export class Watcher {
 
       for (const [rootId, paths] of this.pending) events.push({ kind: 'fs', rootId, paths: [...paths] });
       for (const rootId of this.gitDirty) events.push({ kind: 'git', rootId, paths: [] });
+      // A root with a tree change already tells every tab to re-read: no `files` event beside it.
+      for (const rootId of this.filesDirty) if (!this.pending.has(rootId)) events.push({ kind: 'files', rootId, paths: [] });
 
       this.pending.clear();
       this.gitDirty.clear();
+      this.filesDirty.clear();
       if (events.length) this.onChange(events);
     }, DEBOUNCE_MS);
   }
