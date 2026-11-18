@@ -148,7 +148,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
   /** Path and query: `?git` on a folder's url is its git view. */
   const [full, setPath] = useState(() => location.pathname + location.search);
   const path = full.split('?')[0] ?? '';
-  const gitView = /[?&]git(?:[=&]|$)/.test(full);
+  // Active Team access refuses Git for now: a git view address shows the folder instead of a refused page.
+  const gitView = !options.team && /[?&]git(?:[=&]|$)/.test(full);
   const route = useMemo(() => routeOf(path), [path]);
   const docPath = route.kind === 'file' ? route.path : '';
   const currentDocPath = useRef(docPath);
@@ -850,6 +851,21 @@ function App({ entry: first }: { entry: AdminEntry }) {
             gear={pageGear}
             rootId={dirTarget.rootId}
             rootName={nameOf(dirTarget.rootId, tree?.root.name ?? '')}
+          />
+        ) : !docPath && options.team ? (
+          // Active Team access: the front page is the project's folder, not the git digest it refuses.
+          <DirPage
+            chips={chipsFor(rootId, '/')}
+            tree={tree?.root.id === rootId ? tree : null}
+            dir=""
+            onOpen={openFile}
+            fileUrl={fileUrl}
+            dirUrl={(d) => dirPageUrl(d, rootId)}
+            go={go}
+            onAbout={() => setAboutOpen(true)}
+            gear={pageGear}
+            rootId={rootId}
+            rootName={nameOf(rootId, tree?.root.name ?? '')}
           />
         ) : !docPath ? (
           <Home

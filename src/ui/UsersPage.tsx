@@ -103,6 +103,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
           Staged: Team access is not active, so none of this is enforced yet — users, groups and grants are kept for when it is.
         </p>
       )}
+      <Activation snap={snap} working={working} reload={load} setNote={setNote} />
       {note && (
         <p class="settings-hint users-note" role="status">
           {note}
@@ -412,5 +413,78 @@ function AddUser({ snap, working, act }: { snap: TeamSnapshot; working: boolean;
         </div>
       )}
     </form>
+  );
+}
+
+/**
+ * Team access on or off — the owner only, with the typed words. Blockers say why it cannot be turned on; the server's
+ * own configuration can force it off. A switch changes who may open what: the page reloads (a sign-in may follow).
+ */
+function Activation({ snap, working, reload, setNote }: { snap: TeamSnapshot; working: boolean; reload: () => Promise<void>; setNote: (n: string | null) => void }) {
+  const turnOn = !snap.active;
+  const words = turnOn ? 'activate team' : 'deactivate team';
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const going = useRef(false);
+  const blockers = snap.blockers ?? [];
+  const blocked = turnOn && (blockers.length > 0 || !!snap.forcedOff);
+  const submit = async () => {
+    if (typed !== words || blocked || going.current) return;
+    going.current = true;
+    setBusy(true);
+    setErr(null);
+    try {
+      await api.teamActivation(snap.revision, turnOn, words);
+      location.reload();
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        await reload();
+        setNote('Changed elsewhere — reloaded; check it and try again.');
+      } else setErr(isAdminDenial(e) ? NEEDS_ADMIN : (e as Error).message);
+    } finally {
+      going.current = false;
+      setBusy(false);
+    }
+  };
+  return (
+    <section class="users-activation" aria-label="Team access">
+      <p>
+        Team access: <b>{snap.active ? 'active' : 'not active'}</b>
+        {snap.forcedOff && <> — turned off by this server's configuration</>}
+      </p>
+      {blockers.length > 0 && (
+        <div class="users-blockers">
+          <p class="settings-hint">It cannot be turned on yet:</p>
+          <ul>
+            {blockers.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {snap.canActivate ? (
+        !blocked && (
+          <form
+            class="users-activate"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit();
+            }}
+          >
+            <label>
+              {turnOn ? 'To turn it on' : 'To turn it off'}, type <code>{words}</code>
+              <input class="users-input" type="text" value={typed} spellcheck={false} autocomplete="off" disabled={working || busy} onInput={(e) => setTyped((e.target as HTMLInputElement).value)} />
+            </label>
+            <button type="submit" class={turnOn ? 'git-btn primary' : 'git-btn danger'} disabled={working || busy || typed !== words}>
+              {busy ? '…' : turnOn ? 'Activate Team access' : 'Deactivate Team access'}
+            </button>
+            {err && <p class="settings-error">{err}</p>}
+          </form>
+        )
+      ) : (
+        <p class="settings-hint">Only the owner turns Team access on or off.</p>
+      )}
+    </section>
   );
 }

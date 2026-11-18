@@ -43,6 +43,8 @@ export interface Settings {
   autoRwPaths?: string[];
   /** `viewer`: every project is read-only and the page offers nothing to change. Absent from an older server. */
   mode?: InstanceMode;
+  /** Team access is active: Git, flows, Agent Bus and RAG are refused for now. Absent from an older server. */
+  team?: boolean;
 }
 
 export interface RootInfo {
@@ -271,6 +273,12 @@ export interface TeamSnapshot {
   users: TeamUser[];
   groups: TeamGroup[];
   projects: TeamProject[];
+  /** Why Team access cannot be turned on now, in words. */
+  blockers?: string[];
+  /** Turned off by the server's own configuration, whatever is stored. */
+  forcedOff?: boolean;
+  /** This browser is the owner, who alone turns Team access on or off. */
+  canActivate?: boolean;
 }
 export type TeamAction =
   | { action: 'add'; token: string }
@@ -398,6 +406,8 @@ export const api = {
   teamPreview: (login: string) => post<TeamPreview>('/api/team/preview', { login }),
   /** One change at the snapshot's `revision`: the new snapshot, or 409 `stale` when it moved on. */
   teamAct: (revision: string, action: TeamAction) => post<TeamSnapshot>('/api/team', { revision, ...action }),
+  /** Turn Team access on or off: the owner only, with the typed words (`activate team` / `deactivate team`). */
+  teamActivation: (revision: string, active: boolean, confirm: string) => post<TeamSnapshot>('/api/team/activation', { revision, active, confirm }),
   /** Where a link that names several pages, or none, could go — ranked by the server. */
   choose: (root: string, target: string, from: string) =>
     get<{ target: string; exact?: { rel: string; url: string }; candidates: Array<{ rel: string; url: string; why: 'name' | 'any-case' | 'similar'; place: 'same-folder' | 'parent' | 'subfolder' | 'root' | 'other' }> }>('/api/choose', { root, target, from }),
