@@ -198,6 +198,16 @@ function AccessState({ snap, project, user }: { snap: TeamSnapshot; project: Tea
   const eff = project.effective[user.id] ?? null;
   const st = grantState(project, user, snap.groups);
   const how = st.kind === 'direct' ? (st.access === 'none' ? 'direct: no access' : 'direct') : st.kind === 'inherited' ? `from 👥 ${st.from.join(', ')}` : 'no grant';
+  // Staged (Team access not active): nothing is enforced — say so, and show what is configured; "no access" is kept for
+  // a real denial or an explicit No access.
+  if (!snap.active) {
+    const set = st.kind === 'direct' && st.access !== 'none' ? `${ACCESS_WORD[st.access]} ` : st.kind === 'inherited' ? `${ACCESS_WORD[st.access]} ` : '';
+    return (
+      <span class="users-state">
+        <span class="badge users-eff staged">Not enforced</span> <span class="users-how">{set}{how}</span>
+      </span>
+    );
+  }
   return (
     <span class="users-state">
       <span class={`badge users-eff ${eff ?? 'none'}`}>{eff ? ACCESS_WORD[eff] : 'no access'}</span> <span class="users-how">{how}</span>
