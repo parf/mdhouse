@@ -3,7 +3,7 @@ import { adminEntry, onAdminEntry, type AdminEntry } from './ui/admin-entry';
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { hasUnsaved, openTarget } from './ui/tab-presence';
-import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type TeamMe, type UiTree } from './ui/api';
+import { api, ApiError, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type TeamMe, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
 import { accessBadge, customName } from './ui/project-groups';
 import { StoredRwTag, ViewerBadge, ViewerContext } from './ui/viewer';
@@ -81,12 +81,18 @@ function App({ entry: first }: { entry: AdminEntry }) {
       live = false;
     };
   }, [options.team]);
-  /** Log out of Team access, then the sign-in page (a neutral screen when the server has none). */
+  const signingOut = useRef(false);
+  /** Keep the browser signed out until the reader starts another GitHub sign-in. */
   const logout = async () => {
+    if (signingOut.current) return;
+    signingOut.current = true;
     try {
       await api.teamLogout();
-    } finally {
-      location.href = teamMe?.kind === 'login' ? teamMe.login : '/auth/github/login';
+      location.replace('/auth/signed-out');
+    } catch (error) {
+      signingOut.current = false;
+      if (error instanceof ApiError && error.status === 401) location.replace('/auth/signed-out');
+      else window.alert('Could not log out. Try again.');
     }
   };
   // Until the saved settings arrive, nothing that depends on them is drawn — otherwise a ✎
@@ -424,7 +430,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const onLive = useRef<(msg: LiveMessage) => void>(() => {});
   onLive.current = (msg) => {
     if (msg.t === 'auth') {
-      setAuthChanged(true);
+      if (!signingOut.current) setAuthChanged(true);
       return;
     }
     for (const l of liveListeners) l(msg);

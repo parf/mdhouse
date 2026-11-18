@@ -63,6 +63,8 @@ import { TeamSessions } from './lib/team-sessions';
 interface WsData {
   /** The Team account this socket belongs to; its topics follow that account's grants. */
   team?: string;
+  /** A hash of this browser's Team session, used to close its sockets on sign-out. */
+  teamSession?: string;
   /** The grant this socket was last scoped to, by root id: a change of either side is an authorization change. */
   grants?: Map<string, string>;
   asked: string | null;
@@ -626,6 +628,7 @@ export async function serve(opts: ServeOptions) {
   const teamSecure = teamOauthConfig?.callback.protocol === 'https:';
   const teamForcedOff = process.env.MDHOUSE_TEAM === 'off';
   const teamCookieOf = (req: Request): string | null => readCookie(req.headers.get('cookie'), teamCookieName(cookiePort(), teamSecure));
+  const teamSessionOf = (cookie: string): string => createHash('sha256').update(cookie).digest('hex');
   /** The signed-in Team account of a request: its session is live and its account unbanned, now. */
   const teamUserOf = (req: Request, touch = false) => (team.active ? teamSessions.lookup(teamCookieOf(req), touch) : null);
   const actorOf = (req: Request): Actor => {
@@ -1153,12 +1156,26 @@ export async function serve(opts: ServeOptions) {
       '/auth/logout': {
         POST: mutation('admin-session', (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
-          teamSessions.revoke(teamCookieOf(req));
+          const cookie = teamCookieOf(req);
+          teamSessions.revoke(cookie);
+          if (cookie) {
+            const session = teamSessionOf(cookie);
+            for (const ws of sockets) {
+              if (ws.data.teamSession !== session) continue;
+              announceAuth(ws);
+              for (const id of ws.data.grants?.keys() ?? []) ws.unsubscribe(`root:${id}`);
+              ws.close(1008, 'signed out');
+            }
+          }
           const res = noStore(new Response(null, { status: 204 }));
           res.headers.append('set-cookie', teamCookie(teamCookieName(cookiePort(), teamSecure), '', 0, teamSecure));
           return res;
         }),
       },
+      '/auth/signed-out': read(() => noStore(new Response(
+        '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed out · mdhouse</title><main><h1>Signed out</h1><p><a href="/auth/github/login">Sign in with GitHub</a></p></main></html>',
+        { headers: { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': "default-src 'none'; frame-ancestors 'none'" } },
+      ))),
       /** Who the signed-in account is and what it was granted — the page's source for its own projects and write controls. */
       '/api/team/me': read((req) => {
         const member = teamUserOf(req);
@@ -2687,7 +2704,12 @@ export async function serve(opts: ServeOptions) {
         // A cross-site page must not subscribe to the live channel: it names every root and
         // every file as it changes.
         if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
-        const data: WsData = { asked: url.searchParams.get('client'), ua: req.headers.get('user-agent') ?? '', clientId: '', ...(member ? { team: member.id } : {}) };
+        const data: WsData = { asked: url.searchParams.get('client'), ua: req.headers.get('user-agent') ?? '', clientId: '' };
+        const cookie = teamCookieOf(req);
+        if (member && cookie) {
+          data.team = member.id;
+          data.teamSession = teamSessionOf(cookie);
+        }
         if (srv.upgrade(req, { data })) return undefined as unknown as Response;
         return fail(400, 'websocket upgrade failed');
       }

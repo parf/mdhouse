@@ -561,8 +561,13 @@ describe('Team in a running server', () => {
 
   test('sign-out revokes the session; deactivation ends every session and socket and returns to Personal', async () => {
     const bob = await w.login('bob');
+    const signedIn = await w.ws(bob);
     expect((await w.api(bob, '/auth/logout', { method: 'POST' })).status).toBe(204);
     expect((await w.api(bob, '/api/roots')).status).toBe(401);
+    expect(await signedIn.closed).toBe(1008);
+    const signedOut = await w.api(null, '/auth/signed-out');
+    expect(signedOut.status).toBe(200);
+    expect(await signedOut.text()).toContain('href="/auth/github/login"');
     const bob2 = await w.login('bob');
     const socket = await w.ws(bob2);
     expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: false, confirm: 'deactivate team' })).status).toBe(200);

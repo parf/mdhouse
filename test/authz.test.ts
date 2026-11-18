@@ -118,6 +118,7 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/auth/github/login', '*', null],
   ['/auth/github/callback', '*', null],
   ['/auth/logout', 'POST', 'admin-session'],
+  ['/auth/signed-out', '*', null],
   ['/api/team/me', '*', null],
   ['/vendor/mermaid/*', '*', null],
   ['/api/roots', '*', null],

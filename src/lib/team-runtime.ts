@@ -32,6 +32,7 @@ export const TEAM_ROUTES: Record<string, TeamPolicy | { denied: string }> = {
   '* /auth/github/login': 'public',
   '* /auth/github/callback': 'public',
   'POST /auth/logout': 'session',
+  '* /auth/signed-out': 'public',
   '* /api/team/me': 'session',
   '* /': 'shell',
   '* /d': 'shell',
