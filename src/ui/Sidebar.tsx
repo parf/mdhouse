@@ -3,11 +3,12 @@ import { api } from './api';
 import type { AnyFile } from '../lib/scan';
 import { allEntries, loadTreeKind, saveTreeKind, type TreeKind } from './sidebar-kind';
 import { tabFiles, VIEW_IDS, type RootViews, type ViewId } from './views';
-import type { RootInfo } from './api';
+import type { RootInfo, TeamMe } from './api';
 import type { RecentEntry } from '../lib/store';
 import type { UiTree } from './api';
 import { accessBadge } from './project-groups';
 import { StoredRwTag, useViewer, ViewerBadge } from './viewer';
+import { useTeam } from './team';
 import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import type { SearchResult } from '../lib/search';
@@ -95,6 +96,9 @@ export interface SidebarProps {
   /** Leave the open document and show the root's front page. */
   onHome: () => void;
   onAbout?: () => void;
+  /** Active Team access: who this browser is signed in as (`api.teamMe`), or the sign-in address; and how to log out. */
+  teamMe?: TeamMe | null;
+  onLogout?: () => void;
   /** A project action from the chooser: add an existing folder, or create a new project. */
   onProjectAction: (action: 'add' | 'create') => void;
   /** Changes when only other files than Markdown change: an ALL tree lists them again. */
@@ -121,6 +125,9 @@ export function Sidebar(props: SidebarProps) {
   const wide = state === 'open';
   const StateIcon = STATE_ICON[state];
   const viewer = useViewer();
+  const team = useTeam();
+  // Active Team access: RAG is refused, so a remembered RAG Search scope searches Files.
+  const searchTarget = team ? 'files' : props.searchTarget;
 
   // a view's tab: the tree narrowed to its folders and files, muted ones left out
   const entries = props.tab === 'V1' || props.tab === 'V2' ? props.views[props.tab] : null;
@@ -250,7 +257,8 @@ export function Sidebar(props: SidebarProps) {
       )}
 
       <div class="side-tools">
-        {wide && <SearchScope value={props.searchTarget} onPick={props.onSearchTarget} />}
+        {/* Active Team access refuses RAG: Files only. */}
+        {wide && !team && <SearchScope value={searchTarget} onPick={props.onSearchTarget} />}
         {wide && (
           <div class="search-box">
             <span class="mag">
@@ -258,13 +266,13 @@ export function Sidebar(props: SidebarProps) {
             </span>
             <input
               type="search"
-              placeholder={placeholder(props.searchTarget)}
+              placeholder={placeholder(searchTarget)}
               value={query}
               data-search-input
               onInput={(e) => props.onQuery((e.target as HTMLInputElement).value)}
               onKeyDown={(e) => {
                 if (e.key === 'Escape') props.onQuery('');
-                else if (e.key === 'Enter' && props.searchTarget === 'index') {
+                else if (e.key === 'Enter' && searchTarget === 'index') {
                   e.preventDefault();
                   props.onIndexSearch(query);
                 }
@@ -312,7 +320,7 @@ export function Sidebar(props: SidebarProps) {
           })}
         </div>
 
-        {query && wide && props.searchTarget === 'files' && (
+        {query && wide && searchTarget === 'files' && (
           <div class="filters">
             <button class="chip" aria-pressed={props.searchIn.names} onClick={() => props.onSearchIn('names')}>
               names
@@ -365,7 +373,7 @@ export function Sidebar(props: SidebarProps) {
       </div>
 
       <div class="side-body">
-        {query && props.searchTarget === 'index' ? (
+        {query && searchTarget === 'index' ? (
           <p class="empty">Press Enter to search the project's index for “{query}”.</p>
         ) : query ? (
           <SearchResults {...props} sizes={sizes} nameHits={nameHits} />
@@ -408,6 +416,19 @@ export function Sidebar(props: SidebarProps) {
           </span>
         )}
         {tree?.degraded && <span title="git was unavailable; the list came from a filesystem walk">no git</span>}
+        {team && props.teamMe?.kind === 'user' && (
+          <span class="team-me">
+            <span aria-hidden="true">👤</span> <b title={props.teamMe.user.name ?? undefined}>{props.teamMe.user.login}</b>{' '}
+            <button type="button" class="linklike" onClick={props.onLogout}>
+              Log out
+            </button>
+          </span>
+        )}
+        {team && props.teamMe?.kind === 'login' && (
+          <a class="team-me" href={props.teamMe.login}>
+            Sign in
+          </a>
+        )}
       </div>
     </aside>
   );

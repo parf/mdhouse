@@ -24,6 +24,7 @@ import { usePhone } from './phone';
 import { ASK_EVENT, ASK_STATE } from './nav';
 import { FlowBar } from './FlowBar';
 import { follow, HeadTabs } from './PageHead';
+import { useTeam } from './team';
 import { flowPageUrl } from './flow-model';
 import { editTarget, isPageHref } from '../lib/urls';
 import { loadDraft } from './edit-source';
@@ -523,7 +524,9 @@ export function Doc({
   const [abOpen, setAbOpen] = useState(false);
   const [abState, setAbState] = useState<AbState>('idle');
   // A Viewer sends nothing to agents, so the button, the panel and the `a` key are not there at all.
-  const abOn = !viewer && doc?.kind === 'md' && !!doc.ab && !doc.reference;
+  const team = useTeam();
+  // Active Team access refuses the Agent Bus and Git for now: no ask button, no Git link, chip or history.
+  const abOn = !viewer && !team && doc?.kind === 'md' && !!doc.ab && !doc.reference;
   /** The panel takes the right side; the left sidebar closes to make room. */
   const openAb = () => {
     setAbOpen(true);
@@ -1133,7 +1136,7 @@ export function Doc({
     </button>
   );
 
-  const gitLinkEl = rootInRepo && rootGitUrl && (
+  const gitLinkEl = rootInRepo && rootGitUrl && !team && (
     <a
       class="icon-btn git-link"
       href={rootGitUrl}
@@ -1169,7 +1172,7 @@ export function Doc({
   );
   /** The file's uncommitted state: one chip that opens Changes scoped to this file, where it is reviewed and committed. */
   const changesUrl = rootInRepo && rootDirUrl ? `${rootDirUrl}?git=changes&file=${encodeURIComponent(doc.rel)}` : null;
-  const statusChip = dirty && changesUrl && (
+  const statusChip = dirty && changesUrl && !team && (
     <a class="status-chip" href={changesUrl} title="Review and commit this file in Changes" onClick={(e) => follow(e, () => onNavigate(changesUrl))}>
       {doc.status === 'untracked' ? 'untracked' : 'modified'} · Changes
     </a>
@@ -1450,7 +1453,7 @@ export function Doc({
             </details>
           )}
           <History
-            shown={historyShown}
+            shown={historyShown && !team}
             log={log}
             failed={logFailed}
             activeRev={diffOn ? diffRev : null}

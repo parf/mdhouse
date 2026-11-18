@@ -3,10 +3,11 @@ import { adminEntry, onAdminEntry, type AdminEntry } from './ui/admin-entry';
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { hasUnsaved, openTarget } from './ui/tab-presence';
-import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type UiTree } from './ui/api';
+import { api, connectLive, liveListeners, type DocPayload, type LiveMessage, type RootInfo, type Settings as Options, type TeamMe, type UiTree } from './ui/api';
 import { pageTitle, rootLabel } from './ui/format';
 import { accessBadge, customName } from './ui/project-groups';
 import { StoredRwTag, ViewerBadge, ViewerContext } from './ui/viewer';
+import { TeamContext } from './ui/team';
 import { isViewer, VIEWER_DENIED } from './ui/viewer-text';
 import { parentScope } from './ui/git-state';
 import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from './ui/doc-refresh';
@@ -70,6 +71,24 @@ function App({ entry: first }: { entry: AdminEntry }) {
   useEffect(() => onAdminEntry((outcome) => setEntry({ outcome })), []);
   const [roots, setRoots] = useState<RootInfo[]>([]);
   const [options, setOptions] = useState<Options>({ editLink: true, editScheme: 'edit', autoRw: true, me: '' });
+  /** Under active Team access: who this browser is signed in as, or where to sign in. */
+  const [teamMe, setTeamMe] = useState<TeamMe | null>(null);
+  useEffect(() => {
+    if (!options.team) return setTeamMe(null);
+    let live = true;
+    api.teamMe().then((m) => live && setTeamMe(m), () => live && setTeamMe(null));
+    return () => {
+      live = false;
+    };
+  }, [options.team]);
+  /** Log out of Team access, then the sign-in page (a neutral screen when the server has none). */
+  const logout = async () => {
+    try {
+      await api.teamLogout();
+    } finally {
+      location.href = teamMe?.kind === 'login' ? teamMe.login : '/auth/github/login';
+    }
+  };
   // Until the saved settings arrive, nothing that depends on them is drawn — otherwise a ✎
   // turned off in Settings flashed on every load.
   const [optionsLoaded, setOptionsLoaded] = useState(false);
@@ -440,6 +459,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
     // File notifications may change content; root Git notifications change metadata/history.
     if (doc && msg.root === doc.root) {
       if (msg.t === 'fs' && doc.rel && msg.paths.includes(doc.rel)) refreshDoc(true);
+      // Team access names no paths on its root events (`[]`): any one may be this document, or a page its wikilinks name.
+      else if (msg.t === 'fs' && doc.rel && options.team && !msg.paths.length) refreshDoc(!doc.wikilinks);
       // Its wikilinks may name another page now: render again, not "unchanged" — the text is the same.
       else if (msg.t === 'fs' && doc.wikilinks && msg.paths.some((p) => p !== doc.rel && MD_EXT.test(p))) refreshDoc();
       else if (msg.t === 'git') refreshDocMetadata();
@@ -689,6 +710,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
   return (
     <ViewerContext.Provider value={viewer}>
+    <TeamContext.Provider value={!!options.team}>
     <div class="app" data-sidebar={sidebar}>
       {sidebar === 'off' && (
         <div class="topstrip">
@@ -740,6 +762,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
           live={live}
           onCycleState={cycle}
           onPickRoot={pickRoot}
+          teamMe={teamMe}
+          onLogout={() => void logout()}
           onProjectAction={(a) => go(a === 'add' ? '/settings#add-project' : `${dirUrl(rootId, '')}?new-project`)}
           onTab={(tab) => {
             setQuery('');
@@ -939,6 +963,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
+    </TeamContext.Provider>
     </ViewerContext.Provider>
   );
 }

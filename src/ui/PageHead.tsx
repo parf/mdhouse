@@ -1,5 +1,6 @@
 import { dirUrl as rootPageUrl } from '../lib/urls';
 import { flowPageUrl } from './flow-model';
+import { useTeam } from './team';
 import { IconClock, IconDiff, IconDoc, IconGit, IconGitMark, IconStar, IconUser } from './icons';
 
 export type HomeView = 'favorites' | 'recent' | 'mine' | 'changes' | 'commits' | 'files';
@@ -52,6 +53,8 @@ function Link(props: { href: string; go: (url: string) => void; class?: string; 
  * title row for its project. `view` marks the open tab; null marks none.
  */
 export function HeadTabs({ dirUrl, view, repo, go, flowHref, flowOn }: { dirUrl: string; view: HomeView | null; repo: boolean; go: (url: string) => void; flowHref?: string; flowOn?: boolean }) {
+  // Active Team access: every tab here is a Git view or Run Flow, which it refuses — none offered.
+  if (useTeam()) return null;
   return (
     <div class="tabs head-tabs" role="tablist">
       {repo && (

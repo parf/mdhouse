@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { IconBus, IconDoc, IconGit, IconSearch } from './icons';
+import { useTeam } from './team';
 import { NAV, badgeText, changesUrl, currentNav, navItems, type NavId, type NavState } from './nav';
 import { follow } from './PageHead';
 
@@ -31,7 +32,9 @@ export function PhoneNav(props: Props) {
     };
   }, []);
   if (typing) return null;
-  const ids = navItems(props);
+  // Active Team access refuses Git and the Agent Bus: Files and Search only.
+  const team = useTeam();
+  const ids = navItems(props).filter((id) => !team || (id !== 'changes' && id !== 'ask'));
   const current = currentNav(props);
   const href = changesUrl(props.rootId);
   return (

@@ -285,6 +285,12 @@ export type TeamAction =
   | { action: 'groups'; userId: string; groups: string }
   | { action: 'ban'; userId: string; banned: boolean }
   | { action: 'grant'; projectId: string; subject: 'user' | 'group'; subjectId: string; access: TeamAccess | 'none' | null };
+/** `GET /api/team/me`: who this browser is signed in as under Team access — or off, or a sign-in is needed. */
+export type TeamMe =
+  | { kind: 'off' }
+  | { kind: 'login'; login: string }
+  | { kind: 'user'; user: { id: string; login: string; name: string | null; groups: string[] }; admin: boolean; grants: Record<string, TeamAccess> };
+
 export interface TeamPreview {
   token: string;
   user: { id: string; login: string; name: string | null; avatar: string | null };
@@ -406,6 +412,19 @@ export const api = {
   teamPreview: (login: string) => post<TeamPreview>('/api/team/preview', { login }),
   /** One change at the snapshot's `revision`: the new snapshot, or 409 `stale` when it moved on. */
   teamAct: (revision: string, action: TeamAction) => post<TeamSnapshot>('/api/team', { revision, ...action }),
+  teamMe: async (): Promise<TeamMe> => {
+    const res = await fetch('/api/team/me');
+    if (res.status === 404) return { kind: 'off' };
+    const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (res.status === 401) return { kind: 'login', login: typeof body?.login === 'string' && body.login.startsWith('/') ? body.login : '/auth/github/login' };
+    if (!res.ok || !body?.user) throw new ApiError(`${res.status} ${res.statusText}`, res.status);
+    return { kind: 'user', ...(body as Omit<Extract<TeamMe, { kind: 'user' }>, 'kind'>) };
+  },
+  /** End this browser's Team session (204). */
+  teamLogout: async (): Promise<void> => {
+    const res = await fetch('/auth/logout', { method: 'POST' });
+    if (!res.ok) throw await refusal(res);
+  },
   /** Turn Team access on or off: the owner only, with the typed words (`activate team` / `deactivate team`). */
   teamActivation: (revision: string, active: boolean, confirm: string) => post<TeamSnapshot>('/api/team/activation', { revision, active, confirm }),
   /** Where a link that names several pages, or none, could go — ranked by the server. */
