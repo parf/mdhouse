@@ -278,7 +278,11 @@ export interface TeamSnapshot {
   /** Turned off by the server's own configuration, whatever is stored. */
   forcedOff?: boolean;
   /** This browser is the owner, who alone turns Team access on or off. */
+  owner?: boolean;
+  /** The owner may turn it on now (staged and ready). */
   canActivate?: boolean;
+  /** The owner may turn it off now (active). */
+  canDeactivate?: boolean;
 }
 export type TeamAction =
   | { action: 'add'; token: string }

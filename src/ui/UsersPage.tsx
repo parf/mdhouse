@@ -428,7 +428,9 @@ function Activation({ snap, working, reload, setNote }: { snap: TeamSnapshot; wo
   const [err, setErr] = useState<string | null>(null);
   const going = useRef(false);
   const blockers = snap.blockers ?? [];
-  const blocked = turnOn && (blockers.length > 0 || !!snap.forcedOff);
+  // The server says what the owner may do now: turn it on (staged, ready) or off (active).
+  const can = turnOn ? !!snap.canActivate : !!snap.canDeactivate;
+  const blocked = !can;
   const submit = async () => {
     if (typed !== words || blocked || going.current) return;
     going.current = true;
@@ -463,7 +465,8 @@ function Activation({ snap, working, reload, setNote }: { snap: TeamSnapshot; wo
           </ul>
         </div>
       )}
-      {snap.canActivate ? (
+      {snap.owner && blocked && !blockers.length && <p class="settings-hint">{turnOn ? 'It cannot be turned on now.' : 'It cannot be turned off now.'}</p>}
+      {snap.owner ? (
         !blocked && (
           <form
             class="users-activate"
