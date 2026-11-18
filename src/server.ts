@@ -892,21 +892,30 @@ export async function serve(opts: ServeOptions) {
   /** The project roots a Team account may read now. */
   const grantedRootIds = (userId: string): string[] =>
     team.state ? registry.all().filter((r) => grantFor(team.state!, userId, r, prefs.mode() === 'viewer') !== null).map((r) => r.id) : [];
+  /** Tells a socket its authorization changed — no data — so the page re-enters through normal admission. Always sent before an unsubscribe or a close. */
+  const announceAuth = (ws: ServerWebSocket<WsData>): void => {
+    try { ws.send('{"t":"auth"}'); } catch { /* a socket already gone has nothing to learn */ }
+  };
   const syncSockets = (): void => {
     for (const ws of sockets) {
       if (!team.active || !team.state || !ws.data.team) {
         // Team switched on closes the Personal sockets; switched off closes the account sockets.
-        if (team.active !== !!ws.data.team) ws.close(1008, team.active ? 'team activated' : 'team deactivated');
+        if (team.active !== !!ws.data.team) {
+          announceAuth(ws);
+          ws.close(1008, team.active ? 'team activated' : 'team deactivated');
+        }
         continue;
       }
       const user = team.state.users.find((candidate) => candidate.id === ws.data.team);
       if (!user || user.banned) {
+        announceAuth(ws);
         ws.close(1008, 'access revoked');
         continue;
       }
       const granted = new Set(grantedRootIds(user.id).map((id) => `root:${id}`));
       const held = ws.data.topics ?? new Set<string>();
       let changed = false;
+      if ([...held].some((topic) => !granted.has(topic))) announceAuth(ws);
       for (const topic of held) if (!granted.has(topic)) { ws.unsubscribe(topic); held.delete(topic); changed = true; }
       for (const topic of granted) if (!held.has(topic)) { ws.subscribe(topic); held.add(topic); changed = true; }
       ws.data.topics = held;
@@ -2706,7 +2715,8 @@ export async function serve(opts: ServeOptions) {
   const publishChange = (ev: WatchEvent, paths: string[]): void => {
     // Another file than Markdown: the Markdown scans stand; only git's state (untracked) may be new.
     store.invalidate(ev.rootId, ev.kind !== 'fs');
-    server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths }));
+    // Under Team an event names only the root: no file path leaves with it, the page re-reads what it shows.
+    server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths: team.active ? [] : paths }));
   };
   const watcher = new Watcher((events) => {
     for (const ev of events) {

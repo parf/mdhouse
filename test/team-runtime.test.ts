@@ -484,6 +484,7 @@ describe('Team in a running server', () => {
     await writeFile(join(w.base, 'a', 'new.md'), '# new\n');
     await writeFile(join(w.base, 'b', 'new.md'), '# new\n');
     await settle(900);
+    expect(live.messages.slice(1).filter((m) => m.root).every((m) => m.paths.length === 0)).toBe(true);
     const heard = live.messages.slice(1).map((m) => m.root).filter(Boolean);
     expect(heard).toContain(w.a.id);
     expect(heard).not.toContain(w.b.id);
@@ -492,7 +493,10 @@ describe('Team in a running server', () => {
     const before = live.messages.length;
     expect((await grant(w, w.a, 'user', bobId, 'none')).status).toBe(200);
     await settle(100);
-    expect(live.messages.slice(before)).toContainEqual({ t: 'roots', roots: [] });
+    const told = live.messages.slice(before);
+    expect(told).toContainEqual({ t: 'roots', roots: [] });
+    expect(told.findIndex((m) => m.t === 'auth')).toBeGreaterThanOrEqual(0);
+    expect(told.findIndex((m) => m.t === 'auth')).toBeLessThan(told.findIndex((m) => m.t === 'roots'));
     const n = live.messages.length;
     await writeFile(join(w.base, 'a', 'later.md'), '# later\n');
     await settle(900);
@@ -505,6 +509,7 @@ describe('Team in a running server', () => {
     const aliceId = team.users.find((u: { login: string }) => u.login === 'alice').id;
     expect((await w.update({ action: 'ban', userId: aliceId, banned: true })).status).toBe(200);
     expect(await socket.closed).toBe(1008);
+    expect(socket.messages.map((m) => m.t)).toContain('auth');
     const r = await w.api(alice, '/api/roots');
     expect([r.status, (await r.json()).reason]).toEqual([401, 'login']);
     expect(await w.login('alice')).toBe('FAILED:403');
