@@ -155,6 +155,9 @@ systemd user unit `mdhouse.service` (`ExecStart=bun …/bin/mdhouse --fg`, saved
 `~/.config/mdhouse/prefs.json`, `Restart=on-failure`). It runs this clone's code, so a reload
 is all a code change needs — no build step.
 
+After verifying a change that needs a reload, restart the local `:7777` service using the procedure
+below. The owner authorized this on 2026-11-17.
+
 ```sh
 systemctl --user start   mdhouse.service
 systemctl --user stop    mdhouse.service
