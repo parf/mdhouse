@@ -28,6 +28,8 @@ export const dirUrl = (rootId: string, dir: string): string =>
 export type Route =
   | { kind: 'home' }
   | { kind: 'settings' }
+  /** `/settings/users`: Team users, groups, bans and project grants. */
+  | { kind: 'users' }
   | { kind: 'rag' }
   | { kind: 'dir'; rootId: string; dir: string }
   /** `path`: the pathname as written, for `/api/doc?d=`. */
@@ -37,6 +39,7 @@ export type Route =
 export function routeOf(pathname: string): Route {
   if (pathname === '/' || pathname === '') return { kind: 'home' };
   if (pathname === '/settings') return { kind: 'settings' };
+  if (pathname === '/settings/users') return { kind: 'users' };
   if (pathname === '/rag') return { kind: 'rag' };
   const segs = pathname.slice(1).split('/');
   if (segs.length === 1 || pathname.endsWith('/')) {

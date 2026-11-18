@@ -238,6 +238,50 @@ async function get<T>(
   return res.json() as Promise<T>;
 }
 
+/** `GET /api/team`: Team users, groups and every project's grants (an administrator only). */
+export type TeamAccess = 'ro' | 'rw';
+export interface TeamUser {
+  id: string;
+  login: string;
+  name: string | null;
+  /** Group ids, `all-users` included. */
+  groups: string[];
+  banned: boolean;
+}
+export interface TeamGroup {
+  id: string;
+  name: string;
+  builtin: boolean;
+}
+export interface TeamProject {
+  id: string;
+  name: string;
+  path: string;
+  writable: boolean;
+  grants: { users: Record<string, TeamAccess | 'none'>; groups: Record<string, TeamAccess> };
+  /** Each user's access as it would be enforced. */
+  effective: Record<string, TeamAccess | null>;
+}
+export interface TeamSnapshot {
+  revision: string;
+  /** Team access is enforced; false: staged configuration only. */
+  active: boolean;
+  oauthReady: boolean;
+  adminId: string | null;
+  users: TeamUser[];
+  groups: TeamGroup[];
+  projects: TeamProject[];
+}
+export type TeamAction =
+  | { action: 'add'; token: string }
+  | { action: 'groups'; userId: string; groups: string }
+  | { action: 'ban'; userId: string; banned: boolean }
+  | { action: 'grant'; projectId: string; subject: 'user' | 'group'; subjectId: string; access: TeamAccess | 'none' | null };
+export interface TeamPreview {
+  token: string;
+  user: { id: string; login: string; name: string | null; avatar: string | null };
+}
+
 /** `/api/rag`: the project's RAG source (`source` null: none registered), or why it cannot be read. */
 export interface RagStatus {
   enabled: boolean;
@@ -346,6 +390,14 @@ export const api = {
   tree: (root: string, ignored: boolean, reveal: string[] = []) => get<UiTree>('/api/tree', { root, ignored: ignored ? 1 : 0, reveal }),
   /** Every file under a folder (`p` = `<root>/<dir>`), not only Markdown. */
   files: (p: string) => get<{ files: AnyFile[]; capped: boolean }>('/api/files', { p }),
+  team: async (): Promise<TeamSnapshot> => {
+    const res = await fetch('/api/team');
+    if (!res.ok) throw await refusal(res);
+    return res.json() as Promise<TeamSnapshot>;
+  },
+  teamPreview: (login: string) => post<TeamPreview>('/api/team/preview', { login }),
+  /** One change at the snapshot's `revision`: the new snapshot, or 409 `stale` when it moved on. */
+  teamAct: (revision: string, action: TeamAction) => post<TeamSnapshot>('/api/team', { revision, ...action }),
   /** Where a link that names several pages, or none, could go — ranked by the server. */
   choose: (root: string, target: string, from: string) =>
     get<{ target: string; exact?: { rel: string; url: string }; candidates: Array<{ rel: string; url: string; why: 'name' | 'any-case' | 'similar'; place: 'same-folder' | 'parent' | 'subfolder' | 'root' | 'other' }> }>('/api/choose', { root, target, from }),

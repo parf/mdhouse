@@ -4,6 +4,8 @@
 
 ### Added
 
+- Users page (`/settings/users`, from Settings and each project): Team users with 👥 group badges and filters (All Users first, counts include banned users), each user's projects or each project's 👥 groups and 👤 users with RO / RW (both empty: inherit) and No access, effective access and where it comes from, a group field (spaces or commas; a new name makes a group), Ban / Unban with confirmation, Add user (GitHub username → preview → Confirm; the first becomes the administrator). Until Team access is active it says the configuration is staged — nothing enforced
+
 - Wikilinks: `[[page]]`, `[[path/page]]`, `[[page|label]]`, `[[page#Heading]]` link to a page of the same project — from the document's folder, then the root, `.md` optional; a bare name is the one page of that name anywhere in it. A page that is missing, or a name several pages share, is marked, and a click opens **Where to go?** — every file of that name in the project, by place: this folder, its parent, its subfolders (`done/` and `wiki/` first), the root, elsewhere; then same name, any case, similar — or none and the way back; nothing guessed or created; a relative link to a missing file of any type opens it too and offers that type only; a page added or renamed shows at once. Not in code; `![[embeds]]` stay text
 
 - Project chooser: `Add new Project…` (Settings' Add project, its path field focused) and `Create new Project…` under a separator, apart from the projects; Create opens a page that says what creating a project will ask — not available yet, it creates nothing

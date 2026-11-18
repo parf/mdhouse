@@ -1,3 +1,4 @@
+import { usersUrl } from './UsersPage';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbConfig, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
@@ -513,7 +514,12 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       </section>
 
       <section class="settings-projects">
-        <h2>Projects</h2>
+        <h2>
+          Projects{' '}
+          <a class="settings-users-link" href={usersUrl()} onClick={(e) => follow(e, () => go(usersUrl()))}>
+            👤 Users
+          </a>
+        </h2>
         <div class="projects-pane">
           <nav class="project-list" aria-label="Projects">
             {groupProjects(roots).map((group) => (
@@ -551,6 +557,13 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   {project.name}
                 </a>
               </h3>
+              {project.kind !== 'reference' && (
+                <p class="project-users">
+                  <a href={usersUrl({ project: project.id })} onClick={(e) => follow(e, () => go(usersUrl({ project: project.id })))}>
+                    👥 Who can open {project.name}
+                  </a>
+                </p>
+              )}
               <dl class="project-facts">
                 {project.kind !== 'reference' && (
                   <>

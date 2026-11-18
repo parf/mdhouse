@@ -29,6 +29,7 @@ import { onAutomation as wantsAutomation } from './ui/automation-model';
 import { FlowPage } from './ui/FlowRun';
 import { NewProjectPage } from './ui/NewProjectPage';
 import { ChoosePage } from './ui/ChoosePage';
+import { UsersPage } from './ui/UsersPage';
 import { flowFrom } from './ui/flow-model';
 import { MD_EXT } from './lib/filetypes';
 import { changeSummary } from './ui/git-state';
@@ -153,6 +154,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const currentDocPath = useRef(docPath);
   currentDocPath.current = docPath;
   const onSettings = route.kind === 'settings';
+  const onUsers = route.kind === 'users';
   const onRag = route.kind === 'rag';
   const onAutomation = route.kind === 'dir' && !route.dir && wantsAutomation(full.includes('?') ? full.slice(full.indexOf('?')) : '');
   /** Create new Project (TBD): `?new-project` on a project's address. */
@@ -606,7 +608,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
       const r = roots.find((x) => x.id === id);
       return r ? (customName(r) ?? rootLabel(r.path)) : '';
     };
-    if (onSettings) document.title = pageTitle({ settings: true });
+    if (onUsers) document.title = 'Users - MDHOUSE';
+    else if (onSettings) document.title = pageTitle({ settings: true });
     else if (onRag) document.title = pageTitle({ rag: true });
     else if (dirTarget) document.title = pageTitle({ rel: dirTarget.dir, folder: true, root: rootName(dirTarget.rootId) });
     else if (docPath && doc) document.title = pageTitle({ rel: doc.rel, root: rootName(doc.root) });
@@ -622,7 +625,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       document.title = pageTitle({ rel: rel.join('/'), root: rootName(id) });
     }
     else if (!docPath) document.title = pageTitle({ root: rootName(tree?.root.id ?? '') });
-  }, [onSettings, onRag, docPath, doc?.rel, doc?.root, dirTarget?.rootId, dirTarget?.dir, tree?.root.id, roots]);
+  }, [onUsers, onSettings, onRag, docPath, doc?.rel, doc?.root, dirTarget?.rootId, dirTarget?.dir, tree?.root.id, roots]);
 
   const toggleDir = useCallback((dirPath: string) => {
     setExpanded((prev) => {
@@ -651,8 +654,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const gear = (extra = '') => (
     <button
       class={`icon-btn${extra ? ` ${extra}` : ''}`}
-      aria-pressed={onSettings}
-      onClick={() => go(onSettings ? '/' : '/settings')}
+      aria-pressed={onSettings || onUsers}
+      onClick={() => go(onSettings || onUsers ? '/' : '/settings')}
       title={onSettings ? 'Close settings' : 'Settings'}
       aria-label="Settings"
     >
@@ -768,6 +771,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
         {/* The ⚙ sits in each page's own header row; with the sidebar off the top bar has it. */}
         {onRag ? (
           <RagPage search={full.slice(path.length)} rootId={rootId} roots={roots} go={go} gear={pageGear} onFiles={leaveRag} />
+        ) : onUsers ? (
+          <UsersPage search={full.slice(path.length)} go={go} gear={pageGear} />
         ) : onSettings ? (
           <Settings
             roots={roots}

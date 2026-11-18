@@ -2468,3 +2468,40 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 @media (pointer: coarse) {
   .auto-actions .rag-act { min-height: 44px; padding-inline: 14px; }
 }
+
+/* ── Users (`/settings/users`): lists on the left, the selection's grants on the right ── */
+.users-page { max-width: 1100px; }
+.settings-users-link, .project-users a { font-size: 13px; font-weight: 500; margin-left: 10px; }
+.project-users { margin: 2px 0 8px; }
+.users-staged { padding: 8px 12px; border: 1px solid var(--warn); border-radius: var(--radius); color: var(--warn); font-size: 13px; }
+.users-panes { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.users-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.users-list { list-style: none; margin: 0 0 12px; padding: 0; }
+.users-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 4px 6px; border-radius: var(--radius); }
+.users-list li.banned .users-row { color: var(--fg-muted); text-decoration: line-through; }
+.users-row { text-decoration: none; color: var(--fg); }
+.users-row[aria-current="true"] { color: var(--accent); font-weight: 600; }
+.users-name { color: var(--fg-muted); font-size: 12.5px; }
+.users-badges { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.users-badges .badge, .users-detail .badge { font-size: 11px; padding: 0 5px; border: 1px solid var(--border-strong); border-radius: 3px; color: var(--fg-muted); }
+.badge.users-admin { color: var(--accent); border-color: var(--accent); }
+.badge.users-banned { color: var(--danger); border-color: var(--danger); }
+.badge.users-eff.rw { color: var(--ok); border-color: var(--ok); }
+.badge.users-eff.ro { color: var(--warn); border-color: var(--warn); }
+.users-sub { font-size: 13px; margin: 14px 0 6px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.users-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.users-table td { padding: 4px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
+.users-table tr.banned td:first-child { opacity: 0.6; }
+.users-ticks { display: inline-flex; gap: 12px; white-space: nowrap; }
+.users-tick { display: inline-flex; align-items: center; gap: 4px; }
+.users-how { font-size: 12px; color: var(--fg-muted); }
+.users-groups { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin: 10px 0; }
+.users-groups label { display: grid; gap: 4px; flex: 1 1 18em; font-size: 13px; }
+.users-preview { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); }
+@media (max-width: 860px) { .users-panes { grid-template-columns: 1fr; } }
+@media (pointer: coarse) { .users-tick { min-height: 44px; } .users-tick input { width: 22px; height: 22px; } .users-row { display: inline-block; padding: 10px 0; } }
+.users-page .git-btn.danger { color: var(--danger); border-color: var(--danger); }
+.users-detail h2 { font-size: 18px; font-weight: 650; color: var(--fg); text-transform: none; letter-spacing: normal; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.users-input { font: inherit; font-size: 14px; padding: 5px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); box-sizing: border-box; width: 100%; max-width: 28em; }
+.users-add .users-input { width: auto; max-width: 100%; }
+@media (pointer: coarse) { .users-input { min-height: 44px; font-size: 16px; } }
