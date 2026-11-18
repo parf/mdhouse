@@ -206,6 +206,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Acceptance: from a clean account, an AI follows `install.md`, creates one project workspace and opens it writable in mdhouse
   - Acceptance: a symlink from the workspace cannot write outside the workspace root
   - Acceptance: `Settings → Projects` has Add project; it accepts a path and RW/RO, then uses the same canonical add path as the CLI
+  - Project settings use a grouped picker on narrow screens, project links in the card header, a labeled add form, and a right-aligned removal action. Scratch Chrome verified the picker, add form, Agent Bus disclosure, User Access link and cancellation of the named removal prompt.
   - Acceptance: saved roots show no saved badge; session-only roots show `[unsaved]`
   - Acceptance: clicking `[unsaved]` asks before saving the canonical root and its current RW/RO mode to prefs, then removes the badge without restarting
   - Acceptance: every root shows `[RW]` or `[RO]`; clicking it asks before switching immediately to the opposite mode

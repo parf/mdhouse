@@ -165,6 +165,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   // The project whose details show; kept by id, the first one when it is gone.
   const [picked, setPicked] = useState<string | null>(null);
   const project = selectedProject(roots, picked);
+  const projectGroups = groupProjects(roots);
 
   // The project's own name as typed, saved on Enter or leaving the field; a refusal keeps it to fix or retry.
   const ownName = project ? (customName(project) ?? '') : '';
@@ -512,18 +513,20 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       </section>
 
       <section class="settings-projects">
-        <h2>
-          Projects{' '}
-          <a class="settings-users-link" href={usersUrl()} onClick={(e) => follow(e, () => go(usersUrl()))}>
-            👤 Users
-          </a>
-          <a class="settings-users-link" href={usersUrl({ view: 'groups' })} onClick={(e) => follow(e, () => go(usersUrl({ view: 'groups' })))}>
-            👥 Groups
-          </a>
-        </h2>
+        <header class="projects-heading">
+          <h2>Projects</h2>
+          <nav class="project-links" aria-label="Manage people">
+            <a href={usersUrl()} onClick={(e) => follow(e, () => go(usersUrl()))}>
+              👤 Users
+            </a>
+            <a href={usersUrl({ view: 'groups' })} onClick={(e) => follow(e, () => go(usersUrl({ view: 'groups' })))}>
+              👥 Groups
+            </a>
+          </nav>
+        </header>
         <div class="projects-pane">
           <nav class="project-list" aria-label="Projects">
-            {groupProjects(roots).map((group) => (
+            {projectGroups.map((group) => (
               <div class="project-group" key={group.key}>
                 <h3>{group.title}</h3>
                 {group.roots.map((root) => (
@@ -542,29 +545,48 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               </div>
             ))}
           </nav>
+          {project && roots.length > 1 && (
+            <label class="project-picker">
+              <span>Project</span>
+              <select class="ab-select" value={project.id} onChange={(e) => setPicked(e.currentTarget.value)}>
+                {projectGroups.map((group) => (
+                  <optgroup key={group.key} label={group.title}>
+                    {group.roots.map((root) => (
+                      <option key={root.id} value={root.id}>{root.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          )}
           {project && (
             <div class="project-detail" role="region" aria-label={`Project ${project.name}`}>
-              <h3>
-                <a
-                  class="name"
-                  href={rootUrl(project.id)}
-                  title={`${project.name}/ — every file, as a list`}
-                  onClick={(e) => {
-                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-                    e.preventDefault();
-                    go(rootUrl(project.id));
-                  }}
-                >
-                  {project.name}
-                </a>
-              </h3>
-              {project.kind !== 'reference' && (
-                <p class="project-users">
-                  <a href={usersUrl({ project: project.id })} onClick={(e) => follow(e, () => go(usersUrl({ project: project.id })))}>
-                    👥 Who can open {project.name}
+              <header class="project-detail-heading">
+                <h3>
+                  <a
+                    class="name"
+                    href={rootUrl(project.id)}
+                    title={`${project.name}/ — every file, as a list`}
+                    onClick={(e) => {
+                      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                      e.preventDefault();
+                      go(rootUrl(project.id));
+                    }}
+                  >
+                    {project.name}
                   </a>
-                </p>
-              )}
+                </h3>
+                {project.kind !== 'reference' && (
+                  <nav class="project-links" aria-label={`Manage ${project.name}`}>
+                    <a href={usersUrl({ project: project.id })} onClick={(e) => follow(e, () => go(usersUrl({ project: project.id })))}>
+                      👥 User Access
+                    </a>
+                    <a href={automationUrl(project.id)} onClick={(e) => follow(e, () => go(automationUrl(project.id)))}>
+                      Scheduled runs
+                    </a>
+                  </nav>
+                )}
+              </header>
               <dl class="project-facts">
                 {project.kind !== 'reference' && (
                   <>
@@ -602,8 +624,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 {(!viewer || isAdmin || accessMode(project) === 'rw') && (
                   <>
                 <dt>
-                  Access{' '}
-                  <Info label="About access">
+                  File access{' '}
+                  <Info label="About file access">
                     <b>RW</b>: pages can be edited and saved. <b>RO</b>: view only. Click <code>[RW]</code> / <code>[RO]</code> to switch.
                     {!project.saved && ' Unsaved project: the choice lasts until mdhouse stops.'} From a terminal:{' '}
                     <code>mdhouse &lt;dir&gt; -p --rw</code> adds a project kept on every start, with write access.
@@ -657,8 +679,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   </>
                 )}
                 <dt>
-                  Kept{' '}
-                  <Info label="About kept">
+                  Startup{' '}
+                  <Info label="About startup">
                     Saved: served on every start. <code>[unsaved]</code>: served until mdhouse stops — click it to keep it.
                   </Info>
                 </dt>
@@ -709,16 +731,6 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                     </span>
                   )}
                 </dd>
-                {project.kind !== 'reference' && (
-                  <>
-                    <dt>Automation</dt>
-                    <dd>
-                      <a href={automationUrl(project.id)} onClick={(e) => follow(e, () => go(automationUrl(project.id)))}>
-                        Scheduled runs
-                      </a>
-                    </dd>
-                  </>
-                )}
               </dl>
               {abOpen && project.kind !== 'reference' && (
                 <div class="project-ab-editor" role="group" aria-label={`Agent Bus for ${project.name}`}>
@@ -774,23 +786,28 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                       onClick={() => void saveAb(true)}
                       title="Use the instance's bus and default agents"
                     >
-                      Clear
+                      Use instance defaults
                     </button>
                   </div>
                   {abError && <span class="settings-error">{abError}</span>}
                 </div>
               )}
               {project.kind !== 'reference' && (
-                <button
-                  class="project-remove danger"
-                  disabled={!isAdmin || last || busy !== null}
-                  onClick={() => void remove(project)}
-                  title={
-                    !isAdmin ? NEEDS_ADMIN : last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : 'Stop serving this project'
-                  }
-                >
-                  <IconTrash size={15} /> Remove project
-                </button>
+                <footer class="project-detail-footer">
+                  {last && isAdmin && <span class="settings-hint">Keep at least one project.</span>}
+                  <button
+                    type="button"
+                    class="project-remove danger"
+                    aria-label={`Remove Project ${project.name}`}
+                    disabled={!isAdmin || last || busy !== null}
+                    onClick={() => void remove(project)}
+                    title={
+                      !isAdmin ? NEEDS_ADMIN : last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : 'Stop serving this project'
+                    }
+                  >
+                    Remove Project: <IconTrash size={15} />
+                  </button>
+                </footer>
               )}
             </div>
           )}
@@ -808,42 +825,46 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           <h3>
             Add project{' '}
             <Info label="About adding a project">
-              An existing folder by its full path, like <code>/home/me/notes</code>; <code>~</code> and relative paths don't work. Tick{' '}
-              <b>RW</b> to allow editing. It is served until mdhouse stops; click its <code>[unsaved]</code> to keep it.
+              Enter an existing folder's full path, like <code>/home/me/notes</code>. Use <code>[unsaved]</code> in the project details to keep it across restarts.
             </Info>
           </h3>
-          <input
-            class="settings-scheme project-add-path"
-            type="text"
-            value={addPath}
-            placeholder="/full/path/to/folder"
-            maxLength={ADD_PATH_MAX}
-            spellcheck={false}
-            autocomplete="off"
-            aria-label="Full path of the folder to add"
-            disabled={!isAdmin || busy !== null}
-            title={isAdmin ? undefined : NEEDS_ADMIN}
-            onInput={(e) => setAddPath((e.target as HTMLInputElement).value)}
-          />
-          {!viewer && (
-            <label class="project-add-mode" title="Ticked: read and write; else read-only">
-              <input
-                type="checkbox"
-                checked={addRw}
-                disabled={!isAdmin || busy !== null}
-                onChange={(e) => setAddRw((e.target as HTMLInputElement).checked)}
-              />{' '}
-              RW
-            </label>
-          )}
-          <button
-            type="submit"
-            class="project-add-btn"
-            disabled={!isAdmin || busy !== null || addProblem !== null}
-            title={!isAdmin ? NEEDS_ADMIN : addProblem ?? `Serve this folder ${addRw ? 'read and write' : 'read-only'} until mdhouse stops`}
-          >
-            Add project
-          </button>
+          <label class="project-add-field">
+            <span>Folder path</span>
+            <input
+              class="settings-scheme project-add-path"
+              type="text"
+              value={addPath}
+              placeholder="/full/path/to/folder"
+              maxLength={ADD_PATH_MAX}
+              spellcheck={false}
+              autocomplete="off"
+              disabled={!isAdmin || busy !== null}
+              title={isAdmin ? undefined : NEEDS_ADMIN}
+              onInput={(e) => setAddPath((e.target as HTMLInputElement).value)}
+            />
+          </label>
+          <div class="project-add-actions">
+            {!viewer && (
+              <label class="project-add-mode" title="Ticked: read and write; else read-only">
+                <input
+                  type="checkbox"
+                  checked={addRw}
+                  disabled={!isAdmin || busy !== null}
+                  onChange={(e) => setAddRw((e.target as HTMLInputElement).checked)}
+                />{' '}
+                Allow editing
+              </label>
+            )}
+            <button
+              type="submit"
+              class="project-add-btn"
+              disabled={!isAdmin || busy !== null || addProblem !== null}
+              title={!isAdmin ? NEEDS_ADMIN : addProblem ?? `Serve this folder ${addRw ? 'read and write' : 'read-only'} until mdhouse stops`}
+            >
+              Add project
+            </button>
+          </div>
+          <p class="settings-hint project-add-note">Served for this session by default.</p>
           {addPath && addProblem && <span class="settings-hint">{addProblem}</span>}
           {addError && <span class="settings-error">{addError}</span>}
         </form>

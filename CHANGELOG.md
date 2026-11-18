@@ -104,6 +104,8 @@
 
 ### Changed
 
+- Project settings align User Access and Scheduled runs in the project header, keep Agent Bus controls together, and show a project picker on narrow screens. Add project labels the folder path and editing option. Remove Project sits at the right with a trash icon.
+
 - Settings shows **Administrator** once, with the local access explanation behind ⓘ.
 
 - Agent Bus panel: the default button reads `[1] Send` (every button `[n] …`, Alt+n as before); a sent message shows its note without an "Updated — reply" heading — other actions still name themselves
