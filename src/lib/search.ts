@@ -30,8 +30,6 @@ export interface SearchResult {
 
 export interface SearchOptions {
   regex?: boolean;
-  /** Case-sensitive only when the query contains an uppercase letter. */
-  smartCase?: boolean;
   maxHits?: number;
   /** Per-file cap, so one enormous file cannot fill the whole result. */
   maxPerFile?: number;
@@ -89,7 +87,7 @@ async function searchWithRipgrep(rootPath: string, listed: Set<string>, query: s
     '--hidden',
     '--iglob', '*.md',
     '--iglob', '*.mdx',
-    '--smart-case',
+    '--ignore-case',
     '--max-count', String(maxPerFile),
     '--max-filesize', '8M',
     '--no-messages',
@@ -166,34 +164,16 @@ export async function searchInProcess(
   query: string,
   opts: SearchOptions,
 ): Promise<SearchResult> {
-  // searchContent already refuses an empty query; this is for anyone calling the fallback
-  // directly, where a zero-length needle would make the indexOf walk below never advance.
+  // An empty query should also return nothing when the fallback is called directly.
   if (!query) return { hits: [], truncated: false, degraded: true };
 
   const { regex = false, maxHits = 500, maxPerFile = 20 } = opts;
-  const hasUpper = /[A-Z]/.test(query);
-
-  let matcher: (line: string) => Array<[number, number]>;
-  if (regex) {
-    let re: RegExp;
-    try {
-      re = new RegExp(query, hasUpper ? 'g' : 'gi');
-    } catch {
-      return { hits: [], truncated: false, degraded: true };
-    }
-    matcher = (line) => [...line.matchAll(re)].map((m) => [m.index!, m.index! + m[0].length]);
-  } else {
-    const needle = hasUpper ? query : query.toLowerCase();
-    matcher = (line) => {
-      const hay = hasUpper ? line : line.toLowerCase();
-      const out: Array<[number, number]> = [];
-      let at = hay.indexOf(needle);
-      while (at !== -1) {
-        out.push([at, at + needle.length]);
-        at = hay.indexOf(needle, at + needle.length);
-      }
-      return out;
-    };
+  let re: RegExp;
+  try {
+    // Match the original string so Unicode case folding cannot shift the highlight offsets.
+    re = new RegExp(regex ? query : RegExp.escape(query), 'giu');
+  } catch {
+    return { hits: [], truncated: false, degraded: true };
   }
 
   const hits: SearchHit[] = [];
@@ -210,14 +190,16 @@ export async function searchInProcess(
     if (content === null) continue;
     // Cheap reject before splitting into lines: a plain query that is nowhere in the file
     // cannot match any of its lines.
-    if (!regex && !(hasUpper ? content : content.toLowerCase()).includes(hasUpper ? query : query.toLowerCase())) {
-      continue;
+    if (!regex) {
+      const found = re.test(content);
+      re.lastIndex = 0;
+      if (!found) continue;
     }
 
     let inFile = 0;
     const lines = content.split('\n');
     for (let i = 0; i < lines.length && inFile < maxPerFile && hits.length < maxHits; i++) {
-      const ranges = matcher(lines[i]!);
+      const ranges = [...lines[i]!.matchAll(re)].map((match) => [match.index, match.index + match[0].length] as const);
       if (!ranges.length) continue;
       const { text, shift } = clipLine(lines[i]!);
       hits.push({

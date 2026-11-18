@@ -599,6 +599,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
       Owner 2026-11-16 via `#md/ceo`. CHANGELOG Unreleased: one Added/Changed/Fixed, main first, matches what ships (`370d09e`, `2140bbb`). [Issues](../../issues/2026-11/2026-11-16.md): 11 raised, 10 fixed in the review batch (`4d3b09f`, `eb66aa7`, `3f5f490`, `2140bbb`), followed by the owner-approved F2 fix on 2026-11-18. Push by CEO.
     - [x] MW.13.1j Keep the sidebar tabs available during search <a id="MW.13.1j"></a>
       A compact sidebar could show search results with neither tabs nor a search field. Selecting a tab now clears the query and keeps the document open. Reproduced on scratch before the fix. Verified Files, Recent, RAG search input and Escape at 1280px light, 700px dark and 390px dark with a tap on Files.
+    - [x] MW.13.1k Make sidebar content search case-insensitive <a id="MW.13.1k"></a>
+      ripgrep and the in-process fallback match mixed case and highlight the original text. Scratch Chrome verified mixed-case matches in sidebar names and contents and in both directory filters.
     Owner starting points: explicit MD view (default), All project files with highlighting and matching left-panel tree, and Git pages for branches/commits/authors.
     Research user journeys and other useful representations; develop and compare broader information-architecture options, transitions, shared context and progressive disclosure. These examples are brainstorming inputs, not an approved fixed switcher or implementation scope.
   Review every page and end-to-end flow against [UX Golden Set](../../UX.md), including default/exception emphasis, progressive disclosure and Danger zones.

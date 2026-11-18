@@ -140,6 +140,8 @@
 
 ### Fixed
 
+- Sidebar content search ignores case for all queries, including those with uppercase letters. Filename search and the directory panel's folder and filename filters also ignore case.
+
 - Sidebar tabs stay available during search, even in the compact panel. Select Files to clear the search and return to the tree without leaving the open document.
 
 - `mdhouse admin --workspace` (and `--viewer`) switches the mode from the terminal — it asked for a browser sign-in link instead, refused under `--host-name`; with no users it says to reload the page, with users it prints a sign-in link. Settings, after an administrator refusal: `run  mdhouse admin --workspace from cli`

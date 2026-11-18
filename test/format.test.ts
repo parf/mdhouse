@@ -91,6 +91,8 @@ describe('likeMatcher', () => {
     const m = likeMatcher('plan');
     expect(m('Plans/RLM-1638')).toBe(true);
     expect(m('README')).toBe(false);
+    expect(likeMatcher('GIFtS')('notes/gifts')).toBe(true);
+    expect(likeMatcher('^ПЛаНЫ$')('планы')).toBe(true);
   });
 
   test('% and _ are wildcards; everything else is literal', () => {

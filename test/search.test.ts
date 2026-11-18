@@ -14,6 +14,7 @@ const FIXTURES: Record<string, string> = {
   // The reason this file exists: ripgrep reports offsets in bytes, so a multi-byte prefix
   // used to slide the highlight off the match.
   'cyrillic.md': 'Владелец owner2_name берётся из sidecar\nещё строка\n',
+  'case.md': '  İ 🐟 NeEdLe and ЗАМеТкИ\n',
   'many.md': Array.from({ length: 5 }, (_, i) => `line ${i} owner2_name`).join('\n') + '\n',
 };
 
@@ -76,6 +77,20 @@ describe('content search', () => {
   test('plain queries are literal, not regex', async () => {
     const { hits } = await searchContent(dir, files, 'owner2_name.');
     expect(hits).toHaveLength(0);
+  });
+
+  test('mixed-case literals and regexes match and highlight in both engines', async () => {
+    for (const search of [searchContent, searchInProcess]) {
+      for (const [query, regex, matched] of [
+        ['NEeDLE', false, 'NeEdLe'],
+        ['зАмЕтКи', false, 'ЗАМеТкИ'],
+        ['nEEdl[E]', true, 'NeEdLe'],
+      ] as const) {
+        const { hits } = await search(dir, files.filter((file) => file.rel === 'case.md'), query, { regex });
+        expect(hits).toHaveLength(1);
+        expect(hits[0]!.ranges.map(([start, end]) => hits[0]!.text.slice(start, end))).toEqual([matched]);
+      }
+    }
   });
 });
 
