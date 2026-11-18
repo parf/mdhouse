@@ -797,15 +797,15 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                   {last && isAdmin && <span class="settings-hint">Keep at least one project.</span>}
                   <button
                     type="button"
-                    class="project-remove danger"
+                    class="icon-btn danger project-remove"
                     aria-label={`Remove Project ${project.name}`}
                     disabled={!isAdmin || last || busy !== null}
                     onClick={() => void remove(project)}
                     title={
-                      !isAdmin ? NEEDS_ADMIN : last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : 'Stop serving this project'
+                      !isAdmin ? NEEDS_ADMIN : last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : `Remove Project ${project.name}`
                     }
                   >
-                    Remove Project: <IconTrash size={15} />
+                    <IconTrash size={14} />
                   </button>
                 </footer>
               )}

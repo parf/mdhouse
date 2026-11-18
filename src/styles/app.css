@@ -2087,9 +2087,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .settings-scheme.project-name { width: min(24em, 100%); font-family: inherit; }
 .project-detail-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 12px; border-top: 1px solid var(--border); margin-top: 12px; padding-top: 10px; }
 .project-detail-footer .settings-hint { margin-right: auto; }
-.project-remove { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--danger); font: inherit; font-size: 13px; cursor: pointer; }
-.project-remove:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 8%, transparent); border-color: var(--danger); }
-.project-remove:disabled { opacity: .5; cursor: not-allowed; }
+.icon-btn.project-remove { width: 24px; height: 24px; padding: 0; color: var(--danger); }
 :is(.project-save, .project-mode) { font-family: inherit; cursor: pointer; }
 :is(.project-save, .project-mode, .project-ab):disabled { opacity: .6; cursor: not-allowed; }
 .project-ab[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
@@ -2204,12 +2202,12 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 }
 /* Finger-sized controls. */
 @media (pointer: coarse) {
-  :is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn, .project-remove, .project-pick, .project-save, .project-mode, .ab-filter-save, .ab-select) { min-height: 44px; padding-block: 6px; }
+  :is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn, .project-pick, .project-save, .project-mode, .ab-filter-save, .ab-select) { min-height: 44px; padding-block: 6px; }
   .tag.project-mode { padding-inline: 12px; }
   .settings-option label, .project-add-mode, .rag-src { min-height: 44px; display: inline-flex; align-items: center; }
   .project-links a { min-height: 44px; display: inline-flex; align-items: center; }
   .settings input[type="checkbox"] { width: 22px; height: 22px; }
-  .head-gear .icon-btn, .topstrip .icon-btn { width: 44px; height: 44px; }
+  .head-gear .icon-btn, .topstrip .icon-btn, .icon-btn.project-remove { width: 44px; height: 44px; }
   /* The sidebar header is narrow: the icons keep their size and a finger-sized area around them. */
   .side-head .icon-btn { position: relative; }
   .side-head .icon-btn::after { content: ''; position: absolute; inset: -9px; }

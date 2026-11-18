@@ -104,7 +104,7 @@
 
 ### Changed
 
-- Project settings align User Access and Scheduled runs in the project header, keep Agent Bus controls together, and show a project picker on narrow screens. Add project labels the folder path and editing option. Remove Project sits at the right with a trash icon.
+- Project settings align User Access and Scheduled runs in the project header, keep Agent Bus controls together, and show a project picker on narrow screens. Add project labels the folder path and editing option. A compact trash icon sits at the right for removing a project.
 
 - Settings shows **Administrator** once, with the local access explanation behind ⓘ.
 
