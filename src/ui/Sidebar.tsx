@@ -210,14 +210,16 @@ export function Sidebar(props: SidebarProps) {
           )}
           {viewer && tree && <StoredRwTag root={props.roots.find((r) => r.id === tree.root.id)} />}
         </span>
-        <button
-          class="icon-btn kind-btn"
-          onClick={flipKind}
-          title={kind === 'md' ? 'Markdown files — show all files' : 'All files — show Markdown only'}
-          aria-label={kind === 'md' ? 'Showing Markdown files; show all files' : 'Showing all files; show Markdown only'}
-        >
-          {kind === 'md' ? 'MD' : 'ALL'}
-        </button>
+        {props.tab === 'files' && (
+          <button
+            class="icon-btn kind-btn"
+            onClick={flipKind}
+            title={kind === 'md' ? 'Markdown files — show all files' : 'All files — show Markdown only'}
+            aria-label={kind === 'md' ? 'Showing Markdown files; show all files' : 'Showing all files; show Markdown only'}
+          >
+            {kind === 'md' ? 'MD' : 'ALL'}
+          </button>
+        )}
         {!wide && (
           <button class="icon-btn" title="Search (/)" onClick={props.onCycleState}>
             <IconSearch />

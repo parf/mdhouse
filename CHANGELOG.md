@@ -58,7 +58,7 @@
 
 - Phone navigation: below 900px on a touch screen a bar at the bottom has four labelled places — Files, Changes, Search, Ask — the current one marked, Changes with the number of changed files; Ask appears only on a page an agent can be asked about, the bar steps aside while you type, and the top strip's magnifier moves into the bar as Search
 
-- Sidebar `MD | ALL`: one button in the sidebar header flips the Files tree between the project's Markdown and every file (as the folder page's ALL lists them); other files open in their own viewers, folder counts follow, added and removed files show at once, the choice is remembered
+- Sidebar `MD | ALL`: the button appears on the Files tab and switches the tree between Markdown and every project file (as the folder page's ALL lists them). Other files open in their own viewers, folder counts follow, added and removed files show at once, and the choice is remembered
 
 - Browse gitignored Markdown with Show ignored, direct folder navigation, or folders selected in V1/V2; selected folders also appear in main/default while each V tab keeps its own selection
 
