@@ -51,6 +51,10 @@ import { createHash, randomBytes } from 'node:crypto';
 import { citeRecords } from './lib/rag-cite';
 import { decodeSearchReply } from './lib/rag-sync-runtime';
 import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, sourceFor, type RagLast, type RagSource } from './lib/rag-ui';
+import { TeamAdmin } from './lib/team-admin';
+import { TeamAccessError, type TeamState } from './lib/team-access';
+import { readGitHubOAuthConfig, TeamGitHubError } from './lib/team-github';
+import { TeamSessions } from './lib/team-sessions';
 
 /** A `/ws` socket: the tab id it asked for (`<id>.<proof>`), its User-Agent, and the id it got. */
 interface WsData {
@@ -71,6 +75,8 @@ export interface ServeOptions {
   sessionAuthor?: (req: Request) => AuthorIdentity | null;
   /** Personal (no configured users): a request whose peer is loopback is the administrator. The CLI turns it on. */
   localAdmin?: boolean;
+  /** GitHub transport seam for verifying Team administration without a live provider. */
+  teamFetch?: typeof fetch;
 }
 
 const json = (body: unknown, status = 200) =>
@@ -846,6 +852,40 @@ export async function serve(opts: ServeOptions) {
     if (!actorOf(req).admin) return adminRequired();
     return h(req);
   };
+  const teamSessions = new TeamSessions();
+  const syncAuth = (state: TeamState): void => {
+    teamSessions.syncAuth(state);
+  };
+  const teamAdmin = new TeamAdmin({
+    dir: join(dirname(prefs.path), 'team'),
+    projects: () => registry.projects().map((root) => ({ id: root.id, name: customName(root.path) ?? root.name, path: root.path, writable: root.writable })),
+    viewer: () => prefs.mode() === 'viewer',
+    oauthReady: () => !!readGitHubOAuthConfig(process.env),
+    syncAuth,
+    request: opts.teamFetch,
+  });
+  const teamError = (err: unknown): Response => {
+    if (err instanceof TeamGitHubError) return noStore(fail(err.status, err.message));
+    if (!(err instanceof TeamAccessError)) throw err;
+    const statuses = { invalid: 400, missing: 404, conflict: 409, stale: 409, blocked: 503, unsafe: 503, corrupt: 503, io: 503 } as const;
+    return noStore(json({ error: err.message, reason: err.code }, statuses[err.code]));
+  };
+  const teamBody = async (req: Request): Promise<Record<string, unknown> | null> => {
+    const raw = await req.text().catch(() => '');
+    if (!raw || raw.length > 8192) return null;
+    try {
+      const value: unknown = JSON.parse(raw);
+      return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
+    } catch {
+      return null;
+    }
+  };
+  const teamAdminBinding = (req: Request): string =>
+    isLocalAdmin(req) ? 'local' : readAdminCookie(req.headers.get('cookie'), adminScope()) ?? '';
+  const teamStillAdmin = (req: Request): boolean => {
+    prefs.refresh();
+    return actorOf(req).admin && (!isLocalAdmin(req) || Object.keys(prefs.access.users).length === 0);
+  };
   /**
    * A write a Viewer refuses, before the handler reads anything; a blocked prefs file is refused the same
    * way (`reason: blocked`), and so is an exposed bind (`reason: exposed`, Q-R3-EXPOSE1). Root writability
@@ -897,6 +937,38 @@ export async function serve(opts: ServeOptions) {
       '/d': read(legacyPage),
       '/d/*': read(legacyPage),
       '/settings': read(page),
+      '/settings/users': read(page),
+
+      '/api/team': {
+        GET: adminOnly(() => {
+          try {
+            return noStore(json(teamAdmin.data()));
+          } catch (err) {
+            return teamError(err);
+          }
+        }),
+        POST: mutation('instance-config', async (req) => {
+          const body = await teamBody(req);
+          if (!body) return noStore(fail(400, 'Invalid team access change'));
+          try {
+            return noStore(json(await teamAdmin.update(body, teamAdminBinding(req), () => teamStillAdmin(req))));
+          } catch (err) {
+            return teamError(err);
+          }
+        }),
+      },
+
+      '/api/team/preview': {
+        POST: mutation('instance-config', async (req) => {
+          const body = await teamBody(req);
+          if (!body || Object.keys(body).length !== 1 || typeof body.login !== 'string') return noStore(fail(400, 'Enter a GitHub username'));
+          try {
+            return noStore(json(await teamAdmin.preview(body.login, teamAdminBinding(req), () => teamStillAdmin(req))));
+          } catch (err) {
+            return teamError(err);
+          }
+        }),
+      },
       '/rag': read(page),
 
       /**
