@@ -131,6 +131,14 @@ active Review checks used other ports and are confirmed unaffected. This does no
 of earlier W2 listener-selected stops on 7794; that uncertainty stays separate. Common launcher tests
 must cover wrapper/child group cleanup and post-cleanup verification before clean browser reruns.
 
+### Browser test deadlines
+
+On 2026-11-18, two orphaned W2 CDP scripts each used one CPU core for over 25 hours. Both accepted
+SIGTERM. `safe-smoke` now has a five-minute default command deadline. A real Chrome check with an
+unresolved CDP evaluation exited 124 after a five-second deadline and removed the test, Chrome and
+scratch server groups. `test/safe-smoke.test.ts` also checks that timeout removes both listeners and
+temporary files. A desktop CDP check and a 390px touch walk completed normally through the launcher.
+
 ## W1 injected-cleanup fixture leak — blocked remediation
 
 Receipt `af5767607563804b` and gitignored handoff

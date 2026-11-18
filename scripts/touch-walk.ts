@@ -1,16 +1,19 @@
-// bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — touch-emulated Chrome (:9333) walks the primary journey on a SCRATCH mdhouse (TW_BASE, default :7801; :7777 refused);
+// bun scripts/touch-walk.ts <width> <height> <light|dark> <tag> [step…|all] — Chrome (CDP_PORT, default 9333) walks a scratch mdhouse (TW_BASE or MDH_URL, default :7801; :7777 refused).
 // TW_REPO = the scratch git repo it serves (README.md, notes/plan.md, qa-playground.md, an uncommitted change), TW_OUT = screenshot dir. Steps: nav doc qa edit diff commit ab rag folder kbd strip; search, nav4, views, automation (fake routes; TW_CAN=0 reads only; TW_STALE=1 answers the first approve with stale; TW_NOTIMER=1 makes an approved registration `no-timer`), automationreal (real routes, needs a sandbox bus), automationnotimer (real; TW_AB_SOCK = the sandbox socket: deletes the schedule behind the page), automationgap (real routes; what the page shows when it may not act; TW_BASIC=user:pw for a login-only instance), flow, flowbar, flowviewer, flowro (flowbar and flowviewer answer /api/flow/* and inject doc.flow with a fake; flow is the real round trip on a clean scratch repo (TW_PACKAGE = the flow, default recent-commits-review), flowro checks a read-only project).
 // After every step scripts/touch-audit.js reports targets <44px (with hit area), cut-off, overlapping, covered, hover-only, <16px fields and horizontal scroll.
 import { readFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { limitStandaloneBrowserTest } from './test-deadline';
 const [W, H, scheme, tag, ...only] = process.argv.slice(2);
 const w = Number(W), h = Number(H);
-const base = process.env.TW_BASE ?? 'http://localhost:7801';
+const base = process.env.TW_BASE ?? process.env.MDH_URL ?? 'http://localhost:7801';
 if (new URL(base).port === '7777') throw new Error('refusing :7777 — scratch instances only');
+const cdp = `http://127.0.0.1:${process.env.CDP_PORT ?? '9333'}`;
+limitStandaloneBrowserTest('touch-walk');
 const OUT = process.env.TW_OUT ?? '/tmp/opencode/touch-walk';
 const HERE = import.meta.dir;
 mkdirSync(OUT, { recursive: true });
-const tab = await (await fetch(`http://127.0.0.1:9333/json/new?about:blank`, { method: 'PUT' })).json();
+const tab = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' })).json();
 const ws = new WebSocket(tab.webSocketDebuggerUrl);
 await new Promise((r) => (ws.onopen = r));
 let id = 0;
@@ -97,7 +100,7 @@ const tap = async (sel: string, nth = 0) => {
 const type = async (text: string) => { await send('Input.insertText', { text }); await sleep(200); };
 const go = async (path: string) => { await send('Page.navigate', { url: base + path }); await sleep(1800); };
 const want = (s: string) => !only.length || only.includes(s) || only.includes('all');
-const R = process.env.TW_REPO ?? '/tmp/opencode/journey/repo';
+const R = process.env.TW_REPO ?? process.env.MDH_ROOT ?? '/tmp/opencode/journey/repo';
 const read = (f: string) => readFileSync(`${R}/${f}`, 'utf8');
 
 if (want('nav')) {
@@ -509,5 +512,5 @@ if (only.includes('views')) {
     await audit('views-bar-files');
   }
 }
-await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
+await fetch(`${cdp}/json/close/${tab.id}`);
 process.exit(0);

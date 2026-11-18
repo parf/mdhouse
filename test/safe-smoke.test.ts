@@ -123,6 +123,8 @@ describe('refuses before starting anything', () => {
     ['a non-numeric port', ['ROOT', '--port', '61741x', '--', 'true']],
     ['a duplicate port', ['ROOT', '--port', String(P[0]), '--cdp', String(P[0]), '--', 'true']],
     ['the live port as --cdp', ['ROOT', '--port', String(P[0]), '--cdp', '7777', '--', 'true']],
+    ['a zero test timeout', ['ROOT', '--port', String(P[0]), '--timeout', '0', '--', 'true']],
+    ['a test timeout over an hour', ['ROOT', '--port', String(P[0]), '--timeout', '3601', '--', 'true']],
     ['no command', ['ROOT', '--port', String(P[0])]],
     ['a missing root', ['/nonexistent-safe-smoke', '--port', String(P[0]), '--', 'true']],
   ] as const) {
@@ -170,6 +172,25 @@ describe('owns what it starts, and only that', () => {
     expect(alive(r.pids.server!)).toBe(false);
     expect(alive(r.pids.grandchild!)).toBe(false);
     expect(listening(P[0]!)).toBe(false);
+  }, 30_000);
+
+  test('an unresponsive test command times out and its server and Chrome are stopped', async () => {
+    const before = ownTemps();
+    const command = ['sh', '-c', 'printf "cmd=%s\\n" "$$" >> "$FIX_OUT"; exec sleep 12'];
+    const r = await run([root, '--port', String(P[0]), '--cdp', String(P[1]), '--src', fixture, '--timeout', '1', '--', ...command], { CHROME: fakeChrome });
+    try {
+      expect(r.code).toBe(124);
+      expect(r.stderr).toContain('test exceeded its 1s deadline');
+      for (const name of ['cmd', 'server', 'grandchild', 'chrome']) {
+        expect(r.pids[name]).toBeGreaterThan(0);
+        expect(alive(r.pids[name]!)).toBe(false);
+      }
+      expect(listening(P[0]!)).toBe(false);
+      expect(listening(P[1]!)).toBe(false);
+      expect(ownTemps()).toEqual(before);
+    } finally {
+      killGroups(r.pids.cmd, r.pids.server, r.pids.chrome);
+    }
   }, 30_000);
 
   test('a server ignoring SIGTERM is killed after the bounded wait', async () => {

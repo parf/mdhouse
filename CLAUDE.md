@@ -115,7 +115,7 @@ For findings, reviews and task status — in docs, pages and replies; not decora
 ## Commands
 
 ```sh
-bun test                    # all tests — a temp config dir (test/preload.ts)
+timeout --kill-after=5s 5m bun test    # all tests in a temp config dir (test/preload.ts)
 npx tsc --noEmit -p .       # types
 ```
 
@@ -126,12 +126,16 @@ npx tsc --noEmit -p .       # types
 
 ## Testing in a browser — never on the live instance
 
-`S` = the session's scratchpad dir. Scratch repo (git views need ≥1 commit; `test/fixtures/qa-playground.md`
-has every Q&A form) + spare port + temp config:
+`S` = the session's scratchpad dir. Run browser checks through `safe-smoke` with a scratch repo or a
+fixture directory. It starts mdhouse and Chrome, supplies `MDH_URL`, `MDH_ROOT` and `CDP_PORT`, and
+stops its own test, Chrome and mdhouse groups when the test finishes or reaches its deadline.
+The default is five minutes. Pass `--timeout <seconds>` for a shorter check or a longer suite.
 
 ```sh
-mkdir -p $S/repo $S/cfg && chmod 700 $S/cfg && cp doc/*.md test/fixtures/qa-playground.md $S/repo && git -C $S/repo init -q && git -C $S/repo add -A && git -C $S/repo commit -qm init
-XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
+mkdir -p "$S/fixtures"
+cp README.md test/fixtures/qa-playground.md "$S/fixtures/"
+bun scripts/safe-smoke.ts --fixtures "$S/fixtures" --cdp --timeout 45 -- \
+  bun scripts/cdp.ts /repo/README.md "$S/readme" 1280,900 light
 ```
 
 - the page bundle is built at start — `bun --hot` reloads server code only: restart after a UI edit;
@@ -139,12 +143,12 @@ XDG_CONFIG_HOME=$S/cfg bun --hot run src/cli.ts $S/repo --rw --port 7792 --fg
 - abort if the scratch port is busy; never stop its listener to free it
 - capture the PID when starting your process; verify startup/bind and expected scratch roots before testing
 - cleanup only that captured own PID; never choose a PID by port/listener or use `pkill -f`
+- Give every ad hoc test a wall-clock limit, including one-off CDP scripts. For a command outside
+  `safe-smoke`, use `timeout --kill-after=5s <duration> …` and check that the test's helpers have exited.
 - a CLI-started scratch makes a loopback browser the local administrator (no `mdhouse admin`)
 - Agent Bus in a scratch: only `--agent-bus <sandbox.sock>` with a temp `XDG_RUNTIME_DIR`; never the real daemon
 - look at it in light + dark, and ≤720px; touch: `scripts/touch-walk.ts` + `scripts/touch-audit.js`
-- headless Chrome — an SPA needs the time budget, without it the DOM is empty:
-  `google-chrome --headless=new --disable-gpu --window-size=1280,900 --virtual-time-budget=3000 --screenshot=$S/a.png <url>`
-  (`--dump-dom` the same way); clicks: `--remote-debugging-port=9333` + `scripts/cdp.ts` (usage in its first line)
+- `scripts/cdp.ts` waits for the SPA before the first screenshot and supports keyboard and click steps.
 - never install/uninstall `mdhouse.service` in tests — `service --port <spare>` with a temp
   `XDG_CONFIG_HOME`, then `mdhouse service uninstall --port <spare>` (the unit lands in
   `~/.config/systemd/user` whatever the config)

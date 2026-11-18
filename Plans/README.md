@@ -569,8 +569,10 @@ link/callback directives are inactive. Diagram source grants no privileged reque
 `scripts/safe-smoke.ts` supplies the common CLI/import startup/cleanup for browser corpora. It refuses
 busy/live ports, captures detached own groups, verifies listener ownership and expected roots, and
 cleans only its captured groups/temp directories. Stop failures are non-green; no listener-derived
-kill or foreign endpoint reuse. `scripts/passive-lib.ts` stages fixtures and its own probe, delegates
-server/Chrome lifecycle to that helper, and propagates cleanup failures.
+kill or foreign endpoint reuse. The CLI stops the test and its owned groups after a five-minute
+deadline by default. `--timeout <seconds>` sets 1–3600 seconds. `scripts/passive-lib.ts` stages
+fixtures and its own probe, delegates server/Chrome lifecycle to that helper, and cleans up when
+the test body reaches its five-minute deadline.
 
 
 ## Projects in Settings

@@ -1,8 +1,14 @@
-// bun scripts/cdp.ts <url> <out-prefix> [w,h] [light|dark] 'step'… — Chrome on :9333; a step is JS, `key:a`,
+// bun scripts/cdp.ts <url> <out-prefix> [w,h] [light|dark] 'step'… — uses CDP_PORT (default 9333); a step is JS, `key:a`,
 // `key:ctrl+Enter`, `key:alt+1` or `wait:<ms>`; each runs, waits 800 ms, saves <out-prefix>-<i>.png
+import { limitStandaloneBrowserTest } from './test-deadline';
+
 const [url, out, size = '1280,900', scheme = 'light', ...steps] = process.argv.slice(2);
+const target = new URL(url!, process.env.MDH_URL);
+if (target.port === '7777') throw new Error('refusing :7777 — scratch instances only');
+const cdp = `http://127.0.0.1:${process.env.CDP_PORT ?? '9333'}`;
+limitStandaloneBrowserTest('cdp');
 const [w, h] = size.split(',').map(Number);
-const tab = await (await fetch(`http://127.0.0.1:9333/json/new?about:blank`, { method: 'PUT' })).json();
+const tab = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' })).json();
 const ws = new WebSocket(tab.webSocketDebuggerUrl);
 await new Promise((r) => (ws.onopen = r));
 let id = 0;
@@ -18,7 +24,7 @@ const send = (method: string, params: object = {}) =>
   });
 await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: w < 600 });
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
-await send('Page.navigate', { url });
+await send('Page.navigate', { url: target.href });
 await Bun.sleep(2000);
 const shot = async (i: number) => {
   const r = await send('Page.captureScreenshot', { format: 'png' });
@@ -45,5 +51,5 @@ for (let i = 0; i < steps.length; i++) {
   await Bun.sleep(800);
   await shot(i + 1);
 }
-await fetch(`http://127.0.0.1:9333/json/close/${tab.id}`);
+await fetch(`${cdp}/json/close/${tab.id}`);
 process.exit(0);

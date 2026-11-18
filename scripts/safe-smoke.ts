@@ -1,6 +1,6 @@
-// bun scripts/safe-smoke.ts (<root> | --fixtures <dir>) [--port <n>] [--rw] [--cdp [<n>]] [--src <checkout>] -- <cmd…>
+// bun scripts/safe-smoke.ts (<root> | --fixtures <dir>) [--port <n>] [--rw] [--cdp [<n>]] [--src <checkout>] [--timeout <seconds>] -- <cmd…>
 // Starts its own mdhouse (and, with --cdp, its own headless Chrome), runs <cmd> against them and stops
-// only what it started. <cmd> gets MDH_URL, MDH_ROOT and CDP_PORT; the exit code is <cmd>'s.
+// only what it started. <cmd> gets MDH_URL, MDH_ROOT and CDP_PORT. A timeout exits 124 (default 300s).
 // A script imports `startSmoke()` instead and calls `stop()` when done.
 //
 // - Every port is checked before anything starts: a busy, invalid, duplicate or :7777 port aborts.
@@ -17,6 +17,7 @@ import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { closeSync, cpSync, mkdtempSync, openSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
 import { constants, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { DEFAULT_TEST_TIMEOUT_SECONDS, TestDeadlineExceeded, withTestDeadline } from './test-deadline';
 
 const LIVE_PORT = 7777;
 const PICK_FROM = 62000;
@@ -327,11 +328,12 @@ export async function startSmoke(opts: SmokeOptions): Promise<Smoke> {
   }
 }
 
-function parse(argv: string[]): { opts: SmokeOptions; cmd: string[] } {
+function parse(argv: string[]): { opts: SmokeOptions; cmd: string[]; timeout: number } {
   const dash = argv.indexOf('--');
   const own = dash === -1 ? argv : argv.slice(0, dash);
   const cmd = dash === -1 ? [] : argv.slice(dash + 1);
   const opts: SmokeOptions = {};
+  let timeout = DEFAULT_TEST_TIMEOUT_SECONDS;
   for (let i = 0; i < own.length; i++) {
     const a = own[i]!;
     const value = () => {
@@ -341,7 +343,11 @@ function parse(argv: string[]): { opts: SmokeOptions; cmd: string[] } {
     };
     if (a === '--port') opts.port = validPort(value());
     else if (a === '--cdp') opts.cdp = /^\d+$/.test(own[i + 1] ?? '') ? validPort(value()) : true;
-    else if (a === '--rw') opts.rw = true;
+    else if (a === '--timeout') {
+      const seconds = value();
+      timeout = Number(seconds);
+      if (!/^\d+$/.test(seconds) || timeout < 1 || timeout > 3600) throw new SmokeAbort('--timeout must be 1–3600 seconds', true);
+    } else if (a === '--rw') opts.rw = true;
     else if (a === '--src') opts.src = value();
     else if (a === '--fixtures') opts.fixtures = value();
     else if (a.startsWith('-')) throw new SmokeAbort(`unknown option ${a}`, true);
@@ -349,24 +355,25 @@ function parse(argv: string[]): { opts: SmokeOptions; cmd: string[] } {
     else throw new SmokeAbort(`one root only: ${a}`, true);
   }
   if (!cmd.length) throw new SmokeAbort('a command after -- is required', true);
-  return { opts, cmd };
+  return { opts, cmd, timeout };
 }
 
 if (import.meta.main) {
   let code: number;
   let smoke: Smoke | null = null;
   try {
-    const { opts, cmd } = parse(process.argv.slice(2));
+    const { opts, cmd, timeout } = parse(process.argv.slice(2));
     smoke = await startSmoke(opts);
     console.error(`safe-smoke: own ${Object.entries(smoke.groups).map(([n, g]) => `${n} pgid=${g}`).join(' · ')} · ${smoke.base} root=${smoke.root}`);
     const env = { ...process.env, MDH_URL: smoke.base, MDH_ROOT: smoke.root, ...(smoke.chromePort ? { CDP_PORT: String(smoke.chromePort) } : {}) };
     const child = smoke.run(cmd, env);
-    const [c, s] = await new Promise<[number | null, NodeJS.Signals | null]>((done) => child.once('exit', (x, y) => done([x, y])));
+    const ended = new Promise<[number | null, NodeJS.Signals | null]>((done) => child.once('exit', (x, y) => done([x, y])));
+    const [c, s] = await withTestDeadline(ended, timeout);
     code = c ?? 128 + (s ? constants.signals[s] : 0);
   } catch (e) {
-    if (!(e instanceof SmokeAbort)) throw e;
+    if (!(e instanceof SmokeAbort || e instanceof TestDeadlineExceeded)) throw e;
     console.error(`safe-smoke: ${e.message}`);
-    code = e.usage ? 2 : 3;
+    code = e instanceof TestDeadlineExceeded ? 124 : e.usage ? 2 : 3;
   } finally {
     const leak = await smoke?.stop().then(() => null, (x: unknown) => x as Error);
     if (leak) {

@@ -5,6 +5,7 @@ import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { startSmoke } from './safe-smoke';
+import { withTestDeadline } from './test-deadline';
 
 export interface Env {
   /** `http://127.0.0.1:<port>/<rootId>` — the served fixture repo. */
@@ -59,7 +60,7 @@ export async function startEnv(opts: { fixtures?: string; src?: string; rw?: boo
     writeFileSync(join(fixtures, 'README.md'), '# scratch\n');
     if (opts.fixtures) copyFixtures(opts.fixtures, fixtures, probe.port as number);
     smoke = await startSmoke({ fixtures, rw: opts.rw, src: opts.src, cdp: true });
-    const roots = ((await (await fetch(`${smoke.base}/api/roots`)).json()) as { roots: Array<{ id: string; path: string }> }).roots;
+    const roots = ((await (await fetch(`${smoke.base}/api/roots`, { signal: AbortSignal.timeout(5000) })).json()) as { roots: Array<{ id: string; path: string }> }).roots;
     const mine = roots.find((r) => realpathSync(r.path) === realpathSync(smoke!.root));
     if (!mine) throw new Error(`the served roots do not include ${smoke.root}`);
     return { base: `${smoke.base}/${mine.id}`, dir: smoke.root, chrome: smoke.chromePort!, probes, stop };
@@ -80,7 +81,7 @@ export async function guarded(env: { stop(): Promise<void> }, body: () => Promis
   let code = 0;
   let failure: Error | undefined;
   try {
-    code = await body();
+    code = await withTestDeadline(body());
   } catch (e) {
     failure = e instanceof Error ? e : new Error(String(e));
   }
