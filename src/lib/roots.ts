@@ -6,6 +6,7 @@
  * `resolve()` is the only door, and `writeFile()` is the only write.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { chmod, mkdir, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
 import { fileUrl, RESERVED } from './urls';
@@ -60,7 +61,7 @@ export class ReadOnlyError extends Error {
 /** Why a directory cannot be added as a project: gone, not a directory, or a reference root. */
 export class ProjectDirError extends Error {
   constructor(
-    readonly code: 'missing' | 'not-a-directory' | 'reference',
+    readonly code: 'missing' | 'not-a-directory' | 'reference' | 'overlap',
     message: string,
   ) {
     super(message);
@@ -110,6 +111,30 @@ async function realLocation(candidate: string): Promise<string | null> {
     at = parent;
   }
 }
+
+/** What one request may see of the served roots: Team scopes it to the actor's grants; absent, every root is visible. */
+export interface RootScope {
+  /** May the actor read this root at all. */
+  allows(root: Root): boolean;
+  /** May the actor write to it: a read-write grant, on top of the root's own writability. */
+  canWrite(root: Root): boolean;
+}
+
+/** A scoped request asked for a root it may not see and no fallback exists. */
+export class RootScopeError extends Error {
+  constructor() {
+    super('no project is available to this account');
+    this.name = 'RootScopeError';
+  }
+}
+
+const scopes = new AsyncLocalStorage<RootScope>();
+
+/** Runs `fn` (and everything it awaits) with the registry's lookups confined to `scope`. */
+export const withRootScope = <T>(scope: RootScope, fn: () => T): T => scopes.run(scope, fn);
+/** The scope of the request being served, if it has one. */
+export const currentRootScope = (): RootScope | undefined => scopes.getStore();
+const visible = (root: Root): boolean => scopes.getStore()?.allows(root) ?? true;
 
 export class Registry {
   private readonly byId = new Map<string, Root>();
@@ -209,7 +234,7 @@ export class Registry {
   }
 
   private refuseReference(abs: string): void {
-    if (this.list().some((r) => r.kind === 'reference' && r.path === abs)) {
+    if (this.all().some((r) => r.kind === 'reference' && r.path === abs)) {
       throw new ProjectDirError('reference', `${abs} is mdhouse's reference material — it cannot be added as a project`);
     }
   }
@@ -220,7 +245,7 @@ export class Registry {
    */
   install(abs: string, mode: AccessMode): Root {
     this.refuseReference(abs);
-    const existing = this.list().find((r) => r.path === abs);
+    const existing = this.all().find((r) => r.path === abs);
     if (existing) return existing;
 
     const name = abs.split(sep).filter(Boolean).pop() ?? abs;
@@ -254,7 +279,7 @@ export class Registry {
     const abs = await realpath(resolvePath(spec));
     if (!/^_[a-z0-9][a-z0-9-]*$/.test(id) || RESERVED.has(id)) throw new Error(`not a reference root id: ${id}`);
     if (this.byId.has(id)) throw new Error(`root id already in use: ${id}`);
-    if (this.list().some((r) => r.path === abs)) throw new Error(`${abs} is already served`);
+    if (this.all().some((r) => r.path === abs)) throw new Error(`${abs} is already served`);
     const root: Root = { id, name: name ?? abs.split(sep).filter(Boolean).pop() ?? abs, path: abs, kind: 'reference', writable: false };
     this.byId.set(id, root);
     return root;
@@ -262,12 +287,12 @@ export class Registry {
 
   /** Is `abs` (symlink-resolved) a reference root or inside one? */
   inReference(abs: string): boolean {
-    return this.list().some((r) => r.kind === 'reference' && isUnder(r.path, abs));
+    return this.all().some((r) => r.kind === 'reference' && isUnder(r.path, abs));
   }
 
   /** May this location be written: its root is writable and it is not reference material. */
   writableAt(loc: Resolved): boolean {
-    return loc.root.writable && !this.inReference(loc.abs);
+    return loc.root.writable && !this.inReference(loc.abs) && (scopes.getStore()?.canWrite(loc.root) ?? true);
   }
 
   /** Stop serving a project root. Its id becomes free; paths under it no longer resolve. */
@@ -276,12 +301,18 @@ export class Registry {
     return this.byId.delete(id);
   }
 
-  list(): Root[] {
+  /** Every served root, whoever asks: for the instance's own safety checks, never for an answer to a scoped request. */
+  all(): Root[] {
     return [...this.byId.values()];
   }
 
+  list(): Root[] {
+    return this.all().filter(visible);
+  }
+
   get(id: string): Root | undefined {
-    return this.byId.get(id);
+    const root = this.byId.get(id);
+    return root && visible(root) ? root : undefined;
   }
 
   /** The roots the user added — every root but reference ones. */
@@ -297,7 +328,7 @@ export class Registry {
   /** The root a bare, unprefixed path belongs to: the first project root. Throws when there is none. */
   defaultRoot(): Root {
     const root = this.projects()[0];
-    if (!root) throw new Error('no project root is served');
+    if (!root) throw scopes.getStore() ? new RootScopeError() : new Error('no project root is served');
     return root;
   }
 
@@ -333,7 +364,7 @@ export class Registry {
       .join('/');
 
     const first = decoded.split('/')[0]!;
-    if (this.byId.has(first)) {
+    if (this.get(first)) {
       const asRoot = await this.resolve(decoded);
       if (asRoot && (!legacy || (await stat(asRoot.abs).catch(() => null)))) return asRoot;
     }
@@ -354,7 +385,7 @@ export class Registry {
     const id = slash === -1 ? p : p.slice(0, slash);
     const rel = slash === -1 ? '' : p.slice(slash + 1);
 
-    const root = this.byId.get(id);
+    const root = this.get(id);
     if (!root) return null;
     if (rel.split('/').some((seg) => seg === '..')) return null;
 

@@ -9,10 +9,11 @@ import type { ServerWebSocket } from 'bun';
 import { Control, CTL_TOPIC, CTL_VERSION, registryDocUrl } from './lib/ab-control';
 import { Tabs } from './lib/ws-tabs';
 import index from './index.html';
+import { existsSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { dirname, join, resolve as resolvePath } from 'node:path';
-import { ProjectDirError, Registry, ReadOnlyError, type AccessMode, type Resolved, type Root } from './lib/roots';
+import { ProjectDirError, Registry, ReadOnlyError, RootScopeError, currentRootScope, withRootScope, type AccessMode, type Resolved, type Root } from './lib/roots';
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
@@ -53,11 +54,16 @@ import { decodeSearchReply } from './lib/rag-sync-runtime';
 import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, sourceFor, type RagLast, type RagSource } from './lib/rag-ui';
 import { TeamAdmin } from './lib/team-admin';
 import { TeamAccessError, type TeamState } from './lib/team-access';
-import { readGitHubOAuthConfig, TeamGitHubError } from './lib/team-github';
+import { GitHubOAuth, readGitHubOAuthConfig, TeamGitHubError } from './lib/team-github';
+import { activationBlockers, grantFor, overlappingPaths, readCookie, teamCookie, teamCookieName, teamRoute, teamScope } from './lib/team-runtime';
+import { IDLE_MS } from './lib/user-session-model';
 import { TeamSessions } from './lib/team-sessions';
 
 /** A `/ws` socket: the tab id it asked for (`<id>.<proof>`), its User-Agent, and the id it got. */
 interface WsData {
+  /** The Team account this socket belongs to; its topics follow that account's grants. */
+  team?: string;
+  topics?: Set<string>;
   asked: string | null;
   ua: string;
   clientId: string;
@@ -324,6 +330,10 @@ export async function serve(opts: ServeOptions) {
   /** The port the author cookie is named for: the one actually listening. */
   const cookiePort = (): number => server.port ?? opts.port;
   const authorOf = async (req: Request, loc: { root: Root; rel: string } | null): Promise<AuthorIdentity> => {
+    // Under Team the author is the signed-in GitHub account, whatever a cookie says.
+    const member = teamUserOf(req);
+    if (member) return { name: member.login, source: 'github', id: member.id };
+    if (team.active) return { name: 'unknown', source: 'login' };
     const session = opts.sessionAuthor?.(req);
     if (session) return session;
     const cookie = readAuthorCookie(req.headers.get('cookie'), cookiePort());
@@ -520,7 +530,7 @@ export async function serve(opts: ServeOptions) {
   const within = (path: string, dir: string): boolean => path === dir || path.startsWith(`${dir}/`);
   /** A read-only root that shares files with the repo — a write to the repo may land in it. */
   const readOnlyIn = (repo: string): Root | undefined =>
-    registry.list().find((r) => !r.writable && (within(r.path, repo) || within(repo, r.path)));
+    registry.all().find((r) => !r.writable && (within(r.path, repo) || within(repo, r.path)));
   /**
    * Run inside a git write's queue, right before git: the refusal when the folder stopped being
    * writable since the request was checked — removed, set read-only, writes blocked — or `abs` is
@@ -528,7 +538,7 @@ export async function serve(opts: ServeOptions) {
    */
   const gitStillWritable = (at: { root: Root }, abs?: string): Response | null => {
     if (registry.get(at.root.id) !== at.root || !at.root.writable) return fail(403, `${at.root.name} is read-only`);
-    if (abs !== undefined && registry.list().some((r) => !r.writable && within(abs, r.path))) return fail(403, 'that file is in a read-only folder now');
+    if (abs !== undefined && registry.all().some((r) => !r.writable && within(abs, r.path))) return fail(403, 'that file is in a read-only folder now');
     return null;
   };
   /** Pull or push: uncommitted files only when all Markdown, and confirmed. Pull only when the whole repo is the root's to write. */
@@ -602,13 +612,32 @@ export async function serve(opts: ServeOptions) {
   const admins = new AdminSessions();
   const adminScope = (): AdminCookieScope => ({ port: cookiePort(), secure: false });
   /** The ADMIN-W1 local administrator — never in a Viewer, a blocked prefs file included: there only a minted session is. */
-  const isLocalAdmin = (req: Request): boolean => localAdmins.has(req) && prefs.mode() !== 'viewer';
-  const actorOf = (req: Request): Actor =>
-    isLocalAdmin(req)
-      ? { admin: true, via: 'local' }
-      : admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope())).ok
-        ? { admin: true, via: 'session' }
-        : { admin: false, via: 'none' };
+  const isLocalAdmin = (req: Request): boolean => localAdmins.has(req) && prefs.mode() !== 'viewer' && !team.active;
+  /**
+   * Team (USER-W*): off until the owner activates it, then every request needs a signed-in, known, unbanned account and
+   * sees only its grants. `state` is what `syncAuth` last announced; `failed` is a stored policy that cannot be read,
+   * which refuses everything rather than falling back to Personal.
+   */
+  const team: { active: boolean; failed: boolean; state: TeamState | null } = { active: false, failed: false, state: null };
+  const teamSessions = new TeamSessions();
+  const teamOauthConfig = readGitHubOAuthConfig(process.env);
+  const teamOauth = teamOauthConfig ? new GitHubOAuth(teamOauthConfig, opts.teamFetch) : null;
+  const teamSecure = teamOauthConfig?.callback.protocol === 'https:';
+  const teamForcedOff = process.env.MDHOUSE_TEAM === 'off';
+  const teamCookieOf = (req: Request): string | null => readCookie(req.headers.get('cookie'), teamCookieName(cookiePort(), teamSecure));
+  /** The signed-in Team account of a request: its session is live and its account unbanned, now. */
+  const teamUserOf = (req: Request, touch = false) => (team.active ? teamSessions.lookup(teamCookieOf(req), touch) : null);
+  const actorOf = (req: Request): Actor => {
+    if (isLocalAdmin(req)) return { admin: true, via: 'local' };
+    if (admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope())).ok) return { admin: true, via: 'session' };
+    const member = teamUserOf(req);
+    return member && member.id === team.state?.adminId ? { admin: true, via: 'team', user: member.id } : { admin: false, via: 'none', ...(member ? { user: member.id } : {}) };
+  };
+  /** The owner: the OS user's own door — a local Personal administrator or a session minted over the control socket. Never a Team account. */
+  const isOwner = (req: Request): boolean => {
+    const via = actorOf(req).via;
+    return via === 'local' || via === 'session';
+  };
   const noStore = (res: Response): Response => {
     res.headers.set('cache-control', 'no-store');
     res.headers.set('referrer-policy', 'no-referrer');
@@ -695,7 +724,10 @@ export async function serve(opts: ServeOptions) {
     return lookup;
   };
   /** Open tabs learn that root metadata changed; they read it again from `/api/roots`. */
-  const publishRoots = () => server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
+  const publishRoots = () => {
+    server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.all().map((r) => r.id) }));
+    syncSockets();
+  };
   /**
    * Root metadata changes — add, remove, name, save — one at a time. Only the entry points (routes,
    * control handlers, the CLI's fresh-start name) queue; what they call runs inside, never queuing again.
@@ -759,7 +791,10 @@ export async function serve(opts: ServeOptions) {
   /** The roots as the page sees them: `name` is the label to show, `customName` the override when set. */
   const rootsPayload = () =>
     registry.list().map((r) =>
-      labelled(
+      currentRootScope()
+        ? // A Team account learns its project's id and name, whether it may write, and nothing of the machine: no path, mode or revision.
+          labelled({ id: r.id, name: r.name, path: '', kind: 'project' as const, writable: r.writable && currentRootScope()!.canWrite(r), configuredWritable: false, saved: true }, customName(r.path))
+        : labelled(
         {
           id: r.id,
           name: r.name,
@@ -852,18 +887,57 @@ export async function serve(opts: ServeOptions) {
     if (!actorOf(req).admin) return adminRequired();
     return h(req);
   };
-  const teamSessions = new TeamSessions();
+  /** Every open socket: Team revokes and re-scopes them in the same turn as the policy change. */
+  const sockets = new Set<ServerWebSocket<WsData>>();
+  /** The project roots a Team account may read now. */
+  const grantedRootIds = (userId: string): string[] =>
+    team.state ? registry.all().filter((r) => grantFor(team.state!, userId, r, prefs.mode() === 'viewer') !== null).map((r) => r.id) : [];
+  const syncSockets = (): void => {
+    for (const ws of sockets) {
+      if (!team.active || !team.state || !ws.data.team) {
+        // Team switched on closes the Personal sockets; switched off closes the account sockets.
+        if (team.active !== !!ws.data.team) ws.close(1008, team.active ? 'team activated' : 'team deactivated');
+        continue;
+      }
+      const user = team.state.users.find((candidate) => candidate.id === ws.data.team);
+      if (!user || user.banned) {
+        ws.close(1008, 'access revoked');
+        continue;
+      }
+      const granted = new Set(grantedRootIds(user.id).map((id) => `root:${id}`));
+      const held = ws.data.topics ?? new Set<string>();
+      let changed = false;
+      for (const topic of held) if (!granted.has(topic)) { ws.unsubscribe(topic); held.delete(topic); changed = true; }
+      for (const topic of granted) if (!held.has(topic)) { ws.subscribe(topic); held.add(topic); changed = true; }
+      ws.data.topics = held;
+      if (changed) ws.send(JSON.stringify({ t: 'roots', roots: [...held].map((topic) => topic.slice(5)) }));
+    }
+  };
+  /** Runs synchronously inside the policy change, so a ban, a revoked grant or an activation applies to the next request and every open socket. */
   const syncAuth = (state: TeamState): void => {
     teamSessions.syncAuth(state);
+    team.state = state;
+    team.active = state.active && !teamForcedOff;
+    syncSockets();
   };
+  const teamProjects = () => registry.all().filter((r) => r.kind !== 'reference').map((root) => ({ id: root.id, name: customName(root.path) ?? root.name, path: root.path, writable: root.writable }));
   const teamAdmin = new TeamAdmin({
     dir: join(dirname(prefs.path), 'team'),
-    projects: () => registry.projects().map((root) => ({ id: root.id, name: customName(root.path) ?? root.name, path: root.path, writable: root.writable })),
+    projects: teamProjects,
     viewer: () => prefs.mode() === 'viewer',
-    oauthReady: () => !!readGitHubOAuthConfig(process.env),
+    oauthReady: () => !!teamOauth,
+    blockers: () => [...(teamForcedOff ? ['MDHOUSE_TEAM=off is set: remove it and restart before activating.'] : []), ...activationBlockers({ state: teamAdmin.policy(), oauthReady: !!teamOauth, projects: teamProjects() })],
+    forcedOff: () => teamForcedOff,
     syncAuth,
     request: opts.teamFetch,
   });
+  if (existsSync(join(dirname(prefs.path), 'team', 'team-access.json'))) {
+    try {
+      syncAuth(teamAdmin.policy());
+    } catch {
+      team.failed = !teamForcedOff;
+    }
+  }
   const teamError = (err: unknown): Response => {
     if (err instanceof TeamGitHubError) return noStore(fail(err.status, err.message));
     if (!(err instanceof TeamAccessError)) throw err;
@@ -881,7 +955,7 @@ export async function serve(opts: ServeOptions) {
     }
   };
   const teamAdminBinding = (req: Request): string =>
-    isLocalAdmin(req) ? 'local' : readAdminCookie(req.headers.get('cookie'), adminScope()) ?? '';
+    isLocalAdmin(req) ? 'local' : readAdminCookie(req.headers.get('cookie'), adminScope()) ?? (teamCookieOf(req) ? `team:${teamCookieOf(req)}` : '');
   const teamStillAdmin = (req: Request): boolean => {
     prefs.refresh();
     return actorOf(req).admin && (!isLocalAdmin(req) || Object.keys(prefs.access.users).length === 0);
@@ -900,12 +974,39 @@ export async function serve(opts: ServeOptions) {
       ? noStore(json({ error: `read-only: prefs.json is ${blocked}`, reason: 'blocked' }, 403))
       : noStore(json({ error: 'read-only: this mdhouse is a Viewer', reason: 'viewer' }, 403));
   };
+  const unavailable = (): Response => noStore(json({ error: 'Team access storage is unavailable', reason: 'team-unavailable' }, 503));
+  const needLogin = (req: Request): Response =>
+    req.method === 'GET' && (req.headers.get('accept') ?? '').includes('text/html')
+      ? noStore(new Response(null, { status: 302, headers: { location: '/auth/github/login' } }))
+      : noStore(json({ error: 'sign in with GitHub', reason: 'login', login: '/auth/github/login' }, 401));
+  /**
+   * The Team gate in front of a registered route: off, the handler runs as before. On, the route's Team policy
+   * (`lib/team-runtime.ts`) decides — unlisted routes are refused — and an account's request runs with the registry
+   * confined to its grants. A writing method also needs the same origin.
+   */
+  const teamGate = (pattern: string, method: string, h: Handler): Handler => async (req) => {
+    // An unreadable policy refuses everything but the owner's own door, so the owner can still sign in to repair it.
+    if (team.failed) return teamRoute(method, pattern).policy === 'owner' ? h(req) : unavailable();
+    if (!team.active) return h(req);
+    const { policy, why } = teamRoute(method, pattern);
+    if (policy === 'public' || policy === 'owner') return h(req);
+    if (policy === 'denied') return noStore(json({ error: why, reason: 'team' }, 403));
+    const member = teamUserOf(req, true);
+    if (policy === 'team-admin') {
+      if (!actorOf(req).admin) return member ? adminRequired() : needLogin(req);
+      return h(req);
+    }
+    if (!member) return needLogin(req);
+    if (policy === 'session') return h(req);
+    if ((policy === 'write' || !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) && !sameOrigin(req)) return fail(403, 'cross-origin request refused');
+    return withRootScope(teamScope(() => team.state!, member, () => prefs.mode() === 'viewer'), () => h(req));
+  };
   function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
     routes = inventory(table);
     const family = new Map(routes.map((r) => [`${r.method} ${r.path}`, r.family]));
     const out: Record<string, unknown> = {};
     for (const [path, route] of Object.entries(table)) {
-      if (typeof route === 'function') out[path] = check(route as Handler);
+      if (typeof route === 'function') out[path] = check(teamGate(path, '*', route as Handler));
       else if (isMethodMap(route)) {
         out[path] = Object.fromEntries(
           Object.entries(route).map(([m, h]) => {
@@ -913,7 +1014,7 @@ export async function serve(opts: ServeOptions) {
             // An administrator family a Viewer also refuses (`automation`) passes both gates, the Viewer's (and exposure's) first.
             const admin = f && ADMIN_FAMILIES.has(f) ? adminOnly(h as Handler) : (h as Handler);
             const gated = f && VIEWER_REFUSED.has(f) ? viewerGate(admin) : admin;
-            return [m, check(gated)];
+            return [m, check(teamGate(path, m, gated))];
           }),
         );
       } else out[path] = route;
@@ -958,6 +1059,21 @@ export async function serve(opts: ServeOptions) {
         }),
       },
 
+      /** Owner only: switch Team on (blockers checked at the write, rolled back if the refresh fails) or off. */
+      '/api/team/activation': {
+        POST: mutation('instance-config', async (req) => {
+          if (!isOwner(req) || !teamStillAdmin(req)) return noStore(json({ error: 'only the owner switches Team on or off', reason: 'owner' }, 403));
+          const body = await teamBody(req);
+          if (!body || Object.keys(body).sort().join() !== 'active,confirm,revision' || typeof body.active !== 'boolean') return noStore(fail(400, 'Invalid Team activation'));
+          if (body.confirm !== (body.active ? 'activate team' : 'deactivate team')) return noStore(json({ error: 'Type the confirmation exactly', reason: 'confirm' }, 400));
+          try {
+            return noStore(json(teamAdmin.activate(body.revision, body.active)));
+          } catch (err) {
+            return teamError(err);
+          }
+        }),
+      },
+
       '/api/team/preview': {
         POST: mutation('instance-config', async (req) => {
           const body = await teamBody(req);
@@ -970,6 +1086,61 @@ export async function serve(opts: ServeOptions) {
         }),
       },
       '/rag': read(page),
+
+      /** Team sign-in: GitHub OAuth with PKCE and a state bound to this browser. Only while Team is active. */
+      '/auth/github/login': read(() => {
+        if (!team.active || !teamOauth) return fail(404, 'not found');
+        const { state, url } = teamOauth.begin();
+        const res = noStore(new Response(null, { status: 302, headers: { location: url.href } }));
+        res.headers.append('set-cookie', teamCookie(teamCookieName(cookiePort(), teamSecure, 'oauth'), state, 300, teamSecure));
+        return res;
+      }),
+      '/auth/github/callback': read(async (req) => {
+        if (!team.active || !teamOauth) return fail(404, 'not found');
+        const query = new URL(req.url).searchParams;
+        const oauthName = teamCookieName(cookiePort(), teamSecure, 'oauth');
+        const clearState = teamCookie(oauthName, '', 0, teamSecure);
+        const refuse = (status: number, text: string) => {
+          const res = noStore(new Response(`${text}\n`, { status, headers: { 'content-type': 'text/plain; charset=utf-8' } }));
+          res.headers.append('set-cookie', clearState);
+          return res;
+        };
+        try {
+          const github = await teamOauth.finish(query.get('state') ?? '', readCookie(req.headers.get('cookie'), oauthName), query.get('code') ?? '');
+          // Known, unbanned accounts only: a GitHub account nobody registered gets nothing, and says nothing about who is.
+          const member = team.state?.users.find((user) => user.id === github.id && !user.banned);
+          const value = member ? teamSessions.issue(member.id) : null;
+          if (!value) return refuse(403, 'This GitHub account is not registered for this mdhouse.');
+          const res = noStore(new Response(null, { status: 303, headers: { location: '/' } }));
+          res.headers.append('set-cookie', teamCookie(teamCookieName(cookiePort(), teamSecure), value, IDLE_MS / 1000, teamSecure));
+          res.headers.append('set-cookie', clearState);
+          return res;
+        } catch (err) {
+          if (err instanceof TeamGitHubError) return refuse(err.status, err.message);
+          throw err;
+        }
+      }),
+      '/auth/logout': {
+        POST: mutation('admin-session', (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          teamSessions.revoke(teamCookieOf(req));
+          const res = noStore(new Response(null, { status: 204 }));
+          res.headers.append('set-cookie', teamCookie(teamCookieName(cookiePort(), teamSecure), '', 0, teamSecure));
+          return res;
+        }),
+      },
+      /** Who the signed-in account is and what it was granted — the page's source for its own projects and write controls. */
+      '/api/team/me': read((req) => {
+        const member = teamUserOf(req);
+        if (!team.active || !team.state) return fail(404, 'not found');
+        if (!member) return needLogin(req);
+        const grants: Record<string, string> = {};
+        for (const root of registry.all()) {
+          const grant = grantFor(team.state, member.id, root, prefs.mode() === 'viewer');
+          if (grant) grants[root.id] = grant;
+        }
+        return noStore(json({ user: { id: member.id, login: member.login, name: member.name, groups: member.groups }, admin: member.id === team.state.adminId, grants }));
+      }),
 
       /**
        * Mermaid's own ESM build, served straight from node_modules so it stays out of the app
@@ -994,7 +1165,7 @@ export async function serve(opts: ServeOptions) {
           roots: rootsPayload(),
           single: registry.single,
           // So the top bar can write paths under it as `~/…`.
-          home: homedir(),
+          home: currentRootScope() ? '' : homedir(),
         })),
 
       /**
@@ -1256,7 +1427,7 @@ export async function serve(opts: ServeOptions) {
           }
           // Auto-rw or the mode changes which folders are writable: every tab shows it.
           if (prefs.settings.autoRw !== before || prefs.mode() !== beforeMode) {
-            server.publish('roots', JSON.stringify({ t: 'roots', roots: registry.list().map((r) => r.id) }));
+            publishRoots();
           }
           return json(settingsPayload());
         }),
@@ -1808,7 +1979,7 @@ export async function serve(opts: ServeOptions) {
             if (!files.length) return fail(409, 'nothing to commit');
             const foreign = files.filter((f) => {
               const abs = `${at.repo}/${f.path}`;
-              return !within(abs, at.root.path) || registry.list().some((r) => !r.writable && within(abs, r.path));
+              return !within(abs, at.root.path) || registry.all().some((r) => !r.writable && within(abs, r.path));
             });
             if (foreign.length) return json({ error: `changes outside ${at.root.name} or in a read-only folder — commit in a terminal`, files: foreign }, 409);
             const listed = [...(body?.files ?? [])].sort().join('\n');
@@ -1839,7 +2010,7 @@ export async function serve(opts: ServeOptions) {
           if (!loc) return fail(404, 'no such file');
           const { repo } = at;
           const rel = repoRel(repo, loc.abs);
-          if (!within(loc.abs, at.root.path) || registry.list().some((r) => !r.writable && within(loc.abs, r.path))) {
+          if (!within(loc.abs, at.root.path) || registry.all().some((r) => !r.writable && within(loc.abs, r.path))) {
             return fail(409, `${rel} is outside ${at.root.name} or in a read-only folder — commit in a terminal`);
           }
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
@@ -1885,7 +2056,7 @@ export async function serve(opts: ServeOptions) {
             if (tangled.length) return json({ error: 'a rename, copy or conflict — commit in a terminal', files: tangled }, 409);
             const foreign = chosen.filter((f) => {
               const abs = `${at.repo}/${f.path}`;
-              return !within(abs, at.root.path) || registry.list().some((r) => !r.writable && within(abs, r.path));
+              return !within(abs, at.root.path) || registry.all().some((r) => !r.writable && within(abs, r.path));
             });
             if (foreign.length) return json({ error: `changes outside ${at.root.name} or in a read-only folder — commit in a terminal`, files: foreign }, 409);
             const untracked = chosen.filter((f) => f.code === '??').map((f) => literal(f.path));
@@ -1907,7 +2078,7 @@ export async function serve(opts: ServeOptions) {
           if (!loc) return fail(404, 'not a document');
           const { repo } = at;
           const rel = repoRel(repo, loc.abs);
-          if (!within(loc.abs, at.root.path) || registry.list().some((r) => !r.writable && within(loc.abs, r.path))) {
+          if (!within(loc.abs, at.root.path) || registry.all().some((r) => !r.writable && within(loc.abs, r.path))) {
             return fail(409, `${rel} is outside ${at.root.name} or in a read-only folder — reset it in a terminal`);
           }
           // One git write at a time per repo, as commit / pull / push; and after any write to the file.
@@ -1934,7 +2105,8 @@ export async function serve(opts: ServeOptions) {
         const reveal = parseReveal(url.searchParams.getAll('reveal'));
         if (typeof reveal === 'string') return fail(400, reveal);
         const tree = await store.tree(root, flag(url, 'ignored', opts.includeIgnoredDefault), reveal);
-        return json({ ...tree, root: labelled(tree.root, customName(root.path)) });
+        // A Team account is told the project's name, never where it lives on the machine or whose git identity serves it.
+        return json(currentRootScope() ? { ...tree, user: null, files: tree.files.map(({ repo: _repo, ...file }) => file), root: labelled({ ...tree.root, path: '' }, customName(root.path)) } : { ...tree, root: labelled(tree.root, customName(root.path)) });
       }),
 
       /**
@@ -1980,7 +2152,8 @@ export async function serve(opts: ServeOptions) {
           marks: marksOf(await store.marks(loc.root), loc.rel),
           ...(status ? { status } : {}),
           ...(gitState ? { gitState } : {}),
-          gitRevision: await store.gitRevision(loc.root, loc.rel),
+          // the containing repository's HEAD is the repository's, not the project's
+          gitRevision: currentRootScope() ? null : await store.gitRevision(loc.root, loc.rel),
         };
         if (meta) return json({ ...common, meta: true });
 
@@ -2026,7 +2199,7 @@ export async function serve(opts: ServeOptions) {
         });
 
         // the agents the document asks — sent only while the integration is on
-        const ab = prefs.agentBus.enabled ? { ab: abTargets(src) } : {};
+        const ab = prefs.agentBus.enabled && !currentRootScope() ? { ab: abTargets(src) } : {};
         // a run document: its validated state, as the run page acts on it
         const run = loc.root.kind !== 'reference' && loc.rel.startsWith('Plans/flows/runs/') ? readFlowRunDocument(src) : null;
         const refused = !run ? null : opts.noGit ? { error: 'git is off' } : await verifyRun(flowDeps, loc.root, loc.rel, run.state, readFlowRunMeta(src));
@@ -2108,7 +2281,9 @@ export async function serve(opts: ServeOptions) {
         const limit = limitOf(url, 50, 500);
         const includeIgnored = flag(url, 'ignored', opts.includeIgnoredDefault);
 
-        return json({ entries: await store.recents(root, limit, includeIgnored) });
+        const entries = await store.recents(root, limit, includeIgnored);
+        // A repository's history is not scoped to a project inside it: a Team account gets when and what state, not who or why.
+        return json({ entries: currentRootScope() ? entries.map(({ author: _a, email: _e, subject: _s, hash: _h, ...entry }) => entry) : entries });
       }),
 
       '/api/digest': read(async (req) => {
@@ -2474,19 +2649,32 @@ export async function serve(opts: ServeOptions) {
       const denied = await admit(req);
       if (denied) return denied;
       const url = new URL(req.url);
+      if (team.failed) return unavailable();
+      const member = teamUserOf(req, true);
+      if (team.active && !member) return needLogin(req);
       if (url.pathname === '/ws') {
         // A cross-site page must not subscribe to the live channel: it names every root and
         // every file as it changes.
         if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
-        const data: WsData = { asked: url.searchParams.get('client'), ua: req.headers.get('user-agent') ?? '', clientId: '' };
+        const data: WsData = { asked: url.searchParams.get('client'), ua: req.headers.get('user-agent') ?? '', clientId: '', ...(member ? { team: member.id } : {}) };
         if (srv.upgrade(req, { data })) return undefined as unknown as Response;
         return fail(400, 'websocket upgrade failed');
       }
-      return rootPage(req);
+      return member ? withRootScope(teamScope(() => team.state!, member, () => prefs.mode() === 'viewer'), () => rootPage(req)) : rootPage(req);
     },
 
     websocket: {
       open(ws: ServerWebSocket<WsData>) {
+        sockets.add(ws);
+        if (ws.data.team) {
+          // An account's socket hears only its granted roots; no Agent Bus topic, no root list, no tab registry.
+          const ids = grantedRootIds(ws.data.team);
+          ws.data.topics = new Set(ids.map((id) => `root:${id}`));
+          for (const topic of ws.data.topics) ws.subscribe(topic);
+          ws.data.clientId = randomBytes(16).toString('base64url');
+          ws.send(JSON.stringify({ t: 'hello', roots: ids, clientId: ws.data.clientId, resume: '' }));
+          return;
+        }
         const rootIds = registry.list().map((r) => r.id);
         for (const id of rootIds) ws.subscribe(`root:${id}`);
         ws.subscribe('roots');
@@ -2498,16 +2686,18 @@ export async function serve(opts: ServeOptions) {
       // Client frames: a liveness ping, and `at` — the page the tab shows (Agent Bus control labels).
       message(ws: ServerWebSocket<WsData>, raw: string | Buffer) {
         const text = raw.toString();
-        tabs.message(ws.data.clientId, text);
+        if (!ws.data.team) tabs.message(ws.data.clientId, text);
         if (text === 'ping') ws.send(JSON.stringify({ t: 'pong' }));
       },
       close(ws: ServerWebSocket<WsData>) {
-        tabs.close(ws.data.clientId, ws);
+        sockets.delete(ws);
+        if (!ws.data.team) tabs.close(ws.data.clientId, ws);
       },
     },
 
     error(err) {
       if (err instanceof ReadOnlyError) return fail(403, err.message);
+      if (err instanceof RootScopeError) return fail(403, err.message);
       console.error(err);
       return fail(500, 'internal error');
     },
@@ -2549,7 +2739,11 @@ export async function serve(opts: ServeOptions) {
    */
   const prepareProject = async (spec: string): Promise<PreparedProject> => {
     const abs = await registry.prepare(spec);
-    const served = registry.list().some((r) => r.path === abs);
+    const served = registry.all().some((r) => r.path === abs);
+    // A root added while Team is active would share files with a served one, so a grant on either would reach both.
+    if (team.active && !served && overlappingPaths([abs, ...registry.all().filter((r) => r.kind !== 'reference').map((r) => r.path)]).some(([a]) => a === abs)) {
+      throw new ProjectDirError('overlap', `${abs} overlaps a served project, which Team does not allow: no grant could keep them apart`);
+    }
     return { abs, gitDirs: served || opts.noGit ? [] : await gitDirs(abs) };
   };
   /**
@@ -2625,7 +2819,7 @@ export async function serve(opts: ServeOptions) {
 
     const roots = rootLines(added, asked).map((r) => (upgraded.has(r.id) ? { ...r, upgraded: true } : r));
     // Open tabs learn about the new root over the channel they already hold.
-    server.publish('roots', JSON.stringify({ t: 'roots', roots: roots.map((r) => r.id) }));
+    publishRoots();
     return { url: pageUrl(hostname, server.port), roots };
   };
 
@@ -2680,7 +2874,7 @@ export async function serve(opts: ServeOptions) {
     }
 
     const roots = rootLines();
-    server.publish('roots', JSON.stringify({ t: 'roots', roots: roots.map((r) => r.id) }));
+    publishRoots();
     return { results, roots };
   };
 

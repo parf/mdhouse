@@ -15,6 +15,10 @@ export interface TeamAdminOptions {
   projects: () => Project[];
   viewer: () => boolean;
   oauthReady: () => boolean;
+  /** Why Team cannot be switched on now (empty: it can). */
+  blockers?: () => string[];
+  /** The environment forces Team off: the stored policy stays editable but nothing enforces it. */
+  forcedOff?: () => boolean;
   syncAuth: (next: TeamState, previous: TeamState) => void;
   request?: typeof fetch;
 }
@@ -58,6 +62,7 @@ export class TeamAdmin {
     const viewer = this.options.viewer();
     return {
       revision, active: state.active, oauthReady: this.options.oauthReady(), adminId: state.adminId,
+      blockers: this.options.blockers?.() ?? [], forcedOff: this.options.forcedOff?.() ?? false,
       users: state.users, groups: state.groups,
       projects: projects.map((project) => {
         const grants = grantsByPath.get(project.path);
@@ -67,6 +72,16 @@ export class TeamAdmin {
         };
       }),
     };
+  }
+
+  /** Switches Team on or off. The caller has verified the owner and the typed confirmation; blockers are checked here, at the write. */
+  activate(revision: unknown, active: boolean): ReturnType<TeamAdmin['data']> {
+    const current = this.#current();
+    if (revision !== current.revision) throw new TeamAccessError('stale', 'Team access changed; reload and try again');
+    const blockers = active ? this.options.blockers?.() ?? [] : [];
+    if (blockers.length) throw new TeamAccessError('conflict', `Team cannot be activated: ${blockers.join(' ')}`);
+    this.#store().update(current.state.revision, { action: 'activation', active });
+    return this.data();
   }
 
   async preview(login: string, adminBinding: string, stillAdmin: () => boolean) {

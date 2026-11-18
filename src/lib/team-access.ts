@@ -53,6 +53,7 @@ export type TeamChange =
   | { action: 'add'; user: TeamIdentity }
   | { action: 'groups'; userId: string; groups: string }
   | { action: 'ban'; userId: string; banned: boolean }
+  | { action: 'activation'; active: boolean }
   | { action: 'grant'; projectPath: string; subject: 'user' | 'group'; subjectId: string; access: DirectGrant | null };
 
 export class TeamAccessError extends Error {
@@ -184,6 +185,16 @@ function applyChange(state: Policy, change: TeamChange): void {
     return;
   }
 
+  if (change.action === 'activation') {
+    if (typeof change.active !== 'boolean') throw new TeamAccessError('invalid', 'Activation must be true or false');
+    if (change.active) {
+      const admin = state.users.find((user) => user.id === state.adminId);
+      if (!admin || admin.banned) throw new TeamAccessError('conflict', 'Team needs a registered, unbanned administrator before it can be activated');
+    }
+    state.active = change.active;
+    return;
+  }
+
   if (change.action === 'groups' || change.action === 'ban') {
     const user = state.users.find((candidate) => candidate.id === change.userId);
     if (!user) throw new TeamAccessError('missing', 'User not found');
@@ -275,11 +286,27 @@ export class TeamAccess {
       this.#data = { policy, revision: revisionOf(bytes) };
       try { this.syncAuth?.(this.snapshot(), previous); }
       catch {
+        // Team is never left half switched on: a failed activation is written back; any other change stays saved and the store fails closed.
+        if (change.action === 'activation' && change.active && this.#rollback(previous)) {
+          throw new TeamAccessError('conflict', 'Team was not activated: the authorization refresh failed and the previous state was restored');
+        }
         this.#blocked = true;
         throw new TeamAccessError('blocked', 'Team access was saved, but the authorization refresh failed');
       }
       return this.snapshot();
     } finally { this.#busy = false; }
+  }
+
+  /** Writes the previous policy back over a failed activation and re-announces it. False when either step fails. */
+  #rollback(previous: TeamState): boolean {
+    try {
+      const { revision: _, ...policy } = previous;
+      const bytes = Buffer.from(JSON.stringify({ version: 1, stamp: randomBytes(16).toString('hex'), ...policy }) + '\n');
+      this.#write(bytes, this.#data.revision);
+      this.#data = { policy, revision: revisionOf(bytes) };
+      this.syncAuth?.(this.snapshot(), this.snapshot());
+      return true;
+    } catch { return false; }
   }
 
   #openDir(): number {

@@ -49,7 +49,7 @@ export const VIEWER_REFUSED: ReadonlySet<Family> = new Set<Family>([
  */
 export interface Actor {
   readonly admin: boolean;
-  readonly via: 'control' | 'session' | 'local' | 'none';
+  readonly via: 'control' | 'session' | 'local' | 'team' | 'none';
   readonly user?: string;
 }
 
