@@ -109,6 +109,126 @@ describe('registry scope', () => {
   });
 });
 
+describe('revocation while a request is in flight', () => {
+  const left = (dir: string) => Bun.$`ls -A ${dir}`.text().then((t) => t.trim().split('\n').filter(Boolean).sort());
+
+  test('writeFile asks the scope again after its last await: a write revoked meanwhile is refused, its temp file removed, the target untouched', async () => {
+    const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-wr-')));
+    await mkdir(join(base, 'a'));
+    await writeFile(join(base, 'a', 'x.md'), '# original\n');
+    try {
+      const registry = await Registry.create([join(base, 'a')], 'rw');
+      const root = registry.all()[0]!;
+      let asked = 0;
+      // writable when the write starts, revoked by the time it would commit
+      const scope = { allows: () => true, canWrite: () => ++asked <= 1 };
+      await expect(withRootScope(scope, () => registry.writeFile(`${root.id}/x.md`, '# changed\n'))).rejects.toThrow();
+      expect(asked).toBe(2);
+      expect(readFileSync(join(base, 'a', 'x.md'), 'utf8')).toBe('# original\n');
+      expect(await left(join(base, 'a'))).toEqual(['x.md']);
+      // the same scope that stays writable commits
+      await withRootScope({ allows: () => true, canWrite: () => true }, () => registry.writeFile(`${root.id}/x.md`, '# changed\n'));
+      expect(readFileSync(join(base, 'a', 'x.md'), 'utf8')).toBe('# changed\n');
+      expect(await left(join(base, 'a'))).toEqual(['x.md']);
+    } finally {
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+
+  test('writeFile refuses when the link it wrote through was repointed meanwhile, and removes its temp file', async () => {
+    const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-wl-')));
+    await mkdir(join(base, 'a'));
+    await writeFile(join(base, 'a', 'x.md'), '# x\n');
+    await writeFile(join(base, 'a', 'z.md'), '# z\n');
+    await Bun.$`ln -s x.md ${join(base, 'a', 'link.md')}`;
+    try {
+      const registry = await Registry.create([join(base, 'a')], 'rw');
+      const root = registry.all()[0]!;
+      let asked = 0;
+      const scope = {
+        allows: () => {
+          // the second lookup is the one after the last await: the link is swapped just before it
+          if (++asked === 2) Bun.spawnSync(['ln', '-sfn', 'z.md', join(base, 'a', 'link.md')]);
+          return true;
+        },
+        canWrite: () => true,
+      };
+      await expect(withRootScope(scope, () => registry.writeFile(`${root.id}/link.md`, '# written\n'))).rejects.toThrow('the path changed');
+      expect([readFileSync(join(base, 'a', 'x.md'), 'utf8'), readFileSync(join(base, 'a', 'z.md'), 'utf8')]).toEqual(['# x\n', '# z\n']);
+      expect(await left(join(base, 'a'))).toEqual(['link.md', 'x.md', 'z.md']);
+    } finally {
+      await rm(base, { recursive: true, force: true });
+    }
+  });
+
+  test('runScoped discards an answer computed before a ban, a sign-out or a changed grant, and passes an unchanged one', async () => {
+    const { runScoped } = await import('../src/lib/team-runtime');
+    let valid = true;
+    let grants = 'a:ro';
+    const check = { valid: () => valid, fingerprint: () => grants };
+    const slow = (change: () => void) => async () => {
+      await Promise.resolve();
+      change();
+      await new Promise((r) => setTimeout(r, 5));
+      return new Response('secret');
+    };
+    expect((await runScoped(check, slow(() => {}))).ok).toBe(true);
+    expect(await runScoped(check, slow(() => { grants = 'a:rw'; }))).toEqual({ ok: false, why: 'changed' });
+    expect(await runScoped(check, slow(() => { valid = false; }))).toEqual({ ok: false, why: 'login' });
+  });
+});
+
+describe('Team: an answer computed before a ban or a grant change is not sent', () => {
+  test('doc, raw, the fallback page and a grant change in flight', async () => {
+    let release: (() => void) | null = null;
+    let entered: (() => void) | null = null;
+    let holding = false;
+    const w = await world({
+      hold: async () => {
+        if (!holding) return;
+        holding = false;
+        await new Promise<void>((resolve) => { release = resolve; entered?.(); });
+      },
+    });
+    try {
+      await add(w, 'gh-admin');
+      await add(w, 'alice');
+      const team = await (await w.api(w.owner, '/api/team')).json();
+      const aliceId = team.users.find((u: { login: string }) => u.login === 'alice').id;
+      expect((await grant(w, w.a, 'user', aliceId, 'rw')).status).toBe(200);
+      expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
+      let alice = await w.login('alice');
+      const inFlight = async (path: string, headers: Record<string, string>, change: () => Promise<unknown>) => {
+        const reached = new Promise<void>((resolve) => (entered = resolve));
+        holding = true;
+        const pending = w.api(alice, path, { headers });
+        await reached;
+        await change();
+        release!();
+        return pending;
+      };
+      for (const [path, headers] of [[`/api/doc?p=${w.a.id}/note.md`, {}], [`/api/raw?p=${w.a.id}/note.md`, {}], [`/${w.a.id}/note.md`, { accept: 'text/html' }]] as const) {
+        // no change: the answer goes out
+        expect([path, (await inFlight(path, headers, async () => {})).status]).toEqual([path, 200]);
+        // a grant change meanwhile: 409, nothing of the document
+        const changed = await inFlight(path, headers, () => grant(w, w.a, 'user', aliceId, 'ro'));
+        const body = await changed.text();
+        expect([path, changed.status, body.includes('a note'), body.includes('reason')]).toEqual([path, 409, false, true]);
+        await grant(w, w.a, 'user', aliceId, 'rw');
+        // a ban meanwhile: the session is gone, so sign-in, never the document
+        const banned = await inFlight(path, headers, () => w.update({ action: 'ban', userId: aliceId, banned: true }));
+        const text = await banned.text();
+        expect([path, banned.status === 401 || banned.status === 302, text.includes('a note')]).toEqual([path, true, false]);
+        await w.update({ action: 'ban', userId: aliceId, banned: false });
+        alice = await w.login('alice');
+        expect(alice).toMatch(/^mdhouse-team-/);
+      }
+    } finally {
+      await w.stop();
+    }
+  });
+});
+
 describe('activation rules', () => {
   const state = (over: Partial<TeamState> = {}): TeamState => ({ revision: 'r', active: false, adminId: '11', users: [{ id: '11', login: 'gh-admin', name: null, groups: ['all-users'], banned: false }], groups: [], projects: [], ...over });
   test('needs sign-in configured, a registered unbanned administrator and no overlapping projects', () => {
@@ -198,7 +318,7 @@ interface World {
 const ENV = ['MDHOUSE_GITHUB_CLIENT_ID', 'MDHOUSE_GITHUB_CLIENT_SECRET', 'MDHOUSE_GITHUB_CALLBACK_URL', 'MDHOUSE_TEAM'] as const;
 
 let nextPort = 61910;
-async function world(opts: { oauth?: boolean; roots?: (base: string) => string[]; env?: Record<string, string>; base?: string; git?: boolean } = {}): Promise<World> {
+async function world(opts: { oauth?: boolean; roots?: (base: string) => string[]; env?: Record<string, string>; base?: string; git?: boolean; hold?: (req: Request) => Promise<void> } = {}): Promise<World> {
   const saved = Object.fromEntries(ENV.map((k) => [k, process.env[k]]));
   for (const k of ENV) delete process.env[k];
   if (opts.oauth !== false) {
@@ -217,7 +337,7 @@ async function world(opts: { oauth?: boolean; roots?: (base: string) => string[]
   const prefs = await Prefs.load(join(base, 'config', 'prefs.json'));
   const registry = await Registry.create(opts.roots ? opts.roots(base) : [join(base, 'a'), join(base, 'b')], 'rw');
   const gh = fakeGitHub();
-  const s = await serve({ registry, prefs, port: testPort(nextPort++), hostname: '127.0.0.1', localAdmin: true, noGit: !opts.git, teamFetch: gh.request });
+  const s = await serve({ registry, prefs, port: testPort(nextPort++), hostname: '127.0.0.1', localAdmin: true, noGit: !opts.git, teamFetch: gh.request, teamAfterHandler: opts.hold });
   for (const k of ENV) {
     if (saved[k] === undefined) delete process.env[k];
     else process.env[k] = saved[k];

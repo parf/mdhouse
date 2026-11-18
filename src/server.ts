@@ -53,9 +53,9 @@ import { citeRecords } from './lib/rag-cite';
 import { decodeSearchReply } from './lib/rag-sync-runtime';
 import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, sourceFor, type RagLast, type RagSource } from './lib/rag-ui';
 import { TeamAdmin } from './lib/team-admin';
-import { TeamAccessError, type TeamState } from './lib/team-access';
+import { TeamAccessError, type TeamState, type TeamUser } from './lib/team-access';
 import { GitHubOAuth, readGitHubOAuthConfig, TeamGitHubError } from './lib/team-github';
-import { activationBlockers, grantFor, overlappingPaths, readCookie, teamCookie, teamCookieName, teamRoute, teamScope } from './lib/team-runtime';
+import { activationBlockers, grantFor, overlappingPaths, readCookie, runScoped, teamCookie, teamCookieName, teamRoute, teamScope } from './lib/team-runtime';
 import { IDLE_MS } from './lib/user-session-model';
 import { TeamSessions } from './lib/team-sessions';
 
@@ -86,6 +86,8 @@ export interface ServeOptions {
   localAdmin?: boolean;
   /** GitHub transport seam for verifying Team administration without a live provider. */
   teamFetch?: typeof fetch;
+  /** Test seam: awaited after a scoped read settled and before its account is checked again — where a ban can land. */
+  teamAfterHandler?: (req: Request) => Promise<void>;
 }
 
 const json = (body: unknown, status = 200) =>
@@ -1011,6 +1013,24 @@ export async function serve(opts: ServeOptions) {
    * (`lib/team-runtime.ts`) decides — unlisted routes are refused — and an account's request runs with the registry
    * confined to its grants. A writing method also needs the same origin.
    */
+  /**
+   * An account's request under its scope. A read or a page whose account was banned, signed out or re-granted while it
+   * awaited is not sent (401 login / 409 auth); a write was checked at its commit (`Registry.writeFile`), so its answer stands.
+   */
+  const inScope = async (req: Request, member: TeamUser, h: Handler, guarded: boolean): Promise<Response> => {
+    const scope = teamScope(() => team.state!, member, () => prefs.mode() === 'viewer');
+    if (!guarded) return withRootScope(scope, () => h(req));
+    const out = await runScoped(
+      { valid: () => !!teamUserOf(req), fingerprint: () => JSON.stringify([team.active, [...grantsOf(member.id)]]) },
+      async () => {
+        const res = await withRootScope(scope, () => h(req));
+        await opts.teamAfterHandler?.(req);
+        return res;
+      },
+    );
+    if (out.ok) return out.response;
+    return out.why === 'login' ? needLogin(req) : noStore(json({ error: 'authorization changed while this was answered; try again', reason: 'auth' }, 409));
+  };
   const teamGate = (pattern: string, method: string, h: Handler): Handler => async (req) => {
     // An unreadable policy refuses everything but the owner's own door, so the owner can still sign in to repair it.
     if (team.failed) return teamRoute(method, pattern).policy === 'owner' ? h(req) : unavailable();
@@ -1026,7 +1046,7 @@ export async function serve(opts: ServeOptions) {
     if (!member) return needLogin(req);
     if (policy === 'session') return h(req);
     if ((policy === 'write' || !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) && !sameOrigin(req)) return fail(403, 'cross-origin request refused');
-    return withRootScope(teamScope(() => team.state!, member, () => prefs.mode() === 'viewer'), () => h(req));
+    return inScope(req, member, h, policy !== 'write');
   };
   function guard<R extends string>(table: Bun.Serve.Routes<undefined, R>): Bun.Serve.Routes<undefined, R> {
     routes = inventory(table);
@@ -2713,7 +2733,7 @@ export async function serve(opts: ServeOptions) {
         if (srv.upgrade(req, { data })) return undefined as unknown as Response;
         return fail(400, 'websocket upgrade failed');
       }
-      return member ? withRootScope(teamScope(() => team.state!, member, () => prefs.mode() === 'viewer'), () => rootPage(req)) : rootPage(req);
+      return member ? inScope(req, member, rootPage, true) : rootPage(req);
     },
 
     websocket: {

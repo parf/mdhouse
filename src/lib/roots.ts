@@ -419,6 +419,12 @@ export class Registry {
     try {
       await writeFile(tmp, data, mode === undefined ? undefined : { mode: mode & 0o7777 });
       if (mode !== undefined) await chmod(tmp, mode & 0o7777);
+      // Everything above awaited, and a ban, a revoked grant or a swapped link may have come in meanwhile: the scope, the jail and
+      // the target are asked again after the last await, with nothing between that answer and the rename.
+      const again = await this.resolve(p);
+      const now = await realpath(loc.abs).catch(() => loc.abs);
+      if (!again || !this.writableAt(again)) throw new ReadOnlyError(loc.abs);
+      if (again.abs !== loc.abs || now !== target) throw new Error(`the path changed while it was written: ${p}`);
       await rename(tmp, target);
     } catch (err) {
       await unlink(tmp).catch(() => {});

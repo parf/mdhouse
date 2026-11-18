@@ -191,3 +191,16 @@ export function readCookie(header: string | null | undefined, name: string): str
   }
   return null;
 }
+
+export type ScopedOutcome = { ok: true; response: Response } | { ok: false; why: 'login' | 'changed' };
+
+/**
+ * Runs a scoped handler and re-checks the account after it settled: a ban, a revoked session or a changed grant that came in
+ * while it awaited discards the answer, so nothing computed under the old authorization goes out after the change.
+ */
+export async function runScoped(check: { valid: () => boolean; fingerprint: () => string }, run: () => Response | Promise<Response>): Promise<ScopedOutcome> {
+  const before = check.fingerprint();
+  const response = await run();
+  if (!check.valid()) return { ok: false, why: 'login' };
+  return check.fingerprint() === before ? { ok: true, response } : { ok: false, why: 'changed' };
+}
