@@ -29,15 +29,16 @@ mdhouse --allow reset             # every address again
 ## Team users and project grants
 
 Open **Settings → Users** to add a GitHub account after reviewing its profile. Select a user to edit
-their access to each project, or select a project to edit access for its users and groups. The group
-filters show the number of members, including banned users. **All Users** includes every registered
-account automatically. The administrator can enter extra groups in the user's field, separated by
-spaces or commas.
+their access to each project, or select a project to edit access for its users and groups.
+**Settings → Groups** lists each group's members and project grants. Group counts include banned
+users. **All Users** automatically includes every registered account. The administrator can enter
+extra group names in the user's field, separated by spaces or commas.
 
-A direct RO, RW or No access grant takes precedence over group grants. With both boxes empty,
-the user inherits the strongest of their group grants. Viewer and a read-only project always cap
-access at RO. A ban denies sign-in and revokes existing sessions in Team. If the Users page says
-access is staged, its saved changes will apply only when Team access is enabled.
+A direct RO or RW grant takes precedence over group grants. With both boxes empty, the user inherits
+the strongest group grant. A group with both boxes empty gives no access. An existing explicit block
+stays in effect until cleared with **Use group access**. The RO and RW summaries show the configured
+sources. Viewer and read-only projects cap access at RO. A ban denies sign-in and revokes existing
+sessions. Staged grants take effect when Team access is enabled.
 
 ### Turn on Team access
 
@@ -48,9 +49,13 @@ See [GitHub's OAuth app setup](https://docs.github.com/en/apps/oauth-apps/buildi
 
 The owner confirms the first GitHub account on the Users page. This account becomes the Team
 administrator. Grant users or groups the projects they should be able to open. In **Team access**,
-review any blockers and type `activate team` to switch sign-in to GitHub. Project roots must be
-separate directories at this stage. The owner can also type `deactivate team` to return to the
-instance's existing access mode.
+review any blockers and type `activate team` to switch sign-in to GitHub. The owner can type
+`deactivate team` to return to the instance's existing access mode.
+
+Nested projects have independent grants. For example, you can grant access to a separately served
+`Plans/` project while keeping the containing project private. A grant on the parent also leaves
+`Plans/` private unless the user has a grant on that project. Open the child through its own project.
+Team remembers that boundary when the child stops being served, including after a restart.
 
 Team currently scopes browsing, search, raw files and Markdown editing to granted projects.
 Git, Agent Bus, RAG, flows and automation await Team authorization before they can run there.

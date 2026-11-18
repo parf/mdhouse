@@ -30,7 +30,9 @@
 - 📌 USER-W8 Users have a separate administration page with grants editable by user or by project.
   The administrator edits group membership in a space/comma-delimited field. User rows show group badges.
   **All Users** is automatic for every registered account. Banning an account prevents sign-in and revokes access immediately.
-  A direct RO/RW/No access choice overrides the strongest grant inherited from the user's groups. All Users grants no projects by default.
+  A direct RO/RW choice overrides the strongest group grant. Clearing both choices restores inheritance. Existing explicit blocks can be cleared with Use group access. All Users grants no projects by default.
+  Groups have their own overview and detail with members and project grants. Access rows list the configured RW and RO sources.
+  Nested projects have independent grants. A parent omits each separately served descendant, and Team retains that boundary when the child is unserved.
   The single mdhouse process calls `syncAuth()` after persisted authorization changes.
 - 📌 USER-W3 Admission: known users; optional trusted localhost/CIDRs with explicit project policy.
   No inherited admin grants. Forwarded addresses require a configured trusted proxy.

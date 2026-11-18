@@ -4,9 +4,9 @@
 
 ### Added
 
-- Groups (`/settings/users?view=groups`, from Settings beside 👤 Users): each 👥 group with its members and its RO / RW per project. Access rows say where access comes from once — `RW: 👤 direct · RO: 👥 All Users, 👥 dev` — with every group that gives it; RO / RW ticks only (empty: the user's groups decide, a group gives none); an older explicit block reads "Direct access blocked" with Use group access. Settings' Administrator line is one word, its explanation behind ⓘ
+- Team access: **Settings → Users** manages GitHub accounts, bans and per-project RO/RW. **Settings → Groups** shows each group's members and project grants. Grant tables list configured RW and RO sources. Clearing a user's boxes restores group inheritance. A stored direct block can be cleared with **Use group access**. The first confirmed user becomes the Team administrator. The owner activates Team access after configuring GitHub sign-in and grants.
 
-- Users page (`/settings/users`, from Settings and each project): Team users with 👥 group badges and filters (All Users first, counts include banned users), each user's projects or each project's 👥 groups and 👤 users with RO / RW (both empty: inherit) and No access, effective access and where it comes from, a group field (spaces or commas; a new name makes a group), Ban / Unban with confirmation, Add user (GitHub username → preview → Confirm; the first becomes the administrator). Until Team access is active it says the configuration is staged — nothing enforced; the owner turns Team access on or off there by typing `activate team` / `deactivate team`, and what still blocks it is listed. With Team access active, the front page and git addresses open the project's folder, the sidebar shows who is signed in with Log out, and Git, Run Flow, Agent Bus and RAG Search controls are not offered (reading, Files, search and editing stay)
+- Nested Team projects have independent grants. Each separately served child opens through its own project and stays out of the parent listing and URLs. Team preserves the boundary when the child is unserved or the server restarts.
 
 - Wikilinks: `[[page]]`, `[[path/page]]`, `[[page|label]]`, `[[page#Heading]]` link to a page of the same project — from the document's folder, then the root, `.md` optional; a bare name is the one page of that name anywhere in it. A page that is missing, or a name several pages share, is marked, and a click opens **Where to go?** — every file of that name in the project, by place: this folder, its parent, its subfolders (`done/` and `wiki/` first), the root, elsewhere; then same name, any case, similar — or none and the way back; nothing guessed or created; a relative link to a missing file of any type opens it too and offers that type only; a page added or renamed shows at once. Not in code; `![[embeds]]` stay text
 
@@ -103,6 +103,8 @@
 - Five Legal authoring packages cover contracts, obligations/renewal, policy comparisons, change impacts and counsel briefs with supplied-source uncertainty and qualified-review stops; execution and legal actions are not included
 
 ### Changed
+
+- Settings shows **Administrator** once, with the local access explanation behind ⓘ.
 
 - Agent Bus panel: the default button reads `[1] Send` (every button `[n] …`, Alt+n as before); a sent message shows its note without an "Updated — reply" heading — other actions still name themselves
 

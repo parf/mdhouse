@@ -69,7 +69,7 @@ export function grantState(project: TeamProject, user: TeamUser, groups: TeamGro
 
 /**
  * The grant after a click on RO or RW: ticking one sets it (RW and RO are one choice), unticking the ticked one leaves
- * both empty — inherit (`null`). `none` is the separate No access choice.
+ * both empty — inherit (`null`). `none` represents a stored direct block.
  */
 export function nextGrant(current: TeamAccess | 'none' | null | undefined, clicked: TeamAccess | 'none', checked: boolean): TeamAccess | 'none' | null {
   if (checked) return clicked;
