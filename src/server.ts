@@ -1028,7 +1028,7 @@ export async function serve(opts: ServeOptions) {
         return res;
       },
     );
-    if (out.ok) return out.response;
+    if (out.ok) return noStore(out.response);
     return out.why === 'login' ? needLogin(req) : noStore(json({ error: 'authorization changed while this was answered; try again', reason: 'auth' }, 409));
   };
   const teamGate = (pattern: string, method: string, h: Handler): Handler => async (req) => {
@@ -1038,6 +1038,9 @@ export async function serve(opts: ServeOptions) {
     const { policy, why } = teamRoute(method, pattern);
     if (policy === 'public' || policy === 'owner') return h(req);
     if (policy === 'denied') return noStore(json({ error: why, reason: 'team' }, 403));
+    // An OS-owner administrator can recover from the Users page without a GitHub session.
+    // This admits only its static shell and sanitized display options, never project data.
+    if ((pattern === '/settings/users' || (pattern === '/api/settings' && method === 'GET')) && isOwner(req)) return noStore(await h(req));
     const member = teamUserOf(req, true);
     if (policy === 'team-admin') {
       if (!actorOf(req).admin) return member ? adminRequired() : needLogin(req);
@@ -1478,7 +1481,7 @@ export async function serve(opts: ServeOptions) {
       /** The settings page's options. Changing one is held to the same same-origin rule. */
       '/api/settings': {
         // A Team account gets the shell's defaults and the mode — no auto-rw paths, no name, nothing of the instance's configuration.
-        GET: () => (currentRootScope() ? json({ editLink: false, editScheme: 'edit', autoRw: false, me: '', mode: prefs.mode(), team: true }) : json(settingsPayload())),
+        GET: () => (team.active ? json({ editLink: false, editScheme: 'edit', autoRw: false, me: '', mode: prefs.mode(), team: true }) : json(settingsPayload())),
         POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;

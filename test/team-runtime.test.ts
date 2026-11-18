@@ -658,6 +658,15 @@ describe('Team in a running server', () => {
     expect((await post('/api/team', { revision: (await (await w.api(admin, '/api/team')).json()).revision, action: 'ban', userId: data.adminId, banned: true })).status).toBe(409);
   });
 
+  test('the owner can reach Users for recovery without a GitHub session and gets no project data', async () => {
+    expect((await w.api(w.owner, '/settings/users', { headers: { accept: 'text/html' } })).status).toBe(200);
+    expect((await (await w.api(w.owner, '/api/settings')).json()).team).toBe(true);
+    expect((await (await w.api(w.owner, '/api/team')).json()).canDeactivate).toBe(true);
+    expect((await w.api(w.owner, '/api/roots')).status).toBe(401);
+    expect((await w.api(w.owner, `/api/doc?p=${w.a.id}/note.md`)).status).toBe(401);
+    expect((await w.api(null, '/settings/users', { headers: { accept: 'text/html' } })).status).toBe(302);
+  });
+
   test('sockets: an account hears its granted roots only, with no Agent Bus topic; a grant change re-scopes it at once; a ban closes it', async () => {
     const bob = await w.login('bob');
     const team = await (await w.api(w.owner, '/api/team')).json();

@@ -241,7 +241,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       const named = route.kind === 'file' ? missing?.root : dirTarget?.rootId;
       const wanted = (roots.find((r) => r.id === named) ?? roots.find((r) => r.id === asked))?.id;
       setRootId((current) => current || wanted || (roots[0]?.id ?? ''));
-    });
+    }).catch(() => {});
   }, []);
 
   /**
