@@ -62,6 +62,8 @@ export interface ScanOptions {
    * a path is read where it lies.
    */
   allow?: (rel: string) => Promise<string | null>;
+  /** An absolute path in a different registered project. Skip it before walking or collecting files. */
+  exclude?: (path: string) => boolean;
 }
 
 /** True when `allow` passes at least one of `rels`; asks a few at a time, stops at the first. */
@@ -154,15 +156,15 @@ async function listRepo(
   repo: string,
   dir: string,
   prefix: string,
-  ctx: { rules: IgnoreRules; includeIgnored: boolean; maxDepth: number; out: Map<string, Found>; repos: string[]; ignored: string[] },
+  ctx: { rules: IgnoreRules; includeIgnored: boolean; maxDepth: number; out: Map<string, Found>; repos: string[]; ignored: string[]; exclude?: ScanOptions['exclude'] },
 ): Promise<boolean> {
   // the ignored listing is always asked for: without `includeIgnored` only to know it is there
   const listed = await listViaGit(dir, true);
   if (!listed) return false;
-  for (const p of listed.md) ctx.out.set(prefix ? `${prefix}/${p}` : p, { repo, ignored: false });
+  for (const p of listed.md) if (!ctx.exclude?.(join(dir, p))) ctx.out.set(prefix ? `${prefix}/${p}` : p, { repo, ignored: false });
   for (const p of listed.ignored) {
     const rel = prefix ? `${prefix}/${p}` : p;
-    if (!passesDeny(rel, ctx.rules)) continue;
+    if (!passesDeny(rel, ctx.rules) || ctx.exclude?.(join(dir, p))) continue;
     if (ctx.includeIgnored) ctx.out.set(rel, { repo, ignored: true });
     else ctx.ignored.push(rel);
   }
@@ -173,6 +175,7 @@ async function listRepo(
       const segs = rel.split('/');
       if (segs.length > ctx.maxDepth || segs.some((seg) => isDenied(ctx.rules, seg))) return;
       const abs = join(dir, p);
+      if (ctx.exclude?.(abs)) return;
       // An uninitialised submodule is an empty directory: nothing to list.
       if (!existsSync(join(abs, '.git'))) return;
       if (await listRepo(abs, abs, rel, ctx)) ctx.repos.push(abs);
@@ -191,8 +194,9 @@ async function walk(
   depth: number,
   maxDepth: number,
   found: { files: string[]; repos: string[]; limit: number },
+  exclude?: ScanOptions['exclude'],
 ): Promise<void> {
-  if (found.files.length > found.limit) return;
+  if (found.files.length > found.limit || exclude?.(dir)) return;
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -210,12 +214,13 @@ async function walk(
     if (entry.isDirectory()) {
       if (!isDenied(rules, entry.name) && !entry.name.startsWith('.')) subdirs.push(join(dir, entry.name));
     } else if (entry.isFile() && MD_EXT.test(entry.name)) {
-      found.files.push(join(dir, entry.name));
+      const path = join(dir, entry.name);
+      if (!exclude?.(path)) found.files.push(path);
     }
   }
 
   if (depth >= maxDepth) return;
-  await Promise.all(subdirs.map((sub) => walk(sub, rules, depth + 1, maxDepth, found)));
+  await Promise.all(subdirs.map((sub) => walk(sub, rules, depth + 1, maxDepth, found, exclude)));
 }
 
 export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions = {}): Promise<ScanResult> {
@@ -233,7 +238,7 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
   // filesystem walk and show what is actually in it.
   const gitBlind = ownRepo !== null && (await isIgnoredByGit(root.path));
 
-  const ctx = { rules, includeIgnored, maxDepth, out: relPaths, repos, ignored: [] as string[] };
+  const ctx = { rules, includeIgnored, maxDepth, out: relPaths, repos, ignored: [] as string[], exclude: opts.exclude };
   if (ownRepo && !gitBlind) {
     // The root is inside a repository: one listing covers the whole subtree.
     repos.push(ownRepo);
@@ -241,7 +246,7 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
   } else {
     // Not a repo: walk for loose files and for repositories nested below.
     const found = { files: [] as string[], repos: [] as string[], limit };
-    await walk(root.path, rules, 0, maxDepth, found);
+    await walk(root.path, rules, 0, maxDepth, found, opts.exclude);
 
     const blind = gitBlind && markBlind;
     for (const abs of found.files) relPaths.set(relative(root.path, abs).split(sep).join('/'), { ignored: blind });
@@ -255,6 +260,7 @@ export async function scanRoot(root: Root, rules: IgnoreRules, opts: ScanOptions
         degraded = true;
         const glob = new Bun.Glob('**/*.{md,mdx,MD}');
         for await (const p of glob.scan({ cwd: repo, onlyFiles: true, dot: false })) {
+          if (opts.exclude?.(join(repo, p))) continue;
           relPaths.set(prefix ? `${prefix}/${p}` : p, { repo, ignored: false });
           if (relPaths.size > limit) break;
         }
@@ -316,11 +322,11 @@ export const LIST_CAP = 5000;
 export async function listFiles(
   rootPath: string,
   abs: string,
-  opts: { noGit?: boolean; rules: IgnoreRules; resolve: (rel: string) => Promise<string | null> },
+  opts: { noGit?: boolean; rules: IgnoreRules; resolve: (rel: string) => Promise<string | null>; exclude?: ScanOptions['exclude'] },
 ): Promise<{ files: AnyFile[]; capped: boolean }> {
   const prefix = relative(rootPath, abs).split(sep).join('/');
   const rootRel = (p: string) => (prefix ? `${prefix}/${p}` : p);
-  const shown = (p: string) => !isExplicitlyDenied(opts.rules, rootRel(p));
+  const shown = (p: string) => !isExplicitlyDenied(opts.rules, rootRel(p)) && !opts.exclude?.(join(abs, p));
   const viaGit = !opts.noGit && (await repoToplevel(abs)) !== null && !(await isIgnoredByGit(abs));
   let paths = viaGit ? ((await git(abs, ['ls-files', '-co', '--exclude-standard', '-z']))?.split('\0').filter((p) => p && shown(p)) ?? null) : null;
   if (!paths) {

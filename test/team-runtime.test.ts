@@ -1,13 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
 import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
 import { Registry, RootScopeError, withRootScope, type Root } from '../src/lib/roots';
 import { TeamAccess, type TeamState } from '../src/lib/team-access';
-import { activationBlockers, hasTeamRoute, overlappingPaths, TEAM_ROUTES, teamRoute } from '../src/lib/team-runtime';
+import { activationBlockers, hasTeamRoute, TEAM_ROUTES, teamRoute } from '../src/lib/team-runtime';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
 import { testPort } from './ports';
@@ -277,34 +277,17 @@ describe('Team: an answer computed before a ban or a grant change is not sent', 
 
 describe('activation rules', () => {
   const state = (over: Partial<TeamState> = {}): TeamState => ({ revision: 'r', active: false, adminId: '11', users: [{ id: '11', login: 'gh-admin', name: null, groups: ['all-users'], banned: false }], groups: [], projects: [], ...over });
-  test('needs sign-in configured, a registered unbanned administrator and no overlapping projects', () => {
+  test('needs sign-in configured and a registered unbanned administrator, and permits nested projects', () => {
     const ok = { state: state(), oauthReady: true, projects: [{ name: 'a', path: '/srv/a' }, { name: 'b', path: '/srv/b' }] };
     expect(activationBlockers(ok)).toEqual([]);
     expect(activationBlockers({ ...ok, oauthReady: false }).join()).toContain('GitHub sign-in is not configured');
     expect(activationBlockers({ ...ok, state: state({ adminId: null, users: [] }) }).join()).toContain('Add the Team administrator');
     expect(activationBlockers({ ...ok, state: state({ users: [{ id: '11', login: 'gh-admin', name: null, groups: ['all-users'], banned: true }] }) }).join()).toContain('banned');
-    expect(activationBlockers({ ...ok, projects: [{ name: 'a', path: '/srv/a' }, { name: 'sub', path: '/srv/a/sub' }] }).join()).toContain('Projects overlap: a and sub');
+    expect(activationBlockers({ ...ok, projects: [{ name: 'a', path: '/srv/a' }, { name: 'sub', path: '/srv/a/sub' }] })).toEqual([]);
     expect(activationBlockers({ ...ok, basicUsers: true }).join()).toContain('Basic-auth users are configured');
     expect(activationBlockers({ ...ok, basicUsers: false })).toEqual([]);
     expect(activationBlockers({ ...ok, projects: [{ name: 'root', path: '/' }] }).join()).toContain('whole filesystem');
     expect(activationBlockers({ ...ok, projects: [{ name: 'cfg', path: '/home/u/.config/mdhouse', instance: true }] }).join()).toContain("holds mdhouse's own configuration");
-  });
-
-  test('overlap: equal, nested either way, and symlink aliases; a name that only starts alike is not', async () => {
-    const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-overlap-')));
-    try {
-      await mkdir(join(base, 'a', 'sub'), { recursive: true });
-      await mkdir(join(base, 'ab'));
-      await Bun.$`ln -s ${join(base, 'a')} ${join(base, 'alias')}`;
-      expect(overlappingPaths([join(base, 'a'), join(base, 'ab')])).toEqual([]);
-      expect(overlappingPaths([join(base, 'a'), join(base, 'a', 'sub')]).length).toBe(1);
-      expect(overlappingPaths([join(base, 'a', 'sub'), join(base, 'a')]).length).toBe(1);
-      expect(overlappingPaths([join(base, 'a'), join(base, 'alias')]).length).toBe(1);
-      expect(overlappingPaths(['/', join(base, 'a')]).length).toBe(1);
-      expect(overlappingPaths([join(base, 'a'), '/']).length).toBe(1);
-    } finally {
-      await rm(base, { recursive: true, force: true });
-    }
   });
 
   test('a failed activation is written back and Team stays off; a failed ban refresh fails closed', async () => {
@@ -755,16 +738,57 @@ describe('Team in a running server', () => {
   });
 });
 
-describe('Team refuses to start unsafe', () => {
-  test('overlapping projects block activation with the reason', async () => {
+describe('Team project boundaries', () => {
+  test('parent and nested projects have independent grants across direct URLs, listings and search', async () => {
     const w = await world({ roots: (base) => [join(base, 'a'), join(base, 'a', 'sub')] });
     try {
-      await mkdir(join(w.base, 'a', 'sub'), { recursive: true });
-      await add(w, 'gh-admin');
+      await writeFile(join(w.b.path, 'child-only.md'), '# child-only\n');
+      await symlink(join(w.b.path, 'child-only.md'), join(w.a.path, 'alias.md'));
+      await symlink(join(w.a.path, 'note.md'), join(w.b.path, 'outer-link.md'));
+      await w.prefs.set(w.a.path, 'sub/child-only.md', 'favorite', true);
+      const { id: a } = w.a;
+      const { id: b } = w.b;
+      const listings = [
+        `/api/tree?root=${a}&reveal=sub`,
+        `/api/files?p=${a}`,
+        `/api/search?root=${a}&q=child-only`,
+        `/api/choose?root=${a}&target=child-only&from=note.md`,
+        `/api/recents?root=${a}`,
+      ] as const;
+      expect(await (await w.api(null, listings[0])).text()).toContain('sub/child-only.md');
+      await Promise.all(listings.slice(1).map(async (path) => { await (await w.api(null, path)).text(); }));
+      for (const who of ['gh-admin', 'alice', 'bob', 'carol']) expect((await add(w, who)).status).toBe(200);
+      for (const [root, userId] of [[w.a, '12'], [w.b, '13'], [w.a, '14'], [w.b, '14']] as const) {
+        expect((await grant(w, root, 'user', userId, 'rw')).status).toBe(200);
+      }
       const res = await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' });
-      expect(res.status).toBe(409);
-      expect((await res.json()).error).toContain('Projects overlap');
-      expect((await (await w.api(w.owner, '/api/team')).json()).active).toBe(false);
+      expect(res.status).toBe(200);
+      for (const [who, ids] of [['alice', [a]], ['bob', [b]], ['carol', [a, b]]] as const) {
+        const account = await w.login(who);
+        const roots = await (await w.api(account, '/api/roots')).json();
+        expect(roots.roots.map((r: Root) => r.id).sort()).toEqual([...ids].sort());
+        expect((await w.api(account, `/api/doc?p=${a}/note.md`)).ok).toBe(who !== 'bob');
+        expect((await w.api(account, `/api/raw?p=${b}/child-only.md`)).ok).toBe(who !== 'alice');
+        for (const path of [
+          `/api/doc?p=${a}/sub/child-only.md`,
+          `/api/raw?p=${a}/alias.md`,
+          `/api/source?p=${a}/sub/child-only.md`,
+          `/api/raw?p=${a}/sub/outer-link.md`,
+          `/api/raw?p=${b}/outer-link.md`,
+        ]) expect((await w.api(account, path)).ok).toBe(false);
+        if (who === 'bob') continue;
+        for (const path of listings) {
+          const response = await w.api(account, path);
+          expect([path, response.status]).toEqual([path, 200]);
+          const data = await response.json();
+          const records = data.files ?? data.hits ?? data.candidates ?? data.entries ?? data;
+          expect(JSON.stringify(records)).not.toContain('sub/child-only.md');
+          if (path === listings[0]) expect(JSON.stringify(data)).not.toContain('alias.md');
+        }
+      }
+      const off = await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: false, confirm: 'deactivate team' });
+      expect(off.status).toBe(200);
+      expect((await w.api(null, `/api/doc?p=${a}/sub/child-only.md`)).status).toBe(200);
     } finally {
       await w.stop();
     }
@@ -899,22 +923,39 @@ describe('Team boundaries: a project inside a larger repository, links out of it
     }
   });
 
-  test('the owner adding an overlapping project while Team is active is refused; a separate one is added and starts with no grants', async () => {
+  test('the owner can add a nested project, which stays separated after removal and restart', async () => {
     const w = await world();
     try {
       await add(w, 'gh-admin');
       await add(w, 'alice');
+      await grant(w, w.a, 'user', '12', 'ro');
+      const child = join(w.base, 'a', 'sub');
+      await writeFile(join(child, 'child-only.md'), '# child only\n');
       expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
-      const { askDaemon } = await import('../src/lib/control');
-      for (const bad of ['/', join(w.base, 'config')]) expect(JSON.stringify(await askDaemon(w.port, { dirs: [bad] }))).toContain('Team does not serve');
-      const nested = await askDaemon(w.port, { dirs: [join(w.base, 'a', 'sub')] });
-      expect(JSON.stringify(nested)).toContain('overlaps a served project');
-      await mkdir(join(w.base, 'c'));
-      await writeFile(join(w.base, 'c', 'only.md'), '# c\n');
-      const added = await askDaemon(w.port, { dirs: [join(w.base, 'c')] });
-      expect(JSON.stringify(added)).not.toContain('overlaps');
       const alice = await w.login('alice');
-      expect((await (await w.api(alice, '/api/roots')).json()).roots).toEqual([]);
+      const tree = `/api/tree?root=${w.a.id}`;
+      const raw = `/api/raw?p=${w.a.id}/sub/child-only.md`;
+      expect(await (await w.api(alice, tree)).text()).toContain('sub/child-only.md');
+      expect((await w.api(alice, raw)).status).toBe(200);
+      const { askDaemon, askRemove } = await import('../src/lib/control');
+      for (const bad of ['/', join(w.base, 'config')]) expect(JSON.stringify(await askDaemon(w.port, { dirs: [bad] }))).toContain('Team does not serve');
+      expect(await askDaemon(w.port, { dirs: [child] })).toMatchObject({
+        roots: expect.arrayContaining([expect.objectContaining({ path: child, added: true })]),
+      });
+      expect((await (await w.api(alice, '/api/roots')).json()).roots.map((root: Root) => root.id)).toEqual([w.a.id]);
+      expect(await (await w.api(alice, tree)).text()).not.toContain('sub/child-only.md');
+      expect((await w.api(alice, raw)).ok).toBe(false);
+      expect(await askRemove(w.port, { dirs: [child] })).toMatchObject({ results: [{ removed: true }] });
+      expect((await w.api(alice, raw)).ok).toBe(false);
+      await w.stop(true);
+      const restarted = await world({ base: w.base });
+      try {
+        const relogin = await restarted.login('alice');
+        expect(await (await restarted.api(relogin, tree)).text()).not.toContain('sub/child-only.md');
+        expect((await restarted.api(relogin, raw)).ok).toBe(false);
+      } finally {
+        await restarted.stop();
+      }
     } finally {
       await w.stop();
     }

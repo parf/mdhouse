@@ -189,6 +189,20 @@ export class Registry {
 
   /** The instance's own directories (config, state, runtime), real locations: never served through a root that holds them. */
   private readonly hiddenDirs: string[] = [];
+  private teamProjects: readonly string[] | null = null;
+
+  /** Keep Team project boundaries independent of the current request's grants. */
+  setTeamProjects(paths: readonly string[] | null): void {
+    this.teamProjects = paths;
+  }
+
+  /** The parent project cannot address a separately registered or retained child project. */
+  insideNestedProject(rootPath: string, path: string): boolean {
+    if (!this.teamProjects) return false;
+    const contains = (project: string) => project !== rootPath && isUnder(rootPath, project) && isUnder(project, path);
+    for (const root of this.byId.values()) if (root.kind !== 'reference' && contains(root.path)) return true;
+    return this.teamProjects.some(contains);
+  }
 
   /** Hides `dirs` from every path a request names (`resolve`), so from every route; each by its real location. */
   async hide(dirs: string[]): Promise<void> {
@@ -297,7 +311,8 @@ export class Registry {
 
   /** May this location be written: its root is writable and it is not reference material. */
   writableAt(loc: Resolved): boolean {
-    return loc.root.writable && !this.inReference(loc.abs) && (scopes.getStore()?.canWrite(loc.root) ?? true);
+    return this.byId.get(loc.root.id) === loc.root && loc.root.writable && !this.inReference(loc.abs) &&
+      !this.insideNestedProject(loc.root.path, loc.abs) && (scopes.getStore()?.canWrite(loc.root) ?? true);
   }
 
   /** Stop serving a project root. Its id becomes free; paths under it no longer resolve. */
@@ -395,8 +410,9 @@ export class Registry {
     if (rel.split('/').some((seg) => seg === '..')) return null;
 
     const candidate = resolvePath(root.path, rel);
+    if (this.insideNestedProject(root.path, candidate)) return null;
     const abs = await jailedPath(root.path, candidate);
-    if (abs === null || this.hidden(root.path, abs)) return null;
+    if (this.get(id) !== root || abs === null || this.hidden(root.path, abs) || this.insideNestedProject(root.path, candidate) || this.insideNestedProject(root.path, abs)) return null;
 
     return { root, rel: relative(root.path, abs).split(sep).join('/'), abs };
   }

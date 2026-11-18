@@ -6,7 +6,6 @@
  * registry's scope (`roots.ts`), so no handler can answer with another project.
  */
 
-import { realpathSync } from 'node:fs';
 import { effectiveTeamAccess, type AccessGrant, type TeamState, type TeamUser } from './team-access';
 import type { Root, RootScope } from './roots';
 
@@ -131,23 +130,6 @@ export function teamScope(state: () => TeamState, user: TeamUser, viewer: () => 
   };
 }
 
-/** Pairs of project paths where one holds or is the other: a grant on one would reach the other's files. */
-export function overlappingPaths(paths: string[]): Array<[string, string]> {
-  const real = paths.map((path) => {
-    try { return realpathSync(path); } catch { return path; }
-  });
-  const out: Array<[string, string]> = [];
-  for (let i = 0; i < real.length; i++) {
-    for (let j = i + 1; j < real.length; j++) {
-      const a = real[i]!;
-      const b = real[j]!;
-      const holds = (outer: string, inner: string) => outer === '/' || inner.startsWith(`${outer}/`);
-      if (a === b || holds(a, b) || holds(b, a)) out.push([paths[i]!, paths[j]!]);
-    }
-  }
-  return out;
-}
-
 export interface ActivationFacts {
   state: TeamState;
   oauthReady: boolean;
@@ -167,10 +149,6 @@ export function activationBlockers({ state, oauthReady, basicUsers, projects }: 
   for (const project of projects) {
     if (project.path === '/') out.push(`${project.name} is the whole filesystem: a Team grant on it would reach every file of the machine. Serve a narrower folder.`);
     else if (project.instance) out.push(`${project.name} holds mdhouse's own configuration (prefs, tokens, the Team policy): it cannot be a Team project.`);
-  }
-  const name = (path: string) => projects.find((project) => project.path === path)?.name ?? path;
-  for (const [a, b] of overlappingPaths(projects.map((project) => project.path))) {
-    out.push(`Projects overlap: ${name(a)} and ${name(b)} share files, so a grant on one would reach the other. Remove one of them.`);
   }
   return out;
 }

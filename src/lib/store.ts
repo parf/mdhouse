@@ -7,7 +7,7 @@
  */
 
 import { sep, resolve as resolvePath, relative } from 'node:path';
-import type { Registry, Root } from './roots';
+import { currentRootScope, type Registry, type Root } from './roots';
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isExplicitlyDenied, loadRootRules, type IgnoreRules } from './ignore';
@@ -236,7 +236,8 @@ export class Store {
     if (cached) return cached;
 
     const allow = async (rel: string) => (await this.allowedRel(root, rel))?.abs ?? null;
-    const result = await scanRoot(root, await this.rules(root), { includeIgnored, noGit: this.opts.noGit, allow });
+    const exclude = (path: string) => this.registry.insideNestedProject(root.path, path);
+    const result = await scanRoot(root, await this.rules(root), { includeIgnored, noGit: this.opts.noGit, allow, exclude });
     s.scans.set(includeIgnored, result);
     return result;
   }
@@ -261,7 +262,8 @@ export class Store {
     if (s.files) return s.files;
     const rules = await this.rules(root);
     const resolve = async (rel: string) => (await this.allowedRel(root, rel))?.abs ?? null;
-    const all = await listFiles(root.path, root.path, { noGit: this.opts.noGit, rules, resolve });
+    const exclude = (path: string) => this.registry.insideNestedProject(root.path, path);
+    const all = await listFiles(root.path, root.path, { noGit: this.opts.noGit, rules, resolve, exclude });
     return (s.files = wikiIndex(all.files.map((f) => f.rel), { anyFile: true }));
   }
 
@@ -289,8 +291,15 @@ export class Store {
   /** The root's marks with favorite and muted entries at their canonical paths (`canonicalMark`); ignore rules as written. */
   async marks(root: Root): Promise<RootPrefs> {
     const raw = this.prefs.get(root.path);
-    const canon = async (list: string[]) => [...new Set(await Promise.all(list.map((e) => this.canonicalMark(root, e))))].sort();
-    return { favorite: await canon(raw.favorite), muted: await canon(raw.muted), ignored: raw.ignored };
+    const scoped = !!currentRootScope();
+    const canon = async (list: string[]) => {
+      const names = await Promise.all(list.map(async (entry) => {
+        if (scoped && !await this.registry.resolve(`${root.id}/${entry}`)) return null;
+        return this.canonicalMark(root, entry);
+      }));
+      return [...new Set(names.filter((name): name is string => name !== null))].sort();
+    };
+    return { favorite: await canon(raw.favorite), muted: await canon(raw.muted), ignored: scoped ? [] : raw.ignored };
   }
 
   /**
@@ -327,6 +336,7 @@ export class Store {
       limit: REVEAL.files,
       markBlind: true,
       allow: async (f) => (await this.allowedRel(root, `${rel}/${f}`))?.abs ?? null,
+      exclude: (path) => this.registry.insideNestedProject(root.path, path),
     });
     const files = res.files.map((f) => ({ ...f, rel: `${rel}/${f.rel}`, dir: f.dir ? `${rel}/${f.dir}` : rel }));
     const out = { ...res, files };

@@ -53,7 +53,8 @@ export type TeamChange =
   | { action: 'add'; user: TeamIdentity }
   | { action: 'groups'; userId: string; groups: string }
   | { action: 'ban'; userId: string; banned: boolean }
-  | { action: 'activation'; active: boolean }
+  | { action: 'activation'; active: boolean; paths?: string[] }
+  | { action: 'retain-project'; path: string }
   | { action: 'grant'; projectPath: string; subject: 'user' | 'group'; subjectId: string; access: DirectGrant | null };
 
 export class TeamAccessError extends Error {
@@ -174,6 +175,14 @@ function membership(state: Policy, field: string): string[] {
   return [...selected];
 }
 
+/** Remember a served project even with no grants, so unserving it cannot open it through an ancestor. */
+function retainProject(state: Policy, path: string): void {
+  if (!pathKey(path)) throw new TeamAccessError('invalid', 'Invalid project path');
+  if (state.projects.some((project) => project.path === path)) return;
+  if (state.projects.length >= MAX_PROJECTS) throw new TeamAccessError('invalid', 'The project limit has been reached');
+  state.projects.push({ path, users: {}, groups: {} });
+}
+
 function applyChange(state: Policy, change: TeamChange): void {
   if (change.action === 'add') {
     if (!identity(change.user)) throw new TeamAccessError('invalid', 'Invalid GitHub identity');
@@ -190,8 +199,14 @@ function applyChange(state: Policy, change: TeamChange): void {
     if (change.active) {
       const admin = state.users.find((user) => user.id === state.adminId);
       if (!admin || admin.banned) throw new TeamAccessError('conflict', 'Team needs a registered, unbanned administrator before it can be activated');
+      for (const path of change.paths ?? []) retainProject(state, path);
     }
     state.active = change.active;
+    return;
+  }
+
+  if (change.action === 'retain-project') {
+    retainProject(state, change.path);
     return;
   }
 
@@ -226,7 +241,6 @@ function applyChange(state: Policy, change: TeamChange): void {
   else if (validGrant(change.access)) project.groups[change.subjectId] = change.access;
 
   if (!existing) state.projects.push(project);
-  else if (Object.keys(project.users).length === 0 && Object.keys(project.groups).length === 0) state.projects = state.projects.filter((entry) => entry !== project);
 }
 
 interface OpenOptions {

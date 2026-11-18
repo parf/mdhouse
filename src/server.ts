@@ -55,7 +55,7 @@ import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, so
 import { TeamAdmin } from './lib/team-admin';
 import { TeamAccessError, type TeamState, type TeamUser } from './lib/team-access';
 import { GitHubOAuth, readGitHubOAuthConfig, TeamGitHubError } from './lib/team-github';
-import { activationBlockers, grantFor, overlappingPaths, readCookie, runScoped, teamCookie, teamCookieName, teamRoute, teamScope } from './lib/team-runtime';
+import { activationBlockers, grantFor, readCookie, runScoped, teamCookie, teamCookieName, teamRoute, teamScope } from './lib/team-runtime';
 import { IDLE_MS } from './lib/user-session-model';
 import { TeamSessions } from './lib/team-sessions';
 
@@ -624,6 +624,7 @@ export async function serve(opts: ServeOptions) {
    * which refuses everything rather than falling back to Personal.
    */
   const team: { active: boolean; failed: boolean; state: TeamState | null } = { active: false, failed: false, state: null };
+  let teamTopology = 0;
   const teamSessions = new TeamSessions();
   const teamOauthConfig = readGitHubOAuthConfig(process.env);
   const teamOauth = teamOauthConfig ? new GitHubOAuth(teamOauthConfig, opts.teamFetch) : null;
@@ -909,6 +910,12 @@ export async function serve(opts: ServeOptions) {
   const announceAuth = (ws: ServerWebSocket<WsData>): void => {
     try { ws.send('{"t":"auth"}'); } catch { /* a socket already gone has nothing to learn */ }
   };
+  /** Detach cached parent scans and invalidate answers prepared under the old project boundaries. */
+  const resetTeamTopology = (notify: boolean): void => {
+    teamTopology++;
+    for (const root of registry.all()) store.drop(root.id);
+    if (notify) for (const ws of sockets) if (ws.data.team) announceAuth(ws);
+  };
   const syncSockets = (): void => {
     for (const ws of sockets) {
       if (!team.active || !team.state || !ws.data.team) {
@@ -940,7 +947,10 @@ export async function serve(opts: ServeOptions) {
   const syncAuth = (state: TeamState): void => {
     teamSessions.syncAuth(state);
     team.state = state;
-    team.active = state.active && !teamForcedOff;
+    const active = state.active && !teamForcedOff;
+    registry.setTeamProjects(active ? state.projects.map(({ path }) => path) : null);
+    if (active !== team.active) resetTeamTopology(false);
+    team.active = active;
     syncSockets();
   };
   const teamProjects = () => registry.all().filter((r) => r.kind !== 'reference').map((root) => ({ id: root.id, name: customName(root.path) ?? root.name, path: root.path, writable: root.writable, instance: registry.inInstanceDir(root.path) }));
@@ -1021,7 +1031,7 @@ export async function serve(opts: ServeOptions) {
     const scope = teamScope(() => team.state!, member, () => prefs.mode() === 'viewer');
     if (!guarded) return withRootScope(scope, () => h(req));
     const out = await runScoped(
-      { valid: () => !!teamUserOf(req), fingerprint: () => JSON.stringify([team.active, [...grantsOf(member.id)]]) },
+      { valid: () => !!teamUserOf(req), fingerprint: () => JSON.stringify([team.active, teamTopology, [...grantsOf(member.id)]]) },
       async () => {
         const res = await withRootScope(scope, () => h(req));
         await opts.teamAfterHandler?.(req);
@@ -2320,7 +2330,8 @@ export async function serve(opts: ServeOptions) {
         if (isExplicitlyDenied(rules, loc.rel)) return fail(404, 'no such folder');
         if (!(await stat(loc.abs).catch(() => null))?.isDirectory()) return fail(404, 'no such folder');
         const resolve = async (rel: string) => (await store.allowedRel(loc.root, rel))?.abs ?? null;
-        const all = await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit, rules, resolve });
+        const exclude = (path: string) => registry.insideNestedProject(loc.root.path, path);
+        const all = await listFiles(loc.root.path, loc.abs, { noGit: opts.noGit, rules, resolve, exclude });
         const git = await store.gitPaths(loc.root);
         const files = all.files.map((f) => {
           const gitState = gitStateIn(git, f.rel);
@@ -2341,6 +2352,7 @@ export async function serve(opts: ServeOptions) {
           regex: flag(url, 'regex'),
           includeIgnored,
           maxHits: limitOf(url, 500, 500),
+          ...(currentRootScope() ? { resolve: async (rel: string) => (await store.allowedRel(root, rel))?.abs ?? null } : {}),
         });
         return json(result);
       }),
@@ -2780,16 +2792,22 @@ export async function serve(opts: ServeOptions) {
     },
   });
 
+  const eventPaths = (root: Root, paths: string[]): string[] => paths.filter((p) => {
+    const path = join(root.path, p);
+    return !registry.hidden(root.path, path) && !registry.insideNestedProject(root.path, path);
+  });
   const publishChange = (ev: WatchEvent, paths: string[]): void => {
     // Another file than Markdown: the Markdown scans stand; only git's state (untracked) may be new.
     store.invalidate(ev.rootId, ev.kind !== 'fs');
+    const root = registry.get(ev.rootId);
+    if (!root || (paths.length && !eventPaths(root, paths).length) || (team.active && ev.kind === 'git')) return;
     // Under Team an event names only the root: no file path leaves with it, the page re-reads what it shows.
     server.publish(`root:${ev.rootId}`, JSON.stringify({ t: ev.kind, root: ev.rootId, paths: team.active ? [] : paths }));
   };
   const watcher = new Watcher((events) => {
     for (const ev of events) {
       const root = registry.get(ev.rootId);
-      const paths = root ? ev.paths.filter((p) => !registry.hidden(root.path, join(root.path, p))) : ev.paths;
+      const paths = root ? eventPaths(root, ev.paths) : ev.paths;
       if (ev.paths.length && !paths.length) continue;
       if (ev.kind !== 'files' || !root || !paths.length) {
         publishChange(ev, paths);
@@ -2818,13 +2836,6 @@ export async function serve(opts: ServeOptions) {
   const prepareProject = async (spec: string): Promise<PreparedProject> => {
     const abs = await registry.prepare(spec);
     const served = registry.all().some((r) => r.path === abs);
-    // A root added while Team is active would share files with a served one, so a grant on either would reach both.
-    if (team.active && !served && (abs === '/' || registry.inInstanceDir(abs))) {
-      throw new ProjectDirError('overlap', `${abs} is the whole filesystem or mdhouse's own configuration, which Team does not serve`);
-    }
-    if (team.active && !served && overlappingPaths([abs, ...registry.all().filter((r) => r.kind !== 'reference').map((r) => r.path)]).some(([a]) => a === abs)) {
-      throw new ProjectDirError('overlap', `${abs} overlaps a served project, which Team does not allow: no grant could keep them apart`);
-    }
     return { abs, gitDirs: served || opts.noGit ? [] : await gitDirs(abs) };
   };
   /**
@@ -2835,16 +2846,21 @@ export async function serve(opts: ServeOptions) {
   const installProject = (p: PreparedProject, mode: AccessMode): { root: Root; added: boolean } => {
     const served = registry.list().find((r) => r.path === p.abs);
     if (served) return { root: served, added: false };
+    if (team.active && (p.abs === '/' || registry.inInstanceDir(p.abs))) {
+      throw new ProjectDirError('overlap', `${p.abs} is the whole filesystem or mdhouse's own configuration, which Team does not serve`);
+    }
     const root = registry.install(p.abs, mode);
     try {
       watcher.watchRoot(root);
       // A root inside a checkout, or a linked worktree, has its git dirs out of reach of the recursive watch.
       if (!opts.noGit) watcher.watchRepo(root, p.gitDirs);
+      if (team.active) teamAdmin.retainProject(root.path);
     } catch (err) {
       watcher.unwatch(root.id);
       registry.remove(root.id);
       throw err;
     }
+    if (team.active) resetTeamTopology(true);
     return { root, added: true };
   };
 
@@ -2951,6 +2967,7 @@ export async function serve(opts: ServeOptions) {
       registry.remove(root.id);
       watcher.unwatch(root.id);
       store.drop(root.id);
+      if (team.active) resetTeamTopology(true);
       results.push({ path: abs, unsaved, removed: true });
     }
 

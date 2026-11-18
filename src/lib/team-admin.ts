@@ -80,8 +80,13 @@ export class TeamAdmin {
     if (revision !== current.revision) throw new TeamAccessError('stale', 'Team access changed; reload and try again');
     const blockers = active ? this.options.blockers?.() ?? [] : [];
     if (blockers.length) throw new TeamAccessError('conflict', `Team cannot be activated: ${blockers.join(' ')}`);
-    this.#store().update(current.state.revision, { action: 'activation', active });
+    this.#store().update(current.state.revision, { action: 'activation', active, paths: current.projects.map((project) => project.path) });
     return this.data();
+  }
+
+  retainProject(path: string): void {
+    const state = this.policy();
+    this.#store().update(state.revision, { action: 'retain-project', path });
   }
 
   async preview(login: string, adminBinding: string, stillAdmin: () => boolean) {

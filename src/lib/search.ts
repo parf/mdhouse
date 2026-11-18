@@ -34,6 +34,8 @@ export interface SearchOptions {
   /** Per-file cap, so one enormous file cannot fill the whole result. */
   maxPerFile?: number;
   includeIgnored?: boolean;
+  /** Team supplies its path jail, so search opens only files it can still resolve in the selected project. */
+  resolve?: (rel: string) => Promise<string | null>;
 }
 
 const MAX_LINE = 400;
@@ -94,6 +96,7 @@ async function searchWithRipgrep(rootPath: string, listed: Set<string>, query: s
   ];
   if (!regex) args.push('--fixed-strings');
   if (includeIgnored) args.push('--no-ignore-vcs');
+  if (opts.resolve) args.push('--no-follow');
   args.push('--regexp', query, rootPath);
 
   let proc;
@@ -110,6 +113,7 @@ async function searchWithRipgrep(rootPath: string, listed: Set<string>, query: s
   const decoder = new TextDecoder();
   const reader = proc.stdout.getReader();
   let buffer = '';
+  const checked = new Map<string, boolean>();
 
   for (;;) {
     const { done, value } = await reader.read();
@@ -131,6 +135,10 @@ async function searchWithRipgrep(rootPath: string, listed: Set<string>, query: s
       const path: string = event.data.path?.text ?? '';
       const rel = path.startsWith(prefix) ? path.slice(prefix.length) : path;
       if (!listed.has(rel)) continue;
+      if (opts.resolve) {
+        if (!checked.has(rel)) checked.set(rel, !!(await opts.resolve(rel)));
+        if (!checked.get(rel)) continue;
+      }
       if (hits.length >= maxHits) {
         truncated = true;
         proc.kill();
@@ -184,7 +192,9 @@ export async function searchInProcess(
       truncated = true;
       break;
     }
-    const content = await Bun.file(`${rootPath}/${file.rel}`)
+    const path = opts.resolve ? await opts.resolve(file.rel) : `${rootPath}/${file.rel}`;
+    if (!path) continue;
+    const content = await Bun.file(path)
       .text()
       .catch(() => null);
     if (content === null) continue;
