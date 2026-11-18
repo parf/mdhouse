@@ -39,6 +39,22 @@ the user inherits the strongest of their group grants. Viewer and a read-only pr
 access at RO. A ban denies sign-in and revokes existing sessions in Team. If the Users page says
 access is staged, its saved changes will apply only when Team access is enabled.
 
+### Turn on Team access
+
+Configure a GitHub OAuth app with the callback `/auth/github/callback` on the mdhouse origin. Use
+HTTPS outside loopback. Set `MDHOUSE_GITHUB_CLIENT_ID`, `MDHOUSE_GITHUB_CLIENT_SECRET` and
+`MDHOUSE_GITHUB_CALLBACK_URL` in the server process environment. The secret stays on the server.
+See [GitHub's OAuth app setup](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app).
+
+The owner confirms the first GitHub account on the Users page. This account becomes the Team
+administrator. Grant users or groups the projects they should be able to open. In **Team access**,
+review any blockers and type `activate team` to switch sign-in to GitHub. Project roots must be
+separate directories at this stage. The owner can also type `deactivate team` to return to the
+instance's existing access mode.
+
+Team currently scopes browsing, search, raw files and Markdown editing to granted projects.
+Git, Agent Bus, RAG, flows and automation await Team authorization before they can run there.
+
 ## Viewer — read-only for everyone
 
 ```sh
