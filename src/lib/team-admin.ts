@@ -84,9 +84,9 @@ export class TeamAdmin {
     return this.data();
   }
 
-  retainProject(path: string): void {
+  retainProjects(paths: readonly string[]): TeamState {
     const state = this.policy();
-    this.#store().update(state.revision, { action: 'retain-project', path });
+    return this.#store().update(state.revision, { action: 'retain-projects', paths });
   }
 
   async preview(login: string, adminBinding: string, stillAdmin: () => boolean) {

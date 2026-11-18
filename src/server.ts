@@ -966,7 +966,19 @@ export async function serve(opts: ServeOptions) {
   });
   if (existsSync(join(dirname(prefs.path), 'team', 'team-access.json'))) {
     try {
-      syncAuth(teamAdmin.policy());
+      const policy = teamAdmin.policy();
+      if (policy.active && !teamForcedOff) {
+        const projects = teamProjects();
+        if (projects.some((project) => project.path === '/' || project.instance)) {
+          throw new Error('Team cannot serve the whole filesystem or an instance directory');
+        }
+        // Startup can bring roots the previous process never served. Remember them before opening
+        // the listener, so a future restart without one does not expose it through its parent.
+        const retained = teamAdmin.retainProjects(projects.map((project) => project.path));
+        if (!team.active) syncAuth(retained);
+      } else {
+        syncAuth(policy);
+      }
     } catch {
       team.failed = !teamForcedOff;
     }
@@ -2854,7 +2866,7 @@ export async function serve(opts: ServeOptions) {
       watcher.watchRoot(root);
       // A root inside a checkout, or a linked worktree, has its git dirs out of reach of the recursive watch.
       if (!opts.noGit) watcher.watchRepo(root, p.gitDirs);
-      if (team.active) teamAdmin.retainProject(root.path);
+      if (team.active) teamAdmin.retainProjects([root.path]);
     } catch (err) {
       watcher.unwatch(root.id);
       registry.remove(root.id);

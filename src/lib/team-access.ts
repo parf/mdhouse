@@ -54,7 +54,7 @@ export type TeamChange =
   | { action: 'groups'; userId: string; groups: string }
   | { action: 'ban'; userId: string; banned: boolean }
   | { action: 'activation'; active: boolean; paths?: string[] }
-  | { action: 'retain-project'; path: string }
+  | { action: 'retain-projects'; paths: readonly string[] }
   | { action: 'grant'; projectPath: string; subject: 'user' | 'group'; subjectId: string; access: DirectGrant | null };
 
 export class TeamAccessError extends Error {
@@ -205,8 +205,8 @@ function applyChange(state: Policy, change: TeamChange): void {
     return;
   }
 
-  if (change.action === 'retain-project') {
-    retainProject(state, change.path);
+  if (change.action === 'retain-projects') {
+    for (const path of change.paths) retainProject(state, path);
     return;
   }
 

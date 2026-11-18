@@ -947,12 +947,23 @@ describe('Team boundaries: a project inside a larger repository, links out of it
       expect((await w.api(alice, raw)).ok).toBe(false);
       expect(await askRemove(w.port, { dirs: [child] })).toMatchObject({ results: [{ removed: true }] });
       expect((await w.api(alice, raw)).ok).toBe(false);
+      const coldChild = join(w.base, 'a', 'cold');
+      await mkdir(coldChild);
+      await writeFile(join(coldChild, 'cold-only.md'), '# cold only\n');
       await w.stop(true);
+      const withColdChild = await world({ base: w.base, roots: (base) => [join(base, 'a'), coldChild] });
+      try {
+        const account = await withColdChild.login('alice');
+        expect(await (await withColdChild.api(account, tree)).text()).not.toContain('cold/cold-only.md');
+      } finally {
+        await withColdChild.stop(true);
+      }
       const restarted = await world({ base: w.base });
       try {
         const relogin = await restarted.login('alice');
         expect(await (await restarted.api(relogin, tree)).text()).not.toContain('sub/child-only.md');
         expect((await restarted.api(relogin, raw)).ok).toBe(false);
+        expect((await restarted.api(relogin, `/api/raw?p=${w.a.id}/cold/cold-only.md`)).ok).toBe(false);
       } finally {
         await restarted.stop();
       }
