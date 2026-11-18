@@ -949,7 +949,7 @@ export async function serve(opts: ServeOptions) {
     projects: teamProjects,
     viewer: () => prefs.mode() === 'viewer',
     oauthReady: () => !!teamOauth,
-    blockers: () => [...(teamForcedOff ? ['MDHOUSE_TEAM=off is set: remove it and restart before activating.'] : []), ...activationBlockers({ state: teamAdmin.policy(), oauthReady: !!teamOauth, projects: teamProjects() })],
+    blockers: () => [...(teamForcedOff ? ['MDHOUSE_TEAM=off is set: remove it and restart before activating.'] : []), ...activationBlockers({ state: teamAdmin.policy(), oauthReady: !!teamOauth, basicUsers: (prefs.refresh(), Object.keys(prefs.access.users).length > 0), projects: teamProjects() })],
     forcedOff: () => teamForcedOff,
     syncAuth,
     request: opts.teamFetch,
@@ -1161,7 +1161,8 @@ export async function serve(opts: ServeOptions) {
         try {
           const github = await teamOauth.finish(query.get('state') ?? '', readCookie(req.headers.get('cookie'), oauthName), query.get('code') ?? '');
           // Known, unbanned accounts only: a GitHub account nobody registered gets nothing, and says nothing about who is.
-          const member = team.state?.users.find((user) => user.id === github.id && !user.banned);
+          // The provider was awaited: the policy is read now, so a ban or a deactivation that came in meanwhile issues nothing.
+          const member = team.active ? team.state?.users.find((user) => user.id === github.id && !user.banned) : undefined;
           const value = member ? teamSessions.issue(member.id) : null;
           if (!value) return refuse(403, 'This GitHub account is not registered for this mdhouse.');
           const res = noStore(new Response(null, { status: 303, headers: { location: '/' } }));

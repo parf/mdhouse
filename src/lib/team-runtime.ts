@@ -151,12 +151,15 @@ export function overlappingPaths(paths: string[]): Array<[string, string]> {
 export interface ActivationFacts {
   state: TeamState;
   oauthReady: boolean;
+  /** Basic users are configured: their login would stay in front of Team's, silently keeping a second admission. */
+  basicUsers?: boolean;
   projects: Array<{ name: string; path: string; instance?: boolean }>;
 }
 
 /** Why Team cannot be switched on now; empty when it can. Each line is shown to the owner as written. */
-export function activationBlockers({ state, oauthReady, projects }: ActivationFacts): string[] {
+export function activationBlockers({ state, oauthReady, basicUsers, projects }: ActivationFacts): string[] {
   const out: string[] = [];
+  if (basicUsers) out.push('Basic-auth users are configured: they would stay in front of GitHub sign-in as a second login. Remove them (mdhouse access) before activating.');
   if (!oauthReady) out.push('GitHub sign-in is not configured (MDHOUSE_GITHUB_CLIENT_ID, MDHOUSE_GITHUB_CLIENT_SECRET, MDHOUSE_GITHUB_CALLBACK_URL).');
   const admin = state.users.find((user) => user.id === state.adminId);
   if (!admin) out.push('Add the Team administrator first: the first registered GitHub account becomes the administrator.');

@@ -23,6 +23,8 @@ const user = (p: { id: number; login: string }) => ({ ...p, name: p.login.toUppe
 
 /** A GitHub that never leaves the process: user lookups, the PKCE-checked token exchange and the profile read. */
 function fakeGitHub() {
+  /** Holds the token exchange until released: a ban can land while the provider is awaited. */
+  const hold: { on: boolean; entered?: () => void; release?: () => void } = { on: false };
   const challenges = new Map<string, string>();
   const tokens = new Map<string, string>();
   const calls: string[] = [];
@@ -34,6 +36,10 @@ function fakeGitHub() {
       return p ? Response.json(user(p)) : Response.json({}, { status: 404 });
     }
     if (url.href === 'https://github.com/login/oauth/access_token') {
+      if (hold.on) {
+        hold.on = false;
+        await new Promise<void>((resolve) => { hold.release = resolve; hold.entered?.(); });
+      }
       const body = new URLSearchParams(init!.body as URLSearchParams);
       const code = body.get('code')!;
       const challenge = challenges.get(code.split(':')[1] ?? '');
@@ -48,7 +54,7 @@ function fakeGitHub() {
     }
     return Response.json({}, { status: 500 });
   }, { preconnect: fetch.preconnect }) as typeof fetch;
-  return { request, challenges, calls };
+  return { request, challenges, calls, hold };
 }
 
 describe('Team routes: every registered route has a reviewed Team classification', () => {
@@ -178,6 +184,46 @@ describe('revocation while a request is in flight', () => {
   });
 });
 
+describe('Team sign-in revalidates after the provider answers', () => {
+  test('a ban or a deactivation while GitHub is awaited issues no session', async () => {
+    const w = await world();
+    try {
+      await add(w, 'gh-admin');
+      await add(w, 'alice');
+      const team = await (await w.api(w.owner, '/api/team')).json();
+      const aliceId = team.users.find((u: { login: string }) => u.login === 'alice').id;
+      expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
+      const begin = async () => {
+        const start = await fetch(`${w.origin}/auth/github/login`, { redirect: 'manual' });
+        const target = new URL(start.headers.get('location')!);
+        const state = target.searchParams.get('state')!;
+        w.gh.challenges.set(state, target.searchParams.get('code_challenge')!);
+        const cookie = start.headers.get('set-cookie')!.split(';')[0]!;
+        return () => fetch(`${w.origin}/auth/github/callback?state=${state}&code=alice:${state}`, { redirect: 'manual', headers: { cookie } });
+      };
+      const raced = async (change: () => Promise<unknown>) => {
+        const callback = await begin();
+        const reached = new Promise<void>((resolve) => (w.gh.hold.entered = resolve));
+        w.gh.hold.on = true;
+        const pending = callback();
+        await reached;
+        await change();
+        w.gh.hold.release!();
+        return pending;
+      };
+      const banned = await raced(() => w.update({ action: 'ban', userId: aliceId, banned: true }));
+      expect(banned.status).toBe(403);
+      expect(banned.headers.getSetCookie().some((c) => c.startsWith(`mdhouse-team-${w.port}=`) && !c.includes('Max-Age=0'))).toBe(false);
+      await w.update({ action: 'ban', userId: aliceId, banned: false });
+      const off = await raced(async () => w.ownerPost('/api/team/activation', { revision: await w.revision(), active: false, confirm: 'deactivate team' }));
+      expect(off.status).toBe(403);
+      expect(off.headers.getSetCookie().some((c) => c.startsWith(`mdhouse-team-${w.port}=`) && !c.includes('Max-Age=0'))).toBe(false);
+    } finally {
+      await w.stop();
+    }
+  });
+});
+
 describe('Team: an answer computed before a ban or a grant change is not sent', () => {
   test('doc, raw, the fallback page and a grant change in flight', async () => {
     let release: (() => void) | null = null;
@@ -238,6 +284,8 @@ describe('activation rules', () => {
     expect(activationBlockers({ ...ok, state: state({ adminId: null, users: [] }) }).join()).toContain('Add the Team administrator');
     expect(activationBlockers({ ...ok, state: state({ users: [{ id: '11', login: 'gh-admin', name: null, groups: ['all-users'], banned: true }] }) }).join()).toContain('banned');
     expect(activationBlockers({ ...ok, projects: [{ name: 'a', path: '/srv/a' }, { name: 'sub', path: '/srv/a/sub' }] }).join()).toContain('Projects overlap: a and sub');
+    expect(activationBlockers({ ...ok, basicUsers: true }).join()).toContain('Basic-auth users are configured');
+    expect(activationBlockers({ ...ok, basicUsers: false })).toEqual([]);
     expect(activationBlockers({ ...ok, projects: [{ name: 'root', path: '/' }] }).join()).toContain('whole filesystem');
     expect(activationBlockers({ ...ok, projects: [{ name: 'cfg', path: '/home/u/.config/mdhouse', instance: true }] }).join()).toContain("holds mdhouse's own configuration");
   });
