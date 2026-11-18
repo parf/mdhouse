@@ -119,6 +119,10 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
+  - [ ] MW.0d.3 Separate Users page with user/project grants, group membership and bans <a id="MW.0d.3"></a>
+    Owner approved 2026-11-18. From a user, show every project and a direct RO/RW choice. From a project, show every user and group with RO/RW choices. Both edit the same grants.
+    Admin-editable group input takes spaces and commas. Show group badges in user lists. Built-in **All Users** membership is automatic and grants no projects on its own.
+    Ban blocks sign-in and current sessions. Authorization updates persist first and call `syncAuth()` in the same server process. Verify direct requests and existing sockets alongside both UI paths.
   - [x] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
   - Verified: approved `b9986d2`, integrated `e5382e1`; exact source/dependency identity and focused pure/mock 65/0. No persistence/routes/OAuth/live; [evidence](../EXECUTION.md#pure-session-history-and-mock-geoip-integrated)
   - [x] MW.0d.2 Session-history persistence foundation cohort: strict versioned pure codec (W3) + protected atomic snapshot store (W1); one combined security review/gate <a id="MW.0d.2"></a>

@@ -27,6 +27,10 @@
   Local/password/Basic: Advanced recovery only; local/GitHub identities separate. [History](resolved.md#Q-W8).
 - 📌 USER-W2 Write = Workspace ∩ root RW ∩ project RW ∩ Editor.
   Viewer/root RO/user RO cap access. User/grant changes apply immediately; no jail/reference override.
+- 📌 USER-W8 Users have a separate administration page with grants editable by user or by project.
+  The administrator edits group membership in a space/comma-delimited field. User rows show group badges.
+  **All Users** is automatic for every registered account. Banning an account prevents sign-in and revokes access immediately.
+  The single mdhouse process calls `syncAuth()` after persisted authorization changes.
 - 📌 USER-W3 Admission: known users; optional trusted localhost/CIDRs with explicit project policy.
   No inherited admin grants. Forwarded addresses require a configured trusted proxy.
 - 📌 USER-W4 GitHub OAuth → secure revocable session; secrets/tokens server-side.
