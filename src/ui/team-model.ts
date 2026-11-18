@@ -75,3 +75,45 @@ export function nextGrant(current: TeamAccess | 'none' | null | undefined, click
   if (checked) return clicked;
   return current === clicked ? null : (current ?? null);
 }
+
+/** Where access comes from, by level: who or which group gives RW, and RO. Labels carry their glyph. */
+export interface Sources {
+  rw: string[];
+  ro: string[];
+}
+
+/** A user's configured sources on a project: their own grant (👤 direct) and every group of theirs with a grant. */
+export function userSources(project: TeamProject, user: TeamUser, groups: TeamGroup[]): Sources {
+  const out: Sources = { rw: [], ro: [] };
+  const own = project.grants.users[user.id];
+  if (own === 'rw' || own === 'ro') out[own].push('👤 direct');
+  const byId = new Map(groups.map((g) => [g.id, g]));
+  for (const gid of user.groups) {
+    const a = project.grants.groups[gid];
+    const g = byId.get(gid);
+    if (a && g) out[a].push(`👥 ${groupName(g)}`);
+  }
+  return out;
+}
+
+/** A project's sources once: every user with a direct grant and every group with one. */
+export function projectSources(project: TeamProject, snap: TeamSnapshot): Sources {
+  const out: Sources = { rw: [], ro: [] };
+  for (const u of snap.users) {
+    const a = project.grants.users[u.id];
+    if (a === 'rw' || a === 'ro') out[a].push(`👤 ${u.login}`);
+  }
+  for (const g of snap.groups) {
+    const a = project.grants.groups[g.id];
+    if (a) out[a].push(`👥 ${groupName(g)}`);
+  }
+  return out;
+}
+
+/** `RW: 👤 direct · RO: 👥 All Users, 👥 dev` — empty levels left out; '' when there is none. */
+export function sourcesText(s: Sources): string {
+  return [s.rw.length ? `RW: ${s.rw.join(', ')}` : '', s.ro.length ? `RO: ${s.ro.join(', ')}` : ''].filter(Boolean).join(' · ');
+}
+
+/** A group's members, banned ones included. */
+export const membersOf = (snap: TeamSnapshot, groupId: string): TeamUser[] => usersIn(snap, groupId);

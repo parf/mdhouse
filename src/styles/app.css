@@ -2514,3 +2514,11 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .team-me { margin-left: auto; display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
 .team-me .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
 @media (pointer: coarse) { .team-me .linklike { min-height: 44px; } }
+.users-views { display: flex; gap: 6px; margin-bottom: 10px; }
+.users-views a { text-decoration: none; }
+.users-views a[aria-current="true"] { border-color: var(--accent); color: var(--accent); background: var(--bg-active); }
+.users-table td:first-child { white-space: nowrap; }
+.users-summary { font-size: 13.5px; margin: 6px 0 4px; }
+.users-members { font-size: 13.5px; line-height: 1.8; }
+.users-blocked { color: var(--danger); }
+.users-page .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }

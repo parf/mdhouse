@@ -478,21 +478,19 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
 
       <section class="settings-admin">
         <h2>
-          Administrator <span class="scope">this browser</span>
+          Administrator{' '}
+          {admin?.admin && admin.local && (
+            <Info label="Why you are the administrator">
+              This request reaches mdhouse from this computer: no users are configured, and mdhouse sees it coming from loopback (this
+              computer, or a proxy on it). Such a request is the administrator. Configure users to require a sign-in.
+            </Info>
+          )}
         </h2>
         {ENTRY_NOTE[entry.outcome] && !isAdmin && <p class="settings-error">{ENTRY_NOTE[entry.outcome]}</p>}
-        {admin?.admin && admin.local ? (
-          <p>
-            <b>Administrator</b> — this request reaches mdhouse from this computer{' '}
-            <Info label="Why you are the administrator">
-              No users are configured, and mdhouse sees this request coming from loopback (this computer, or a proxy on it). Such a request is
-              the administrator. Configure users to require a sign-in.
-            </Info>
-          </p>
-        ) : admin?.admin ? (
+        {admin?.admin && admin.local ? null : admin?.admin ? (
           <div class="settings-option admin-state">
             <span>
-              <b>Signed in as the administrator</b>
+              <b>Signed in</b>
               {admin.expiresAt !== undefined && <> until {new Date(admin.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>}
             </span>
             <button type="button" class="admin-logout" onClick={() => void signOut()}>
@@ -518,6 +516,9 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           Projects{' '}
           <a class="settings-users-link" href={usersUrl()} onClick={(e) => follow(e, () => go(usersUrl()))}>
             👤 Users
+          </a>
+          <a class="settings-users-link" href={usersUrl({ view: 'groups' })} onClick={(e) => follow(e, () => go(usersUrl({ view: 'groups' })))}>
+            👥 Groups
           </a>
         </h2>
         <div class="projects-pane">

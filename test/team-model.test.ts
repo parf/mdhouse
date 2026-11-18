@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TeamSnapshot } from '../src/ui/api';
-import { grantState, groupCounts, groupField, groupFilters, inherited, nextGrant, parseGroupField, usersIn } from '../src/ui/team-model';
+import { grantState, groupCounts, groupField, groupFilters, inherited, nextGrant, parseGroupField, projectSources, sourcesText, userSources, usersIn } from '../src/ui/team-model';
 
 const snap: TeamSnapshot = {
   revision: 'r1', active: false, oauthReady: true, adminId: '1',
@@ -47,5 +47,14 @@ describe('Users page rules', () => {
     expect(nextGrant('rw', 'ro', false)).toBe('rw');
     expect(nextGrant('ro', 'none', true)).toBe('none');
     expect(nextGrant('none', 'none', false)).toBeNull();
+  });
+  test('sources: own grant and every group of the user, by level; project-wide once; empty left out', () => {
+    const p = snap.projects[0]!;
+    expect(userSources(p, snap.users[1]!, snap.groups)).toEqual({ rw: ['👥 ops'], ro: ['👥 dev'] });
+    expect(sourcesText(userSources(p, snap.users[1]!, snap.groups))).toBe('RW: 👥 ops · RO: 👥 dev');
+    expect(sourcesText(userSources(p, snap.users[2]!, snap.groups))).toBe(''); // explicit none and no groups: nothing to list
+    expect(sourcesText(projectSources(p, snap))).toBe('RW: 👥 ops · RO: 👥 dev');
+    const withDirect = { ...p, grants: { users: { '1': 'rw' as const }, groups: { 'all-users': 'ro' as const } } };
+    expect(sourcesText(projectSources(withDirect, snap))).toBe('RW: 👤 ann · RO: 👥 All Users');
   });
 });
