@@ -30,6 +30,7 @@
 - 📌 USER-W8 Users have a separate administration page with grants editable by user or by project.
   The administrator edits group membership in a space/comma-delimited field. User rows show group badges.
   **All Users** is automatic for every registered account. Banning an account prevents sign-in and revokes access immediately.
+  A direct RO/RW/No access choice overrides the strongest grant inherited from the user's groups. All Users grants no projects by default.
   The single mdhouse process calls `syncAuth()` after persisted authorization changes.
 - 📌 USER-W3 Admission: known users; optional trusted localhost/CIDRs with explicit project policy.
   No inherited admin grants. Forwarded addresses require a configured trusted proxy.
