@@ -139,7 +139,8 @@ export function overlappingPaths(paths: string[]): Array<[string, string]> {
     for (let j = i + 1; j < real.length; j++) {
       const a = real[i]!;
       const b = real[j]!;
-      if (a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`)) out.push([paths[i]!, paths[j]!]);
+      const holds = (outer: string, inner: string) => outer === '/' || inner.startsWith(`${outer}/`);
+      if (a === b || holds(a, b) || holds(b, a)) out.push([paths[i]!, paths[j]!]);
     }
   }
   return out;

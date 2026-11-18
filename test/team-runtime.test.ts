@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
 import { Registry, RootScopeError, withRootScope, type Root } from '../src/lib/roots';
 import { TeamAccess, type TeamState } from '../src/lib/team-access';
-import { activationBlockers, hasTeamRoute, overlappingPaths, teamRoute } from '../src/lib/team-runtime';
+import { activationBlockers, hasTeamRoute, overlappingPaths, TEAM_ROUTES, teamRoute } from '../src/lib/team-runtime';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
 import { testPort } from './ports';
@@ -63,6 +63,9 @@ describe('Team routes: every registered route has a reviewed Team classification
     try {
       const unclassified = s.routes.filter((r) => r.path !== '/__app/' ? !hasTeamRoute(r.method, r.path) : false).map((r) => `${r.method} ${r.path}`);
       expect(unclassified).toEqual([]);
+      // a bare handler answers every method: its entry must be the wildcard, never one method that would leave the others unlisted
+      for (const r of s.routes.filter((r) => r.method === '*' && r.path !== '/__app/')) expect([r.path, `* ${r.path}` in TEAM_ROUTES]).toEqual([r.path, true]);
+      for (const m of ['GET', 'POST', 'HEAD']) expect(teamRoute(m, '/api/tree').policy).toBe('read');
     } finally {
       s.server.stop(true);
       s.watcher.close();
@@ -127,6 +130,8 @@ describe('activation rules', () => {
       expect(overlappingPaths([join(base, 'a'), join(base, 'a', 'sub')]).length).toBe(1);
       expect(overlappingPaths([join(base, 'a', 'sub'), join(base, 'a')]).length).toBe(1);
       expect(overlappingPaths([join(base, 'a'), join(base, 'alias')]).length).toBe(1);
+      expect(overlappingPaths(['/', join(base, 'a')]).length).toBe(1);
+      expect(overlappingPaths([join(base, 'a'), '/']).length).toBe(1);
     } finally {
       await rm(base, { recursive: true, force: true });
     }
@@ -296,7 +301,11 @@ describe('Team in a running server', () => {
     const early = await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' });
     expect(early.status).toBe(409);
     expect((await early.json()).error).toContain('Add the Team administrator');
+    const before = await (await w.api(w.owner, '/api/team')).json();
+    expect([before.owner, before.canActivate, before.canDeactivate, before.blockers.length > 0]).toEqual([true, false, false, true]);
     expect((await add(w, 'gh-admin')).status).toBe(200);
+    const ready = await (await w.api(w.owner, '/api/team')).json();
+    expect([ready.owner, ready.canActivate]).toEqual([true, true]);
     for (const who of ['alice', 'bob', 'carol']) expect((await add(w, who)).status).toBe(200);
     expect(await (await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'yes' })).json()).toMatchObject({ reason: 'confirm' });
     expect((await w.ownerPost('/api/team/activation', { revision: 'stale', active: true, confirm: 'activate team' })).status).toBe(409);
@@ -457,6 +466,7 @@ describe('Team in a running server', () => {
     expect(team.status).toBe(200);
     const data = await team.json();
     const post = (path: string, body: unknown) => w.api(admin, path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    expect([data.owner, data.canActivate, data.canDeactivate]).toEqual([false, false, false]);
     expect((await post('/api/team/activation', { revision: data.revision, active: false, confirm: 'deactivate team' })).status).toBe(403);
     expect((await w.api(admin, '/api/roots')).status).toBe(200);
     expect((await (await w.api(admin, '/api/roots')).json()).roots).toEqual([]);
@@ -503,6 +513,14 @@ describe('Team in a running server', () => {
     expect(live.messages.slice(n).filter((m) => m.root === w.a.id)).toEqual([]);
     expect((await w.api(bob, `/api/doc?p=${w.a.id}/note.md`)).status).toBeGreaterThanOrEqual(400);
     expect((await grant(w, w.a, 'user', bobId, 'rw')).status).toBe(200);
+    // the same root at another level is an authorization change too: the page is told, with no roots message
+    const level = live.messages.length;
+    expect((await grant(w, w.a, 'user', bobId, 'ro')).status).toBe(200);
+    await settle(100);
+    expect(live.messages.slice(level).map((m) => m.t)).toEqual(['auth']);
+    expect((await grant(w, w.a, 'user', bobId, 'rw')).status).toBe(200);
+    await settle(100);
+    expect(live.messages.slice(level).map((m) => m.t)).toEqual(['auth', 'auth']);
     // ban: the session dies on the next request and the socket is closed with it
     const alice = await w.login('alice');
     const socket = await w.ws(alice);
@@ -622,7 +640,7 @@ describe('Team across a restart', () => {
     try {
       expect((await forced.api(null, '/api/roots')).status).toBe(200);
       const data = await (await forced.api(forced.owner, '/api/team')).json();
-      expect([data.active, data.forcedOff]).toEqual([true, true]);
+      expect([data.active, data.forcedOff, data.owner, data.canActivate, data.canDeactivate]).toEqual([true, true, true, false, false]);
       expect((await forced.ownerPost('/api/team/activation', { revision: data.revision, active: true, confirm: 'activate team' })).status).toBe(409);
     } finally {
       await forced.stop();

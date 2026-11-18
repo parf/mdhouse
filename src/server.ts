@@ -63,7 +63,8 @@ import { TeamSessions } from './lib/team-sessions';
 interface WsData {
   /** The Team account this socket belongs to; its topics follow that account's grants. */
   team?: string;
-  topics?: Set<string>;
+  /** The grant this socket was last scoped to, by root id: a change of either side is an authorization change. */
+  grants?: Map<string, string>;
   asked: string | null;
   ua: string;
   clientId: string;
@@ -890,8 +891,15 @@ export async function serve(opts: ServeOptions) {
   /** Every open socket: Team revokes and re-scopes them in the same turn as the policy change. */
   const sockets = new Set<ServerWebSocket<WsData>>();
   /** The project roots a Team account may read now. */
-  const grantedRootIds = (userId: string): string[] =>
-    team.state ? registry.all().filter((r) => grantFor(team.state!, userId, r, prefs.mode() === 'viewer') !== null).map((r) => r.id) : [];
+  const grantsOf = (userId: string): Map<string, string> => {
+    const out = new Map<string, string>();
+    if (!team.state) return out;
+    for (const root of registry.all()) {
+      const grant = grantFor(team.state, userId, root, prefs.mode() === 'viewer');
+      if (grant) out.set(root.id, grant);
+    }
+    return out;
+  };
   /** Tells a socket its authorization changed — no data — so the page re-enters through normal admission. Always sent before an unsubscribe or a close. */
   const announceAuth = (ws: ServerWebSocket<WsData>): void => {
     try { ws.send('{"t":"auth"}'); } catch { /* a socket already gone has nothing to learn */ }
@@ -912,14 +920,15 @@ export async function serve(opts: ServeOptions) {
         ws.close(1008, 'access revoked');
         continue;
       }
-      const granted = new Set(grantedRootIds(user.id).map((id) => `root:${id}`));
-      const held = ws.data.topics ?? new Set<string>();
+      const now = grantsOf(user.id);
+      const held = ws.data.grants ?? new Map<string, string>();
+      // A removed root, or the same root at another level (RO ↔ RW), is an authorization change the page must re-enter through admission.
+      if ([...held].some(([id, grant]) => now.get(id) !== grant)) announceAuth(ws);
       let changed = false;
-      if ([...held].some((topic) => !granted.has(topic))) announceAuth(ws);
-      for (const topic of held) if (!granted.has(topic)) { ws.unsubscribe(topic); held.delete(topic); changed = true; }
-      for (const topic of granted) if (!held.has(topic)) { ws.subscribe(topic); held.add(topic); changed = true; }
-      ws.data.topics = held;
-      if (changed) ws.send(JSON.stringify({ t: 'roots', roots: [...held].map((topic) => topic.slice(5)) }));
+      for (const id of held.keys()) if (!now.has(id)) { ws.unsubscribe(`root:${id}`); changed = true; }
+      for (const id of now.keys()) if (!held.has(id)) { ws.subscribe(`root:${id}`); changed = true; }
+      ws.data.grants = now;
+      if (changed) ws.send(JSON.stringify({ t: 'roots', roots: [...now.keys()] }));
     }
   };
   /** Runs synchronously inside the policy change, so a ban, a revoked grant or an activation applies to the next request and every open socket. */
@@ -947,6 +956,12 @@ export async function serve(opts: ServeOptions) {
       team.failed = !teamForcedOff;
     }
   }
+  /** The management projection for this requester: `owner` and `canActivate` are theirs — never true for a Team account, nor while the environment forces Team off. */
+  const teamData = (req: Request) => {
+    const data = teamAdmin.data();
+    const owner = isOwner(req) && teamStillAdmin(req);
+    return { ...data, owner, canActivate: owner && !data.active && !data.forcedOff && data.blockers.length === 0, canDeactivate: owner && data.active && !data.forcedOff };
+  };
   const teamError = (err: unknown): Response => {
     if (err instanceof TeamGitHubError) return noStore(fail(err.status, err.message));
     if (!(err instanceof TeamAccessError)) throw err;
@@ -1050,9 +1065,9 @@ export async function serve(opts: ServeOptions) {
       '/settings/users': read(page),
 
       '/api/team': {
-        GET: adminOnly(() => {
+        GET: adminOnly((req) => {
           try {
-            return noStore(json(teamAdmin.data()));
+            return noStore(json(teamData(req)));
           } catch (err) {
             return teamError(err);
           }
@@ -1061,7 +1076,10 @@ export async function serve(opts: ServeOptions) {
           const body = await teamBody(req);
           if (!body) return noStore(fail(400, 'Invalid team access change'));
           try {
-            return noStore(json(await teamAdmin.update(body, teamAdminBinding(req), () => teamStillAdmin(req))));
+            {
+              await teamAdmin.update(body, teamAdminBinding(req), () => teamStillAdmin(req));
+              return noStore(json(teamData(req)));
+            }
           } catch (err) {
             return teamError(err);
           }
@@ -1073,10 +1091,13 @@ export async function serve(opts: ServeOptions) {
         POST: mutation('instance-config', async (req) => {
           if (!isOwner(req) || !teamStillAdmin(req)) return noStore(json({ error: 'only the owner switches Team on or off', reason: 'owner' }, 403));
           const body = await teamBody(req);
+          // the body was awaited: the owner and the authority are checked again, immediately before the store
+          if (!isOwner(req) || !teamStillAdmin(req)) return noStore(json({ error: 'only the owner switches Team on or off', reason: 'owner' }, 403));
           if (!body || Object.keys(body).sort().join() !== 'active,confirm,revision' || typeof body.active !== 'boolean') return noStore(fail(400, 'Invalid Team activation'));
           if (body.confirm !== (body.active ? 'activate team' : 'deactivate team')) return noStore(json({ error: 'Type the confirmation exactly', reason: 'confirm' }, 400));
           try {
-            return noStore(json(teamAdmin.activate(body.revision, body.active)));
+            teamAdmin.activate(body.revision, body.active);
+            return noStore(json(teamData(req)));
           } catch (err) {
             return teamError(err);
           }
@@ -2677,9 +2698,9 @@ export async function serve(opts: ServeOptions) {
         sockets.add(ws);
         if (ws.data.team) {
           // An account's socket hears only its granted roots; no Agent Bus topic, no root list, no tab registry.
-          const ids = grantedRootIds(ws.data.team);
-          ws.data.topics = new Set(ids.map((id) => `root:${id}`));
-          for (const topic of ws.data.topics) ws.subscribe(topic);
+          ws.data.grants = grantsOf(ws.data.team);
+          const ids = [...ws.data.grants.keys()];
+          for (const id of ids) ws.subscribe(`root:${id}`);
           ws.data.clientId = randomBytes(16).toString('base64url');
           ws.send(JSON.stringify({ t: 'hello', roots: ids, clientId: ws.data.clientId, resume: '' }));
           return;
