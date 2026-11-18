@@ -118,6 +118,8 @@ describe('activation rules', () => {
     expect(activationBlockers({ ...ok, state: state({ adminId: null, users: [] }) }).join()).toContain('Add the Team administrator');
     expect(activationBlockers({ ...ok, state: state({ users: [{ id: '11', login: 'gh-admin', name: null, groups: ['all-users'], banned: true }] }) }).join()).toContain('banned');
     expect(activationBlockers({ ...ok, projects: [{ name: 'a', path: '/srv/a' }, { name: 'sub', path: '/srv/a/sub' }] }).join()).toContain('Projects overlap: a and sub');
+    expect(activationBlockers({ ...ok, projects: [{ name: 'root', path: '/' }] }).join()).toContain('whole filesystem');
+    expect(activationBlockers({ ...ok, projects: [{ name: 'cfg', path: '/home/u/.config/mdhouse', instance: true }] }).join()).toContain("holds mdhouse's own configuration");
   });
 
   test('overlap: equal, nested either way, and symlink aliases; a name that only starts alike is not', async () => {
@@ -447,13 +449,18 @@ describe('Team in a running server', () => {
     for (const [method, path] of [
       ['GET', '/api/git'], ['POST', '/api/git/commit'], ['POST', '/api/git/push'], ['GET', '/api/git/log'], ['GET', '/api/digest'],
       ['GET', '/api/ab'], ['POST', '/api/ab/send'], ['GET', '/api/ab/config'], ['GET', '/api/rag'], ['GET', '/api/rag/search'], ['GET', '/rag'],
-      ['GET', '/api/settings'], ['POST', '/api/settings'], ['GET', '/api/author'], ['POST', '/api/author'], ['GET', '/api/marks'],
+      ['POST', '/api/settings'], ['GET', '/api/author'], ['POST', '/api/author'], ['GET', '/api/marks'],
       ['POST', '/api/roots/add'], ['POST', '/api/roots/remove'], ['POST', '/api/roots/mode'], ['GET', '/api/flow/catalog'], ['POST', '/api/flow/start'],
       ['GET', '/api/automation'], ['POST', '/api/automation/approve'], ['GET', '/api/team'], ['POST', '/api/team'], ['POST', '/api/team/preview'], ['POST', '/api/team/activation'],
     ] as const) {
       const r = await w.api(bob, path, { method, headers: { 'content-type': 'application/json' }, ...(method === 'POST' ? { body: '{}' } : {}) });
       expect([method, path, r.status]).toEqual([method, path, path.startsWith('/api/team') ? 401 : 403]);
     }
+    // the shell's settings, sanitized: nothing of the instance's configuration
+    const settings = await w.api(bob, '/api/settings');
+    expect(settings.status).toBe(200);
+    expect(await settings.json()).toEqual({ editLink: false, editScheme: 'edit', autoRw: false, me: '', mode: 'workspace', team: true });
+    expect((await w.api(null, '/api/settings')).status).toBe(401);
     const denied = await (await w.api(bob, '/api/git')).json();
     expect(denied).toMatchObject({ reason: 'team' });
     expect(denied.error).toContain('larger repository');
@@ -581,6 +588,20 @@ describe('Team refuses to start unsafe', () => {
     }
   });
 
+  test('a project that is the instance configuration directory blocks activation', async () => {
+    const base = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-teamcfg-')));
+    await mkdir(join(base, 'config'));
+    const w = await world({ base, roots: (b) => [join(b, 'config')] });
+    try {
+      await add(w, 'gh-admin');
+      const res = await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' });
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toContain("holds mdhouse's own configuration");
+    } finally {
+      await w.stop();
+    }
+  });
+
   test('without GitHub sign-in configured Team cannot be activated', async () => {
     const w = await world({ oauth: false });
     try {
@@ -703,6 +724,7 @@ describe('Team boundaries: a project inside a larger repository, links out of it
       await add(w, 'alice');
       expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
       const { askDaemon } = await import('../src/lib/control');
+      for (const bad of ['/', join(w.base, 'config')]) expect(JSON.stringify(await askDaemon(w.port, { dirs: [bad] }))).toContain('Team does not serve');
       const nested = await askDaemon(w.port, { dirs: [join(w.base, 'a', 'sub')] });
       expect(JSON.stringify(nested)).toContain('overlaps a served project');
       await mkdir(join(w.base, 'c'));

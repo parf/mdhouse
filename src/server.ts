@@ -938,7 +938,7 @@ export async function serve(opts: ServeOptions) {
     team.active = state.active && !teamForcedOff;
     syncSockets();
   };
-  const teamProjects = () => registry.all().filter((r) => r.kind !== 'reference').map((root) => ({ id: root.id, name: customName(root.path) ?? root.name, path: root.path, writable: root.writable }));
+  const teamProjects = () => registry.all().filter((r) => r.kind !== 'reference').map((root) => ({ id: root.id, name: customName(root.path) ?? root.name, path: root.path, writable: root.writable, instance: registry.inInstanceDir(root.path) }));
   const teamAdmin = new TeamAdmin({
     dir: join(dirname(prefs.path), 'team'),
     projects: teamProjects,
@@ -1439,7 +1439,8 @@ export async function serve(opts: ServeOptions) {
 
       /** The settings page's options. Changing one is held to the same same-origin rule. */
       '/api/settings': {
-        GET: () => json(settingsPayload()),
+        // A Team account gets the shell's defaults and the mode — no auto-rw paths, no name, nothing of the instance's configuration.
+        GET: () => (currentRootScope() ? json({ editLink: false, editScheme: 'edit', autoRw: false, me: '', mode: prefs.mode(), team: true }) : json(settingsPayload())),
         POST: mutation('instance-config', async (req) => {
           if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
           const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -2772,6 +2773,9 @@ export async function serve(opts: ServeOptions) {
     const abs = await registry.prepare(spec);
     const served = registry.all().some((r) => r.path === abs);
     // A root added while Team is active would share files with a served one, so a grant on either would reach both.
+    if (team.active && !served && (abs === '/' || registry.inInstanceDir(abs))) {
+      throw new ProjectDirError('overlap', `${abs} is the whole filesystem or mdhouse's own configuration, which Team does not serve`);
+    }
     if (team.active && !served && overlappingPaths([abs, ...registry.all().filter((r) => r.kind !== 'reference').map((r) => r.path)]).some(([a]) => a === abs)) {
       throw new ProjectDirError('overlap', `${abs} overlaps a served project, which Team does not allow: no grant could keep them apart`);
     }

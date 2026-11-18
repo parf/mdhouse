@@ -198,6 +198,11 @@ export class Registry {
     }
   }
 
+  /** Is `path` an instance directory (config, state, runtime) or inside one? Served as a root, it would hand out prefs, tokens and the Team policy. */
+  inInstanceDir(path: string): boolean {
+    return this.hiddenDirs.some((d) => isUnder(d, path));
+  }
+
   /**
    * Whether the real path `abs`, served from `rootPath`, is in a hidden instance directory that lies
    * strictly inside that root (`mdhouse ~`). A root that is, or is inside, an instance directory was

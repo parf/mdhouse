@@ -89,7 +89,8 @@ export const TEAM_ROUTES: Record<string, TeamPolicy | { denied: string }> = {
   '* /api/automation': { denied: DENY_FLOW },
   '* /api/automation/approve': { denied: DENY_FLOW },
   '* /api/automation/revoke': { denied: DENY_FLOW },
-  '* /api/settings': { denied: DENY_ADMIN },
+  'GET /api/settings': 'read',
+  'POST /api/settings': { denied: DENY_ADMIN },
   '* /api/author': { denied: 'Authorship in Team is the signed-in GitHub account; it is not chosen in the browser.' },
   '* /api/marks': { denied: DENY_ADMIN },
   '* /api/roots/name': { denied: DENY_ADMIN },
@@ -149,7 +150,7 @@ export function overlappingPaths(paths: string[]): Array<[string, string]> {
 export interface ActivationFacts {
   state: TeamState;
   oauthReady: boolean;
-  projects: Array<{ name: string; path: string }>;
+  projects: Array<{ name: string; path: string; instance?: boolean }>;
 }
 
 /** Why Team cannot be switched on now; empty when it can. Each line is shown to the owner as written. */
@@ -159,6 +160,10 @@ export function activationBlockers({ state, oauthReady, projects }: ActivationFa
   const admin = state.users.find((user) => user.id === state.adminId);
   if (!admin) out.push('Add the Team administrator first: the first registered GitHub account becomes the administrator.');
   else if (admin.banned) out.push('The Team administrator is banned.');
+  for (const project of projects) {
+    if (project.path === '/') out.push(`${project.name} is the whole filesystem: a Team grant on it would reach every file of the machine. Serve a narrower folder.`);
+    else if (project.instance) out.push(`${project.name} holds mdhouse's own configuration (prefs, tokens, the Team policy): it cannot be a Team project.`);
+  }
   const name = (path: string) => projects.find((project) => project.path === path)?.name ?? path;
   for (const [a, b] of overlappingPaths(projects.map((project) => project.path))) {
     out.push(`Projects overlap: ${name(a)} and ${name(b)} share files, so a grant on one would reach the other. Remove one of them.`);
