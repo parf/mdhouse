@@ -397,8 +397,16 @@ function App({ entry: first }: { entry: AdminEntry }) {
   // The socket is opened once and kept. The handler changes on nearly every render, so it
   // lives in a ref — putting it in the effect's dependencies would tear the connection down
   // and rebuild it each time a document loaded.
+  const [authChanged, setAuthChanged] = useState(false);
+  useEffect(() => {
+    if (authChanged) location.reload();
+  }, [authChanged]);
   const onLive = useRef<(msg: LiveMessage) => void>(() => {});
   onLive.current = (msg) => {
+    if (msg.t === 'auth') {
+      setAuthChanged(true);
+      return;
+    }
     for (const l of liveListeners) l(msg);
     if (msg.t === 'pong' || msg.t === 'ab') return;
     // Agent Bus control: an in-app document path, and never over unsaved editor text.
@@ -675,6 +683,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
     optionsLoaded && !viewer && options.editLink && doc && docRoot && !doc.reference
       ? editUrl(options.editScheme, `${docRoot.path}/${doc.rel}`)
       : null;
+
+  if (authChanged) return <p role="status">Updating access…</p>;
 
   return (
     <ViewerContext.Provider value={viewer}>

@@ -26,6 +26,19 @@ mdhouse --allow reset             # every address again
 - To require a sign-in, configure users: `mdhouse user-add ann`
 - Not in a Viewer — there sign in with `mdhouse admin`
 
+## Team users and project grants
+
+Open **Settings → Users** to add a GitHub account after reviewing its profile. Select a user to edit
+their access to each project, or select a project to edit access for its users and groups. The group
+filters show the number of members, including banned users. **All Users** includes every registered
+account automatically. The administrator can enter extra groups in the user's field, separated by
+spaces or commas.
+
+A direct RO, RW or No access grant takes precedence over group grants. With both boxes empty,
+the user inherits the strongest of their group grants. Viewer and a read-only project always cap
+access at RO. A ban denies sign-in and revokes existing sessions in Team. If the Users page says
+access is staged, its saved changes will apply only when Team access is enabled.
+
 ## Viewer — read-only for everyone
 
 ```sh

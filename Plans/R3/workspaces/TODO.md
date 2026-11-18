@@ -124,6 +124,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
     Admin-editable group input takes spaces and commas. Show group badges in user lists. Built-in **All Users** membership is automatic and grants no projects on its own.
     Above the user list, each group shows its member count and filters the list on click. Use 👤 for a user and 👥 for a group.
     Ban blocks sign-in and current sessions. Authorization updates persist first and call `syncAuth()` in the same server process. Verify direct requests and existing sockets alongside both UI paths.
+    Staged management integrated at `697cbe8` (independent security PASS) and `85981a0`. W2 verified the browser against the real API with a mocked GitHub identity provider, including both grant directions, filters, admin denial, and Ban/Unban. Team admission and request enforcement are the next gate.
   - [x] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
   - Verified: approved `b9986d2`, integrated `e5382e1`; exact source/dependency identity and focused pure/mock 65/0. No persistence/routes/OAuth/live; [evidence](../EXECUTION.md#pure-session-history-and-mock-geoip-integrated)
   - [x] MW.0d.2 Session-history persistence foundation cohort: strict versioned pure codec (W3) + protected atomic snapshot store (W1); one combined security review/gate <a id="MW.0d.2"></a>

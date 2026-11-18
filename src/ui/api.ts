@@ -588,6 +588,8 @@ export type LiveMessage =
   | { t: 'files'; root: string; paths: string[] }
   /** The served directories changed: one added by a second `mdhouse`, or one removed. */
   | { t: 'roots'; roots: string[] }
+  /** The server changed this tab's authorization. The app discards its loaded data and re-enters through HTTP admission. */
+  | { t: 'auth' }
   /** An Agent Bus request's progress — every tab gets it; a page keeps its own jobs'. */
   | ({ t: 'ab' } & AbEvent);
 
