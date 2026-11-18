@@ -276,6 +276,40 @@ export function Sidebar(props: SidebarProps) {
           </div>
         )}
 
+        <div class={`tabs${wide ? '' : ' icons'}`} role="tablist">
+          {TABS.map(({ id, label, title, Icon }) => (
+            <button
+              key={id}
+              role="tab"
+              title={title}
+              aria-label={title}
+              aria-selected={!query && props.tab === id}
+              onClick={() => props.onTab(id)}
+            >
+              <Icon size={wide ? 12 : 14} />
+              {wide && <span>{label}</span>}
+            </button>
+          ))}
+          {VIEW_IDS.map((id) => {
+            const n = props.views[id].length;
+            // V1 is always there to start with; V2 shows once it holds something
+            if (id === 'V2' && !n && props.tab !== id) return null;
+            return (
+              <button
+                key={id}
+                role="tab"
+                class="view-tab"
+                title={n ? `View ${id}: ${n} folder${n === 1 ? '' : 's'} / file${n === 1 ? '' : 's'} — the tree narrowed to them` : `View ${id} — empty: add folders and files with +${id} on a page's title or its breadcrumbs`}
+                aria-selected={!query && props.tab === id}
+                onClick={() => props.onTab(id)}
+              >
+                <IconView n={id.slice(1)} size={wide ? 13 : 15} />
+                {n > 0 && <span class="n">{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+
         {query && wide && props.searchTarget === 'files' && (
           <div class="filters">
             <button class="chip" aria-pressed={props.searchIn.names} onClick={() => props.onSearchIn('names')}>
@@ -304,65 +338,27 @@ export function Sidebar(props: SidebarProps) {
           </div>
         )}
 
-        {!query && (
-          <>
-            <div class={`tabs${wide ? '' : ' icons'}`} role="tablist">
-              {TABS.map(({ id, label, title, Icon }) => (
-                <button
-                  key={id}
-                  role="tab"
-                  title={title}
-                  aria-label={title}
-                  aria-selected={props.tab === id}
-                  onClick={() => props.onTab(id)}
-                >
-                  <Icon size={wide ? 12 : 14} />
-                  {wide && <span>{label}</span>}
-                </button>
-              ))}
-              {VIEW_IDS.map((id) => {
-                const n = props.views[id].length;
-                // V1 is always there to start with; V2 shows once it holds something
-                if (id === 'V2' && !n && props.tab !== id) return null;
-                return (
-                  <button
-                    key={id}
-                    role="tab"
-                    class="view-tab"
-                    title={n ? `View ${id}: ${n} folder${n === 1 ? '' : 's'} / file${n === 1 ? '' : 's'} — the tree narrowed to them` : `View ${id} — empty: add folders and files with +${id} on a page's title or its breadcrumbs`}
-                    aria-selected={props.tab === id}
-                    onClick={() => props.onTab(id)}
-                  >
-                    <IconView n={id.slice(1)} size={wide ? 13 : 15} />
-                    {n > 0 && <span class="n">{n}</span>}
-                  </button>
-                );
-              })}
-            </div>
-
-            {wide && (
-              <div class="filters">
-                {props.tab === 'recent' && authors.length > 1 && (
-                  <select value={props.authorFilter} onChange={(e) => props.onAuthor((e.target as HTMLSelectElement).value)}>
-                    <option value="">everyone</option>
-                    {tree?.user?.name && <option value={tree.user.name}>mine</option>}
-                    {authors
-                      .filter((a) => a !== tree?.user?.name)
-                      .map((a) => (
-                        <option key={a} value={a}>
-                          {a}
-                        </option>
-                      ))}
-                  </select>
-                )}
-                {(tree?.hasIgnored || props.showIgnored) && (
-                  <button class="chip" aria-pressed={props.showIgnored} onClick={props.onToggleIgnored} title="Show Markdown files git ignores, in every folder">
-                    <IconEyeOff size={11} /> {props.showIgnored ? 'Hide ignored' : 'Show ignored'}
-                  </button>
-                )}
-              </div>
+        {!query && wide && (
+          <div class="filters">
+            {props.tab === 'recent' && authors.length > 1 && (
+              <select value={props.authorFilter} onChange={(e) => props.onAuthor((e.target as HTMLSelectElement).value)}>
+                <option value="">everyone</option>
+                {tree?.user?.name && <option value={tree.user.name}>mine</option>}
+                {authors
+                  .filter((a) => a !== tree?.user?.name)
+                  .map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+              </select>
             )}
-          </>
+            {(tree?.hasIgnored || props.showIgnored) && (
+              <button class="chip" aria-pressed={props.showIgnored} onClick={props.onToggleIgnored} title="Show Markdown files git ignores, in every folder">
+                <IconEyeOff size={11} /> {props.showIgnored ? 'Hide ignored' : 'Show ignored'}
+              </button>
+            )}
+          </div>
         )}
       </div>
 

@@ -727,7 +727,10 @@ function App({ entry: first }: { entry: AdminEntry }) {
           onCycleState={cycle}
           onPickRoot={pickRoot}
           onProjectAction={(a) => go(a === 'add' ? '/settings#add-project' : `${dirUrl(rootId, '')}?new-project`)}
-          onTab={setTab}
+          onTab={(tab) => {
+            setQuery('');
+            setTab(tab);
+          }}
           onQuery={setQuery}
           searchIn={searchIn}
           searchScope={searchScope}

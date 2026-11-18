@@ -138,6 +138,8 @@
 
 ### Fixed
 
+- Sidebar tabs stay available during search, even in the compact panel. Select Files to clear the search and return to the tree without leaving the open document.
+
 - `mdhouse admin --workspace` (and `--viewer`) switches the mode from the terminal — it asked for a browser sign-in link instead, refused under `--host-name`; with no users it says to reload the page, with users it prints a sign-in link. Settings, after an administrator refusal: `run  mdhouse admin --workspace from cli`
 
 - Discard changes (`git reset` of one file) reached a file inside a read-only folder through a writable folder around it — now refused, as commit already was
