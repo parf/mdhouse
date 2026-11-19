@@ -35,6 +35,8 @@ interface Props {
   search?: string;
   /** The project on screen elsewhere: Projects opens on it. */
   rootId?: string;
+  /** Reopen Add project when the picker requests it from an already open Settings page. */
+  addProjectRequest: number;
 }
 
 const SAVE_STALE = 'This project changed since it was shown. Check it and save again.';
@@ -88,7 +90,7 @@ const ENTRY_NOTE: Partial<Record<AdminEntry, string>> = {
  * Adding takes a folder's full path and an access the administrator chooses; the server checks the
  * folder. Nothing completes or lists paths here — `mdhouse <dir>` in a terminal can.
  */
-export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go, entry, search = '', rootId }: Props) {
+export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go, entry, search = '', rootId, addProjectRequest }: Props) {
   const params = new URLSearchParams(search);
   const tab: 'projects' | 'personal' | 'instance' = params.get('tab') === 'personal' ? 'personal' : params.get('tab') === 'instance' ? 'instance' : 'projects';
   const [busy, setBusy] = useState<string | null>(null);
@@ -107,12 +109,14 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   // the form in sight and its path field focused once it is usable.
   const [addOpen, setAddOpen] = useState(() => location.hash === '#add-project');
   useEffect(() => {
-    if (location.hash !== '#add-project' || admin === null) return;
-    setAddOpen(true);
+    if (location.hash === '#add-project') setAddOpen(true);
+  }, [addProjectRequest]);
+  useEffect(() => {
+    if (location.hash !== '#add-project' || tab !== 'projects' || !addOpen || admin === null) return;
     const form = document.getElementById('add-project');
     form?.scrollIntoView({ block: 'center' });
     form?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
-  }, [admin, entry]);
+  }, [addProjectRequest, addOpen, admin, tab]);
   /** The refusal's text; an administrator denial also turns the protected controls off. */
   const refused = (err: unknown): string => {
     if (!isAdminDenial(err)) return (err as Error).message;
@@ -625,7 +629,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             </dl>
             {project.kind !== 'reference' && (
               <ul class="project-rows">
-                <li>{linkTo(usersUrl({ project: project.id }), '👥 Who can open it')}</li>
+                <li>{linkTo(usersUrl({ project: project.id }), '👥 User Access')}</li>
                 <li>{linkTo(automationUrl(project.id), 'Scheduled runs')}</li>
               </ul>
             )}
@@ -934,20 +938,15 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             <code>{RECOVER}</code> in a terminal on this computer.
           </p>
         )}
-        <div class="mode-switch" role="group" aria-label="Mode">
-          {(['workspace', 'viewer'] as const).map((m) => (
-            <button
-              type="button"
-              class={`mode-btn${m === 'viewer' ? ' danger' : ''}`}
-              aria-pressed={mode === m}
-              disabled={mode === m || !isAdmin || modeBusy}
-              title={mode === m ? 'The current mode' : !isAdmin ? NEEDS_ADMIN : undefined}
-              onClick={() => void switchMode(m)}
-            >
-              {m === 'workspace' ? 'Workspace' : 'Switch to Viewer'}
-            </button>
-          ))}
-        </div>
+        <button
+          type="button"
+          class={viewer ? 'mode-btn' : 'mode-btn danger'}
+          disabled={!isAdmin || modeBusy}
+          title={!isAdmin ? NEEDS_ADMIN : undefined}
+          onClick={() => void switchMode(viewer ? 'workspace' : 'viewer')}
+        >
+          {viewer ? 'Switch to Workspace' : 'Switch to Viewer'}
+        </button>
         {viewer && !isAdmin && (
           <p class="settings-hint">
             {VIEWER_SIGN_IN[0]}

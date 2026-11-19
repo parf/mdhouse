@@ -2205,9 +2205,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 /* In the sidebar the badge has a line of its own: beside the project name there is no room for its words. */
 .viewer-strip { padding: 5px 8px 0; }
 .viewer-strip .viewer-badge { display: inline-block; margin: 0; font-weight: 600; font-size: 11px; letter-spacing: 0.02em; color: var(--warn); border: 1px solid currentColor; border-radius: 3px; padding: 1px 6px; }
-.mode-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 8px; }
-.mode-btn[aria-pressed="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); opacity: 1; font-weight: 600; }
-.mode-btn[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); }
 
 /* ── Narrow and touch: Settings and /rag ────────────────────────────────── */
 

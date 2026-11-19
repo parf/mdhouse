@@ -172,6 +172,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
   /** Path and query: `?git` on a folder's url is its git view. */
   const [full, setPath] = useState(() => location.pathname + location.search);
+  const [addProjectRequest, requestAddProject] = useState(0);
   const path = full.split('?')[0] ?? '';
   // Active Team access refuses Git for now: a git view address shows the folder instead of a refused page.
   const gitView = !options.team && /[?&]git(?:[=&]|$)/.test(full);
@@ -196,12 +197,14 @@ function App({ entry: first }: { entry: AdminEntry }) {
     setJumpLine(line ?? null);
     if (url !== location.pathname + location.search + location.hash) history.pushState(null, '', url);
     setPath(location.pathname + location.search);
+    if (location.pathname === '/settings' && location.hash === '#add-project') requestAddProject((request) => request + 1);
   }, []);
 
   useEffect(() => {
     const onPop = () => {
       setJumpLine(null);
       setPath(location.pathname + location.search);
+      if (location.pathname === '/settings' && location.hash === '#add-project') requestAddProject((request) => request + 1);
     };
     addEventListener('popstate', onPop);
     return () => removeEventListener('popstate', onPop);
@@ -826,6 +829,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
             entry={entry}
             search={full.slice(path.length)}
             rootId={rootId}
+            addProjectRequest={addProjectRequest}
           />
         ) : choose !== null && dirTarget ? (
           <ChoosePage

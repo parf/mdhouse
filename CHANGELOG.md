@@ -104,7 +104,8 @@
 
 ### Changed
 
-- Project settings align User Access and Scheduled runs in the project header, keep Agent Bus controls together, and show a project picker on narrow screens. Add project labels the folder path and editing option. A compact trash icon sits at the right for removing a project.
+- Settings separates Personal, Projects, Access and Instance. Project settings show the folder, file access and startup first. Add project opens on request, including from the project picker. Instance Mode has its own Danger zone with the recovery command.
+- Access has separate Users, Groups and Projects directories. The details show configured grants first, with effective limits beside them. Expand to find a project or person without a grant. Permission edits have Save and Cancel, and Team setup details open from the status line.
 
 - Settings shows **Administrator** once, with the local access explanation behind ⓘ.
 
