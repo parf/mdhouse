@@ -1,21 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';
 import { api, ApiError, isAdminDenial, type TeamAccess, type TeamAction, type TeamGroup, type TeamPreview, type TeamProject, type TeamSnapshot, type TeamUser } from './api';
 import { follow } from './PageHead';
-import { ALL_USERS, groupField, groupFilters, groupName, membersOf, nextGrant, parseGroupField, projectSources, sourcesText, userSources, usersIn } from './team-model';
+import { SettingsNav } from './SettingsNav';
+import { ALL_USERS, grantState, groupField, groupFilters, groupName, membersOf, parseGroupField, projectSources, sourcesText, userSources, usersIn } from './team-model';
 
 const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin --workspace from cli';
-const ACCESS_WORD: Record<TeamAccess, string> = { ro: 'RO', rw: 'RW' };
+const ACCESS_WORD: Record<TeamAccess, string> = { ro: 'Read-only', rw: 'Read and write' };
+const directories = { users: 'Users', groups: 'Groups', projects: 'Projects' } as const;
+type Directory = keyof typeof directories;
 
 /** The page's own address for a selection: a user, a group, a project, the groups index, or the users list. */
-export const usersUrl = (sel: { user?: string; group?: string; project?: string; view?: 'groups' } = {}): string =>
+export const usersUrl = (sel: { user?: string; group?: string; project?: string; view?: Directory } = {}): string =>
   sel.user
     ? `/settings/users?user=${encodeURIComponent(sel.user)}`
     : sel.group
       ? `/settings/users?group=${encodeURIComponent(sel.group)}`
       : sel.project
         ? `/settings/users?project=${encodeURIComponent(sel.project)}`
-        : sel.view === 'groups'
-          ? '/settings/users?view=groups'
+        : sel.view && sel.view !== 'users'
+          ? `/settings/users?view=${sel.view}`
           : '/settings/users';
 
 /** 👤 / 👥 before a name; hidden from screen readers where the row already says what it is. */
@@ -36,13 +39,24 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
   const userSel = params.get('user');
   const groupSel = params.get('group');
   const projectSel = params.get('project');
-  const groupsView = params.get('view') === 'groups' || !!groupSel;
+  const selection = userSel ?? groupSel ?? projectSel;
+  const directory = params.get('view');
+  const view: Directory = userSel ? 'users' : groupSel ? 'groups' : projectSel ? 'projects' :
+    directory === 'groups' || directory === 'projects' ? directory : 'users';
   const [snap, setSnap] = useState<TeamSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [filter, setFilter] = useState(ALL_USERS);
   const busy = useRef(false);
   const [working, setWorking] = useState(false);
+  const detail = useRef<HTMLElement>(null);
+  const loaded = snap !== null;
+  useEffect(() => {
+    if (!loaded || selection === null) return;
+    const heading = detail.current?.querySelector('h2');
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: 'nearest' });
+  }, [loaded, selection, view]);
 
   const load = () =>
     api.team().then(
@@ -81,7 +95,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
       {text}
     </a>
   );
-  const title = groupsView ? 'Groups' : 'Users';
+  const title = 'Access';
 
   if (error) {
     return (
@@ -90,6 +104,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
           <h1>{title}</h1>
           <span class="head-gear">{props.gear}</span>
         </header>
+        <SettingsNav current="access" go={props.go} />
         <p class="settings-error">{error}</p>
       </div>
     );
@@ -99,6 +114,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
   const user = userSel ? snap.users.find((u) => u.id === userSel) ?? null : null;
   const group = groupSel ? snap.groups.find((g) => g.id === groupSel) ?? null : null;
   const project = projectSel ? snap.projects.find((p) => p.id === projectSel) ?? null : null;
+  const selected = !!(user || group || project);
   const filters = groupFilters(snap);
   const shown = usersIn(snap, filter);
   const groupOf = new Map(snap.groups.map((g) => [g.id, g]));
@@ -109,12 +125,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
         <h1>{title}</h1>
         <span class="head-gear">{props.gear}</span>
       </header>
-      <p class="settings-hint">{link('/settings', '← Settings')}</p>
-      {!snap.active && (
-        <p class="users-staged" role="status">
-          Staged: Team access is not active, so none of this is enforced yet — users, groups and grants are kept for when it is.
-        </p>
-      )}
+      <SettingsNav current="access" go={props.go} />
       <Activation snap={snap} working={working} reload={load} setNote={setNote} />
       {note && (
         <p class="settings-hint users-note" role="status">
@@ -122,29 +133,35 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
         </p>
       )}
 
-      <div class="users-panes">
-        <nav class="users-lists" aria-label="Users, groups and projects">
-          <div class="users-views">
-            {link(usersUrl(), <Who>Users ({snap.users.length})</Who>, 'chip', !groupsView)}
-            {link(usersUrl({ view: 'groups' }), <Who group>Groups ({snap.groups.length})</Who>, 'chip', groupsView)}
-          </div>
-          {groupsView ? (
+      <nav class="users-views" aria-label="Access directory">
+        {Object.entries(directories).map(([id, label]) => (
+          <span key={id}>{link(usersUrl({ view: id as Directory }), label, 'chip', view === id)}</span>
+        ))}
+      </nav>
+      <div class={`users-panes${selected ? ' has-selection' : ''}`}>
+        <aside class="users-lists" aria-label={`${directories[view]} directory`}>
+          {view === 'groups' ? (
             <ul class="users-list">
               {filters.map((f) => (
                 <li key={f.id}>{link(usersUrl({ group: f.id }), <Who group>{f.label} ({f.count})</Who>, 'users-row', f.id === groupSel)}</li>
               ))}
             </ul>
+          ) : view === 'projects' ? (
+            <ul class="users-list">
+              {snap.projects.map((p) => (
+                <li key={p.id}>{link(usersUrl({ project: p.id }), p.name, 'users-row', p.id === projectSel)}</li>
+              ))}
+            </ul>
           ) : (
             <>
-              <div class="users-filters" role="group" aria-label="Show users in a group">
-                {filters.map((f) => (
-                  <button key={f.id} type="button" class="chip" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-                    <Who group>
-                      {f.label} ({f.count})
-                    </Who>
-                  </button>
-                ))}
-              </div>
+              {snap.groups.length > 1 && (
+                <label class="users-filter">
+                  <span>Filter by group</span>
+                  <select class="ab-select" value={filter} onChange={(event) => setFilter(event.currentTarget.value)}>
+                    {filters.map((f) => <option key={f.id} value={f.id}>{f.label} ({f.count})</option>)}
+                  </select>
+                </label>
+              )}
               <ul class="users-list">
                 {shown.map((u) => (
                   <li key={u.id} class={u.banned ? 'banned' : undefined}>
@@ -152,7 +169,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
                     <span class="users-badges">
                       {u.id === snap.adminId && <span class="badge users-admin">admin</span>}
                       {u.banned && <span class="badge users-banned">banned</span>}
-                      {u.groups.map((g) => (
+                      {u.groups.filter((id) => id !== ALL_USERS).map((g) => (
                         <span key={g} class="badge users-group">
                           <Who group>{groupOf.get(g) ? groupName(groupOf.get(g)!) : g}</Who>
                         </span>
@@ -162,18 +179,16 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
                 ))}
                 {!shown.length && <li class="settings-hint">No users{filter !== ALL_USERS ? ' in this group' : ' yet'}.</li>}
               </ul>
-              <AddUser snap={snap} working={working} act={act} />
+              <details class="users-disclose">
+                <summary>Add user</summary>
+                <AddUser snap={snap} working={working} act={act} />
+              </details>
             </>
           )}
-          <h3 class="users-sub">Projects</h3>
-          <ul class="users-list">
-            {snap.projects.map((p) => (
-              <li key={p.id}>{link(usersUrl({ project: p.id }), p.name, 'users-row', p.id === projectSel)}</li>
-            ))}
-          </ul>
-        </nav>
+        </aside>
 
-        <section class="users-detail" aria-live="polite">
+        <section class="users-detail" ref={detail} aria-label="Access details">
+          {selected && <p class="users-detail-back">{link(usersUrl({ view }), `← ${directories[view]}`)}</p>}
           {user ? (
             <UserDetail key={user.id} snap={snap} user={user} working={working} act={act} link={link} />
           ) : group ? (
@@ -181,7 +196,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
           ) : project ? (
             <ProjectDetail key={project.id} snap={snap} project={project} working={working} act={act} link={link} />
           ) : (
-            <p class="settings-hint">{groupsView ? 'Pick a group to see its members and projects.' : 'Pick a user to see every project, or a project to see its groups and users.'}</p>
+            <p class="settings-hint">{selection ? 'This selection is no longer available. Choose another record from the directory.' : 'Choose a record to see its project access.'}</p>
           )}
         </section>
       </div>
@@ -199,63 +214,93 @@ const UserLabel = ({ user }: { user: TeamUser }) => (
 type Act = (action: TeamAction, done?: string) => Promise<boolean>;
 type Link = (url: string, text: preact.ComponentChildren, cls?: string, current?: boolean) => preact.JSX.Element;
 
-/** RO / RW as two ticks: one choice; both empty — a user uses their groups, a group has no grant. */
-function GrantTicks(props: { label: string; value: TeamAccess | 'none' | null | undefined; disabled: boolean; set: (next: TeamAccess | null) => void }) {
-  const tick = (what: TeamAccess, text: string) => (
-    <label class="users-tick">
-      <input
-        type="checkbox"
-        checked={props.value === what}
-        disabled={props.disabled}
-        aria-label={`${props.label}: ${text}`}
-        onChange={(e) => {
-          const next = nextGrant(props.value === 'none' ? null : props.value, what, (e.target as HTMLInputElement).checked);
-          props.set(next === 'none' ? null : next);
-        }}
-      />{' '}
-      {text}
-    </label>
-  );
+/** A permission edit stays local until saved. A stored block can only be preserved or explicitly changed. */
+function GrantEditor({ label, value, user = false, disabled, save }: {
+  label: string;
+  value: TeamAccess | 'none' | null | undefined;
+  user?: boolean;
+  disabled: boolean;
+  save: (next: TeamAccess | null) => Promise<boolean>;
+}) {
+  const [draft, setDraft] = useState<TeamAccess | '' | null>(null);
+  const select = useRef<HTMLSelectElement>(null);
+  const current = value ?? '';
+  const changed = draft !== null && draft !== current;
   return (
-    <span class="users-ticks">
-      {tick('ro', 'RO')}
-      {tick('rw', 'RW')}
-    </span>
+    <form class="grant-editor" onSubmit={async (event) => {
+      event.preventDefault();
+      if (!changed || disabled) return;
+      const detail = select.current?.closest('.users-detail');
+      if (await save(draft || null)) setDraft(null);
+      requestAnimationFrame(() => (select.current ?? detail?.querySelector('h2'))?.focus());
+    }}>
+      <select
+        ref={select}
+        class="ab-select"
+        aria-label={label}
+        disabled={disabled}
+        value={draft ?? current}
+        onChange={(event) => {
+          const next = event.currentTarget.value;
+          if (next === 'ro' || next === 'rw' || next === '') setDraft(next);
+        }}
+      >
+        {current === 'none' && <option value="none" disabled>Direct access blocked</option>}
+        <option value="">{user ? 'Use group access' : 'No grant'}</option>
+        <option value="ro">Read-only</option>
+        <option value="rw">Read and write</option>
+      </select>
+      {changed && <button type="submit" class="git-btn" disabled={disabled}>Save</button>}
+      {changed && <button type="button" class="linklike" disabled={disabled} onClick={() => {
+        setDraft(null);
+        select.current?.focus();
+      }}>Cancel</button>}
+    </form>
   );
 }
 
-/**
- * Where a user's access to a project comes from (`RW: 👤 direct · RO: 👥 All Users`), left out when there is none. An old
- * explicit block (`none`) is shown as such with a way back to the groups — never changed by showing it. While active, a
- * different enforced level (a read-only root caps RW) is said once.
- */
-function UserSources({ snap, project, user, working, act }: { snap: TeamSnapshot; project: TeamProject; user: TeamUser; working: boolean; act: Act }) {
-  const blocked = project.grants.users[user.id] === 'none';
-  const src = userSources(project, user, snap.groups);
-  const text = sourcesText(src);
-  const eff = project.effective[user.id] ?? null;
-  const own = project.grants.users[user.id];
-  const configured = own === 'rw' || own === 'ro' ? own : src.rw.length ? 'rw' : src.ro.length ? 'ro' : null;
+/** The access shown in the row stays separate from the direct grant being edited. */
+function UserSources({ snap, project, user }: { snap: TeamSnapshot; project: TeamProject; user: TeamUser }) {
+  const grant = grantState(project, user, snap.groups);
+  if (grant.kind === 'none') return null;
+  const configured = grant.access === 'none' ? null : grant.access;
+  const effective = project.effective[user.id] ?? null;
+  const text = sourcesText(userSources(project, user, snap.groups));
   return (
-    <span class="users-how">
-      {blocked ? (
-        <>
-          <span class="users-blocked">Direct access blocked</span>{' '}
-          <button type="button" class="linklike" disabled={working} onClick={() => void act({ action: 'grant', projectId: project.id, subject: 'user', subjectId: user.id, access: null })}>
-            Use group access
-          </button>
-          {text && <> · groups: {text}</>}
-        </>
+    <div class="users-how">
+      {snap.active ? (
+        <span>Effective: {effective ? ACCESS_WORD[effective] : 'No access'}</span>
+      ) : configured ? (
+        <span>{ACCESS_WORD[configured]}{grant.kind === 'inherited' ? ' from groups' : ''}</span>
       ) : (
-        text
+        <span class="users-blocked">Direct access blocked</span>
       )}
-      {snap.active && !blocked && eff !== configured && <> {eff ? `(enforced ${ACCESS_WORD[eff]})` : '(not enforced)'}</>}
-    </span>
+      {snap.active && configured && effective !== configured && <span> · configured {ACCESS_WORD[configured].toLowerCase()}</span>}
+      {text && <details><summary>Grant sources</summary>{text}</details>}
+    </div>
+  );
+}
+
+function RevealGrants({ expanded, onClick, controls, show, hide }: {
+  expanded: boolean;
+  onClick: () => void;
+  controls: string;
+  show: string;
+  hide: string;
+}) {
+  return (
+    <button type="button" class="linklike users-reveal" aria-expanded={expanded} aria-controls={controls} onClick={onClick}>
+      {expanded ? hide : show}
+    </button>
   );
 }
 
 function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; user: TeamUser; working: boolean; act: Act; link: Link }) {
   const [groups, setGroups] = useState(() => groupField(snap, user));
+  const [showAll, setShowAll] = useState(false);
+  const grantsId = useId();
+  const projects = snap.projects.filter((p) => showAll || grantState(p, user, snap.groups).kind !== 'none');
+  const memberships = snap.groups.filter((g) => user.groups.includes(g.id));
   useEffect(() => setGroups(groupField(snap, user)), [snap.revision, user.id]);
   const changed = parseGroupField(groups).join(' ') !== groupField(snap, user);
   const ban = async () => {
@@ -265,50 +310,59 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
   };
   return (
     <div class="users-user">
-      <h2>
+      <h2 tabIndex={-1}>
         <UserLabel user={user} />
         {user.id === snap.adminId && <span class="badge users-admin">admin</span>}
         {user.banned && <span class="badge users-banned">banned</span>}
       </h2>
-      <p class="settings-hint">GitHub user id {user.id}</p>
-      <form
-        class="users-groups"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void act({ action: 'groups', userId: user.id, groups: parseGroupField(groups).join(' ') }, 'Groups saved.');
-        }}
-      >
-        <label>
-          Groups <span class="settings-hint">(spaces or commas; a new name makes a group; 👥 All Users is automatic)</span>
-          <input class="users-input" type="text" value={groups} disabled={working} spellcheck={false} autocomplete="off" onInput={(e) => setGroups((e.target as HTMLInputElement).value)} />
-        </label>
-        <button type="submit" class="git-btn" disabled={working || !changed}>
-          Save groups
-        </button>
-      </form>
-      <p>
-        <button type="button" class={user.banned ? 'git-btn' : 'git-btn danger'} disabled={working || user.id === snap.adminId} title={user.id === snap.adminId ? 'The administrator cannot be banned' : undefined} onClick={() => void ban()}>
-          {user.banned ? 'Unban' : 'Ban'}
-        </button>{' '}
-        <span class="settings-hint">{user.banned ? 'Banned: cannot sign in.' : 'Ban ends their sessions and blocks sign-in.'}</span>
-      </p>
-      <h3 class="users-sub">Projects</h3>
-      <p class="settings-hint">Tick RO or RW for {user.login}'s own grant; with both empty the groups decide.</p>
-      <table class="users-table">
+      <ul class="users-membership" aria-label="Group memberships">
+        {memberships.map((g) => <li key={g.id}>{link(usersUrl({ group: g.id }), groupName(g))}</li>)}
+      </ul>
+      <h3 class="users-sub">Project access</h3>
+      {projects.length === 0 && <p class="settings-hint">No project access configured.</p>}
+      {projects.length < snap.projects.length || showAll ? (
+        <RevealGrants expanded={showAll} onClick={() => setShowAll((value) => !value)} controls={grantsId} show="Grant project access" hide="Show configured access only" />
+      ) : null}
+      <table id={grantsId} class="users-table" aria-label={`Project access for ${user.login}`} hidden={projects.length === 0}>
         <tbody>
-          {snap.projects.map((p) => (
+          {projects.map((p) => (
             <tr key={p.id}>
-              <td>{link(usersUrl({ project: p.id }), p.name)}</td>
               <td>
-                <GrantTicks label={`${user.login} on ${p.name}`} value={p.grants.users[user.id]} disabled={working} set={(access) => void act({ action: 'grant', projectId: p.id, subject: 'user', subjectId: user.id, access })} />
+                {link(usersUrl({ project: p.id }), p.name)}
+                <UserSources snap={snap} project={p} user={user} />
               </td>
               <td>
-                <UserSources snap={snap} project={p} user={user} working={working} act={act} />
+                <GrantEditor user label={`Direct access for ${user.login} on ${p.name}`} value={p.grants.users[user.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: p.id, subject: 'user', subjectId: user.id, access }, 'Project access saved.')} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <details class="users-disclose">
+        <summary>Edit groups</summary>
+        <form
+          class="users-groups"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void act({ action: 'groups', userId: user.id, groups: parseGroupField(groups).join(' ') }, 'Groups saved.');
+          }}
+        >
+          <label>
+            Groups <span class="settings-hint">(spaces or commas; a new name makes a group; All Users is automatic)</span>
+            <input class="users-input" type="text" value={groups} disabled={working} spellcheck={false} autocomplete="off" onInput={(e) => setGroups((e.target as HTMLInputElement).value)} />
+          </label>
+          <button type="submit" class="git-btn" disabled={working || !changed}>Save groups</button>
+        </form>
+      </details>
+      <details class="users-disclose">
+        <summary>Account details</summary>
+        <p class="settings-hint">GitHub user id {user.id}</p>
+        {user.id !== snap.adminId && (
+          <button type="button" class={user.banned ? 'git-btn' : 'git-btn danger'} disabled={working} onClick={() => void ban()}>
+            {user.banned ? 'Unban' : 'Ban'} {user.login}
+          </button>
+        )}
+      </details>
     </div>
   );
 }
@@ -316,80 +370,101 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
 /** A group: its members (links), and every project with the group's own RO / RW grant. */
 function GroupDetail({ snap, group, working, act, link }: { snap: TeamSnapshot; group: TeamGroup; working: boolean; act: Act; link: Link }) {
   const members = membersOf(snap, group.id);
+  const [showAll, setShowAll] = useState(false);
+  const grantsId = useId();
+  const projects = snap.projects.filter((p) => showAll || p.grants.groups[group.id]);
   return (
     <div class="users-group-detail">
-      <h2>
+      <h2 tabIndex={-1}>
         <Who group>{groupName(group)}</Who> <span class="users-name">{members.length} member{members.length === 1 ? '' : 's'}</span>
       </h2>
-      {group.id === ALL_USERS && <p class="settings-hint">Every user is a member, automatically.</p>}
-      {members.length > 0 && (
-        <p class="users-members">
-          {members.map((u, i) => (
-            <span key={u.id}>
-              {i > 0 && ', '}
-              {link(usersUrl({ user: u.id }), <Who>{u.login}</Who>, u.banned ? 'users-row banned' : 'users-row')}
-            </span>
-          ))}
-        </p>
-      )}
-      <h3 class="users-sub">Projects</h3>
-      <p class="settings-hint">Tick RO or RW to give every member that access; with both empty the group gives none.</p>
-      <table class="users-table">
+      <h3 class="users-sub">Project access</h3>
+      {projects.length === 0 && <p class="settings-hint">No project grants.</p>}
+      {projects.length < snap.projects.length || showAll ? (
+        <RevealGrants expanded={showAll} onClick={() => setShowAll((value) => !value)} controls={grantsId} show="Grant project access" hide="Show granted projects only" />
+      ) : null}
+      <table id={grantsId} class="users-table" aria-label={`Project grants for ${groupName(group)}`} hidden={projects.length === 0}>
         <tbody>
-          {snap.projects.map((p) => (
+          {projects.map((p) => (
             <tr key={p.id}>
-              <td>{link(usersUrl({ project: p.id }), p.name)}</td>
               <td>
-                <GrantTicks label={`${groupName(group)} on ${p.name}`} value={p.grants.groups[group.id]} disabled={working} set={(access) => void act({ action: 'grant', projectId: p.id, subject: 'group', subjectId: group.id, access })} />
+                {link(usersUrl({ project: p.id }), p.name)}
+                {!p.writable && <div class="users-how">Project is read-only</div>}
+              </td>
+              <td>
+                <GrantEditor label={`Grant for ${groupName(group)} on ${p.name}`} value={p.grants.groups[group.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: p.id, subject: 'group', subjectId: group.id, access }, 'Group grant saved.')} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <details class="users-disclose">
+        <summary>Members ({members.length})</summary>
+        {group.id === ALL_USERS && <p class="settings-hint">Every user is a member automatically.</p>}
+        {members.length ? (
+          <ul class="users-list">
+            {members.map((u) => <li key={u.id} class={u.banned ? 'banned' : undefined}>{link(usersUrl({ user: u.id }), <Who>{u.login}</Who>, 'users-row')}</li>)}
+          </ul>
+        ) : <p class="settings-hint">No members.</p>}
+      </details>
     </div>
   );
 }
 
 function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapshot; project: TeamProject; working: boolean; act: Act; link: Link }) {
-  const groups = [...snap.groups].sort((a, b) => (a.id === ALL_USERS ? -1 : b.id === ALL_USERS ? 1 : a.name.localeCompare(b.name)));
+  const [showGroups, setShowGroups] = useState(false);
+  const [showUsers, setShowUsers] = useState(false);
+  const groupsId = useId();
+  const usersId = useId();
+  const groups = snap.groups.filter((g) => showGroups || project.grants.groups[g.id])
+    .sort((a, b) => (a.id === ALL_USERS ? -1 : b.id === ALL_USERS ? 1 : a.name.localeCompare(b.name)));
+  const users = snap.users.filter((u) => showUsers || project.grants.users[u.id]);
   const summary = sourcesText(projectSources(project, snap));
   return (
     <div class="users-project">
-      <h2>{project.name}</h2>
-      <p class="settings-hint">
-        <code>{project.path}</code> · {project.writable ? 'RW' : 'RO — a grant cannot make it writable'}
-      </p>
-      <p class="users-summary">{summary ? <>Access — {summary}</> : 'No one has access yet.'}</p>
+      <h2 tabIndex={-1}>{project.name}</h2>
+      {!project.writable && <p class="settings-hint">Read-only project. Write grants are limited to read access.</p>}
+      <p class="users-summary">{summary ? <>Configured grants · {summary}</> : 'No grants configured.'}</p>
       <h3 class="users-sub">Groups</h3>
-      <table class="users-table">
+      {groups.length < snap.groups.length || showGroups ? (
+        <RevealGrants expanded={showGroups} onClick={() => setShowGroups((value) => !value)} controls={groupsId} show="Grant access to a group" hide="Show granted groups only" />
+      ) : null}
+      <table id={groupsId} class="users-table" aria-label={`Group grants for ${project.name}`} hidden={groups.length === 0}>
         <tbody>
           {groups.map((g) => (
             <tr key={g.id}>
               <td>{link(usersUrl({ group: g.id }), <Who group>{groupName(g)}</Who>)}</td>
               <td>
-                <GrantTicks label={`${groupName(g)} on ${project.name}`} value={project.grants.groups[g.id]} disabled={working} set={(access) => void act({ action: 'grant', projectId: project.id, subject: 'group', subjectId: g.id, access })} />
+                <GrantEditor label={`Grant for ${groupName(g)} on ${project.name}`} value={project.grants.groups[g.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: project.id, subject: 'group', subjectId: g.id, access }, 'Group grant saved.')} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <h3 class="users-sub">Users</h3>
-      <p class="settings-hint">A user's own RO or RW; with both empty their groups decide.</p>
-      <table class="users-table">
+      <h3 class="users-sub">Direct user access</h3>
+      {users.length < snap.users.length || showUsers ? (
+        <RevealGrants expanded={showUsers} onClick={() => setShowUsers((value) => !value)} controls={usersId} show="Show all users" hide="Show direct grants only" />
+      ) : null}
+      <table id={usersId} class="users-table" aria-label={`User access for ${project.name}`} hidden={users.length === 0}>
         <tbody>
-          {snap.users.map((u) => (
+          {users.map((u) => (
             <tr key={u.id} class={u.banned ? 'banned' : undefined}>
-              <td>{link(usersUrl({ user: u.id }), <UserLabel user={u} />)}</td>
               <td>
-                <GrantTicks label={`${u.login} on ${project.name}`} value={project.grants.users[u.id]} disabled={working} set={(access) => void act({ action: 'grant', projectId: project.id, subject: 'user', subjectId: u.id, access })} />
+                {link(usersUrl({ user: u.id }), <UserLabel user={u} />)}
+                {u.banned && <span class="badge users-banned">banned</span>}
+                <UserSources snap={snap} project={project} user={u} />
               </td>
               <td>
-                <UserSources snap={snap} project={project} user={u} working={working} act={act} />
+                <GrantEditor user label={`Direct access for ${u.login} on ${project.name}`} value={project.grants.users[u.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: project.id, subject: 'user', subjectId: u.id, access }, 'Project access saved.')} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <details class="users-disclose">
+        <summary>Folder details</summary>
+        <p class="settings-hint"><code>{project.path}</code></p>
+      </details>
     </div>
   );
 }
@@ -432,8 +507,6 @@ function AddUser({ snap, working, act }: { snap: TeamSnapshot; working: boolean;
         void look();
       }}
     >
-      <h3 class="users-sub">Add user</h3>
-      {!snap.oauthReady && <p class="settings-hint">GitHub sign-in is not configured yet: a user can be added now, and signs in once it is.</p>}
       <input
         class="users-input"
         type="text"
@@ -508,11 +581,10 @@ function Activation({ snap, working, reload, setNote }: { snap: TeamSnapshot; wo
     }
   };
   return (
-    <section class="users-activation" aria-label="Team access">
-      <p>
-        Team access: <b>{snap.active ? 'active' : 'not active'}</b>
-        {snap.forcedOff && <> — turned off by this server's configuration</>}
-      </p>
+    <details class="users-activation">
+      <summary>
+        Team access · <b>{snap.forcedOff ? 'Forced off by server configuration' : snap.active ? 'Active' : 'Staged · grants are not enforced'}</b>
+      </summary>
       {blockers.length > 0 && (
         <div class="users-blockers">
           <p class="settings-hint">It cannot be turned on yet:</p>
@@ -546,6 +618,6 @@ function Activation({ snap, working, reload, setNote }: { snap: TeamSnapshot; wo
       ) : (
         <p class="settings-hint">Only the owner turns Team access on or off.</p>
       )}
-    </section>
+    </details>
   );
 }

@@ -573,6 +573,12 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.13 Schedule a comprehensive UX review of all pages and flows <a id="MW.13"></a>
   Owner priority: navigation and new project views are the next major UX step; Teams and automations design builds on the agreed structure and [№MW.14](#MW.14) data placement.
   - [ ] MW.13.1 Explore navigation and views for mdhouse as a project workspace beyond a Markdown viewer <a id="MW.13.1"></a>
+    - [ ] MW.13.1l Organize Settings and Access around their most common tasks <a id="MW.13.1l"></a>
+      - Settings has Personal, Projects, Access and Instance destinations. Projects opens the current project and shows file access, startup and useful project actions. Add project expands on demand, including from the existing deep link.
+      - Access uses one directory at a time (Users, Groups, Projects). A selected record shows configured grants and meaningful enforcement limits. An explicit action reveals subjects or projects with no grant.
+      - Mode is an instance-wide control in its own Danger zone. Before a switch to Viewer, explain loss of local administrator access and show the CLI recovery command. Team activation keeps owner checks, blockers and typed confirmation.
+      - Preserve legacy links, browser Back, keyboard focus and useful narrow layouts. Show the consequences of a permission change, preserve input on rejection and keep saved grants distinct from effective access.
+      - Scope: Settings UI and existing APIs. Personal controls may only change browser-local state. Edit-link defaults stay shared until a separate browser preference is available. Rankings are workflow hypotheses.
     - [x] MW.13.1a Capture current journeys and compare navigation options <a id="MW.13.1a"></a>
       [Research proposal](../UX-NAVIGATION.md): source inventory, 18 scratch journey captures, five IA alternatives and phased recommendation; nonauthor fact-check PASS. Direction/implementation and parent review remain open.
     - [ ] MW.13.1b Phone UX fixes from the touch journey ([proposal, QA](../QA.md#touch-ux)); order 2, 5, 1 approved; 3 (one Changes destination) and 4 (Files|Index search, IA option B) await the owner <a id="MW.13.1b"></a>

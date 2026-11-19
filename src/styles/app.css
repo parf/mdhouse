@@ -2488,11 +2488,16 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .auto-actions .rag-act { min-height: 44px; padding-inline: 14px; }
 }
 
-/* ── Users (`/settings/users`): lists on the left, the selection's grants on the right ── */
+/* ── Settings navigation and Access (`/settings/users`) ── */
+.settings-nav { display: flex; flex-wrap: wrap; gap: 2px 4px; border-bottom: 1px solid var(--border); margin: 8px 0 18px; }
+.settings-nav a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-bottom: 2px solid transparent; color: var(--fg-muted); text-decoration: none; }
+.settings-nav a:hover { color: var(--fg); background: var(--bg-hover); }
+.settings-nav a[aria-current="page"] { color: var(--accent); border-color: var(--accent); font-weight: 650; }
+.settings-nav a:focus-visible, .users-page summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 .users-page { max-width: 1100px; }
-.users-staged { padding: 8px 12px; border: 1px solid var(--warn); border-radius: var(--radius); color: var(--warn); font-size: 13px; }
-.users-panes { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
-.users-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.users-panes { display: grid; grid-template-columns: minmax(170px, 240px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.users-filter { display: grid; gap: 4px; margin-bottom: 10px; color: var(--fg-muted); font-size: 12.5px; }
 .users-list { list-style: none; margin: 0 0 12px; padding: 0; }
 .users-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 4px 6px; border-radius: var(--radius); }
 .users-list li.banned .users-row { color: var(--fg-muted); text-decoration: line-through; }
@@ -2509,20 +2514,41 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .users-table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .users-table td { padding: 4px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
 .users-table tr.banned td:first-child { opacity: 0.6; }
-.users-ticks { display: inline-flex; gap: 12px; white-space: nowrap; }
-.users-tick { display: inline-flex; align-items: center; gap: 4px; }
-.users-how { font-size: 12px; color: var(--fg-muted); }
+.grant-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.users-how { padding-top: 2px; font-size: 12px; color: var(--fg-muted); }
+.users-how > details { margin: 3px 0; overflow-wrap: anywhere; }
+.users-how summary, .users-disclose summary { width: fit-content; max-width: 100%; color: var(--accent); cursor: pointer; }
+.users-disclose { margin: 10px 0; }
+.users-disclose[open] { padding-bottom: 4px; }
+.users-reveal { margin: 0 0 8px; }
+.users-membership { display: flex; flex-wrap: wrap; gap: 6px 12px; list-style: none; padding: 0; margin: 8px 0; font-size: 13px; }
+.users-detail-back { display: none; }
 .users-groups { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin: 10px 0; }
 .users-groups label { display: grid; gap: 4px; flex: 1 1 18em; font-size: 13px; }
 .users-preview { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); }
-@media (max-width: 860px) { .users-panes { grid-template-columns: 1fr; } }
-@media (pointer: coarse) { .users-tick { min-height: 44px; } .users-tick input { width: 22px; height: 22px; } .users-row { display: inline-block; padding: 10px 0; } }
+@media (max-width: 700px) {
+  .users-panes { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .users-panes.has-selection .users-lists { display: none; }
+  .users-detail-back { display: block; margin: 0; font-size: 13px; }
+}
+@media (max-width: 400px) {
+  .settings-nav a { padding-inline: 8px; }
+  .users-table td { padding-inline: 4px; }
+}
+@media (pointer: coarse) {
+  .settings-nav a, .users-disclose summary, .users-activation summary, .users-reveal, .grant-editor button { min-height: 44px; }
+  .users-disclose summary, .users-activation summary { padding-block: 10px; }
+  .users-views a, .users-detail-back a { display: inline-flex; align-items: center; min-height: 44px; }
+  .users-row { display: inline-block; padding: 10px 0; }
+}
 .users-page .git-btn.danger { color: var(--danger); border-color: var(--danger); }
 .users-detail h2 { font-size: 18px; font-weight: 650; color: var(--fg); text-transform: none; letter-spacing: normal; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
 .users-input { font: inherit; font-size: 14px; padding: 5px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); box-sizing: border-box; width: 100%; max-width: 28em; }
 .users-add .users-input { width: auto; max-width: 100%; }
 @media (pointer: coarse) { .users-input { min-height: 44px; font-size: 16px; } }
 .users-activation { margin: 8px 0 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13.5px; }
+.users-activation summary { cursor: pointer; }
+.users-activation[open] summary { margin-bottom: 10px; }
 .users-activation p { margin: 0 0 6px; }
 .users-blockers ul { margin: 4px 0 8px; padding-left: 1.3em; }
 .users-activate { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
@@ -2534,8 +2560,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .users-views { display: flex; gap: 6px; margin-bottom: 10px; }
 .users-views a { text-decoration: none; }
 .users-views a[aria-current="true"] { border-color: var(--accent); color: var(--accent); background: var(--bg-active); }
-.users-table td:first-child { white-space: nowrap; }
+.users-table td:first-child { overflow-wrap: anywhere; }
 .users-summary { font-size: 13.5px; margin: 6px 0 4px; }
-.users-members { font-size: 13.5px; line-height: 1.8; }
 .users-blocked { color: var(--danger); }
 .users-page .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
