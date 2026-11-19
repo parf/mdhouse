@@ -1,28 +1,50 @@
 import { follow } from './PageHead';
 
-type SettingsView = 'personal' | 'projects' | 'access' | 'instance';
+type SettingsTab = 'projects' | 'instance';
+type SettingsView = SettingsTab | 'access' | 'users' | 'groups';
+type AccessDirectory = 'users' | 'groups' | 'projects';
 
-export function settingsUrl(view: Exclude<SettingsView, 'access'>, project?: string): string {
+export const accessTitles = { users: 'Users', groups: 'Groups', projects: 'Access' } as const;
+
+export function accessDirectory(params: URLSearchParams): AccessDirectory {
+  if (params.get('user')) return 'users';
+  if (params.get('group')) return 'groups';
+  if (params.get('project')) return 'projects';
+  const view = params.get('view');
+  return view === 'groups' || view === 'projects' ? view : 'users';
+}
+
+export function usersUrl({ user, group, project, view }: {
+  user?: string; group?: string; project?: string; view?: AccessDirectory;
+} = {}): string {
+  if (user) return `/settings/users?user=${encodeURIComponent(user)}`;
+  if (group) return `/settings/users?group=${encodeURIComponent(group)}`;
+  if (project) return `/settings/users?project=${encodeURIComponent(project)}`;
+  return view && view !== 'users' ? `/settings/users?view=${view}` : '/settings/users';
+}
+
+export function settingsUrl(view: SettingsTab, project?: string): string {
   if (view !== 'projects') return `/settings?tab=${view}`;
   return project ? `/settings?project=${encodeURIComponent(project)}` : '/settings';
 }
 
-const destinations = [
-  { id: 'personal', label: 'Personal', href: settingsUrl('personal') },
+const destinations: ReadonlyArray<{ id: SettingsView; label: string; href: string; title?: string; glyph?: string }> = [
   { id: 'projects', label: 'Projects', href: settingsUrl('projects') },
-  { id: 'access', label: 'Access', href: '/settings/users' },
+  { id: 'access', label: accessTitles.projects, href: usersUrl({ view: 'projects' }), title: 'Project access' },
+  { id: 'users', label: accessTitles.users, href: usersUrl(), glyph: '👤' },
+  { id: 'groups', label: accessTitles.groups, href: usersUrl({ view: 'groups' }), glyph: '👥' },
   { id: 'instance', label: 'Instance', href: settingsUrl('instance') },
-] as const;
+];
 
-export function SettingsNav({ current, go, showAccess = true }: {
+export function SettingsNav({ current, go }: {
   current: SettingsView;
   go: (url: string) => void;
-  showAccess?: boolean;
 }) {
   return (
     <nav class="settings-nav" aria-label="Settings">
-      {destinations.filter(({ id }) => id !== 'access' || showAccess).map(({ id, label, href }) => (
-        <a key={id} href={href} aria-current={id === current ? 'page' : undefined} onClick={(event) => follow(event, () => go(href))}>
+      {destinations.map(({ id, label, href, title, glyph }) => (
+        <a key={id} href={href} title={title} aria-current={id === current ? 'page' : undefined} onClick={(event) => follow(event, () => go(href))}>
+          {glyph && <span aria-hidden="true">{glyph}</span>}
           {label}
         </a>
       ))}

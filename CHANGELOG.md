@@ -104,8 +104,8 @@
 
 ### Changed
 
-- Settings separates Personal, Projects, Access and Instance. Project settings show the folder, file access and startup first. Add project opens on request, including from the project picker. Instance Mode has its own Danger zone with the recovery command.
-- Access has separate Users, Groups and Projects directories. The details show configured grants first, with effective limits beside them. Expand to find a project or person without a grant. Permission edits have Save and Cancel, and Team setup details open from the status line.
+- Settings opens on Projects. Project settings show the folder, file access and startup first. Add project opens on request, including from the project picker. Instance includes Personal browser settings and a Danger zone for Mode with the recovery command.
+- Users, Groups and project Access are directly available from the Settings menu. The details show configured grants first, with effective limits beside them. Expand to find a project or person without a grant. Permission edits have Save and Cancel, and Team setup details open from the status line.
 
 - Settings shows **Administrator** once, with the local access explanation behind ⓘ.
 

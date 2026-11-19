@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TeamSnapshot } from '../src/ui/api';
-import { grantState, groupCounts, groupField, groupFilters, inherited, nextGrant, parseGroupField, projectSources, sourcesText, userSources, usersIn } from '../src/ui/team-model';
+import { configuredAccess, groupCounts, groupField, groupFilters, parseGroupField, projectSources, sourcesText, userSources, usersIn } from '../src/ui/team-model';
 
 const snap: TeamSnapshot = {
   revision: 'r1', active: false, oauthReady: true, adminId: '1',
@@ -34,19 +34,11 @@ describe('Users page rules', () => {
     expect(groupField(snap, snap.users[1]!)).toBe('dev ops');
     expect(parseGroupField(' dev, ops  Dev,,qa ')).toEqual(['dev', 'ops', 'qa']);
   });
-  test('where access comes from: the strongest group grant, and which groups; a direct grant wins', () => {
+  test('configured access uses the strongest group grant, with direct access taking precedence', () => {
     const p = snap.projects[0]!;
-    expect(inherited(p, snap.users[1]!, snap.groups)).toEqual({ access: 'rw', from: ['ops'] });
-    expect(grantState(p, snap.users[0]!, snap.groups)).toEqual({ kind: 'inherited', access: 'ro', from: ['dev'] });
-    expect(grantState(p, snap.users[2]!, snap.groups)).toEqual({ kind: 'direct', access: 'none' });
-  });
-  test('RO / RW ticks are one choice; unticking the ticked one inherits; No access is its own', () => {
-    expect(nextGrant(null, 'ro', true)).toBe('ro');
-    expect(nextGrant('ro', 'rw', true)).toBe('rw');
-    expect(nextGrant('rw', 'rw', false)).toBeNull();
-    expect(nextGrant('rw', 'ro', false)).toBe('rw');
-    expect(nextGrant('ro', 'none', true)).toBe('none');
-    expect(nextGrant('none', 'none', false)).toBeNull();
+    expect(configuredAccess(p, snap.users[0]!)).toBe('ro');
+    expect(configuredAccess(p, snap.users[1]!)).toBe('rw');
+    expect(configuredAccess(p, snap.users[2]!)).toBe('none');
   });
   test('sources: own grant and every group of the user, by level; project-wide once; empty left out', () => {
     const p = snap.projects[0]!;

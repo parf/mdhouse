@@ -170,10 +170,11 @@
   Filesystem directory/path and internal root/API/storage semantics stay unchanged; unsupported
   per-project mutations require their existing admin-gated owning work. [History](resolved.md#PROJECTS-W1).
 
-- 📌 SETTINGS-UX1 Settings separates Personal, Projects, Access and Instance. <a id="SETTINGS-UX1"></a>
+- 📌 SETTINGS-UX1 Settings links directly to Projects, project Access, Users, Groups and Instance. <a id="SETTINGS-UX1"></a>
   Show current state and common actions first. Add project and lower-priority details open on request.
-  Access shows one directory at a time and defaults to configured grants. The instance-wide Mode control
-  has its own Danger zone and shows the CLI recovery command before a switch to Viewer.
+  Access shows one directory at a time and defaults to configured grants. Instance includes Personal
+  browser settings. The instance-wide Mode control has its own Danger zone and shows the CLI recovery
+  command before a switch to Viewer.
 
 
 - 📌 Q-R3-AB1 AB endpoint/default overrides follow the existing saved/session root-property lifetime. <a id="Q-R3-AB1"></a>

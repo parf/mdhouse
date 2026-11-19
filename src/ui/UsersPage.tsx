@@ -1,25 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';
 import { api, ApiError, isAdminDenial, type TeamAccess, type TeamAction, type TeamGroup, type TeamPreview, type TeamProject, type TeamSnapshot, type TeamUser } from './api';
 import { follow } from './PageHead';
-import { SettingsNav } from './SettingsNav';
-import { ALL_USERS, grantState, groupField, groupFilters, groupName, membersOf, parseGroupField, projectSources, sourcesText, userSources, usersIn } from './team-model';
+import { accessDirectory, accessTitles, SettingsNav, usersUrl } from './SettingsNav';
+import { ALL_USERS, configuredAccess, groupField, groupFilters, groupName, parseGroupField, projectSources, sourcesText, userSources, usersIn } from './team-model';
 
 const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin --workspace from cli';
 const ACCESS_WORD: Record<TeamAccess, string> = { ro: 'Read-only', rw: 'Read and write' };
-const directories = { users: 'Users', groups: 'Groups', projects: 'Projects' } as const;
-type Directory = keyof typeof directories;
-
-/** The page's own address for a selection: a user, a group, a project, the groups index, or the users list. */
-export const usersUrl = (sel: { user?: string; group?: string; project?: string; view?: Directory } = {}): string =>
-  sel.user
-    ? `/settings/users?user=${encodeURIComponent(sel.user)}`
-    : sel.group
-      ? `/settings/users?group=${encodeURIComponent(sel.group)}`
-      : sel.project
-        ? `/settings/users?project=${encodeURIComponent(sel.project)}`
-        : sel.view && sel.view !== 'users'
-          ? `/settings/users?view=${sel.view}`
-          : '/settings/users';
 
 /** 👤 / 👥 before a name; hidden from screen readers where the row already says what it is. */
 const Who = ({ group, children }: { group?: boolean; children: preact.ComponentChildren }) => (
@@ -40,9 +26,9 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
   const groupSel = params.get('group');
   const projectSel = params.get('project');
   const selection = userSel ?? groupSel ?? projectSel;
-  const directory = params.get('view');
-  const view: Directory = userSel ? 'users' : groupSel ? 'groups' : projectSel ? 'projects' :
-    directory === 'groups' || directory === 'projects' ? directory : 'users';
+  const view = accessDirectory(params);
+  const title = accessTitles[view];
+  const settingsView = view === 'projects' ? 'access' : view;
   const [snap, setSnap] = useState<TeamSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -95,7 +81,6 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
       {text}
     </a>
   );
-  const title = 'Access';
 
   if (error) {
     return (
@@ -104,7 +89,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
           <h1>{title}</h1>
           <span class="head-gear">{props.gear}</span>
         </header>
-        <SettingsNav current="access" go={props.go} />
+        <SettingsNav current={settingsView} go={props.go} />
         <p class="settings-error">{error}</p>
       </div>
     );
@@ -125,7 +110,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
         <h1>{title}</h1>
         <span class="head-gear">{props.gear}</span>
       </header>
-      <SettingsNav current="access" go={props.go} />
+      <SettingsNav current={settingsView} go={props.go} />
       <Activation snap={snap} working={working} reload={load} setNote={setNote} />
       {note && (
         <p class="settings-hint users-note" role="status">
@@ -133,13 +118,8 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
         </p>
       )}
 
-      <nav class="users-views" aria-label="Access directory">
-        {Object.entries(directories).map(([id, label]) => (
-          <span key={id}>{link(usersUrl({ view: id as Directory }), label, 'chip', view === id)}</span>
-        ))}
-      </nav>
       <div class={`users-panes${selected ? ' has-selection' : ''}`}>
-        <aside class="users-lists" aria-label={`${directories[view]} directory`}>
+        <aside class="users-lists" aria-label={`${title} directory`}>
           {view === 'groups' ? (
             <ul class="users-list">
               {filters.map((f) => (
@@ -188,7 +168,7 @@ export function UsersPage(props: { search: string; go: (url: string) => void; ge
         </aside>
 
         <section class="users-detail" ref={detail} aria-label="Access details">
-          {selected && <p class="users-detail-back">{link(usersUrl({ view }), `← ${directories[view]}`)}</p>}
+          {selected && <p class="users-detail-back">{link(usersUrl({ view }), `← ${title}`)}</p>}
           {user ? (
             <UserDetail key={user.id} snap={snap} user={user} working={working} act={act} link={link} />
           ) : group ? (
@@ -261,9 +241,10 @@ function GrantEditor({ label, value, user = false, disabled, save }: {
 
 /** The access shown in the row stays separate from the direct grant being edited. */
 function UserSources({ snap, project, user }: { snap: TeamSnapshot; project: TeamProject; user: TeamUser }) {
-  const grant = grantState(project, user, snap.groups);
-  if (grant.kind === 'none') return null;
-  const configured = grant.access === 'none' ? null : grant.access;
+  const grant = configuredAccess(project, user);
+  if (!grant) return null;
+  const configured = grant === 'none' ? null : grant;
+  const inherited = !project.grants.users[user.id];
   const effective = project.effective[user.id] ?? null;
   const text = sourcesText(userSources(project, user, snap.groups));
   return (
@@ -271,7 +252,7 @@ function UserSources({ snap, project, user }: { snap: TeamSnapshot; project: Tea
       {snap.active ? (
         <span>Effective: {effective ? ACCESS_WORD[effective] : 'No access'}</span>
       ) : configured ? (
-        <span>{ACCESS_WORD[configured]}{grant.kind === 'inherited' ? ' from groups' : ''}</span>
+        <span>{ACCESS_WORD[configured]}{inherited ? ' from groups' : ''}</span>
       ) : (
         <span class="users-blocked">Direct access blocked</span>
       )}
@@ -299,7 +280,7 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
   const [groups, setGroups] = useState(() => groupField(snap, user));
   const [showAll, setShowAll] = useState(false);
   const grantsId = useId();
-  const projects = snap.projects.filter((p) => showAll || grantState(p, user, snap.groups).kind !== 'none');
+  const projects = snap.projects.filter((p) => showAll || configuredAccess(p, user));
   const memberships = snap.groups.filter((g) => user.groups.includes(g.id));
   useEffect(() => setGroups(groupField(snap, user)), [snap.revision, user.id]);
   const changed = parseGroupField(groups).join(' ') !== groupField(snap, user);
@@ -369,7 +350,7 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
 
 /** A group: its members (links), and every project with the group's own RO / RW grant. */
 function GroupDetail({ snap, group, working, act, link }: { snap: TeamSnapshot; group: TeamGroup; working: boolean; act: Act; link: Link }) {
-  const members = membersOf(snap, group.id);
+  const members = usersIn(snap, group.id);
   const [showAll, setShowAll] = useState(false);
   const grantsId = useId();
   const projects = snap.projects.filter((p) => showAll || p.grants.groups[group.id]);

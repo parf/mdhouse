@@ -44,36 +44,17 @@ export function parseGroupField(text: string): string[] {
   return out;
 }
 
-const rank = (a: TeamAccess | null | undefined): number => (a === 'rw' ? 2 : a === 'ro' ? 1 : 0);
-
-/** What the user's groups give on a project, and which groups give it. */
-export function inherited(project: TeamProject, user: TeamUser, groups: TeamGroup[]): { access: TeamAccess | null; from: string[] } {
+/** The user's direct grant or the strongest group grant. */
+export function configuredAccess(project: TeamProject, user: TeamUser): TeamAccess | 'none' | null {
+  const direct = project.grants.users[user.id];
+  if (direct) return direct;
   let best: TeamAccess | null = null;
-  for (const g of user.groups) {
-    const a = project.grants.groups[g];
-    if (rank(a) > rank(best)) best = a!;
+  for (const group of user.groups) {
+    const access = project.grants.groups[group];
+    if (access === 'rw') return access;
+    if (access === 'ro') best = access;
   }
-  const name = new Map(groups.map((g) => [g.id, groupName(g)]));
-  const from = best ? user.groups.filter((g) => project.grants.groups[g] === best).map((g) => name.get(g) ?? g) : [];
-  return { access: best, from };
-}
-
-/** How a user's access to a project is set: their own grant, their groups', or nothing. */
-export type GrantState = { kind: 'direct'; access: TeamAccess | 'none' } | { kind: 'inherited'; access: TeamAccess; from: string[] } | { kind: 'none' };
-export function grantState(project: TeamProject, user: TeamUser, groups: TeamGroup[]): GrantState {
-  const own = project.grants.users[user.id];
-  if (own) return { kind: 'direct', access: own };
-  const inh = inherited(project, user, groups);
-  return inh.access ? { kind: 'inherited', access: inh.access, from: inh.from } : { kind: 'none' };
-}
-
-/**
- * The grant after a click on RO or RW: ticking one sets it (RW and RO are one choice), unticking the ticked one leaves
- * both empty — inherit (`null`). `none` represents a stored direct block.
- */
-export function nextGrant(current: TeamAccess | 'none' | null | undefined, clicked: TeamAccess | 'none', checked: boolean): TeamAccess | 'none' | null {
-  if (checked) return clicked;
-  return current === clicked ? null : (current ?? null);
+  return best;
 }
 
 /** Where access comes from, by level: who or which group gives RW, and RO. Labels carry their glyph. */
@@ -114,6 +95,3 @@ export function projectSources(project: TeamProject, snap: TeamSnapshot): Source
 export function sourcesText(s: Sources): string {
   return [s.rw.length ? `RW: ${s.rw.join(', ')}` : '', s.ro.length ? `RO: ${s.ro.join(', ')}` : ''].filter(Boolean).join(' · ');
 }
-
-/** A group's members, banned ones included. */
-export const membersOf = (snap: TeamSnapshot, groupId: string): TeamUser[] => usersIn(snap, groupId);

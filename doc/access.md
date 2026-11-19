@@ -34,11 +34,10 @@ their access to each project, or select a project to edit access for its users a
 users. **All Users** automatically includes every registered account. The administrator can enter
 extra group names in the user's field, separated by spaces or commas.
 
-A direct RO or RW grant takes precedence over group grants. With both boxes empty, the user inherits
-the strongest group grant. A group with both boxes empty gives no access. An existing explicit block
-stays in effect until cleared with **Use group access**. The RO and RW summaries show the configured
-sources. Viewer and read-only projects cap access at RO. A ban denies sign-in and revokes existing
-sessions. Staged grants take effect when Team access is enabled.
+A direct **Read-only** or **Read and write** grant takes precedence over group grants. **Use group
+access** gives the user the strongest group grant and clears any direct block. **No grant** removes
+a group's grant. Select **Save** to apply a change. Viewer and read-only projects cap access at RO.
+A ban denies sign-in and revokes existing sessions. Staged grants take effect when Team access is enabled.
 
 ### Turn on Team access
 

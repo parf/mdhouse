@@ -31,6 +31,7 @@ import { FlowPage } from './ui/FlowRun';
 import { NewProjectPage } from './ui/NewProjectPage';
 import { ChoosePage } from './ui/ChoosePage';
 import { UsersPage } from './ui/UsersPage';
+import { accessDirectory, accessTitles } from './ui/SettingsNav';
 import { flowFrom } from './ui/flow-model';
 import { MD_EXT } from './lib/filetypes';
 import { changeSummary } from './ui/git-state';
@@ -182,6 +183,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   currentDocPath.current = docPath;
   const onSettings = route.kind === 'settings';
   const onUsers = route.kind === 'users';
+  const accessTitle = onUsers ? accessTitles[accessDirectory(new URLSearchParams(full.slice(path.length)))] : '';
   const onRag = route.kind === 'rag';
   const onAutomation = route.kind === 'dir' && !route.dir && wantsAutomation(full.includes('?') ? full.slice(full.indexOf('?')) : '');
   /** Create new Project (TBD): `?new-project` on a project's address. */
@@ -647,7 +649,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       const r = roots.find((x) => x.id === id);
       return r ? (customName(r) ?? rootLabel(r.path)) : '';
     };
-    if (onUsers) document.title = 'Access - MDHOUSE';
+    if (onUsers) document.title = `${accessTitle} - MDHOUSE`;
     else if (onSettings) document.title = pageTitle({ settings: true });
     else if (onRag) document.title = pageTitle({ rag: true });
     else if (dirTarget) document.title = pageTitle({ rel: dirTarget.dir, folder: true, root: rootName(dirTarget.rootId) });
@@ -664,7 +666,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       document.title = pageTitle({ rel: rel.join('/'), root: rootName(id) });
     }
     else if (!docPath) document.title = pageTitle({ root: rootName(tree?.root.id ?? '') });
-  }, [onUsers, onSettings, onRag, docPath, doc?.rel, doc?.root, dirTarget?.rootId, dirTarget?.dir, tree?.root.id, roots]);
+  }, [onUsers, accessTitle, onSettings, onRag, docPath, doc?.rel, doc?.root, dirTarget?.rootId, dirTarget?.dir, tree?.root.id, roots]);
 
   const toggleDir = useCallback((dirPath: string) => {
     setExpanded((prev) => {

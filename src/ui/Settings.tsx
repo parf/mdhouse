@@ -1,4 +1,3 @@
-import { usersUrl } from './UsersPage';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import { ApiError, api, isAdminDenial, type AbConfig, type AbInfo, type AdminState, type AuthorInfo, type RootInfo, type Settings as Options } from './api';
 import type { AdminEntry } from './admin-entry';
@@ -8,7 +7,7 @@ import { isViewer, switchConfirm, VIEWER_SIGN_IN, type InstanceMode } from './vi
 import { ADD_PATH_MAX, accessBadge, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject, storedTitle } from './project-groups';
 import { automationUrl } from './automation-model';
 import { follow } from './PageHead';
-import { SettingsNav, settingsUrl } from './SettingsNav';
+import { SettingsNav, settingsUrl, usersUrl } from './SettingsNav';
 import { StoredRwTag } from './viewer';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
@@ -31,7 +30,7 @@ interface Props {
   go: (url: string) => void;
   /** What the latest `#admin=` sign-in link came to, if there was one. */
   entry: { outcome: AdminEntry };
-  /** The address's query: `?tab=personal|instance`, `?project=<id>`; Projects otherwise. */
+  /** The address's query: `?tab=instance`, `?project=<id>`; Projects otherwise. */
   search?: string;
   /** The project on screen elsewhere: Projects opens on it. */
   rootId?: string;
@@ -92,7 +91,7 @@ const ENTRY_NOTE: Partial<Record<AdminEntry, string>> = {
  */
 export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go, entry, search = '', rootId, addProjectRequest }: Props) {
   const params = new URLSearchParams(search);
-  const tab: 'projects' | 'personal' | 'instance' = params.get('tab') === 'personal' ? 'personal' : params.get('tab') === 'instance' ? 'instance' : 'projects';
+  const tab = params.get('tab') === 'instance' ? 'instance' : 'projects';
   const [busy, setBusy] = useState<string | null>(null);
   // Unknown until the server answers; protected controls stay off until it says `admin`.
   const [admin, setAdmin] = useState<AdminState | null>(null);
@@ -482,9 +481,9 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       ) : (
         admin && (
           <span>
-            Not signed in — settings are read-only here{' '}
+            Not signed in · shared settings are read-only{' '}
             <Info label="How to sign in">
-              Changing settings and adding or removing projects needs the administrator. Run <code>mdhouse admin</code> in a terminal on this
+              Changing shared settings or managing projects requires the administrator. Run <code>mdhouse admin</code> in a terminal on this
               computer and open the link it prints: it works once, within 60 s.
             </Info>
           </span>
@@ -802,15 +801,14 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     </section>
   );
 
-  const personalTab = (
-    <section class="settings-personal">
-      <p class="settings-hint">Kept in this browser only.</p>
-      {author ? authorCard : <p class="settings-hint">Loading…</p>}
-    </section>
-  );
-
   const instanceTab = (
     <>
+      {author && (
+        <section>
+          <h2>Personal <span class="scope">this browser</span></h2>
+          {authorCard}
+        </section>
+      )}
       <section>
         <h2>
           Documents <span class="scope">all projects</span>
@@ -967,7 +965,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       </header>
       <SettingsNav current={tab} go={go} />
       {adminLine}
-      {tab === 'personal' ? personalTab : tab === 'instance' ? instanceTab : projectsTab}
+      {tab === 'instance' ? instanceTab : projectsTab}
     </div>
   );
 }

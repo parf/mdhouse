@@ -2051,21 +2051,15 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 
 /* Settings: Projects — a list to choose from, the chosen one's facts beside it (stacked on a phone). */
 .settings h2 .scope { font-size: 11px; font-weight: 500; color: var(--fg-faint); margin-left: 8px; text-transform: none; letter-spacing: 0; }
-.projects-heading, .project-detail-heading, .project-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
-.projects-heading { justify-content: space-between; margin-bottom: 10px; }
-.settings .projects-heading h2 { margin: 0; }
-.project-links a { font-size: 13px; font-weight: 500; }
 .projects-pane { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 16px; align-items: start; }
 .project-add { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 14px; margin-top: 16px; }
-.project-add h3 { flex-basis: 100%; margin: 0; font-size: 14px; }
 .project-add-field { display: grid; gap: 4px; flex: 1 1 18em; min-width: 0; }
 .project-add-field > span { color: var(--fg-muted); font-size: 13px; }
 .project-add .project-add-path { width: 100%; min-width: 0; }
 .project-add-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 44px; }
 .project-add-mode { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
-:is(.project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn):disabled { opacity: .6; cursor: not-allowed; }
+:is(.project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn, .project-save, .project-mode, .ab-select):disabled { opacity: .6; cursor: not-allowed; }
 .project-add :is(.settings-hint, .settings-error) { flex-basis: 100%; }
-.project-add-note { margin: 0; }
 .project-list { display: flex; flex-direction: column; gap: 10px; }
 .project-picker { display: none; }
 .project-group h3 { margin: 0 0 4px; font-size: 11px; font-weight: 600; color: var(--fg-faint); text-transform: uppercase; letter-spacing: .04em; }
@@ -2094,7 +2088,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .danger-zone .mode-btn.danger:not(:disabled) { color: var(--danger); border-color: var(--danger); }
 @media (pointer: coarse) { .project-rows a, .project-more > summary, .project-add-box > summary, .settings-quiet > summary, .settings .linklike { min-height: 44px; } }
 .project-detail, .project-add { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel); padding: 12px 14px; min-width: 0; }
-.project-detail-heading { justify-content: space-between; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.project-detail-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
 .project-detail-heading h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
 .project-detail h3 .name { color: var(--dir); text-decoration: none; }
 .project-detail h3 .name:hover { text-decoration: underline; }
@@ -2104,27 +2098,20 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-facts dd.path { font: 12.5px var(--mono); }
 .project-name-field { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .settings-scheme.project-name { width: min(24em, 100%); font-family: inherit; }
-.project-detail-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 12px; border-top: 1px solid var(--border); margin-top: 12px; padding-top: 10px; }
-.project-detail-footer .settings-hint { margin-right: auto; }
 .icon-btn.project-remove { width: 24px; height: 24px; padding: 0; color: var(--danger); }
 :is(.project-save, .project-mode) { font-family: inherit; cursor: pointer; }
-:is(.project-save, .project-mode, .project-ab):disabled { opacity: .6; cursor: not-allowed; }
-.project-ab[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
-.project-ab-value { margin-left: 6px; font-size: 12px; color: var(--accent); overflow-wrap: anywhere; }
+.project-ab-value { font-size: 12px; color: var(--accent); overflow-wrap: anywhere; }
 .project-ab-editor { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); }
 .project-ab-editor .settings-scheme-field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .project-ab-editor .settings-scheme-field b { min-width: 7em; }
 .project-ab-editor .settings-scheme { flex: 1 1 18em; width: auto; min-width: 0; }
 .project-ab-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .project-access .settings-hint { display: block; }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn) { min-height: 32px; padding: 5px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn):hover:not(:disabled) { background: var(--bg-hover); }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn):active:not(:disabled) { box-shadow: none; transform: translateY(1px); }
-:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.project-ab-row { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.project-ab-row .project-ab-value { margin-left: 0; }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn) { min-height: 32px; padding: 5px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn):hover:not(:disabled) { background: var(--bg-hover); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn):active:not(:disabled) { box-shadow: none; transform: translateY(1px); }
+:is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ab-select { min-height: 32px; max-width: 100%; padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--fg); font: inherit; font-size: 13px; }
-.ab-select:disabled { opacity: .6; cursor: not-allowed; }
 .project-ab-editor .ab-select { flex: 1 1 18em; min-width: 0; }
 .ab-default { display: block; margin-top: 6px; }
 .settings input:disabled, .settings textarea:disabled { opacity: .6; cursor: not-allowed; }
@@ -2218,10 +2205,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 }
 /* Finger-sized controls. */
 @media (pointer: coarse) {
-  :is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .project-ab, .rag-act, .mode-btn, .project-pick, .project-save, .project-mode, .ab-filter-save, .ab-select) { min-height: 44px; padding-block: 6px; }
+  :is(.admin-logout, .project-add-btn, .project-ab-save, .project-ab-clear, .ab-check, .rag-act, .mode-btn, .project-pick, .project-save, .project-mode, .ab-filter-save, .ab-select) { min-height: 44px; padding-block: 6px; }
   .tag.project-mode { padding-inline: 12px; }
   .settings-option label, .project-add-mode, .rag-src { min-height: 44px; display: inline-flex; align-items: center; }
-  .project-links a { min-height: 44px; display: inline-flex; align-items: center; }
   .settings input[type="checkbox"] { width: 22px; height: 22px; }
   .head-gear .icon-btn, .topstrip .icon-btn, .icon-btn.project-remove { width: 44px; height: 44px; }
   /* The sidebar header is narrow: the icons keep their size and a finger-sized area around them. */
@@ -2504,9 +2490,9 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .auto-actions .rag-act { min-height: 44px; padding-inline: 14px; }
 }
 
-/* ── Settings navigation and Access (`/settings/users`) ── */
+/* ── Settings navigation and access directories ── */
 .settings-nav { display: flex; flex-wrap: wrap; gap: 2px 4px; border-bottom: 1px solid var(--border); margin: 8px 0 18px; }
-.settings-nav a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-bottom: 2px solid transparent; color: var(--fg-muted); text-decoration: none; }
+.settings-nav a { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-bottom: 2px solid transparent; color: var(--fg-muted); text-decoration: none; }
 .settings-nav a:hover { color: var(--fg); background: var(--bg-hover); }
 .settings-nav a[aria-current="page"] { color: var(--accent); border-color: var(--accent); font-weight: 650; }
 .settings-nav a:focus-visible, .users-page summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -2524,8 +2510,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .users-badges .badge, .users-detail .badge { font-size: 11px; padding: 0 5px; border: 1px solid var(--border-strong); border-radius: 3px; color: var(--fg-muted); }
 .badge.users-admin { color: var(--accent); border-color: var(--accent); }
 .badge.users-banned { color: var(--danger); border-color: var(--danger); }
-.badge.users-eff.rw { color: var(--ok); border-color: var(--ok); }
-.badge.users-eff.ro { color: var(--warn); border-color: var(--warn); }
 .users-sub { font-size: 13px; margin: 14px 0 6px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .users-table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .users-table td { padding: 4px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
@@ -2547,14 +2531,15 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   .users-panes.has-selection .users-lists { display: none; }
   .users-detail-back { display: block; margin: 0; font-size: 13px; }
 }
-@media (max-width: 400px) {
-  .settings-nav a { padding-inline: 8px; }
-  .users-table td { padding-inline: 4px; }
+@media (max-width: 480px) {
+  .settings-nav { gap: 1px; }
+  .settings-nav a { min-width: 44px; padding-inline: 4px; font-size: 13px; }
 }
+@media (max-width: 400px) { .users-table td { padding-inline: 4px; } }
 @media (pointer: coarse) {
   .settings-nav a, .users-disclose summary, .users-activation summary, .users-reveal, .grant-editor button { min-height: 44px; }
   .users-disclose summary, .users-activation summary { padding-block: 10px; }
-  .users-views a, .users-detail-back a { display: inline-flex; align-items: center; min-height: 44px; }
+  .users-detail-back a { display: inline-flex; align-items: center; min-height: 44px; }
   .users-row { display: inline-block; padding: 10px 0; }
 }
 .users-page .git-btn.danger { color: var(--danger); border-color: var(--danger); }
@@ -2573,10 +2558,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .team-me { margin-left: auto; display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
 .team-me .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
 @media (pointer: coarse) { .team-me .linklike { min-height: 44px; } }
-.users-views { display: flex; gap: 6px; margin-bottom: 10px; }
-.users-views a { text-decoration: none; }
-.users-views a[aria-current="true"] { border-color: var(--accent); color: var(--accent); background: var(--bg-active); }
 .users-table td:first-child { overflow-wrap: anywhere; }
 .users-summary { font-size: 13.5px; margin: 6px 0 4px; }
 .users-blocked { color: var(--danger); }
-.users-page .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
