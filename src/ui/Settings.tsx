@@ -8,6 +8,7 @@ import { isViewer, switchConfirm, VIEWER_SIGN_IN, type InstanceMode } from './vi
 import { ADD_PATH_MAX, accessBadge, accessMode, accessSource, addPathProblem, customName, groupProjects, modeTarget, removable, selectedProject, storedTitle } from './project-groups';
 import { automationUrl } from './automation-model';
 import { follow } from './PageHead';
+import { SettingsNav, settingsUrl } from './SettingsNav';
 import { StoredRwTag } from './viewer';
 
 /** Where to start when nothing handles the edit link's URLs yet. */
@@ -30,6 +31,10 @@ interface Props {
   go: (url: string) => void;
   /** What the latest `#admin=` sign-in link came to, if there was one. */
   entry: { outcome: AdminEntry };
+  /** The address's query: `?tab=personal|instance`, `?project=<id>`; Projects otherwise. */
+  search?: string;
+  /** The project on screen elsewhere: Projects opens on it. */
+  rootId?: string;
 }
 
 const SAVE_STALE = 'This project changed since it was shown. Check it and save again.';
@@ -66,6 +71,9 @@ const folderName = (path: string) => path.split('/').filter(Boolean).pop() ?? pa
 /** How to become the administrator — said wherever a control needs it. */
 const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin in a terminal on this computer';
 const SESSION_ENDED = 'run  mdhouse admin --workspace from cli';
+/** The way back from Viewer, said before the switch and in its confirmation. */
+const RECOVER = 'mdhouse admin --workspace';
+const VIEWER_SWITCH = `Switch to Viewer?\n\nEvery project becomes read-only for everyone, including you: ticks, answers, edits, commits, marks and Agent Bus sends are refused and their controls disappear. This browser stops being the local administrator. Each project keeps its own RW/RO setting.\n\nTo switch back, run in a terminal on this computer:\n  ${RECOVER}`;
 
 /** Only a failed sign-in needs a note: a successful one shows as the state itself. */
 const ENTRY_NOTE: Partial<Record<AdminEntry, string>> = {
@@ -80,7 +88,9 @@ const ENTRY_NOTE: Partial<Record<AdminEntry, string>> = {
  * Adding takes a folder's full path and an access the administrator chooses; the server checks the
  * folder. Nothing completes or lists paths here — `mdhouse <dir>` in a terminal can.
  */
-export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go, entry }: Props) {
+export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, go, entry, search = '', rootId }: Props) {
+  const params = new URLSearchParams(search);
+  const tab: 'projects' | 'personal' | 'instance' = params.get('tab') === 'personal' ? 'personal' : params.get('tab') === 'instance' ? 'instance' : 'projects';
   const [busy, setBusy] = useState<string | null>(null);
   // Unknown until the server answers; protected controls stay off until it says `admin`.
   const [admin, setAdmin] = useState<AdminState | null>(null);
@@ -93,9 +103,12 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
       () => setAdmin({ admin: false }),
     );
   useEffect(() => void loadAdmin(), [entry]);
-  // `/settings#add-project` (the project chooser's Add new Project): the form in sight, its path field focused once it is usable.
+  // Add project is closed until asked for — `/settings#add-project` (the project chooser's Add new Project) opens it,
+  // the form in sight and its path field focused once it is usable.
+  const [addOpen, setAddOpen] = useState(() => location.hash === '#add-project');
   useEffect(() => {
     if (location.hash !== '#add-project' || admin === null) return;
+    setAddOpen(true);
     const form = document.getElementById('add-project');
     form?.scrollIntoView({ block: 'center' });
     form?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
@@ -162,9 +175,9 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   };
   const [error, setError] = useState('');
   const last = removable(roots).length === 1;
-  // The project whose details show; kept by id, the first one when it is gone.
-  const [picked, setPicked] = useState<string | null>(null);
-  const project = selectedProject(roots, picked);
+  // The project whose details show: the address's `?project=`, else the one on screen, else the first.
+  const project = selectedProject(roots, params.get('project') ?? rootId ?? null);
+  const pick = (id: string) => go(settingsUrl('projects', id));
   const projectGroups = groupProjects(roots);
 
   // The project's own name as typed, saved on Enter or leaving the field; a refusal keeps it to fix or retry.
@@ -256,13 +269,14 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     setAddError('');
     try {
       const { id } = await api.addRoot(addPath, addRw ? 'rw' : 'ro');
-      setPicked(id);
       setAddPath('');
+      setAddOpen(false);
+      pick(id);
       setAddRw(false);
       onChanged();
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && err.reason === 'served' && err.id) {
-        setPicked(err.id);
+        pick(err.id);
         setAddError(ADD_SERVED);
       } else if (err instanceof ApiError && err.status === 409 && err.reason === 'stale') {
         setAddError(ADD_STALE);
@@ -388,7 +402,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
   const [modeError, setModeError] = useState('');
   const mode: InstanceMode = viewer ? 'viewer' : 'workspace';
   const switchMode = async (to: InstanceMode) => {
-    const question = switchConfirm(mode, to);
+    const question = to === 'viewer' ? VIEWER_SWITCH : switchConfirm(mode, to);
     if (!question || modeBusy || !isAdmin || !confirm(question)) return;
     setModeBusy(true);
     setModeError('');
@@ -437,382 +451,301 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
     </>
   );
 
-  return (
-    <div class="settings">
-      <header class="home-head">
-        <h1>Settings</h1>
-        <span class="head-gear">{gear}</span>
-      </header>
-
-      <section class="settings-mode">
-        <h2>
-          Mode <span class="scope">all projects</span>
-        </h2>
-        <div class="mode-switch" role="group" aria-label="Mode">
-          {(['workspace', 'viewer'] as const).map((m) => (
-            <button
-              type="button"
-              class="mode-btn"
-              aria-pressed={mode === m}
-              disabled={mode === m || !isAdmin || modeBusy}
-              title={mode === m ? 'The current mode' : !isAdmin ? NEEDS_ADMIN : undefined}
-              onClick={() => void switchMode(m)}
-            >
-              {m === 'workspace' ? 'Workspace' : 'Viewer'}
-            </button>
-          ))}
-          <Info label="About the mode">
-            <b>Workspace</b>: each project is writable by its own RW/RO setting. <b>Viewer</b>: every project is read-only for everyone and the
-            controls that change anything are gone. Each project keeps its setting; Workspace brings it back. From a terminal:{' '}
-            <code>mdhouse --viewer</code> / <code>mdhouse --workspace</code>.
+  const linkTo = (url: string, text: preact.ComponentChildren, cls?: string) => (
+    <a class={cls} href={url} onClick={(e) => follow(e, () => go(url))}>
+      {text}
+    </a>
+  );
+  // Who this browser is to mdhouse — one line above every tab, not a block of its own.
+  const adminLine = (
+    <div class="settings-adminbar" role="status">
+      {admin?.admin && admin.local ? (
+        <span>
+          <b>Administrator</b>{' '}
+          <Info label="Why you are the administrator">
+            This request reaches mdhouse from this computer: no users are configured, and mdhouse sees it coming from loopback (this
+            computer, or a proxy on it). Such a request is the administrator. Configure users to require a sign-in.
           </Info>
-        </div>
-        {viewer && !isAdmin && (
-          <p class="settings-hint">
-            {VIEWER_SIGN_IN[0]}
-            <code>{VIEWER_SIGN_IN[1]}</code>
-            {VIEWER_SIGN_IN[2]}
-          </p>
-        )}
-        {modeError && <p class="settings-error">{modeError}</p>}
-      </section>
-
-      <section class="settings-admin">
-        <h2>
-          Administrator{' '}
-          {admin?.admin && admin.local && (
-            <Info label="Why you are the administrator">
-              This request reaches mdhouse from this computer: no users are configured, and mdhouse sees it coming from loopback (this
-              computer, or a proxy on it). Such a request is the administrator. Configure users to require a sign-in.
+        </span>
+      ) : admin?.admin ? (
+        <span>
+          <b>Administrator</b> — signed in
+          {admin.expiresAt !== undefined && <> until {new Date(admin.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>}{' '}
+          <button type="button" class="admin-logout linklike" onClick={() => void signOut()}>
+            Sign out
+          </button>
+        </span>
+      ) : (
+        admin && (
+          <span>
+            Not signed in — settings are read-only here{' '}
+            <Info label="How to sign in">
+              Changing settings and adding or removing projects needs the administrator. Run <code>mdhouse admin</code> in a terminal on this
+              computer and open the link it prints: it works once, within 60 s.
             </Info>
-          )}
-        </h2>
-        {ENTRY_NOTE[entry.outcome] && !isAdmin && <p class="settings-error">{ENTRY_NOTE[entry.outcome]}</p>}
-        {admin?.admin && admin.local ? null : admin?.admin ? (
-          <div class="settings-option admin-state">
-            <span>
-              <b>Signed in</b>
-              {admin.expiresAt !== undefined && <> until {new Date(admin.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>}
-            </span>
-            <button type="button" class="admin-logout" onClick={() => void signOut()}>
-              Sign out
-            </button>
-          </div>
-        ) : (
-          admin && (
-            <p>
-              Not signed in — settings are read-only here{' '}
-              <Info label="How to sign in">
-                Changing settings and adding or removing projects needs the administrator. Run <code>mdhouse admin</code> in a terminal on this
-                computer and open the link it prints: it works once, within 60 s.
-              </Info>
-            </p>
-          )
-        )}
-        {adminError && <p class="settings-error">{adminError}</p>}
-      </section>
+          </span>
+        )
+      )}
+      {ENTRY_NOTE[entry.outcome] && !isAdmin && <span class="settings-error">{ENTRY_NOTE[entry.outcome]}</span>}
+      {adminError && <span class="settings-error">{adminError}</span>}
+    </div>
+  );
 
-      <section class="settings-projects">
-        <header class="projects-heading">
-          <h2>Projects</h2>
-          <nav class="project-links" aria-label="Manage people">
-            <a href={usersUrl()} onClick={(e) => follow(e, () => go(usersUrl()))}>
-              👤 Users
-            </a>
-            <a href={usersUrl({ view: 'groups' })} onClick={(e) => follow(e, () => go(usersUrl({ view: 'groups' })))}>
-              👥 Groups
-            </a>
-          </nav>
-        </header>
-        <div class="projects-pane">
-          <nav class="project-list" aria-label="Projects">
-            {projectGroups.map((group) => (
-              <div class="project-group" key={group.key}>
-                <h3>{group.title}</h3>
-                {group.roots.map((root) => (
-                  <button
-                    key={root.id}
-                    class="project-pick"
-                    aria-current={project?.id === root.id ? 'true' : undefined}
-                    onClick={() => setPicked(root.id)}
-                    title={root.path}
-                  >
-                    <span class="name">{root.name}</span>
-                    {!viewer && accessBadge(root) && <span class="tag ro" title="Read-only">RO</span>}
-                    {viewer && <StoredRwTag root={root} tag />}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </nav>
-          {project && roots.length > 1 && (
-            <label class="project-picker">
-              <span>Project</span>
-              <select class="ab-select" value={project.id} onChange={(e) => setPicked(e.currentTarget.value)}>
-                {projectGroups.map((group) => (
-                  <optgroup key={group.key} label={group.title}>
-                    {group.roots.map((root) => (
-                      <option key={root.id} value={root.id}>{root.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-          )}
-          {project && (
-            <div class="project-detail" role="region" aria-label={`Project ${project.name}`}>
-              <header class="project-detail-heading">
-                <h3>
-                  <a
-                    class="name"
-                    href={rootUrl(project.id)}
-                    title={`${project.name}/ — every file, as a list`}
-                    onClick={(e) => {
-                      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-                      e.preventDefault();
-                      go(rootUrl(project.id));
-                    }}
-                  >
-                    {project.name}
-                  </a>
-                </h3>
-                {project.kind !== 'reference' && (
-                  <nav class="project-links" aria-label={`Manage ${project.name}`}>
-                    <a href={usersUrl({ project: project.id })} onClick={(e) => follow(e, () => go(usersUrl({ project: project.id })))}>
-                      👥 User Access
-                    </a>
-                    <a href={automationUrl(project.id)} onClick={(e) => follow(e, () => go(automationUrl(project.id)))}>
-                      Scheduled runs
-                    </a>
-                  </nav>
-                )}
-              </header>
-              <dl class="project-facts">
-                {project.kind !== 'reference' && (
-                  <>
-                    <dt>
-                      Name{' '}
-                      <Info label="About the name">
-                        Shown in the project list and headings instead of the folder name. Empty: the folder name.
-                        {!project.saved && ' Unsaved project: kept until mdhouse stops.'}
-                      </Info>
-                    </dt>
-                    <dd class="project-name-field">
-                      <input
-                        class="settings-scheme project-name"
-                        type="text"
-                        value={nameDraft}
-                        placeholder={folderName(project.path)}
-                        maxLength={80}
-                        spellcheck={false}
-                        autocomplete="off"
-                        aria-label={`Name of project ${project.name}`}
-                        disabled={!isAdmin}
-                        title={isAdmin ? undefined : NEEDS_ADMIN}
-                        onInput={(e) => setNameDraft((e.target as HTMLInputElement).value)}
-                        onBlur={() => void saveName()}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                      />
-                      {nameError && <span class="settings-error">{nameError}</span>}
-                    </dd>
-                  </>
-                )}
-                <dt>Folder</dt>
-                <dd class="path" title={project.path}>
-                  {project.path}
-                </dd>
-                {(!viewer || isAdmin || accessMode(project) === 'rw') && (
-                  <>
-                <dt>
-                  File access{' '}
-                  <Info label="About file access">
-                    <b>RW</b>: pages can be edited and saved. <b>RO</b>: view only. Click <code>[RW]</code> / <code>[RO]</code> to switch.
-                    {!project.saved && ' Unsaved project: the choice lasts until mdhouse stops.'} From a terminal:{' '}
-                    <code>mdhouse &lt;dir&gt; -p --rw</code> adds a project kept on every start, with write access.
-                  </Info>
-                </dt>
-                <dd>
-                  {project.kind === 'reference' ? (
-                    <span class="project-access">
-                      <span class="tag">read-only</span>
-                    </span>
-                  ) : viewer && !isAdmin ? (
-                    <span class="project-access">
-                      <StoredRwTag root={project} tag />
-                    </span>
-                  ) : viewer ? (
-                    <span class="project-access">
-                      <button
-                        type="button"
-                        class="tag project-mode stored"
-                        disabled={busy !== null || !modeTarget(project, true)}
-                        onClick={() => void setMode(project)}
-                        title={storedTitle(project)}
-                      >
-                        {accessMode(project) === 'rw' ? '[RW]' : '[RO]'}
-                      </button>{' '}
-                      stored {accessMode(project) === 'rw' ? 'read and write' : 'read-only'} — takes effect in Workspace
-                    </span>
-                  ) : (
-                    <span class="project-access">
-                      <button
-                        type="button"
-                        class={`tag project-mode${project.writable ? '' : ' ro'}`}
-                        disabled={!isAdmin || busy !== null || !modeTarget(project)}
-                        onClick={() => void setMode(project)}
-                        title={
-                          !isAdmin
-                            ? NEEDS_ADMIN
-                            : !modeTarget(project)
-                              ? 'Cannot be changed here'
-                              : project.writable
-                                ? 'Make it read-only'
-                                : 'Make it read and write'
-                        }
-                      >
-                        {project.writable ? '[RW]' : '[RO]'}
-                      </button>{' '}
-                      {project.writable ? 'read and write' : 'read-only'} — {accessSource(project)}
-                    </span>
-                  )}
-                </dd>
-                  </>
-                )}
-                <dt>
-                  Startup{' '}
-                  <Info label="About startup">
-                    Saved: served on every start. <code>[unsaved]</code>: served until mdhouse stops — click it to keep it.
-                  </Info>
-                </dt>
-                <dd>
-                  {project.kind === 'reference' ? (
-                    <span class="tag" title="mdhouse's own documentation — served on every start, read-only">
-                      reference — always served, cannot be changed
-                    </span>
-                  ) : project.saved ? (
-                    <span class="project-kept-default">served on every start</span>
-                  ) : (
-                    <span class="project-kept">
-                      <button
-                        type="button"
-                        class="tag unsaved project-save"
-                        disabled={!isAdmin || nameDirty || busy !== null || typeof project.saveRev !== 'string'}
-                        onClick={() => void save(project)}
-                        title={!isAdmin ? NEEDS_ADMIN : nameDirty ? 'Finish editing the name first' : 'Save it: serve it on every start'}
-                      >
-                        [unsaved]
-                      </button>{' '}
-                      served until mdhouse stops
-                    </span>
-                  )}
-                </dd>
-                <dt>
-                  Agent Bus{' '}
-                  <Info label="About the project's Agent Bus">
-                    Which bus and default agent this project's pages use. Unset: the instance's, from the Agent Bus section below.
-                  </Info>
-                </dt>
-                <dd>
-                  {project.kind === 'reference' ? (
-                    <span class="settings-hint">never sent to agents</span>
-                  ) : (
-                    <span class="project-ab-row">
-                      {spaceSummary(space) ? <code class="project-ab-value">{spaceSummary(space)}</code> : <span>the instance's bus and default agent</span>}{' '}
-                      <button
-                        type="button"
-                        class="project-ab"
-                        aria-expanded={abOpen}
-                        disabled={!abConfig}
-                        onClick={() => setAbOpen((v) => !v)}
-                        title={abConfig ? "This project's Agent Bus: endpoint and default agent" : abLoadError || 'Loading the Agent Bus settings'}
-                      >
-                        {abOpen ? 'Close' : 'Edit'}
-                      </button>
-                    </span>
-                  )}
-                </dd>
-              </dl>
-              {abOpen && project.kind !== 'reference' && (
-                <div class="project-ab-editor" role="group" aria-label={`Agent Bus for ${project.name}`}>
-                  {abConfig && !abConfig.enabled && <p class="settings-hint">{AB_OFF_HINT}</p>}
-                  {space?.error && <p class="settings-error">The stored Agent Bus settings of this project cannot be used: {space.error}</p>}
-                  <label class="settings-scheme-field">
-                    <b>Endpoint</b>
-                    <Info label="About the endpoint">
-                      The Agent Bus this project talks to: a socket path or <code>http(s)://host:port</code>. Empty: the instance's bus.
-                      {space?.hasCredential && ' A credential for it is set on the server; changing or clearing the endpoint discards it.'}
+  // File access in one line: the [RW]/[RO] switch, then where that comes from — said once.
+  const accessCell = (p: RootInfo) =>
+    p.kind === 'reference' ? (
+      <span class="tag">read-only</span>
+    ) : viewer && !isAdmin ? (
+      <StoredRwTag root={p} tag />
+    ) : viewer ? (
+      <span class="project-access">
+        <button type="button" class="tag project-mode stored" disabled={busy !== null || !modeTarget(p, true)} onClick={() => void setMode(p)} title={storedTitle(p)}>
+          {accessMode(p) === 'rw' ? '[RW]' : '[RO]'}
+        </button>{' '}
+        stored — takes effect in Workspace
+      </span>
+    ) : (
+      <span class="project-access">
+        <button
+          type="button"
+          class={`tag project-mode${p.writable ? '' : ' ro'}`}
+          disabled={!isAdmin || busy !== null || !modeTarget(p)}
+          onClick={() => void setMode(p)}
+          title={!isAdmin ? NEEDS_ADMIN : !modeTarget(p) ? 'Cannot be changed here' : p.writable ? 'Make it read-only' : 'Make it read and write'}
+        >
+          {p.writable ? '[RW]' : '[RO]'}
+        </button>{' '}
+        {accessSource(p)}
+      </span>
+    );
+
+  const projectsTab = (
+    <section class="settings-projects">
+      <div class="projects-pane">
+        <nav class="project-list" aria-label="Projects">
+          {projectGroups.map((group) => (
+            <div class="project-group" key={group.key}>
+              <h3>{group.title}</h3>
+              {group.roots.map((root) => (
+                <a
+                  key={root.id}
+                  class="project-pick"
+                  href={settingsUrl('projects', root.id)}
+                  aria-current={project?.id === root.id ? 'true' : undefined}
+                  onClick={(e) => follow(e, () => pick(root.id))}
+                  title={root.path}
+                >
+                  <span class="name">{root.name}</span>
+                  {!viewer && accessBadge(root) && <span class="tag ro" title="Read-only">RO</span>}
+                  {viewer && <StoredRwTag root={root} tag />}
+                </a>
+              ))}
+            </div>
+          ))}
+        </nav>
+        {project && roots.length > 1 && (
+          <label class="project-picker">
+            <span>Project</span>
+            <select class="ab-select" value={project.id} onChange={(e) => pick(e.currentTarget.value)}>
+              {projectGroups.map((group) => (
+                <optgroup key={group.key} label={group.title}>
+                  {group.roots.map((root) => (
+                    <option key={root.id} value={root.id}>
+                      {root.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+        )}
+        {project && (
+          <div class="project-detail" role="region" aria-label={`Project ${project.name}`}>
+            <header class="project-detail-heading">
+              <h3>{linkTo(rootUrl(project.id), project.name, 'name')}</h3>
+              {project.kind !== 'reference' && (
+                <button
+                  type="button"
+                  class="icon-btn danger project-remove"
+                  aria-label={`Remove Project ${project.name}`}
+                  disabled={!isAdmin || last || busy !== null}
+                  onClick={() => void remove(project)}
+                  title={!isAdmin ? NEEDS_ADMIN : last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : `Remove Project ${project.name}`}
+                >
+                  <IconTrash size={14} />
+                </button>
+              )}
+            </header>
+            <dl class="project-facts">
+              <dt>Folder</dt>
+              <dd class="path" title={project.path}>
+                {project.path}
+              </dd>
+              {(!viewer || isAdmin || accessMode(project) === 'rw') && (
+                <>
+                  <dt>
+                    File access{' '}
+                    <Info label="About file access">
+                      <b>RW</b>: pages can be edited and saved. <b>RO</b>: view only. Click <code>[RW]</code> / <code>[RO]</code> to switch.
+                      {!project.saved && ' Unsaved project: the choice lasts until mdhouse stops.'} From a terminal: <code>mdhouse &lt;dir&gt; -p --rw</code>{' '}
+                      adds a project kept on every start, with write access.
                     </Info>
-                    <input
-                      class="settings-scheme project-ab-endpoint"
-                      type="text"
-                      value={endpointDraft}
-                      placeholder={abConfig?.instance.endpoint ?? ''}
-                      maxLength={1024}
-                      spellcheck={false}
-                      autocomplete="off"
-                      aria-label={`Agent Bus endpoint of project ${project.name}`}
-                      disabled={!abEditable || busy !== null}
-                      title={isAdmin ? undefined : NEEDS_ADMIN}
-                      onInput={(e) => setEndpointDraft((e.target as HTMLInputElement).value)}
-                    />
-                  </label>
-                  <label class="settings-scheme-field">
-                    <b>Default agent</b>
-                    <Info label="About the default agent">
-                      The agent a page in this project asks when the page names none with <code>&lt;!-- AB: name --&gt;</code>. Unset: the
-                      instance's default agent. {!project.saved && 'Unsaved project: kept until mdhouse stops.'}
-                    </Info>
-                    <AgentSelect
-                      class="project-ab-default"
-                      value={splitNames(namesDraft)[0] ?? ''}
-                      none={`instance default${abConfig?.instance.default.length ? `: ${abConfig.instance.default.join(' ')}` : ''}`}
-                      agents={abAgents(abInfo, [...splitNames(namesDraft), ...splitNames(storedNames)])}
-                      extra={splitNames(namesDraft).slice(1)}
-                      checked={abInfo?.enabled === true}
-                      label={`Default agent of project ${project.name}`}
-                      disabled={!abEditable || busy !== null}
-                      title={isAdmin ? undefined : NEEDS_ADMIN}
-                      onChange={setNamesDraft}
-                    />
-                  </label>
-                  <div class="project-ab-actions">
-                    <button type="button" class="project-ab-save" disabled={!abEditable || busy !== null || !abDirty} onClick={() => void saveAb(false)}>
-                      Save
-                    </button>
+                  </dt>
+                  <dd>{accessCell(project)}</dd>
+                </>
+              )}
+              <dt>
+                Startup{' '}
+                <Info label="About startup">
+                  Saved: served on every start. <code>[unsaved]</code>: served until mdhouse stops — click it to keep it.
+                </Info>
+              </dt>
+              <dd>
+                {project.kind === 'reference' ? (
+                  <span class="tag" title="mdhouse's own documentation — served on every start, read-only">
+                    reference — always served
+                  </span>
+                ) : project.saved ? (
+                  <span class="project-kept-default">served on every start</span>
+                ) : (
+                  <span class="project-kept">
                     <button
                       type="button"
-                      class="project-ab-clear"
-                      disabled={!abEditable || busy !== null || !spaceSummary(space)}
-                      onClick={() => void saveAb(true)}
-                      title="Use the instance's bus and default agents"
+                      class="tag unsaved project-save"
+                      disabled={!isAdmin || nameDirty || busy !== null || typeof project.saveRev !== 'string'}
+                      onClick={() => void save(project)}
+                      title={!isAdmin ? NEEDS_ADMIN : nameDirty ? 'Finish editing the name first' : 'Save it: serve it on every start'}
                     >
-                      Use instance defaults
-                    </button>
-                  </div>
-                  {abError && <span class="settings-error">{abError}</span>}
-                </div>
-              )}
-              {project.kind !== 'reference' && (
-                <footer class="project-detail-footer">
-                  {last && isAdmin && <span class="settings-hint">Keep at least one project.</span>}
-                  <button
-                    type="button"
-                    class="icon-btn danger project-remove"
-                    aria-label={`Remove Project ${project.name}`}
-                    disabled={!isAdmin || last || busy !== null}
-                    onClick={() => void remove(project)}
-                    title={
-                      !isAdmin ? NEEDS_ADMIN : last ? 'The last project cannot be removed — mdhouse would have nothing to serve' : `Remove Project ${project.name}`
-                    }
-                  >
-                    <IconTrash size={14} />
+                      [unsaved]
+                    </button>{' '}
+                    served until mdhouse stops
+                  </span>
+                )}
+              </dd>
+            </dl>
+            {project.kind !== 'reference' && (
+              <ul class="project-rows">
+                <li>{linkTo(usersUrl({ project: project.id }), '👥 Who can open it')}</li>
+                <li>{linkTo(automationUrl(project.id), 'Scheduled runs')}</li>
+              </ul>
+            )}
+            {project.kind !== 'reference' && (
+              <details class="project-more" open={nameDirty || !!nameError}>
+                <summary>
+                  Name <span class="settings-hint">{customName(project) ?? `the folder's — ${folderName(project.path)}`}</span>
+                </summary>
+                <form
+                  class="project-name-field"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void saveName();
+                  }}
+                >
+                  <input
+                    class="settings-scheme project-name"
+                    type="text"
+                    value={nameDraft}
+                    placeholder={folderName(project.path)}
+                    maxLength={80}
+                    spellcheck={false}
+                    autocomplete="off"
+                    aria-label={`Name of project ${project.name}`}
+                    disabled={!isAdmin}
+                    title={isAdmin ? undefined : NEEDS_ADMIN}
+                    onInput={(e) => setNameDraft((e.target as HTMLInputElement).value)}
+                  />
+                  <button type="submit" disabled={!isAdmin || !nameDirty}>
+                    Save
                   </button>
-                </footer>
-              )}
-            </div>
-          )}
-        </div>
-        {error && <p class="settings-error">{error}</p>}
+                  <button type="button" disabled={!nameDirty} onClick={() => setNameDraft(ownName)}>
+                    Cancel
+                  </button>
+                  <span class="settings-hint">Shown instead of the folder name; empty: the folder name.{!project.saved && ' Unsaved project: kept until mdhouse stops.'}</span>
+                  {nameError && <span class="settings-error">{nameError}</span>}
+                </form>
+              </details>
+            )}
+            {project.kind !== 'reference' && (
+              <details class="project-more" open={abOpen} onToggle={(e) => setAbOpen((e.target as HTMLDetailsElement).open)}>
+                <summary>
+                  Agent Bus{' '}
+                  <span class="settings-hint">{spaceSummary(space) ? <code class="project-ab-value">{spaceSummary(space)}</code> : "the instance's bus and default agent"}</span>
+                </summary>
+                {!abConfig ? (
+                  <p class="settings-hint">{abLoadError || 'Loading the Agent Bus settings…'}</p>
+                ) : (
+                  <div class="project-ab-editor" role="group" aria-label={`Agent Bus for ${project.name}`}>
+                    {!abConfig.enabled && <p class="settings-hint">{AB_OFF_HINT}</p>}
+                    {space?.error && <p class="settings-error">The stored Agent Bus settings of this project cannot be used: {space.error}</p>}
+                    <label class="settings-scheme-field">
+                      <b>Endpoint</b>
+                      <Info label="About the endpoint">
+                        The Agent Bus this project talks to: a socket path or <code>http(s)://host:port</code>. Empty: the instance's bus.
+                        {space?.hasCredential && ' A credential for it is set on the server; changing or clearing the endpoint discards it.'}
+                      </Info>
+                      <input
+                        class="settings-scheme project-ab-endpoint"
+                        type="text"
+                        value={endpointDraft}
+                        placeholder={abConfig.instance.endpoint ?? ''}
+                        maxLength={1024}
+                        spellcheck={false}
+                        autocomplete="off"
+                        aria-label={`Agent Bus endpoint of project ${project.name}`}
+                        disabled={!abEditable || busy !== null}
+                        title={isAdmin ? undefined : NEEDS_ADMIN}
+                        onInput={(e) => setEndpointDraft((e.target as HTMLInputElement).value)}
+                      />
+                    </label>
+                    <label class="settings-scheme-field">
+                      <b>Default agent</b>
+                      <Info label="About the default agent">
+                        The agent a page in this project asks when the page names none with <code>&lt;!-- AB: name --&gt;</code>. Unset: the instance's
+                        default agent. {!project.saved && 'Unsaved project: kept until mdhouse stops.'}
+                      </Info>
+                      <AgentSelect
+                        class="project-ab-default"
+                        value={splitNames(namesDraft)[0] ?? ''}
+                        none={`instance default${abConfig.instance.default.length ? `: ${abConfig.instance.default.join(' ')}` : ''}`}
+                        agents={abAgents(abInfo, [...splitNames(namesDraft), ...splitNames(storedNames)])}
+                        extra={splitNames(namesDraft).slice(1)}
+                        checked={abInfo?.enabled === true}
+                        label={`Default agent of project ${project.name}`}
+                        disabled={!abEditable || busy !== null}
+                        title={isAdmin ? undefined : NEEDS_ADMIN}
+                        onChange={setNamesDraft}
+                      />
+                    </label>
+                    <div class="project-ab-actions">
+                      <button type="button" class="project-ab-save" disabled={!abEditable || busy !== null || !abDirty} onClick={() => void saveAb(false)}>
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!abDirty || busy !== null}
+                        onClick={() => {
+                          setEndpointDraft(storedEndpoint);
+                          setNamesDraft(storedNames);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button type="button" class="project-ab-clear" disabled={!abEditable || busy !== null || !spaceSummary(space)} onClick={() => void saveAb(true)} title="Use the instance's bus and default agents">
+                        Use instance defaults
+                      </button>
+                    </div>
+                    {abError && <span class="settings-error">{abError}</span>}
+                  </div>
+                )}
+              </details>
+            )}
+            {last && isAdmin && project.kind !== 'reference' && <p class="settings-hint">Keep at least one project.</p>}
+          </div>
+        )}
+      </div>
+      {error && <p class="settings-error">{error}</p>}
+      <details class="project-add-box" open={addOpen} onToggle={(e) => setAddOpen((e.target as HTMLDetailsElement).open)}>
+        <summary>Add project</summary>
         <form
           id="add-project"
           class="project-add"
@@ -822,14 +755,14 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             void add();
           }}
         >
-          <h3>
-            Add project{' '}
-            <Info label="About adding a project">
-              Enter an existing folder's full path, like <code>/home/me/notes</code>. Use <code>[unsaved]</code> in the project details to keep it across restarts.
-            </Info>
-          </h3>
           <label class="project-add-field">
-            <span>Folder path</span>
+            <span>
+              Folder path{' '}
+              <Info label="About adding a project">
+                Enter an existing folder's full path, like <code>/home/me/notes</code>. It is served for this session; use <code>[unsaved]</code> in
+                the project to keep it across restarts.
+              </Info>
+            </span>
             <input
               class="settings-scheme project-add-path"
               type="text"
@@ -846,13 +779,7 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           <div class="project-add-actions">
             {!viewer && (
               <label class="project-add-mode" title="Ticked: read and write; else read-only">
-                <input
-                  type="checkbox"
-                  checked={addRw}
-                  disabled={!isAdmin || busy !== null}
-                  onChange={(e) => setAddRw((e.target as HTMLInputElement).checked)}
-                />{' '}
-                Allow editing
+                <input type="checkbox" checked={addRw} disabled={!isAdmin || busy !== null} onChange={(e) => setAddRw((e.target as HTMLInputElement).checked)} /> Allow editing
               </label>
             )}
             <button
@@ -861,24 +788,25 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               disabled={!isAdmin || busy !== null || addProblem !== null}
               title={!isAdmin ? NEEDS_ADMIN : addProblem ?? `Serve this folder ${addRw ? 'read and write' : 'read-only'} until mdhouse stops`}
             >
-              Add project
+              {addError ? 'Try again' : 'Add project'}
             </button>
           </div>
-          <p class="settings-hint project-add-note">Served for this session by default.</p>
           {addPath && addProblem && <span class="settings-hint">{addProblem}</span>}
           {addError && <span class="settings-error">{addError}</span>}
         </form>
-      </section>
+      </details>
+    </section>
+  );
 
-      {author && (
-        <section>
-          <h2>
-            This browser <span class="scope">only here</span>
-          </h2>
-          {authorCard}
-        </section>
-      )}
+  const personalTab = (
+    <section class="settings-personal">
+      <p class="settings-hint">Kept in this browser only.</p>
+      {author ? authorCard : <p class="settings-hint">Loading…</p>}
+    </section>
+  );
 
+  const instanceTab = (
+    <>
       <section>
         <h2>
           Documents <span class="scope">all projects</span>
@@ -912,7 +840,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
             <a href={EDIT_HELP} target="_blank" rel="noopener noreferrer">
               how to set one up
             </a>
-            . Another scheme, like <code>mdedit</code>, can open a different editor (e.g. Typora) than your usual <code>edit</code> one.
+            . Another scheme, like <code>mdedit</code>, can open a different editor (e.g. Typora) than your usual <code>edit</code> one. Shared by
+            every browser.
           </Info>
           {options.editLink && (
             <label class="settings-scheme-field">
@@ -935,8 +864,13 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
           )}
           {options.editLink && schemeError && <span class="settings-error">{schemeError}</span>}
         </div>
-        {/* The paths are set from the CLI; here only the switch. */}
-        {!viewer && !!options.autoRwPaths?.length && (
+        {error && <p class="settings-error">{error}</p>}
+      </section>
+      {!viewer && !!options.autoRwPaths?.length && (
+        <details class="settings-quiet">
+          <summary>
+            Auto-RW <span class="settings-hint">{options.autoRw ? 'on' : 'off'}</span>
+          </summary>
           <div class="settings-option">
             <label>
               <input
@@ -957,7 +891,8 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
                 }}
               />
               <span>
-                <b>Auto-RW</b> — folders under {options.autoRwPaths.map((p, i) => (
+                Folders under{' '}
+                {options.autoRwPaths.map((p, i) => (
                   <>
                     {i > 0 && ', '}
                     <code>{p}</code>
@@ -971,19 +906,69 @@ export function Settings({ roots, onChanged, gear, options, onOptions, rootUrl, 
               <code>mdhouse --auto-rw &lt;path,…&gt;</code>
             </Info>
           </div>
+        </details>
+      )}
+      <details class="settings-quiet">
+        <summary>
+          Agent Bus <span class="settings-hint">{abConfig ? (abConfig.enabled ? 'on' : 'off') : '…'}</span>
+        </summary>
+        <AgentBusSettings
+          isAdmin={isAdmin}
+          refused={refused}
+          config={abConfig}
+          onConfig={() => void loadAb()}
+          info={abInfo}
+          checking={abChecking}
+          checkError={abCheckError}
+          onCheck={() => void checkAb()}
+        />
+      </details>
+      <section class="settings-mode danger-zone" aria-label="Danger zone">
+        <h2>Danger zone</h2>
+        <p>
+          Mode: <b>{mode === 'workspace' ? 'Workspace' : 'Viewer'}</b> — {mode === 'workspace' ? 'each project is writable by its own RW/RO setting.' : 'every project is read-only for everyone.'}
+        </p>
+        {mode === 'workspace' && (
+          <p class="settings-hint">
+            Viewer makes every project read-only for everyone and this browser stops being the local administrator. To come back, run{' '}
+            <code>{RECOVER}</code> in a terminal on this computer.
+          </p>
         )}
+        <div class="mode-switch" role="group" aria-label="Mode">
+          {(['workspace', 'viewer'] as const).map((m) => (
+            <button
+              type="button"
+              class={`mode-btn${m === 'viewer' ? ' danger' : ''}`}
+              aria-pressed={mode === m}
+              disabled={mode === m || !isAdmin || modeBusy}
+              title={mode === m ? 'The current mode' : !isAdmin ? NEEDS_ADMIN : undefined}
+              onClick={() => void switchMode(m)}
+            >
+              {m === 'workspace' ? 'Workspace' : 'Switch to Viewer'}
+            </button>
+          ))}
+        </div>
+        {viewer && !isAdmin && (
+          <p class="settings-hint">
+            {VIEWER_SIGN_IN[0]}
+            <code>{VIEWER_SIGN_IN[1]}</code>
+            {VIEWER_SIGN_IN[2]}
+          </p>
+        )}
+        {modeError && <p class="settings-error">{modeError}</p>}
       </section>
+    </>
+  );
 
-      <AgentBusSettings
-        isAdmin={isAdmin}
-        refused={refused}
-        config={abConfig}
-        onConfig={() => void loadAb()}
-        info={abInfo}
-        checking={abChecking}
-        checkError={abCheckError}
-        onCheck={() => void checkAb()}
-      />
+  return (
+    <div class="settings">
+      <header class="home-head">
+        <h1>Settings</h1>
+        <span class="head-gear">{gear}</span>
+      </header>
+      <SettingsNav current={tab} go={go} />
+      {adminLine}
+      {tab === 'personal' ? personalTab : tab === 'instance' ? instanceTab : projectsTab}
     </div>
   );
 }

@@ -2074,6 +2074,25 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .project-pick .name { font-weight: 600; color: var(--dir); overflow-wrap: anywhere; }
 .project-pick[aria-current='true'] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 .project-pick:focus-visible, .project-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.project-pick, .project-pick:hover { text-decoration: none; }
+/* Settings, redesigned: who this browser is in one line; project rows; details for the rarer edits; Danger zone */
+.settings-adminbar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 13px; color: var(--fg-muted); margin: -8px 0 16px; }
+.settings-adminbar b { color: var(--fg); }
+.settings .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.project-rows { list-style: none; margin: 10px 0 4px; padding: 0; display: grid; gap: 2px; justify-items: start; }
+.project-rows a { display: inline-flex; align-items: center; min-height: 28px; font-size: 13.5px; }
+.project-more, .project-add-box, .settings-quiet { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+.project-more > summary, .project-add-box > summary, .settings-quiet > summary { cursor: pointer; font-weight: 600; font-size: 13.5px; min-height: 28px; display: list-item; }
+.project-more > summary .settings-hint, .settings-quiet > summary .settings-hint { font-weight: 400; margin-left: 6px; }
+.project-more .project-name-field { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 8px; }
+.project-more .project-name-field .settings-hint { flex-basis: 100%; }
+.project-add-box { margin-top: 18px; }
+.project-add-box .project-add { margin-top: 8px; }
+.settings-quiet { margin: 14px 0; }
+.danger-zone { margin-top: 24px; padding: 12px 14px; border: 1px solid var(--danger); border-radius: var(--radius); }
+.danger-zone h2 { color: var(--danger); }
+.danger-zone .mode-btn.danger:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+@media (pointer: coarse) { .project-rows a, .project-more > summary, .project-add-box > summary, .settings-quiet > summary, .settings .linklike { min-height: 44px; } }
 .project-detail, .project-add { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel); padding: 12px 14px; min-width: 0; }
 .project-detail-heading { justify-content: space-between; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
 .project-detail-heading h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }

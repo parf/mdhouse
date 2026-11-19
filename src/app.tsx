@@ -644,7 +644,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
       const r = roots.find((x) => x.id === id);
       return r ? (customName(r) ?? rootLabel(r.path)) : '';
     };
-    if (onUsers) document.title = 'Users - MDHOUSE';
+    if (onUsers) document.title = 'Access - MDHOUSE';
     else if (onSettings) document.title = pageTitle({ settings: true });
     else if (onRag) document.title = pageTitle({ rag: true });
     else if (dirTarget) document.title = pageTitle({ rel: dirTarget.dir, folder: true, root: rootName(dirTarget.rootId) });
@@ -824,6 +824,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
             rootUrl={(id) => dirPageUrl('', id)}
             go={go}
             entry={entry}
+            search={full.slice(path.length)}
+            rootId={rootId}
           />
         ) : choose !== null && dirTarget ? (
           <ChoosePage
