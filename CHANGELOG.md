@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased
+## 2.3.4 — 2026-11-20
 
 ### Added
 
-- Team access: **Settings → Users** manages GitHub accounts, bans and per-project RO/RW. **Settings → Groups** shows each group's members and project grants. Grant tables list configured RW and RO sources. Clearing a user's boxes restores group inheritance. A stored direct block can be cleared with **Use group access**. The first confirmed user becomes the Team administrator. The owner activates Team access after configuring GitHub sign-in and grants.
+- Team access: **Settings → Users** manages GitHub accounts, bans and per-project RO/RW. **Settings → Groups** shows each group's members and project grants. The permissions editor shows configured grants and effective access. **Use group access** restores inheritance. The first confirmed user becomes the Team administrator. The owner activates Team access after configuring GitHub sign-in and grants.
 
 - Nested Team projects have independent grants. Each separately served child opens through its own project and stays out of the parent listing and URLs. Team preserves the boundary when the child is unserved or the server restarts.
 
@@ -146,6 +146,8 @@
 - Document header: Edit becomes a `</>` icon, rightmost in the actions row next to ✎ (external edit); while the source is open it shows the page icon; on a phone it stays in the title row
 
 ### Fixed
+
+- The Settings header and menu stay aligned when switching between Projects, Access, Users, Groups and Instance.
 
 - Sidebar content search ignores case for all queries, including those with uppercase letters. Filename search and the directory panel's folder and filename filters also ignore case.
 
