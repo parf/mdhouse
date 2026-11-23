@@ -17,10 +17,10 @@ Without --run, show help, Kitty availability and current team status only.
 
 Open six Kitty tabs, each in its own .ai-team/<role>/ starting directory:
   md/ceo      #md/ceo       ab-codex
-  MDH-CTO     #md/cto       ab-codex
+  MDH-CTO     #md/cto       ab-claude -3
   MDH-W1      #md/w1        ab-claude
   MDH-W2      #md/w2        ab-claude -2
-  MDH-W3      #md/w3        ab-codex
+  MDH-W3      #md/w3        ab-claude -3
   MDH-Review  #md/review    ab-opencode
 
 All sessions use --tag mdhouse and an explicit AGENT_BUS_NAME.
@@ -268,9 +268,9 @@ launch_agent() {
 started=()
 
 launch_agent ceo md/ceo '#md/ceo' 'mdhouse CEO — product and coordination' ab-codex
-launch_agent cto MDH-CTO '#md/cto' 'mdhouse CTO — technical direction' ab-codex
+launch_agent cto MDH-CTO '#md/cto' 'mdhouse CTO — technical direction, Claude account 3' ab-claude -3
 launch_agent w1 MDH-W1 '#md/w1' 'mdhouse worker 1 — server, access and security' ab-claude
 launch_agent w2 MDH-W2 '#md/w2' 'mdhouse worker 2 — UI, editing and mobile, Claude account 2' ab-claude -2
-launch_agent w3 MDH-W3 '#md/w3' 'mdhouse worker 3 — implementation, Codex' ab-codex
+launch_agent w3 MDH-W3 '#md/w3' 'mdhouse worker 3 — implementation, Claude account 3' ab-claude -3
 launch_agent review MDH-Review '#md/review' 'mdhouse independent code review' ab-opencode
 (( ${#started[@]} )) && tell_roles "${started[@]}"
