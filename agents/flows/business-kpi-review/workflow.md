@@ -48,5 +48,5 @@ question or blocked comparison stays visible with the independent evidence alrea
   > 💬👾 `<context, source limitations and the answer needed>`
 
 Reference local question №Q1; link cross-file IDs to owning items. Keep important current rules short
-in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning `resolved.md`,
+in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning `RESOLVED.md`,
 with stable IDs and anchored old-location pointers. Pending questions stay open.

@@ -48,5 +48,5 @@ request; no source changes, roots, projects, experiments or scheduled runs are c
   > 💬👾 `<source, assumptions and evidence needed to answer>`
 
 Reference local question №Q1; cross-file IDs link to owning items. Important current rules stay short
-in owning `DECISIONS.md`; full solved questions/options/threads remain verbatim in owning `resolved.md`,
+in owning `DECISIONS.md`; full solved questions/options/threads remain verbatim in owning `RESOLVED.md`,
 with the original IDs and anchored old-location pointers. Keep unanswered questions open.

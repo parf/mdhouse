@@ -21,8 +21,8 @@
 - [№Q-R3-NAME1](DECISIONS.md#Q-R3-NAME1) <a id="Q-R3-NAME1"></a>
 - [№Q-R3-MODE1](DECISIONS.md#Q-R3-MODE1) <a id="Q-R3-MODE1"></a>
 - [№Q-R3-AB1](DECISIONS.md#Q-R3-AB1) <a id="Q-R3-AB1"></a>
-- [№Q-R3-RELOAD1](resolved.md#Q-R3-RELOAD1) <a id="Q-R3-RELOAD1"></a>
-- [№Q-R3-HANDOFF1](resolved.md#Q-R3-HANDOFF1) <a id="Q-R3-HANDOFF1"></a>
+- [№Q-R3-RELOAD1](RESOLVED.md#Q-R3-RELOAD1) <a id="Q-R3-RELOAD1"></a>
+- [№Q-R3-HANDOFF1](RESOLVED.md#Q-R3-HANDOFF1) <a id="Q-R3-HANDOFF1"></a>
 
 ## Owner decisions — 2026-11-12
 
@@ -34,7 +34,7 @@
 
 - [№Q-R3-VIEWPROXY1](DECISIONS.md#Q-R3-VIEWPROXY1) <a id="Q-R3-VIEWPROXY1"></a>
 
-- [№Q-R3-SUBSYS1](resolved.md#Q-R3-SUBSYS1) <a id="Q-R3-SUBSYS1"></a>
+- [№Q-R3-SUBSYS1](RESOLVED.md#Q-R3-SUBSYS1) <a id="Q-R3-SUBSYS1"></a>
 
 - [№Q-R3-REFDOC1](DECISIONS.md#Q-R3-REFDOC1) <a id="Q-R3-REFDOC1"></a>
 
@@ -52,4 +52,4 @@
 
 - [№Q-R3-REL1](DECISIONS.md#Q-R3-REL1) <a id="Q-R3-REL1"></a>
 
-- [№Q-R3-CLAUDE1](resolved.md#Q-R3-CLAUDE1) <a id="Q-R3-CLAUDE1"></a>
+- [№Q-R3-CLAUDE1](RESOLVED.md#Q-R3-CLAUDE1) <a id="Q-R3-CLAUDE1"></a>

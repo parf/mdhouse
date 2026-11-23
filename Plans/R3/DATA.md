@@ -1,7 +1,7 @@
 # mdhouse data — what is kept, where, by whom
 
 Rule [№DATA-W1](workspaces/DECISIONS.md#DATA-W1): user data in `$HOME/.config/mdhouse` (each user's own); team data in `$PROJECT/.mdhouse/` under Git (common).
-Decided: [№DATA-W1](workspaces/DECISIONS.md#DATA-W1), [№DATA-W2](workspaces/DECISIONS.md#DATA-W2); [№Q-R3-DATA1](workspaces/resolved.md#Q-R3-DATA1). Inventory: #md/w1 (MW.14), 2026-11-12.
+Decided: [№DATA-W1](workspaces/DECISIONS.md#DATA-W1), [№DATA-W2](workspaces/DECISIONS.md#DATA-W2); [№Q-R3-DATA1](workspaces/RESOLVED.md#Q-R3-DATA1). Inventory: #md/w1 (MW.14), 2026-11-12.
 
 ✅ kept now · ⚠️ kept now, moves (follow-up) · `[ ]` planned, agreed · 🚫 dropped.
 

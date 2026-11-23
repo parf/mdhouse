@@ -129,7 +129,7 @@ export const BUSINESS_COVERAGE = [
     id: 'business-decision-memo', scope: 'selected-document', audience: 'executive', output: 'decision-memo',
     stages: ['frame', 'compare', 'recommend', 'record', 'report'],
     sources: ['decision problem alternatives and evidence', 'cost risk reversibility and constraints', 'decision authority and actual answer or explicit pending'],
-    exampleFacts: ['recommendation only', 'owner decision: pending', 'No decision was approved', 'resolved.md'],
+    exampleFacts: ['recommendation only', 'owner decision: pending', 'No decision was approved', 'RESOLVED.md'],
   },
 ] as const;
 

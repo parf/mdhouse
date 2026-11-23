@@ -6,7 +6,7 @@ The other files of this reference sit next to this one: take the URL you fetched
 
 ## 1. Plans — how to write them
 
-- [Plans](plans.md) — the files (`Plans/README.md`, `TODO.md`, `DECISIONS.md`, `resolved.md`) and where each kind of text goes
+- [Plans](plans.md) — project files, task IDs, decisions and questions, sprints, reviews and archiving completed work
 
 ## 2. Glyphs — which ones
 

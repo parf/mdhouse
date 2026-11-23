@@ -51,4 +51,4 @@ providers. Human approval is required for consequential follow-up; validation gr
 
 Reference local question №Q1; cross-file IDs link to their owning items. Keep current important rules
 short in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning
-`resolved.md`, with stable IDs and anchored old-location pointers. Leave unanswered questions open.
+`RESOLVED.md`, with stable IDs and anchored old-location pointers. Leave unanswered questions open.

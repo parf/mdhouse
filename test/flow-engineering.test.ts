@@ -42,7 +42,7 @@ for (const row of ENGINEERING_COVERAGE) test(`${row.id}: evidence, honest unknow
   expect(workflow).toContain('complete without a tracker');
   expect(workflow).toContain('separate preview and explicit approval');
   expect(workflow).toContain('`DECISIONS.md`');
-  expect(workflow).toContain('`resolved.md`');
+  expect(workflow).toContain('`RESOLVED.md`');
   expect(flow.example).toContain('Synthetic example');
   expect(flow.example).toContain('not an executed or verified run');
   expect(flow.example).not.toMatch(/\b[0-9a-f]{40}\b/);

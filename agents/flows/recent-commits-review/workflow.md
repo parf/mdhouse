@@ -66,4 +66,4 @@ its own approved action; no ticket filing or external send occurs from this pack
 
 Reference local question №Q1; cross-file IDs always link to the owning item. Preserve human answers
 and original IDs. Short current decisions belong in owning `DECISIONS.md`; verbatim solved questions,
-options and threads belong in owning `resolved.md`, with anchored pointers left at old locations.
+options and threads belong in owning `RESOLVED.md`, with anchored pointers left at old locations.

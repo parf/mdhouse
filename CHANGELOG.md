@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Expanded the planning guide for agents with project file roles, task and wave tracking, and archiving.
+
 ### Fixed
 
 - Blue 🔵 notes in Markdown Q&A use the full row width and no longer overlap the next item.

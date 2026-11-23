@@ -52,4 +52,4 @@ approval outside this package. The local report/register/brief is complete witho
 
 Reference local question №Q1; cross-file IDs link to their owning items. Current important rules go
 briefly in owning `DECISIONS.md`; full solved questions/threads remain verbatim in owning
-`resolved.md`, with stable IDs and anchored pointers. Leave unanswered questions open.
+`RESOLVED.md`, with stable IDs and anchored pointers. Leave unanswered questions open.

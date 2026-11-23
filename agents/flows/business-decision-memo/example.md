@@ -17,7 +17,7 @@ instruction. It states owner decision: pending and records which evidence would 
 
 The important-rule destination would be a shortest current rule plus necessary conditions in owning
 `DECISIONS.md` only after an actual owner decision. Full original options/answers/rationale belong
-verbatim in owning `resolved.md`, with the same stable ID and anchored links. This example archives
+verbatim in owning `RESOLVED.md`, with the same stable ID and anchored links. This example archives
 nothing because the question is still open.
 
 ## Open questions

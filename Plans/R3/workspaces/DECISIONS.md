@@ -4,8 +4,8 @@
 
 - 📌 Q-W0 Markdown workspace: read, edit, agents, review, delivery; Viewer = RO.
 - 📌 Q-W0a Personal by default; Team optional. Participants/access ≠ Workspace/Viewer; per-browser identity.
-- 📌 Q-W4 Name: **Markdown workspace**; **personal-first, team-ready**. [History](resolved.md#Q-W4).
-- 📌 Q-W5 Persist `mode: "workspace" | "viewer"`; onboarding, Settings, CLI. [History](resolved.md#Q-W5).
+- 📌 Q-W4 Name: **Markdown workspace**; **personal-first, team-ready**. [History](RESOLVED.md#Q-W4).
+- 📌 Q-W5 Persist `mode: "workspace" | "viewer"`; onboarding, Settings, CLI. [History](RESOLVED.md#Q-W5).
   Workspace: default RW, explicit root modes. Viewer: hard RO, no write controls; retain stored modes.
   Upgrade: preserve existing access.
 - 📌 PROFILE-W1 Profiles: `personal`, `open-viewer`, `private-viewer`, `team`. <a id="Q-W6"></a>
@@ -16,7 +16,7 @@
   Shared enforcement; visible trusted-network modifier + project policy; preview/confirm profile switches.
   Viewer preserves root modes/user grants; caps RO.
   Personal localhost: no setup/login. Remote: explicit GitHub/trusted CIDR/VPN/proxy admission before RW exposure.
-  [History](resolved.md#Q-W6).
+  [History](RESOLVED.md#Q-W6).
 
 ## Access
 
@@ -24,7 +24,7 @@
   Identity = provider + immutable GitHub ID; username = admin-controlled display/routing once set; renames never transfer grants.
   No writes before confirmation; bind it to the verified numeric ID, reject changed/stale identity.
   Web user management: Personal owner; Team configured administrator only. ACCESS = sign-in; project grant = content; new grant = RW; absent = hidden/denied.
-  Local/password/Basic: Advanced recovery only; local/GitHub identities separate. [History](resolved.md#Q-W8).
+  Local/password/Basic: Advanced recovery only; local/GitHub identities separate. [History](RESOLVED.md#Q-W8).
 - 📌 USER-W2 Write = Workspace ∩ root RW ∩ project RW ∩ Editor.
   Viewer/root RO/user RO cap access. User/grant changes apply immediately; no jail/reference override.
 - 📌 USER-W8 Users have a separate administration page with grants editable by user or by project.
@@ -41,21 +41,21 @@
   No email/key requirement or silent account merge.
   Markdown: current GitHub username; grants/audit: immutable provider ID. Browser author cookie: anonymous fallback only.
 - 📌 USER-W5 With >1 configured user, Team answers/comments and their edits require the authenticated respondent’s name; shared Git author is not attribution. <a id="USER-W5"></a>
-  Personal signature preference and existing Team/admin thresholds remain separate. [History](resolved.md#USER-W5).
+  Personal signature preference and existing Team/admin thresholds remain separate. [History](RESOLVED.md#USER-W5).
 - 📌 USER-W6 Keep per-user sessions, last 10 IPs, last 10 unique cities, states and countries with last-seen dates (city keyed by state/country, state by country), latest browser User-Agent; self/admin only. <a id="USER-W6"></a>
   IP/GeoIP observations retain ISP, organization and ASN number/label when supplied; missing metadata stays unavailable.
   GeoIP: two public services, primary first, secondary only on failure; no parallel fan-out, private/loopback IP disclosure or guessed location.
   Every country transition requires GitHub re-login before protected actions/trusted history; unknown/private/failed GeoIP is not a transition. [№Q-R3-COUNTRY1](#Q-R3-COUNTRY1).
-  Each session idle >30 days requires GitHub re-login before last-used updates; other sessions do not renew it. Admin proof/session TTLs stay separate. [History](resolved.md#USER-W6).
+  Each session idle >30 days requires GitHub re-login before last-used updates; other sessions do not renew it. Admin proof/session TTLs stay separate. [History](RESOLVED.md#USER-W6).
 - 📌 USER-W7 Once set, Team GitHub username and name/realm are configured-admin-edit-only; self-edit and automatic profile-sync overwrite are forbidden. <a id="USER-W7"></a>
   Login/signature always uses the authenticated immutable principal; body/cookie spoof, different-ID OAuth rebinding and admin login-as are forbidden.
-  Immutable GitHub principal and grants stay unchanged; username correction requires GitHub lookup/preview/confirm. Realm meaning: [№Q-R3-REALM1](#Q-R3-REALM1). [History](resolved.md#USER-W7).
+  Immutable GitHub principal and grants stay unchanged; username correction requires GitHub lookup/preview/confirm. Realm meaning: [№Q-R3-REALM1](#Q-R3-REALM1). [History](RESOLVED.md#USER-W7).
 - 📌 Q-R3-REALM1 "name/realm" = the user's display name; no realm field. <a id="Q-R3-REALM1"></a>
-  [History](resolved.md#Q-R3-REALM1).
-- 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](resolved.md#Q-W1).
+  [History](RESOLVED.md#Q-R3-REALM1).
+- 📌 Q-W1 Explicit add → RW; `--ro` opts out; Viewer caps RO. [History](RESOLVED.md#Q-W1).
   No protected-path list; canonical root = grant; realpath jail = boundary; automatic references stay RO.
-- 📌 Q-W2 Roots: one `prefs.json` model; CLI + Settings Add directory; shared canonical registration. [History](resolved.md#Q-W2).
-- 📌 Q-W3 Every instance auto-mounts current immutable RO package references: Plans, markup, syntax, skills. [History](resolved.md#Q-W3).
+- 📌 Q-W2 Roots: one `prefs.json` model; CLI + Settings Add directory; shared canonical registration. [History](RESOLVED.md#Q-W2).
+- 📌 Q-W3 Every instance auto-mounts current immutable RO package references: Plans, markup, syntax, skills. [History](RESOLVED.md#Q-W3).
 
 ## Agent Bus
 
@@ -67,11 +67,11 @@
 - 📌 CTRL-W1 Control API: inventory IDs; open = `rootId` + Markdown path + destination `clientId`. <a id="Q-W7"></a>
   AB control is read-only inventory/query plus authorized targeted page opening; no root/config/user/grant writes.
   Page agent-chat is separate; sender/root/user authorization and the path jail still apply.
-  No pairing/broadcast. Unknown/disconnected client → canonical URL, `opened: false`. [History](resolved.md#Q-W7).
+  No pairing/broadcast. Unknown/disconnected client → canonical URL, `opened: false`. [History](RESOLVED.md#Q-W7).
 
 - 📌 RAG-W1 RAG sync is a separate mdhouse bin module, implemented by our team and executed only on explicit owner demand; no implicit/background sync or provider-status calls. <a id="RAG-W1"></a>
   For the approved mdhouse sync scope, parf stays Owner and CTO is Maintainer on the dedicated RAG/FileScan records only after live confirmation; no worker/wildcard grants or implied destructive reset/replay.
-  FileScan: one provisioned instance per folder; owner/AB-CEO handle roots/record/config/token/grants, our bin handles the agreed subscription/status. Paid/live authority is separate. [History](resolved.md#RAG-W1).
+  FileScan: one provisioned instance per folder; owner/AB-CEO handle roots/record/config/token/grants, our bin handles the agreed subscription/status. Paid/live authority is separate. [History](RESOLVED.md#RAG-W1).
 
 ## Directory controls
 
@@ -82,11 +82,11 @@
 - 📌 Q-R3-MODE1 Implement scoped access migration/toggle; one mdhouse process per machine. <a id="Q-R3-MODE1"></a>
   Changes apply on reload. Multiple manually started instances are the user’s responsibility, not a development gate.
   Downgraded readers lose auto-RW; no automatic restart.
-  [History](resolved.md#Q-R3-MODE1).
+  [History](RESOLVED.md#Q-R3-MODE1).
 - 📌 DIR-W3 Optional name keyed by canonical path; display only; empty resets.
   No path/ID/URL/jail change; default = directory label.
 - 📌 Q-R3-NAME1 Unsaved project names stay in memory until the project is explicitly saved. <a id="Q-R3-NAME1"></a>
-  [History](resolved.md#Q-R3-NAME1).
+  [History](RESOLVED.md#Q-R3-NAME1).
 
 ## Editor
 
@@ -117,58 +117,58 @@
   Remote admin explicit. Proof: random, short-lived, single-use, memory-only; URL fragment removed before content renders.
   Exchange: trusted-host + admission + same-origin; expiring HttpOnly host-only cookie, appropriate HTTPS/SameSite.
   No secrets in config/projects/logs/query/audit/startup output; explicit CLI/browser recovery.
-  Independent security review + negative tests before integration. [History](resolved.md#ADMIN-W1).
+  Independent security review + negative tests before integration. [History](RESOLVED.md#ADMIN-W1).
 
 - 📌 Q-R3-ADMIN1 Shared file marks (`/api/marks`) = instance configuration: Personal owner / Team configured instance administrator only. <a id="Q-R3-ADMIN1"></a>
-  [History](resolved.md#Q-R3-ADMIN1).
+  [History](RESOLVED.md#Q-R3-ADMIN1).
 
 ## Document content
 
 - 📌 Q-R3-HTML1 Prohibit document-supplied active content. <a id="Q-R3-HTML1"></a>
   Keep passive HTML. Mermaid runs only through the app-controlled constrained renderer; diagram
   source gains no arbitrary script or privileged-request capability. Referer is not this boundary.
-  [History](resolved.md#Q-R3-HTML1).
+  [History](RESOLVED.md#Q-R3-HTML1).
 
 - 📌 Q-R3-COUNTRY1 Country baseline = this session’s last GitHub-authenticated country; only successful reauthentication changes it. <a id="Q-R3-COUNTRY1"></a>
-  US→DE→US requires re-login twice; other sessions/history do not waive it. Initial unknown: [№Q-R3-COUNTRY2](#Q-R3-COUNTRY2). [History](resolved.md#Q-R3-COUNTRY1).
+  US→DE→US requires re-login twice; other sessions/history do not waive it. Initial unknown: [№Q-R3-COUNTRY2](#Q-R3-COUNTRY2). [History](RESOLVED.md#Q-R3-COUNTRY1).
 
 - 📌 Q-R3-COUNTRY2 No GeoIP country → country `NA` (not available); the first verified country after `NA` requires GitHub reauthentication. <a id="Q-R3-COUNTRY2"></a>
-  [History](resolved.md#Q-R3-COUNTRY2).
+  [History](RESOLVED.md#Q-R3-COUNTRY2).
 
 - 📌 Q-R3-RAGSYNC1 Use the finite on-demand FileScan sync; no subscription/watch/timer remains, no answer within the timeout → the next sync repeats it (resend). <a id="Q-R3-RAGSYNC1"></a>
-  Bind the delivered approved provider contract after deployment; standing-watch retry authority is separate. [History](resolved.md#Q-R3-RAGSYNC1).
+  Bind the delivered approved provider contract after deployment; standing-watch retry authority is separate. [History](RESOLVED.md#Q-R3-RAGSYNC1).
 
 - 📌 Q-R3-RAG1 No provider source registry / job API / history; the R3 source lifecycle is mdhouse's. <a id="Q-R3-RAG1"></a>
   New source: FileScan instance + runner roots (admin step) → `mdhouse-rag-sync` → RAG. Goal: index all docs. No answer within the timeout → repeat; no request-id dedup;
   failed/unknown files = fail queue, retried with back-off while the provider is down.
   Source registry, sync history: KV on `#mdhouse@<host>` (`set --add`); events: `#mdhouse` agent log. Small-file citations: mdhouse computes heading/lines from the file
-  at `content_hash`; mismatch → stale, no citation. [History](resolved.md#Q-R3-RAG1).
+  at `content_hash`; mismatch → stale, no citation. [History](RESOLVED.md#Q-R3-RAG1).
 
 
 - 📌 BROWSE-W1 Gitignore is a visibility default, not access control. <a id="BROWSE-W1"></a>
   Show ignored when eligible ignored files exist; direct ignored-folder navigation lists its contents.
   Folders selected in either V1/V2 also appear in main/default; each V tab keeps only its own selection.
-  Preserve explicit exclusions, `.git` protection and path jail. [History](resolved.md#BROWSE-W1).
+  Preserve explicit exclusions, `.git` protection and path jail. [History](RESOLVED.md#BROWSE-W1).
 
 
 - 📌 GIT-W1 Distinguish Gitignored (orange) and Untracked (blue) across file surfaces. <a id="GIT-W1"></a>
   Separate right file-panel badges; tracked/no-repo files have neither. Direct file navigation reveals
-  its exact path/selection without changing strict V1/V2 or exclusions/jail. [History](resolved.md#GIT-W1).
+  its exact path/selection without changing strict V1/V2 or exclusions/jail. [History](RESOLVED.md#GIT-W1).
 
 
 - 📌 GIT-W2 Hide file Git history for authoritative Gitignored and Untracked without confirmed history. <a id="GIT-W2"></a>
   Tracked paths keep history, including force-tracked ignore matches. Do not infer from badges,
-  no-repo or synthesized status. [History](resolved.md#GIT-W2).
+  no-repo or synthesized status. [History](RESOLVED.md#GIT-W2).
 
 
 - 📌 RENDER-W1 Unchanged file content must not trigger document-body/token replacement or new diagram work. <a id="RENDER-W1"></a>
   Refresh Git metadata separately; actual content changes refresh body/provenance normally. Image cache
-  is defense, not a substitute for eliminating redundant full rendering. [History](resolved.md#RENDER-W1).
+  is defense, not a substitute for eliminating redundant full rendering. [History](RESOLVED.md#RENDER-W1).
 
 
 - 📌 PROJECTS-W1 Settings uses Projects with project selection/details, separate browser and instance scopes. <a id="PROJECTS-W1"></a>
   Filesystem directory/path and internal root/API/storage semantics stay unchanged; unsupported
-  per-project mutations require their existing admin-gated owning work. [History](resolved.md#PROJECTS-W1).
+  per-project mutations require their existing admin-gated owning work. [History](RESOLVED.md#PROJECTS-W1).
 
 - 📌 SETTINGS-UX1 Settings links directly to Projects, project Access, Users, Groups and Instance. <a id="SETTINGS-UX1"></a>
   Show current state and common actions first. Add project and lower-priority details open on request.
@@ -180,44 +180,44 @@
 - 📌 Q-R3-AB1 AB endpoint/default overrides follow the existing saved/session root-property lifetime. <a id="Q-R3-AB1"></a>
   Unsaved: memory until explicit save; save atomically carries AB metadata with mode/name. Saved edits persist.
   Credentials stay server-only; endpoint change discards the old credential.
-  [Verified-source clarification](resolved.md#Q-R3-AB1).
+  [Verified-source clarification](RESOLVED.md#Q-R3-AB1).
 
 - 📌 Q-R3-VIEWADMIN1 Viewer: no local administrator — sign in with `mdhouse admin`. <a id="Q-R3-VIEWADMIN1"></a>
-  [History](resolved.md#Q-R3-VIEWADMIN1).
+  [History](RESOLVED.md#Q-R3-VIEWADMIN1).
 
 - 📌 Q-R3-EXPOSE1 Non-loopback bind with no users, no allow list and no host names: every project RO; the start line says why. <a id="Q-R3-EXPOSE1"></a>
-  [History](resolved.md#Q-R3-EXPOSE1).
+  [History](RESOLVED.md#Q-R3-EXPOSE1).
 
 - 📌 Q-R3-HOSTNAME1 `--host-name` (a proxy on this host) is an explicit access policy. <a id="Q-R3-HOSTNAME1"></a>
-  [History](resolved.md#Q-R3-HOSTNAME1).
+  [History](RESOLVED.md#Q-R3-HOSTNAME1).
 
 - 📌 Q-R3-VIEWPROXY1 Viewer behind `--host-name`: switch back by CLI only (`mdhouse --workspace`). <a id="Q-R3-VIEWPROXY1"></a>
-  [History](resolved.md#Q-R3-VIEWPROXY1).
+  [History](RESOLVED.md#Q-R3-VIEWPROXY1).
 
 ## Editor, retrieval and automations direction
 
 - 📌 EDIT-W2 Integrate an existing Markdown editor component; do not build an editor engine. <a id="EDIT-W2"></a>
 - 📌 RAG-W2 Defer RAG implementation; design two independent indexes. <a id="RAG-W2"></a>
   End users: documents only. Developers and AI agents: shared code-and-documentation index; retain repository/revision identity and access boundaries.
-  [Owner history](resolved.md#RAG-W2).
+  [Owner history](RESOLVED.md#RAG-W2).
 - 📌 AUTO-W1 Use Agent Bus Cron/At to invoke agents and AI pipelines, including code review and QA. <a id="AUTO-W1"></a>
   No separate mdhouse scheduler; live schedules require separate authorization.
 
 - 📌 Q-R3-AUTO1 Scheduled pipelines v1: analysis only (no code execution, commit or push); the instance administrator registers, a Viewer never; <a id="Q-R3-AUTO1"></a>
   3 failures in a row disable, ≤ 10 runs a day; bus schedules on the instance's `#mdhouse`; QA v1 = documents and changes;
-  runs in `Plans/flows/runs/`; notify on the page + optionally one agent. [History](resolved.md#Q-R3-AUTO1).
+  runs in `Plans/flows/runs/`; notify on the page + optionally one agent. [History](RESOLVED.md#Q-R3-AUTO1).
 
 ## Access badges
 
 - 📌 BADGE-W1 Access badges show deviations from the mode baseline. <a id="BADGE-W1"></a>
   Workspace: hide RW, show RO. Viewer: hide RO, show configured RW; effective writes remain forbidden.
   Apply throughout the UI: hide defaults or render them gray; highlight important or unusual states.
-  [Owner history](resolved.md#BADGE-W1).
+  [Owner history](RESOLVED.md#BADGE-W1).
 
 ## Data placement
 
 - 📌 CONFIG-W1 `$PROJECT_HOME/.mdhouse/` is Git-controlled. <a id="CONFIG-W1"></a>
-  [Owner history](resolved.md#CONFIG-W1).
+  [Owner history](RESOLVED.md#CONFIG-W1).
 
 - 📌 DATA-W1 User data (`$HOME/.config/mdhouse`): each user's own — e.g. favorites, agent setup. Team data (`$PROJECT/.mdhouse/`, Git): common — e.g. automation. <a id="DATA-W1"></a>
   [Owner comment](QUESTIONS.md#Q-R3-DATA1).
@@ -230,20 +230,20 @@
 - 📌 Q-R3-REFDOC1 The installed reference holds only end-user docs; testing docs live outside it. <a id="Q-R3-REFDOC1"></a>
   End goal: ONE line with a URL for a project's AGENTS.md that teaches an AI how to write plans, which glyphs, which markup — so mdhouse understands.
   `skills/markup.md` folds into `agent-markup.md` (5-line pointer kept); `plans.md` keeps only the portable Plans convention;
-  `mdhouse docs` prints the reference path; glyph/sample copies stay. [History](resolved.md#Q-R3-REFDOC1).
+  `mdhouse docs` prints the reference path; glyph/sample copies stay. [History](RESOLVED.md#Q-R3-REFDOC1).
 
 ## Agent Bus control, automation trust, phone navigation
 
 - 📌 Q-R3-CTL1 Agent Bus control (MW.7): only agents/people the `#mdhouse` record's bus ACL admits; mdhouse adds no list by default (`--ab-control` narrows, `off` stops). <a id="Q-R3-CTL1"></a>
-  [History](resolved.md#Q-R3-CTL1).
+  [History](RESOLVED.md#Q-R3-CTL1).
 
 - 📌 Q-R3-AUTO2 A committed automation registration fires only after the instance administrator approves its content hash on this machine; a changed file stops until approved again. <a id="Q-R3-AUTO2"></a>
-  [History](resolved.md#Q-R3-AUTO2).
+  [History](RESOLVED.md#Q-R3-AUTO2).
 
 - 📌 Q-R3-UX1 Do now, adjust later: one "Changes" destination (files + diff + message + "Commit N files"; the document shows a status chip; Push only with a remote, no raw git error; untracked listed, unticked); <a id="Q-R3-UX1"></a>
-  phone navigation = Files · Changes · Search · Ask; one Search with a scope switch Files | Index (the RAG page is "Index"; [R] stays a shortcut). [History](resolved.md#Q-R3-UX1).
+  phone navigation = Files · Changes · Search · Ask; one Search with a scope switch Files | Index (the RAG page is "Index"; [R] stays a shortcut). [History](RESOLVED.md#Q-R3-UX1).
 
 ## Release
 
 - 📌 Q-R3-REL1 Publish after #md/review's independent pass of everything since the last release. <a id="Q-R3-REL1"></a>
-  [History](resolved.md#Q-R3-REL1).
+  [History](RESOLVED.md#Q-R3-REL1).

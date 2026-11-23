@@ -29,7 +29,8 @@ that the problem exists and needs doing.
 - **DECISIONS.md** — important rules only: `- 📌 <ID> <shortest decision>`; necessary conditions below.
   Use minimal terms/forms. No discussion, repetition, obsolete investigation or useless prose.
   For agree: accepted proposal + note; for a pick: chosen option; otherwise the final answer in brief.
-- **resolved.md** — full original solved question, answers, options and history, verbatim; same ID.
+- **Resolved archive** — use `RESOLVED.md` or the project's topic file under `resolved/`.
+  Keep the full original solved question, answers, options and history verbatim, with the same ID.
   Other solved questions need no DECISIONS entry. Link important decisions to their archived history.
 - **Old location** — anchored linked `№ID` pointer to the decision or archive; keep the questions file.
 - **TODO.md** — each action the answer implies, at the end: `- [ ] <action>`; an action the new answer

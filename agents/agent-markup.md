@@ -136,11 +136,12 @@ The first glyph is the stage; the severity stays after it:
 ### Where
 
 - Important decision → `DECISIONS.md`: same ID, shortest possible rule; necessary conditions only.
-- Resolved question/thread → `resolved.md`: preserve wording, answers, options and history verbatim.
-- Old location → anchored `[№Q3](DECISIONS.md#Q3)` or `[№Q3](resolved.md#Q3)` pointer.
+- Resolved question/thread → `RESOLVED.md` or the project's topic file under `resolved/`.
+  Preserve wording, answers, options and history verbatim. See [Plans](plans.md#decisions-and-resolved-questions).
+- Old location → anchored `[№Q3](DECISIONS.md#Q3)` or `[№Q3](RESOLVED.md#Q3)` pointer.
 - Unresolved questions stay; never delete the questions file.
 - `DECISIONS.md`: minimal terms/forms; no discussion, repetition, obsolete investigation or useless prose.
-  Link to `resolved.md` for history.
+  Link to the archived thread for history.
 
 ### Decision
 
@@ -299,7 +300,7 @@ A decision that matters — a rule much other work keeps following. A usual deci
 
 - `- 🚫 …` under it — a rejected alternative, muted
 - an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
-- important resolved rule → `DECISIONS.md`, same ID, shortest form; full question/options/thread → `resolved.md`
+- important resolved rule → `DECISIONS.md`, same ID, shortest form; full question/options/thread → resolved archive
 - old location keeps an anchored `№ID` link; decisions contain no discussion or useless prose
 - never folded, never waiting on anyone; 💬 under it — a reply
 

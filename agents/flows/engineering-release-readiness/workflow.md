@@ -50,4 +50,4 @@ successful marker from incomplete evidence. No manual or scheduled execution is 
 
 Reference local question №Q1; link cross-file IDs to their owning item. Keep current important rules
 short in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning
-`resolved.md`, with stable IDs and anchored links from old locations. Unresolved questions stay open.
+`RESOLVED.md`, with stable IDs and anchored links from old locations. Unresolved questions stay open.

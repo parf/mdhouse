@@ -32,7 +32,7 @@ State the recommendation and its rationale, trade-offs, conditions and next vali
 
 ### record
 
-If an actual final decision is supplied, keep only the shortest current rule/necessary conditions in owning DECISIONS.md; preserve its full question, options, answer and rationale verbatim in owning resolved.md with the same ID and anchored history links. If pending, leave the question open and do not fabricate a closing turn.
+If an actual final decision is supplied, keep only the shortest current rule/necessary conditions in owning DECISIONS.md; preserve its full question, options, answer and rationale verbatim in owning RESOLVED.md with the same ID and anchored history links. If pending, leave the question open and do not fabricate a closing turn.
 
 ### report
 
@@ -52,5 +52,5 @@ question or blocked comparison stays visible with the independent evidence alrea
   > 💬👾 `<context, source limitations and the answer needed>`
 
 Reference local question №Q1; link cross-file IDs to owning items. Keep important current rules short
-in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning `resolved.md`,
+in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning `RESOLVED.md`,
 with stable IDs and anchored old-location pointers. Pending questions stay open.

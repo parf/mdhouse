@@ -72,7 +72,7 @@ Use examples as illustrations only; placeholder SHAs and synthetic checks never 
 ## Decisions
 
 Keep owning `DECISIONS.md` to the shortest current rule and necessary conditions. Preserve full
-solved questions, answers and rejected alternatives verbatim in owning `resolved.md`, with the same
+solved questions, answers and rejected alternatives verbatim in owning `RESOLVED.md`, with the same
 IDs and anchored links from decisions/old locations. Unresolved questions stay open; this report
 does not silently settle them or rewrite decisions.
 

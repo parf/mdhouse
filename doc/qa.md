@@ -87,7 +87,7 @@ A decision that matters — a rule much other work keeps following. A usual deci
 
 - `- 🚫 …` under it (or under a `✅`) — a rejected alternative, muted, not counted
 - an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
-- important resolved rule → `DECISIONS.md`, same ID, shortest form; full question/options/thread → `resolved.md`
+- important resolved rule → `DECISIONS.md`, same ID, shortest form; full question/options/thread → `RESOLVED.md`
 - old location keeps an anchored `№ID` link; decisions contain no discussion or useless prose
 - never folded, never waiting on anyone; 💬 under it — a reply
 
@@ -230,6 +230,6 @@ How a plan gets worked through with an agent (Claude Code or alike), in a folder
    `💡` or `( )` options for what it proposes
 2. **Answer** — you open the file in mdhouse, click each ❓ and answer; Ctrl+Shift+Enter saves
    and opens the next open one
-3. **Decide** — shortest important rules → `DECISIONS.md`; solved questions/full history → `resolved.md`;
+3. **Decide** — shortest important rules → `DECISIONS.md`; solved questions/full history → `RESOLVED.md`;
    preserve IDs and verbatim answers; old locations keep anchored links
 4. **Track** — the work goes into `TODO.md` as checkboxes, one per decision, ticked as each lands

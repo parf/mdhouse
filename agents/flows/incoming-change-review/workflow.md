@@ -67,4 +67,4 @@ without a live provider, but unavailable merge evidence stops at readiness.block
 
 Reference local question №Q1; cross-file IDs always link to the owning item. Preserve human answers
 and original IDs. Short current decisions belong in owning `DECISIONS.md`; verbatim solved questions,
-options and threads belong in owning `resolved.md`, with anchored pointers left at old locations.
+options and threads belong in owning `RESOLVED.md`, with anchored pointers left at old locations.

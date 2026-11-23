@@ -50,5 +50,5 @@ The local report is complete without a tracker. No action, manual run or schedul
   > 💬👾 `<source, impact and evidence needed to answer>`
 
 Reference local question №Q1; cross-file IDs link to owning items. Keep important current rules short
-in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning `resolved.md`,
+in owning `DECISIONS.md`; preserve solved questions/options/threads verbatim in owning `RESOLVED.md`,
 with stable IDs and anchored old-location pointers. Keep unresolved questions open.

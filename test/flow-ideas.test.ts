@@ -29,7 +29,7 @@ for (const row of IDEAS_COVERAGE) test(`${row.id}: provenance, assumptions and d
   expect(flow.manifest.steps.at(-1)!.on.complete).toEqual(row.handoff
     ? { kind: 'handoff', to: 'person', target: 'project-owner' } : { kind: 'end', status: 'complete' });
   const document = flow.documents.get('workflow.md')!;
-  for (const term of ['not runnable', '[Shared execution contract](../README.md#runtime-boundary)', 'missing mandatory evidence', 'source references', 'complete without a tracker', 'separate preview and explicit approval', '`DECISIONS.md`', '`resolved.md`']) expect(document).toContain(term);
+  for (const term of ['not runnable', '[Shared execution contract](../README.md#runtime-boundary)', 'missing mandatory evidence', 'source references', 'complete without a tracker', 'separate preview and explicit approval', '`DECISIONS.md`', '`RESOLVED.md`']) expect(document).toContain(term);
   expect(flow.example).toContain('Synthetic example');
   expect(flow.example).toContain('not an executed or verified run');
   expect(flow.example).not.toMatch(/\b[0-9a-f]{40}\b/);
