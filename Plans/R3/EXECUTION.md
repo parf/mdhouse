@@ -4,18 +4,29 @@ Owner-authorized complete R3 implementation/testing; CTO owns shared plan edits/
 Base implementation revision: `c1fb27f35cbd82270c754e4dfc6a562d36e0924d`; launcher-only main update:
 `3af3ca0c939c7d5830685bbe175cad654eac5d00`. Target: `main`.
 
-## Current checkpoint — 2026-11-06
+## Current checkpoint — v2.3.4 {#current-checkpoint--2026-11-06}
 
-Done/integrated: [№MW.0f](workspaces/TODO.md#MW.0f) immutable references, [№MW.0a](workspaces/TODO.md#MW.0a)
-fallback author, license/scheme/Copy-touch implementation slices, 39 authoring packages and pure-run
-core, [№MW.8](workspaces/TODO.md#MW.8) passive content (`3b044d5`) and dormant classification
-(`484a277`). Latest controlled full: `fdb4098`, 703/0 + tsc; no new suite for documentation changes.
-[№MW.0d.1](workspaces/TODO.md#MW.0d.1): approved `b9986d2`, integrated `e5382e1`, pure/mock scope done.
-[№MW.0d.2](workspaces/TODO.md#MW.0d.2): approved cohort `3dd661e`, integrated `c529bf1`; codec/store foundation done, no runtime authentication or routes.
-[№MW.2a.1a](workspaces/TODO.md#MW.2a.1a): approved cohort `4087601`, integrated `ae04901`; standalone local-plan bin done, no connected provider transport/index/search.
-Admin/OAuth/access wiring, materialization, RAG runtime and cross-browser/real-device release QA stay
-open. Country/identity rules are current in [DECISIONS](workspaces/DECISIONS.md); historical pending
-reports below are chronological evidence, not current blockers.
+Shipped in v2.3.4 (`9c470e7`, 2026-11-20). Closed items: [R3 archive](../done/R3.md).
+
+- Access: [№MW.0f](workspaces/TODO.md#MW.0f) references `ea7ebda`; [№MW.0a](workspaces/TODO.md#MW.0a) author `b11e47f`; dormant classification `484a277`;
+  local administrator [№MW.0g.2b](workspaces/TODO.md#MW.0g.2b) `4af60fd`; scoped access [№MW.0h.1](workspaces/TODO.md#MW.0h.1) `9957efe`; Viewer `21c08bd`;
+  exposure cap `ff84a7d`; Team users/grants [№MW.0d.3](workspaces/TODO.md#MW.0d.3) `17df80b`; session model [№MW.0d.1](workspaces/TODO.md#MW.0d.1) `e5382e1`,
+  store [№MW.0d.2](workspaces/TODO.md#MW.0d.2) `c529bf1`.
+- Projects: save [№MW.1.1](workspaces/TODO.md#MW.1.1) `ad7b5fc`; RW/RO [№MW.1.2](workspaces/TODO.md#MW.1.2) `9957efe`; Add project [№MW.1.3](workspaces/TODO.md#MW.1.3) `c7c2ef4`;
+  names [№MW.1a.1](workspaces/TODO.md#MW.1a.1) `ba0b19c`; Agent Bus per project [№MW.2.1](workspaces/TODO.md#MW.2.1) `fe7bac8`, auto [№MW.2.2](workspaces/TODO.md#MW.2.2) `5feab66`;
+  Settings [№MW.10](workspaces/TODO.md#MW.10) `be56acd`.
+- Documents: [№MW.L](workspaces/TODO.md#MW.L) `e9c1b77`; [№MW.8](workspaces/TODO.md#MW.8) `3b044d5`; editor [№MW.5.1](workspaces/TODO.md#MW.5.1) `8d84762`; Copy [№MW.5b.1](workspaces/TODO.md#MW.5b.1) `d7b0ef7`;
+  touch [№MW.5c.1](workspaces/TODO.md#MW.5c.1) `f434fd5`; [№MW.9](workspaces/TODO.md#MW.9) `9b90362`; [№MW.9a](workspaces/TODO.md#MW.9a) `8fa40e1`; [№MW.8c](workspaces/TODO.md#MW.8c) `4ccd007`;
+  [№MW.9b](workspaces/TODO.md#MW.9b)/[№MW.8d](workspaces/TODO.md#MW.8d) `c568e3b`; [№MW.18](workspaces/TODO.md#MW.18) `74b0128`.
+- Flows: 39 authoring packages `c76a512`; run core [№MW.3.2](workspaces/TODO.md#MW.3.2) `d10524e`; flow server [№MW.3.3](workspaces/TODO.md#MW.3.3-ui) `df04925`;
+  Run Flow page [№MW.13.2](workspaces/TODO.md#MW.13.2) `7e96132`.
+- RAG: local-plan bin [№MW.2a.1a](workspaces/TODO.md#MW.2a.1a) `ae04901`; connected bin [№MW.2a.1b](workspaces/TODO.md#MW.2a.1b) `1fd503a`; first live sync 184/184
+  ([checkpoint](RAG-CONTRACT.md#first-live-sync--2026-11-12)).
+- Open: [№MW.0](workspaces/TODO.md#MW.0), [№MW.0b](workspaces/TODO.md#MW.0b), [№MW.0c](workspaces/TODO.md#MW.0c), [№MW.0d](workspaces/TODO.md#MW.0d), [№MW.0e](workspaces/TODO.md#MW.0e), [№MW.0g](workspaces/TODO.md#MW.0g), [№MW.0h](workspaces/TODO.md#MW.0h), [№MW.1](workspaces/TODO.md#MW.1), [№MW.1a](workspaces/TODO.md#MW.1a),
+  [№MW.2](workspaces/TODO.md#MW.2), [№MW.2a](workspaces/TODO.md#MW.2a), [№MW.3](workspaces/TODO.md#MW.3)–[№MW.3h](workspaces/TODO.md#MW.3h), [№MW.4](workspaces/TODO.md#MW.4), [№MW.5b](workspaces/TODO.md#MW.5b), [№MW.5c](workspaces/TODO.md#MW.5c), [№MW.7](workspaces/TODO.md#MW.7),
+  [№MW.11](workspaces/TODO.md#MW.11), [№MW.13](workspaces/TODO.md#MW.13), [№MW.14](workspaces/TODO.md#MW.14), [№MW.16](workspaces/TODO.md#MW.16), [№MW.17](workspaces/TODO.md#MW.17); gates [№MW.6](workspaces/TODO.md#MW.6); release outcomes [№R3a](TODO.md#R3a)–[№R3l](TODO.md#R3l).
+
+Historical reports below are chronological evidence, not current blockers.
 
 ## States
 

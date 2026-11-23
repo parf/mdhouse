@@ -258,3 +258,7 @@ exit, live updates, the page over an ssh tunnel; the whole suite.
 
 - Expanded folders retain their file-count link to the folder page; the name still toggles children.
 - Verified expand/collapse and count navigation in a scratch browser; light/dark and 700px captures checked. Tree/view tests and TypeScript pass.
+
+## R3
+
+[`done/R3.md`](done/R3.md) — completed R3 Workspace items.
