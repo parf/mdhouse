@@ -6,6 +6,11 @@
 
 **A Markdown workspace on your own machine — read every file, answer questions, triage issues and commit, together with your AI agents.**
 
+> [!IMPORTANT]
+> **AI agents — READ THIS.** Send this line to your agent or add it to your project's `AGENTS.md` or `CLAUDE.md`.
+>
+> Read and follow <https://raw.githubusercontent.com/parf/mdhouse/main/agents/README.md>
+
 **TL;DR** — [mdhouse in short](Readme2.md)
 
 > ✦ **In ten seconds.** Point it at a folder — notes, a repo, a pile of repos — and get one
@@ -69,7 +74,7 @@ mdhouse service install      # starts now and at every login, serving the saved 
 ## ✎ Working on docs — with you and your agents
 
 Writes need a project served with `--rw`: `mdhouse -p --rw folder(s)`. The markup is plain GFM —
-[Questions and answers](doc/qa.md). Every syntax on one page: [Syntax](doc/syntax.md). For your agents: [Markup for agents](agents/agent-markup.md) — give it and say "do like this".
+[Questions and answers](doc/qa.md). Every syntax on one page: [Syntax](doc/syntax.md).
 
 **Edit while reading**
 
@@ -109,14 +114,6 @@ Writes need a project served with `--rw`: `mdhouse -p --rw folder(s)`. The marku
 
 🛡 Each write changes only its own lines; if the file changed meanwhile it is refused and your
 text is kept
-
----
-
-## 👾 Agent skills
-
-- Ask your AI: *use https://github.com/parf/mdhouse/blob/main/agents/agent-markup.md and do a review*
-- Or ask Claude: *copy skills from [mdhouse](https://github.com/parf/mdhouse)* — we are pretty sure
-  our review skills will trump yours :)
 
 ---
 

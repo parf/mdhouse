@@ -1,39 +1,34 @@
 # mdhouse for agents
 
-This folder is the installed, read-only reference for agents, served as `_mdhouse`. Never write here.
+Read the writing rules below before writing plans, questions, issues or decisions. mdhouse reads
+plain Markdown. Then choose the skill for your task.
 
-- A file's page: `/_mdhouse/<file>`; its raw text: `/api/raw?p=_mdhouse/<file>`
-- Docs for people: [github.com/parf/mdhouse/doc](https://github.com/parf/mdhouse/tree/main/doc)
+## Writing rules
 
-## Install
-
-- [Install — runbook for an AI](install.md)
-
-## Write for the user
-
-Read before writing plans, questions, issues or decisions.
-
-- [Writing for mdhouse — read this first](for-agents.md) — plans, glyphs and markup in one page, for an AI
-- [Plans](plans.md)
-- [Markup for questions, issues and decisions](agent-markup.md)
-- [Glyphs](skills/glyphs.md)
-- [Q&A states — shared by /ask-questions, /resolve-questions, /find-issues, /fix-issues](skills/qa-states.md)
+- [Plans](plans.md) — plan files, task IDs, decisions, sprints, reviews and archiving
+- [Glyphs](skills/glyphs.md) and [Q&A states](skills/qa-states.md) — meanings and who acts
+- [Agent markup](agent-markup.md) — forms for questions, issues and decisions
 - [Suggested markup](skills/markup.md)
+- [Markdown syntax mdhouse reads](https://github.com/parf/mdhouse/blob/main/doc/syntax.md)
 
 ## Skills
 
 Claude Code: copy `skills/` to `.claude/skills/`. Any other AI: read a `SKILL.md` and follow it.
 
-- [ask-questions](skills/ask-questions/SKILL.md)
-- [resolve-questions](skills/resolve-questions/SKILL.md)
-- [find-issues](skills/find-issues/SKILL.md)
-- [fix-issues](skills/fix-issues/SKILL.md)
+- [ask-questions](skills/ask-questions/SKILL.md) — ask a question for the user to answer on the page
+- [resolve-questions](skills/resolve-questions/SKILL.md) — carry answers into plans
+- [find-issues](skills/find-issues/SKILL.md) — review changes and write findings
+- [fix-issues](skills/fix-issues/SKILL.md) — act on triaged findings
 - [What we check](skills/review-checklist.md)
 
-## Tools
+## Reference
 
+- [Install — runbook for an AI](install.md)
 - [mdhouse-rag-sync](rag-sync.md)
+- [Flow authoring packages](flows/README.md) · [catalog.json](flows/catalog.json)
+- [Docs for people](https://github.com/parf/mdhouse/tree/main/doc)
 
-## Flows
+This folder is the installed, read-only reference served as `_mdhouse`. Never write here.
 
-- [Flow authoring packages — schema v1](flows/README.md) · [catalog.json](flows/catalog.json)
+Open `/_mdhouse/<file>` for the page or `/api/raw?p=_mdhouse/<file>` for its text. From a raw URL,
+replace `README.md` with a linked path such as `plans.md` or `skills/glyphs.md`.

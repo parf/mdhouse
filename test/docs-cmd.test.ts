@@ -14,8 +14,8 @@ describe('mdhouse docs, the pure parts', () => {
     expect(clientHost('docs.example.org')).toBe('docs.example.org');
   });
   test('the start file is fetched raw from the daemon, and from GitHub without one', () => {
-    expect(startUrl('127.0.0.1', 8080)).toBe('http://127.0.0.1:8080/api/raw?p=_mdhouse/for-agents.md');
-    expect(GITHUB_RAW).toBe('https://raw.githubusercontent.com/parf/mdhouse/main/agents/for-agents.md');
+    expect(startUrl('127.0.0.1', 8080)).toBe('http://127.0.0.1:8080/api/raw?p=_mdhouse/README.md');
+    expect(GITHUB_RAW).toBe('https://raw.githubusercontent.com/parf/mdhouse/main/agents/README.md');
   });
   test('the line is one line with the one URL', () => {
     const line = agentsLine();
@@ -46,12 +46,12 @@ describe('mdhouse docs, the command', () => {
     expect(r.code).toBe(0);
     expect(r.out.split('\n')[0]).toBe(agentsLine());
     expect(r.out).toContain(`Offline: the reference is ${REF}`);
-    expect(r.out).toContain('http://127.0.0.1:7777/api/raw?p=_mdhouse/for-agents.md');
+    expect(r.out).toContain('http://127.0.0.1:7777/api/raw?p=_mdhouse/README.md');
   });
   test('--path prints only the path', async () => {
     expect((await run('--path')).out).toBe(`${REF}\n`);
   });
   test('the port in use is in the line', async () => {
-    expect((await run('--port', '8123')).out).toContain('http://127.0.0.1:8123/api/raw?p=_mdhouse/for-agents.md');
+    expect((await run('--port', '8123')).out).toContain('http://127.0.0.1:8123/api/raw?p=_mdhouse/README.md');
   });
 });

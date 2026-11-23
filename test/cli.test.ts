@@ -250,9 +250,9 @@ describe('the reference root (MW.0f.2)', () => {
       expect(single).toBe(true);
       expect(roots.map((r) => [r.id, r.kind, r.writable])).toEqual([['a', 'project', true], ['_mdhouse', 'reference', false]]);
       expect(roots[1]!.path).toBe(REF);
-      const doc = (await (await at(testPort(61940), '/api/doc?p=_mdhouse/for-agents.md')).json()) as { writable: boolean; reference?: boolean };
+      const doc = (await (await at(testPort(61940), '/api/doc?p=_mdhouse/README.md')).json()) as { writable: boolean; reference?: boolean };
       expect(doc).toMatchObject({ writable: false, reference: true });
-      expect((await at(testPort(61940), '/api/task', { p: '_mdhouse/for-agents.md', line: 1, hash: '00000000' })).status).toBe(403);
+      expect((await at(testPort(61940), '/api/task', { p: '_mdhouse/README.md', line: 1, hash: '00000000' })).status).toBe(403);
       expect((await at(testPort(61940), '/api/roots/remove', { id: '_mdhouse' })).status).toBe(403); // local administrator; the reference root stays
       expect(s.run(['--rm', REF, '--port', String(testPort(61940))]).code).toBe(1);
     } finally {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { GITHUB_RAW } from '../src/lib/docs-cmd';
 
 const doc = resolve(import.meta.dir, '../agents');
 const index = readFileSync(join(doc, 'README.md'), 'utf8');
@@ -8,9 +9,9 @@ const index = readFileSync(join(doc, 'README.md'), 'utf8');
 /** The local targets of README.md's links, anchors dropped, in order. */
 const targets = [...index.matchAll(/\]\(([^)\s#?]+)(?:#[^)]*)?\)/g)].map((m) => m[1]!).filter((t) => !/^[a-z]+:/i.test(t));
 
-/** Every Markdown file of the reference but the index and the flow packages' own files, which flows/README.md and catalog.json own. */
+/** Reference docs other than the entry point, its legacy pointer and the assets listed by the flow catalog. */
 const documents = [...new Bun.Glob('**/*.md').scanSync({ cwd: doc, onlyFiles: true })]
-  .filter((f) => f !== 'README.md' && !/^flows\/[^/]+\//.test(f))
+  .filter((f) => f !== 'README.md' && f !== 'for-agents.md' && !/^flows\/[^/]+\//.test(f))
   .sort();
 
 describe('agents/README.md is the one start file', () => {
@@ -28,17 +29,16 @@ describe('agents/README.md is the one start file', () => {
     expect(index).toContain('Never write here');
     expect(index).toContain('/api/raw?p=_mdhouse/<file>');
   });
-});
-
-describe('for-agents.md is the one page an AI is pointed at', () => {
-  const start = readFileSync(join(doc, 'for-agents.md'), 'utf8');
-  test('is short and covers plans, glyphs and markup', () => {
-    expect(start.split('\n').length).toBeLessThanOrEqual(40);
-    for (const t of ['plans.md', 'skills/glyphs.md', 'agent-markup.md', 'https://github.com/parf/mdhouse/blob/main/doc/syntax.md']) expect(start).toContain(`](${t})`);
+  test('covers plans, glyphs and markup in a short guide', () => {
+    expect(index.split('\n').length).toBeLessThanOrEqual(40);
+    for (const t of ['plans.md', 'skills/glyphs.md', 'agent-markup.md', 'https://github.com/parf/mdhouse/blob/main/doc/syntax.md']) expect(index).toContain(`](${t})`);
   });
-  test('every link in it exists', () => {
-    const links = [...start.matchAll(/\]\(([^)\s#?]+)/g)].map((m) => m[1]!).filter((t) => !/^[a-z]+:/i.test(t));
-    expect(links.length).toBeGreaterThan(6);
-    for (const t of links) expect([t, existsSync(join(doc, t))]).toEqual([t, true]);
+  test('the project README and earlier entry points direct agents to the same guide', () => {
+    const projectReadme = readFileSync(join(doc, '../README.md'), 'utf8');
+    expect(projectReadme.split('**TL;DR**')[0]).toContain(GITHUB_RAW);
+    expect(projectReadme.match(/agents\/[^\s)<>]+\.md/g)).toEqual(['agents/README.md']);
+    for (const path of ['for-agents.md', '../doc/for-agents.md']) {
+      expect(readFileSync(join(doc, path), 'utf8')).toContain(GITHUB_RAW);
+    }
   });
 });

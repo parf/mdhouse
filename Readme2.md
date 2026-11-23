@@ -26,7 +26,7 @@ Your notes and docs, in one browser tab. Your AI writes questions — you answer
 - 📌 **Decisions stay put** — the important rules stand out, so nobody (human or AI) forgets them.
 - 🗂 **One plain file is the whole conversation** — no chat history to lose. It reads the same on GitHub.
 - 🛡 **No accidents** — every write is small and checked; if the file changed meanwhile, it stops and keeps your text.
-- 🤝 **Any AI** — give it [agent-markup.md](agents/agent-markup.md) and say "do like this".
+- 🤝 **Any AI** — tell it to read and follow the [agent guide](agents/README.md).
 
 
 ...

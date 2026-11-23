@@ -4,6 +4,7 @@
 
 ### Changed
 
+- The project README and `mdhouse docs` now point agents to one guide, `agents/README.md`.
 - Expanded the planning guide for agents with project file roles, task and wave tracking, and archiving.
 
 ### Fixed

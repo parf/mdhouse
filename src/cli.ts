@@ -29,7 +29,7 @@ const USAGE = `mdhouse — a Markdown workspace on your own machine
   mdhouse exit --all              stop every mdhouse, whatever its port
   mdhouse admin [--port <n>]      print a single-use browser administrator link (terminal only)
   mdhouse admin --list|--revoke   list, or end every, browser administrator session
-  mdhouse docs [--path]           print where the reference is, and the line for a project's AGENTS.md
+  mdhouse docs [--path]           print the guide line for AGENTS.md or CLAUDE.md and its local paths
   mdhouse service install         run it as a systemd --user service, started at login
   mdhouse service uninstall|status
   mdhouse user-add <login>        ask for a login from then on (any user turns it on);
