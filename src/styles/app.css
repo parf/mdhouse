@@ -1215,7 +1215,7 @@ main {
 .md .t-a { margin-top: 3px; color: color-mix(in srgb, var(--qa-answer) 60%, var(--fg-faint)); overflow-wrap: anywhere; }
 .md details.settled:not([open]) :is(.t-q, .t-a) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .md details.settled[open] > summary .t-a { display: none; }
-.md li.item.info { opacity: 0.85; }
+.md li.item.qa-info { opacity: 0.85; }
 .md .more { justify-self: start; margin-top: 2px; font-size: 12px; color: var(--qa-pick); border: 1px solid var(--border);
   border-radius: 10px; padding: 0 8px; background: var(--bg-raised); grid-column: 2; }
 .md details.settled[open] .more { display: none; }

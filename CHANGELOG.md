@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Blue 🔵 notes in Markdown Q&A use the full row width and no longer overlap the next item.
+
 ## 2.3.4 — 2026-11-20
 
 ### Added

@@ -206,7 +206,7 @@ export function qaHtml(r: QaRender) {
         ? `<span class="g g-answered" role="button" data-tip="Answered — click to edit the answer"${actAttrs(a)}>${status === '⁉️' ? '!?' : '?'}</span>`
         : `<span class="g">${glyphButton(st.ignored ? '🚫' : status, tip, a)}</span>`;
       return (
-        `<li class="item settled${status === '🔵' ? ' info' : ''}"${attrs}><details class="settled"><summary>${mark}` +
+        `<li class="item settled${status === '🔵' ? ' qa-info' : ''}"${attrs}><details class="settled"><summary>${mark}` +
         `<span class="t"><span class="t-q">${html}</span>${answer}</span>${tgt(a)}</summary>` +
         `${opts}${threadHtml(item.replies, 'thread', a, CLOSED.includes(status) || status === '🔵')}${settledKids}</details></li>`
       );
