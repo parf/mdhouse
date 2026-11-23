@@ -101,7 +101,15 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
-  - [x] MW.0d.3 Separate Users page with user/project grants, group membership and bans → [№MW.0d.3](../../done/R3.md#MW.0d.3) <a id="MW.0d.3"></a>
+  - [ ] MW.0d.3 Separate Users page with user/project grants, group membership and bans <a id="MW.0d.3"></a>
+    Owner approved 2026-11-18. From a user, show every project and a direct RO/RW choice. From a project, show every user and group with RO/RW choices. Both edit the same grants.
+    Admin-editable group input takes spaces and commas. Show group badges in user lists. Built-in **All Users** membership is automatic and grants no projects on its own.
+    Above the user list, each group shows its member count and filters the list on click. Use 👤 for a user and 👥 for a group.
+    Ban blocks sign-in and current sessions. Authorization updates persist first and call `syncAuth()` in the same server process. Verify direct requests and existing sockets alongside both UI paths.
+    Integrated at `17df80b`, independent security PASS on that exact revision, 1717 tests and types passed. Chrome with real mdhouse APIs and mocked GitHub verified both grant views, filters, active sign-in and project isolation, a live RW→RO change, ban and re-login denial, logout, and owner recovery without GitHub. The server calls `syncAuth()` after durable changes, including socket reauthorization.
+    Groups has a dedicated Settings link, member list and project grants. Grant tables show RO/RW sources, with a separate action to clear an older explicit block. Administrator details are behind ⓘ.
+    Nested projects grant access independently. Verified parent-only, child-only and both grants through Chrome with mocked GitHub, including adding a nested project while Team is active. Server tests cover removal, restart and symlink boundaries. Activation requires a configured GitHub OAuth app and a registered Team administrator.
+    ⚠️ Shipped in v2.3.4; independent review for `a117881`, `b49eb8f` and `467f628` is not recorded.
   - [x] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
   - Verified: approved `b9986d2`, integrated `e5382e1`; exact source/dependency identity and focused pure/mock 65/0. No persistence/routes/OAuth/live; [evidence](../EXECUTION.md#pure-session-history-and-mock-geoip-integrated)
   - [x] MW.0d.2 Session-history persistence foundation cohort: strict versioned pure codec (W3) + protected atomic snapshot store (W1); one combined security review/gate <a id="MW.0d.2"></a>
