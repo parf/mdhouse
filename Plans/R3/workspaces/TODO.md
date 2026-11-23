@@ -101,7 +101,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
-  - [ ] MW.0d.3 Separate Users page with user/project grants, group membership and bans <a id="MW.0d.3"></a>
+  - [x] MW.0d.3 Separate Users page with user/project grants, group membership and bans <a id="MW.0d.3"></a>
     Owner approved 2026-11-18. From a user, show every project and a direct RO/RW choice. From a project, show every user and group with RO/RW choices. Both edit the same grants.
     Admin-editable group input takes spaces and commas. Show group badges in user lists. Built-in **All Users** membership is automatic and grants no projects on its own.
     Above the user list, each group shows its member count and filters the list on click. Use 👤 for a user and 👥 for a group.
@@ -109,7 +109,7 @@ Independent Copy, license and flow-package authoring may proceed before default 
     Integrated at `17df80b`, independent security PASS on that exact revision, 1717 tests and types passed. Chrome with real mdhouse APIs and mocked GitHub verified both grant views, filters, active sign-in and project isolation, a live RW→RO change, ban and re-login denial, logout, and owner recovery without GitHub. The server calls `syncAuth()` after durable changes, including socket reauthorization.
     Groups has a dedicated Settings link, member list and project grants. Grant tables show RO/RW sources, with a separate action to clear an older explicit block. Administrator details are behind ⓘ.
     Nested projects grant access independently. Verified parent-only, child-only and both grants through Chrome with mocked GitHub, including adding a nested project while Team is active. Server tests cover removal, restart and symlink boundaries. Activation requires a configured GitHub OAuth app and a registered Team administrator.
-    ⚠️ Shipped in v2.3.4; independent review for `a117881`, `b49eb8f` and `467f628` is not recorded.
+    Independent review PASS for `f346a38`..`b49eb8f` (`a117881`, `467f628`, `b49eb8f`) bound to `b49eb8f`; gate 63/0 and tsc. Closed by CTO 2026-11-23; shipped in v2.3.4.
   - [x] MW.0d.1 Pure per-user session/history model and mock-only sequential GeoIP; no persistence, routes, proxy config or OAuth activation <a id="MW.0d.1"></a>
   - Verified: approved `b9986d2`, integrated `e5382e1`; exact source/dependency identity and focused pure/mock 65/0. No persistence/routes/OAuth/live; [evidence](../EXECUTION.md#pure-session-history-and-mock-geoip-integrated)
   - [x] MW.0d.2 Session-history persistence foundation cohort: strict versioned pure codec (W3) + protected atomic snapshot store (W1); one combined security review/gate <a id="MW.0d.2"></a>
@@ -477,7 +477,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [ ] MW.13 Schedule a comprehensive UX review of all pages and flows <a id="MW.13"></a>
   Owner priority: navigation and new project views are the next major UX step; Teams and automations design builds on the agreed structure and [№MW.14](#MW.14) data placement.
   - [ ] MW.13.1 Explore navigation and views for mdhouse as a project workspace beyond a Markdown viewer <a id="MW.13.1"></a>
-    - [ ] MW.13.1l Organize Settings and Access around their most common tasks <a id="MW.13.1l"></a>
+    - [x] MW.13.1l Organize Settings and Access around their most common tasks <a id="MW.13.1l"></a>
       - The Settings menu links directly to Projects, project Access, Users, Groups and Instance. Instance includes Personal browser settings. Projects opens the current project and shows file access, startup and useful project actions. Add project expands on demand, including from the project picker.
       - Access uses one directory at a time (Users, Groups, Projects). A selected record shows configured grants and meaningful enforcement limits. An explicit action reveals subjects or projects with no grant.
       - Mode is an instance-wide control in its own Danger zone. Before a switch to Viewer, explain loss of local administrator access and show the CLI recovery command. Team activation keeps owner checks, blockers and typed confirmation.
@@ -486,7 +486,7 @@ No package is done before shared runner/permission checks pass; tracker-free out
       - Three Astra reviews covered task priority, desktop and phone navigation, and editing safeguards. Access at `d839845` passed independent review and scratch Chrome checks for the empty group view, explicit grant save/cancel, draft retention after a conflict, legacy blocks, read-only caps, and browser Back.
       - W2 Settings at `b0935db`: 1718 tests passed, types passed, and scratch Chrome checked desktop and phone navigation, Add project, shared editor settings and the Viewer warning. Two Fable 5.2 reviews requested from W1 are queued while its Agent Bus reader is disconnected.
       - The follow-up Astra review and two direct Fable 5.2 code reviews covered shared navigation, browser author editing and unused code. Settings uses one menu for Users and Groups. The browser name is under Instance and the old Personal tab is removed.
-      - ⚠️ Shipped in v2.3.4; final-SHA review and gate evidence for `f6b8b34`..`6cea22e` is not recorded.
+      - Independent review PASS for `b0935db`..`6cea22e` bound to `6cea22e`; gate 62/0 and tsc. Closed by CTO 2026-11-23; shipped in v2.3.4.
     - [x] MW.13.1a Capture current journeys and compare navigation options → [№MW.13.1a](../../done/R3.md#MW.13.1a) <a id="MW.13.1a"></a>
     - [ ] MW.13.1b Phone UX fixes from the touch journey ([proposal, QA](../QA.md#touch-ux)); order 2, 5, 1 approved; 3 (one Changes destination) and 4 (Files|Index search, IA option B) await the owner <a id="MW.13.1b"></a>
       - [x] MW.13.1b.2 One ⋯ per heading on touch: Edit section · Add below · Add at end · Copy link; desktop unchanged
