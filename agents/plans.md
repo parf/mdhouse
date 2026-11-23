@@ -54,6 +54,9 @@ completed work and follow-up in their own files.
 
 ### `QUESTIONS.md`
 
+- When writing or working from a plan, use `- ❓ <ID> <question>` for each clarification. If you
+  have a recommended answer, put `> 💡👾 <proposal>` below the question. Use pick-one or pick-many
+  options when the user has specific choices.
 - Keep questions that block or shape active work. Move a thread as soon as it is resolved and keep
   an anchored `№ID` link at its original location. Retain the questions file and unresolved items.
 - Continue independent work while an answer is pending. Pause only work that depends on the answer.
@@ -62,12 +65,12 @@ completed work and follow-up in their own files.
 
 ### `DECISIONS.md`
 
-- Read this file with the plan. Record dated, important decisions that extend the task statement.
-  Keep the same ID, the shortest rule, necessary conditions and where it landed. Include a brief
-  reason when it is needed to apply the rule. Link to the design and archived discussion.
+- Read this file with the plan. Group current decisions under headings by topic, feature or
+  contract. Keep one entry per decision with its stable ID, the shortest rule, necessary
+  conditions and where it applies. Link to the design and archived discussion.
 - Quote the owner's exact words when recording an owner decision. Keep routine answers, discussion
-  and history in the resolved archive. An archived answer that changes the task statement also
-  gets an entry in `DECISIONS.md`.
+  and the dated history in the resolved archive. An archived answer that changes the task
+  statement also gets an entry under the relevant topic in `DECISIONS.md`.
 
 ### `RESOLVED.md` or `resolved/`
 

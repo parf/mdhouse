@@ -135,7 +135,8 @@ The first glyph is the stage; the severity stays after it:
 
 ### Where
 
-- Important decision → `DECISIONS.md`: same ID, shortest possible rule; necessary conditions only.
+- Important decision → `DECISIONS.md` under its topic heading. Keep the same ID, the shortest
+  rule and its necessary conditions.
 - Resolved question/thread → `RESOLVED.md` or the project's topic file under `resolved/`.
   Preserve wording, answers, options and history verbatim. See [Plans](plans.md#decisions-and-resolved-questions).
 - Old location → anchored `[№Q3](DECISIONS.md#Q3)` or `[№Q3](RESOLVED.md#Q3)` pointer.
