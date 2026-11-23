@@ -7,7 +7,7 @@ completed work and follow-up in their own files.
 
 | Path | Contents |
 | --- | --- |
-| `README.md` | Stable project knowledge and the current state |
+| `README.md` | Stable, high-level project specification |
 | `TODO.md` | Active execution plan |
 | `DONE.md` | Concise completion log |
 | `FUTURE.md` | Follow-up after the project closes, when needed |
@@ -25,13 +25,12 @@ completed work and follow-up in their own files.
 
 ### `README.md`
 
-- Open with one **Current state** block for the latest owner decisions and where work stands.
-  Other files link to it so there is one current account.
-- Record project purpose, current or target architecture, contracts and invariants, data sources,
-  endpoints, jobs, services, settings, security rules, stable layout and canonical links. State
-  where things live, what can change and what must stay stable.
-- Keep tasks, blockers, acceptance criteria and backlog in the plan. Keep test logs, rejected
-  attempts and decision history with their evidence or archive.
+- Write an executive-level specification of what the project should be. Cover its purpose, scope,
+  expected behavior, major components and important contracts and constraints. Link to the details.
+- Keep it stable during development. Update only the parts affected by a lasting change to the
+  specification. A large project area can have a brief **Current state** note for orientation.
+- Keep tasks, progress, blockers and task-level acceptance criteria in `TODO.md`. Keep test logs,
+  rejected attempts and decision history with their evidence or archive.
 
 ### `TODO.md`
 
@@ -146,7 +145,8 @@ completed work and follow-up in their own files.
 2. Name tasks with stable IDs and write their acceptance criteria before execution.
 3. Update the plan in the same turn as the work. Mark each completed item `[x]` with a commit or
    receipt, or use a status glyph and a short note for work in progress, partial results or blockers.
-4. Update project knowledge and functional docs when a closed task changes them.
+4. Update functional docs when a task changes behavior. Update `README.md` when the specification
+   changes.
 
 ### Close a task or wave
 
@@ -158,8 +158,8 @@ completed work and follow-up in their own files.
 
 ### Close a project
 
-- Review and update `README.md`. Keep the concise `DONE.md`, any needed `FUTURE.md`, and useful
-  snapshots under `done/`.
+- Check `README.md` against the delivered specification and update any lasting differences. Keep
+  the concise `DONE.md`, any needed `FUTURE.md`, and useful snapshots under `done/`.
 - Move the project directory to `Plans/done/<project>/` and verify links to its new location.
 
 ## Collapsible details
