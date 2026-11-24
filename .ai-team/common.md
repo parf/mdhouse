@@ -83,6 +83,21 @@ leaving verified `№ID` pointers.
 - Do not mistake an acknowledgement for completion. Report blockers and continue independent work;
   do not flood peers with repeated messages.
 
+## Report every operational refusal
+
+Workers and reviewers report every actual refusal immediately to both `#md/ceo` and `#md/cto`.
+This includes tool and connector denials, automatic safety-review rejections, session permission
+blocks and access denials. Report it even if independent work can continue or the refusal has been resolved.
+CTO reports their own refusals to CEO. CEO handles refusal and permission discussions with Parf.
+
+Include the task, exact attempted action and target, stated reason, whether it ran or had side
+effects, remaining work and the exact permission still needed. Name the session that needs the
+permission and say whether a prompt is visible. Keep credentials, other secrets and customer data
+out of the report. Record any existing owner GO separately from tool or session permission.
+
+Use the refusing tool's approval path. Retry only after authorization that it accepts. Continue
+independent authorized work and report the verified outcome after the refusal is resolved.
+
 ## Questions flow
 
 1. Worker asks CTO with the task link, current understanding and concrete uncertainty.
