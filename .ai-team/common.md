@@ -22,10 +22,9 @@ Use these forms in plans, questions, decisions, reports and templates. Preserve 
 human answers and quoted history. Keep facts plain, tasks as checkboxes and Q&A choices distinct.
 Verify rendered anchors; add explicit supported anchors when an existing ID does not auto-anchor.
 
-Important decisions → owning `DECISIONS.md`: shortest rule, minimal terms/forms, necessary conditions only.
-Solved questions/full threads → `RESOLVED.md`, IDs and wording verbatim; link decisions to history.
-Old location → anchored linked `№ID` pointer. No discussion/repetition/useless prose in decisions.
-Keep unresolved questions in place and retain the questions file.
+Follow the [planning guide](../agents/plans.md) for current `README.md`, `TODO.md` and `DECISIONS.md`.
+Apply resolved answers in the owning plan and archive full threads and superseded rules before
+leaving verified `№ID` pointers.
 
 ## Shared work rules
 

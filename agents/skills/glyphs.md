@@ -73,8 +73,8 @@ First in a 💬 it is the author.
 |---|---|---|---|
 | `- ( )` / `- (x)` under a ❓ | one of — an option / the picked one | radio; a pick settles the ❓ | radio |
 | `- [ ]` / `- [x]` under a ❓ | any of — an option / a picked one | GFM task items | checkbox |
-| 🌟 | the suggested option (rank 1) | the agent's pick, one per question | highlighted |
-| ⭐ | runner-up (rank 2) | optional | slightly highlighted |
+| 🌟 | recommended option | at most one for pick-one, each recommended option for pick-many | highlighted |
+| ⭐ | runner-up (rank 2) | optional, at most one for pick-one | slightly highlighted |
 
 ## Requests on existing text (not this iteration)
 

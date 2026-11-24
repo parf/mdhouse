@@ -41,10 +41,8 @@ Append; never edit or delete a turn, never touch the user's words. The agent's *
 `💬👾 → …`, `` 💬👾 `<sha>` — … ``, `💬👾 🎫<ID> → …` — are not turns: they never
 reopen an item and never count as its last word.
 
-After resolution: shortest important rule → `DECISIONS.md`; full original question/thread →
-`RESOLVED.md`. Other solved questions go only to `RESOLVED.md`. Preserve IDs and verbatim history;
-leave anchored `№ID` links at the old location. Decisions contain only the rule and necessary
-conditions; no discussion, repetition or useless prose. Unresolved questions stay in place.
+For plan answers, follow the [carry-over steps](resolve-questions/SKILL.md#carry-over). They reconcile
+the active plan and preserve the original questions, answers and anchors in the archive.
 
 ## 🎯 Selected
 
@@ -79,7 +77,7 @@ carry; `✅` without it — the agent, and for the agent the `✅` alone is enou
 | `🎫` | a ticket requested; the user's `💬` names who (`👤name` / `👥team`) | file it where the repo tracks work (the 🎫 is the go-ahead): `gh issue create` on its GitHub — title in English, body the item and its thread, `--assignee` when the name is a login; no tracker → `- [ ] <item> 👤name` in `TODO.md` (the ID: `TODO.md`) → `✅` + `💬👾 🎫<ID> → 👤name` |
 | `⛔` `❌` | blocked / failed | nobody — list them in the report |
 | `✅` `🚫` `⏸️` | closed | nobody |
-| `📌` | a decision — settled, applies | nobody acts on it as a task; follow it in all work; never change it — reply under it |
+| `📌` | a current rule | follow it until the owner approves a replacement or withdrawal; ask about proposed changes in `QUESTIONS.md` |
 
 **Answered** — only the newest `💡` counts (an older one is superseded); when it is still undecided,
 nothing is answered. Otherwise any of:

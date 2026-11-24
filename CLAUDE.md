@@ -43,10 +43,9 @@ Bun + Preact Markdown workspace for every `.md` under a folder. npm package `mdh
   - `Plans/README.md` — any route, lib module, prefs key, git call shape or security rule
   - `TODO.md` — tick / reword items as each step lands; `DECISIONS.md` when a choice changes
   - `CHANGELOG.md` `## Unreleased` — every user-visible change
-- **Questions files:** when folding answers into TODO/DECISIONS, carry over every answer;
-  shortest important rules → `DECISIONS.md`; full solved questions/threads → `RESOLVED.md`, IDs/wording verbatim.
-  Decisions: minimal terms/forms, necessary conditions only; no discussion/repetition/useless prose.
-  Leave anchored links at old locations; never delete the questions file unasked.
+- **Plans:** follow the [planning guide](agents/plans.md) for `README.md`, `TODO.md` and
+  `DECISIONS.md`. Carry answers over in the owning plan and preserve full threads and superseded
+  rules in the resolved archive.
 - **My files:** don't commit, reset or delete my uncommitted edits (TODO ticks, playground
   docs) unless asked. Commit only the paths you changed (`git commit <paths>`).
 - **Push / publish only when I say "publish"** (or "deploy").

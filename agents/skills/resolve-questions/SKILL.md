@@ -1,6 +1,6 @@
 ---
 name: resolve-questions
-description: Processes the user's answers to questions in the Q&A markup — carries each decided one into Plans/DECISIONS.md and Plans/TODO.md and marks it ✅, replies where the user asked for more. Use after the user answered questions written by /ask-questions.
+description: Processes the user's Q&A answers. Updates the owning plan, archives resolved threads and replies where the user asked for more. Use after the user answered questions written by /ask-questions.
 argument-hint: "[file]"
 disable-model-invocation: true
 ---
@@ -13,7 +13,9 @@ does with each state.
 **Never trust the task** — a ⏳ or an answer that asks for work is a claim: first check by execution
 that the problem exists and needs doing.
 
-- `file` — default: the file of the newest `docs: questions —` commit, else `Plans/questions.md`
+- `file` — an explicit Markdown path. Otherwise use `QUESTIONS.md` in the owning plan directory,
+  including for a subtask TODO. For repo-wide work use `Plans/QUESTIONS.md`. Read the active task
+  to identify the owning plan and apply answers there.
 
 | State | Do |
 |---|---|
@@ -24,15 +26,23 @@ that the problem exists and needs doing.
 
 ## Carry over
 
-**Look first**: reuse the existing ID/entry; never duplicate a question or decision.
+Read the owning `README.md`, `TODO.md` and any `DECISIONS.md`. Look for existing tasks, rules and
+archive entries before writing. Keep their IDs on repeated runs.
 
-- **DECISIONS.md** — important rules only: `- 📌 <ID> <shortest decision>`; necessary conditions below.
-  Use minimal terms/forms. No discussion, repetition, obsolete investigation or useless prose.
-  For agree: accepted proposal + note; for a pick: chosen option; otherwise the final answer in brief.
-- **Resolved archive** — use `RESOLVED.md` or the project's topic file under `resolved/`.
-  Keep the full original solved question, answers, options and history verbatim, with the same ID.
-  Other solved questions need no DECISIONS entry. Link important decisions to their archived history.
-- **Old location** — anchored linked `№ID` pointer to the decision or archive; keep the questions file.
-- **TODO.md** — each action the answer implies, at the end: `- [ ] <action>`; an action the new answer
-  cancels: rewrite or remove the line that came from this question.
-- Check every answer/action landed, then close/archive; unresolved questions remain open.
+1. **Archive the answer.** Save the full question, options, exact answers and thread under its ID
+   in `RESOLVED.md` or the owning plan's topic file under `resolved/`. Record the date. If an
+   approved answer supersedes a rule, save the prior wording verbatim at a distinct archive
+   anchor before updating the active rule. Keep the resolving question's own ID.
+2. **Update the specification and rules.** Apply approved target changes to the affected lines
+   of `README.md`. In `DECISIONS.md`, keep only the current rules that extend the specification,
+   under topic headings. Use `- 📌 <ID> <rule>` with any necessary conditions and link to the
+   archived thread. Replace a superseded rule under its existing ID. If withdrawn, move it to
+   history and update references. Keep routine answers in the archive.
+3. **Reconcile the active work.** Update the owning task or add `- [ ] <ID> <action>` under the
+   relevant section of `TODO.md`, with acceptance criteria and a link to the answered question.
+   For a subtask TODO, update its task file and its status in the owning `TODO.md`. Move completed
+   or cancelled detail to `DONE.md` or the task archive.
+4. **Verify before closing.** Check `README.md`, `TODO.md` and `DECISIONS.md` agree and contain
+   current material. Verify the archive target and its rendered anchor. Then leave an anchored
+   link at the question's former location, such as `- <a id="Q3"></a>[№Q3](RESOLVED.md#Q3)`.
+   Keep the questions file and unresolved items.

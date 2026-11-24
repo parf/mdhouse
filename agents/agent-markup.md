@@ -81,7 +81,8 @@ plain GFM: every item is a list item, every reply a quote under it.
   - [ ] lint
 ```
 
-- Always mark what you suggest, at the end of the option: `🌟` — your pick, `⭐` — the runner-up.
+- For pick-one, put `🌟` at the end of your recommended option and `⭐` at the end of the runner-up
+  when offered, at most one of each. For pick-many, put `🌟` at the end of every recommended option.
 - A picked one: `(x)` / `[x]` — set by the person.
 
 ## Issues
@@ -122,15 +123,16 @@ The first glyph is the stage; the severity stays after it:
 
 ### ✅ or 📌
 
-- A decision is the usual `✅` — `- ✅ Q2 …`, in `DECISIONS.md` too.
-- `📌` — only a decision that matters: a rule much other work keeps following (scope, a contract,
-  a hard constraint). Few per file.
+- `✅` closes a question for the resolved archive.
+- `📌` makes a decision stand out in a document. Keep the current rules that extend the
+  specification in `DECISIONS.md`.
 - Facts, inventories, findings are not decisions — plain text, or research notes.
 
 ### ID and reference
 
-- The ID of the question it settles: `⁉️ Q3` → `✅ Q3`. A decision with no question — the next free
-  ID of the same question series (`Q14`; `Q-R14` where questions are `Q-R…`): one series, no clashes.
+- Keep the question's ID in its archived thread, as in `⁉️ Q3` → `✅ Q3`. A current rule can take
+  its originating question's ID. When a later answer replaces the rule, keep the rule's ID and
+  archive the new question under its own ID. Use the next free ID if there is no question.
 - Reference: `№Q3`; in another file `[№Q3](DECISIONS.md#Q3)`.
 
 ### Where
@@ -139,23 +141,20 @@ The first glyph is the stage; the severity stays after it:
   rule and its necessary conditions.
 - Resolved question/thread → `RESOLVED.md` or the project's topic file under `resolved/`.
   Preserve wording, answers, options and history verbatim. See [Plans](plans.md#decisions-and-resolved-questions).
-- Old location → anchored `[№Q3](DECISIONS.md#Q3)` or `[№Q3](RESOLVED.md#Q3)` pointer.
-- Unresolved questions stay; never delete the questions file.
-- `DECISIONS.md`: minimal terms/forms; no discussion, repetition, obsolete investigation or useless prose.
-  Link to the archived thread for history.
+- After verifying the archive target, leave a pointer such as
+  `- <a id="Q3"></a>[№Q3](RESOLVED.md#Q3)` at the old location. Keep the questions file and open items.
 
 ### Decision
 
 ```markdown
-- ✅ Q3 Timeout is 30 s
-  `src/net.ts:12` follows the README.
-  - 🚫 10 s — too short on a cold start
+## Data residency
+
 - 📌 Q6 Personal data never leaves the EU
   Every service, log and backup.
+  [History](RESOLVED.md#Q6)
 ```
 
-- Every rejected alternative is a `- 🚫 <alternative> — <why>` line under it — never in the prose
-  ("Alternative X was rejected" → `- 🚫 X — <why>`).
+- In archived history, `- 🚫 <alternative> — <why>` marks a rejected alternative.
 - Follow decisions; proposals/questions go in `QUESTIONS.md`, linked to the decision.
 
 ## 🎯 Selected
@@ -295,15 +294,13 @@ A decision that matters — a rule much other work keeps following. A usual deci
 ```markdown
 - 📌 Q-R1 `/p/F/L/NJ/` — keep the 301 to `/p/F/L/`
   The name page filters NJ people itself.
-  - 🚫 410 — the 301 carries the NJ page's weight
+  [History](RESOLVED.md#Q-R1)
 - 📌 Q-R9 ClickHouse down → 503 + `Retry-After`
 ```
 
-- `- 🚫 …` under it — a rejected alternative, muted
-- an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
-- important resolved rule → `DECISIONS.md`, same ID, shortest form; full question/options/thread → resolved archive
-- old location keeps an anchored `№ID` link; decisions contain no discussion or useless prose
-- never folded, never waiting on anyone; 💬 under it — a reply
+- the ID (`Q-R1`) is its anchor; `№Q-R1` links to it
+- see [Plans](plans.md#decisions-and-resolved-questions) for current decisions and their archives
+- a 📌 stays expanded on the page
 
 ### 3. Suggestions — pick one, or several
 
@@ -324,7 +321,7 @@ On GitHub `[ ]` is a checkbox and `(x)` reads as text — the pick is still plai
   - [ ] `Plans/done/CHANGELOG-beta.md`
 ```
 
-- 🌟 = the suggested one (the agent's pick); ⭐ = runner-up, optional
+- Pick-one takes one 🌟 and one optional ⭐ at most. Pick-many takes 🌟 on each recommended option.
 - a click on `( )` writes `(x)` and clears the others — my answer: the question shows answered
   (green ?); `✅` is set by the agent once it carried the pick over
 - a click on that answered mark undoes the pick: `(x)` → `( )` — unanswered again

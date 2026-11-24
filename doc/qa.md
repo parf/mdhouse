@@ -76,20 +76,20 @@ An issue id first in the claim (`- 🔴 D1 …`) is the item's anchor: `issues/2
 
 ## Decisions — 📌
 
-A decision that matters — a rule much other work keeps following. A usual decision is `✅`.
+Use 📌 to make a decision stand out on the page. Use ✅ for a resolved question in the archive.
 
 ```markdown
 - 📌 Q-R1 `/p/F/L/NJ/` — keep the 301 to `/p/F/L/`
   The name page filters NJ people itself.
-  - 🚫 410 — the 301 carries the NJ page's weight
+  [History](RESOLVED.md#Q-R1)
 - 📌 Q-R9 ClickHouse down → 503 + `Retry-After`
 ```
 
-- `- 🚫 …` under it (or under a `✅`) — a rejected alternative, muted, not counted
-- an id first (`Q-R1`) — its anchor; `№Q-R1` links to it
-- important resolved rule → `DECISIONS.md`, same ID, shortest form; full question/options/thread → `RESOLVED.md`
-- old location keeps an anchored `№ID` link; decisions contain no discussion or useless prose
-- never folded, never waiting on anyone; 💬 under it — a reply
+- `- 🚫 …` under a decision renders a muted alternative in an archived thread.
+- `Q-R1` is the rule's anchor. `№Q-R1` links to it.
+- Keep current rules in `DECISIONS.md` under topic headings and link to their archived history.
+  See the [planning guide](../agents/plans.md#decisions-and-resolved-questions).
+- A 📌 stays expanded. Open a question to propose a change to it.
 
 ## Pick one, or several
 
@@ -102,7 +102,7 @@ The markup decides: `( )` / `(x)` — one of (radio), `[ ]` / `[x]` — any of (
   - ( ) keep `7777`
 ```
 
-- 🌟 = the suggested one (the agent's pick); ⭐ = runner-up, optional
+- Pick-one takes at most one 🌟 and one ⭐. Pick-many takes 🌟 on each recommended option.
 - a click on `( )` writes `(x)` and clears the others — my answer: the question shows answered
   (green ?); `✅` is set by the agent once it carried the pick over
 - a click on that answered mark undoes the pick: `(x)` → `( )` — unanswered again
@@ -226,10 +226,12 @@ An answer block after its question (blank lines between) joins the question's qu
 
 How a plan gets worked through with an agent (Claude Code or alike), in a folder served `--rw`:
 
-1. **Ask** — the agent writes its open questions into a plan file, one `- ❓` item each, with a
-   `💡` or `( )` options for what it proposes
+1. **Ask** — the agent writes each open question as `- ❓ <ID> …` in the owning plan's
+   `QUESTIONS.md`, with a `💡` proposal or choices when useful
 2. **Answer** — you open the file in mdhouse, click each ❓ and answer; Ctrl+Shift+Enter saves
    and opens the next open one
-3. **Decide** — shortest important rules → `DECISIONS.md`; solved questions/full history → `RESOLVED.md`;
-   preserve IDs and verbatim answers; old locations keep anchored links
-4. **Track** — the work goes into `TODO.md` as checkboxes, one per decision, ticked as each lands
+3. **Decide** — the agent archives the thread verbatim, verifies the anchor and leaves a link in
+   `QUESTIONS.md`. It updates `README.md` when the target changes and `DECISIONS.md` for current
+   rules that extend the specification
+4. **Track** — the agent updates tasks in `TODO.md` with stable IDs, acceptance criteria and a link
+   to the answer

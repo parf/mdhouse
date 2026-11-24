@@ -3,6 +3,10 @@
 Use `Plans/<project>/` for active project planning. Keep project knowledge, active work,
 completed work and follow-up in their own files.
 
+Read `README.md`, `TODO.md` and `DECISIONS.md` together. After an approved change, reconcile all
+three before closing the work. Keep current specifications, tasks and rules in those files. Move
+completed work and superseded text to their archives.
+
 ## Files
 
 | Path | Contents |
@@ -12,7 +16,7 @@ completed work and follow-up in their own files.
 | `DONE.md` | Concise completion log |
 | `FUTURE.md` | Follow-up after the project closes, when needed |
 | `QUESTIONS.md` | Open questions, when needed |
-| `DECISIONS.md` | Important decisions that extend the task statement, when needed |
+| `DECISIONS.md` | Current rules that extend the specification, when needed |
 | `RESOLVED.md` or `resolved/` | Resolved questions and decision history |
 | `sprint/` | Sub-plans for large tasks, when needed |
 | `reports/` | Receipts and proof of execution |
@@ -28,7 +32,8 @@ completed work and follow-up in their own files.
 - Write an executive-level specification of what the project should be. Cover its purpose, scope,
   expected behavior, major components and important contracts and constraints. Link to the details.
 - Keep it stable during development. Update only the parts affected by a lasting change to the
-  specification. A large project area can have a brief **Current state** note for orientation.
+  specification. Apply an approved decision that changes the target to those lines in the same
+  update. A large project area can have a brief **Current state** note for orientation.
 - Keep tasks, progress, blockers and task-level acceptance criteria in `TODO.md`. Keep test logs,
   rejected attempts and decision history with their evidence or archive.
 
@@ -39,6 +44,9 @@ completed work and follow-up in their own files.
 - Aim for about 200 lines. Split large work into `sprint/` files and move finished detail to
   `DONE.md` or `done/` as it closes.
 - Link to project knowledge, evidence and future work from their relevant tasks.
+- When one TODO item needs its own plan, move its scope, steps and acceptance criteria to a
+  single file such as `A.1-search-filters.md`. Keep one checkbox with the same ID and a link to
+  the file in `TODO.md`. Record project-level decisions in the owning `DECISIONS.md`.
 
 ### `DONE.md`
 
@@ -57,36 +65,44 @@ completed work and follow-up in their own files.
 - When writing or working from a plan, use `- ❓ <ID> <question>` for each clarification. If you
   have a recommended answer, put `> 💡👾 <proposal>` below the question. Use pick-one or pick-many
   options when the user has specific choices.
-- Keep questions that block or shape active work. Move a thread as soon as it is resolved and keep
-  an anchored `№ID` link at its original location. Retain the questions file and unresolved items.
+- Use the owning plan's `QUESTIONS.md` by default, including when working on a subtask TODO. Keep
+  questions that block or shape active work. Archive resolved threads and keep an anchored `№ID`
+  link at their original location. Retain the questions file and unresolved items.
 - Continue independent work while an answer is pending. Pause only work that depends on the answer.
 - Run owner Q&A with [ask-questions](skills/ask-questions/SKILL.md) and
   [resolve-questions](skills/resolve-questions/SKILL.md).
 
 ### `DECISIONS.md`
 
-- Read this file with the plan. Group current decisions under headings by topic, feature or
-  contract. Keep one entry per decision with its stable ID, the shortest rule, necessary
-  conditions and where it applies. Link to the design and archived discussion.
-- Quote the owner's exact words when recording an owner decision. Keep routine answers, discussion
-  and the dated history in the resolved archive. An archived answer that changes the task
-  statement also gets an entry under the relevant topic in `DECISIONS.md`.
+- Use 📌 so decisions stand out on the page. Keep only the latest approved rules in
+  `DECISIONS.md`, grouped by topic, feature or contract. Record important details and constraints
+  that extend the high-level specification. Keep each rule short with its stable ID, necessary
+  conditions and a link to the archived thread.
+- When the owner approves a replacement, save the prior wording in the archive before updating
+  the current rule in place under its existing ID. Keep the new question's ID in the archive and
+  link it to the updated rule. For a withdrawn rule, archive it and update references to point
+  to its history.
+- Apply changes to the high-level specification in `README.md` and reconcile affected tasks in
+  `TODO.md` in the same update.
 
 ### `RESOLVED.md` or `resolved/`
 
-- Archive solved questions and routine decisions in `RESOLVED.md`. If the archive grows, use
-  `resolved/<topic>.md` or `resolved/owner-answers-YYYYMMDD.md` for individual topics or sessions.
+- Archive solved questions, routine decisions and prior versions of rules in `RESOLVED.md`. If the
+  archive grows, use `resolved/<topic>.md` or `resolved/owner-answers-YYYYMMDD.md` for topics or sessions.
 - Preserve IDs, original questions, options, answers and full threads verbatim. Record the date
-  and where each answer was applied. Link important decisions back to their history.
+  and where each answer was applied. Give prior versions distinct archive anchors and link
+  important decisions back to their history.
 
 ### Markup and links
 
-- Follow [agent markup](agent-markup.md). Start each question or decision with its glyph and ID.
-  Use ❓ for open questions and ✅ or 📌 for decisions. Use `( )` to pick one option and `[ ]` to
-  pick several. Use the established reply markup when quoting a person.
-- Give items stable anchors. Verify links in the rendered document and use an explicit anchor like
-  `<a id="A.1"></a>` where needed. Keep anchored links at moved items, for example
-  `[№Q3](RESOLVED.md#Q3)`.
+- Follow [agent markup](agent-markup.md). Use ❓ for open questions, 📌 for current decisions and
+  ✅ for resolved questions. For pick-one `( )`, put 🌟 at the end of the recommended option and
+  ⭐ at the end of the runner-up when offered, at most one of each. For pick-many `[ ]`, put 🌟 on
+  each recommended option and use 🌟 as the only recommendation marker. Leave all choices blank
+  for the person to pick.
+- Give items stable anchors. Write and verify the archive target before replacing an item with a
+  pointer, for example `- <a id="Q3"></a>[№Q3](RESOLVED.md#Q3)`. Check the rendered anchors and
+  incoming and outgoing links when moving files or splitting an archive.
 
 ## Supporting files
 
@@ -161,9 +177,11 @@ completed work and follow-up in their own files.
 
 ### Close a project
 
-- Check `README.md` against the delivered specification and update any lasting differences. Keep
-  the concise `DONE.md`, any needed `FUTURE.md`, and useful snapshots under `done/`.
-- Move the project directory to `Plans/done/<project>/` and verify links to its new location.
+- Check delivery against `README.md` and `DECISIONS.md`. Keep any unresolved gap active in
+  `TODO.md` until it is addressed or the owner approves a change in scope. Keep the concise
+  `DONE.md`, any needed `FUTURE.md`, and useful snapshots under `done/`.
+- Move the project directory to `Plans/done/<project>/` and verify incoming and outgoing links,
+  including anchors.
 
 ## Collapsible details
 
