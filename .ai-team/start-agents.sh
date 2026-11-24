@@ -8,6 +8,7 @@ run=0
 roles=0
 stop=0
 kitty_socket=${KITTY_LISTEN_ON:-}
+kitty_bg_image=${KITTY_BG_IMAGE:-$HOME/.config/kitty/bg/md.png}
 
 usage() {
     cat <<'EOF'
@@ -110,6 +111,7 @@ elif [[ -z $kitty_socket ]]; then
 elif kitty "${kitty_args[@]}" ls >/dev/null 2>&1; then
     printf 'Kitty: remote control ready (%s).\n' "$kitty_socket"
     kitty_ready=1
+    [[ -r $kitty_bg_image ]] && kitty "${kitty_args[@]}" set-background-image --all --layout centered "$kitty_bg_image" >/dev/null 2>&1 || true
 else
     printf 'Kitty: socket unavailable (%s); check Kitty and remote control, or pass --to KITTY_SOCKET.\n' "$kitty_socket"
 fi
@@ -238,6 +240,7 @@ if (( ! kitty_ready )); then
     echo 'Opening detached Kitty; the team will start inside it.'
     exec env -u KITTY_LISTEN_ON MDHOUSE_KITTY_BOOTSTRAPPED=1 kitty --detach \
         --listen-on "$new_socket" -o allow_remote_control=socket-only \
+        -o background_image="$kitty_bg_image" -o background_image_layout=centered \
         --directory "$repo_dir" "$team_dir/start-agents.sh" --run
 fi
 
