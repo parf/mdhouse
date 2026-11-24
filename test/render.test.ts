@@ -311,7 +311,7 @@ describe('Q&A items', () => {
     const { html } = await render('- ✅ done\n  > 💬 👤parf yes\n\n- ❓ q\n  > 💬 👤parf a\n\n- 🔵 not reviewed\n', ctx);
     expect(html.match(/<details class="settled">/g)).toHaveLength(3);
     expect(html).toContain('g-answered');
-    expect(html).toContain('class="item settled info"');
+    expect(html).toContain('class="item settled qa-info"');
   });
 
   test('options are radios / checkboxes with their lines, not counted as tasks; a plain [ ] still is', async () => {
