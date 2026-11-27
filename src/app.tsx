@@ -41,6 +41,8 @@ import { DirPage } from './ui/DirPage';
 import { ancestors } from './ui/tree-model';
 import { dirUrl, editUrl, fileUrl as pageUrl, routeOf } from './lib/urls';
 import { IconGear, IconPanel, IconSearch } from './ui/icons';
+import { canOpenEditor, wantsEdit } from './ui/edit-page';
+import { loadDraft } from './ui/edit-source';
 
 const STATES: SidebarState[] = ['off', 'compact', 'open'];
 /** The width at which the sidebar becomes a drawer (see `max-width: 720px` in app.css). */
@@ -193,6 +195,17 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const choose = chooseAt?.get('choose') ?? null;
   /** The Run Flow page: `?flow=<from>` on a project's address. */
   const flowAt = route.kind === 'dir' && !route.dir ? flowFrom(full.includes('?') ? full.slice(full.indexOf('?')) : '') : null;
+  /** The editor page: `?edit` on a document's address. Its code is loaded on the first visit, not with the app. */
+  const editAt = route.kind === 'file' && wantsEdit(full.includes('?') ? full.slice(full.indexOf('?')) : '');
+  const [EditorPage, setEditorPage] = useState<typeof import('./ui/EditorPage').default | null>(null);
+  const [editorLoadError, setEditorLoadError] = useState('');
+  useEffect(() => {
+    if (editAt && !EditorPage)
+      import('./ui/EditorPage').then(
+        (m) => setEditorPage(() => m.default),
+        (err: Error) => setEditorLoadError(`The editor did not load: ${err.message}`),
+      );
+  }, [editAt]);
 
   /** Navigate without a page load. */
   const go = useCallback((url: string, line?: number) => {
@@ -291,6 +304,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
   // Document load, keyed on the URL.
   const loadSeq = useRef(0);
+  /** The address the document on the page was loaded for. */
+  const docLoadedFor = useRef('');
   const metadataSeq = useRef(0);
   const contentCommit = useRef(0);
   useEffect(() => {
@@ -314,6 +329,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
           return;
         }
         ++contentCommit.current;
+        docLoadedFor.current = docPath;
         setDoc(payload);
         setDocError(null);
         setRootId(payload.root);
@@ -717,13 +733,32 @@ function App({ entry: first }: { entry: AdminEntry }) {
       ? editUrl(options.editScheme, `${docRoot.path}/${doc.rel}`)
       : null;
 
+  /**
+   * The document the editor page was opened for. Decided once on entry, from the document, its live
+   * access and a kept draft; a document it does not open for goes to its own page. Access lost while
+   * it is open leaves it open, read-only, with the text.
+   */
+  const [editEntry, setEditEntry] = useState<string | null>(null);
+  const editReady = editAt && optionsLoaded && !loadingDoc && !!doc && !!docRoot && docLoadedFor.current === docPath;
+  useEffect(() => {
+    if (!editAt) return setEditEntry(null);
+    if (!editReady || !doc || editEntry === docPath) return;
+    if (canOpenEditor(doc, { writable: liveWritable(doc, docRoot), viewer, draft: !!loadDraft(`${doc.root}/${doc.rel}`) })) setEditEntry(docPath);
+    else {
+      history.replaceState(null, '', doc.url);
+      setPath(location.pathname + location.search);
+    }
+  }, [editAt, editReady, docPath]);
+  const editing = editAt && editEntry === docPath && !!doc;
+
   if (authChanged) return <p role="status">Updating access…</p>;
 
   return (
     <ViewerContext.Provider value={viewer}>
     <TeamContext.Provider value={!!options.team}>
     <div class="app" data-sidebar={sidebar}>
-      {sidebar === 'off' && (
+      {/* On a phone the editor page's own header is the only one: the strip would repeat the file name. */}
+      {sidebar === 'off' && !(phone && editing) && (
         <div class="topstrip">
           <button class="icon-btn" onClick={cycle} title="Show sidebar (Ctrl+B)" aria-label="Show sidebar">
             <IconPanel />
@@ -922,6 +957,22 @@ function App({ entry: first }: { entry: AdminEntry }) {
             view="recent"
             go={go}
           />
+        ) : editAt && docError === null ? (
+          editing && EditorPage && doc ? (
+            <EditorPage
+              p={`${doc.root}/${doc.rel}`}
+              docUrl={doc.url}
+              writable={liveWritable(doc, docRoot)}
+              revision={`${doc.mtime}:${doc.size}`}
+              onSaved={refreshDoc}
+              go={go}
+              gear={pageGear}
+            />
+          ) : editorLoadError ? (
+            <p class="settings-error">{editorLoadError}</p>
+          ) : (
+            <div class="spinner" />
+          )
         ) : (
         <Doc
           chips={doc ? chipsFor(doc.root, doc.rel) : null}
@@ -958,7 +1009,8 @@ function App({ entry: first }: { entry: AdminEntry }) {
         )}
       </main>
 
-      {phone && (
+      {/* The editor page fills the screen in Edit and Preview alike; Back leaves it. */}
+      {phone && !editing && (
         <PhoneNav
           rootId={rootId}
           go={go}

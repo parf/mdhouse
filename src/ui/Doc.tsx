@@ -3,13 +3,14 @@ import { fetchesHistory, gitStateOf, heldConfirmed, heldFor, holdAnswer, showsHi
 import { GitStateBadge } from './GitStateBadge';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { safeHtml } from './safe-html';
-import { mermaidImage } from './mermaid-image';
+import { renderMermaid } from './mermaid-render';
 import { loadWide, saveWide } from './wide';
 import { api, type DocPayload, type DocAuthors, type HistoryPayload } from './api';
 import type { Mark } from '../lib/prefs';
-import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconCode, IconDoc, IconEye, IconEyeOff, IconBus } from './icons';
+import { IconStar, IconMute, IconLink, IconClock, IconGit, IconGitMark, IconWide, IconDiff, IconDiffDoc, IconEdit, IconCode, IconEye, IconEyeOff, IconBus } from './icons';
 import { AgentBusPanel, type AbState } from './AgentBusPanel';
 import { useViewer } from './viewer';
+import { canOpenEditor, editPageUrl } from './edit-page';
 import { fileSize, timeAgo } from './format';
 import { Ago } from './Ago';
 import { Diff, DiffHead } from './Diff';
@@ -82,62 +83,6 @@ interface Props {
   writable: boolean;
 }
 
-/**
- * Mermaid is ~5 MB bundled, so it is deliberately kept out of the app bundle: the server
- * publishes mermaid's own ESM build under /vendor/mermaid/, and this import goes through a
- * variable so the bundler cannot resolve it statically and inline it. A document with no
- * diagram never pays for any of it.
- */
-const MERMAID_URL = '/vendor/mermaid/mermaid.esm.min.mjs';
-let mermaidModule: Promise<typeof import('mermaid')> | null = null;
-
-let mermaidRenderId = 0;
-
-/** Renders only blocks still owned by this live body generation after every async boundary. */
-async function renderMermaid(container: HTMLElement, current: () => boolean): Promise<void> {
-  const blocks = container.querySelectorAll<HTMLElement>('pre.mermaid:not([data-rendered])');
-  const belongs = (block: HTMLElement) => current() && container.isConnected && block.isConnected && container.contains(block);
-  if (!blocks.length || !current()) return;
-  const renderId = ++mermaidRenderId;
-  const fail = (block: HTMLElement, source: string, error: unknown) => {
-    if (!belongs(block)) return;
-    block.dataset.rendered = 'error';
-    block.title = String(error);
-    block.textContent = `Unable to render diagram.\n${source}`;
-  };
-
-  try {
-    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-    mermaidModule ??= import(/* @vite-ignore */ MERMAID_URL) as Promise<typeof import('mermaid')>;
-    const { default: mermaid } = await mermaidModule;
-    if (!current() || !container.isConnected) return;
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: dark ? 'dark' : 'default',
-      securityLevel: 'strict',
-      // Directives in a diagram cannot change these.
-      secure: ['secure', 'securityLevel', 'startOnLoad', 'maxTextSize', 'suppressErrorRendering', 'maxEdges', 'theme', 'themeCSS', 'themeVariables', 'fontFamily', 'altFontFamily', 'dompurifyConfig'],
-    });
-
-    for (const [i, block] of blocks.entries()) {
-      if (!belongs(block)) continue;
-      const source = block.textContent ?? '';
-      try {
-        const { svg } = await mermaid.render(`mmd-${renderId}-${i}`, source);
-        if (!belongs(block)) continue;
-        const image = await mermaidImage(svg);
-        if (!belongs(block)) continue;
-        block.replaceChildren(image);
-        block.dataset.rendered = '1';
-      } catch (err) {
-        fail(block, source, err);
-      }
-    }
-  } catch (err) {
-    for (const block of blocks) fail(block, block.textContent ?? '', err);
-  }
-}
-
 export function Doc({
   doc,
   metadataRevision = null,
@@ -173,24 +118,10 @@ export function Doc({
   /** An HTML file: its source instead of the page it renders. */
   const [source, setSource] = useState(false);
   useEffect(() => setSource(false), [doc?.url]);
-  /**
-   * The whole source in the editor, in place of the page. Its code is loaded on the first Edit, not
-   * with the page. Leaving the document closes it; an unsaved draft stays for when the reader comes back.
-   */
-  const [sourceOpen, setSourceOpen] = useState(false);
-  const [Editor, setEditor] = useState<typeof import('./DocEditor').default | null>(null);
-  const [editorError, setEditorError] = useState('');
-  useEffect(() => setSourceOpen(false), [doc?.url]);
-  const openEditor = () => {
-    setSourceOpen(true);
-    if (!Editor)
-      import('./DocEditor').then(
-        (m) => setEditor(() => m.default),
-        (err: Error) => setEditorError(`The editor did not load: ${err.message}`),
-      );
-  };
-  const kept = doc?.kind === 'md' && !sourceOpen ? loadDraft(`${doc.root}/${doc.rel}`) : null;
-  const canEdit = !!doc && doc.kind === 'md' && !doc.reference && (writable || !!kept);
+  /** The whole source is edited on the editor page (`?edit`); a draft kept for this document is offered there. */
+  const kept = doc?.kind === 'md' ? loadDraft(`${doc.root}/${doc.rel}`) : null;
+  const canEdit = canOpenEditor(doc, { writable, viewer: useViewer(), draft: !!kept });
+  const editPage = doc ? editPageUrl(doc.url) : '';
   const phone = usePhone();
   const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => setMoreOpen(false), [doc?.url, phone]);
@@ -1159,16 +1090,10 @@ export function Doc({
     </a>
   );
   const editBtn = canEdit && (
-    <button
-      type="button"
-      class="icon-btn doc-src-btn"
-      aria-pressed={sourceOpen}
-      onClick={() => (sourceOpen ? setSourceOpen(false) : openEditor())}
-      title={sourceOpen ? 'Back to the page — unsaved text is kept' : 'Edit the whole source here'}
-    >
-      {sourceOpen ? <IconDoc size={15} /> : <IconCode size={15} />}
-      <span class="lbl">{sourceOpen ? 'Page' : 'Edit source'}</span>
-    </button>
+    <a class="icon-btn doc-src-btn" href={editPage} onClick={(e) => follow(e, () => onNavigate(editPage))} title="Edit the whole source">
+      <IconCode size={15} />
+      <span class="lbl">Edit</span>
+    </a>
   );
   /** The file's uncommitted state: one chip that opens Changes scoped to this file, where it is reviewed and committed. */
   const changesUrl = rootInRepo && rootDirUrl ? `${rootDirUrl}?git=changes&file=${encodeURIComponent(doc.rel)}` : null;
@@ -1493,28 +1418,18 @@ export function Doc({
       {view === 'doc' && md && <QaStrip body={body} html={doc.html} url={doc.url} />}
       {view === 'doc' && !md && !byLines && <FileView doc={doc} />}
       {view === 'doc' && doc.tooBig && byLines && <FileView doc={doc} />}
-      {kept && (
+      {kept && canEdit && (
         <p class="doc-draft-note">
           Unsaved edits of this document are kept in this browser.{' '}
-          <button type="button" class="doc-edit-btn" onClick={openEditor}>
+          <a class="doc-edit-btn" href={editPage} onClick={(e) => follow(e, () => onNavigate(editPage))}>
             Edit to continue
-          </button>
+          </a>
         </p>
-      )}
-      {sourceOpen && editorError && <p class="settings-error">{editorError}</p>}
-      {sourceOpen && Editor && (
-        <Editor
-          p={`${doc.root}/${doc.rel}`}
-          writable={writable && !doc.reference}
-          revision={`${doc.mtime}:${doc.size}`}
-          onSaved={() => onReload?.()}
-          onClose={() => setSourceOpen(false)}
-        />
       )}
       <div
         ref={body}
         class={md ? `md${overlaid ? ' marked' : ''}${answerable ? ' qa-rw' : ''}` : 'code-file'}
-        hidden={sourceOpen || view === 'patch' || (view === 'marked' && diff?.current === false) || (!md && (!byLines || !!doc.tooBig))}
+        hidden={view === 'patch' || (view === 'marked' && diff?.current === false) || (!md && (!byLines || !!doc.tooBig))}
         dangerouslySetInnerHTML={{ __html: safeBody }}
       />
     </article>

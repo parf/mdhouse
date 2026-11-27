@@ -541,6 +541,13 @@ describe('Team in a running server', () => {
       expect(await r.text()).not.toContain('b note');
     }
     expect((await w.api(alice, `/api/doc?p=${w.b.id}/note.md`)).status).toBe(missing.status);
+    // the editor's Preview: her granted project renders; another project is the same refusal as a missing document
+    const preview = (rootId: string) =>
+      w.api(alice, '/api/preview', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ p: `${rootId}/note.md`, text: '# draft' }) });
+    expect((await preview(w.a.id)).status).toBe(200);
+    const refused = await preview(w.b.id);
+    expect(refused.status).toBe(404);
+    expect(await refused.text()).not.toContain('draft');
     // a bare request falls to a project she may see, never the first one served
     const dflt = await (await w.api(alice, '/api/tree')).json();
     expect(dflt.files.every((f: { rel: string }) => !f.rel.includes('b note'))).toBe(true);

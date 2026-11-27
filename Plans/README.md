@@ -239,7 +239,7 @@ contents list, so a heading link and its contents entry cannot disagree.
 - Automation (MW.11): `src/lib/automation.ts` — `parseRegistration` (strict `.mdhouse/automation/<id>.json`), `Automation.handle({from, schedule, body})` (the bus `schedule` stamp from `#bus` is the only provenance; body `{v:1, op:'run', project, registration}`; replay by `<scheduleId>:<slot>`; overlap skip, 5 min interval, 10/day, 3 failures stop; every firing asks `deps.approval`), `RunIndex` (`automation/<folderKey>/<id>/state|hist/…`, 200 kept); `src/lib/automation-registry.ts` — the jailed loader (`runnableFlow` packages only, 16 KiB, plain files in the project); `src/lib/automation-state.ts` — `busStore` (JSON values in the KV of the instance's `#mdhouse` record, [№DATA-W2](R3/workspaces/DECISIONS.md#DATA-W2)), `Approvals` (`auto/approval/<folderKey>/<id>` `{hash, scheduleId, at, by}`; `check` fail-closed), `folderKey` = sha256(root path)[0:16]. Wired in `serve()`: `bus.control({topic:'schedule', lock:'auto'})` (Viewer → `viewer`); a schedule body's `project` = `folderKey`, mapped by `AutoDeps.project` to the served root (none → `unregistered`); start = `startFlowRun` (trigger schedule), audit → journal + agent log, notify → `bus.tell`
 - `mdhouse docs [--path]` (`src/cli.ts`, pure parts in `src/lib/docs-cmd.ts`) prints a line for `AGENTS.md` or `CLAUDE.md` with the GitHub raw URL of `agents/README.md`, then the installed path and local `/api/raw?p=_mdhouse/README.md`. It runs before any daemon or prefs write.
 - Serving: `AgentBus.control` — while on and `control` ≠ `off`, holds lock `ctl` on its own record (TTL 60 s, extended every 20 s) and writes a per-process nonce to KV `ctl.owner`; a foreign nonce or a failed extend stops serving (one agent name = one lock holder); while `ctl` is held under a foreign nonce no process takes it, even where the daemon would grant it again to the same name (agent-busd 1.0.15 does not). Shutdown releases it (≤ 1.5 s)
-- Tabs: `src/lib/ws-tabs.ts` — `/ws` hello carries `clientId` + `resume` (HMAC, per-process key); `/ws?client=<id>.<proof>` keeps the id unless a live socket holds it; client frames `ping`, `{t:'at', page, title, busy}`; server frame `{t:'open', url}` to one socket. Client: `src/ui/tab-presence.ts` (sessionStorage `mdhouse.client`; DocEditor unsaved → busy; `openTarget` same-origin path only)
+- Tabs: `src/lib/ws-tabs.ts` — `/ws` hello carries `clientId` + `resume` (HMAC, per-process key); `/ws?client=<id>.<proof>` keeps the id unless a live socket holds it; client frames `ping`, `{t:'at', page, title, busy}`; server frame `{t:'open', url}` to one socket. Client: `src/ui/tab-presence.ts` (sessionStorage `mdhouse.client`; EditorPage unsaved → busy; `openTarget` same-origin path only)
 
 ### Agent skills read the page's states
 
@@ -735,8 +735,20 @@ existing admission/jail/reference/RW checks, serialized file queue and fresh raw
 Registry.writeFile writes verbatim atomically with final live access/path checks and mode preservation.
 IO failure keeps the old file. No renderer actToken is needed for app-chrome Save; authored content grants nothing.
 
-In-app Edit is available on current writable Markdown outside references. Save/Ctrl+S uses the raw snapshot hash;
-Close keeps the draft, explicit Discard asks first. Draft/base are kept per document in memory and guarded
+Edit opens the editor page `<doc>?edit` (`src/ui/EditorPage.tsx`, lazy; `src/ui/edit-page.ts` decides entry) — the
+only full-source editing surface. It opens on Markdown outside references, not in Viewer mode, when writable now or
+with a kept draft (read-only); otherwise the address becomes the document's. Entry is decided once: access lost
+while open leaves it open, read-only. Header: Back to document, file name, state, Preview, Save. `src/ui/md-styling.ts`
+styles headings/links in place and hides `#`, emphasis, inline-code and link syntax off the selection's lines
+(decorations only; code blocks, tables and HTML stay source). Ticks, Q&A and section inserts stay on the document page.
+POST `/api/preview` `{p,text}` — bare `read()`, POST + sameOrigin, exact shape 400, 5,000,000 bytes 413, `sourceAt`
+(the `/api/source` read gate: jail, admission, Team grant, `.md`, no `.git`) 404 — renders the text as `/api/doc`
+would (no BOM, legacy converted, front matter dropped, `renderContext(loc)`) with `render(…, {controls: false})`:
+`{html, hasMermaid}`, no actToken, no `data-act`; no write, no file read, no-store. Preview shows it via `safeHtml`
+with no action handlers, Mermaid through the same constrained renderer (`src/ui/mermaid-render.ts`); a newer
+toggle supersedes an older answer; back in the editor the caret, selection and scroll are kept.
+Save/Ctrl+S (also in Preview) uses the raw snapshot hash and stays on the page; leaving keeps the draft, explicit
+Discard asks first. Draft/base are kept per document in memory and guarded
 localStorage; navigation/reload and stale/IO/RO failures retain text. Live access loss disables save. Dirty edits
 are never overwritten by watcher refresh; the page shows an external-change note. LF/CRLF/BOM/final-newline and
 legacy forms retain source fidelity; unsupported input is explicit. Existing document diff/history/commit and

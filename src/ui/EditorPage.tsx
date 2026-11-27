@@ -1,29 +1,39 @@
 /**
- * The whole source of a Markdown document in CodeMirror 6: the text as it is on disk, saved back
- * exactly (its line endings, BOM and final newline). Close keeps the draft; Discard drops it after a
- * confirmation. A save is refused when the file changed since the draft's base — the draft stays.
+ * The editor page (`<doc>?edit`): the whole source of a Markdown document in CodeMirror 6, styled in
+ * place, filling the page. The text is saved back exactly (its line endings, BOM and final newline).
+ * Leaving keeps the draft; Discard drops it after a confirmation. A save is refused when the file
+ * changed since the draft's base — the draft stays. Preview shows the unsaved text rendered, read-only;
+ * back in the editor the caret, selection and scroll are where they were.
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Compartment, EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
+import { EditorView, keymap, drawSelection, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { HighlightStyle, LanguageSupport, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { markdownLanguage } from '@codemirror/lang-markdown';
 import { ApiError, api } from './api';
 import { dropDraft, forEditor, fromEditor, loadDraft, saveDraft, type EditorSource } from './edit-source';
+import { markdownStyling } from './md-styling';
+import { renderMermaid } from './mermaid-render';
+import { follow } from './PageHead';
+import { IconTrash } from './icons';
+import { safeHtml } from './safe-html';
 import { setUnsaved } from './tab-presence';
 
 interface Props {
   /** The document, as a wire path `root/rel`. */
   p: string;
+  /** The document's page: Back goes there. */
+  docUrl: string;
   /** May it be written now: the project's live access. Off keeps the text, read-only. */
   writable: boolean;
   /** Bumped whenever the file may have changed on disk. */
   revision: string;
-  /** Saved: the page shows the file as it now is. */
+  /** Saved: the document page shows the file as it now is. */
   onSaved: () => void;
-  onClose: () => void;
+  go: (url: string) => void;
+  gear?: preact.ComponentChildren;
 }
 
 /** Markdown marks in the page's own colours, so light and dark both read. */
@@ -33,16 +43,18 @@ const highlight = HighlightStyle.define([
   { tag: t.emphasis, fontStyle: 'italic' },
   { tag: t.strikethrough, textDecoration: 'line-through' },
   { tag: [t.link, t.url], color: 'var(--accent)' },
-  { tag: t.monospace, color: 'var(--fg-muted)' },
+  { tag: t.monospace, fontFamily: 'var(--mono)', color: 'var(--fg-muted)' },
   { tag: t.quote, color: 'var(--fg-muted)' },
   { tag: [t.processingInstruction, t.meta, t.contentSeparator], color: 'var(--fg-faint)' },
 ]);
 
 type Loaded = { src: EditorSource; base: string; disk: string };
+/** What Preview shows: nothing yet, the rendered draft, or why it could not render. */
+type Shown = { html: string; hasMermaid: boolean } | { error: string } | null;
 
 const STALE = 'The file changed since you started — your text is kept. Copy it, or discard it and load the file as it is now.';
 
-export default function DocEditor({ p, writable, revision, onSaved, onClose }: Props) {
+export default function EditorPage({ p, docUrl, writable, revision, onSaved, go, gear }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const editable = useRef(new Compartment());
@@ -63,11 +75,25 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
     dirtyNow.current = d;
     setDirty(d);
   };
-  // This editor's life for this document: an answer that arrives after it ended (closed, another document) is dropped.
+  // This editor's life for this document: an answer that arrives after it ended (left, another document) is dropped.
   const epoch = useRef(0);
   // The keymap's Save runs from the editor's own state: it reads the access as it is now.
   const writableNow = useRef(writable);
   writableNow.current = writable;
+
+  const [previewing, setPreviewingState] = useState(false);
+  // Read by a toggle that comes before the next render: two quick clicks are on, then off.
+  const previewingNow = useRef(false);
+  const setPreviewing = (on: boolean) => {
+    previewingNow.current = on;
+    setPreviewingState(on);
+  };
+  const [shown, setShown] = useState<Shown>(null);
+  // The newest Preview asked for: an older answer, or one for a Preview already left, is dropped.
+  const previewSeq = useRef(0);
+  const previewBody = useRef<HTMLDivElement>(null);
+  /** The editor's scroll when Preview opened, put back when it closes. */
+  const scrollAt = useRef(0);
 
   /** The editor's text, joined with the file's own separator. */
   const current = (src: EditorSource) => fromEditor(src, (view.current?.state.doc.toJSON() ?? src.lines).join(src.separator));
@@ -92,7 +118,6 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
     EditorState.create({
       doc: src.lines.join('\n'),
       extensions: [
-        lineNumbers(),
         history(),
         drawSelection(),
         highlightActiveLine(),
@@ -100,6 +125,7 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
         // Markdown highlighting only: no languages nested in code blocks or HTML, which would weigh far more.
         new LanguageSupport(markdownLanguage),
         syntaxHighlighting(highlight),
+        markdownStyling,
         keymap.of([{ key: 'Mod-s', preventDefault: true, run: () => (void save(), true) }, ...defaultKeymap, ...historyKeymap]),
         editable.current.of([EditorState.readOnly.of(!writable)]),
         EditorView.contentAttributes.of({ 'aria-label': 'Document source', spellcheck: 'true', autocapitalize: 'off' }),
@@ -116,6 +142,7 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
   // The source: a draft kept for this document, else the file. Read once per document.
   useEffect(() => {
     const my = ++epoch.current;
+    setPreviewing(false);
     api.source(p).then(
       (s) => {
         if (my !== epoch.current) return;
@@ -127,11 +154,13 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
           if (d) dropDraft(p);
           show(s.text, s.hash, s.hash, false);
         }
+        view.current?.focus();
       },
       (err: Error & { status?: number }) => my === epoch.current && setProblem(err.status === 413 ? 'This file is too large to edit here.' : err.status === 422 ? 'This file is not valid UTF-8 — it cannot be edited here.' : err.message),
     );
     return () => {
       epoch.current++;
+      previewSeq.current++;
       view.current?.destroy();
       view.current = null;
     };
@@ -212,8 +241,25 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
     }
   };
 
+  // Save works in Preview too, where the editor has no focus to take the key.
+  useEffect(() => {
+    if (!previewing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        void save();
+      }
+    };
+    addEventListener('keydown', onKey);
+    return () => removeEventListener('keydown', onKey);
+  }, [previewing]);
+
   const discard = async () => {
     if (dirty && !confirm('Discard your unsaved changes to this document and load the file as it is now?')) return;
+    if (previewingNow.current) {
+      previewSeq.current++;
+      setPreviewing(false);
+    }
     const my = epoch.current;
     const at = view.current?.state.doc;
     dropDraft(p);
@@ -234,28 +280,109 @@ export default function DocEditor({ p, writable, revision, onSaved, onClose }: P
     if (l) void navigator.clipboard?.writeText(current(l.src)).then(() => setNote('Copied — your text is still here.'), () => setNote('Could not copy — select the text and copy it.'));
   };
 
+  /** Preview on: the text as it is now, rendered. Off: back to the editor as it was left. */
+  const togglePreview = () => {
+    const l = loadedNow.current;
+    const v = view.current;
+    if (!l || !v) return;
+    const my = ++previewSeq.current;
+    if (previewingNow.current) {
+      setPreviewing(false);
+      return;
+    }
+    scrollAt.current = v.scrollDOM.scrollTop;
+    setShown(null);
+    setPreviewing(true);
+    api.preview(p, current(l.src)).then(
+      (r) => my === previewSeq.current && setShown({ html: r.html, hasMermaid: r.hasMermaid }),
+      (err: Error) => my === previewSeq.current && setShown({ error: `Preview failed — your text is kept: ${err.message}` }),
+    );
+  };
+
+  // Back in the editor: its scroll as it was, and the caret where it was.
+  useEffect(() => {
+    const v = view.current;
+    if (previewing || !v) return;
+    v.requestMeasure();
+    requestAnimationFrame(() => {
+      if (view.current !== v) return;
+      v.scrollDOM.scrollTop = scrollAt.current;
+      v.focus();
+    });
+  }, [previewing]);
+
+  // Diagrams in the preview, drawn by the same constrained renderer as the document page.
+  const previewHtml = shown && 'html' in shown ? safeHtml(shown.html) : '';
+  useEffect(() => {
+    const el = previewBody.current;
+    if (!el || !previewHtml || !(shown && 'html' in shown && shown.hasMermaid)) return;
+    let live = true;
+    void renderMermaid(el, () => live && previewBody.current === el);
+    return () => {
+      live = false;
+    };
+  }, [previewHtml]);
+
+  /** A link in the preview to another page of the app opens it here; the draft stays for this document. */
+  const previewClick = (e: MouseEvent) => {
+    const a = (e.target as Element | null)?.closest('a');
+    const href = a?.getAttribute('href') ?? '';
+    if (!a || !href.startsWith('/') || href.startsWith('//') || href.startsWith('/api/') || a.target) return;
+    follow(e, () => go(href));
+  };
+
+  const name = p.slice(p.lastIndexOf('/') + 1);
+  const state = !writable ? 'read-only — this project is not writable now' : saving ? 'saving…' : dirty ? 'unsaved changes' : loaded ? 'saved' : '';
+
   return (
-    <section class="doc-editor" aria-label="Edit the document">
-      <div class="doc-editor-bar">
-        <button type="button" class="doc-editor-save" disabled={!loaded || saving || !dirty || !writable} onClick={() => void save()} title="Save — Ctrl+S">
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-        <button type="button" class="doc-editor-close" onClick={onClose} title={dirty ? 'Close — your unsaved text is kept for this document' : 'Close'}>
-          Close
-        </button>
-        <button type="button" class="doc-editor-discard" disabled={!loaded || (!dirty && !note)} onClick={() => void discard()} title="Throw away your changes and load the file as it is now">
-          Discard
-        </button>
-        {note === STALE && (
-          <button type="button" class="doc-editor-copy" onClick={copy}>
-            Copy text
+    <section class="editor-page" aria-label={`Edit ${name}`}>
+      <header class="editor-head">
+        <a class="editor-back" href={docUrl} onClick={(e) => follow(e, () => go(docUrl))} title={dirty ? 'Back to the document — your unsaved text is kept' : 'Back to the document'}>
+          ← <span class="lbl">Back to document</span>
+        </a>
+        <span class="editor-title">
+          <h1 class="editor-name" title={p.slice(p.indexOf('/') + 1)}>
+            {name}
+          </h1>
+          <span class="editor-state" role="status">
+            {state}
+          </span>
+        </span>
+        <span class="editor-actions">
+          {(dirty || note) && (
+            <button type="button" class="doc-editor-discard" disabled={!loaded} onClick={() => void discard()} title="Discard — throw away your changes and load the file as it is now" aria-label="Discard">
+              <IconTrash size={15} />
+              <span class="lbl">Discard</span>
+            </button>
+          )}
+          <button type="button" class="editor-preview-btn" aria-pressed={previewing} disabled={!loaded || !!problem} onClick={togglePreview} title={previewing ? 'Back to editing' : 'See the unsaved text rendered'}>
+            {previewing ? 'Edit' : 'Preview'}
           </button>
-        )}
-        <span class="doc-editor-state">{!writable ? 'read-only — this project is not writable now' : dirty ? 'unsaved changes' : loaded ? 'saved' : ''}</span>
-      </div>
+          <button type="button" class="doc-editor-save" disabled={!loaded || saving || !dirty || !writable} onClick={() => void save()} title="Save — Ctrl+S">
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </span>
+        {gear && <span class="head-gear">{gear}</span>}
+      </header>
       {problem && <p class="settings-error">{problem}</p>}
-      {note && <p class={note === STALE || note.startsWith('Not saved') ? 'settings-error' : 'settings-hint'}>{note}</p>}
-      <div class="doc-editor-cm" ref={host} hidden={!!problem} />
+      {note && (
+        <p class={`editor-note ${note === STALE || note.startsWith('Not saved') ? 'settings-error' : 'settings-hint'}`}>
+          {note}
+          {note === STALE && (
+            <button type="button" class="doc-editor-copy" onClick={copy}>
+              Copy text
+            </button>
+          )}
+        </p>
+      )}
+      <div class="editor-cm doc-editor-cm" ref={host} hidden={!!problem || previewing} />
+      {previewing && (
+        <div class="editor-preview" aria-label="Preview of the unsaved text">
+          {!shown && <div class="spinner" />}
+          {shown && 'error' in shown && <p class="settings-error">{shown.error}</p>}
+          {shown && 'html' in shown && <div ref={previewBody} class="md" onClick={previewClick} dangerouslySetInnerHTML={{ __html: previewHtml }} />}
+        </div>
+      )}
     </section>
   );
 }

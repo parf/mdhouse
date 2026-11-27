@@ -2131,18 +2131,51 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .doc-edit-btn { font: inherit; font-size: 13px; padding: 3px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
 .doc-edit-btn.on { border-color: var(--accent); color: var(--accent); }
 .doc-draft-note { margin: 8px 0; color: var(--fg-muted); font-size: 13px; }
-.doc-editor { margin: 12px 0; }
-.doc-editor-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
-.doc-editor-bar button { font: inherit; min-height: 32px; padding: 4px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
-.doc-editor-bar button:disabled { opacity: .6; cursor: not-allowed; }
-.doc-editor-save:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.doc-editor-state { color: var(--fg-muted); font-size: 12.5px; }
-.doc-editor-cm { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--fg); }
-.doc-editor-cm .cm-editor { min-height: 60vh; font-family: var(--mono); font-size: 14px; }
-.doc-editor-cm .cm-editor.cm-focused { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); }
-.doc-editor-cm .cm-gutters { background: var(--bg-raised); color: var(--fg-faint); border-right: 1px solid var(--border); }
-.doc-editor-cm .cm-activeLine { background: color-mix(in srgb, var(--accent) 6%, transparent); }
-@media (pointer: coarse) { .doc-editor-cm .cm-editor { font-size: 16px; } }
+.editor-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.editor-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 16px; min-height: var(--head-band); border-bottom: 1px solid var(--border); background: var(--bg); }
+.editor-back { display: inline-flex; align-items: center; gap: 4px; color: var(--fg-muted); text-decoration: none; white-space: nowrap; }
+.editor-back:hover { color: var(--accent); }
+.editor-title { display: flex; align-items: baseline; gap: 12px; min-width: 0; flex: 0 1 auto; }
+.editor-name { margin: 0; font-size: 15px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editor-state { color: var(--fg-muted); font-size: 12.5px; white-space: nowrap; }
+.editor-actions { display: flex; gap: 8px; margin-left: auto; }
+.editor-head .head-gear { margin-left: 0; }
+.editor-actions button { font: inherit; min-height: 32px; padding: 4px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
+.editor-actions button:disabled { opacity: .6; cursor: not-allowed; }
+.editor-preview-btn[aria-pressed="true"], .doc-editor-save:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.editor-page > .settings-error, .editor-page > .settings-hint { margin: 8px 16px; }
+.editor-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.editor-note button { font: inherit; min-height: 32px; padding: 4px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; }
+.doc-editor-discard { display: inline-flex; align-items: center; gap: 6px; }
+.editor-cm { flex: 1; min-height: 0; background: var(--bg); color: var(--fg); }
+.editor-cm[hidden] { display: none; }
+.editor-cm .cm-editor { height: 100%; font-size: 15.5px; }
+.editor-cm .cm-editor.cm-focused { outline: none; }
+.editor-cm .cm-scroller { font-family: inherit; line-height: 1.65; }
+.editor-cm .cm-content { box-sizing: border-box; width: 100%; max-width: 900px; margin: 0 auto; padding: 24px 30px 40vh; }
+.editor-cm .cm-activeLine { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.editor-cm .cm-md-h { font-weight: 700; line-height: 1.3; }
+.editor-cm .cm-md-h1 { font-size: 1.7em; color: var(--h1); }
+.editor-cm .cm-md-h2 { font-size: 1.4em; color: var(--h2); }
+.editor-cm .cm-md-h3 { font-size: 1.2em; color: var(--h3); }
+.editor-cm .cm-md-h5, .editor-cm .cm-md-h6 { color: var(--fg-muted); }
+.editor-cm .cm-md-h * { color: inherit; }
+.editor-cm .cm-md-link { text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 2px; }
+.editor-preview { flex: 1; min-height: 0; overflow-y: auto; }
+.editor-preview > .md, .editor-preview > .settings-error, .editor-preview > .spinner { max-width: 900px; margin: 0 auto; padding: 24px 30px 120px; box-sizing: border-box; }
+@media (max-width: 720px) {
+  .editor-head { gap: 4px 8px; padding: 4px 8px; }
+  .editor-back .lbl { display: none; }
+  .editor-back { justify-content: center; min-width: 44px; min-height: 44px; font-size: 22px; color: var(--fg); }
+  .editor-head { flex-wrap: nowrap; }
+  .editor-title { flex: 1 1 60px; flex-direction: column; align-items: stretch; gap: 0; }
+  .doc-editor-discard .lbl { display: none; }
+  .editor-note button { min-height: 44px; }
+  .editor-title .editor-state { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; }
+  .editor-actions { margin-left: 0; flex-shrink: 0; gap: 6px; }
+  .editor-cm .cm-content, .editor-preview > .md { padding: 16px 16px 40vh; }
+}
+@media (pointer: coarse) { .editor-cm .cm-editor { font-size: 16px; } }
 
 /* ⓘ help: shown on mouseover or keyboard focus; the tip stays open while the pointer is over it (links in it work) */
 .info { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin: 0 3px; border: 1.2px solid currentColor; border-radius: 50%; color: var(--fg-muted); font-weight: normal; cursor: help; vertical-align: 1px; }
@@ -2267,7 +2300,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
   :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select) { font-size: 16px; }
   .git-message, .doc-commit .git-message { min-height: 44px; font-size: 16px; padding: 4px 10px; }
   .md .qa-edit .bar { gap: 8px; }
-  :is(.md .qa-edit .bar button, .md .add-kind, .md .answer-cancel, .doc-editor-bar button, .ab-bar button, .ab-pick, .diff-reset, .git-list h2 .fold, button.sync-chip) { min-height: 44px; min-width: 44px; padding: 4px 12px; font-size: 14px; }
+  :is(.md .qa-edit .bar button, .md .add-kind, .md .answer-cancel, .editor-actions button, .editor-note button, .ab-bar button, .ab-pick, .diff-reset, .git-list h2 .fold, button.sync-chip) { min-height: 44px; min-width: 44px; padding: 4px 12px; font-size: 14px; }
   .md .qa-edit .bar .sign { min-height: 44px; padding-inline: 6px; }
   .md .form-edit { min-width: 44px; min-height: 44px; justify-content: center; }
   .md .qa-edit textarea, .ab-input { padding-right: 56px; }

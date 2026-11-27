@@ -571,6 +571,9 @@ export const api = {
   source: (p: string) => get<{ text: string; hash: string; writable: boolean; reference?: boolean }>('/api/source', { p }),
   /** Saves the whole source; refused (409) when the file is no longer at `hash`. */
   saveSource: (p: string, hash: string, text: string) => post<{ hash: string }>('/api/source', { p, hash, text }),
+  /** Unsaved text rendered as document `p` would render, with no controls — the editor's Preview. */
+  preview: (p: string, text: string) =>
+    post<{ html: string; hasMermaid: boolean }>('/api/preview', { p, text }),
   abInfo: () => get<AbInfo>('/api/ab'),
   /** The project's registered RAG source and latest sync — `/api/rag`. */
   rag: (root: string) => get<RagStatus>('/api/rag', { root }),

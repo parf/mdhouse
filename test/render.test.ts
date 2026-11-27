@@ -373,3 +373,17 @@ describe('file names in the text are links to the files', () => {
     expect(out).toContain('href="http://www.example.com"');
   });
 });
+
+describe('a render without controls (the editor Preview)', () => {
+  test('makes no token and marks no control: headings, tasks and Q&A carry no data-act', async () => {
+    const src = '# Head\n\n- [ ] task\n\n- ❓ Why?\n  > 💡👾 Because.\n';
+    const live = await render(src, ctx);
+    expect(live.actToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(live.html).toContain(`data-act="${live.actToken}"`);
+    const inert = await render(src, ctx, { controls: false });
+    expect(inert.actToken).toBe('');
+    expect(inert.html).not.toContain('data-act');
+    expect(inert.html).toContain('task-checkbox');
+    expect(inert.html).toContain('data-qa="item"');
+  });
+});

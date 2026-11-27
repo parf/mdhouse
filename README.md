@@ -82,6 +82,7 @@ Writes need a project served with `--rw`: `mdhouse -p --rw folder(s)`. The marku
 - Hover a heading: ↓ add a block right under it · ⇊ at the end of its section — as text, quote,
   my quote, tip, question, disagreement or answer; Ctrl+Enter — the last one used, my quote at first
 - 👤 Settings → Your name — what your replies and quotes are signed with, in this browser only; a name, not a login
+- **Edit** — the whole source on its own page (`<doc>?edit`): Markdown styled in place, its marks shown on the line you are on; **Preview** shows the unsaved text rendered; **Save** / Ctrl+S keeps you editing
 - ✎ / `e` / Alt+E — open the file at that line in your editor (`edit:/path:line`; Settings → Scheme changes `edit`, e.g. `mdedit:/path:line` for Typora)
 
 <img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with its Add as buttons and Cancel" width="560">
@@ -147,7 +148,7 @@ text is kept
 | `e` | open the document in your editor |
 | `a` | speak with AI: open Agent Bus on the document (when it is on) |
 | `Ctrl+Enter` | in a form: save; in Agent Bus: `[1] Send` |
-| `Ctrl+S` / `⌘S` | in the source editor: save |
+| `Ctrl+S` / `⌘S` | on the editor page: save |
 | `Ctrl+Shift+Enter` | in an answer form: save, open the next open question |
 | `Ctrl+Shift+Space` | in Agent Bus or a reply form: start or accept voice input |
 | `Alt+1`…`Alt+9` | in an answer form or Agent Bus: the button with that number |

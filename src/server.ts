@@ -21,7 +21,7 @@ import { SOURCE_MAX, sourceHash, sourceOf } from './lib/source';
 import { CONFIG_DIR, Prefs, MARKS, marksOf, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
 import { gitStateIn, parseReveal, Store } from './lib/store';
 import { isExplicitlyDenied } from './lib/ignore';
-import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask } from './lib/render';
+import { highlightFile, markupHunks, render, splitFrontmatter, toggleTask, type RenderContext } from './lib/render';
 import { applyQa, badgeSource, lineHash, qaRequestOf, replyText, type QaError } from './lib/qa';
 import { authorCookieName, authorSetCookie, normalizeAuthorName, readAuthorCookie, type AuthorIdentity } from './lib/author';
 import { searchContent } from './lib/search';
@@ -311,6 +311,35 @@ export async function serve(opts: ServeOptions) {
     if (!loc || !MD_EXT.test(loc.rel)) return null;
     return (await stat(loc.abs).catch(() => null))?.isFile() ? loc : null;
   };
+  /** A Markdown document whose source may be read here (`/api/source`, `/api/preview`): never one under `.git`. */
+  const sourceAt = async (p: string) => {
+    const loc = await docAt(p);
+    return loc && !inGitDir(loc.rel) ? loc : null;
+  };
+  /** How a document renders where it lives: its links, files, wikilinks and choosing page, from its own folder and project. */
+  const renderContext = (loc: NonNullable<Awaited<ReturnType<typeof registry.resolve>>>): RenderContext => ({
+    rootId: loc.root.id,
+    docPath: loc.rel,
+    docUrl: (rel) => registry.docUrl(loc.root, rel),
+    // a file named in the text is a link when it is a file in this root
+    exists: async (rels) => {
+      const files = await Promise.all(
+        rels.map(async (rel) => {
+          const at = await registry.resolve(`${loc.root.id}/${rel}`);
+          return at && at.root === loc.root && (await stat(at.abs).catch(() => null))?.isFile() ? rel : null;
+        }),
+      );
+      return new Set(files.filter((r): r is string => r !== null));
+    },
+    // [[page]]: this project's Markdown files as the store lists them — never another project, never a raw walk
+    wiki: async (targets) => {
+      const index = await store.wikiIndex(loc.root);
+      return new Map(targets.map((t) => [t, resolveWiki(index, loc.rel, t)]));
+    },
+    // several pages, or none: the choosing page of this project (`/api/choose`), from this document
+    chooseUrl: (target, hash) =>
+      `${dirUrl(loc.root.id, '')}?choose=${encodeURIComponent(target)}&from=${encodeURIComponent(loc.rel)}${hash ? `#${hash}` : ''}`,
+  });
   /** Any file in a root that is there now — a page shows code and text as well as Markdown. */
   const fileAt = async (p: string) => {
     const loc = await registry.resolve(p);
@@ -1412,8 +1441,8 @@ export async function serve(opts: ServeOptions) {
        */
       '/api/source': {
         GET: async (req) => {
-          const loc = await docAt(new URL(req.url).searchParams.get('p') ?? '');
-          if (!loc || inGitDir(loc.rel)) return fail(404, 'not a document');
+          const loc = await sourceAt(new URL(req.url).searchParams.get('p') ?? '');
+          if (!loc) return fail(404, 'not a document');
           // one read, of at most one byte past the cap
           const raw = await Bun.file(loc.abs).slice(0, SOURCE_MAX + 1).bytes().catch(() => null);
           if (!raw) return fail(404, 'not a document');
@@ -1440,8 +1469,8 @@ export async function serve(opts: ServeOptions) {
           }
           const data = new TextEncoder().encode(text);
           if (data.length > SOURCE_MAX) return fail(413, 'the text is too long');
-          const loc = await docAt(p);
-          if (!loc || inGitDir(loc.rel)) return fail(404, 'not a document');
+          const loc = await sourceAt(p);
+          if (!loc) return fail(404, 'not a document');
           if (!registry.writableAt(loc)) return readOnly(loc, 'edit it');
           const stale = () => json({ error: 'the file changed since it was opened', reason: 'stale' }, 409);
           try {
@@ -1462,6 +1491,31 @@ export async function serve(opts: ServeOptions) {
           }
         }),
       },
+
+      /**
+       * The editor's Preview: POST `{p, text}` renders `text` as the document `p` would render (`{html, hasMermaid}`) — its links,
+       * files and wikilinks from its own folder and project — with no controls (no `actToken`, no
+       * `data-act`). Same-origin; any reader of the source may preview (`sourceAt`). Reads no file
+       * contents, writes nothing.
+       */
+      '/api/preview': read(async (req) => {
+        if (req.method !== 'POST') return fail(405, 'POST only');
+        if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+        const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+        const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort() : [];
+        const { p, text } = (body ?? {}) as { p?: unknown; text?: unknown };
+        if (keys.join() !== 'p,text' || typeof p !== 'string' || !p || typeof text !== 'string' || !text.isWellFormed()) {
+          return fail(400, 'expected exactly {p, text}');
+        }
+        if (new TextEncoder().encode(text).length > SOURCE_MAX) return fail(413, 'the text is too long');
+        const loc = await sourceAt(p);
+        if (!loc) return fail(404, 'not a document');
+        // read as `readDoc` reads a file: no BOM, the old Q&A forms converted — the same page /api/doc would show
+        const raw = text.replace(/^\uFEFF/, '');
+        const { body: md } = splitFrontmatter(convertLegacy(raw, splitFrontmatter(raw).offset));
+        const { html, hasMermaid } = await render(md, renderContext(loc), { controls: false });
+        return noStore(json({ html, hasMermaid }));
+      }),
 
       /** Whether this browser holds an administrator session, and until when at most. No secret. */
       '/api/admin': read((req) => {
@@ -2268,29 +2322,7 @@ export async function serve(opts: ServeOptions) {
         const contentHash = hashOf(src);
         if (contentHash === ifContent) return json({ ...common, contentHash, unchanged: true });
         const { frontmatter, body, offset } = splitFrontmatter(src);
-        const rendered = await render(body, {
-          rootId: loc.root.id,
-          docPath: loc.rel,
-          docUrl: (rel) => registry.docUrl(loc.root, rel),
-          // a file named in the text is a link when it is a file in this root
-          exists: async (rels) => {
-            const files = await Promise.all(
-              rels.map(async (rel) => {
-                const at = await registry.resolve(`${loc.root.id}/${rel}`);
-                return at && at.root === loc.root && (await stat(at.abs).catch(() => null))?.isFile() ? rel : null;
-              }),
-            );
-            return new Set(files.filter((r): r is string => r !== null));
-          },
-          // [[page]]: this project's Markdown files as the store lists them — never another project, never a raw walk
-          wiki: async (targets) => {
-            const index = await store.wikiIndex(loc.root);
-            return new Map(targets.map((t) => [t, resolveWiki(index, loc.rel, t)]));
-          },
-          // several pages, or none: the choosing page of this project (`/api/choose`), from this document
-          chooseUrl: (target, hash) =>
-            `${dirUrl(loc.root.id, '')}?choose=${encodeURIComponent(target)}&from=${encodeURIComponent(loc.rel)}${hash ? `#${hash}` : ''}`,
-        });
+        const rendered = await render(body, renderContext(loc));
 
         // the agents the document asks — sent only while the integration is on
         const ab = prefs.agentBus.enabled && !currentRootScope() ? { ab: abTargets(src) } : {};

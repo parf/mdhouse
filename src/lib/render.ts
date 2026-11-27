@@ -70,7 +70,8 @@ export interface Rendered {
   /**
    * This render's token, fresh each time: every control it made carries it as `data-act`, with
    * what it acts on in its own `data-act-*`. A node without it is the document's own markup.
-   * It proves where a node came from on the page, nothing more — no route reads it.
+   * It proves where a node came from on the page, nothing more — no route reads it. Empty for a
+   * render without controls.
    */
   actToken: string;
 }
@@ -727,7 +728,8 @@ const LINK_TLDS = (
   'ru de uk us eu fr it nl jp cn in ca au ch se no fi be at cz es pt ua by kz il kr br tv su рф'
 ).split(' ');
 
-export async function render(src: string, ctx: RenderContext): Promise<Rendered> {
+/** `controls: false` makes no controls: nothing in the output carries `data-act` (a preview of unsaved text). */
+export async function render(src: string, ctx: RenderContext, opts: { controls?: boolean } = {}): Promise<Rendered> {
   await preloadLanguages(src);
   const files = await fileMentions(src, ctx);
   const targets = ctx.wiki ? wikiTargets(src) : [];
@@ -802,8 +804,8 @@ export async function render(src: string, ctx: RenderContext): Promise<Rendered>
   md.renderer.rules.html_block = (tokens, idx) => (ours.has(tokens[idx]!) ? tokens[idx]!.content : authored(tokens[idx]!.content));
   md.renderer.rules.html_inline = (tokens, idx) => (ours.has(tokens[idx]!) ? tokens[idx]!.content : authored(tokens[idx]!.content));
 
-  const actToken = randomBytes(16).toString('hex');
-  const env = { act: actToken } satisfies ActEnv;
+  const actToken = opts.controls === false ? '' : randomBytes(16).toString('hex');
+  const env: ActEnv = actToken ? { act: actToken } : {};
   const tokens = md.parse(src, env);
   // A relative link to a file (any type) that is not a file of this root goes to the choosing page instead.
   if (ctx.exists && ctx.chooseUrl) {

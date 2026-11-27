@@ -166,6 +166,11 @@ if (want('edit')) {
   await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'End', code: 'End', modifiers: 2 });
   await type('\n\nEdited on a phone.\n');
   await audit('editor-typed');
+  await tap('.editor-preview-btn', 0);
+  await sleep(900);
+  await audit('editor-preview');
+  await tap('.editor-preview-btn', 0);
+  await sleep(300);
   await tap('.doc-editor-save', 0);
   await sleep(900);
   say(`  edit on disk: ${read('notes/plan.md').includes('Edited on a phone.')}`);
