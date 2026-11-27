@@ -16,8 +16,15 @@
 
 ## Acceptance
 
-- [ ] Create from a nested breadcrumb and a root breadcrumb, verify the editor and save a first
+- [x] Create from a nested breadcrumb and a root breadcrumb, verify the editor and save a first
   edit. Check keyboard focus, touch, cancel, invalid name, collision and a server refusal.
-- [ ] Cover input validation, exclusive creation, stale authorization and the Personal/Team jail
+- [x] Cover input validation, exclusive creation, stale authorization and the Personal/Team jail
   boundaries with focused tests. Run the combined test/type gate and bounded browser checks.
-- [ ] Obtain independent review on the exact revision, integrate and record evidence.
+- [x] Obtain independent review on the exact revision, integrate and record evidence.
+
+## Result
+
+- ✅ Integrated on `main` at `bbcee7c`: W1 server `eb1467d`, `9245659`, `1932704`; W2 UI `38eb13c`, `2faf648`, `75568c4`.
+- ✅ Independent review PASS bound to `d692ece` and to `bbcee7c` (revocation-while-open fix); combined gate 1754/0 + tsc.
+- ✅ Real-server scratch browser 30/30 (nested/root create + first save, 400/409/403, live revocation, 390 dark, `e`/`x`); W1 mutations 7 killed.
+- ⚪ Team-without-write icon hiding verified by code and `serve()` tests, not in a browser. Residual create races are recorded in [README](../../README.md).
