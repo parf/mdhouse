@@ -15,3 +15,18 @@
   - [ ] Plans/R3/README.md: link DATA.md
   > 💬 review and do yourself, BUT keep in mind CLAUDE.md - ONLY real project knowledge, no junk, keep it small - review and use best practices
   > 💬👾 → done: CLAUDE.md (testPort, fixture playground, package size, two scratch rules), Plans/R3/README.md links DATA.md.
+
+## Dedicated Markdown editor — 2026-11-27
+
+- ✅ EDIT-W3 Separate editor and optional Preview approved. <a id="EDIT-W3"></a>
+  > 💬 👤parf idea - add similar code to us, - SEPARATE page editor only case for MD edits
+  >
+  > discuss
+  >
+  > 💬 👤parf да + да (preview); хотя и preview не очень нужен (тк this editor ~= preview by itself)
+  >
+  > дискутируем дальше
+  >
+  > 💬 👤parf OK, создавай plan md file; и реализуй через CTO
+
+  Applied to [№EDIT-W3](DECISIONS.md#EDIT-W3) and [№MW.5d](TODO.md#MW.5d).

@@ -260,8 +260,9 @@ separate setup pass.
 
 ## Full Markdown editor
 
-Edit the complete source document in mdhouse, not only checkboxes, replies and inserted blocks.
-The editor keeps the current safety contract:
+Edit a complete Markdown document on a dedicated page. The editor styles the Markdown as you type
+and reveals its syntax on the active line. Preview shows the unsaved draft using the document
+renderer. The editor keeps the current safety contract:
 
 - writable roots only;
 - paths through the existing jail;

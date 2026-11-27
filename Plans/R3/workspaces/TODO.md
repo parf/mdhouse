@@ -406,6 +406,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
   - Acceptance: responsive UI tests and a documented manual device matrix in `Plans/R3/QA.md` cover iPad landscape/portrait and representative phone widths
   - Home: [Full Markdown editor](README.md#full-markdown-editor)
 
+- [ ] MW.5d [Dedicated Markdown editor page with Preview](MW.5d-markdown-editor.md) <a id="MW.5d"></a>
+
 ## W5 — Agent Bus control
 
 - [ ] MW.7 Let Agent Bus control a mdhouse workspace <a id="MW.7"></a>
