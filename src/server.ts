@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { dirname, join, resolve as resolvePath } from 'node:path';
-import { ExistsError, ProjectDirError, Registry, ReadOnlyError, RootScopeError, currentRootScope, withRootScope, type AccessMode, type Resolved, type Root } from './lib/roots';
+import { ExistsError, newFilePath, ProjectDirError, Registry, ReadOnlyError, RootScopeError, currentRootScope, withRootScope, type AccessMode, type Resolved, type Root } from './lib/roots';
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
 import { inGitDir, kindOf, langOf, MD_EXT, newFileName, type Kind } from './lib/filetypes';
@@ -1521,7 +1521,7 @@ export async function serve(opts: ServeOptions) {
           }
           if (!registry.writableAt(loc)) return readOnly(loc, 'create files');
           try {
-            const made = await queueWrite(`${loc.abs}/${name}`, () => registry.createFile(registry.encode(loc.root, loc.rel), name));
+            const made = await queueWrite(newFilePath(loc.abs, name), () => registry.createFile(registry.encode(loc.root, loc.rel), name));
             if (!made) return fail(404, 'no such folder');
             return json({ p: registry.encode(made.root, made.rel), url: `${registry.docUrl(made.root, made.rel)}?edit` }, 201);
           } catch (err) {

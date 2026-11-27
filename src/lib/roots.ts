@@ -9,7 +9,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { constants } from 'node:fs';
 import { chmod, lstat, mkdir, open, readlink, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
-import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
+import { sep, resolve as resolvePath, relative, dirname, basename, join } from 'node:path';
 import { fileUrl, RESERVED } from './urls';
 
 /**
@@ -51,6 +51,9 @@ export interface Resolved {
   /** Absolute path on disk, proven to be inside the root. */
   abs: string;
 }
+
+/** Where `createFile` puts `name` in the real folder `folder` — one spelling for the create, its check and the write queue (`/` + `a.md` is `/a.md`). */
+export const newFilePath = (folder: string, name: string): string => join(folder, name);
 
 /** `createFile` found something at the name already — a file, a folder or a dangling link; it is left as it was. */
 export class ExistsError extends Error {
@@ -482,7 +485,7 @@ export class Registry {
     const folder = await lstat(loc.abs).catch(() => null);
     if (!folder?.isDirectory()) return null;
     if (!this.writableAt(loc)) throw new ReadOnlyError(loc.abs);
-    const abs = `${loc.abs}${sep}${name}`;
+    const abs = newFilePath(loc.abs, name);
     const fh = await open(abs, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o666).catch((err: NodeJS.ErrnoException) => {
       if (err.code === 'EEXIST') throw new ExistsError(abs);
       if (err.code === 'ENOENT' || err.code === 'ENOTDIR') return null;

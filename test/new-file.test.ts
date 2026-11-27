@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { newFileName } from '../src/lib/filetypes';
 import { Prefs } from '../src/lib/prefs';
-import { ExistsError, ReadOnlyError, Registry } from '../src/lib/roots';
+import { ExistsError, newFilePath, ReadOnlyError, Registry } from '../src/lib/roots';
 import { serve } from '../src/server';
 import { testPort } from './ports';
 
@@ -55,6 +55,10 @@ describe('newFileName', () => {
 });
 
 describe('Registry.createFile', () => {
+  test('the new path is one canonical spelling, a folder at the filesystem root included', () => {
+    expect([newFilePath('/', 'a.md'), newFilePath('/x', 'a.md'), newFilePath('/x/y', 'b c.md')]).toEqual(['/a.md', '/x/a.md', '/x/y/b c.md']);
+  });
+
   test('creates an empty file in an existing folder; never folders, never over anything; refuses a read-only root', async () => {
     const dir = await realpath(await mkdtemp(join(tmpdir(), 'mdhouse-create-')));
     try {
