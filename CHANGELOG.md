@@ -5,6 +5,7 @@
 ### Added
 
 - **New Markdown file** on a document's breadcrumb, beside the folder: name the file and it opens in the editor. `.md` is added when the name has no Markdown suffix.
+- Server: `POST /api/new-file` creates an empty Markdown file in an existing folder, with the document write checks; an existing name is never overwritten.
 
 ### Changed
 
@@ -14,10 +15,6 @@
 
 - The project README and `mdhouse docs` now point agents to one guide, `agents/README.md`.
 - Expanded the planning guide for agents with project file roles, task and wave tracking, and archiving.
-
-### Added
-
-- Server: `POST /api/new-file` creates an empty Markdown file in an existing folder, with the document write checks; an existing name is never overwritten.
 
 ### Fixed
 
