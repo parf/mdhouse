@@ -66,8 +66,11 @@ control socket) lives outside every tree.
 
 The only other write, `Registry.createFile(dir, name)`, makes one empty file in an existing folder:
 `O_CREAT|O_EXCL|O_NOFOLLOW` — never over anything at the name (a dangling link included), never a folder.
-It re-resolves the folder and re-checks `writableAt` right before the create; a folder swapped for a link
-meanwhile has the file removed. `POST /api/new-file` `{dir, name}` (doc-write, Team `write`): sameOrigin 403 ·
+It re-resolves the folder, captures its dev+ino and re-checks `writableAt` right before the create. The created
+file is bound to that folder through its open handle (`/proc/self/fd` location on Linux, and folder/file dev+ino);
+a mismatch (the folder swapped for a link) leaves the stray file in place, logs it and answers 404 — nothing is
+ever removed. Residual: a grant revoked between the last `writableAt` and the `open`, and a swap made and undone
+between the `open` and the binding check, are not seen; without `/proc` only dev+ino is compared. `POST /api/new-file` `{dir, name}` (doc-write, Team `write`): sameOrigin 403 ·
 exact shape / `newFileName` (one segment, no leading dot, no `/` `\` NUL or control, ≤255 UTF-8 bytes,
 `MD_EXT`; the client adds `.md`) 400 `name` · `registry.resolve(dir)` + folder + `allowedRel`/explicit
 exclusions (folder and new file) 404 · `writableAt` 403 · `queueWrite(<target abs>)` · `createFile` →

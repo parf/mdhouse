@@ -8,7 +8,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { constants } from 'node:fs';
-import { chmod, mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, open, readlink, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
 import { fileUrl, RESERVED } from './urls';
 
@@ -463,6 +463,12 @@ export class Registry {
    * `name` is one path segment. Never creates folders; never follows or replaces anything at the name: `O_EXCL`
    * refuses an existing entry, a dangling symlink included (`ExistsError`). Null when `dir` is not a served folder now;
    * `ReadOnlyError` when it may not be written. The folder and its write access are asked again right before the create.
+   *
+   * The created file is bound to the checked folder through its open handle: its location (`/proc/self/fd`, Linux) and
+   * the folder's identity (dev+ino, captured at the last check) must still match. A file that landed elsewhere — the
+   * folder swapped for a link meanwhile — is left where it is, logged, and the answer is null. Nothing is ever removed.
+   * Residual: a grant revoked between the last `writableAt` and the `open` itself is not seen; a swap made and undone
+   * between the `open` and the identity check is not seen. Without `/proc` only the identity check runs.
    */
   async createFile(dir: string, name: string): Promise<Resolved | null> {
     if (!name || name === '.' || name === '..' || /[/\\\0]/.test(name)) throw new Error(`not one file name: ${name}`);
@@ -473,6 +479,8 @@ export class Registry {
     // that is not a folder fails the create itself (`ENOTDIR`).
     const loc = await this.resolve(dir);
     if (!loc || loc.abs !== first.abs) return null;
+    const folder = await lstat(loc.abs).catch(() => null);
+    if (!folder?.isDirectory()) return null;
     if (!this.writableAt(loc)) throw new ReadOnlyError(loc.abs);
     const abs = `${loc.abs}${sep}${name}`;
     const fh = await open(abs, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o666).catch((err: NodeJS.ErrnoException) => {
@@ -481,11 +489,17 @@ export class Registry {
       throw err;
     });
     if (!fh) return null;
-    await fh.close();
-    // A folder swapped for a link between the check and the create puts the file elsewhere: that file is removed.
-    if ((await realpath(abs).catch(() => null)) !== abs) {
-      await unlink(abs).catch(() => {});
-      return null;
+    try {
+      const made = await fh.stat();
+      const at = await readlink(`/proc/self/fd/${fh.fd}`).catch(() => null);
+      const [nowFolder, nowFile] = await Promise.all([lstat(loc.abs).catch(() => null), lstat(abs).catch(() => null)]);
+      const same = (a: { dev: number; ino: number } | null, b: { dev: number; ino: number }) => !!a && a.dev === b.dev && a.ino === b.ino;
+      if ((at !== null && at !== abs) || !nowFolder?.isDirectory() || !same(nowFolder, folder) || !same(nowFile, made)) {
+        console.error(`mdhouse  a new file landed outside its checked folder ${loc.abs} and was left there: ${at ?? abs}`);
+        return null;
+      }
+    } finally {
+      await fh.close();
     }
     return { root: loc.root, rel: loc.rel ? `${loc.rel}/${name}` : name, abs };
   }
