@@ -34,10 +34,12 @@ export function NewFile({ dir, where, go }: Props) {
   const dialog = useRef<HTMLFormElement>(null);
   const name = newFileName(typed);
 
+  /** Cleared on unmount: a late answer for a page already left opens nothing. */
+  const live = useRef(true);
+  useEffect(() => () => void (live.current = false), []);
   useEffect(() => {
     if (open) field.current?.focus();
   }, [open]);
-  useEffect(() => setOpen(false), [dir]);
 
   const close = () => {
     if (busyNow.current) return;
@@ -53,39 +55,55 @@ export function NewFile({ dir, where, go }: Props) {
     busyNow.current = true;
     setBusy(true);
     setError('');
+    const from = location.pathname + location.search;
     try {
       const made = await api.newFile(dir, name);
+      if (!live.current || location.pathname + location.search !== from) return;
       setOpen(false);
       setTyped('');
       go(made.url);
     } catch (err) {
+      if (!live.current) return;
       setError(refusalText(err));
       field.current?.focus();
     } finally {
       busyNow.current = false;
-      setBusy(false);
+      if (live.current) setBusy(false);
     }
   };
 
-  // Keys stay in the dialog: the page's shortcuts (e, x, a …) do not fire behind it, and Tab cycles inside.
-  const onKeyDown = (e: KeyboardEvent) => {
-    e.stopPropagation();
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      close();
-    } else if (e.key === 'Tab' && dialog.current) {
-      const all = [...dialog.current.querySelectorAll<HTMLElement>('input, button:not([disabled])')];
+  // While open, every key belongs to the dialog — even with focus outside it (a click on its padding): the page's
+  // shortcuts (e, x, a …) do not fire behind it, Escape closes it, and Tab cycles inside.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      const box = dialog.current;
+      if (!box) return;
+      e.stopPropagation();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const all = [...box.querySelectorAll<HTMLElement>('input, button:not([disabled])')];
       const first = all[0];
       const last = all[all.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
+      const at = document.activeElement;
+      if (!box.contains(at)) {
+        e.preventDefault();
+        first?.focus();
+      } else if (e.shiftKey && at === first) {
         e.preventDefault();
         last?.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
+      } else if (!e.shiftKey && at === last) {
         e.preventDefault();
         first?.focus();
       }
-    }
-  };
+    };
+    addEventListener('keydown', onKey, true);
+    return () => removeEventListener('keydown', onKey, true);
+  }, [open]);
 
   return (
     <>
@@ -111,7 +129,6 @@ export function NewFile({ dir, where, go }: Props) {
             aria-modal="true"
             aria-labelledby="new-file-title"
             onClick={(e) => e.stopPropagation()}
-            onKeyDown={onKeyDown}
             onSubmit={submit}
           >
             <h2 id="new-file-title">New Markdown file</h2>
