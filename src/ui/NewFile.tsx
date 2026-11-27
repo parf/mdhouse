@@ -10,6 +10,8 @@ interface Props {
   where: string;
   /** Opens the created file's editor page in this tab. */
   go: (url: string) => void;
+  /** The icon shows (`canCreateFile`). An open dialog stays when access goes, so the server's refusal shows in it with the name kept. */
+  enabled: boolean;
 }
 
 /** The refusal shown under the field; the typed name stays for correction. */
@@ -23,7 +25,7 @@ function refusalText(err: unknown): string {
 }
 
 /** The breadcrumb's New Markdown file button and its dialog: a name, the folder shown read-only, Create / Cancel. */
-export function NewFile({ dir, where, go }: Props) {
+export function NewFile({ dir, where, go, enabled }: Props) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
   const [error, setError] = useState('');
@@ -43,10 +45,13 @@ export function NewFile({ dir, where, go }: Props) {
 
   const close = () => {
     if (busyNow.current) return;
+    // With the icon gone (access lost while open), focus goes to the breadcrumb's folder link.
+    const crumbs = dialog.current?.closest('.crumbs');
+    const target = button.current ?? crumbs?.querySelector<HTMLElement>('.crumb.here') ?? crumbs?.querySelector<HTMLElement>('.crumb.root');
     setOpen(false);
     setTyped('');
     setError('');
-    button.current?.focus();
+    target?.focus();
   };
 
   const submit = async (e: Event) => {
@@ -105,21 +110,24 @@ export function NewFile({ dir, where, go }: Props) {
     return () => removeEventListener('keydown', onKey, true);
   }, [open]);
 
+  if (!enabled && !open) return null;
   return (
     <>
-      <span class="view-add new-file-add">
-        <button
-          ref={button}
-          type="button"
-          class="view-chip add new-file-btn"
-          title={`New Markdown file in ${where}`}
-          aria-label="New Markdown file"
-          aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
-        >
-          <IconNewDoc size={15} />
-        </button>
-      </span>
+      {enabled && (
+        <span class="view-add new-file-add">
+          <button
+            ref={button}
+            type="button"
+            class="view-chip add new-file-btn"
+            title={`New Markdown file in ${where}`}
+            aria-label="New Markdown file"
+            aria-haspopup="dialog"
+            onClick={() => setOpen(true)}
+          >
+            <IconNewDoc size={15} />
+          </button>
+        </span>
+      )}
       {open && (
         <div class="modal-backdrop" role="presentation" onClick={close}>
           <form
