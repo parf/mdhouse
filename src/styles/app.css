@@ -2021,6 +2021,19 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .icon-btn.fav-btn[aria-pressed="true"] { color: var(--mark-fav); }
 .crumbs .view-chip { font-size: 10px; padding: 1px 3px; }
 .crumbs .view-chip svg { width: 13px; height: 13px; }
+/* New Markdown file: beside the folder's view chips, revealed with them; its dialog names the folder read-only. */
+.crumbs .new-file-add { margin-left: 4px; }
+.crumbs .new-file-btn { color: var(--fg-muted); }
+.modal-dialog.new-file { max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+.new-file h2 { margin: 0; font-size: 16px; }
+.new-file-field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--fg-muted); }
+.new-file-field input { font: 14px var(--sans); padding: 6px 8px; color: var(--fg); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius); }
+.new-file-field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.new-file p { margin: 0; font-size: 12.5px; color: var(--fg-muted); overflow-wrap: anywhere; }
+.new-file code { font-family: var(--mono); color: var(--fg); }
+.new-file .new-file-error { color: var(--danger); }
+.new-file .new-file-error:empty { display: none; }
+.new-file-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 /* a view's tab in the sidebar: its name, and how many folders / files it holds */
 .tabs .view-tab[aria-selected="true"] { color: var(--accent); }
 .tabs .view-tab { font: 600 11px/1 var(--mono); display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
@@ -2295,6 +2308,12 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 
 /* ── Touch: forms, editor, commit ───────────────────────────────────────── */
 
+@media (pointer: coarse) {
+  .crumbs .new-file-add { margin-left: 12px; }
+  .crumbs .view-chip.new-file-btn::after { inset: -15px -8px; }
+  .new-file-field input { font-size: 16px; min-height: 44px; }
+  .new-file-actions .git-btn { min-height: 44px; min-width: 88px; }
+}
 /* Fields are 16px so a phone does not zoom in on focus; every button of a form is a full touch target. */
 @media (pointer: coarse) {
   :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select) { font-size: 16px; }

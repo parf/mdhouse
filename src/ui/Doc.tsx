@@ -29,6 +29,8 @@ import { useTeam } from './team';
 import { flowPageUrl } from './flow-model';
 import { editTarget, isPageHref } from '../lib/urls';
 import { loadDraft } from './edit-source';
+import { NewFile } from './NewFile';
+import { canCreateFile, newFileDir } from './create-file';
 
 /** The two diff views; either can be the one a toggle turns on. */
 type DiffView = 'patch' | 'marked';
@@ -1246,6 +1248,9 @@ export function Doc({
             );
           })}
           {dirs.length > 0 && !phone && crumbChips}
+          {canCreateFile({ writable, viewer }) && (
+            <NewFile key={doc.url} dir={newFileDir(doc.root, doc.rel)} where={`${[rootName ?? doc.root, ...dirs].join('/')}/`} go={onNavigate} />
+          )}
         </div>
 
         {/* The ⚙ shares the title's line: the top of a document is the breadcrumb, and a gear

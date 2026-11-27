@@ -279,6 +279,18 @@ export const IconEdit = (p: Props) =>
     p,
   );
 
+/** A page with `+` — a new Markdown file. */
+export const IconNewDoc = (p: Props) =>
+  svg(
+    <>
+      <path d="M9 1.75H4.25A1.5 1.5 0 0 0 2.75 3.25v9.5a1.5 1.5 0 0 0 1.5 1.5h7.5a1.5 1.5 0 0 0 1.5-1.5V5.75z" />
+      <polyline points="9,1.75 9,5.75 13.25,5.75" />
+      <line x1="8" y1="8" x2="8" y2="12" />
+      <line x1="6" y1="10" x2="10" y2="10" />
+    </>,
+    p,
+  );
+
 /** `</>` — the document's source. */
 export const IconCode = (p: Props) =>
   svg(
