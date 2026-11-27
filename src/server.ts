@@ -13,10 +13,10 @@ import { existsSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
 import { homedir, hostname as machineName, userInfo } from 'node:os';
 import { dirname, join, resolve as resolvePath } from 'node:path';
-import { ProjectDirError, Registry, ReadOnlyError, RootScopeError, currentRootScope, withRootScope, type AccessMode, type Resolved, type Root } from './lib/roots';
+import { ExistsError, ProjectDirError, Registry, ReadOnlyError, RootScopeError, currentRootScope, withRootScope, type AccessMode, type Resolved, type Root } from './lib/roots';
 import { dirUrl, normalizeEditScheme } from './lib/urls';
 import { listFiles, repoToplevel } from './lib/scan';
-import { inGitDir, kindOf, langOf, MD_EXT, type Kind } from './lib/filetypes';
+import { inGitDir, kindOf, langOf, MD_EXT, newFileName, type Kind } from './lib/filetypes';
 import { SOURCE_MAX, sourceHash, sourceOf } from './lib/source';
 import { CONFIG_DIR, Prefs, MARKS, marksOf, publicSpaceAb, SPACE_DEFAULT_MAX, type Mark, type SpaceAbPublic } from './lib/prefs';
 import { gitStateIn, parseReveal, Store } from './lib/store';
@@ -1488,6 +1488,47 @@ export async function serve(opts: ServeOptions) {
             if (err instanceof ReadOnlyError) return readOnly(loc, 'edit it');
             console.error(err);
             return fail(500, 'the document could not be saved — it is unchanged');
+          }
+        }),
+      },
+
+      /**
+       * A new, empty Markdown file in an existing folder. POST exactly `{dir, name}`: `dir` a folder's wire path (`<root>` or
+       * `<root>/<rel>`), `name` one file name ending in a Markdown suffix (`newFileName`). 201 `{p, url}` — `url` opens the
+       * editor (`?edit`). 400 `name` · 404 a folder that is not shown here (`.git`, an exclusion, outside the jail or the
+       * actor's projects) · 403 not writable · 409 `exists`: anything at the name is left byte for byte. Created by
+       * `Registry.createFile`, in the target's file queue.
+       */
+      '/api/new-file': {
+        POST: mutation('doc-write', async (req) => {
+          if (!sameOrigin(req)) return fail(403, 'cross-origin request refused');
+          const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+          const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort() : [];
+          const { dir, name } = (body ?? {}) as { dir?: unknown; name?: unknown };
+          if (keys.join() !== 'dir,name' || typeof dir !== 'string' || !dir || !dir.isWellFormed() || typeof name !== 'string' || !name.isWellFormed()) {
+            return json({ error: 'expected exactly {dir, name}', reason: 'name' }, 400);
+          }
+          const why = newFileName(name);
+          if (why) return json({ error: why, reason: 'name' }, 400);
+          const p = dir.replace(/\/+$/, '');
+          const loc = await registry.resolve(p);
+          if (!loc || !(await stat(loc.abs).catch(() => null))?.isDirectory()) return fail(404, 'no such folder');
+          // `.git` and explicit exclusions, on the requested and the resolved folder and on the new file
+          const asked = p.includes('/') ? p.slice(p.indexOf('/') + 1) : '';
+          const rules = await store.rules(loc.root);
+          if ((asked && !(await store.allowedRel(loc.root, asked))) || isExplicitlyDenied(rules, loc.rel ? `${loc.rel}/${name}` : name)) {
+            return fail(404, 'no such folder');
+          }
+          if (!registry.writableAt(loc)) return readOnly(loc, 'create files');
+          try {
+            const made = await queueWrite(`${loc.abs}/${name}`, () => registry.createFile(registry.encode(loc.root, loc.rel), name));
+            if (!made) return fail(404, 'no such folder');
+            return json({ p: registry.encode(made.root, made.rel), url: `${registry.docUrl(made.root, made.rel)}?edit` }, 201);
+          } catch (err) {
+            if (err instanceof ExistsError) return json({ error: `${name} already exists here`, reason: 'exists' }, 409);
+            if (err instanceof ReadOnlyError) return readOnly(loc, 'create files');
+            console.error(err);
+            return fail(500, 'the file could not be created');
           }
         }),
       },

@@ -64,6 +64,15 @@ over it (through a symlink to its target, the mode kept). Its callers are `POST 
 under a heading). mdhouse's own config (`prefs.json`, the
 control socket) lives outside every tree.
 
+The only other write, `Registry.createFile(dir, name)`, makes one empty file in an existing folder:
+`O_CREAT|O_EXCL|O_NOFOLLOW` — never over anything at the name (a dangling link included), never a folder.
+It re-resolves the folder and re-checks `writableAt` right before the create; a folder swapped for a link
+meanwhile has the file removed. `POST /api/new-file` `{dir, name}` (doc-write, Team `write`): sameOrigin 403 ·
+exact shape / `newFileName` (one segment, no leading dot, no `/` `\` NUL or control, ≤255 UTF-8 bytes,
+`MD_EXT`; the client adds `.md`) 400 `name` · `registry.resolve(dir)` + folder + `allowedRel`/explicit
+exclusions (folder and new file) 404 · `writableAt` 403 · `queueWrite(<target abs>)` · `createFile` →
+201 `{p, url: <doc>?edit}` · 409 `exists`. A nested Team project is written through its own id and grant.
+
 Reference roots (`kind: 'reference'`, `Registry.addReference`, `_…` IDs) are never writable or removable
 and do not count as projects for `defaultRoot`/`single`. `Registry.writeFile()` also refuses their files
 through overlapping project roots or symlinks. Git commit/reset/pull preserve the same read-only floor.
@@ -182,7 +191,7 @@ contents list, so a heading link and its contents entry cannot disagree.
   applies to a running server at once. The page routes hand out the HTML bundle's page from a
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
   code with no data, and stay open. [doc/access.md](../doc/access.md).
-- **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa`, `/api/insert`, `/api/roots/remove`, `/api/settings`,
+- **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa`, `/api/insert`, `/api/new-file`, `/api/roots/remove`, `/api/settings`,
   `/api/git/commit|commit-file|commit-files|pull|push|reset`, `/api/ab/default|filter|send` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another
   site. Bun parses a body whatever its content-type, so this is the only thing standing between
@@ -416,7 +425,7 @@ Other families retain existing behavior; marks admin policy is decided, not enfo
 
 | Family | Routes (POST) |
 |---|---|
-| `doc-write` | `/api/source`, `/api/task`, `/api/qa`, `/api/insert` |
+| `doc-write` | `/api/source`, `/api/new-file`, `/api/task`, `/api/qa`, `/api/insert` |
 | `git-write` | `/api/git/commit`, `/commit-file`, `/commit-files`, `/reset` |
 | `git-sync` | `/api/git/pull`, `/push` |
 | `instance-config` | `/api/settings`, `/api/ab/default`, `/api/ab/filter` |

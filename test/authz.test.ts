@@ -128,6 +128,7 @@ const EXPECTED: [path: string, method: string, family: Family | null][] = [
   ['/api/insert', 'POST', 'doc-write'],
   ['/api/source', 'GET', null],
   ['/api/source', 'POST', 'doc-write'],
+  ['/api/new-file', 'POST', 'doc-write'],
   ['/api/preview', '*', null],
   ['/api/admin', '*', null],
   ['/api/admin/session', 'POST', 'admin-session'],

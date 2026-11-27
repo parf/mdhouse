@@ -57,6 +57,7 @@ export const TEAM_ROUTES: Record<string, TeamPolicy | { denied: string }> = {
   'POST /api/task': 'write',
   'GET /api/source': 'read',
   'POST /api/source': 'write',
+  'POST /api/new-file': 'write',
   '* /api/preview': 'read',
   'GET /api/qa': 'read',
   'POST /api/qa': 'write',

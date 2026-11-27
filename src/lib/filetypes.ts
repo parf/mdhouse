@@ -4,6 +4,19 @@ import { bundledLanguages } from 'shiki';
 
 export const MD_EXT = /\.mdx?$/i;
 export const HTML_EXT = /\.html?$/i;
+
+/**
+ * Why `name` cannot be a new Markdown file's name, or null when it can: one path segment — no `/`, `\\`, NUL or
+ * control character, not `.` or `..`, no leading dot — of at most 255 UTF-8 bytes, ending in a Markdown suffix.
+ */
+export function newFileName(name: string): string | null {
+  if (!name || name === '.' || name === '..') return 'a file name is required';
+  if (/[/\\\x00-\x1f\x7f]/.test(name)) return 'a file name cannot contain /, \\ or control characters';
+  if (name.startsWith('.')) return 'a file name cannot start with a dot';
+  if (new TextEncoder().encode(name).length > 255) return 'the file name is too long';
+  if (!MD_EXT.test(name)) return 'a Markdown file name ends in .md';
+  return null;
+}
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif|ico|bmp)$/i;
 const VIDEO_EXT = /\.(mp4|webm|ogv|mov|m4v)$/i;
 const AUDIO_EXT = /\.(mp3|wav|ogg|oga|m4a|flac|opus|aac)$/i;

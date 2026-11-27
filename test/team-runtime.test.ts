@@ -979,3 +979,53 @@ describe('Team boundaries: a project inside a larger repository, links out of it
     }
   });
 });
+
+describe('Team: creating a Markdown file', () => {
+  const create = (w: World, cookie: string, dir: string, name: string) =>
+    w.api(cookie, '/api/new-file', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dir, name }) });
+
+  test('a nested project is written with its own grant: parent-only, child-only and both', async () => {
+    const w = await world({ roots: (base) => [join(base, 'a'), join(base, 'a', 'sub')] });
+    try {
+      for (const who of ['gh-admin', 'alice', 'bob', 'carol']) expect((await add(w, who)).status).toBe(200);
+      for (const [root, userId] of [[w.a, '12'], [w.b, '13'], [w.a, '14'], [w.b, '14']] as const) {
+        expect((await grant(w, root, 'user', userId, 'rw')).status).toBe(200);
+      }
+      expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
+      const { id: a } = w.a;
+      const { id: b } = w.b;
+      for (const [who, parent, child] of [['alice', 201, 404], ['bob', 404, 201], ['carol', 201, 201]] as const) {
+        const account = await w.login(who);
+        expect([who, 'parent', (await create(w, account, a, `${who}-a.md`)).status]).toEqual([who, 'parent', parent]);
+        expect([who, 'child', (await create(w, account, b, `${who}-b.md`)).status]).toEqual([who, 'child', child]);
+        // the child's folder addressed through the parent is never the parent's to write
+        expect([who, 'through', (await create(w, account, `${a}/sub`, `${who}-via.md`)).status]).toEqual([who, 'through', 404]);
+        expect(existsSync(join(w.a.path, 'sub', `${who}-via.md`))).toBe(false);
+        expect([existsSync(join(w.a.path, `${who}-a.md`)), existsSync(join(w.b.path, `${who}-b.md`))]).toEqual([parent === 201, child === 201]);
+      }
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('a grant changed between requests: RW creates, RO is refused, none hides the project; cross-origin is refused', async () => {
+    const w = await world();
+    try {
+      for (const who of ['gh-admin', 'bob']) expect((await add(w, who)).status).toBe(200);
+      expect((await grant(w, w.a, 'user', '13', 'rw')).status).toBe(200);
+      expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
+      const bob = await w.login('bob');
+      expect((await w.api(bob, '/api/new-file', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://evil.example' }, body: JSON.stringify({ dir: w.a.id, name: 'x.md' }) })).status).toBe(403);
+      expect((await create(w, bob, w.a.id, 'one.md')).status).toBe(201);
+      expect((await create(w, bob, w.b.id, 'one.md')).status).toBe(404);
+      expect((await grant(w, w.a, 'user', '13', 'ro')).status).toBe(200);
+      expect((await create(w, bob, w.a.id, 'two.md')).status).toBe(403);
+      expect((await grant(w, w.a, 'user', '13', 'none')).status).toBe(200);
+      expect((await create(w, bob, w.a.id, 'three.md')).status).toBe(404);
+      expect(['one.md', 'two.md', 'three.md'].map((n) => existsSync(join(w.a.path, n)))).toEqual([true, false, false]);
+      expect(existsSync(join(w.b.path, 'one.md'))).toBe(false);
+    } finally {
+      await w.stop();
+    }
+  });
+});

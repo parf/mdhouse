@@ -3,11 +3,12 @@
  *
  * Every path that crosses the HTTP boundary is the opaque string `p = "<rootId>/<relpath>"`.
  * Nothing else in the codebase is allowed to turn a request value into an absolute path —
- * `resolve()` is the only door, and `writeFile()` is the only write.
+ * `resolve()` is the only door; `writeFile()` and `createFile()` are the only writes.
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { chmod, mkdir, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { chmod, mkdir, open, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { sep, resolve as resolvePath, relative, dirname, basename } from 'node:path';
 import { fileUrl, RESERVED } from './urls';
 
@@ -49,6 +50,14 @@ export interface Resolved {
   rel: string;
   /** Absolute path on disk, proven to be inside the root. */
   abs: string;
+}
+
+/** `createFile` found something at the name already — a file, a folder or a dangling link; it is left as it was. */
+export class ExistsError extends Error {
+  constructor(path: string) {
+    super(`already exists: ${path}`);
+    this.name = 'ExistsError';
+  }
 }
 
 export class ReadOnlyError extends Error {
@@ -447,5 +456,37 @@ export class Registry {
       throw err;
     }
     return loc;
+  }
+
+  /**
+   * Creates the empty file `name` in the existing folder `dir` (a wire path) — the only other write to a served tree.
+   * `name` is one path segment. Never creates folders; never follows or replaces anything at the name: `O_EXCL`
+   * refuses an existing entry, a dangling symlink included (`ExistsError`). Null when `dir` is not a served folder now;
+   * `ReadOnlyError` when it may not be written. The folder and its write access are asked again right before the create.
+   */
+  async createFile(dir: string, name: string): Promise<Resolved | null> {
+    if (!name || name === '.' || name === '..' || /[/\\\0]/.test(name)) throw new Error(`not one file name: ${name}`);
+    const first = await this.resolve(dir);
+    if (!first) return null;
+    if (!this.writableAt(first)) throw new ReadOnlyError(first.abs);
+    // A ban, a revoked grant or a swapped folder may have come in meanwhile: asked again, then the create. A `dir`
+    // that is not a folder fails the create itself (`ENOTDIR`).
+    const loc = await this.resolve(dir);
+    if (!loc || loc.abs !== first.abs) return null;
+    if (!this.writableAt(loc)) throw new ReadOnlyError(loc.abs);
+    const abs = `${loc.abs}${sep}${name}`;
+    const fh = await open(abs, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o666).catch((err: NodeJS.ErrnoException) => {
+      if (err.code === 'EEXIST') throw new ExistsError(abs);
+      if (err.code === 'ENOENT' || err.code === 'ENOTDIR') return null;
+      throw err;
+    });
+    if (!fh) return null;
+    await fh.close();
+    // A folder swapped for a link between the check and the create puts the file elsewhere: that file is removed.
+    if ((await realpath(abs).catch(() => null)) !== abs) {
+      await unlink(abs).catch(() => {});
+      return null;
+    }
+    return { root: loc.root, rel: loc.rel ? `${loc.rel}/${name}` : name, abs };
   }
 }
