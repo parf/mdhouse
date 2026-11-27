@@ -1,13 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Prefs } from '../src/lib/prefs';
 import { Registry, RootScopeError, withRootScope, type Root } from '../src/lib/roots';
 import { TeamAccess, type TeamState } from '../src/lib/team-access';
-import { activationBlockers, hasTeamRoute, TEAM_ROUTES, teamRoute } from '../src/lib/team-runtime';
+import { activationBlockers, GUEST_ROUTES, hasTeamRoute, isGuestRoot, TEAM_ROUTES, teamRoute } from '../src/lib/team-runtime';
 import { serve } from '../src/server';
 import { adminLogin } from './admin-login';
 import { testPort } from './ports';
@@ -344,6 +344,7 @@ interface World {
   login: (who: string) => Promise<string>;
   api: (cookie: string | null, path: string, init?: RequestInit) => Promise<Response>;
   ws: (cookie: string | null) => Promise<{ messages: any[]; closed: Promise<number>; socket: WebSocket }>;
+  routes: readonly { path: string; method: string }[];
 }
 
 const ENV = ['MDHOUSE_GITHUB_CLIENT_ID', 'MDHOUSE_GITHUB_CLIENT_SECRET', 'MDHOUSE_GITHUB_CALLBACK_URL', 'MDHOUSE_TEAM'] as const;
@@ -413,7 +414,7 @@ async function world(opts: { oauth?: boolean; roots?: (base: string) => string[]
       setTimeout(() => reject(new Error('socket timeout')), 5000);
     });
   return {
-    base, origin, port, a, b, owner, gh, ownerPost, revision, update, login, api, ws, prefs,
+    base, origin, port, a, b, owner, gh, ownerPost, revision, update, login, api, ws, prefs, routes: s.routes,
     stop: async (keep = false) => {
       s.server.stop(true);
       s.watcher.close();
@@ -1024,6 +1025,320 @@ describe('Team: creating a Markdown file', () => {
       expect((await create(w, bob, w.a.id, 'three.md')).status).toBe(404);
       expect(['one.md', 'two.md', 'three.md'].map((n) => existsSync(join(w.a.path, n)))).toEqual([true, false, false]);
       expect(existsSync(join(w.b.path, 'one.md'))).toBe(false);
+    } finally {
+      await w.stop();
+    }
+  });
+});
+
+describe('Team: Public projects for visitors without a Team session', () => {
+  test('Public reaches only an active Team\'s project roots: never reference material, never while Team is off', () => {
+    const state = { revision: 'r', active: true, adminId: null, users: [], groups: [], projects: [{ path: '/srv/p', users: {}, groups: {}, public: 'ro' as const }, { path: '/srv/ref', users: {}, groups: {}, public: 'ro' as const }] };
+    const root = (path: string, kind: 'project' | 'reference') => ({ id: 'x', name: 'x', path, kind, writable: false }) as Root;
+    expect([isGuestRoot(state, root('/srv/p', 'project')), isGuestRoot(state, root('/srv/ref', 'reference')), isGuestRoot(state, root('/srv/q', 'project'))]).toEqual([true, false, false]);
+    expect(isGuestRoot({ ...state, active: false }, root('/srv/p', 'project'))).toBe(false);
+  });
+
+  test('the guest list names only registered reads: shell, read, or the session route that answers a guest', async () => {
+    const w = await world();
+    try {
+      const registered = new Set(w.routes.map((r) => `${r.method} ${r.path}`));
+      for (const key of GUEST_ROUTES) {
+        const [method, pattern] = key.split(' ') as [string, string];
+        expect([key, registered.has(key) || registered.has(`* ${pattern}`)]).toEqual([key, true]);
+        const { policy } = teamRoute(method === '*' ? 'GET' : method, pattern);
+        expect([key, ['shell', 'read'].includes(policy) || key === '* /api/team/me']).toEqual([key, true]);
+      }
+    } finally {
+      await w.stop();
+    }
+  });
+
+  const html = { accept: 'text/html' };
+  /** Team on with gh-admin (11), alice (12) RW on a, bob (13) RW on b; nothing public yet. */
+  async function teamOn(w: World) {
+    for (const who of ['gh-admin', 'alice', 'bob']) expect((await add(w, who)).status).toBe(200);
+    expect((await grant(w, w.a, 'user', '12', 'rw')).status).toBe(200);
+    expect((await grant(w, w.b, 'user', '13', 'rw')).status).toBe(200);
+    expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
+  }
+  const setPublic = (w: World, root: Root, access: unknown) => w.update({ action: 'public', projectId: root.id, access });
+  const guest = (w: World, path: string, init: RequestInit = {}) => w.api(null, path, init);
+  const reads = (w: World, root: string) => [
+    `/api/doc?p=${root}/note.md`,
+    `/api/raw?p=${root}/note.md`,
+    `/api/asset?p=${root}/note.md`,
+    `/api/tree?root=${root}`,
+    `/api/files?p=${root}`,
+    `/api/search?root=${root}&q=note`,
+    `/api/recents?root=${root}`,
+    `/api/choose?root=${root}&target=note`,
+    `/api/qa?p=${root}/note.md`,
+  ];
+
+  test('no grant by default: a guest gets exactly the sign-in answers of before', async () => {
+    const w = await world();
+    try {
+      await teamOn(w);
+      expect((await guest(w, '/', { headers: html })).status).toBe(302);
+      expect((await guest(w, `/${w.a.id}/note.md`, { headers: html })).headers.get('location')).toBe('/auth/github/login');
+      for (const path of ['/api/team/me', '/api/roots', '/api/settings', ...reads(w, w.a.id)]) {
+        const res = await guest(w, path);
+        expect([path, res.status, (await res.json()).reason]).toEqual([path, 401, 'login']);
+      }
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('set and clear under the admin revision: ro only, a stale revision is 409; GET /api/team shows it', async () => {
+    const w = await world();
+    try {
+      await teamOn(w);
+      const stale = await w.revision();
+      expect((await setPublic(w, w.a, 'rw')).status).toBe(400);
+      expect((await setPublic(w, w.a, 'none')).status).toBe(400);
+      expect((await w.update({ action: 'public', projectId: 'nope', access: 'ro' })).status).toBe(404);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      expect((await w.ownerPost('/api/team', { revision: stale, action: 'public', projectId: w.b.id, access: 'ro' })).status).toBe(409);
+      const team = await (await w.api(w.owner, '/api/team')).json();
+      expect(team.projects.map((p: { id: string; public: unknown }) => [p.id, p.public])).toEqual([[w.a.id, 'ro'], [w.b.id, null]]);
+      expect(team.groups.map((g: { id: string }) => g.id)).toEqual(['all-users']);
+      // a signed-in member cannot set it
+      const alice = await w.login('alice');
+      expect((await w.api(alice, '/api/team', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ revision: await w.revision(), action: 'public', projectId: w.b.id, access: 'ro' }) })).status).not.toBe(200);
+      expect((await setPublic(w, w.a, null)).status).toBe(200);
+      expect((await guest(w, '/api/roots')).status).toBe(401);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('a guest reads the public project only — no-store, one 404 for private and missing, no oracle in HTML', async () => {
+    const w = await world();
+    try {
+      await teamOn(w);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      const a = w.a.id;
+      const b = w.b.id;
+      for (const path of reads(w, a)) {
+        const res = await guest(w, path);
+        expect([path, res.status, res.headers.get('cache-control')]).toEqual([path, 200, 'no-store']);
+      }
+      const doc = await (await guest(w, `/api/doc?p=${a}/note.md`)).json();
+      expect([doc.writable, doc.html.includes('task a')]).toEqual([false, true]);
+      expect((await (await guest(w, '/api/roots')).json()).roots.map((r: Root) => r.id)).toEqual([a]);
+      expect(await (await guest(w, '/api/team/me')).json()).toEqual({ user: null, guest: true, admin: false, grants: { [a]: 'ro' }, login: '/auth/github/login' });
+      expect(Object.keys(await (await guest(w, '/api/settings')).json()).sort()).toEqual(['autoRw', 'editLink', 'editScheme', 'me', 'mode', 'team']);
+      expect((await (await guest(w, `/api/qa?p=${a}/note.md`)).json()).me).toBe('unknown');
+      expect(JSON.stringify(await (await guest(w, `/api/search?root=${a}&q=note`)).json())).not.toContain(`${b}`);
+      // private, missing project, missing doc: one answer, in the API and in HTML
+      const answers = async (paths: string[], headers: Record<string, string> = {}) =>
+        Promise.all(paths.map(async (path) => { const r = await guest(w, path, { headers }); return [r.status, r.headers.get('cache-control'), await r.text()]; }));
+      const api = await answers([
+        `/api/doc?p=${b}/note.md`, `/api/doc?p=nosuch/note.md`, `/api/doc?p=${a}/missing.md`,
+        `/api/raw?p=${b}/note.md`, `/api/raw?p=${a}/missing.md`, `/api/tree?root=${b}`, `/api/tree?root=nosuch`, `/api/search?root=${b}&q=note`, `/api/files?p=${b}`,
+      ]);
+      for (const answer of api) expect(answer).toEqual(api[0]!);
+      expect(api[0]![0]).toBe(404);
+      const pages = await answers([`/${b}/note.md`, `/nosuch/note.md`, `/${b}/missing.md`], html);
+      for (const answer of pages) expect(answer).toEqual(pages[0]!);
+      expect(pages[0]).toEqual(api[0]);
+      // HTML for the public doc is the app shell
+      expect((await guest(w, `/${a}/note.md`, { headers: html })).status).toBe(200);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('every route outside the guest list answers sign-in to a guest, whatever is public', async () => {
+    const w = await world();
+    try {
+      await teamOn(w);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      const before = readFileSync(join(w.a.path, 'note.md'), 'utf8');
+      const checked: string[] = [];
+      // every registered route and method, from the server's own inventory
+      for (const { path: pattern, method } of w.routes) {
+        const policy = teamRoute(method === '*' ? 'GET' : method, pattern).policy;
+        if (policy === 'public' || policy === 'owner') continue;
+        const path = pattern.replace('*', 'x') + `?p=${w.a.id}/note.md&root=${w.a.id}`;
+        for (const m of method === '*' ? ['GET', 'POST'] : [method]) {
+          if ((m === 'GET' || m === 'HEAD') && (GUEST_ROUTES.has(`* ${pattern}`) || GUEST_ROUTES.has(`${m} ${pattern}`))) continue;
+          const res = await guest(w, path, { method: m, headers: { 'content-type': 'application/json' }, ...(m === 'GET' ? {} : { body: JSON.stringify({ p: `${w.a.id}/note.md`, line: 3, hash: 'x', text: 'x', dir: w.a.id, name: 'n.md' }) }) });
+          expect([m, pattern, res.status]).toEqual([m, pattern, 401]);
+          checked.push(`${m} ${pattern}`);
+        }
+      }
+      expect(checked.length).toBeGreaterThan(50);
+      expect(checked).toContain('POST /api/source');
+      expect(checked).toContain('GET /api/source');
+      expect(checked).toContain('POST /api/team');
+      expect(readFileSync(join(w.a.path, 'note.md'), 'utf8')).toBe(before);
+      expect(existsSync(join(w.a.path, 'n.md'))).toBe(false);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('nested: a private child under a public parent stays out; a custom group named Public opens nothing', async () => {
+    const w = await world({ roots: (base) => [join(base, 'a'), join(base, 'a', 'sub')] });
+    try {
+      await writeFile(join(w.b.path, 'child-only.md'), '# child-only\n');
+      for (const who of ['gh-admin', 'alice', 'bob']) expect((await add(w, who)).status).toBe(200);
+      expect((await w.update({ action: 'groups', userId: '13', groups: 'Public' })).status).toBe(200);
+      expect((await grant(w, w.b, 'group', 'public', 'rw')).status).toBe(200);
+      expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
+      // the custom group gives guests nothing
+      expect((await guest(w, `/api/doc?p=${w.b.id}/child-only.md`)).status).toBe(401);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      expect((await (await guest(w, '/api/roots')).json()).roots.map((r: Root) => r.id)).toEqual([w.a.id]);
+      for (const path of [`/api/doc?p=${w.b.id}/child-only.md`, `/api/doc?p=${w.a.id}/sub/child-only.md`, `/api/raw?p=${w.a.id}/sub/child-only.md`]) {
+        expect([path, (await guest(w, path)).status]).toEqual([path, 404]);
+      }
+      for (const path of [`/api/tree?root=${w.a.id}`, `/api/files?p=${w.a.id}`, `/api/search?root=${w.a.id}&q=child-only`]) {
+        expect([path, await (await guest(w, path)).text()]).not.toEqual([path, expect.stringContaining('child-only')]);
+      }
+      // bob, in the group named Public, keeps his grant on the child
+      const bob = await w.login('bob');
+      expect((await w.api(bob, `/api/doc?p=${w.b.id}/child-only.md`)).status).toBe(200);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('explicit exclusions hold for a guest — asked, through a link, by the real path; a member reads as before', async () => {
+    const w = await world();
+    try {
+      await mkdir(join(w.a.path, 'drafts'));
+      await writeFile(join(w.a.path, 'drafts', 'plan.md'), '# secret plan\n');
+      await writeFile(join(w.a.path, '.mdhouseignore'), 'drafts\n');
+      await symlink(join(w.a.path, 'drafts', 'plan.md'), join(w.a.path, 'alias.md'));
+      await teamOn(w);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      const a = w.a.id;
+      for (const path of [`/api/doc?p=${a}/drafts/plan.md`, `/api/doc?p=${a}/alias.md`, `/api/raw?p=${a}/alias.md`, `/api/asset?p=${a}/drafts/plan.md`, `/api/qa?p=${a}/alias.md`, `/api/files?p=${a}/drafts`]) {
+        expect([path, (await guest(w, path)).status]).toEqual([path, 404]);
+      }
+      for (const path of [`/api/tree?root=${a}`, `/api/files?p=${a}`, `/api/search?root=${a}&q=secret`, `/api/recents?root=${a}`, `/api/choose?root=${a}&target=plan`]) {
+        const text = await (await guest(w, path)).text();
+        expect([path, text.includes('plan.md')]).toEqual([path, false]);
+      }
+      const alice = await w.login('alice');
+      expect((await w.api(alice, `/api/doc?p=${a}/drafts/plan.md`)).status).toBe(200);
+      expect((await w.api(alice, `/api/doc?p=${a}/alias.md`)).status).toBe(200);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('a flow run document: a guest gets the Markdown, no flow state', async () => {
+    const w = await world();
+    try {
+      const rel = 'Plans/flows/runs/recent-commits-review/20261127T235240Z-587e600a.md';
+      await mkdir(join(w.a.path, 'Plans/flows/runs/recent-commits-review'), { recursive: true });
+      copyFileSync(join(import.meta.dir, 'fixtures/flow-run.md'), join(w.a.path, rel));
+      await teamOn(w);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      const alice = await w.login('alice');
+      const member = await (await w.api(alice, `/api/doc?p=${w.a.id}/${rel}`)).json();
+      expect(member).toHaveProperty('flow');
+      const doc = await (await guest(w, `/api/doc?p=${w.a.id}/${rel}`)).json();
+      expect(doc.html).toContain('Review recent commits');
+      expect(Object.keys(doc).filter((k) => ['flow', 'ab', 'run', 'automation'].includes(k))).toEqual([]);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('revoked while a guest read is in flight: not sent; banned or signed-out cookies never fall back to Public', async () => {
+    let release: (() => void) | null = null;
+    let entered: (() => void) | null = null;
+    let holding = false;
+    const w = await world({
+      hold: async () => {
+        if (!holding) return;
+        holding = false;
+        await new Promise<void>((resolve) => { release = resolve; entered?.(); });
+      },
+    });
+    try {
+      await teamOn(w);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      for (const [path, headers] of [[`/api/doc?p=${w.a.id}/note.md`, {}], [`/api/raw?p=${w.a.id}/note.md`, {}], [`/${w.a.id}/note.md`, html]] as const) {
+        const reached = new Promise<void>((resolve) => (entered = resolve));
+        holding = true;
+        const pending = guest(w, path, { headers });
+        await reached;
+        expect((await setPublic(w, w.a, null)).status).toBe(200);
+        release!();
+        const res = await pending;
+        const body = await res.text();
+        expect([path, res.status, res.headers.get('cache-control'), body.includes('task a')]).toEqual([path, 409, 'no-store', false]);
+        expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      }
+      // a banned account's cookie: sign-in, not Public
+      const bob = await w.login('bob');
+      expect((await w.update({ action: 'ban', userId: '13', banned: true })).status).toBe(200);
+      for (const path of [`/api/doc?p=${w.a.id}/note.md`, '/api/team/me', '/api/roots']) {
+        const res = await w.api(bob, path);
+        expect([path, res.status]).toEqual([path, 401]);
+      }
+      expect((await w.api(bob, `/${w.a.id}/note.md`, { headers: html })).status).toBe(302);
+      // a signed-in member without a grant on the public project does not read it through Public
+      const alice = await w.login('alice');
+      expect((await grant(w, w.a, 'user', '12', null)).status).toBe(200);
+      expect((await w.api(alice, `/api/doc?p=${w.a.id}/note.md`)).status).toBe(403); // the member's refusal, as before
+      expect((await guest(w, `/api/doc?p=${w.a.id}/note.md`)).status).toBe(200);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('signed-in effective access agrees everywhere: direct RW over an RO group, direct RO over RW, Public adds nothing', async () => {
+    const w = await world();
+    try {
+      for (const who of ['gh-admin', 'alice', 'bob']) expect((await add(w, who)).status).toBe(200);
+      expect((await w.update({ action: 'groups', userId: '13', groups: 'editors' })).status).toBe(200);
+      expect((await grant(w, w.a, 'group', 'all-users', 'ro')).status).toBe(200);
+      expect((await grant(w, w.a, 'group', 'editors', 'rw')).status).toBe(200);
+      expect((await grant(w, w.a, 'user', '12', 'rw')).status).toBe(200); // alice: direct RW over the RO group
+      expect((await grant(w, w.a, 'user', '13', 'ro')).status).toBe(200); // bob: direct RO over the RW group
+      expect((await setPublic(w, w.b, 'ro')).status).toBe(200);
+      expect((await w.ownerPost('/api/team/activation', { revision: await w.revision(), active: true, confirm: 'activate team' })).status).toBe(200);
+      const team = await (await w.api(w.owner, '/api/team')).json();
+      const effective = (root: Root) => team.projects.find((p: { id: string }) => p.id === root.id).effective;
+      expect([effective(w.a)['12'], effective(w.a)['13'], effective(w.b)['12'], effective(w.b)['13']]).toEqual(['rw', 'ro', null, null]);
+      for (const [who, expected] of [['alice', { [w.a.id]: 'rw' }], ['bob', { [w.a.id]: 'ro' }]] as const) {
+        const cookie = await w.login(who);
+        expect([who, (await (await w.api(cookie, '/api/team/me')).json()).grants]).toEqual([who, expected]);
+        expect([who, (await (await w.api(cookie, `/api/doc?p=${w.a.id}/note.md`)).json()).writable]).toEqual([who, expected[w.a.id] === 'rw']);
+        expect([who, (await w.api(cookie, `/api/doc?p=${w.b.id}/note.md`)).status]).toEqual([who, 403]);
+      }
+      expect((await guest(w, `/api/doc?p=${w.b.id}/note.md`)).status).toBe(200);
+    } finally {
+      await w.stop();
+    }
+  });
+
+  test('a guest socket hears the public roots only, is re-scoped on a change and closed when nothing is public', async () => {
+    const w = await world();
+    try {
+      await teamOn(w);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      const socket = await w.ws(null);
+      expect(socket.messages[0]).toMatchObject({ t: 'hello', roots: [w.a.id] });
+      expect((await setPublic(w, w.b, 'ro')).status).toBe(200);
+      await settle();
+      expect(socket.messages).toContainEqual({ t: 'roots', roots: [w.a.id, w.b.id] });
+      expect((await setPublic(w, w.a, null)).status).toBe(200);
+      await settle();
+      expect(socket.messages).toContainEqual({ t: 'auth' });
+      expect(socket.messages).toContainEqual({ t: 'roots', roots: [w.b.id] });
+      expect((await setPublic(w, w.b, null)).status).toBe(200);
+      expect(await socket.closed).toBe(1008);
+      // and with nothing public a guest socket is refused
+      await expect(w.ws(null)).rejects.toThrow();
     } finally {
       await w.stop();
     }

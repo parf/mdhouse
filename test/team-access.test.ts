@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { chmodSync, existsSync, linkSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ALL_USERS_ID, effectiveTeamAccess, TEAM_ACCESS_FILE, TeamAccess, TeamAccessError, type TeamChange } from '../src/lib/team-access';
+import { ALL_USERS_ID, effectiveTeamAccess, isPublicProject, TEAM_ACCESS_FILE, TeamAccess, TeamAccessError, type TeamChange } from '../src/lib/team-access';
 
 let dir: string;
 let project: string;
@@ -94,6 +94,28 @@ describe('Team access', () => {
     expect(effectiveTeamAccess(snap, bob.id, project, true, false)).toBeNull();
     snap = grant(store, 'user', bob.id, null);
     expect(effectiveTeamAccess(snap, bob.id, project, true, false)).toBe('rw');
+  });
+
+  test('a direct RW grant overrides an RO-only group; root and Viewer still cap it; clearing inherits RO again', () => {
+    const store = TeamAccess.open({ dir });
+    addUsers(store);
+    let snap = grant(store, 'group', ALL_USERS_ID, 'ro');
+    expect(effectiveTeamAccess(snap, bob.id, project, true, false)).toBe('ro');
+    snap = grant(store, 'user', bob.id, 'rw');
+    expect(effectiveTeamAccess(snap, bob.id, project, true, false)).toBe('rw');
+    expect(effectiveTeamAccess(snap, bob.id, project, false, false)).toBe('ro');
+    expect(effectiveTeamAccess(snap, bob.id, project, true, true)).toBe('ro');
+    expect(effectiveTeamAccess(snap, alice.id, project, true, false)).toBe('ro');
+    snap = grant(store, 'user', bob.id, null);
+    expect(effectiveTeamAccess(snap, bob.id, project, true, false)).toBe('ro');
+  });
+
+  test('Public never feeds a signed-in grant: a public project gives a user without a grant nothing', () => {
+    const store = TeamAccess.open({ dir });
+    addUsers(store);
+    const snap = change(store, { action: 'public', projectPath: project, access: 'ro' });
+    expect(isPublicProject(snap, project)).toBe(true);
+    for (const user of [alice, bob]) expect(effectiveTeamAccess(snap, user.id, project, true, false)).toBeNull();
   });
 
   test('banning a non-admin keeps memberships and blocks all grants; the designated admin is protected', () => {
@@ -199,5 +221,58 @@ describe('Team access persistence', () => {
     expect(errorCode(() => change(store, { action: 'add', user: alice }))).toBe('blocked');
     expect(errorCode(() => store.snapshot())).toBe('blocked');
     expect(TeamAccess.open({ dir }).snapshot().adminId).toBe(alice.id);
+  });
+});
+
+describe('Public: a project field, never a group', () => {
+  test('absent is no grant; ro is set and cleared under the revision; anything else is refused', () => {
+    const store = TeamAccess.open({ dir });
+    addUsers(store);
+    expect(isPublicProject(store.snapshot(), project)).toBe(false);
+    const stale = store.snapshot().revision;
+    change(store, { action: 'public', projectPath: project, access: 'ro' });
+    const on = store.snapshot();
+    expect([isPublicProject(on, project), isPublicProject(on, otherProject)]).toEqual([true, false]);
+    expect(on.projects).toEqual([{ path: project, users: {}, groups: {}, public: 'ro' }]);
+    expect(on.groups.map((g) => g.id)).toEqual([ALL_USERS_ID]);
+    expect(TeamAccess.open({ dir }).snapshot()).toEqual(on);
+    expect(errorCode(() => store.update(stale, { action: 'public', projectPath: otherProject, access: 'ro' }))).toBe('stale');
+    for (const access of ['rw', 'none', 'yes', true]) {
+      expect(errorCode(() => change(store, { action: 'public', projectPath: project, access } as unknown as TeamChange))).toBe('invalid');
+    }
+    expect(errorCode(() => change(store, { action: 'public', projectPath: join(dir, 'missing'), access: 'ro' }))).toBe('invalid');
+    change(store, { action: 'public', projectPath: project, access: null });
+    // the project stays known (retained), only the field goes
+    expect(store.snapshot().projects).toEqual([{ path: project, users: {}, groups: {} }]);
+    expect(JSON.parse(readFileSync(file(), 'utf8')).projects[0]).not.toHaveProperty('public');
+  });
+
+  test('an older file without the field loads as no grant and is not rewritten; a bad stored value is corrupt', () => {
+    const store = TeamAccess.open({ dir });
+    addUsers(store);
+    grant(store, 'user', bob.id, 'ro');
+    const before = readFileSync(file());
+    const loaded = TeamAccess.open({ dir }).snapshot();
+    expect(isPublicProject(loaded, project)).toBe(false);
+    expect(readFileSync(file())).toEqual(before);
+    for (const bad of ['rw', 'none', null, true, 'RO']) {
+      const data = JSON.parse(before.toString());
+      data.projects[0].public = bad;
+      writeFileSync(file(), JSON.stringify(data));
+      expect([bad, errorCode(() => TeamAccess.open({ dir }).snapshot())]).toEqual([bad, 'corrupt']);
+    }
+  });
+
+  test('a custom group named Public, with grants, stays an ordinary group: it never makes a project public', () => {
+    const store = TeamAccess.open({ dir });
+    addUsers(store);
+    change(store, { action: 'groups', userId: bob.id, groups: 'Public' });
+    grant(store, 'group', 'public', 'rw');
+    const state = store.snapshot();
+    expect(state.groups).toContainEqual({ id: 'public', name: 'Public', builtin: false });
+    expect(isPublicProject(state, project)).toBe(false);
+    expect(effectiveTeamAccess(state, bob.id, project, true, false)).toBe('rw');
+    change(store, { action: 'public', projectPath: project, access: 'ro' });
+    expect(store.snapshot().projects[0]).toEqual({ path: project, users: {}, groups: { public: 'rw' }, public: 'ro' });
   });
 });

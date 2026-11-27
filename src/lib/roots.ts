@@ -130,6 +130,10 @@ export interface RootScope {
   allows(root: Root): boolean;
   /** May the actor write to it: a read-write grant, on top of the root's own writability. */
   canWrite(root: Root): boolean;
+  /** A visitor without a Team session (Public): read-only, no derived instance state. */
+  readonly guest?: boolean;
+  /** Whether a root-relative path is withheld from this actor; `resolve` asks it of the requested and the real path. */
+  hides?(root: Root, rel: string): Promise<boolean>;
 }
 
 /** A scoped request asked for a root it may not see and no fallback exists. */
@@ -425,8 +429,11 @@ export class Registry {
     if (this.insideNestedProject(root.path, candidate)) return null;
     const abs = await jailedPath(root.path, candidate);
     if (this.get(id) !== root || abs === null || this.hidden(root.path, abs) || this.insideNestedProject(root.path, candidate) || this.insideNestedProject(root.path, abs)) return null;
+    const real = relative(root.path, abs).split(sep).join('/');
+    const scope = scopes.getStore();
+    if (scope?.hides && ((await scope.hides(root, rel)) || (await scope.hides(root, real)) || this.get(id) !== root)) return null;
 
-    return { root, rel: relative(root.path, abs).split(sep).join('/'), abs };
+    return { root, rel: real, abs };
   }
 
   /**

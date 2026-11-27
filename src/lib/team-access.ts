@@ -35,6 +35,8 @@ export interface TeamProject {
   path: string;
   users: Record<string, DirectGrant>;
   groups: Record<string, AccessGrant>;
+  /** Read-only for visitors without a Team session; absent is no grant. Not a group: no membership reaches it. */
+  public?: 'ro';
 }
 
 interface Policy {
@@ -55,7 +57,8 @@ export type TeamChange =
   | { action: 'ban'; userId: string; banned: boolean }
   | { action: 'activation'; active: boolean; paths?: string[] }
   | { action: 'retain-projects'; paths: readonly string[] }
-  | { action: 'grant'; projectPath: string; subject: 'user' | 'group'; subjectId: string; access: DirectGrant | null };
+  | { action: 'grant'; projectPath: string; subject: 'user' | 'group'; subjectId: string; access: DirectGrant | null }
+  | { action: 'public'; projectPath: string; access: 'ro' | null };
 
 export class TeamAccessError extends Error {
   constructor(readonly code: 'invalid' | 'missing' | 'conflict' | 'stale' | 'unsafe' | 'corrupt' | 'io' | 'blocked', message: string) {
@@ -134,18 +137,22 @@ function readPolicy(text: string): Policy {
   const projects: TeamProject[] = [];
   const knownPaths = new Set<string>();
   for (const entry of obj.projects) {
-    const project = shape(entry, ['path', 'users', 'groups']);
-    if (!project || !pathKey(project.path) || knownPaths.has(project.path)) throw bad();
+    const project = shape(entry, Object.hasOwn(record(entry) ?? {}, 'public') ? ['path', 'users', 'groups', 'public'] : ['path', 'users', 'groups']);
+    if (!project || !pathKey(project.path) || knownPaths.has(project.path) || (Object.hasOwn(project, 'public') && project.public !== 'ro')) throw bad();
     const ug = record(project.users);
     const gg = record(project.groups);
     if (!ug || !gg) throw bad();
     if (Object.entries(ug).some(([id, access]) => !knownUsers.has(id) || !validDirect(access))) throw bad();
     if (Object.entries(gg).some(([id, access]) => !knownGroups.has(id) || !validGrant(access))) throw bad();
     knownPaths.add(project.path);
-    projects.push({ path: project.path, users: { ...ug } as TeamProject['users'], groups: { ...gg } as TeamProject['groups'] });
+    projects.push({ path: project.path, users: { ...ug } as TeamProject['users'], groups: { ...gg } as TeamProject['groups'], ...(project.public === 'ro' ? { public: 'ro' as const } : {}) });
   }
   return { active: obj.active, adminId: obj.adminId, users, groups, projects };
 }
+
+/** Whether visitors without a Team session may read the project at `projectPath`. Callers must separately check `state.active`. */
+export const isPublicProject = (state: TeamState, projectPath: string): boolean =>
+  state.projects.find((candidate) => candidate.path === projectPath)?.public === 'ro';
 
 /** Resolves configured grants. Callers using them for admission must separately check `state.active`. */
 export function effectiveTeamAccess(state: TeamState, userId: string, projectPath: string, rootWritable: boolean, viewer: boolean): AccessGrant | null {
@@ -222,10 +229,25 @@ function applyChange(state: Policy, change: TeamChange): void {
     return;
   }
 
-  if (change.action !== 'grant' || !pathKey(change.projectPath) || (change.subject !== 'user' && change.subject !== 'group')) throw new TeamAccessError('invalid', 'Invalid access change');
+  if ((change.action !== 'grant' && change.action !== 'public') || !pathKey(change.projectPath)) throw new TeamAccessError('invalid', 'Invalid access change');
   try {
     if (realpathSync(change.projectPath) !== change.projectPath || !statSync(change.projectPath).isDirectory()) throw new Error('not a project path');
   } catch { throw new TeamAccessError('invalid', 'The project path must name an existing canonical directory'); }
+
+  if (change.action === 'public') {
+    if (change.access !== null && change.access !== 'ro') throw new TeamAccessError('invalid', 'Public access is read-only or no grant');
+    const project = state.projects.find((candidate) => candidate.path === change.projectPath);
+    if (change.access === null) {
+      if (project) delete project.public;
+      return;
+    }
+    if (project) project.public = 'ro';
+    else if (state.projects.length >= MAX_PROJECTS) throw new TeamAccessError('invalid', 'The project limit has been reached');
+    else state.projects.push({ path: change.projectPath, users: {}, groups: {}, public: 'ro' });
+    return;
+  }
+
+  if (change.subject !== 'user' && change.subject !== 'group') throw new TeamAccessError('invalid', 'Invalid access change');
   const subjects = change.subject === 'user' ? state.users : state.groups;
   if (!subjects.some(({ id }) => id === change.subjectId)) throw new TeamAccessError('missing', 'Grant subject not found');
   if (change.access !== null && !(change.subject === 'user' ? validDirect(change.access) : validGrant(change.access))) throw new TeamAccessError('invalid', 'Invalid access grant');

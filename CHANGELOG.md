@@ -4,6 +4,7 @@
 
 ### Added
 
+- Server: Team projects can be set Public (read-only) for visitors without GitHub sign-in: `POST /api/team` `action: 'public'`. Guests read only Public projects — documents, tree, search, files and live updates — and nothing else; without a Public project sign-in works as before.
 - **New Markdown file** appears beside the view shortcuts when you hover over a document's breadcrumb. Name the file and it opens in the editor. `.md` is added when the name has no Markdown suffix.
 - Server: `POST /api/new-file` creates an empty Markdown file in an existing folder, with the document write checks; an existing name is never overwritten.
 

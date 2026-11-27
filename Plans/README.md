@@ -194,6 +194,18 @@ contents list, so a heading link and its contents entry cannot disagree.
   applies to a running server at once. The page routes hand out the HTML bundle's page from a
   hidden `/__app/` route, so the page is behind both checks too; the bundle and its chunks are
   code with no data, and stay open. [doc/access.md](../doc/access.md).
+- **Team Public** ([№USER-W9](R3/workspaces/DECISIONS.md#USER-W9)): `team-access.json` project field `public: 'ro'` (absent = no grant;
+  any other value is corrupt; not a group — a custom group named Public opens nothing). Set/cleared only by `POST /api/team`
+  `{revision, action:'public', projectId, access:'ro'|null}` (team-admin, stale → 409, other access → 400); `GET /api/team` projects carry
+  `public`. Older files load without it, unchanged on disk; ⚠️ an older mdhouse refuses a file that has it as corrupt (Team unavailable, fail closed).
+  It never feeds `effectiveTeamAccess`: a signed-in user gets only its own grants.
+  Guest = Team active, no Team session cookie, not the owner's admin session; a cookie that no longer resolves (signed out, banned) stays sign-in.
+  `guestScope` (`lib/team-runtime.ts`): Public project roots, never reference, `canWrite` false, `hides` = `.git` + explicit exclusions on the asked
+  and the real path (`Registry.resolve`). Only `GUEST_ROUTES` (GET/HEAD: `/`, `/d`, `/d/*`, page fallback, `/api/team/me`, roots, tree, doc, raw,
+  asset, choose, files, search, recents, GET qa, GET settings) run, through `asGuest`: `runScoped` over [active, topology, Public roots] (409 auth),
+  no-store, every 403/404 → one `404 {error:'not found'}`; anything else → sign-in (401 / 302). With no Public project a guest gets the old sign-in.
+  `/api/team/me` guest → `{user:null, guest:true, admin:false, grants, login}`; `/api/doc` omits flow state for a guest. `/ws` guest: `root:<id>`
+  of Public roots only (no `roots`, `ab`, tabs), re-scoped by `syncSockets`, closed 1008 when none is left.
 - **State-changing requests** — `POST /api/marks`, `/api/task`, `/api/qa`, `/api/insert`, `/api/new-file`, `/api/roots/remove`, `/api/settings`,
   `/api/git/commit|commit-file|commit-files|pull|push|reset`, `/api/ab/default|filter|send` — and the
   WebSocket upgrade also pass `sameOrigin()`: `Origin` and `Sec-Fetch-Site` must not name another

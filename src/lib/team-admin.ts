@@ -67,7 +67,7 @@ export class TeamAdmin {
       projects: projects.map((project) => {
         const grants = grantsByPath.get(project.path);
         return {
-          ...project, grants: { users: grants?.users ?? {}, groups: grants?.groups ?? {} },
+          ...project, grants: { users: grants?.users ?? {}, groups: grants?.groups ?? {} }, public: grants?.public ?? null,
           effective: Object.fromEntries(state.users.map(({ id }) => [id, state.active ? effectiveTeamAccess(state, id, project.path, project.writable, viewer) : null])),
         };
       }),
@@ -130,6 +130,15 @@ export class TeamAdmin {
         const project = current.projects.find(({ id }) => id === projectId);
         if (!project) throw new TeamAccessError('missing', 'Project not found');
         change = { action: 'grant', projectPath: project.path, subject, subjectId, access };
+        break;
+      }
+      case 'public': {
+        fields('projectId', 'access');
+        const { projectId, access } = input;
+        if (typeof projectId !== 'string' || (access !== null && access !== 'ro')) return bad();
+        const project = current.projects.find(({ id }) => id === projectId);
+        if (!project) throw new TeamAccessError('missing', 'Project not found');
+        change = { action: 'public', projectPath: project.path, access };
         break;
       }
       default:

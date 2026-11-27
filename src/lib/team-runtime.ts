@@ -6,7 +6,7 @@
  * registry's scope (`roots.ts`), so no handler can answer with another project.
  */
 
-import { effectiveTeamAccess, type AccessGrant, type TeamState, type TeamUser } from './team-access';
+import { effectiveTeamAccess, isPublicProject, type AccessGrant, type TeamState, type TeamUser } from './team-access';
 import type { Root, RootScope } from './roots';
 
 export type TeamPolicy =
@@ -130,6 +130,40 @@ export function teamScope(state: () => TeamState, user: TeamUser, viewer: () => 
     allows: (root) => grantFor(state(), user.id, root, viewer()) !== null,
     canWrite: (root) => grantFor(state(), user.id, root, viewer()) === 'rw',
   };
+}
+
+/**
+ * What a visitor without a Team session may ask, each a read the route table also lists: GET/HEAD only, every other
+ * route answers sign-in. A test holds this list to the route inventory.
+ */
+export const GUEST_ROUTES: ReadonlySet<string> = new Set([
+  '* /',
+  '* /d',
+  '* /d/*',
+  '* /api/team/me',
+  '* /api/roots',
+  '* /api/tree',
+  '* /api/doc',
+  '* /api/raw',
+  '* /api/asset',
+  '* /api/choose',
+  '* /api/files',
+  '* /api/search',
+  '* /api/recents',
+  'GET /api/qa',
+  'GET /api/settings',
+]);
+
+/** Whether a guest may make this request: a listed route, read methods only. */
+export const guestRoute = (method: string, requestMethod: string, pattern: string): boolean =>
+  (requestMethod === 'GET' || requestMethod === 'HEAD') && (GUEST_ROUTES.has(`${method} ${pattern}`) || GUEST_ROUTES.has(`* ${pattern}`));
+
+/** A project root a visitor without a Team session may read: Team on, a project (not reference material), set Public. */
+export const isGuestRoot = (state: TeamState, root: Root): boolean => state.active && root.kind !== 'reference' && isPublicProject(state, root.path);
+
+/** The registry scope of a visitor without a Team session: Public projects, read-only, minus `hides` (explicit exclusions). */
+export function guestScope(state: () => TeamState, hides: (root: Root, rel: string) => Promise<boolean>): RootScope {
+  return { guest: true, allows: (root) => isGuestRoot(state(), root), canWrite: () => false, hides };
 }
 
 export interface ActivationFacts {

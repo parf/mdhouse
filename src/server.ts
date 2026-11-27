@@ -55,7 +55,7 @@ import { isSourceKey, lastKeyOf, lastOf, searchBody, searchParams, shapeHits, so
 import { TeamAdmin } from './lib/team-admin';
 import { TeamAccessError, type TeamState, type TeamUser } from './lib/team-access';
 import { GitHubOAuth, readGitHubOAuthConfig, TeamGitHubError } from './lib/team-github';
-import { activationBlockers, grantFor, readCookie, runScoped, teamCookie, teamCookieName, teamRoute, teamScope } from './lib/team-runtime';
+import { activationBlockers, grantFor, guestRoute, guestScope, isGuestRoot, readCookie, runScoped, teamCookie, teamCookieName, teamRoute, teamScope } from './lib/team-runtime';
 import { IDLE_MS } from './lib/user-session-model';
 import { TeamSessions } from './lib/team-sessions';
 
@@ -63,6 +63,8 @@ import { TeamSessions } from './lib/team-sessions';
 interface WsData {
   /** The Team account this socket belongs to; its topics follow that account's grants. */
   team?: string;
+  /** A visitor without a Team session: its topics follow the Public projects. */
+  guest?: boolean;
   /** A hash of this browser's Team session, used to close its sockets on sign-out. */
   teamSession?: string;
   /** The grant this socket was last scoped to, by root id: a change of either side is an authorization change. */
@@ -663,6 +665,20 @@ export async function serve(opts: ServeOptions) {
   const teamSessionOf = (cookie: string): string => createHash('sha256').update(cookie).digest('hex');
   /** The signed-in Team account of a request: its session is live and its account unbanned, now. */
   const teamUserOf = (req: Request, touch = false) => (team.active ? teamSessions.lookup(teamCookieOf(req), touch) : null);
+  /**
+   * A visitor without a Team session: Team on, no Team session cookie at all and not the owner's administrator session. A
+   * cookie that no longer resolves (signed out, expired, banned) keeps its sign-in answer and never falls back to Public.
+   */
+  const isGuest = (req: Request): boolean => team.active && !!team.state && !teamCookieOf(req) && !actorOf(req).admin;
+  /** The Public project roots now, by id: what a guest may read. */
+  const guestGrants = (): Map<string, string> => {
+    const out = new Map<string, string>();
+    if (!team.active || !team.state) return out;
+    for (const root of registry.all()) if (isGuestRoot(team.state, root)) out.set(root.id, 'ro');
+    return out;
+  };
+  /** A guest never reads `.git` or an explicit exclusion (`.mdhouseignore`, the CLI's), by the asked or the real path. */
+  const hidesFromGuest = async (root: Root, rel: string): Promise<boolean> => !!rel && isExplicitlyDenied(await store.rules(root), rel);
   const actorOf = (req: Request): Actor => {
     if (isLocalAdmin(req)) return { admin: true, via: 'local' };
     if (admins.verify(readAdminCookie(req.headers.get('cookie'), adminScope())).ok) return { admin: true, via: 'session' };
@@ -945,8 +961,27 @@ export async function serve(opts: ServeOptions) {
     for (const root of registry.all()) store.drop(root.id);
     if (notify) for (const ws of sockets) if (ws.data.team) announceAuth(ws);
   };
+  /** Re-scopes a Team or guest socket to `now`: a changed grant is announced, revoked roots unsubscribed, new ones subscribed. */
+  const rescope = (ws: ServerWebSocket<WsData>, now: Map<string, string>): void => {
+    const held = ws.data.grants ?? new Map<string, string>();
+    // A removed root, or the same root at another level (RO ↔ RW), is an authorization change the page must re-enter through admission.
+    if ([...held].some(([id, grant]) => now.get(id) !== grant)) announceAuth(ws);
+    let changed = false;
+    for (const id of held.keys()) if (!now.has(id)) { ws.unsubscribe(`root:${id}`); changed = true; }
+    for (const id of now.keys()) if (!held.has(id)) { ws.subscribe(`root:${id}`); changed = true; }
+    ws.data.grants = now;
+    if (changed) ws.send(JSON.stringify({ t: 'roots', roots: [...now.keys()] }));
+  };
   const syncSockets = (): void => {
     for (const ws of sockets) {
+      if (ws.data.guest) {
+        const now = guestGrants();
+        if (!now.size) {
+          announceAuth(ws);
+          ws.close(1008, team.active ? 'no public project' : 'team deactivated');
+        } else rescope(ws, now);
+        continue;
+      }
       if (!team.active || !team.state || !ws.data.team) {
         // Team switched on closes the Personal sockets; switched off closes the account sockets.
         if (team.active !== !!ws.data.team) {
@@ -961,15 +996,7 @@ export async function serve(opts: ServeOptions) {
         ws.close(1008, 'access revoked');
         continue;
       }
-      const now = grantsOf(user.id);
-      const held = ws.data.grants ?? new Map<string, string>();
-      // A removed root, or the same root at another level (RO ↔ RW), is an authorization change the page must re-enter through admission.
-      if ([...held].some(([id, grant]) => now.get(id) !== grant)) announceAuth(ws);
-      let changed = false;
-      for (const id of held.keys()) if (!now.has(id)) { ws.unsubscribe(`root:${id}`); changed = true; }
-      for (const id of now.keys()) if (!held.has(id)) { ws.subscribe(`root:${id}`); changed = true; }
-      ws.data.grants = now;
-      if (changed) ws.send(JSON.stringify({ t: 'roots', roots: [...now.keys()] }));
+      rescope(ws, grantsOf(user.id));
     }
   };
   /** Runs synchronously inside the policy change, so a ban, a revoked grant or an activation applies to the next request and every open socket. */
@@ -1068,6 +1095,24 @@ export async function serve(opts: ServeOptions) {
    * An account's request under its scope. A read or a page whose account was banned, signed out or re-granted while it
    * awaited is not sent (401 login / 409 auth); a write was checked at its commit (`Registry.writeFile`), so its answer stands.
    */
+  /**
+   * A guest's read under the Public scope. Never cached; an answer computed before Public changed is not sent (409 auth),
+   * and every refusal is one 404, so a private project, doc or asset and a missing one look the same.
+   */
+  const asGuest = async (req: Request, h: Handler): Promise<Response> => {
+    const scope = guestScope(() => team.state!, hidesFromGuest);
+    const out = await runScoped(
+      { valid: () => isGuest(req), fingerprint: () => JSON.stringify([team.active, teamTopology, [...guestGrants()]]) },
+      async () => {
+        const res = await withRootScope(scope, () => h(req));
+        await opts.teamAfterHandler?.(req);
+        return res;
+      },
+    );
+    if (!out.ok) return out.why === 'login' ? needLogin(req) : noStore(json({ error: 'authorization changed while this was answered; try again', reason: 'auth' }, 409));
+    if (out.response.status === 403 || out.response.status === 404) return noStore(json({ error: 'not found' }, 404));
+    return noStore(out.response);
+  };
   const inScope = async (req: Request, member: TeamUser, h: Handler, guarded: boolean): Promise<Response> => {
     const scope = teamScope(() => team.state!, member, () => prefs.mode() === 'viewer');
     if (!guarded) return withRootScope(scope, () => h(req));
@@ -1088,10 +1133,12 @@ export async function serve(opts: ServeOptions) {
     if (!team.active) return h(req);
     const { policy, why } = teamRoute(method, pattern);
     if (policy === 'public' || policy === 'owner') return h(req);
-    if (policy === 'denied') return noStore(json({ error: why, reason: 'team' }, 403));
     // An OS-owner administrator can recover from the Users page without a GitHub session.
     // This admits only its static shell and sanitized display options, never project data.
     if ((pattern === '/settings/users' || (pattern === '/api/settings' && method === 'GET')) && isOwner(req)) return noStore(await h(req));
+    // A visitor without a Team session reads the Public projects through the guest routes only; anything else is sign-in.
+    if (isGuest(req)) return guestRoute(method, req.method, pattern) && guestGrants().size ? asGuest(req, h) : needLogin(req);
+    if (policy === 'denied') return noStore(json({ error: why, reason: 'team' }, 403));
     const member = teamUserOf(req, true);
     if (policy === 'team-admin') {
       if (!actorOf(req).admin) return member ? adminRequired() : needLogin(req);
@@ -1255,6 +1302,7 @@ export async function serve(opts: ServeOptions) {
       '/api/team/me': read((req) => {
         const member = teamUserOf(req);
         if (!team.active || !team.state) return fail(404, 'not found');
+        if (!member && currentRootScope()?.guest) return json({ user: null, guest: true, admin: false, grants: Object.fromEntries(guestGrants()), login: '/auth/github/login' });
         if (!member) return needLogin(req);
         const grants: Record<string, string> = {};
         for (const root of registry.all()) {
@@ -2367,8 +2415,8 @@ export async function serve(opts: ServeOptions) {
 
         // the agents the document asks — sent only while the integration is on
         const ab = prefs.agentBus.enabled && !currentRootScope() ? { ab: abTargets(src) } : {};
-        // a run document: its validated state, as the run page acts on it
-        const run = loc.root.kind !== 'reference' && loc.rel.startsWith('Plans/flows/runs/') ? readFlowRunDocument(src) : null;
+        // a run document: its validated state, as the run page acts on it — never for a guest
+        const run = !currentRootScope()?.guest && loc.root.kind !== 'reference' && loc.rel.startsWith('Plans/flows/runs/') ? readFlowRunDocument(src) : null;
         const refused = !run ? null : opts.noGit ? { error: 'git is off' } : await verifyRun(flowDeps, loc.root, loc.rel, run.state, readFlowRunMeta(src));
         const flow = run ? { flow: docFlow(run.state, registry.writableAt(loc), refused?.error) } : {};
         return json({ ...common, frontmatter, lineOffset: offset, ...rendered, ...ab, ...flow, contentHash });
@@ -2820,7 +2868,8 @@ export async function serve(opts: ServeOptions) {
       const url = new URL(req.url);
       if (team.failed) return unavailable();
       const member = teamUserOf(req, true);
-      if (team.active && !member) return needLogin(req);
+      const guest = !member && isGuest(req) && guestGrants().size > 0 && (req.method === 'GET' || req.method === 'HEAD');
+      if (team.active && !member && !guest) return needLogin(req);
       if (url.pathname === '/ws') {
         // A cross-site page must not subscribe to the live channel: it names every root and
         // every file as it changes.
@@ -2830,16 +2879,25 @@ export async function serve(opts: ServeOptions) {
         if (member && cookie) {
           data.team = member.id;
           data.teamSession = teamSessionOf(cookie);
-        }
+        } else if (guest) data.guest = true;
         if (srv.upgrade(req, { data })) return undefined as unknown as Response;
         return fail(400, 'websocket upgrade failed');
       }
-      return member ? inScope(req, member, rootPage, true) : rootPage(req);
+      return member ? inScope(req, member, rootPage, true) : guest ? asGuest(req, rootPage) : rootPage(req);
     },
 
     websocket: {
       open(ws: ServerWebSocket<WsData>) {
         sockets.add(ws);
+        if (ws.data.guest) {
+          // A guest's socket hears only the Public roots; no Agent Bus topic, no root list, no tab registry.
+          ws.data.grants = guestGrants();
+          const ids = [...ws.data.grants.keys()];
+          for (const id of ids) ws.subscribe(`root:${id}`);
+          ws.data.clientId = randomBytes(16).toString('base64url');
+          ws.send(JSON.stringify({ t: 'hello', roots: ids, clientId: ws.data.clientId, resume: '' }));
+          return;
+        }
         if (ws.data.team) {
           // An account's socket hears only its granted roots; no Agent Bus topic, no root list, no tab registry.
           ws.data.grants = grantsOf(ws.data.team);
@@ -2860,12 +2918,12 @@ export async function serve(opts: ServeOptions) {
       // Client frames: a liveness ping, and `at` — the page the tab shows (Agent Bus control labels).
       message(ws: ServerWebSocket<WsData>, raw: string | Buffer) {
         const text = raw.toString();
-        if (!ws.data.team) tabs.message(ws.data.clientId, text);
+        if (!ws.data.team && !ws.data.guest) tabs.message(ws.data.clientId, text);
         if (text === 'ping') ws.send(JSON.stringify({ t: 'pong' }));
       },
       close(ws: ServerWebSocket<WsData>) {
         sockets.delete(ws);
-        if (!ws.data.team) tabs.close(ws.data.clientId, ws);
+        if (!ws.data.team && !ws.data.guest) tabs.close(ws.data.clientId, ws);
       },
     },
 
