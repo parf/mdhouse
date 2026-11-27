@@ -87,7 +87,13 @@ export function AboutModal({ open, onClose }: Props) {
                 <td>
                   <kbd>e</kbd>
                 </td>
-                <td>Open the document in your editor (the edit link)</td>
+                <td>Open the mdhouse Markdown editor</td>
+              </tr>
+              <tr>
+                <td>
+                  <kbd>x</kbd>
+                </td>
+                <td>Open the document in an external editor (when enabled)</td>
               </tr>
               <tr>
                 <td>

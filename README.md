@@ -82,8 +82,8 @@ Writes need a project served with `--rw`: `mdhouse -p --rw folder(s)`. The marku
 - Hover a heading: ↓ add a block right under it · ⇊ at the end of its section — as text, quote,
   my quote, tip, question, disagreement or answer; Ctrl+Enter — the last one used, my quote at first
 - 👤 Settings → Your name — what your replies and quotes are signed with, in this browser only; a name, not a login
-- **Edit** — the whole source on its own page (`<doc>?edit`): Markdown styled in place, its marks shown on the line you are on; **Preview** shows the unsaved text rendered; **Save** / Ctrl+S keeps you editing
-- ✎ / `e` / Alt+E — open the file at that line in your editor (`edit:/path:line`; Settings → Scheme changes `edit`, e.g. `mdedit:/path:line` for Typora)
+- **Edit** / `e` — the whole source on its own page (`<doc>?edit`): Markdown styled in place, its marks shown on the line you are on; **Preview** shows the unsaved text rendered; **Save** / Ctrl+S keeps you editing
+- ✎ / `x` — open in your external editor; Alt+E in a form opens at that line (`edit:/path:line`; Settings → Scheme changes `edit`, e.g. `mdedit:/path:line` for Typora)
 
 <img src="doc/rw-add.png" alt="A heading with its edit, add-below and add-at-end buttons, and the add editor open at the end of its section with its Add as buttons and Cancel" width="560">
 
@@ -145,7 +145,8 @@ text is kept
 | `/`, `Ctrl+K`, `Ctrl+P` | open the sidebar and focus search |
 | `?` | version, links and this list |
 | `Esc` | clear the search query, or close the dialog or Agent Bus |
-| `e` | open the document in your editor |
+| `e` | open the mdhouse Markdown editor |
+| `x` | open the document in an external editor (when enabled) |
 | `a` | speak with AI: open Agent Bus on the document (when it is on) |
 | `Ctrl+Enter` | in a form: save; in Agent Bus: `[1] Send` |
 | `Ctrl+S` / `⌘S` | on the editor page: save |

@@ -57,7 +57,7 @@
 
   // The settings page
   "settings": {
-    // ✎ beside each title, opening edit:/full/path (and `e`)
+    // ✎ beside each title, opening edit:/full/path (and `x`)
     "editLink": true,
     // The ✎ link's URL scheme, no colon: "edit" (default) or e.g. "mdedit" to open Markdown in Typora
     // while `edit:` stays for your common editor. Not javascript, data, http, file, mailto …

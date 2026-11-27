@@ -489,19 +489,24 @@ export function Doc({
     return () => void window.dispatchEvent(new CustomEvent(ASK_STATE, { detail: false }));
   }, [abOpen]);
 
-  /** `e` opens the file in the editor, as the ✎ beside the title does — not while typing. */
+  /** Document shortcuts use the same targets as the edit links. */
   useEffect(() => {
-    if (!editAt) return;
+    if (!canEdit && !editAt) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'e' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-      const t = e.target as HTMLElement;
-      if (t.closest('input, textarea, select, [contenteditable]')) return;
-      e.preventDefault();
-      location.href = editAt;
+      if (e.key !== 'e' && e.key !== 'x') return;
+      if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
+      if (e.key === 'e' && canEdit) {
+        e.preventDefault();
+        onNavigate(editPage);
+      } else if (e.key === 'x' && editAt) {
+        e.preventDefault();
+        location.href = editAt;
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [editAt]);
+  }, [canEdit, editAt, editPage, onNavigate]);
 
   // The editor's element: made once per opened form, and moved — never rebuilt — when the page
   // is re-rendered from a changed file, so the text, the cursor and undo survive another
@@ -1084,13 +1089,13 @@ export function Doc({
     </a>
   );
   const extEditEl = editAt && (
-    <a class="icon-btn edit-link" href={editAt} title={`Edit ${editTarget(editAt)} (e)`} aria-label="Edit">
+    <a class="icon-btn edit-link" href={editAt} title={`Edit ${editTarget(editAt)} externally (x)`} aria-label="Edit in an external editor" aria-keyshortcuts="X">
       <IconEdit />
       <span class="lbl">Edit in an external editor</span>
     </a>
   );
   const editBtn = canEdit && (
-    <a class="icon-btn doc-src-btn" href={editPage} onClick={(e) => follow(e, () => onNavigate(editPage))} title="Edit the whole source">
+    <a class="icon-btn doc-src-btn" href={editPage} onClick={(e) => follow(e, () => onNavigate(editPage))} title="Edit the whole source (e)" aria-keyshortcuts="E">
       <IconCode size={15} />
       <span class="lbl">Edit</span>
     </a>
@@ -1298,7 +1303,7 @@ export function Doc({
           )}
 
           {/* ✎ hands the file to whatever handles `edit:` URLs (Settings turns it off where nothing does).
-              The in-page Edit sits right of it, last in the row; on a phone it stays in the title row. */}
+              Edit sits right of it, last in the row; on a phone it stays in the title row. */}
           {!phone && (
             <span class="doc-actions">
               {actionBtns}
