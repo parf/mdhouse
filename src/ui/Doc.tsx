@@ -1248,9 +1248,13 @@ export function Doc({
             );
           })}
           {dirs.length > 0 && !phone && crumbChips}
-          {canCreateFile({ writable, viewer }) && (
-            <NewFile key={doc.url} dir={newFileDir(doc.root, doc.rel)} where={`${[rootName ?? doc.root, ...dirs].join('/')}/`} go={onNavigate} />
-          )}
+          <NewFile
+            key={doc.url}
+            enabled={canCreateFile({ writable, viewer })}
+            dir={newFileDir(doc.root, doc.rel)}
+            where={`${[rootName ?? doc.root, ...dirs].join('/')}/`}
+            go={onNavigate}
+          />
         </div>
 
         {/* The ⚙ shares the title's line: the top of a document is the breadcrumb, and a gear

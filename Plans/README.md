@@ -756,7 +756,8 @@ watcher/WebSocket refresh are reused. No new authority, Git operation, editor en
 
 New Markdown file (`src/ui/NewFile.tsx`, `src/ui/create-file.ts`): an icon after the document breadcrumb's folder
 (or the root crumb for a top-level document), revealed with the view chips on hover/focus, always shown on touch. It
-shows while the project is writable now and not in Viewer mode. The dialog takes a name (`.md` added unless `.md`/`.mdx`)
+shows while the project is writable now and not in Viewer mode; an open dialog stays when access goes, and closing it
+then focuses the folder crumb. The dialog takes a name (`.md` added unless `.md`/`.mdx`)
 and shows the folder read-only; it POSTs `/api/new-file` `{dir, name}` (`dir` in the `p` form), shows refusals inline
 with the name kept, and on 201 opens `url` (`<doc>?edit`) in the same tab. Escape/Cancel create nothing and return focus.
 
