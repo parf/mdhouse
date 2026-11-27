@@ -409,6 +409,8 @@ No package is done before shared runner/permission checks pass; tracker-free out
 - [x] MW.5d [Dedicated Markdown editor page with Preview](MW.5d-markdown-editor.md) <a id="MW.5d"></a>
   - Verified: `b74c0fa` (W2 `c888c27`), review PASS; [result](MW.5d-markdown-editor.md#result)
 
+- [ ] MW.5e [Create a Markdown file from the document breadcrumb](MW.5e-create-markdown-file.md) <a id="MW.5e"></a>
+
 ## W5 — Agent Bus control
 
 - [ ] MW.7 Let Agent Bus control a mdhouse workspace <a id="MW.7"></a>
