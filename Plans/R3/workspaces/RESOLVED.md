@@ -18,7 +18,7 @@
 
 ## Dedicated Markdown editor — 2026-11-27
 
-- ✅ EDIT-W3 Separate editor and optional Preview approved. <a id="EDIT-W3"></a>
+- ✅ EDIT-W3 Separate editor and optional Preview approved.
   > 💬 👤parf idea - add similar code to us, - SEPARATE page editor only case for MD edits
   >
   > discuss
@@ -29,4 +29,4 @@
   >
   > 💬 👤parf OK, создавай plan md file; и реализуй через CTO
 
-  Applied to [№EDIT-W3](DECISIONS.md#EDIT-W3) and [№MW.5d](TODO.md#MW.5d).
+Applied to [№EDIT-W3](DECISIONS.md#EDIT-W3) and [№MW.5d](TODO.md#MW.5d).

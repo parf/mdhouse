@@ -92,7 +92,7 @@
 
 - 📌 EDIT-W1 External scheme configurable; default `edit`; e.g. `mdedit:/path:line` for Typora.
   Separate enable switch; inline scheme/help shown only when enabled; disable preserves value.
-- 📌 EDIT-W3 Full Markdown editing has a dedicated page. <a id="EDIT-W3"></a>
+- 📌 EDIT-W3 Full Markdown editing has a dedicated page.
   Styled Markdown is the default. Preview renders the unsaved draft on demand.
   [History](RESOLVED.md#EDIT-W3).
 
