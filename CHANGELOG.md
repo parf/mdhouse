@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- **New Markdown file** on a document's breadcrumb, beside the folder: name the file and it opens in the editor. `.md` is added when the name has no Markdown suffix.
+
 ### Changed
 
 - On a document, `e` opens the mdhouse Markdown editor and `x` opens the external editor.

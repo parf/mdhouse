@@ -572,6 +572,8 @@ export const api = {
   /** Saves the whole source; refused (409) when the file is no longer at `hash`. */
   saveSource: (p: string, hash: string, text: string) => post<{ hash: string }>('/api/source', { p, hash, text }),
   /** Unsaved text rendered as document `p` would render, with no controls — the editor's Preview. */
+  /** Create an empty Markdown file `name` in folder `dir` (`<root>` or `<root>/<dir>`): the new document and its editor page. */
+  newFile: (dir: string, name: string) => post<{ p: string; url: string }>('/api/new-file', { dir, name }),
   preview: (p: string, text: string) =>
     post<{ html: string; hasMermaid: boolean }>('/api/preview', { p, text }),
   abInfo: () => get<AbInfo>('/api/ab'),
