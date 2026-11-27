@@ -2567,6 +2567,8 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .users-table tr.banned td:first-child { opacity: 0.6; }
 .grant-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .users-how { padding-top: 2px; font-size: 12px; color: var(--fg-muted); }
+/* A guest's Sign in, where the ⚙ Settings button sits for a signed-in reader. */
+.guest-signin { text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; }
 .users-how > details { margin: 3px 0; overflow-wrap: anywhere; }
 .users-how summary, .users-disclose summary { width: fit-content; max-width: 100%; color: var(--accent); cursor: pointer; }
 .users-disclose { margin: 10px 0; }

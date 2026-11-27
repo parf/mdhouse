@@ -7,7 +7,7 @@ import { api, ApiError, connectLive, liveListeners, type DocPayload, type LiveMe
 import { pageTitle, rootLabel } from './ui/format';
 import { accessBadge, customName } from './ui/project-groups';
 import { StoredRwTag, ViewerBadge, ViewerContext } from './ui/viewer';
-import { TeamContext } from './ui/team';
+import { GuestContext, TeamContext } from './ui/team';
 import { isViewer, VIEWER_DENIED } from './ui/viewer-text';
 import { parentScope } from './ui/git-state';
 import { docMetadataRevision, docRefreshTicket, liveWritable, mergeDocRefresh } from './ui/doc-refresh';
@@ -113,6 +113,9 @@ function App({ entry: first }: { entry: AdminEntry }) {
   // A Viewer drops every control that changes anything; a mode switch elsewhere reaches this tab as a
   // `roots` event, a refused write as VIEWER_DENIED — both re-read the settings.
   const viewer = isViewer(options);
+  /** A guest of public projects: no writes and no administration, as a Viewer, but with Sign in instead of Settings. */
+  const guest = teamMe?.kind === 'guest';
+  const noWrites = viewer || guest;
   const rereadSettings = useCallback(() => void api.settings().then(setOptions).catch(() => {}), []);
   useEffect(() => {
     addEventListener(VIEWER_DENIED, rereadSettings);
@@ -708,7 +711,12 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
   const crumb = useMemo(() => doc?.rel ?? '', [doc?.rel]);
 
-  const gear = (extra = '') => (
+  const gear = (extra = '') =>
+    teamMe?.kind === 'guest' ? (
+      <a class={`git-btn guest-signin${extra ? ` ${extra}` : ''}`} href={teamMe.login} title="Sign in with GitHub">
+        Sign in
+      </a>
+    ) : (
     <button
       class={`icon-btn${extra ? ` ${extra}` : ''}`}
       aria-pressed={onSettings || onUsers}
@@ -718,7 +726,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
     >
       <IconGear />
     </button>
-  );
+    );
 
   const pageGear = sidebar !== 'off' ? gear() : null;
 
@@ -729,7 +737,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const nameOf = (id: string, fallback: string) => roots.find((r) => r.id === id)?.name ?? fallback;
   // Each segment encoded on its own: `encodeURI` leaves `#` and `?` alone, which cut the path.
   const editHref =
-    optionsLoaded && !viewer && options.editLink && doc && docRoot && !doc.reference
+    optionsLoaded && !noWrites && options.editLink && doc && docRoot && !doc.reference
       ? editUrl(options.editScheme, `${docRoot.path}/${doc.rel}`)
       : null;
 
@@ -743,7 +751,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   useEffect(() => {
     if (!editAt) return setEditEntry(null);
     if (!editReady || !doc || editEntry === docPath) return;
-    if (canOpenEditor(doc, { writable: liveWritable(doc, docRoot), viewer, draft: !!loadDraft(`${doc.root}/${doc.rel}`) })) setEditEntry(docPath);
+    if (canOpenEditor(doc, { writable: liveWritable(doc, docRoot), viewer: noWrites, draft: !!loadDraft(`${doc.root}/${doc.rel}`) })) setEditEntry(docPath);
     else {
       history.replaceState(null, '', doc.url);
       setPath(location.pathname + location.search);
@@ -754,8 +762,9 @@ function App({ entry: first }: { entry: AdminEntry }) {
   if (authChanged) return <p role="status">Updating access…</p>;
 
   return (
-    <ViewerContext.Provider value={viewer}>
+    <ViewerContext.Provider value={noWrites}>
     <TeamContext.Provider value={!!options.team}>
+    <GuestContext.Provider value={guest}>
     <div class="app" data-sidebar={sidebar}>
       {/* On a phone the editor page's own header is the only one: the strip would repeat the file name. */}
       {sidebar === 'off' && !(phone && editing) && (
@@ -1014,7 +1023,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
         <PhoneNav
           rootId={rootId}
           go={go}
-          askAvailable={!viewer && route.kind === 'file' && doc?.kind === 'md' && !!doc.ab && !doc.reference}
+          askAvailable={!noWrites && route.kind === 'file' && doc?.kind === 'md' && !!doc.ab && !doc.reference}
           askOpen={askOpen}
           changeCount={changeCount}
           changes={onChanges(full.includes('?') ? full.slice(full.indexOf('?')) : '')}
@@ -1029,6 +1038,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
 
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
+    </GuestContext.Provider>
     </TeamContext.Provider>
     </ViewerContext.Provider>
   );

@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';
 import { api, ApiError, isAdminDenial, type TeamAccess, type TeamAction, type TeamGroup, type TeamPreview, type TeamProject, type TeamSnapshot, type TeamUser } from './api';
 import { follow } from './PageHead';
 import { accessDirectory, accessTitles, SettingsNav, usersUrl } from './SettingsNav';
-import { ALL_USERS, configuredAccess, groupField, groupFilters, groupName, parseGroupField, projectSources, sourcesText, userSources, usersIn } from './team-model';
+import { ALL_USERS, configuredAccess, groupField, groupFilters, groupName, parseGroupField, projectSources, PUBLIC_NAME, publicAccess, sourcesText, userSources, usersIn } from './team-model';
 
 const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin --workspace from cli';
 const ACCESS_WORD: Record<TeamAccess, string> = { ro: 'Read-only', rw: 'Read and write' };
@@ -194,11 +194,12 @@ const UserLabel = ({ user }: { user: TeamUser }) => (
 type Act = (action: TeamAction, done?: string) => Promise<boolean>;
 type Link = (url: string, text: preact.ComponentChildren, cls?: string, current?: boolean) => preact.JSX.Element;
 
-/** A permission edit stays local until saved. A stored block can only be preserved or explicitly changed. */
-function GrantEditor({ label, value, user = false, disabled, save }: {
+/** A permission edit stays local until saved. A stored block can only be preserved or explicitly changed. `readOnly`: No grant and Read-only only. */
+function GrantEditor({ label, value, user = false, readOnly = false, disabled, save }: {
   label: string;
   value: TeamAccess | 'none' | null | undefined;
   user?: boolean;
+  readOnly?: boolean;
   disabled: boolean;
   save: (next: TeamAccess | null) => Promise<boolean>;
 }) {
@@ -222,13 +223,13 @@ function GrantEditor({ label, value, user = false, disabled, save }: {
         value={draft ?? current}
         onChange={(event) => {
           const next = event.currentTarget.value;
-          if (next === 'ro' || next === 'rw' || next === '') setDraft(next);
+          if (next === 'ro' || (next === 'rw' && !readOnly) || next === '') setDraft(next);
         }}
       >
         {current === 'none' && <option value="none" disabled>Direct access blocked</option>}
         <option value="">{user ? 'Use group access' : 'No grant'}</option>
         <option value="ro">Read-only</option>
-        <option value="rw">Read and write</option>
+        {!readOnly && <option value="rw">Read and write</option>}
       </select>
       {changed && <button type="submit" class="git-btn" disabled={disabled}>Save</button>}
       {changed && <button type="button" class="linklike" disabled={disabled} onClick={() => {
@@ -410,8 +411,17 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
       {groups.length < snap.groups.length || showGroups ? (
         <RevealGrants expanded={showGroups} onClick={() => setShowGroups((value) => !value)} controls={groupsId} show="Grant access to a group" hide="Show granted groups only" />
       ) : null}
-      <table id={groupsId} class="users-table" aria-label={`Group grants for ${project.name}`} hidden={groups.length === 0}>
+      <table id={groupsId} class="users-table" aria-label={`Group grants for ${project.name}`}>
         <tbody>
+          <tr class="users-public">
+            <td>
+              <span aria-hidden="true">🌐</span> {PUBLIC_NAME}
+              <div class="users-how">Visitors without GitHub sign-in</div>
+            </td>
+            <td>
+              <GrantEditor readOnly label={`Grant for ${PUBLIC_NAME} on ${project.name}`} value={publicAccess(project)} disabled={working} save={(access) => act({ action: 'public', projectId: project.id, access: access === 'ro' ? 'ro' : null }, 'Public access saved.')} />
+            </td>
+          </tr>
           {groups.map((g) => (
             <tr key={g.id}>
               <td>{link(usersUrl({ group: g.id }), <Who group>{groupName(g)}</Who>)}</td>

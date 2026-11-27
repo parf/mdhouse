@@ -57,6 +57,11 @@ export function configuredAccess(project: TeamProject, user: TeamUser): TeamAcce
   return best;
 }
 
+/** The built-in Public row's name: visitors without a Team session. Not a group. */
+export const PUBLIC_NAME = 'Public';
+/** A project's Public grant: Read-only only when the server says exactly `ro`; anything else is No grant. */
+export const publicAccess = (project: TeamProject): 'ro' | null => (project.public === 'ro' ? 'ro' : null);
+
 /** Where access comes from, by level: who or which group gives RW, and RO. Labels carry their glyph. */
 export interface Sources {
   rw: string[];
@@ -77,9 +82,10 @@ export function userSources(project: TeamProject, user: TeamUser, groups: TeamGr
   return out;
 }
 
-/** A project's sources once: every user with a direct grant and every group with one. */
+/** A project's sources once: Public, every user with a direct grant and every group with one. */
 export function projectSources(project: TeamProject, snap: TeamSnapshot): Sources {
   const out: Sources = { rw: [], ro: [] };
+  if (publicAccess(project)) out.ro.push(`🌐 ${PUBLIC_NAME}`);
   for (const u of snap.users) {
     const a = project.grants.users[u.id];
     if (a === 'rw' || a === 'ro') out[a].push(`👤 ${u.login}`);

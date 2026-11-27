@@ -39,6 +39,11 @@ access** gives the user the strongest group grant and clears any direct block. *
 a group's grant. Select **Save** to apply a change. Viewer and read-only projects cap access at RO.
 A ban denies sign-in and revokes existing sessions. Staged grants take effect when Team access is enabled.
 
+**Public** is a built-in row in each project's **Groups**: **No grant** (the default) or **Read-only**. It
+applies to visitors without GitHub sign-in. It is not a group: it has no members and is not in user filters
+or group fields. A visitor of a public project reads it with a **Sign in** link in place of Settings and no
+write controls. With no public project, visitors go to GitHub sign-in as before.
+
 ### Turn on Team access
 
 Configure a GitHub OAuth app with the callback `/auth/github/callback` on the mdhouse origin. Use

@@ -8,7 +8,7 @@ import type { RecentEntry } from '../lib/store';
 import type { UiTree } from './api';
 import { accessBadge } from './project-groups';
 import { StoredRwTag, useViewer, ViewerBadge } from './viewer';
-import { useTeam } from './team';
+import { useGuest, useTeam } from './team';
 import { gitStateClass, shownStatus } from './git-state';
 import { GitStateBadge } from './GitStateBadge';
 import type { SearchResult } from '../lib/search';
@@ -124,7 +124,9 @@ export function Sidebar(props: SidebarProps) {
   const { state, tree, query } = props;
   const wide = state === 'open';
   const StateIcon = STATE_ICON[state];
-  const viewer = useViewer();
+  // A guest's pages are read-only too, but it is not a Viewer: no Viewer badge or tag, and no project actions.
+  const guest = useGuest();
+  const viewer = useViewer() && !guest;
   const team = useTeam();
   // Active Team access: RAG is refused, so a remembered RAG Search scope searches Files.
   const searchTarget = team ? 'files' : props.searchTarget;
@@ -250,7 +252,7 @@ export function Sidebar(props: SidebarProps) {
             onPick={props.onPickRoot}
             above={wide ? 2 : 1}
             max={wide ? 44 : 28}
-            actions={PROJECT_ACTIONS}
+            actions={guest ? undefined : PROJECT_ACTIONS}
             onAction={(id) => props.onProjectAction(id as 'add' | 'create')}
           />
         </div>
@@ -424,7 +426,7 @@ export function Sidebar(props: SidebarProps) {
             </button>
           </span>
         )}
-        {team && props.teamMe?.kind === 'login' && (
+        {team && (props.teamMe?.kind === 'login' || props.teamMe?.kind === 'guest') && (
           <a class="team-me" href={props.teamMe.login}>
             Sign in
           </a>

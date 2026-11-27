@@ -7,3 +7,10 @@ import { useContext } from 'preact/hooks';
  */
 export const TeamContext = createContext(false);
 export const useTeam = (): boolean => useContext(TeamContext);
+
+/**
+ * A guest: active Team access, no Team session, reading public projects. Every project is read-only and there is no
+ * administration; the app also sets the Viewer context, so write controls are gone. Viewer wording is not shown for it.
+ */
+export const GuestContext = createContext(false);
+export const useGuest = (): boolean => useContext(GuestContext);
