@@ -22,15 +22,21 @@ CTO owns implementation, acceptance and integration into `main`.
 
 ## Acceptance
 
-- [ ] From a writable Markdown document, open the editor, reload directly, make an edit, save,
+- [x] From a writable Markdown document, open the editor, reload directly, make an edit, save,
   and return to the document. Check keyboard and touch, light and dark, and desktop and phone.
-- [ ] Verify plain Markdown source fidelity through edit, selection, undo and save. Check
+- [x] Verify plain Markdown source fidelity through edit, selection, undo and save. Check
   `LF`/`CRLF`, BOM and final newline. Switching modes keeps draft, caret and scroll.
-- [ ] Compare the same draft in Preview and the document renderer with tables, Mermaid, wikilinks,
+- [x] Compare the same draft in Preview and the document renderer with tables, Mermaid, wikilinks,
   relative links/images and Q&A. Check hostile authored HTML and confirm preview cannot run
   document actions or write source. Check that Preview uses the latest draft during rapid toggles.
-- [ ] Verify direct entry for Viewer, RO, reference and non-Markdown files. Verify live write
+- [x] Verify direct entry for Viewer, RO, reference and non-Markdown files. Verify live write
   revocation and external edits preserve the draft and prevent stale writes. Keep current jail,
   admission and Team grant checks at the existing source API and any preview route.
-- [ ] Run focused checks, the combined test/type gate and bounded scratch browser checks. Obtain
+- [x] Run focused checks, the combined test/type gate and bounded scratch browser checks. Obtain
   independent review on the exact revision. Record the result and update editor docs and changelog.
+
+## Result
+
+- ✅ W2 `c888c27`, integrated on `main` as `b74c0fa`: gate 1732/0 + tsc; scratch browser 64/64 (1280/390, light/dark, touch audits zero).
+- ✅ Independent review PASS bound to `c888c27`; integrated HEAD focused 111/0 + tsc.
+- ⚪ Team boundary covered by `serve()` tests, not in a browser. Viewer no longer opens a kept draft.
