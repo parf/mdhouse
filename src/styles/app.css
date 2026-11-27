@@ -851,7 +851,7 @@ main {
 .doc-wrap.full { max-width: none; }
 
 .doc-head { margin-bottom: 18px; }
-.crumbs { font-size: 12px; color: var(--fg-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.crumbs { font-size: 12px; color: var(--fg-muted); display: flex; width: fit-content; max-width: 100%; flex-wrap: wrap; align-items: center; gap: 4px; }
 .crumbs .sep { color: var(--fg-faint); }
 .crumbs .crumb { font: inherit; color: inherit; padding: 0; border-radius: 2px; }
 .crumbs .crumb:hover { color: var(--accent); text-decoration: underline; }
