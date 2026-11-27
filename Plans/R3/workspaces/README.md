@@ -49,7 +49,9 @@ are absent. It preserves configured per-root modes for a later return to Workspa
 In Workspace mode, read access may stay open while edit access requires login. Optionally localhost
 or configured intranet CIDRs may receive Editor access without login; requests from everywhere else
 remain Reader until authenticated. Effective write access requires both an RW root and Editor access.
-For a known user it also requires that user's RW grant for the project.
+For a known user it also requires that user's RW grant for the project. In Team, a project can
+grant read-only access to visitors without signing in through the built-in Public group. Its
+default is No Grant.
 
 Normal Team login is GitHub OAuth. Add user asks only for a GitHub username; mdhouse binds grants to
 the immutable GitHub user ID and displays the pinned username; after it is set, only a configured

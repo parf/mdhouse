@@ -34,6 +34,9 @@
   Groups have their own overview and detail with members and project grants. Access rows list the configured RW and RO sources.
   Nested projects have independent grants. A parent omits each separately served descendant, and Team retains that boundary when the child is unserved.
   The single mdhouse process calls `syncAuth()` after persisted authorization changes.
+- 📌 USER-W9 Public is a built-in group for visitors without a Team session.
+  Each project offers No Grant (default) or Read-Only. Public grants no write or administrative
+  authority and has no editable membership. [History](RESOLVED.md#USER-W9).
 - 📌 USER-W3 Admission: known users; optional trusted localhost/CIDRs with explicit project policy.
   No inherited admin grants. Forwarded addresses require a configured trusted proxy.
 - 📌 USER-W4 GitHub OAuth → secure revocable session; secrets/tokens server-side.

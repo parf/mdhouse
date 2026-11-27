@@ -16,6 +16,19 @@
   > 💬 review and do yourself, BUT keep in mind CLAUDE.md - ONLY real project knowledge, no junk, keep it small - review and use best practices
   > 💬👾 → done: CLAUDE.md (testPort, fixture playground, package size, two scratch rules), Plans/R3/README.md links DATA.md.
 
+## Public project access — 2026-11-27
+
+- ✅ USER-W9 Public read-only grants approved.
+  > 💬 👤parf http://md/settings/users?project=mdhouse
+  > congig =>  access => Groups
+  >   show Public group - only two options - No Grant / Read-Only
+  >
+  > что понял
+  >
+  > 💬 👤parf yes, go
+
+Applied to [№USER-W9](DECISIONS.md#USER-W9) and [№MW.0d.4](TODO.md#MW.0d.4).
+
 ## Dedicated Markdown editor — 2026-11-27
 
 - ✅ EDIT-W3 Separate editor and optional Preview approved.
