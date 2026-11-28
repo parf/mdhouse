@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TeamSnapshot } from '../src/ui/api';
-import { configuredAccess, groupCounts, groupField, groupFilters, parseGroupField, projectSources, sourcesText, userSources, usersIn } from '../src/ui/team-model';
+import { configuredAccess, grantAction, grantChoices, grantShown, groupCounts, groupField, groupFilters, parseGroupField, projectSources, publicAccess, sourcesText, userSources, usersIn } from '../src/ui/team-model';
 
 const snap: TeamSnapshot = {
   revision: 'r1', active: false, oauthReady: true, adminId: '1',
@@ -48,5 +48,52 @@ describe('Users page rules', () => {
     expect(sourcesText(projectSources(p, snap))).toBe('RW: 👥 ops · RO: 👥 dev');
     const withDirect = { ...p, grants: { users: { '1': 'rw' as const }, groups: { 'all-users': 'ro' as const } } };
     expect(sourcesText(projectSources(withDirect, snap))).toBe('RW: 👤 ann · RO: 👥 All Users');
+  });
+});
+
+describe('Public, the built-in row for visitors without a Team session', () => {
+  const p = snap.projects[0]!;
+  const as = (value: unknown) => ({ ...p, public: value }) as typeof p;
+  test('Read-only only for exactly ro; missing, null, rw or junk read as No grant', () => {
+    expect(publicAccess(as('ro'))).toBe('ro');
+    for (const v of [undefined, null, 'rw', 'RO', '', 1, {}]) expect(publicAccess(as(v))).toBeNull();
+  });
+  test('the project summary names Public under RO; no grants otherwise unchanged', () => {
+    expect(sourcesText(projectSources(as('ro'), snap))).toBe('RW: 👥 ops · RO: 🌐 Public, 👥 dev');
+    expect(sourcesText(projectSources(as(null), snap))).toBe('RW: 👥 ops · RO: 👥 dev');
+    const bare = { ...p, grants: { users: {}, groups: {} }, public: 'ro' as const };
+    expect(sourcesText(projectSources(bare, snap))).toBe('RO: 🌐 Public');
+  });
+  test('Public is not a group: filters, group fields and a user\'s access ignore it', () => {
+    const pub = { ...snap, projects: [as('ro')] };
+    expect(groupFilters(pub).map((f) => f.label)).toEqual(['All Users', 'dev', 'ops']);
+    expect(groupField(pub, pub.users[2]!)).toBe('');
+    expect(configuredAccess(pub.projects[0]!, pub.users[2]!)).toBe('none');
+    expect(sourcesText(userSources(pub.projects[0]!, pub.users[2]!, pub.groups))).toBe('');
+  });
+});
+
+describe('grant radios', () => {
+  test('choices: No Grant first everywhere; Public exactly No Grant / Read-Only', () => {
+    expect(grantChoices({ kind: 'public' })).toEqual([['', 'No Grant'], ['ro', 'Read-Only']]);
+    expect(grantChoices({ kind: 'group', id: 'g' })).toEqual([['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']]);
+    expect(grantChoices({ kind: 'user', id: '1' })).toEqual([['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']]);
+  });
+  test('No Grant sends access: null — never none — for a user, a group and Public', () => {
+    expect(grantAction('p', { kind: 'user', id: '3' }, '')).toEqual({ action: 'grant', projectId: 'p', subject: 'user', subjectId: '3', access: null });
+    expect(grantAction('p', { kind: 'group', id: 'g-dev' }, '')).toEqual({ action: 'grant', projectId: 'p', subject: 'group', subjectId: 'g-dev', access: null });
+    expect(grantAction('p', { kind: 'public' }, '')).toEqual({ action: 'public', projectId: 'p', access: null });
+  });
+  test('RO / RW send their level; Public sends ro', () => {
+    expect(grantAction('p', { kind: 'user', id: '3' }, 'rw')).toEqual({ action: 'grant', projectId: 'p', subject: 'user', subjectId: '3', access: 'rw' });
+    expect(grantAction('p', { kind: 'group', id: 'g' }, 'ro')).toEqual({ action: 'grant', projectId: 'p', subject: 'group', subjectId: 'g', access: 'ro' });
+    expect(grantAction('p', { kind: 'public' }, 'ro')).toEqual({ action: 'public', projectId: 'p', access: 'ro' });
+  });
+  test('shown: a legacy block is its own state; missing is No Grant', () => {
+    expect(grantShown('none')).toBe('none');
+    expect(grantShown(undefined)).toBe('');
+    expect(grantShown(null)).toBe('');
+    expect(grantShown('ro')).toBe('ro');
+    expect(grantShown('rw')).toBe('rw');
   });
 });

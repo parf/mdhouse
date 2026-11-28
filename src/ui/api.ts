@@ -261,6 +261,8 @@ export interface TeamProject {
   path: string;
   writable: boolean;
   grants: { users: Record<string, TeamAccess | 'none'>; groups: Record<string, TeamAccess> };
+  /** Public: read-only for visitors without a Team session; null or absent: No grant. Not a group. */
+  public?: 'ro' | null;
   /** Each user's access as it would be enforced. */
   effective: Record<string, TeamAccess | null>;
 }
@@ -288,11 +290,14 @@ export type TeamAction =
   | { action: 'add'; token: string }
   | { action: 'groups'; userId: string; groups: string }
   | { action: 'ban'; userId: string; banned: boolean }
-  | { action: 'grant'; projectId: string; subject: 'user' | 'group'; subjectId: string; access: TeamAccess | 'none' | null };
+  | { action: 'grant'; projectId: string; subject: 'user' | 'group'; subjectId: string; access: TeamAccess | 'none' | null }
+  | { action: 'public'; projectId: string; access: 'ro' | null };
 /** `GET /api/team/me`: who this browser is signed in as under Team access — or off, or a sign-in is needed. */
 export type TeamMe =
   | { kind: 'off' }
   | { kind: 'login'; login: string }
+  /** A visitor without a Team session reading public projects: read-only, with a sign-in link. */
+  | { kind: 'guest'; login: string }
   | { kind: 'user'; user: { id: string; login: string; name: string | null; groups: string[] }; admin: boolean; grants: Record<string, TeamAccess> };
 
 export interface TeamPreview {
@@ -420,7 +425,9 @@ export const api = {
     const res = await fetch('/api/team/me');
     if (res.status === 404) return { kind: 'off' };
     const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-    if (res.status === 401) return { kind: 'login', login: typeof body?.login === 'string' && body.login.startsWith('/') ? body.login : '/auth/github/login' };
+    const login = typeof body?.login === 'string' && body.login.startsWith('/') ? body.login : '/auth/github/login';
+    if (res.status === 401) return { kind: 'login', login };
+    if (res.ok && body?.guest === true && body.user === null) return { kind: 'guest', login };
     if (!res.ok || !body?.user) throw new ApiError(`${res.status} ${res.statusText}`, res.status);
     return { kind: 'user', ...(body as Omit<Extract<TeamMe, { kind: 'user' }>, 'kind'>) };
   },

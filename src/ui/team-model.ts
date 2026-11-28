@@ -1,5 +1,5 @@
 /** The Users page's pure rules: group filters, the group field, where a user's access to a project comes from. */
-import type { TeamAccess, TeamGroup, TeamProject, TeamSnapshot, TeamUser } from './api';
+import type { TeamAccess, TeamAction, TeamGroup, TeamProject, TeamSnapshot, TeamUser } from './api';
 
 export const ALL_USERS = 'all-users';
 /** The built-in group's name, always. */
@@ -57,6 +57,35 @@ export function configuredAccess(project: TeamProject, user: TeamUser): TeamAcce
   return best;
 }
 
+/** The built-in Public row's name: visitors without a Team session. Not a group. */
+export const PUBLIC_NAME = 'Public';
+/** A project's Public grant: Read-only only when the server says exactly `ro`; anything else is No grant. */
+export const publicAccess = (project: TeamProject): 'ro' | null => (project.public === 'ro' ? 'ro' : null);
+
+/** A grant row's radio choice: `''` is No Grant — no record (a user then uses their groups' access). */
+export type GrantChoice = '' | TeamAccess;
+/** Whose grant a row edits: a user's direct grant, a group's grant, or Public. */
+export type GrantSubject = { kind: 'user' | 'group'; id: string } | { kind: 'public' };
+
+/** The radios of a row, first No Grant. Public has the owner's exact labels and no RW. */
+export function grantChoices(subject: GrantSubject): Array<[GrantChoice, string]> {
+  return subject.kind === 'public'
+    ? [['', 'No Grant'], ['ro', 'Read-Only']]
+    : [['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']];
+}
+
+/** The radio a stored value shows: a legacy explicit block stays its own state until another radio is picked. */
+export function grantShown(value: TeamAccess | 'none' | null | undefined): GrantChoice | 'none' {
+  return value === 'ro' || value === 'rw' || value === 'none' ? value : '';
+}
+
+/** The `/api/team` change a radio sends. No Grant sends `access: null`, never `'none'`. */
+export function grantAction(projectId: string, subject: GrantSubject, choice: GrantChoice): TeamAction {
+  const access = choice === '' ? null : choice;
+  if (subject.kind === 'public') return { action: 'public', projectId, access: access === 'ro' ? 'ro' : null };
+  return { action: 'grant', projectId, subject: subject.kind, subjectId: subject.id, access };
+}
+
 /** Where access comes from, by level: who or which group gives RW, and RO. Labels carry their glyph. */
 export interface Sources {
   rw: string[];
@@ -77,9 +106,10 @@ export function userSources(project: TeamProject, user: TeamUser, groups: TeamGr
   return out;
 }
 
-/** A project's sources once: every user with a direct grant and every group with one. */
+/** A project's sources once: Public, every user with a direct grant and every group with one. */
 export function projectSources(project: TeamProject, snap: TeamSnapshot): Sources {
   const out: Sources = { rw: [], ro: [] };
+  if (publicAccess(project)) out.ro.push(`🌐 ${PUBLIC_NAME}`);
   for (const u of snap.users) {
     const a = project.grants.users[u.id];
     if (a === 'rw' || a === 'ro') out[a].push(`👤 ${u.login}`);

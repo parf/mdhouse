@@ -34,10 +34,16 @@ their access to each project, or select a project to edit access for its users a
 users. **All Users** automatically includes every registered account. The administrator can enter
 extra group names in the user's field, separated by spaces or commas.
 
-A direct **Read-only** or **Read and write** grant takes precedence over group grants. **Use group
-access** gives the user the strongest group grant and clears any direct block. **No grant** removes
-a group's grant. Select **Save** to apply a change. Viewer and read-only projects cap access at RO.
+Each grant is a row of choices: **No Grant**, **Read-only**, **Read and write**. One click saves it.
+**No Grant** removes the record: a user then has their groups' strongest grant. A direct **Read-only**
+or **Read and write** grant takes precedence over group grants. An older explicit block shows as
+**Blocked** until you pick another choice. Viewer and read-only projects cap access at RO.
 A ban denies sign-in and revokes existing sessions. Staged grants take effect when Team access is enabled.
+
+**Public** is a built-in row in each project's **Groups**: **No Grant** (the default) or **Read-Only**. It
+applies to visitors without GitHub sign-in. It is not a group: it has no members and is not in user filters
+or group fields. A visitor of a public project reads it with a **Sign in** link in place of Settings and no
+write controls. With no public project, visitors go to GitHub sign-in as before.
 
 ### Turn on Team access
 

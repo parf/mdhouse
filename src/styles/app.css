@@ -2565,8 +2565,24 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .users-table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .users-table td { padding: 4px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
 .users-table tr.banned td:first-child { opacity: 0.6; }
-.grant-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+/* A row's grant as radios: No Grant neutral, Read-only blue, Read and write amber in the border, fill and dot; the words stay --fg for contrast. */
+.grant-radios { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.grant-choice { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px 2px 5px; border: 1px solid var(--border-strong); border-radius: 999px; font-size: 12px; color: var(--fg-muted); cursor: pointer; white-space: nowrap; }
+.grant-choice input { margin: 0; accent-color: var(--fg-muted); }
+.grant-choice:has(input:checked) { color: var(--fg); border-color: var(--fg-muted); font-weight: 600; }
+.grant-choice.ro:has(input:checked) { color: var(--fg); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.grant-choice.ro input { accent-color: var(--accent); }
+.grant-choice.rw:has(input:checked) { color: var(--fg); border-color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.grant-choice.rw input { accent-color: var(--warn); }
+.grant-choice.none:has(input:checked) { color: var(--danger); border-color: var(--danger); }
+.grant-choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+.grant-radios:disabled .grant-choice { cursor: progress; opacity: 0.7; }
+.users-nogrant { margin: 0 0 6px; font-size: 12px; }
+/* A project's folder after its name in the Access heading: small, muted, wrapping anywhere. */
+.users-detail h2 .users-path { font-size: 12px; font-weight: 400; color: var(--fg-muted); overflow-wrap: anywhere; min-width: 0; }
 .users-how { padding-top: 2px; font-size: 12px; color: var(--fg-muted); }
+/* A guest's Sign in, where the ⚙ Settings button sits for a signed-in reader. */
+.guest-signin { text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; }
 .users-how > details { margin: 3px 0; overflow-wrap: anywhere; }
 .users-how summary, .users-disclose summary { width: fit-content; max-width: 100%; color: var(--accent); cursor: pointer; }
 .users-disclose { margin: 10px 0; }
@@ -2588,7 +2604,7 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 }
 @media (max-width: 400px) { .users-table td { padding-inline: 4px; } }
 @media (pointer: coarse) {
-  .settings-nav a, .users-disclose summary, .users-activation summary, .users-reveal, .grant-editor button { min-height: 44px; }
+  .settings-nav a, .users-disclose summary, .users-activation summary, .users-reveal, .grant-choice { min-height: 44px; }
   .users-disclose summary, .users-activation summary { padding-block: 10px; }
   .users-detail-back a { display: inline-flex; align-items: center; min-height: 44px; }
   .users-row { display: inline-block; padding: 10px 0; }
@@ -2609,6 +2625,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .team-me { margin-left: auto; display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
 .team-me .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
 @media (pointer: coarse) { .team-me .linklike { min-height: 44px; } }
-.users-table td:first-child { overflow-wrap: anywhere; }
+.users-table td:first-child { overflow-wrap: anywhere; min-width: 8em; }
 .users-summary { font-size: 13.5px; margin: 6px 0 4px; }
 .users-blocked { color: var(--danger); }
