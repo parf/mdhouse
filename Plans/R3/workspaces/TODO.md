@@ -101,7 +101,8 @@ Independent Copy, license and flow-package authoring may proceed before default 
   - Home: [Next release](README.md#next-release)
 
 - [ ] MW.0d Add user management and per-project grants <a id="MW.0d"></a>
-  - [ ] MW.0d.4 [Public read-only access per project](MW.0d.4-public-project-access.md) <a id="MW.0d.4"></a>
+  - [x] MW.0d.4 [Public read-only access per project](MW.0d.4-public-project-access.md) <a id="MW.0d.4"></a>
+    Verified: `efceb3a`, security review PASS; [result](MW.0d.4-public-project-access.md#result)
   - [x] MW.0d.3 Separate Users page with user/project grants, group membership and bans <a id="MW.0d.3"></a>
     Owner approved 2026-11-18. From a user, show every project and a direct RO/RW choice. From a project, show every user and group with RO/RW choices. Both edit the same grants.
     Admin-editable group input takes spaces and commas. Show group badges in user lists. Built-in **All Users** membership is automatic and grants no projects on its own.
