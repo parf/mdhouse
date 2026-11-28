@@ -1,11 +1,22 @@
 # Plans
 
-Use `Plans/<project>/` for active project planning. Keep project knowledge, active work,
-completed work and follow-up in their own files.
+Keep project plans under `Plans/`. Choose the structure that fits the work.
 
-Read `README.md`, `TODO.md` and `DECISIONS.md` together. After an approved change, reconcile all
-three before closing the work. Keep current specifications, tasks and rules in those files. Move
-completed work and superseded text to their archives.
+## Plan size
+
+- **Small.** Use one PascalCase file, such as `Plans/ProjectName.md`, with `## README`, `## TODO`
+  and `## DONE` sections. `README` describes the intended result. `TODO` lists open tasks as `[ ]`.
+  Move finished tasks to `DONE` as `[x]` with the same IDs and a short result or evidence link.
+- **Medium.** Use a lowercase directory, such as `Plans/project-name/`, with `README.md`, `TODO.md`
+  and `DONE.md`. Add `DECISIONS.md` and other standard files as needed.
+- **Large.** Use the same directory structure, with a [constitution](#constitution-md) strongly
+  recommended. Keep a high-level specification in `README.md` and link to separate PascalCase
+  feature specifications such as `PublicAccess.md` and `MarkdownEditor.md`. Each feature file
+  describes its intended behavior and constraints. Track implementation in `TODO.md` and link each
+  task to its feature specification.
+
+Read the current specification, tasks and decisions together. After an approved change, reconcile
+them before closing the work. Move completed work and superseded text to their archives.
 
 ## Files
 
@@ -26,7 +37,7 @@ completed work and superseded text to their archives.
 | `scripts/` | One-time and support scripts belonging to the plan |
 | `tmp/` | Gitignored scratch files and scripts |
 | `done/` | Archived project artifacts |
-| `Plans/done/<project>/` | Completed project archive |
+| `Plans/done/ProjectName.md` or `Plans/done/project-name/` | Completed project archive |
 
 ### `README.md`
 
@@ -40,10 +51,11 @@ completed work and superseded text to their archives.
 
 ### `CONSTITUTION.md`
 
-For large projects, create `Plans/<project>/CONSTITUTION.md` and link to it from the project
+For large projects, create `Plans/project-name/CONSTITUTION.md` and link to it from the project
 `README.md` and the instructions agents read when they start work. A constitution is especially
 useful when multiple teams or agents need to apply the same rules across many features. For small
-and medium projects, keep the rules in `README.md` and `DECISIONS.md` as needed.
+and medium projects, keep the rules in the project specification and any `DECISIONS.md` used by
+the project.
 
 The constitution defines how the project is built and reviewed across features. Each feature
 specification defines what to build for that feature. Anyone working on a feature, including an
@@ -186,27 +198,28 @@ and reviewing the result. During review, check the result against each applicabl
 
 ### Start and execute
 
-1. Create `README.md` and `TODO.md` for non-trivial work. Add optional files when needed.
+1. Choose the [plan size](#plan-size). Create the single-file plan or its directory and core files.
 2. Name tasks with stable IDs and write their acceptance criteria before execution.
 3. Update the plan in the same turn as the work. Mark each completed item `[x]` with a commit or
    receipt, or use a status glyph and a short note for work in progress, partial results or blockers.
-4. Update functional docs when a task changes behavior. Update `README.md` when the specification
-   changes.
+4. Update functional docs when a task changes behavior. Update the project or feature specification
+   when the intended behavior changes.
 
 ### Close a task or wave
 
-- Add a short result to `DONE.md`. Move completed detail out of `TODO.md` and leave a concise
-  link at the old anchor where references need it.
+- Move the completed task from `TODO` to `DONE` in a single-file plan, or from `TODO.md` to
+  `DONE.md` in a directory plan. Record a short result and leave a link at the old anchor where
+  references need it.
 - Archive a completed section or wave under `done/`. Move post-project follow-up to `FUTURE.md`.
 - Apply resolved answers to the plan and archive their threads. Keep active tasks in `TODO.md`
   until their acceptance criteria are met.
 
 ### Close a project
 
-- Check delivery against `README.md` and `DECISIONS.md`. Keep any unresolved gap active in
-  `TODO.md` until it is addressed or the owner approves a change in scope. Keep the concise
-  `DONE.md`, any needed `FUTURE.md`, and useful snapshots under `done/`.
-- Move the project directory to `Plans/done/<project>/` and verify incoming and outgoing links,
+- Check delivery against the project specification and decisions. Keep unresolved work in the
+  active task list until it is addressed or the owner approves a change in scope. Keep the results,
+  any follow-up and useful snapshots with the archived project.
+- Move the project file or directory into `Plans/done/` and verify incoming and outgoing links,
   including anchors.
 
 ## Collapsible details
@@ -226,8 +239,10 @@ Keep decisions, next steps, gates, blockers and results visible. Put supporting 
 ## Naming
 
 - Use uppercase for standard planning filenames such as `TODO.md` and `RESOLVED.md` so they stand
-  out from project-specific files. Under `Plans/`, use lowercase for directory names and descriptive
-  slugs. Keep the existing case of ticket codes and task IDs.
+  out from project-specific files. Use PascalCase for single-file project plans and feature
+  specifications, such as `ProjectName.md` and `PublicAccess.md`.
+- Use lowercase for project directory names and descriptive slugs under `Plans/`. Keep the
+  existing case of ticket codes and task IDs.
 - Name ticket-backed project directories `<TICKET>-<short-slug>`, for example
   `APP-123-search-filters`. For work without a ticket, use a short slug such as `search-parser`.
 - Use IDs such as `A`, `A.1` and `A.1.2`, and task filenames such as `A.1-parse-cities.md`.

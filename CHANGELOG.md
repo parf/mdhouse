@@ -18,7 +18,7 @@
 - **Edit** opens the whole source on its own page (`<doc>?edit`) instead of in the document: Markdown styled in place, with its marks and link targets shown only on the line you are on. **Preview** shows the unsaved text rendered — tables, diagrams, wikilinks and Q&A — read-only; back in the editor the cursor and scroll are where you left them. **Save** / Ctrl+S keeps you on the page; **Back to document** keeps unsaved text as before. Ticks, answers and section inserts stay on the document page.
 
 - The project README and `mdhouse docs` now point agents to one guide, `agents/README.md`.
-- Expanded the planning guide for agents with project file roles, task and wave tracking, archiving, and constitutions for large projects.
+- Expanded the planning guide for agents with layouts for small, medium and large projects, file roles, task and wave tracking, archiving, and constitutions for large projects.
 
 ### Fixed
 
