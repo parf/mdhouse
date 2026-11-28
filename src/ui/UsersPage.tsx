@@ -241,6 +241,12 @@ function GrantRadios({ name, label, value, subject, disabled, save }: {
   );
 }
 
+/** Rows edited on this page stay listed after No Grant, so the row and its focus do not vanish under the click. */
+function useKept(): [Set<string>, (id: string) => void] {
+  const [kept, setKept] = useState<Set<string>>(() => new Set());
+  return [kept, (id) => setKept((prev) => (prev.has(id) ? prev : new Set(prev).add(id)))];
+}
+
 /** One line per table of user grants: No Grant is no record, so the user's groups decide. */
 const USER_NO_GRANT = 'No Grant on a user uses their groups\' access.';
 
@@ -285,7 +291,8 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
   const [groups, setGroups] = useState(() => groupField(snap, user));
   const [showAll, setShowAll] = useState(false);
   const grantsId = useId();
-  const projects = snap.projects.filter((p) => showAll || configuredAccess(p, user));
+  const [kept, keep] = useKept();
+  const projects = snap.projects.filter((p) => showAll || configuredAccess(p, user) || kept.has(p.id));
   const memberships = snap.groups.filter((g) => user.groups.includes(g.id));
   useEffect(() => setGroups(groupField(snap, user)), [snap.revision, user.id]);
   const changed = parseGroupField(groups).join(' ') !== groupField(snap, user);
@@ -319,7 +326,7 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
                 <UserSources snap={snap} project={p} user={user} />
               </td>
               <td>
-                <GrantRadios name={`grant-user-${user.id}-${p.id}`} label={`Direct access for ${user.login} on ${p.name}`} subject={{ kind: 'user', id: user.id }} value={p.grants.users[user.id]} disabled={working} save={(c) => act(grantAction(p.id, { kind: 'user', id: user.id }, c), 'Project access saved.')} />
+                <GrantRadios name={`grant-user-${user.id}-${p.id}`} label={`Direct access for ${user.login} on ${p.name}`} subject={{ kind: 'user', id: user.id }} value={p.grants.users[user.id]} disabled={working} save={(c) => (keep(p.id), act(grantAction(p.id, { kind: 'user', id: user.id }, c), 'Project access saved.'))} />
               </td>
             </tr>
           ))}
@@ -359,7 +366,8 @@ function GroupDetail({ snap, group, working, act, link }: { snap: TeamSnapshot; 
   const members = usersIn(snap, group.id);
   const [showAll, setShowAll] = useState(false);
   const grantsId = useId();
-  const projects = snap.projects.filter((p) => showAll || p.grants.groups[group.id]);
+  const [kept, keep] = useKept();
+  const projects = snap.projects.filter((p) => showAll || p.grants.groups[group.id] || kept.has(p.id));
   return (
     <div class="users-group-detail">
       <h2 tabIndex={-1}>
@@ -379,7 +387,7 @@ function GroupDetail({ snap, group, working, act, link }: { snap: TeamSnapshot; 
                 {!p.writable && <div class="users-how">Project is read-only</div>}
               </td>
               <td>
-                <GrantRadios name={`grant-group-${group.id}-${p.id}`} label={`Grant for ${groupName(group)} on ${p.name}`} subject={{ kind: 'group', id: group.id }} value={p.grants.groups[group.id]} disabled={working} save={(c) => act(grantAction(p.id, { kind: 'group', id: group.id }, c), 'Group grant saved.')} />
+                <GrantRadios name={`grant-group-${group.id}-${p.id}`} label={`Grant for ${groupName(group)} on ${p.name}`} subject={{ kind: 'group', id: group.id }} value={p.grants.groups[group.id]} disabled={working} save={(c) => (keep(p.id), act(grantAction(p.id, { kind: 'group', id: group.id }, c), 'Group grant saved.'))} />
               </td>
             </tr>
           ))}
@@ -403,9 +411,10 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
   const [showUsers, setShowUsers] = useState(false);
   const groupsId = useId();
   const usersId = useId();
-  const groups = snap.groups.filter((g) => showGroups || project.grants.groups[g.id])
+  const [kept, keep] = useKept();
+  const groups = snap.groups.filter((g) => showGroups || project.grants.groups[g.id] || kept.has(`g:${g.id}`))
     .sort((a, b) => (a.id === ALL_USERS ? -1 : b.id === ALL_USERS ? 1 : a.name.localeCompare(b.name)));
-  const users = snap.users.filter((u) => showUsers || project.grants.users[u.id]);
+  const users = snap.users.filter((u) => showUsers || project.grants.users[u.id] || kept.has(`u:${u.id}`));
   const summary = sourcesText(projectSources(project, snap));
   return (
     <div class="users-project">
@@ -433,7 +442,7 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
             <tr key={g.id}>
               <td>{link(usersUrl({ group: g.id }), <Who group>{groupName(g)}</Who>)}</td>
               <td>
-                <GrantRadios name={`grant-group-${g.id}-${project.id}`} label={`Grant for ${groupName(g)} on ${project.name}`} subject={{ kind: 'group', id: g.id }} value={project.grants.groups[g.id]} disabled={working} save={(c) => act(grantAction(project.id, { kind: 'group', id: g.id }, c), 'Group grant saved.')} />
+                <GrantRadios name={`grant-group-${g.id}-${project.id}`} label={`Grant for ${groupName(g)} on ${project.name}`} subject={{ kind: 'group', id: g.id }} value={project.grants.groups[g.id]} disabled={working} save={(c) => (keep(`g:${g.id}`), act(grantAction(project.id, { kind: 'group', id: g.id }, c), 'Group grant saved.'))} />
               </td>
             </tr>
           ))}
@@ -454,7 +463,7 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
                 <UserSources snap={snap} project={project} user={u} />
               </td>
               <td>
-                <GrantRadios name={`grant-user-${u.id}-${project.id}`} label={`Direct access for ${u.login} on ${project.name}`} subject={{ kind: 'user', id: u.id }} value={project.grants.users[u.id]} disabled={working} save={(c) => act(grantAction(project.id, { kind: 'user', id: u.id }, c), 'Project access saved.')} />
+                <GrantRadios name={`grant-user-${u.id}-${project.id}`} label={`Direct access for ${u.login} on ${project.name}`} subject={{ kind: 'user', id: u.id }} value={project.grants.users[u.id]} disabled={working} save={(c) => (keep(`u:${u.id}`), act(grantAction(project.id, { kind: 'user', id: u.id }, c), 'Project access saved.'))} />
               </td>
             </tr>
           ))}
