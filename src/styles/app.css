@@ -2625,6 +2625,6 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .team-me { margin-left: auto; display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
 .team-me .linklike { font: inherit; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
 @media (pointer: coarse) { .team-me .linklike { min-height: 44px; } }
-.users-table td:first-child { overflow-wrap: anywhere; }
+.users-table td:first-child { overflow-wrap: anywhere; min-width: 8em; }
 .users-summary { font-size: 13.5px; margin: 6px 0 4px; }
 .users-blocked { color: var(--danger); }
