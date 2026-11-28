@@ -1321,6 +1321,29 @@ describe('Team: Public projects for visitors without a Team session', () => {
     }
   });
 
+  test('a nested child registered as its own private project under a Public parent: guest sockets re-enter, the child path is 404', async () => {
+    const w = await world();
+    try {
+      const child = join(w.a.path, 'sub');
+      await writeFile(join(child, 'child-only.md'), '# child only\n');
+      await teamOn(w);
+      expect((await setPublic(w, w.a, 'ro')).status).toBe(200);
+      const path = `/api/doc?p=${w.a.id}/sub/child-only.md`;
+      expect((await guest(w, path)).status).toBe(200);
+      const socket = await w.ws(null);
+      const notFound = await (await guest(w, `/api/doc?p=${w.a.id}/missing.md`)).text();
+      const { askDaemon } = await import('../src/lib/control');
+      expect(await askDaemon(w.port, { dirs: [child] })).toMatchObject({ roots: expect.arrayContaining([expect.objectContaining({ path: child, added: true })]) });
+      await settle();
+      expect(socket.messages).toContainEqual({ t: 'auth' });
+      const res = await guest(w, path);
+      expect([res.status, await res.text()]).toEqual([404, notFound]);
+      socket.socket.close();
+    } finally {
+      await w.stop();
+    }
+  });
+
   test('a guest socket hears the public roots only, is re-scoped on a change and closed when nothing is public', async () => {
     const w = await world();
     try {

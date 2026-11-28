@@ -959,7 +959,7 @@ export async function serve(opts: ServeOptions) {
   const resetTeamTopology = (notify: boolean): void => {
     teamTopology++;
     for (const root of registry.all()) store.drop(root.id);
-    if (notify) for (const ws of sockets) if (ws.data.team) announceAuth(ws);
+    if (notify) for (const ws of sockets) if (ws.data.team || ws.data.guest) announceAuth(ws);
   };
   /** Re-scopes a Team or guest socket to `now`: a changed grant is announced, revoked roots unsubscribed, new ones subscribed. */
   const rescope = (ws: ServerWebSocket<WsData>, now: Map<string, string>): void => {
