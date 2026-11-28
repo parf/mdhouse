@@ -409,7 +409,9 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
   const summary = sourcesText(projectSources(project, snap));
   return (
     <div class="users-project">
-      <h2 tabIndex={-1}>{project.name}</h2>
+      <h2 tabIndex={-1}>
+        {project.name} <span class="users-path">{project.path}</span>
+      </h2>
       {!project.writable && <p class="settings-hint">Read-only project. Write grants are limited to read access.</p>}
       <p class="users-summary">{summary ? <>Configured grants · {summary}</> : 'No grants configured.'}</p>
       <h3 class="users-sub">Groups</h3>
@@ -458,10 +460,6 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
           ))}
         </tbody>
       </table>
-      <details class="users-disclose">
-        <summary>Folder details</summary>
-        <p class="settings-hint"><code>{project.path}</code></p>
-      </details>
     </div>
   );
 }
