@@ -29,7 +29,7 @@ them before closing the work. Move completed work and superseded text to their a
 | `DECISIONS.md` | Current rules that extend the specification, when needed |
 | `QUESTIONS.md` | Open questions, when needed |
 | `RESOLVED.md` | Resolved questions and decision history |
-| `HOW-TO-TEST.md` | Test accounts, flows, pipelines and instructions |
+| `TESTING.md` | Test accounts, flows, pipelines and instructions |
 | `FUTURE.md` | Follow-up after the project closes, when needed |
 | `done/` | Archived project artifacts |
 | `tmp/` | Gitignored scratch files and scripts |
@@ -161,7 +161,7 @@ and reviewing the result. During review, check the result against each applicabl
   Name each `<slug>-YYYYMMDD.md` or use a directory of that name for a multi-file receipt.
 - Apply the same data rules as for archived artifacts under [`done/`](#archives).
 
-### `HOW-TO-TEST.md`
+### `TESTING.md`
 
 - Keep test accounts, flows, pipelines, commands and step-by-step checks current for testers and
   agents. Cover both manual and automated checks where they exist.
