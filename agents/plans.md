@@ -31,6 +31,7 @@ them before closing the work. Move completed work and superseded text to their a
 | `QUESTIONS.md` | Open questions, when needed |
 | `DECISIONS.md` | Current rules that extend the specification, when needed |
 | `RESOLVED.md` or `resolved/` | Resolved questions and decision history |
+| `Plans/*/brainstorm/` | Discuss feature ideas before adding them to TODO. |
 | `sprint/` | Sub-plans for large tasks, when needed |
 | `reports/` | Receipts and proof of execution |
 | `HOW-TO-TEST.md` | Test accounts, flows, pipelines and instructions |
