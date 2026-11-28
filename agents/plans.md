@@ -1,13 +1,14 @@
 # Plans
 
-Keep project plans under `Plans/`. Choose the structure that fits the work.
+Keep project plans under `Plans/`. Choose the structure that fits the work and follow the
+[naming rules](#naming).
 
 ## Plan size
 
-- **Small.** Use one PascalCase file, such as `Plans/ProjectName.md`, with `## README`, `## TODO`
+- **Small.** Use one file, such as `Plans/ProjectName.md`, with `## README`, `## TODO`
   and `## DONE` sections. `README` describes the intended result. `TODO` lists open tasks as `[ ]`.
   Move finished tasks to `DONE` as `[x]` with the same IDs and a short result or evidence link.
-- **Medium.** Use a lowercase directory, such as `Plans/project-name/`, with `README.md`, `TODO.md`
+- **Medium.** Use a directory, such as `Plans/project-name/`, with `README.md`, `TODO.md`
   and `DONE.md`. Add `DECISIONS.md` and other standard files as needed.
 - **Large.** Use the same directory structure, with a [constitution](#constitution-md) strongly
   recommended. Keep a high-level specification in `README.md` and link to separate PascalCase
@@ -238,13 +239,15 @@ Keep decisions, next steps, gates, blockers and results visible. Put supporting 
 
 ## Naming
 
-- Use uppercase for standard planning filenames such as `TODO.md` and `RESOLVED.md` so they stand
-  out from project-specific files. Use PascalCase for single-file project plans and feature
-  specifications, such as `ProjectName.md` and `PublicAccess.md`.
-- Use lowercase for project directory names and descriptive slugs under `Plans/`. Keep the
-  existing case of ticket codes and task IDs.
-- Name ticket-backed project directories `<TICKET>-<short-slug>`, for example
-  `APP-123-search-filters`. For work without a ticket, use a short slug such as `search-parser`.
+- When a project plan has a tracker item, use `TrackerID-human-name` by default. Keep the tracker
+  ID's original case and use a short lowercase, hyphenated name. For example, use
+  `Plans/APP-123-search-filters.md` for a single-file plan or `Plans/APP-123-search-filters/` for
+  a directory plan.
+- For plans without a tracker item, use PascalCase for a single-file plan (`ProjectName.md`) and
+  lowercase, hyphenated names for directories (`project-name/`). Use PascalCase for feature
+  specifications (`PublicAccess.md`).
+- Use uppercase for standard planning filenames such as `TODO.md` and `RESOLVED.md`. Keep the
+  existing case of task IDs and use lowercase descriptive slugs under `Plans/`.
 - Use IDs such as `A`, `A.1` and `A.1.2`, and task filenames such as `A.1-parse-cities.md`.
   Keep IDs stable across the plan, `DONE.md`, reports, commits and relevant code comments.
 - Prefix ID references in documents with `№`. Link cross-file references to their anchors.
