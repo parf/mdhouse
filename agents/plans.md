@@ -31,6 +31,7 @@ them before closing the work. Move completed work and superseded text to their a
 | `RESOLVED.md` | Resolved questions and decision history |
 | `TESTING.md` | Test accounts, flows, pipelines and instructions |
 | `FUTURE.md` | Follow-up after the project closes, when needed |
+| `CONSTITUTION.md` | Project-wide rules for building and reviewing work, strongly recommended for large projects |
 | `done/` | Archived project artifacts |
 | `tmp/` | Gitignored scratch files and scripts |
 | `scripts/` | One-time and support scripts belonging to the plan |
@@ -41,7 +42,6 @@ them before closing the work. Move completed work and superseded text to their a
 | `sprint/` | Sub-plans for large tasks, when needed |
 | `reports/` | Receipts and proof of execution |
 | `Plans/done/ProjectName.md` or `Plans/done/project-name/` | Completed project archive |
-| `CONSTITUTION.md` | Project-wide rules for building and reviewing work, strongly recommended for large projects |
 
 ### `README.md`
 
