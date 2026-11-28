@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TeamSnapshot } from '../src/ui/api';
-import { configuredAccess, groupCounts, groupField, groupFilters, parseGroupField, projectSources, publicAccess, sourcesText, userSources, usersIn } from '../src/ui/team-model';
+import { configuredAccess, grantAction, grantChoices, grantShown, groupCounts, groupField, groupFilters, parseGroupField, projectSources, publicAccess, sourcesText, userSources, usersIn } from '../src/ui/team-model';
 
 const snap: TeamSnapshot = {
   revision: 'r1', active: false, oauthReady: true, adminId: '1',
@@ -70,5 +70,30 @@ describe('Public, the built-in row for visitors without a Team session', () => {
     expect(groupField(pub, pub.users[2]!)).toBe('');
     expect(configuredAccess(pub.projects[0]!, pub.users[2]!)).toBe('none');
     expect(sourcesText(userSources(pub.projects[0]!, pub.users[2]!, pub.groups))).toBe('');
+  });
+});
+
+describe('grant radios', () => {
+  test('choices: No Grant first everywhere; Public exactly No Grant / Read-Only', () => {
+    expect(grantChoices({ kind: 'public' })).toEqual([['', 'No Grant'], ['ro', 'Read-Only']]);
+    expect(grantChoices({ kind: 'group', id: 'g' })).toEqual([['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']]);
+    expect(grantChoices({ kind: 'user', id: '1' })).toEqual([['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']]);
+  });
+  test('No Grant sends access: null — never none — for a user, a group and Public', () => {
+    expect(grantAction('p', { kind: 'user', id: '3' }, '')).toEqual({ action: 'grant', projectId: 'p', subject: 'user', subjectId: '3', access: null });
+    expect(grantAction('p', { kind: 'group', id: 'g-dev' }, '')).toEqual({ action: 'grant', projectId: 'p', subject: 'group', subjectId: 'g-dev', access: null });
+    expect(grantAction('p', { kind: 'public' }, '')).toEqual({ action: 'public', projectId: 'p', access: null });
+  });
+  test('RO / RW send their level; Public sends ro', () => {
+    expect(grantAction('p', { kind: 'user', id: '3' }, 'rw')).toEqual({ action: 'grant', projectId: 'p', subject: 'user', subjectId: '3', access: 'rw' });
+    expect(grantAction('p', { kind: 'group', id: 'g' }, 'ro')).toEqual({ action: 'grant', projectId: 'p', subject: 'group', subjectId: 'g', access: 'ro' });
+    expect(grantAction('p', { kind: 'public' }, 'ro')).toEqual({ action: 'public', projectId: 'p', access: 'ro' });
+  });
+  test('shown: a legacy block is its own state; missing is No Grant', () => {
+    expect(grantShown('none')).toBe('none');
+    expect(grantShown(undefined)).toBe('');
+    expect(grantShown(null)).toBe('');
+    expect(grantShown('ro')).toBe('ro');
+    expect(grantShown('rw')).toBe('rw');
   });
 });

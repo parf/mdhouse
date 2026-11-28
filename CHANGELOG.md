@@ -5,11 +5,12 @@
 ### Added
 
 - **New Markdown file** appears beside the view shortcuts when you hover over a document's breadcrumb. Name the file and it opens in the editor. `.md` is added when the name has no Markdown suffix.
-- **Public** in **Settings → Access → project → Groups**: No grant or Read-only for visitors without GitHub sign-in. A visitor of a public project reads it with a **Sign in** link where Settings would be, and no write controls.
+- **Public** in **Settings → Access → project → Groups**: No Grant or Read-Only for visitors without GitHub sign-in. A visitor of a public project reads it with a **Sign in** link where Settings would be, and no write controls.
 - Server: `POST /api/new-file` creates an empty Markdown file in an existing folder, with the document write checks; an existing name is never overwritten.
 
 ### Changed
 
+- Access grants for users, groups and Public are radio choices in the table: one click saves; Read-only and Read and write have their own colours.
 - On a document, `e` opens the mdhouse Markdown editor and `x` opens the external editor.
 
 - **Edit** opens the whole source on its own page (`<doc>?edit`) instead of in the document: Markdown styled in place, with its marks and link targets shown only on the line you are on. **Preview** shows the unsaved text rendered — tables, diagrams, wikilinks and Q&A — read-only; back in the editor the cursor and scroll are where you left them. **Save** / Ctrl+S keeps you on the page; **Back to document** keeps unsaved text as before. Ticks, answers and section inserts stay on the document page.

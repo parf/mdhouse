@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';
 import { api, ApiError, isAdminDenial, type TeamAccess, type TeamAction, type TeamGroup, type TeamPreview, type TeamProject, type TeamSnapshot, type TeamUser } from './api';
 import { follow } from './PageHead';
 import { accessDirectory, accessTitles, SettingsNav, usersUrl } from './SettingsNav';
-import { ALL_USERS, configuredAccess, groupField, groupFilters, groupName, parseGroupField, projectSources, PUBLIC_NAME, publicAccess, sourcesText, userSources, usersIn } from './team-model';
+import { ALL_USERS, configuredAccess, grantAction, grantChoices, grantShown, groupField, groupFilters, groupName, parseGroupField, projectSources, PUBLIC_NAME, publicAccess, sourcesText, userSources, usersIn, type GrantChoice, type GrantSubject } from './team-model';
 
 const NEEDS_ADMIN = 'Needs the administrator: run mdhouse admin --workspace from cli';
 const ACCESS_WORD: Record<TeamAccess, string> = { ro: 'Read-only', rw: 'Read and write' };
@@ -194,51 +194,55 @@ const UserLabel = ({ user }: { user: TeamUser }) => (
 type Act = (action: TeamAction, done?: string) => Promise<boolean>;
 type Link = (url: string, text: preact.ComponentChildren, cls?: string, current?: boolean) => preact.JSX.Element;
 
-/** A permission edit stays local until saved. A stored block can only be preserved or explicitly changed. `readOnly`: No grant and Read-only only. */
-function GrantEditor({ label, value, user = false, readOnly = false, disabled, save }: {
+/**
+ * A row's grant as radios: one click (or one arrow key) saves at once with the snapshot's revision. While a save is in
+ * flight every grant radio is disabled; a refused save shows the stored choice again. A legacy explicit block shows as
+ * its own checked state and stays until another radio is picked — no radio writes it.
+ */
+function GrantRadios({ name, label, value, subject, disabled, save }: {
+  name: string;
   label: string;
   value: TeamAccess | 'none' | null | undefined;
-  user?: boolean;
-  readOnly?: boolean;
+  subject: GrantSubject;
   disabled: boolean;
-  save: (next: TeamAccess | null) => Promise<boolean>;
+  save: (choice: GrantChoice) => Promise<boolean>;
 }) {
-  const [draft, setDraft] = useState<TeamAccess | '' | null>(null);
-  const select = useRef<HTMLSelectElement>(null);
-  const current = value ?? '';
-  const changed = draft !== null && draft !== current;
+  const stored = grantShown(value);
+  const [picked, setPicked] = useState<GrantChoice | null>(null);
+  const box = useRef<HTMLFieldSetElement>(null);
+  useEffect(() => setPicked(null), [stored]);
+  const shown = picked ?? stored;
+  const choices: Array<[GrantChoice | 'none', string]> = [...grantChoices(subject), ...(stored === 'none' ? [['none', 'Blocked'] as [GrantChoice | 'none', string]] : [])];
+  const pick = async (choice: GrantChoice) => {
+    if (disabled || choice === stored) return;
+    const focused = box.current?.contains(document.activeElement) ?? false;
+    setPicked(choice);
+    const ok = await save(choice);
+    if (!ok) setPicked(null);
+    if (focused) requestAnimationFrame(() => box.current?.querySelector<HTMLInputElement>('input:checked')?.focus());
+  };
   return (
-    <form class="grant-editor" onSubmit={async (event) => {
-      event.preventDefault();
-      if (!changed || disabled) return;
-      const detail = select.current?.closest('.users-detail');
-      if (await save(draft || null)) setDraft(null);
-      requestAnimationFrame(() => (select.current ?? detail?.querySelector('h2'))?.focus());
-    }}>
-      <select
-        ref={select}
-        class="ab-select"
-        aria-label={label}
-        disabled={disabled}
-        value={draft ?? current}
-        onChange={(event) => {
-          const next = event.currentTarget.value;
-          if (next === 'ro' || (next === 'rw' && !readOnly) || next === '') setDraft(next);
-        }}
-      >
-        {current === 'none' && <option value="none" disabled>Direct access blocked</option>}
-        <option value="">{user ? 'Use group access' : 'No grant'}</option>
-        <option value="ro">Read-only</option>
-        {!readOnly && <option value="rw">Read and write</option>}
-      </select>
-      {changed && <button type="submit" class="git-btn" disabled={disabled}>Save</button>}
-      {changed && <button type="button" class="linklike" disabled={disabled} onClick={() => {
-        setDraft(null);
-        select.current?.focus();
-      }}>Cancel</button>}
-    </form>
+    <fieldset ref={box} class="grant-radios" aria-label={label} disabled={disabled}>
+      {choices.map(([v, text]) => (
+        <label key={v} class={`grant-choice${v ? ` ${v}` : ' none-grant'}`}>
+          <input
+            type="radio"
+            name={name}
+            value={v}
+            checked={shown === v}
+            onChange={() => {
+              if (v !== 'none') void pick(v);
+            }}
+          />
+          <span>{text}</span>
+        </label>
+      ))}
+    </fieldset>
   );
 }
+
+/** One line per table of user grants: No Grant is no record, so the user's groups decide. */
+const USER_NO_GRANT = 'No Grant on a user uses their groups\' access.';
 
 /** The access shown in the row stays separate from the direct grant being edited. */
 function UserSources({ snap, project, user }: { snap: TeamSnapshot; project: TeamProject; user: TeamUser }) {
@@ -305,6 +309,7 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
       {projects.length < snap.projects.length || showAll ? (
         <RevealGrants expanded={showAll} onClick={() => setShowAll((value) => !value)} controls={grantsId} show="Grant project access" hide="Show configured access only" />
       ) : null}
+      {projects.length > 0 && <p class="settings-hint users-nogrant">{USER_NO_GRANT}</p>}
       <table id={grantsId} class="users-table" aria-label={`Project access for ${user.login}`} hidden={projects.length === 0}>
         <tbody>
           {projects.map((p) => (
@@ -314,7 +319,7 @@ function UserDetail({ snap, user, working, act, link }: { snap: TeamSnapshot; us
                 <UserSources snap={snap} project={p} user={user} />
               </td>
               <td>
-                <GrantEditor user label={`Direct access for ${user.login} on ${p.name}`} value={p.grants.users[user.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: p.id, subject: 'user', subjectId: user.id, access }, 'Project access saved.')} />
+                <GrantRadios name={`grant-user-${user.id}-${p.id}`} label={`Direct access for ${user.login} on ${p.name}`} subject={{ kind: 'user', id: user.id }} value={p.grants.users[user.id]} disabled={working} save={(c) => act(grantAction(p.id, { kind: 'user', id: user.id }, c), 'Project access saved.')} />
               </td>
             </tr>
           ))}
@@ -374,7 +379,7 @@ function GroupDetail({ snap, group, working, act, link }: { snap: TeamSnapshot; 
                 {!p.writable && <div class="users-how">Project is read-only</div>}
               </td>
               <td>
-                <GrantEditor label={`Grant for ${groupName(group)} on ${p.name}`} value={p.grants.groups[group.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: p.id, subject: 'group', subjectId: group.id, access }, 'Group grant saved.')} />
+                <GrantRadios name={`grant-group-${group.id}-${p.id}`} label={`Grant for ${groupName(group)} on ${p.name}`} subject={{ kind: 'group', id: group.id }} value={p.grants.groups[group.id]} disabled={working} save={(c) => act(grantAction(p.id, { kind: 'group', id: group.id }, c), 'Group grant saved.')} />
               </td>
             </tr>
           ))}
@@ -419,14 +424,14 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
               <div class="users-how">Visitors without GitHub sign-in</div>
             </td>
             <td>
-              <GrantEditor readOnly label={`Grant for ${PUBLIC_NAME} on ${project.name}`} value={publicAccess(project)} disabled={working} save={(access) => act({ action: 'public', projectId: project.id, access: access === 'ro' ? 'ro' : null }, 'Public access saved.')} />
+              <GrantRadios name={`grant-public-${project.id}`} label={`Grant for ${PUBLIC_NAME} on ${project.name}`} subject={{ kind: 'public' }} value={publicAccess(project)} disabled={working} save={(c) => act(grantAction(project.id, { kind: 'public' }, c), 'Public access saved.')} />
             </td>
           </tr>
           {groups.map((g) => (
             <tr key={g.id}>
               <td>{link(usersUrl({ group: g.id }), <Who group>{groupName(g)}</Who>)}</td>
               <td>
-                <GrantEditor label={`Grant for ${groupName(g)} on ${project.name}`} value={project.grants.groups[g.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: project.id, subject: 'group', subjectId: g.id, access }, 'Group grant saved.')} />
+                <GrantRadios name={`grant-group-${g.id}-${project.id}`} label={`Grant for ${groupName(g)} on ${project.name}`} subject={{ kind: 'group', id: g.id }} value={project.grants.groups[g.id]} disabled={working} save={(c) => act(grantAction(project.id, { kind: 'group', id: g.id }, c), 'Group grant saved.')} />
               </td>
             </tr>
           ))}
@@ -436,6 +441,7 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
       {users.length < snap.users.length || showUsers ? (
         <RevealGrants expanded={showUsers} onClick={() => setShowUsers((value) => !value)} controls={usersId} show="Show all users" hide="Show direct grants only" />
       ) : null}
+      {users.length > 0 && <p class="settings-hint users-nogrant">{USER_NO_GRANT}</p>}
       <table id={usersId} class="users-table" aria-label={`User access for ${project.name}`} hidden={users.length === 0}>
         <tbody>
           {users.map((u) => (
@@ -446,7 +452,7 @@ function ProjectDetail({ snap, project, working, act, link }: { snap: TeamSnapsh
                 <UserSources snap={snap} project={project} user={u} />
               </td>
               <td>
-                <GrantEditor user label={`Direct access for ${u.login} on ${project.name}`} value={project.grants.users[u.id]} disabled={working} save={(access) => act({ action: 'grant', projectId: project.id, subject: 'user', subjectId: u.id, access }, 'Project access saved.')} />
+                <GrantRadios name={`grant-user-${u.id}-${project.id}`} label={`Direct access for ${u.login} on ${project.name}`} subject={{ kind: 'user', id: u.id }} value={project.grants.users[u.id]} disabled={working} save={(c) => act(grantAction(project.id, { kind: 'user', id: u.id }, c), 'Project access saved.')} />
               </td>
             </tr>
           ))}
