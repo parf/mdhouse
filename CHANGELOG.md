@@ -11,6 +11,7 @@
 ### Changed
 
 - Access grants for users, groups and Public are radio choices in the table: one click saves; Read-only and Read and write have their own colours.
+- A project's Access page shows its folder path beside the name; the separate Folder details section is gone.
 - On a document, `e` opens the mdhouse Markdown editor and `x` opens the external editor.
 
 - **Edit** opens the whole source on its own page (`<doc>?edit`) instead of in the document: Markdown styled in place, with its marks and link targets shown only on the line you are on. **Preview** shows the unsaved text rendered — tables, diagrams, wikilinks and Q&A — read-only; back in the editor the cursor and scroll are where you left them. **Save** / Ctrl+S keeps you on the page; **Back to document** keeps unsaved text as before. Ticks, answers and section inserts stay on the document page.

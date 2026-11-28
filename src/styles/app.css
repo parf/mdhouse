@@ -2565,14 +2565,14 @@ h1:hover .view-add, .crumbs:hover .view-add, .view-add:focus-within { opacity: 1
 .users-table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .users-table td { padding: 4px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
 .users-table tr.banned td:first-child { opacity: 0.6; }
-/* A row's grant as radios: No Grant neutral, Read-only blue, Read and write amber — each with its words, never colour alone. */
+/* A row's grant as radios: No Grant neutral, Read-only blue, Read and write amber in the border, fill and dot; the words stay --fg for contrast. */
 .grant-radios { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; border: 0; min-width: 0; }
 .grant-choice { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px 2px 5px; border: 1px solid var(--border-strong); border-radius: 999px; font-size: 12px; color: var(--fg-muted); cursor: pointer; white-space: nowrap; }
 .grant-choice input { margin: 0; accent-color: var(--fg-muted); }
 .grant-choice:has(input:checked) { color: var(--fg); border-color: var(--fg-muted); font-weight: 600; }
-.grant-choice.ro:has(input:checked) { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.grant-choice.ro:has(input:checked) { color: var(--fg); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .grant-choice.ro input { accent-color: var(--accent); }
-.grant-choice.rw:has(input:checked) { color: var(--warn); border-color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.grant-choice.rw:has(input:checked) { color: var(--fg); border-color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
 .grant-choice.rw input { accent-color: var(--warn); }
 .grant-choice.none:has(input:checked) { color: var(--danger); border-color: var(--danger); }
 .grant-choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }

@@ -115,7 +115,9 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const viewer = isViewer(options);
   /** A guest of public projects: no writes and no administration, as a Viewer, but with Sign in instead of Settings. */
   const guest = teamMe?.kind === 'guest';
-  const noWrites = viewer || guest;
+  /** Under Team, who this browser is stays unknown until `/api/team/me` answers (or if it fails): no writes meanwhile. */
+  const identityKnown = optionsLoaded && (!options.team || teamMe !== null);
+  const noWrites = viewer || guest || !identityKnown;
   const rereadSettings = useCallback(() => void api.settings().then(setOptions).catch(() => {}), []);
   useEffect(() => {
     addEventListener(VIEWER_DENIED, rereadSettings);
@@ -712,7 +714,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
   const crumb = useMemo(() => doc?.rel ?? '', [doc?.rel]);
 
   const gear = (extra = '') =>
-    teamMe?.kind === 'guest' ? (
+    !identityKnown ? null : teamMe?.kind === 'guest' ? (
       <a class={`git-btn guest-signin${extra ? ` ${extra}` : ''}`} href={teamMe.login} title="Sign in with GitHub">
         Sign in
       </a>
@@ -747,7 +749,7 @@ function App({ entry: first }: { entry: AdminEntry }) {
    * it is open leaves it open, read-only, with the text.
    */
   const [editEntry, setEditEntry] = useState<string | null>(null);
-  const editReady = editAt && optionsLoaded && !loadingDoc && !!doc && !!docRoot && docLoadedFor.current === docPath;
+  const editReady = editAt && identityKnown && !loadingDoc && !!doc && !!docRoot && docLoadedFor.current === docPath;
   useEffect(() => {
     if (!editAt) return setEditEntry(null);
     if (!editReady || !doc || editEntry === docPath) return;
