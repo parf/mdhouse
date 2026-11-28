@@ -67,14 +67,9 @@ export type GrantChoice = '' | TeamAccess;
 /** Whose grant a row edits: a user's direct grant, a group's grant, or Public. */
 export type GrantSubject = { kind: 'user' | 'group'; id: string } | { kind: 'public' };
 
-/** The radios of a row, first No Grant. Public has the owner's exact labels and no RW. */
-export function grantChoices(subject: GrantSubject): Array<[GrantChoice, string]> {
-  return subject.kind === 'public'
-    ? [['', 'No Grant'], ['ro', 'Read-Only']]
-    : [['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']];
-}
+export const GRANT_COLUMNS = [['', 'No Grant'], ['ro', 'Read-Only'], ['rw', 'Read-Write']] as const satisfies readonly (readonly [GrantChoice, string])[];
 
-/** The radio a stored value shows: a legacy explicit block stays its own state until another radio is picked. */
+/** A stored block stays distinct from No Grant until an administrator picks a grant. */
 export function grantShown(value: TeamAccess | 'none' | null | undefined): GrantChoice | 'none' {
   return value === 'ro' || value === 'rw' || value === 'none' ? value : '';
 }

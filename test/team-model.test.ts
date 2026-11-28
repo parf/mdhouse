@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TeamSnapshot } from '../src/ui/api';
-import { configuredAccess, grantAction, grantChoices, grantShown, groupCounts, groupField, groupFilters, parseGroupField, projectSources, publicAccess, sourcesText, userSources, usersIn } from '../src/ui/team-model';
+import { configuredAccess, grantAction, GRANT_COLUMNS, grantShown, groupCounts, groupField, groupFilters, parseGroupField, projectSources, publicAccess, sourcesText, userSources, usersIn } from '../src/ui/team-model';
 
 const snap: TeamSnapshot = {
   revision: 'r1', active: false, oauthReady: true, adminId: '1',
@@ -74,10 +74,8 @@ describe('Public, the built-in row for visitors without a Team session', () => {
 });
 
 describe('grant radios', () => {
-  test('choices: No Grant first everywhere; Public exactly No Grant / Read-Only', () => {
-    expect(grantChoices({ kind: 'public' })).toEqual([['', 'No Grant'], ['ro', 'Read-Only']]);
-    expect(grantChoices({ kind: 'group', id: 'g' })).toEqual([['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']]);
-    expect(grantChoices({ kind: 'user', id: '1' })).toEqual([['', 'No Grant'], ['ro', 'Read-only'], ['rw', 'Read and write']]);
+  test('table columns have shared labels with No Grant first', () => {
+    expect(GRANT_COLUMNS).toEqual([['', 'No Grant'], ['ro', 'Read-Only'], ['rw', 'Read-Write']]);
   });
   test('No Grant sends access: null — never none — for a user, a group and Public', () => {
     expect(grantAction('p', { kind: 'user', id: '3' }, '')).toEqual({ action: 'grant', projectId: 'p', subject: 'user', subjectId: '3', access: null });

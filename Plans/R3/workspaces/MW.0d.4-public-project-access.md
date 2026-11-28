@@ -8,7 +8,7 @@ CTO owns implementation, review and integration into local `main`.
 
 - In **Settings → Access → project → Groups**, show **Public** as a built-in row. Give it the
   choices **No Grant** and **Read-Only**, saved with the other project grants. Explain that it
-  applies to visitors without GitHub sign-in. Keep it out of editable membership and user filters.
+  applies to visitors without sign-in. Keep it out of editable membership and user filters.
 - **No Grant** is the effective default for every existing or new project. A grant is per project.
   In active Team, guests can open and read only explicitly public projects. Keep host/network
   admission, the nested-project jail, and the existing signed-in Team and Personal rules.
@@ -34,7 +34,7 @@ CTO owns implementation, review and integration into local `main`.
 ## Owner steering (2026-11-27)
 
 - [x] A direct user grant overrides the group grant in both directions; No Grant inherits ([№USER-W8](DECISIONS.md#USER-W8)).
-- [x] Every Groups/Users grant is a radio choice in the table; one click saves. No Grant is first and sends `access: null`; RO and RW have distinct colours. Public reads exactly **No Grant** / **Read-Only**. A stored explicit block stays until changed.
+- [x] Every Groups/Users grant is a radio choice in the table; one click saves. No Grant is first and sends `access: null`; RO and RW have distinct colours. Grant labels appear in the column headers. Public offers **No Grant** / **Read-Only**. A stored explicit block stays until changed.
 - [x] The project Access heading shows the full folder path in muted text.
 
 ## Result

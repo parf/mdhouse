@@ -34,7 +34,7 @@ their access to each project, or select a project to edit access for its users a
 users. **All Users** automatically includes every registered account. The administrator can enter
 extra group names in the user's field, separated by spaces or commas.
 
-Each grant is a row of choices: **No Grant**, **Read-only**, **Read and write**. One click saves it.
+The grant tables have **No Grant**, **Read-Only** and **Read-Write** columns. One click on a radio saves it.
 **No Grant** removes the record: a user then has their groups' strongest grant. A direct **Read-only**
 or **Read and write** grant takes precedence over group grants. An older explicit block shows as
 **Blocked** until you pick another choice. Viewer and read-only projects cap access at RO.

@@ -6,12 +6,12 @@
 
 - Server: Team projects can be set Public (read-only) for visitors without GitHub sign-in: `POST /api/team` `action: 'public'`. Guests read only Public projects — documents, tree, search, files and live updates — and nothing else; without a Public project sign-in works as before.
 - **New Markdown file** appears beside the view shortcuts when you hover over a document's breadcrumb. Name the file and it opens in the editor. `.md` is added when the name has no Markdown suffix.
-- **Public** in **Settings → Access → project → Groups**: No Grant or Read-Only for visitors without GitHub sign-in. A visitor of a public project reads it with a **Sign in** link where Settings would be, and no write controls.
+- **Public** in **Settings → Access → project → Groups**: No Grant or Read-Only for visitors without sign-in. A visitor of a public project reads it with a **Sign in** link where Settings would be, and no write controls.
 - Server: `POST /api/new-file` creates an empty Markdown file in an existing folder, with the document write checks; an existing name is never overwritten.
 
 ### Changed
 
-- Access grants for users, groups and Public are radio choices in the table: one click saves; Read-only and Read and write have their own colours.
+- Access tables put grant names in column headers. One click on a radio saves, with separate colours for Read-Only and Read-Write.
 - A project's Access page shows its folder path beside the name; the separate Folder details section is gone.
 - On a document, `e` opens the mdhouse Markdown editor and `x` opens the external editor.
 
