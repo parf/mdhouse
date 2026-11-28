@@ -24,22 +24,24 @@ them before closing the work. Move completed work and superseded text to their a
 | Path | Contents |
 | --- | --- |
 | `README.md` | Stable, high-level project specification |
-| `CONSTITUTION.md` | Project-wide rules for building and reviewing work, strongly recommended for large projects |
 | `TODO.md` | Active execution plan |
 | `DONE.md` | Concise completion log |
-| `FUTURE.md` | Follow-up after the project closes, when needed |
-| `QUESTIONS.md` | Open questions, when needed |
 | `DECISIONS.md` | Current rules that extend the specification, when needed |
-| `RESOLVED.md` or `resolved/` | Resolved questions and decision history |
+| `QUESTIONS.md` | Open questions, when needed |
+| `RESOLVED.md` | Resolved questions and decision history |
+| `HOW-TO-TEST.md` | Test accounts, flows, pipelines and instructions |
+| `FUTURE.md` | Follow-up after the project closes, when needed |
+| `done/` | Archived project artifacts |
+| `tmp/` | Gitignored scratch files and scripts |
+| `scripts/` | One-time and support scripts belonging to the plan |
+| `sources/` | Primary sources |
+| `research/` | Research notes |
+| `resolved/` | Resolved questions and decisions split by topic or session |
 | `brainstorm/` | Discuss feature ideas before adding them to TODO. |
 | `sprint/` | Sub-plans for large tasks, when needed |
 | `reports/` | Receipts and proof of execution |
-| `HOW-TO-TEST.md` | Test accounts, flows, pipelines and instructions |
-| `sources/`, `research/` | Primary sources and research notes |
-| `scripts/` | One-time and support scripts belonging to the plan |
-| `tmp/` | Gitignored scratch files and scripts |
-| `done/` | Archived project artifacts |
 | `Plans/done/ProjectName.md` or `Plans/done/project-name/` | Completed project archive |
+| `CONSTITUTION.md` | Project-wide rules for building and reviewing work, strongly recommended for large projects |
 
 ### `README.md`
 
