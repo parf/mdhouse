@@ -12,6 +12,7 @@ completed work and superseded text to their archives.
 | Path | Contents |
 | --- | --- |
 | `README.md` | Stable, high-level project specification |
+| `CONSTITUTION.md` | Project-wide rules for building and reviewing work, strongly recommended for large projects |
 | `TODO.md` | Active execution plan |
 | `DONE.md` | Concise completion log |
 | `FUTURE.md` | Follow-up after the project closes, when needed |
@@ -36,6 +37,31 @@ completed work and superseded text to their archives.
   update. A large project area can have a brief **Current state** note for orientation.
 - Keep tasks, progress, blockers and task-level acceptance criteria in `TODO.md`. Keep test logs,
   rejected attempts and decision history with their evidence or archive.
+
+### `CONSTITUTION.md`
+
+For large projects, create `Plans/<project>/CONSTITUTION.md` and link to it from the project
+`README.md` and the instructions agents read when they start work. A constitution is especially
+useful when multiple teams or agents need to apply the same rules across many features. For small
+and medium projects, keep the rules in `README.md` and `DECISIONS.md` as needed.
+
+The constitution defines how the project is built and reviewed across features. Each feature
+specification defines what to build for that feature. Anyone working on a feature, including an
+agent, rereads the constitution before writing its specification or plan, starting implementation,
+and reviewing the result. During review, check the result against each applicable rule.
+
+- **Identity.** State the project's purpose, domain and scope briefly.
+- **Principles.** Use stable rule IDs. Use `MUST` and `MUST NOT` for requirements and prohibitions,
+  `SHOULD` for defaults that need a reason to depart from them, and `MAY` for allowed options.
+- **Technology.** Record the languages, frameworks and tools the project has committed to.
+- **Quality gates.** Define required tests, when test-first development applies, coverage
+  expectations, and the review and verification needed before work can be accepted.
+- **Hard constraints.** State requirements that apply across features, such as static output first
+  or preserving the compatibility of published interfaces.
+- **Governance.** Record the current version and amendment date. Say who approves amendments and
+  how the version is incremented. With each approved amendment, keep a **Sync Impact Report**
+  listing the affected specification, plan and task templates, agent instructions and checks that
+  need updating. Archive the amendment and its report in `RESOLVED.md` or `resolved/`.
 
 ### `TODO.md`
 
